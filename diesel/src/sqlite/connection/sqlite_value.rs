@@ -105,6 +105,10 @@ impl Row<Sqlite> for SqliteRow {
             tpe == ffi::SQLITE_NULL
         })
     }
+
+    fn column_index(&self) -> usize {
+        self.next_col_index as usize
+    }
 }
 
 pub struct SqliteNamedRow<'a> {

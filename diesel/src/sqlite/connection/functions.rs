@@ -30,7 +30,7 @@ where
     }
 
     conn.register_sql_function(fn_name, fields_needed, deterministic, move |conn, args| {
-        let mut row = FunctionRow { args };
+        let mut row = FunctionRow { args, col_idx: 0 };
         let args_row = Args::Row::build_from_row(&mut row).map_err(Error::DeserializationError)?;
         let args = Args::build(args_row);
 
@@ -55,11 +55,13 @@ where
 
 struct FunctionRow<'a> {
     args: &'a [*mut ffi::sqlite3_value],
+    col_idx: usize,
 }
 
 impl<'a> Row<Sqlite> for FunctionRow<'a> {
     fn take(&mut self) -> Option<&SqliteValue> {
         self.args.split_first().and_then(|(&first, rest)| {
+            self.col_idx += 1;
             self.args = rest;
             unsafe { SqliteValue::new(first) }
         })
@@ -69,5 +71,9 @@ impl<'a> Row<Sqlite> for FunctionRow<'a> {
         self.args[..count]
             .iter()
             .all(|&p| unsafe { SqliteValue::new(p) }.is_none())
+    }
+
+    fn column_index(&self) -> usize {
+        self.col_idx
     }
 }

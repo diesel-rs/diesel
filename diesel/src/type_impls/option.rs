@@ -95,10 +95,21 @@ where
             row.advance(fields_needed);
             Ok(None)
         } else {
+            let column_index_before_build = row.column_index();
             match T::build_from_row(row) {
                 Ok(v) => Ok(Some(v)),
                 Err(e) => {
                     if e.is::<UnexpectedNullError>() {
+                        // It is possible that we are recovering but not all fields have been taken.
+                        // We need to skip those that are left that belong to this `Option`.
+
+                        // We are returning a deserialization error in case this goes unexpectedly
+                        // to make it easier on people implementing `FromSqlRow`
+                        row.advance(
+                            (column_index_before_build + fields_needed)
+                                .checked_sub(row.column_index())
+                                .ok_or("Inconsistent FromSqlRow impl: we went further than FIELDS_NEEDED")?,
+                        );
                         Ok(None)
                     } else {
                         Err(e)

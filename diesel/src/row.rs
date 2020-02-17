@@ -19,6 +19,12 @@ pub trait Row<DB: Backend> {
     /// would all return `None`.
     fn next_is_null(&self, count: usize) -> bool;
 
+    /// Returns the index of the current column (next to be returned by take, zero based)
+    ///
+    /// May be used to skip the right number of fields when recovering for an `UnexpectedNullError` when
+    /// deserializing an `Option`
+    fn column_index(&self) -> usize;
+
     /// Skips the next `count` columns. This method must be called if you are
     /// choosing not to call `take` as a result of `next_is_null` returning
     /// `true`.

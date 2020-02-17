@@ -59,6 +59,10 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
     fn next_is_null(&self, count: usize) -> bool {
         (0..count).all(|i| self.binds.field_data(self.col_idx + i).is_none())
     }
+
+    fn column_index(&self) -> usize {
+        self.col_idx
+    }
 }
 
 pub struct NamedStatementIterator<'a> {
