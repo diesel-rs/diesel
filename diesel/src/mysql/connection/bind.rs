@@ -83,8 +83,8 @@ impl Binds {
 
     pub fn field_data(&self, idx: usize) -> Option<MysqlValue<'_>> {
         let data = &self.data[idx];
-        let tpe = data.tpe.into();
         self.data[idx].bytes().map(|bytes| {
+            let tpe = data.tpe.into();
             MysqlValue::new(
                 bytes,
                 MysqlTypeMetadata {
@@ -266,7 +266,11 @@ impl From<ffi::enum_field_types> for MysqlType {
             | MYSQL_TYPE_LONG_BLOB => MysqlType::Blob,
             MYSQL_TYPE_DECIMAL | MYSQL_TYPE_NEWDECIMAL => MysqlType::Numeric,
             // Null value
-            MYSQL_TYPE_NULL |
+            MYSQL_TYPE_NULL => unreachable!(
+                "We ensure at the call side that we do not hit this type here. \
+                 If you ever see this error, something has gone very wrong. \
+                 Please open a issue at the diesel github repo in this case"
+            ),
             // bit type
             // same encoding as string
             MYSQL_TYPE_BIT |
@@ -289,7 +293,7 @@ impl From<ffi::enum_field_types> for MysqlType {
             MYSQL_TYPE_NEWDATE
             | MYSQL_TYPE_TIME2
             | MYSQL_TYPE_DATETIME2
-            | MYSQL_TYPE_TIMESTAMP2 => panic!(
+            | MYSQL_TYPE_TIMESTAMP2 => unreachable!(
                 "The mysql documentation states that this types are \
                  only used on server side, so if you see this error \
                  something has gone wrong. Please open a issue at \
