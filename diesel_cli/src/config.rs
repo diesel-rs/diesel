@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use toml;
 
 use super::find_project_root;
-use print_schema;
+use crate::print_schema;
 
 #[derive(Deserialize, Default)]
 #[serde(deny_unknown_fields)]

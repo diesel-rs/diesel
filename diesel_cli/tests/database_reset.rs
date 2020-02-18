@@ -1,7 +1,7 @@
 #[cfg(feature = "postgres")]
 extern crate url;
 
-use support::{database, project};
+use crate::support::{database, project};
 
 #[test]
 fn reset_drops_the_database() {

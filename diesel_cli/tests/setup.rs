@@ -1,7 +1,7 @@
 #[cfg(feature = "postgres")]
 use std::path::Path;
 
-use support::{database, project};
+use crate::support::{database, project};
 
 #[test]
 fn setup_creates_database() {

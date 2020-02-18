@@ -1,6 +1,6 @@
-use config;
+use crate::config;
 
-use infer_schema_internals::*;
+use crate::infer_schema_internals::*;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use std::error::Error;

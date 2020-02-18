@@ -6,7 +6,7 @@ use diesel::sql_types::Bool;
 use diesel::*;
 use migrations_internals as migrations;
 
-use database_error::{DatabaseError, DatabaseResult};
+use crate::database_error::{DatabaseError, DatabaseResult};
 
 use std::env;
 use std::error::Error;
@@ -134,13 +134,15 @@ macro_rules! call_with_conn {
         $database_url:expr,
         $($func:ident)::+ ($($args:expr),*)
     ) => {
-        match ::database::InferConnection::establish(&$database_url).unwrap_or_else(handle_error) {
+        match crate::database::InferConnection::establish(&$database_url)
+            .unwrap_or_else(handle_error)
+        {
             #[cfg(feature="postgres")]
-            ::database::InferConnection::Pg(ref conn) => $($func)::+ (conn, $($args),*),
+            crate::database::InferConnection::Pg(ref conn) => $($func)::+ (conn, $($args),*),
             #[cfg(feature="sqlite")]
-            ::database::InferConnection::Sqlite(ref conn) => $($func)::+ (conn, $($args),*),
+            crate::database::InferConnection::Sqlite(ref conn) => $($func)::+ (conn, $($args),*),
             #[cfg(feature="mysql")]
-            ::database::InferConnection::Mysql(ref conn) => $($func)::+ (conn, $($args),*),
+            crate::database::InferConnection::Mysql(ref conn) => $($func)::+ (conn, $($args),*),
         }
     };
 }

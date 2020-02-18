@@ -55,7 +55,7 @@ use std::{env, fs};
 
 use self::config::Config;
 use self::database_error::{DatabaseError, DatabaseResult};
-use migrations::MigrationError;
+use crate::migrations::MigrationError;
 use migrations_internals::TIMESTAMP_FORMAT;
 
 fn main() {
@@ -376,8 +376,8 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 }
 
 fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
-    use infer_schema_internals::TableName;
-    use print_schema::*;
+    use crate::infer_schema_internals::TableName;
+    use crate::print_schema::*;
 
     let database_url = database::database_url(matches);
     let mut config = Config::read(matches)?.print_schema;
@@ -468,7 +468,7 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<d
 mod tests {
     extern crate tempfile;
 
-    use database_error::DatabaseError;
+    use crate::database_error::DatabaseError;
 
     use self::tempfile::Builder;
 

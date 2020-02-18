@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
-use support::{database, project};
+use crate::support::{database, project};
 
 #[test]
 fn run_infer_schema_without_docs() {

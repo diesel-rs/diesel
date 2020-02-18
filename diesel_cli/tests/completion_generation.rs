@@ -1,4 +1,4 @@
-use support::project;
+use crate::support::project;
 
 #[test]
 fn can_generate_deprecated_bash_completion() {

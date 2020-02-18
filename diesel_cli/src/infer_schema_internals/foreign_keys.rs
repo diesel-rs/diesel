@@ -3,7 +3,7 @@
 use super::data_structures::ForeignKeyConstraint;
 use super::inference::get_primary_keys;
 use super::table_data::TableName;
-use database::InferConnection;
+use crate::database::InferConnection;
 
 pub fn remove_unsafe_foreign_keys_for_codegen(
     database_url: &str,

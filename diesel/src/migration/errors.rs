@@ -36,10 +36,11 @@ impl fmt::Display for MigrationError {
                 f,
                 "Unable to find migrations directory in this directory or any parent directories."
             ),
-            MigrationError::UnknownMigrationFormat(_) => {
-                write!(f,"Invalid migration directory, the directory's name should be \
-                 <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql.")
-            }
+            MigrationError::UnknownMigrationFormat(_) => write!(
+                f,
+                "Invalid migration directory, the directory's name should be \
+                 <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql."
+            ),
             MigrationError::IoError(ref error) => write!(f, "{}", error),
             MigrationError::UnknownMigrationVersion(_) => write!(
                 f,

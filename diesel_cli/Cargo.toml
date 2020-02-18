@@ -10,6 +10,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
 keywords = ["diesel", "migrations", "cli"]
 autotests = false
+edition = "2018"
 
 [[bin]]
 name = "diesel"
