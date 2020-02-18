@@ -40,7 +40,7 @@ impl ConnectionOptions {
             Some(password) => Some(decode_into_cstring(password)?),
             None => None,
         };
-        let database = match url.path_segments().and_then(|mut iter| iter.nth(0)) {
+        let database = match url.path_segments().and_then(|mut iter| iter.next()) {
             Some("") | None => None,
             Some(segment) => Some(CString::new(segment.as_bytes())?),
         };

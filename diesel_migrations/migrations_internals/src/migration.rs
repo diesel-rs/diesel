@@ -102,7 +102,7 @@ pub fn version_from_path(path: &Path) -> Result<String, MigrationError> {
         .unwrap_or_else(|| panic!("Can't get file name from path `{:?}`", path))
         .to_string_lossy()
         .split('_')
-        .nth(0)
+        .next()
         .map(|s| Ok(s.replace('-', "")))
         .unwrap_or_else(|| Err(MigrationError::UnknownMigrationFormat(path.to_path_buf())))
 }
