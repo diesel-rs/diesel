@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use support::{database, project};
+use crate::support::{database, project};
 
 #[test]
 #[cfg(not(feature = "sqlite"))]

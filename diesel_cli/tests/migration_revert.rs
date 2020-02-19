@@ -1,4 +1,4 @@
-use support::{database, project};
+use crate::support::{database, project};
 
 #[test]
 fn migration_revert_runs_the_last_migration_down() {

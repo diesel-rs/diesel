@@ -4,7 +4,7 @@ use diesel::result::Error::NotFound;
 
 use super::data_structures::*;
 use super::table_data::*;
-use database::InferConnection;
+use crate::database::InferConnection;
 
 static RESERVED_NAMES: &[&str] = &[
     "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",

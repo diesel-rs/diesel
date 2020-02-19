@@ -1,4 +1,4 @@
-use support::{database, project};
+use crate::support::{database, project};
 
 #[test]
 fn database_setup_creates_database() {

@@ -1,4 +1,4 @@
-use support::project;
+use crate::support::project;
 
 #[test]
 fn migration_redo_runs_the_last_migration_down_and_up() {
