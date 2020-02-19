@@ -22,11 +22,20 @@ impl<'a> MysqlValue<'a> {
 
     /// Checks that the type code is valid, and interprets the data as a
     /// `MYSQL_TIME` pointer
-    #[allow(dead_code)]
+    // We use `ptr.read_unaligned()` to read the potential unaligned ptr,
+    // so clippy is clearly wrong here
+    // https://github.com/rust-lang/rust-clippy/issues/2881
+    #[allow(dead_code, clippy::cast_ptr_alignment)]
     pub(crate) fn time_value(&self) -> deserialize::Result<ffi::MYSQL_TIME> {
         match self.tpe.data_type {
             MysqlType::Time | MysqlType::Date | MysqlType::DateTime | MysqlType::Timestamp => {
-                Ok(*unsafe { &*(self.raw as *const _ as *const ffi::MYSQL_TIME) })
+                let ptr = self.raw.as_ptr() as *const ffi::MYSQL_TIME;
+                let result = unsafe { ptr.read_unaligned() };
+                if result.neg == 0 {
+                    Ok(result)
+                } else {
+                    Err("Negative dates/times are not yet supported".into())
+                }
             }
             _ => Err(self.invalid_type_code("timestamp")),
         }
