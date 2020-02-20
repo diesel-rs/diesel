@@ -1,8 +1,32 @@
-use std::str;
+use std::error::Error;
+use std::str::{self, FromStr};
 
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue};
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
+
+fn decimal_to_integer<T>(bytes: &[u8]) -> deserialize::Result<T>
+where
+    T: FromStr,
+    T::Err: Error + Send + Sync + 'static,
+{
+    let string = str::from_utf8(bytes)?;
+    let mut splited = string.split('.');
+    let integer_portion = splited.next().unwrap_or_default();
+    let decimal_portion = splited.next().unwrap_or_default();
+    if splited.next().is_some() {
+        Err(format!("Invalid decimal format: {:?}", string).into())
+    } else if decimal_portion.chars().any(|c| c != '0') {
+        Err(format!(
+            "Tried to convert a decimal to an integer that contained /
+             a non null decimal portion: {:?}",
+            string
+        )
+        .into())
+    } else {
+        Ok(integer_portion.parse()?)
+    }
+}
 
 impl FromSql<SmallInt, Mysql> for i16 {
     fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
@@ -16,11 +40,7 @@ impl FromSql<SmallInt, Mysql> for i16 {
             Big(x) => Ok(x as Self),
             Float(x) => Ok(x as Self),
             Double(x) => Ok(x as Self),
-            Decimal(bytes) => {
-                let string = str::from_utf8(bytes)?;
-                let integer_portion = string.split('.').nth(0).unwrap_or_default();
-                Ok(integer_portion.parse()?)
-            }
+            Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
 }
@@ -37,11 +57,7 @@ impl FromSql<Integer, Mysql> for i32 {
             Big(x) => Ok(x as Self),
             Float(x) => Ok(x as Self),
             Double(x) => Ok(x as Self),
-            Decimal(bytes) => {
-                let string = str::from_utf8(bytes)?;
-                let integer_portion = string.split('.').nth(0).unwrap_or_default();
-                Ok(integer_portion.parse()?)
-            }
+            Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
 }
@@ -58,11 +74,7 @@ impl FromSql<BigInt, Mysql> for i64 {
             Big(x) => Ok(x),
             Float(x) => Ok(x as Self),
             Double(x) => Ok(x as Self),
-            Decimal(bytes) => {
-                let string = str::from_utf8(bytes)?;
-                let integer_portion = string.split('.').nth(0).unwrap_or_default();
-                Ok(integer_portion.parse()?)
-            }
+            Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
 }
