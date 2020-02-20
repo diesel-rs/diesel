@@ -225,7 +225,7 @@ fn not_null_constraints_correct_column_name() {
 }
 
 #[test]
-fn check_constraints_constraints_are_detected() {
+fn check_constraints_are_detected() {
     let connection = connection();
 
     insert_into(users::table)
