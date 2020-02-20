@@ -216,8 +216,7 @@ fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
                 Config::read(matches)
                     .unwrap_or_else(handle_error)
                     .migrations_directory?
-                    .dir
-                    .to_owned(),
+                    .dir,
             )
         });
 
@@ -248,7 +247,7 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
         create_migrations_directory(&dir)?;
     }
 
-    Ok(dir.to_owned())
+    Ok(dir)
 }
 
 fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {

@@ -82,7 +82,7 @@ impl MetaItem {
     }
 
     pub fn ident_value(&self) -> Result<syn::Ident, Diagnostic> {
-        let maybe_attr = self.nested().ok().and_then(|mut n| n.nth(0));
+        let maybe_attr = self.nested().ok().and_then(|mut n| n.next());
         let maybe_path = maybe_attr.as_ref().and_then(|m| m.path().ok());
         match maybe_path {
             Some(x) => {
