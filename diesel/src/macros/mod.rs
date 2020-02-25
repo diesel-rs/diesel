@@ -270,7 +270,7 @@ macro_rules! table {
             sql_name = unknown,
             name = unknown,
             schema = public,
-            primary_key = (id),
+            primary_key = id,
         }
     }
 }
