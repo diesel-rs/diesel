@@ -1,7 +1,7 @@
 use crate::schema::*;
-use diesel::result::DatabaseErrorKind::{
-    CheckViolation, ForeignKeyViolation, NotNullViolation, UniqueViolation,
-};
+#[cfg(not(feature = "mysql"))]
+use diesel::result::DatabaseErrorKind::CheckViolation;
+use diesel::result::DatabaseErrorKind::{ForeignKeyViolation, NotNullViolation, UniqueViolation};
 use diesel::result::Error::DatabaseError;
 use diesel::*;
 
@@ -225,6 +225,8 @@ fn not_null_constraints_correct_column_name() {
 }
 
 #[test]
+#[cfg(not(feature = "mysql"))]
+/// MySQL < 8.0.16 doesn't enforce check constraints
 fn check_constraints_are_detected() {
     let connection = connection();
 
