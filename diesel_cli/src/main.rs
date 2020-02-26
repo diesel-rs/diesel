@@ -316,7 +316,8 @@ fn search_for_directory_containing_file(path: &Path, file: &str) -> DatabaseResu
     } else {
         path.parent()
             .map(|p| search_for_directory_containing_file(p, file))
-            .unwrap_or(Err(DatabaseError::ProjectRootNotFound))
+            .unwrap_or_else(|| Err(DatabaseError::ProjectRootNotFound(path.into())))
+            .map_err(|_| DatabaseError::ProjectRootNotFound(path.into()))
     }
 }
 

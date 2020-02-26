@@ -384,8 +384,9 @@ pub fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, Migration
         Ok(migration_path)
     } else {
         path.parent()
-            .map(search_for_migrations_directory)
-            .unwrap_or(Err(MigrationError::MigrationDirectoryNotFound))
+            .map(|p| search_for_migrations_directory(p))
+            .unwrap_or_else(|| Err(MigrationError::MigrationDirectoryNotFound(path.into())))
+            .map_err(|_| MigrationError::MigrationDirectoryNotFound(path.into()))
     }
 }
 
