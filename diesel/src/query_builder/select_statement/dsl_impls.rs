@@ -344,13 +344,13 @@ impl<'a, F, S, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
 where
     Self: AsQuery,
     DB: Backend,
-    S: QueryFragment<DB> + SelectableExpression<F> + 'a,
-    D: QueryFragment<DB> + 'a,
+    S: QueryFragment<DB> + SelectableExpression<F> + Send + 'a,
+    D: QueryFragment<DB> + Send + 'a,
     W: Into<BoxedWhereClause<'a, DB>>,
-    O: Into<Option<Box<dyn QueryFragment<DB> + 'a>>>,
-    L: QueryFragment<DB> + 'a,
-    Of: QueryFragment<DB> + 'a,
-    G: QueryFragment<DB> + 'a,
+    O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
+    L: QueryFragment<DB> + Send + 'a,
+    Of: QueryFragment<DB> + Send + 'a,
+    G: QueryFragment<DB> + Send + 'a,
 {
     type Output = BoxedSelectStatement<'a, S::SqlType, F, DB>;
 
@@ -374,13 +374,13 @@ where
     Self: AsQuery,
     DB: Backend,
     F: QuerySource,
-    F::DefaultSelection: QueryFragment<DB> + 'a,
-    D: QueryFragment<DB> + 'a,
+    F::DefaultSelection: QueryFragment<DB> + Send + 'a,
+    D: QueryFragment<DB> + Send + 'a,
     W: Into<BoxedWhereClause<'a, DB>>,
-    O: Into<Option<Box<dyn QueryFragment<DB> + 'a>>>,
-    L: QueryFragment<DB> + 'a,
-    Of: QueryFragment<DB> + 'a,
-    G: QueryFragment<DB> + 'a,
+    O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
+    L: QueryFragment<DB> + Send + 'a,
+    Of: QueryFragment<DB> + Send + 'a,
+    G: QueryFragment<DB> + Send + 'a,
 {
     type Output = BoxedSelectStatement<'a, <F::DefaultSelection as Expression>::SqlType, F, DB>;
     fn internal_into_boxed(self) -> Self::Output {
