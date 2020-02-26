@@ -103,6 +103,8 @@ fn last_error(raw_connection: *mut ffi::sqlite3) -> Error {
             DatabaseErrorKind::UniqueViolation
         }
         ffi::SQLITE_CONSTRAINT_FOREIGNKEY => DatabaseErrorKind::ForeignKeyViolation,
+        ffi::SQLITE_CONSTRAINT_NOTNULL => DatabaseErrorKind::NotNullViolation,
+        ffi::SQLITE_CONSTRAINT_CHECK => DatabaseErrorKind::CheckViolation,
         _ => DatabaseErrorKind::__Unknown,
     };
     DatabaseError(error_kind, error_information)

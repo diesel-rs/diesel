@@ -141,12 +141,14 @@ impl Statement {
     fn last_error_type(&self) -> DatabaseErrorKind {
         let last_error_number = unsafe { ffi::mysql_stmt_errno(self.stmt.as_ptr()) };
         // These values are not exposed by the C API, but are documented
-        // at https://dev.mysql.com/doc/refman/5.7/en/error-messages-server.html
+        // at https://dev.mysql.com/doc/refman/8.0/en/server-error-reference.html
         // and are from the ANSI SQLSTATE standard
         match last_error_number {
             1062 | 1586 | 1859 => DatabaseErrorKind::UniqueViolation,
             1216 | 1217 | 1451 | 1452 | 1830 | 1834 => DatabaseErrorKind::ForeignKeyViolation,
             1792 => DatabaseErrorKind::ReadOnlyTransaction,
+            1048 | 1364 => DatabaseErrorKind::NotNullViolation,
+            3819 => DatabaseErrorKind::CheckViolation,
             _ => DatabaseErrorKind::__Unknown,
         }
     }

@@ -1,5 +1,7 @@
 use crate::schema::*;
-use diesel::result::DatabaseErrorKind::{ForeignKeyViolation, UniqueViolation};
+#[cfg(not(feature = "mysql"))]
+use diesel::result::DatabaseErrorKind::CheckViolation;
+use diesel::result::DatabaseErrorKind::{ForeignKeyViolation, NotNullViolation, UniqueViolation};
 use diesel::result::Error::DatabaseError;
 use diesel::*;
 
@@ -188,4 +190,87 @@ fn read_only_errors_are_detected() {
     let result = users::table.for_update().load::<User>(&conn);
 
     assert_matches!(result, Err(DatabaseError(ReadOnlyTransaction, _)));
+}
+
+#[test]
+fn not_null_constraints_are_detected() {
+    let connection = connection();
+
+    let failure = insert_into(users::table)
+        .values(users::columns::hair_color.eq("black"))
+        .execute(&connection);
+
+    assert_matches!(failure, Err(DatabaseError(NotNullViolation, _)));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn not_null_constraints_correct_column_name() {
+    let connection = connection();
+
+    let failure = insert_into(users::table)
+        .values(users::columns::hair_color.eq("black"))
+        .execute(&connection);
+
+    match failure {
+        Err(DatabaseError(NotNullViolation, e)) => {
+            assert_eq!(Some("users"), e.table_name());
+            assert_eq!(Some("name"), e.column_name());
+        }
+        _ => panic!(
+            "{:?} did not match Err(DatabaseError(NotNullViolation, e))",
+            failure
+        ),
+    };
+}
+
+#[test]
+#[cfg(not(feature = "mysql"))]
+/// MySQL < 8.0.16 doesn't enforce check constraints
+fn check_constraints_are_detected() {
+    let connection = connection();
+
+    insert_into(users::table)
+        .values(&User::new(1, "Sean"))
+        .execute(&connection)
+        .unwrap();
+
+    let failure = insert_into(pokes::table)
+        .values((
+            pokes::columns::user_id.eq(1),
+            pokes::columns::poke_count.eq(-1),
+        ))
+        .execute(&connection);
+
+    assert_matches!(failure, Err(DatabaseError(CheckViolation, _)));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn check_constraints_correct_constraint_name() {
+    let connection = connection();
+
+    insert_into(users::table)
+        .values(&User::new(1, "Sean"))
+        .execute(&connection)
+        .unwrap();
+
+    let failure = insert_into(pokes::table)
+        .values((
+            pokes::columns::user_id.eq(1),
+            pokes::columns::poke_count.eq(-1),
+        ))
+        .execute(&connection);
+
+    match failure {
+        Err(DatabaseError(CheckViolation, e)) => {
+            assert_eq!(Some("pokes"), e.table_name());
+            assert_eq!(None, e.column_name());
+            assert_eq!(Some("pokes_poke_count_check"), e.constraint_name());
+        }
+        _ => panic!(
+            "{:?} did not match Err(DatabaseError(CheckViolation, e))",
+            failure
+        ),
+    };
 }
