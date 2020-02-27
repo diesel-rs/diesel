@@ -236,8 +236,8 @@ fn on_conflict_do_nothing_with_select() {
 #[test]
 #[cfg(feature = "sqlite")]
 fn on_conflict_do_nothing_with_select_for_sqlite() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
 
@@ -309,8 +309,8 @@ fn on_conflict_do_update_with_select() {
 #[test]
 #[cfg(feature = "sqlite")]
 fn on_conflict_do_update_with_select_for_sqlite() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
 

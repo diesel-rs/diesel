@@ -266,12 +266,12 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
+#[cfg(feature = "postgres")]
 fn upsert_with_sql_literal_for_target() {
     use crate::schema::users::dsl::*;
     use diesel::dsl::sql;
-    use diesel::pg::upsert::*;
     use diesel::sql_types::Text;
+    use diesel::upsert::*;
 
     let connection = connection();
     // This index needs to happen before the insert or we'll get a deadlock
