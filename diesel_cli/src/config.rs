@@ -1,4 +1,5 @@
 use clap::ArgMatches;
+use serde::Deserialize;
 use std::env;
 use std::error::Error;
 use std::fs;

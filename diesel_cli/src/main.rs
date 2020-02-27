@@ -14,25 +14,12 @@
 )]
 #![cfg_attr(test, allow(clippy::result_unwrap_used))]
 
-extern crate chrono;
-#[macro_use]
-extern crate clap;
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
-extern crate heck;
-extern crate migrations_internals;
 #[macro_use]
-extern crate serde;
-extern crate tempfile;
-extern crate toml;
-#[cfg(feature = "url")]
-extern crate url;
+extern crate clap;
 
 mod config;
-
-#[cfg(feature = "barrel-migrations")]
-extern crate barrel;
 
 mod database_error;
 #[macro_use]
@@ -59,7 +46,7 @@ use crate::migrations::MigrationError;
 use migrations_internals::TIMESTAMP_FORMAT;
 
 fn main() {
-    use self::dotenv::dotenv;
+    use dotenv::dotenv;
     dotenv().ok();
 
     let matches = cli::build_cli().get_matches();
