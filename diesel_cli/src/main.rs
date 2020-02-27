@@ -500,7 +500,7 @@ mod tests {
         let temp_path = dir.path().canonicalize().unwrap();
 
         assert_eq!(
-            Err(DatabaseError::ProjectRootNotFound),
+            Err(DatabaseError::ProjectRootNotFound(temp_path.clone())),
             search_for_directory_containing_file(&temp_path, "Cargo.toml")
         );
     }
