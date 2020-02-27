@@ -1,6 +1,6 @@
-use super::on_conflict_actions::*;
-use super::on_conflict_clause::*;
-use super::on_conflict_target::*;
+use crate::query_builder::upsert::on_conflict_actions::*;
+use crate::query_builder::upsert::on_conflict_clause::*;
+use crate::query_builder::upsert::on_conflict_target::*;
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
 use crate::query_source::QuerySource;
 

@@ -3,9 +3,9 @@
 //! unique constraint, not the name of an index.
 
 use crate::pg::Pg;
+use crate::query_builder::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::upsert::{ConflictTarget, OnConflictTarget};
 
 /// # Example
 ///

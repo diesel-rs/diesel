@@ -4,9 +4,6 @@ use crate::query_builder::*;
 use crate::query_source::Column;
 use crate::result::QueryResult;
 
-#[cfg(feature = "postgres")]
-pub use crate::pg::on_constraint::*;
-
 #[doc(hidden)]
 pub trait OnConflictTarget<Table> {}
 

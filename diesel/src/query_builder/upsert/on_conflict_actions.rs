@@ -4,11 +4,6 @@ use crate::query_builder::*;
 use crate::query_source::*;
 use crate::result::QueryResult;
 
-/// Represents `excluded.column` in an `ON CONFLICT DO UPDATE` clause.
-pub fn excluded<T>(excluded: T) -> Excluded<T> {
-    Excluded(excluded)
-}
-
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct DoNothing;
@@ -55,6 +50,12 @@ where
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct Excluded<T>(T);
+
+impl<T> Excluded<T> {
+    pub(crate) fn new(t: T) -> Self {
+        Excluded(t)
+    }
+}
 
 impl<DB, T> QueryFragment<DB> for Excluded<T>
 where
