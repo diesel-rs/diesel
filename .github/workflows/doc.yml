@@ -10,6 +10,7 @@ name: Publish Docs
 
 jobs:
   publish_docs:
+    if: github.repository == 'diesel-rs/diesel'
     name: Publish Docs
     runs-on: ubuntu-latest
     steps:
