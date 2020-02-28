@@ -119,7 +119,7 @@ where
     /// ### Specifying multiple columns as the target
     ///
     /// ```rust
-    /// # include!("../../doctest_setup.rs");
+    /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
     /// #     users {
