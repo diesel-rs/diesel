@@ -9,6 +9,8 @@ error: No field with column name bar_id
   |
 8 | #[belongs_to(Bar, foreign_key = "bar_id")]
   |                                 ^^^^^^^^
+  |
+  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: No field with column name bar_id
   --> $DIR/belongs_to_missing_foreign_key_field.rs:12:14
@@ -21,6 +23,8 @@ error: No field with column name bar_id
    |
 13 | #[belongs_to(Bar, foreign_key = "bar_id")]
    |                                 ^^^^^^^^
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: aborting due to 4 previous errors
 

@@ -9,6 +9,8 @@ error[E0412]: cannot find type `hair_color` in module `users`
    |
 14 |     #[column_name = "hair_color"]
    |                     ^^^^^^^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0425]: cannot find value `name` in module `users`
   --> $DIR/as_changeset_bad_column_name.rs:13:5
@@ -21,22 +23,36 @@ error[E0425]: cannot find value `hair_color` in module `users`
    |
 14 |     #[column_name = "hair_color"]
    |                     ^^^^^^^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0412]: cannot find type `name` in module `users`
   --> $DIR/as_changeset_bad_column_name.rs:20:34
    |
 20 | struct UserTuple(#[column_name = "name"] String);
    |                                  ^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0425]: cannot find value `name` in module `users`
   --> $DIR/as_changeset_bad_column_name.rs:20:34
    |
 20 | struct UserTuple(#[column_name = "name"] String);
    |                                  ^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0601]: `main` function not found in crate `as_changeset_bad_column_name`
-  |
-  = note: consider adding a `main` function to `$DIR/as_changeset_bad_column_name.rs`
+  --> $DIR/as_changeset_bad_column_name.rs:1:1
+   |
+1  | / #[macro_use]
+2  | | extern crate diesel;
+3  | |
+4  | | table! {
+...  |
+19 | | #[table_name = "users"]
+20 | | struct UserTuple(#[column_name = "name"] String);
+   | |_________________________________________________^ consider adding a `main` function to `$DIR/as_changeset_bad_column_name.rs`
 
 error: aborting due to 7 previous errors
 
