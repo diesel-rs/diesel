@@ -9,6 +9,12 @@ use std::path::Path;
 
 use util::{get_option, get_options_from_input};
 
+#[derive(Copy, Clone)]
+enum Direction {
+    Up,
+    Down,
+}
+
 pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
     fn bug() -> ! {
         panic!(
@@ -22,10 +28,19 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
     let migrations_path_opt = options
         .as_ref()
         .map(|o| get_option(o, "migrations_path", bug));
-    let migrations_expr =
+
+    let up_migrations_expr =
         migration_directory_from_given_path(migrations_path_opt.as_ref().map(String::as_str))
-            .and_then(|path| migration_literals_from_path(&path));
-    let migrations_expr = match migrations_expr {
+            .and_then(|path| migration_literals_from_path(&path, Direction::Up));
+    let up_migrations_expr = match up_migrations_expr {
+        Ok(v) => v,
+        Err(e) => panic!("Error reading migrations: {}", e),
+    };
+
+    let down_migrations_expr =
+        migration_directory_from_given_path(migrations_path_opt.as_ref().map(String::as_str))
+            .and_then(|path| migration_literals_from_path(&path, Direction::Down));
+    let down_migrations_expr = match down_migrations_expr {
         Ok(v) => v,
         Err(e) => panic!("Error reading migrations: {}", e),
     };
@@ -35,6 +50,8 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         struct EmbeddedMigration {
             version: &'static str,
             up_sql: &'static str,
+            down_sql: &'static str,
+
         }
 
         impl Migration for EmbeddedMigration {
@@ -47,7 +64,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
             }
 
             fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-                unreachable!()
+                conn.batch_execute(self.down_sql).map_err(Into::into)
             }
         }
     );
@@ -61,7 +78,11 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
             conn: &C,
             out: &mut io::Write,
         ) -> Result<(), RunMigrationsError> {
-            run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| *v), out)
+            run_migrations(conn, UP_MIGRATIONS.iter().map(|v| *v), out)
+        }
+
+        pub fn revert<C: MigrationConnection>(conn: &C) -> Result<(), RunMigrationsError> {
+            run_migrations(conn, DOWN_MIGRATIONS.iter().map(|v| *v), &mut io::sink())
         }
     );
 
@@ -73,7 +94,8 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         use self::diesel::connection::SimpleConnection;
         use std::io;
 
-        const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
+        const UP_MIGRATIONS: &[&Migration] = &[#(#up_migrations_expr),*];
+        const DOWN_MIGRATIONS: &[&Migration] = &[#(#down_migrations_expr),*];
 
         #embedded_migration_def
 
@@ -83,20 +105,32 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
 
 fn migration_literals_from_path(
     path: &Path,
+    direction: Direction,
 ) -> Result<Vec<proc_macro2::TokenStream>, Box<dyn Error>> {
     let mut migrations = migration_paths_in_directory(path)?;
 
     migrations.sort_by_key(DirEntry::path);
 
+    match direction {
+        Direction::Up => (),
+        Direction::Down => migrations.reverse(),
+    }
+
     migrations
         .into_iter()
-        .map(|e| migration_literal_from_path(&e.path()))
+        .map(|e| migration_literal_from_path(&e.path(), direction))
         .collect()
 }
 
-fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<dyn Error>> {
+fn migration_literal_from_path(
+    path: &Path,
+    direction: Direction,
+) -> Result<proc_macro2::TokenStream, Box<dyn Error>> {
     let version = version_from_path(path)?;
-    let sql_file = path.join("up.sql");
+    let sql_file = path.join(match direction {
+        Direction::Up => "up.sql",
+        Direction::Down => "down.sql",
+    });
     let sql_file_path = sql_file.to_str();
 
     Ok(quote!(&EmbeddedMigration {
