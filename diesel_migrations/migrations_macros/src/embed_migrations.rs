@@ -132,7 +132,7 @@ fn migration_literal_from_path(
         Direction::Down => "down.sql",
     });
     let up_sql_file_path = sql_file.to_str();
-    let down_sql_file_path = up_sql_file_path.clone();
+    let down_sql_file_path = up_sql_file_path;
 
     Ok(quote!(&EmbeddedMigration {
         version: #version,
