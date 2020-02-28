@@ -63,7 +63,7 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
                 conn.batch_execute(self.up_sql).map_err(Into::into)
             }
 
-            fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+            fn revert(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
                 conn.batch_execute(self.down_sql).map_err(Into::into)
             }
         }
@@ -131,10 +131,12 @@ fn migration_literal_from_path(
         Direction::Up => "up.sql",
         Direction::Down => "down.sql",
     });
-    let sql_file_path = sql_file.to_str();
+    let up_sql_file_path = sql_file.to_str();
+    let down_sql_file_path = up_sql_file_path.clone();
 
     Ok(quote!(&EmbeddedMigration {
         version: #version,
-        up_sql: include_str!(#sql_file_path),
+        up_sql: include_str!(#up_sql_file_path),
+        down_sql: include_str!(#down_sql_file_path),
     }))
 }
