@@ -3,12 +3,16 @@ error[E0433]: failed to resolve: use of undeclared type or module `posts`
    |
 11 | struct Post {
    |        ^^^^ use of undeclared type or module `posts`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0433]: failed to resolve: use of undeclared type or module `posts`
   --> $DIR/insertable_missing_table_or_column.rs:16:16
    |
 16 | #[table_name = "posts"]
    |                ^^^^^^^ use of undeclared type or module `posts`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0412]: cannot find type `name` in module `users`
   --> $DIR/insertable_missing_table_or_column.rs:24:5
@@ -27,12 +31,16 @@ error[E0412]: cannot find type `name` in module `users`
    |
 30 |     #[column_name = "name"]
    |                     ^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0425]: cannot find value `name` in module `users`
   --> $DIR/insertable_missing_table_or_column.rs:30:21
    |
 30 |     #[column_name = "name"]
    |                     ^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: aborting due to 6 previous errors
 

@@ -15,12 +15,16 @@ error[E0412]: cannot find type `bar_id` in module `foo`
    |
 20 | #[belongs_to(Bar, foreign_key = "bar_id")]
    |                                 ^^^^^^^^ not found in `foo`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0425]: cannot find value `bar_id` in module `foo`
   --> $DIR/belongs_to_missing_foreign_key_column.rs:20:33
    |
 20 | #[belongs_to(Bar, foreign_key = "bar_id")]
    |                                 ^^^^^^^^ not found in `foo`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0412]: cannot find type `bar_id` in module `foo`
   --> $DIR/belongs_to_missing_foreign_key_column.rs:27:14
@@ -39,12 +43,16 @@ error[E0412]: cannot find type `bar_id` in module `foo`
    |
 35 | #[belongs_to(Bar, foreign_key = "bar_id")]
    |                                 ^^^^^^^^ not found in `foo`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0425]: cannot find value `bar_id` in module `foo`
   --> $DIR/belongs_to_missing_foreign_key_column.rs:35:33
    |
 35 | #[belongs_to(Bar, foreign_key = "bar_id")]
    |                                 ^^^^^^^^ not found in `foo`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: aborting due to 8 previous errors
 
