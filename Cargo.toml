@@ -24,10 +24,3 @@ members = [
     "examples/sqlite/getting_started_step_2",
     "examples/sqlite/getting_started_step_3",
 ]
-
-[replace]
-"diesel:1.4.3" = { path = "diesel" }
-"diesel_derives:1.4.1" = { path = "diesel_derives" }
-"diesel_migrations:1.4.0" = { path = "diesel_migrations" }
-"migrations_internals:1.4.0" = { path = "diesel_migrations/migrations_internals" }
-"migrations_macros:1.4.1" = { path = "diesel_migrations/migrations_macros" }
