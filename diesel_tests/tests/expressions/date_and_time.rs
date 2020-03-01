@@ -29,6 +29,13 @@ table! {
     }
 }
 
+table! {
+    has_date {
+        id -> Integer,
+        date -> Date,
+    }
+}
+
 #[cfg(feature = "postgres")]
 table! {
     nullable_date_and_time {
@@ -132,6 +139,94 @@ fn now_can_be_used_as_nullable() {
     let result = select(nullable_timestamp.eq(now)).get_result(&connection());
 
     assert_eq!(Ok(Some(true)), result);
+}
+
+#[test]
+fn today_can_be_used_as_nullable() {
+    use diesel::sql_types::Date;
+
+    let nullable_date = sql::<Nullable<Date>>("CURRENT_DATE");
+    let result = select(nullable_date.eq(today)).get_result(&connection());
+
+    assert_eq!(Ok(true), result);
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn today_executes_sql_function_current_date() {
+    use self::has_date::dsl::*;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection
+        .execute(
+            "INSERT INTO has_date (date) VALUES
+                (current_date - '1 day'::interval), (current_date + '1 day'::interval);",
+        )
+        .unwrap();
+
+    let before_today = has_date
+        .select(id)
+        .filter(date.lt(today))
+        .load::<i32>(&connection);
+    let after_today = has_date
+        .select(id)
+        .filter(date.gt(today))
+        .load::<i32>(&connection);
+    assert_eq!(Ok(vec![1]), before_today);
+    assert_eq!(Ok(vec![2]), after_today);
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn today_executes_sql_function_current_date() {
+    use self::has_date::dsl::*;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection
+        .execute(
+            "INSERT INTO has_date (date) VALUES
+                (DATE('now', '-1 day')), (DATE('now', '+1 day'));",
+        )
+        .unwrap();
+
+    let before_today = has_date
+        .select(id)
+        .filter(date.lt(today))
+        .load::<i32>(&connection);
+    let after_today = has_date
+        .select(id)
+        .filter(date.gt(today))
+        .load::<i32>(&connection);
+    assert_eq!(Ok(vec![1]), before_today);
+    assert_eq!(Ok(vec![2]), after_today);
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn today_executes_sql_function_current_date() {
+use self::has_date::dsl::*;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection
+        .execute(
+            "INSERT INTO has_date (date) VALUES
+                (DATE_SUB(CURDATE(), INTERVAL 1 DAY)), (DATE_ADD(CURDATE(), INTERVAL 1 DAY));",
+        )
+        .unwrap();
+
+    let before_today = has_date
+        .select(id)
+        .filter(date.lt(today))
+        .load::<i32>(&connection);
+    let after_today = has_date
+        .select(id)
+        .filter(date.gt(today))
+        .load::<i32>(&connection);
+    assert_eq!(Ok(vec![1]), before_today);
+    assert_eq!(Ok(vec![2]), after_today);
 }
 
 #[test]
@@ -369,6 +464,16 @@ fn setup_test_table(conn: &TestConnection) {
         (
             integer("id").primary_key().auto_increment(),
             time("time").not_null(),
+        ),
+    )
+    .execute(conn)
+    .unwrap();
+
+    create_table(
+        "has_date",
+        (
+            integer("id").primary_key().auto_increment(),
+            date("date").not_null(),
         ),
     )
     .execute(conn)
