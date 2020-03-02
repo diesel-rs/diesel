@@ -19,16 +19,23 @@ path = "src/main.rs"
 [dependencies]
 chrono = "0.4"
 clap = "2.27"
-diesel = { version = "~1.4.0", default-features = false }
 dotenv = ">=0.8, <0.11"
 heck = "0.3.1"
-migrations_internals = "~1.4.0"
 serde = { version = "1.0.0", features = ["derive"] }
 tempfile = "3.0.0"
 toml = "0.4.6"
 url = { version = "2.1.0", optional = true }
 barrel = { version = ">= 0.5.0", optional = true, features = ["diesel"] }
 libsqlite3-sys = { version = ">=0.8.0, <0.18.0", optional = true, features = ["min_sqlite_version_3_7_16"] }
+
+[dependencies.diesel]
+version = "~1.4.0"
+path = "../diesel"
+default-features = false
+
+[dependencies.migrations_internals]
+version = "~1.4.0"
+path = "../diesel_migrations/migrations_internals"
 
 [dev-dependencies]
 difference = "1.0"

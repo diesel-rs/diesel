@@ -16,8 +16,11 @@ proc-macro2 = "1"
 
 [dev-dependencies]
 cfg-if = "0.1.0"
-diesel = "1.4.0"
 dotenv = "0.10.0"
+
+[dev-dependencies.diesel]
+version = "~1.4.0"
+path = "../diesel"
 
 [lib]
 proc-macro = true
