@@ -199,12 +199,15 @@ fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
     let migrations_dir = migrations_dir_from_cli(matches)
         .or_else(|| env::var("MIGRATION_DIRECTORY").map(PathBuf::from).ok())
         .or_else(|| {
-            Some(
-                Config::read(matches)
-                    .unwrap_or_else(handle_error)
-                    .migrations_directory?
-                    .dir,
-            )
+            let mut project_root = find_project_root().ok()?;
+            let migrations_dir = Config::read(matches)
+                .unwrap_or_else(handle_error)
+                .migrations_directory?
+                .dir;
+
+            project_root.push(migrations_dir);
+
+            Some(project_root)
         });
 
     match migrations_dir {
