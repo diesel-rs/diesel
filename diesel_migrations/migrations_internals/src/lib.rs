@@ -404,7 +404,9 @@ mod tests {
         let dir = Builder::new().prefix("diesel").tempdir().unwrap();
 
         assert_eq!(
-            Err(MigrationError::MigrationDirectoryNotFound(dir.path().into())),
+            Err(MigrationError::MigrationDirectoryNotFound(
+                dir.path().into()
+            )),
             search_for_migrations_directory(dir.path())
         );
     }
