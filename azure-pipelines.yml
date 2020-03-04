@@ -29,6 +29,7 @@ jobs:
     setup:
       - bash: |
           brew update &&
+          brew uninstall --ignore-dependencies libpq &&
           brew install postgres &&
           brew services start postgres &&
           sleep 3 &&
