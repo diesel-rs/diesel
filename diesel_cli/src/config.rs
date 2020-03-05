@@ -42,7 +42,10 @@ impl Config {
     }
 
     fn set_relative_path_base(&mut self, base: &Path) {
-        self.print_schema.set_relative_path_base(base)
+        self.print_schema.set_relative_path_base(base);
+        if let Some(ref mut migration) = self.migrations_directory {
+            migration.set_relative_path_base(base);
+        }
     }
 }
 
@@ -91,4 +94,12 @@ impl PrintSchema {
 #[serde(deny_unknown_fields)]
 pub struct MigrationsDirectory {
     pub dir: PathBuf,
+}
+
+impl MigrationsDirectory {
+    fn set_relative_path_base(&mut self, base: &Path) {
+        if self.dir.is_relative() {
+            self.dir = base.join(&self.dir);
+        }
+    }
 }
