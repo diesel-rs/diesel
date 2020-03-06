@@ -502,7 +502,8 @@ fn verify_schema_errors_if_schema_file_would_change() {
     assert!(
         result
             .stderr()
-            .contains("Command would result in changes to src/my_schema.rs"),
+            .contains("Command would result in changes to")
+            && result.stderr().contains("src/my_schema.rs"),
         "Unexpected stderr {}",
         result.stderr()
     );

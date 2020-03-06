@@ -13,7 +13,7 @@ use crate::result;
 #[derive(Debug)]
 pub enum MigrationError {
     /// The migration directory wasn't found
-    MigrationDirectoryNotFound,
+    MigrationDirectoryNotFound(PathBuf),
     /// Provided migration was in an unknown format
     UnknownMigrationFormat(PathBuf),
     /// General system IO error
@@ -32,9 +32,10 @@ impl Error for MigrationError {}
 impl fmt::Display for MigrationError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
-            MigrationError::MigrationDirectoryNotFound => write!(
+            MigrationError::MigrationDirectoryNotFound(ref p) => write!(
                 f,
-                "Unable to find migrations directory in this directory or any parent directories."
+                "Unable to find migrations directory in {:?} or any parent directories.",
+                p
             ),
             MigrationError::UnknownMigrationFormat(_) => write!(
                 f,
@@ -59,8 +60,8 @@ impl PartialEq for MigrationError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (
-                &MigrationError::MigrationDirectoryNotFound,
-                &MigrationError::MigrationDirectoryNotFound,
+                &MigrationError::MigrationDirectoryNotFound(_),
+                &MigrationError::MigrationDirectoryNotFound(_),
             ) => true,
             (
                 &MigrationError::UnknownMigrationFormat(ref p1),
