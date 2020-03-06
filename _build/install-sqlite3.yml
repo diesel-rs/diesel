@@ -12,9 +12,9 @@ steps:
     - script: |
         sudo apt-get update
         sudo apt-get install curl libpq-dev libmysqlclient-dev
-        curl -fsS --retry 3 -o sqlite-autoconf-3240000.tar.gz https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz
-        tar zxf sqlite-autoconf-3240000.tar.gz
-        cd sqlite-autoconf-3240000
+        curl -fsS --retry 3 -o sqlite-autoconf-3310100.tar.gz https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
+        tar zxf sqlite-autoconf-3310100.tar.gz
+        cd sqlite-autoconf-3310100
         CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
                     -DSQLITE_DEFAULT_FOREIGN_KEYS=1 \
                     -DSQLITE_SECURE_DELETE \
@@ -49,7 +49,7 @@ steps:
         choco install 7zip
         mkdir C:\sqlite
         CD /D C:\sqlite
-        curl -fsS --retry 3 --retry-connrefused -o sqlite3.zip https://sqlite.org/2018/sqlite-dll-win64-x64-3240000.zip
+        curl -fsS --retry 3 --retry-connrefused -o sqlite3.zip https://sqlite.org/2020/sqlite-dll-win64-x64-3310100.zip
         7z e sqlite3.zip -y
         call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
         lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
