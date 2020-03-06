@@ -9,7 +9,7 @@ pub mod types;
 
 #[doc(hidden)]
 #[cfg(feature = "with-deprecated")]
-#[deprecated(since = "1.4.0", note = "Use `diesel::upsert` instead")]
+#[deprecated(since = "2.0.0", note = "Use `diesel::upsert` instead")]
 pub use crate::upsert;
 
 mod backend;
