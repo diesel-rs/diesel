@@ -1,0 +1,14 @@
+error[E0277]: the trait bound `diesel::sqlite::Sqlite: diesel::backend::SupportsDefaultKeyword` is not satisfied
+  --> $DIR/upsert_with_multiple_values_not_supported_on_sqlite.rs:18:10
+   |
+18 |         .execute(&connection);
+   |          ^^^^^^^ the trait `diesel::backend::SupportsDefaultKeyword` is not implemented for `diesel::sqlite::Sqlite`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::insertable::OwnedBatchInsert<diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, users::table>`
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::insertable::OwnedBatchInsert<diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, users::table>, diesel::query_builder::upsert::on_conflict_target::NoConflictTarget, diesel::query_builder::upsert::on_conflict_actions::DoNothing>`
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::insertable::OwnedBatchInsert<diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, users::table>, diesel::query_builder::upsert::on_conflict_target::NoConflictTarget, diesel::query_builder::upsert::on_conflict_actions::DoNothing>>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::load_dsl::ExecuteDsl<diesel::SqliteConnection, diesel::sqlite::Sqlite>` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::insertable::OwnedBatchInsert<diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, users::table>, diesel::query_builder::upsert::on_conflict_target::NoConflictTarget, diesel::query_builder::upsert::on_conflict_actions::DoNothing>>`
+
+error: aborting due to previous error
+
+For more information about this error, try `rustc --explain E0277`.
