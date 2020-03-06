@@ -387,6 +387,8 @@ mod private {
         }
     }
 
+    // The corresponding impl for`NoWhereClause` is missing because of
+    // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
     #[cfg(feature = "sqlite")]
     impl<F, S, D, W, O, L, Of, G, LC> QueryFragment<crate::sqlite::Sqlite>
         for OnConflictSelectWrapper<SelectStatement<F, S, D, WhereClause<W>, O, L, Of, G, LC>>
@@ -409,6 +411,7 @@ mod private {
         QS::FromClause: QueryFragment<crate::sqlite::Sqlite>,
     {
         fn walk_ast(&self, pass: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
+            // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
             self.0.build_query(pass, |_where_clause, mut pass| {
                 pass.push_sql(" WHERE 1=1 ");
                 Ok(())
