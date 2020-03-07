@@ -11,6 +11,9 @@ jobs:
     variables:
       BACKEND: sqlite
       SQLITE_DATABASE_URL: /tmp/test.db
+    setup:
+      - script: |
+          echo "Skip this step"
 
 - template: _build/azure-pipelines-template.yml
   parameters:
@@ -62,6 +65,9 @@ jobs:
     variables:
       BACKEND: sqlite
       SQLITE_DATABASE_URL: /tmp/test.db
+    setup:
+      - script: |
+          echo "Skip this step"
 
 - template: _build/azure-pipelines-template.yml
   parameters:
@@ -108,6 +114,9 @@ jobs:
       BACKEND: sqlite
       SQLITE_DATABASE_URL: C:\test.db
       SQLITE3_LIB_DIR: C:\sqlite
+    setup:
+      - script: |
+          echo "Skip this step"
 
 - template: _build/azure-pipelines-template.yml
   parameters:
