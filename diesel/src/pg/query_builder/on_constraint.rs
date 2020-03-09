@@ -42,9 +42,7 @@ use crate::result::QueryResult;
 /// # }
 /// ```
 pub fn on_constraint(constraint_name: &str) -> OnConstraint {
-    OnConstraint {
-        constraint_name,
-    }
+    OnConstraint { constraint_name }
 }
 
 #[doc(hidden)]

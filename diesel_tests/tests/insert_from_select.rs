@@ -272,7 +272,6 @@ fn on_conflict_do_update_with_select() {
     assert_eq!(expected, data);
 }
 
-
 #[test]
 #[cfg(all(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_update_with_boxed_select() {
