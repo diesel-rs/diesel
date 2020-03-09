@@ -61,7 +61,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
     pub(crate) fn build_query(
         &self,
         mut out: AstPass<DB>,
-        on_no_where_clause: impl Fn(&BoxedWhereClause<'a, DB>, AstPass<DB>) -> QueryResult<()>,
+        where_clause_handler: impl Fn(&BoxedWhereClause<'a, DB>, AstPass<DB>) -> QueryResult<()>,
     ) -> QueryResult<()>
     where
         DB: Backend,
@@ -73,10 +73,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
         self.select.walk_ast(out.reborrow())?;
         out.push_sql(" FROM ");
         self.from.from_clause().walk_ast(out.reborrow())?;
-        match &self.where_clause {
-            w @ BoxedWhereClause::None => on_no_where_clause(w, out.reborrow())?,
-            w => w.walk_ast(out.reborrow())?,
-        }
+        where_clause_handler(&self.where_clause, out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
 
         if let Some(ref order) = self.order {
