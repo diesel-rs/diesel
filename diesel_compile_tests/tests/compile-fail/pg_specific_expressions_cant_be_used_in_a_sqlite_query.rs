@@ -3,6 +3,7 @@
 use diesel::*;
 use diesel::sql_types::*;
 use diesel::dsl::*;
+use diesel::upsert::on_constraint;
 
 table! {
     users {
@@ -32,6 +33,7 @@ fn main() {
         .load::<i32>(&connection);
     //~^ ERROR type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
     insert_into(users).values(&NewUser("Sean"))
-        .on_conflict(on_constraint("name"));
-    //~^ ERROR 35:22: 35:35: cannot find function `on_constraint` in this scope [E0425]
+        .on_conflict(on_constraint("name"))
+        .execute(&connection);
+    //~^ ERROR 0599
 }
