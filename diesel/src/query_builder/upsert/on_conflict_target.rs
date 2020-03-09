@@ -58,7 +58,6 @@ impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> {}
 macro_rules! on_conflict_tuples {
     ($(
         $Tuple:tt {
-            (0) -> A, SA, TA,
             $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)*
         }
     )+) => {
