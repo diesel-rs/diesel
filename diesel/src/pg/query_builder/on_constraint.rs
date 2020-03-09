@@ -11,7 +11,7 @@ use crate::result::QueryResult;
 ///
 /// ```rust
 /// # #[macro_use] extern crate diesel;
-/// # include!("../upsert/on_conflict_docs_setup.rs");
+/// # include!("../../upsert/on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
@@ -43,7 +43,7 @@ use crate::result::QueryResult;
 /// ```
 pub fn on_constraint(constraint_name: &str) -> OnConstraint {
     OnConstraint {
-        constraint_name: constraint_name,
+        constraint_name,
     }
 }
 

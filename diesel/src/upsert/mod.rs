@@ -9,7 +9,7 @@ mod on_conflict_extension;
 
 pub use self::on_conflict_extension::*;
 #[cfg(feature = "postgres")]
-pub use crate::pg::on_constraint::*;
+pub use crate::pg::query_builder::on_constraint::*;
 
 /// Represents `excluded.column` in an `ON CONFLICT DO UPDATE` clause.
 pub fn excluded<T>(excluded: T) -> Excluded<T> {
