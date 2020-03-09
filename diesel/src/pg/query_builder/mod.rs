@@ -3,6 +3,7 @@ use crate::query_builder::QueryBuilder;
 use crate::result::QueryResult;
 
 mod distinct_on;
+pub(crate) mod on_constraint;
 mod query_fragment_impls;
 pub use self::distinct_on::DistinctOnClause;
 
