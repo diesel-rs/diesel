@@ -1,3 +1,4 @@
+use crate::query_builder::upsert::into_conflict_clause::IntoConflictValueClause;
 use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
 use crate::query_builder::upsert::on_conflict_target::*;
@@ -6,7 +7,7 @@ use crate::query_source::QuerySource;
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
 where
-    U: UndecoratedInsertRecord<T> + self::private::IntoConflictValueClause,
+    U: UndecoratedInsertRecord<T> + IntoConflictValueClause,
 {
     /// Adds `ON CONFLICT DO NOTHING` to the insert statement, without
     /// specifying any columns or constraints to restrict the conflict to.
@@ -180,7 +181,7 @@ where
         ConflictTarget<Target>: OnConflictTarget<T>,
     {
         IncompleteOnConflict {
-            stmt: self.replace_values(self::private::IntoConflictValueClause::into_value_clause),
+            stmt: self.replace_values(IntoConflictValueClause::into_value_clause),
             target: ConflictTarget(target),
         }
     }
@@ -350,131 +351,4 @@ impl<T, U, Op, Ret, Target> IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, T
     }
 }
 
-mod private {
-    use crate::insertable::{BatchInsert, OwnedBatchInsert};
-    #[cfg(feature = "sqlite")]
-    use crate::query_builder::WhereClause;
-    use crate::query_builder::{
-        AstPass, BoxedSelectStatement, InsertFromSelect, Query, QueryFragment, SelectStatement,
-        ValuesClause,
-    };
-
-    use crate::result::QueryResult;
-
-    pub trait IntoConflictValueClause {
-        type ValueClause;
-
-        fn into_value_clause(self) -> Self::ValueClause;
-    }
-
-    #[derive(Debug, Clone, Copy)]
-    pub struct OnConflictSelectWrapper<S>(S);
-
-    impl<Q> Query for OnConflictSelectWrapper<Q>
-    where
-        Q: Query,
-    {
-        type SqlType = Q::SqlType;
-    }
-
-    #[cfg(feature = "postgres")]
-    impl<S> QueryFragment<crate::pg::Pg> for OnConflictSelectWrapper<S>
-    where
-        S: QueryFragment<crate::pg::Pg>,
-    {
-        fn walk_ast(&self, out: AstPass<crate::pg::Pg>) -> QueryResult<()> {
-            self.0.walk_ast(out)
-        }
-    }
-
-    // The corresponding impl for`NoWhereClause` is missing because of
-    // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
-    #[cfg(feature = "sqlite")]
-    impl<F, S, D, W, O, L, Of, G, LC> QueryFragment<crate::sqlite::Sqlite>
-        for OnConflictSelectWrapper<SelectStatement<F, S, D, WhereClause<W>, O, L, Of, G, LC>>
-    where
-        SelectStatement<F, S, D, WhereClause<W>, O, L, Of, G, LC>:
-            QueryFragment<crate::sqlite::Sqlite>,
-    {
-        fn walk_ast(&self, out: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
-            self.0.walk_ast(out)
-        }
-    }
-
-    #[cfg(feature = "sqlite")]
-    impl<'a, ST, QS> QueryFragment<crate::sqlite::Sqlite>
-        for OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite>>
-    where
-        BoxedSelectStatement<'a, ST, QS, crate::sqlite::Sqlite>:
-            QueryFragment<crate::sqlite::Sqlite>,
-        QS: crate::query_source::QuerySource,
-        QS::FromClause: QueryFragment<crate::sqlite::Sqlite>,
-    {
-        fn walk_ast(&self, pass: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
-            // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
-            self.0.build_query(pass, |_where_clause, mut pass| {
-                pass.push_sql(" WHERE 1=1 ");
-                Ok(())
-            })
-        }
-    }
-
-    impl<Inner, Tab> IntoConflictValueClause for ValuesClause<Inner, Tab> {
-        type ValueClause = Self;
-
-        fn into_value_clause(self) -> Self::ValueClause {
-            self
-        }
-    }
-
-    impl<'a, Inner, Tab> IntoConflictValueClause for BatchInsert<'a, Inner, Tab> {
-        type ValueClause = Self;
-
-        fn into_value_clause(self) -> Self::ValueClause {
-            self
-        }
-    }
-
-    impl<Inner, Tab> IntoConflictValueClause for OwnedBatchInsert<Inner, Tab> {
-        type ValueClause = Self;
-
-        fn into_value_clause(self) -> Self::ValueClause {
-            self
-        }
-    }
-
-    impl<F, S, D, W, O, L, Of, G, LC, Columns> IntoConflictValueClause
-        for InsertFromSelect<SelectStatement<F, S, D, W, O, L, Of, G, LC>, Columns>
-    {
-        type ValueClause = InsertFromSelect<
-            OnConflictSelectWrapper<SelectStatement<F, S, D, W, O, L, Of, G, LC>>,
-            Columns,
-        >;
-
-        fn into_value_clause(self) -> Self::ValueClause {
-            let InsertFromSelect { columns, query } = self;
-            InsertFromSelect {
-                query: OnConflictSelectWrapper(query),
-                columns,
-            }
-        }
-    }
-
-    impl<'a, ST, QS, DB, Columns> IntoConflictValueClause
-        for InsertFromSelect<BoxedSelectStatement<'a, ST, QS, DB>, Columns>
-    {
-        type ValueClause = InsertFromSelect<
-            OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, DB>>,
-            Columns,
-        >;
-
-        fn into_value_clause(self) -> Self::ValueClause {
-            let InsertFromSelect { columns, query } = self;
-            InsertFromSelect {
-                query: OnConflictSelectWrapper(query),
-                columns,
-            }
-        }
-    }
-
-}
+mod private {}
