@@ -207,18 +207,19 @@ fn insert_or_replace_with_select() {
 }
 
 #[test]
-#[cfg(all(feature = "postgres", feature = "sqlite"))]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
 
-    sql_query("CREATE UNIQUE INDEX ON posts (title)")
+    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
         .execute(&conn)
         .unwrap();
     let query = users
         .select((id, name.concat(" says hi")))
+        .filter(id.ge(0)) // Sqlite needs a where claues
         .insert_into(posts)
         .into_columns((user_id, title))
         .on_conflict_do_nothing();
@@ -234,54 +235,19 @@ fn on_conflict_do_nothing_with_select() {
 }
 
 #[test]
-#[cfg(feature = "sqlite")]
-fn on_conflict_do_nothing_with_select_for_sqlite() {
-    use crate::schema::posts::dsl::*;
-    use crate::schema::users::dsl::{id, name, users};
-
-    let conn = connection_with_sean_and_tess_in_users_table();
-
-    sql_query("CREATE UNIQUE INDEX index_on_title  ON posts (title)")
-        .execute(&conn)
-        .unwrap();
-
-    let inserted_rows = users
-        .select((id, name.concat(" says hi")))
-        .filter(diesel::dsl::sql(" 1=1 "))
-        .insert_into(posts)
-        .into_columns((user_id, title))
-        .on_conflict_do_nothing()
-        .execute(&conn)
-        .unwrap();
-    assert_eq!(2, inserted_rows);
-    let inserted_rows = users
-        .select((id, name.concat(" says hi")))
-        .filter(diesel::dsl::sql(" 1=1 "))
-        .insert_into(posts)
-        .into_columns((user_id, title))
-        .on_conflict_do_nothing()
-        .execute(&conn)
-        .unwrap();
-    assert_eq!(0, inserted_rows);
-
-    let data = posts.select(title).load::<String>(&conn).unwrap();
-    let expected = vec!["Sean says hi", "Tess says hi"];
-    assert_eq!(expected, data);
-}
-
-#[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_update_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
 
-    sql_query("CREATE UNIQUE INDEX ON posts (title)")
+    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
         .execute(&conn)
         .unwrap();
     let query = users
         .select((id, name.concat(" says hi")))
+        .filter(id.ge(0)) // exists because sqlite needs a where clause
         .insert_into(posts)
         .into_columns((user_id, title))
         .on_conflict(title)
@@ -306,53 +272,6 @@ fn on_conflict_do_update_with_select() {
     assert_eq!(expected, data);
 }
 
-#[test]
-#[cfg(feature = "sqlite")]
-fn on_conflict_do_update_with_select_for_sqlite() {
-    use crate::schema::posts::dsl::*;
-    use crate::schema::users::dsl::{id, name, users};
-
-    let conn = connection_with_sean_and_tess_in_users_table();
-
-    sql_query("CREATE UNIQUE INDEX index_on_title  ON posts (title)")
-        .execute(&conn)
-        .unwrap();
-
-    users
-        .select((id, name.concat(" says hi")))
-        .filter(diesel::dsl::sql("1=1"))
-        .insert_into(posts)
-        .into_columns((user_id, title))
-        .on_conflict(title)
-        .do_update()
-        .set(body.eq("updated"))
-        .execute(&conn)
-        .unwrap();
-
-    insert_into(users)
-        .values(name.eq("Ruby"))
-        .execute(&conn)
-        .unwrap();
-
-    users
-        .select((id, name.concat(" says hi")))
-        .filter(diesel::dsl::sql("1=1"))
-        .insert_into(posts)
-        .into_columns((user_id, title))
-        .on_conflict(title)
-        .do_update()
-        .set(body.eq("updated"))
-        .execute(&conn)
-        .unwrap();
-
-    let data = posts.select((title, body)).load(&conn).unwrap();
-    let expected = vec![
-        (String::from("Sean says hi"), Some(String::from("updated"))),
-        (String::from("Tess says hi"), Some(String::from("updated"))),
-        (String::from("Ruby says hi"), None),
-    ];
-    assert_eq!(expected, data);
-}
 
 #[test]
 #[cfg(all(feature = "postgres", feature = "sqlite"))]
