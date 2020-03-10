@@ -370,4 +370,105 @@ mod tests {
             .get_result::<(i32, i32, i32)>(&connection);
         assert_eq!(Ok((2, 3, 4)), added);
     }
+
+    use crate::sql_types::Foldable;
+    sql_function! {
+        #[aggregate]
+        fn my_sum<ST: Foldable>(expr: ST) -> ST::Sum;
+    }
+
+    struct MySum<T: Foldable> {
+        sum: T::Sum,
+    }
+    impl<T: Foldable> MySum<T> {
+        fn new() -> Self {
+            Self { sum: 0 }
+        }
+    }
+    impl<T: Foldable> Aggregator<T> for MySum<T> {
+        fn step(&mut self, expr: T) {
+            self.sum += expr;
+        }
+
+        fn finalize(&self) -> T::Sum {
+            self.sum
+        }
+    }
+    table! {
+        my_sum_example {
+            id -> Integer,
+            value -> Integer,
+        }
+    }
+
+    #[test]
+    fn register_aggregate_function() {
+        use self::my_sum_example::dsl::*;
+
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.execute("CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)").unwrap();
+        connection.execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)").unwrap();
+
+        let my_sum_struct = MySum::new();
+        my_sum::register_impl(&connection, my_sum_struct).unwrap();
+
+        let result = crate::select(my_sum(value)).get_result::<i32>(&connection).unwrap();
+        assert_eq!(6, result);
+    }
+
+    use crate::sql_types::SqlOrd;
+    sql_function! {
+        #[aggregate]
+        fn range_max<T: SqlOrd>(exprs: [T; 3]) -> T;
+    }
+
+    struct RangeMax<T: SqlOrd> {
+        max_value: Option<T>,
+    }
+    impl<T: SqlOrd> RangeMax<T> {
+        fn new() -> Self {
+            Self { max_value: None }
+        }
+    }
+    impl<T: SqlOrd> Aggregator<T> for RangeMax<T> {
+        fn step(&mut self, exprs: [T; 3]) {
+            let values = exprs.iter().collect::<Vec<_>>();
+            if let Some(max_value) = self.max_value {
+                values.push(max_value);
+            }
+
+            self.max_value = values.iter().max();
+        }
+
+        fn finalize(&self) -> T::Sum {
+            self.max_value
+        }
+    }
+    table! {
+        range_max_example {
+            id -> Integer,
+            value1 -> Integer,
+            value2 -> Integer,
+            value3 -> Integer,
+        }
+    }
+
+    #[test]
+    fn register_aggregate_multiarg_function() {
+        use self::range_max_example::dsl::*;
+
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        connection.execute(r#"CREATE TABLE range_max_example (
+                id integer primary key autoincrement,
+                value1 integer,
+                value2 integer,
+                value3 integer
+            )"#).unwrap();
+        connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1)").unwrap();
+
+        let range_max_struct = RangeMax::new();
+        range_max::register_impl(&connection, range_max_struct).unwrap();
+        let result = crate::select(range_max_example([value1, value2, value3])).get_result::<i32>(&connection).unwrap();
+        assert_eq!(3, result);
+    }
 }
