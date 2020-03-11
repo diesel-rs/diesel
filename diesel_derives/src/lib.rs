@@ -176,7 +176,7 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, from_sql_row::derive)
 }
 
-/// Implements `Identifiable`
+/// Implements `Identifiable` for references of the current type
 ///
 /// By default, the "id" field is assumed to be a single field called `id`.
 /// If it's not, you can put `#[primary_key(your_id)]` on your struct.
