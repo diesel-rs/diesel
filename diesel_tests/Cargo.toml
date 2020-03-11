@@ -18,7 +18,6 @@ chrono = { version = "0.4" }
 diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "network-address", "numeric", "with-deprecated"] }
 diesel_migrations = { path = "../diesel_migrations" }
 diesel_infer_schema = { version = "1.4.0" }
-diesel_derives = { version = "1.4" }
 dotenv = ">=0.8, <0.11"
 quickcheck = { version = "0.4", features = ["unstable"] }
 uuid = { version = ">=0.7.0, <0.9.0" }
