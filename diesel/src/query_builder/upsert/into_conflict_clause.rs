@@ -2,9 +2,10 @@ use crate::insertable::{BatchInsert, OwnedBatchInsert};
 #[cfg(feature = "sqlite")]
 use crate::query_builder::where_clause::{BoxedWhereClause, WhereClause};
 use crate::query_builder::{
-    AstPass, BoxedSelectStatement, InsertFromSelect, Query, QueryFragment, SelectStatement,
+    AstPass, BoxedSelectStatement, Query, QueryFragment, SelectStatement,
     ValuesClause,
 };
+use crate::query_builder::insert_statement::InsertFromSelect;
 
 use crate::result::QueryResult;
 
