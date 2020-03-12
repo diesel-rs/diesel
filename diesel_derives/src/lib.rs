@@ -131,7 +131,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 ///
 /// # Required type attributes
 ///
-/// * `#[belongs(User)]`, to specify a child-to-parent relation ship
+/// * `#[belongs_to(User)]`, to specify a child-to-parent relation ship
 /// between the current table and the specified parent type (`User`).
 /// If this attribute is given multiple times, multiple relation ships
 /// are generated.
@@ -178,7 +178,7 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 
 /// Implements `Identifiable` for references of the current type
 ///
-/// By default, the "id" field is assumed to be a single field called `id`.
+/// By default, the primary key field is assumed to be a single field called `id`.
 /// If it's not, you can put `#[primary_key(your_id)]` on your struct.
 /// If you have a composite primary key, the syntax is `#[primary_key(id1, id2)]`.
 ///
