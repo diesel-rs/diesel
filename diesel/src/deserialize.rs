@@ -154,6 +154,7 @@ where
     fn build(row: Self::Row) -> Self;
 }
 
+#[doc(inline)]
 pub use diesel_derives::Queryable;
 
 /// Deserializes the result of a query constructed with [`sql_query`].
@@ -251,6 +252,7 @@ where
     fn build<R: NamedRow<DB>>(row: &R) -> Result<Self>;
 }
 
+#[doc(inline)]
 pub use diesel_derives::QueryableByName;
 
 /// Deserialize a single field of a given SQL type.
