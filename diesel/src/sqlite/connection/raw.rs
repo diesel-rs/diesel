@@ -10,6 +10,14 @@ use super::serialized_value::SerializedValue;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 
+// Sticking this here for now until I find a better place
+pub trait Aggregator<Args>: Default {
+    type Output;
+
+    fn step(&mut self, args: Args);
+    fn finalize(self) -> Self::Output;
+}
+
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
     pub(crate) internal_connection: NonNull<ffi::sqlite3>,
