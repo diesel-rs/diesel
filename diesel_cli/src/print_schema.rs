@@ -2,7 +2,7 @@ use crate::config;
 
 use crate::infer_schema_internals::*;
 use serde::de::{self, MapAccess, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 use std::fs::File;
@@ -32,6 +32,23 @@ impl Filtering {
             ExceptTables(ref names) => names.contains(name),
             None => false,
         }
+    }
+}
+
+/// How to sort columns when querying the table schema.
+#[derive(Deserialize, Serialize)]
+pub enum ColumnSorting {
+    /// Order by ordinal position
+    #[serde(rename = "ordinal_position")]
+    OrdinalPosition,
+    /// Order by column name
+    #[serde(rename = "name")]
+    Name,
+}
+
+impl Default for ColumnSorting {
+    fn default() -> Self {
+        ColumnSorting::OrdinalPosition
     }
 }
 
@@ -73,7 +90,7 @@ pub fn output_schema(
         remove_unsafe_foreign_keys_for_codegen(database_url, &foreign_keys, &table_names);
     let table_data = table_names
         .into_iter()
-        .map(|t| load_table_data(database_url, t))
+        .map(|t| load_table_data(database_url, t, &config.column_sorting))
         .collect::<Result<_, Box<dyn Error>>>()?;
     let definitions = TableDefinitions {
         tables: table_data,

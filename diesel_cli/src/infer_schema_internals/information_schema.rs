@@ -13,7 +13,7 @@ use diesel::*;
 
 use super::data_structures::*;
 use super::table_data::TableName;
-use super::ColumnSorting;
+use crate::print_schema::ColumnSorting;
 
 pub trait UsesInformationSchema: Backend {
     type TypeColumn: SelectableExpression<
@@ -120,7 +120,7 @@ mod information_schema {
 pub fn get_table_data<Conn>(
     conn: &Conn,
     table: &TableName,
-    column_sorting: ColumnSorting,
+    column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>>
 where
     Conn: Connection,
@@ -443,9 +443,12 @@ mod tests {
         let array_col = ColumnInformation::new("array_col", "_varchar", false);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
-            get_table_data(&connection, &table_1, ColumnSorting::OrdinalPosition)
+            get_table_data(&connection, &table_1, &ColumnSorting::OrdinalPosition)
         );
-        assert_eq!(Ok(vec![array_col]), get_table_data(&connection, &table_2, ColumnSorting::OrdinalPosition));
+        assert_eq!(
+            Ok(vec![array_col]),
+            get_table_data(&connection, &table_2, &ColumnSorting::OrdinalPosition)
+        );
     }
 
     #[test]
