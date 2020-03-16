@@ -59,6 +59,9 @@ pub fn rust_name_for_sql_name(sql_name: &str) -> String {
 pub enum ColumnSorting {
     /// Order by ordinal position
     OrdinalPosition,
+    /// Order by column name
+    #[allow(dead_code)]
+    Name,
 }
 
 pub fn load_table_names(

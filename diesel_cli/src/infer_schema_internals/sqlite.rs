@@ -92,10 +92,19 @@ pub fn load_foreign_key_constraints(
 pub fn get_table_data(
     conn: &SqliteConnection,
     table: &TableName,
-    _column_sorting: ColumnSorting,
+    column_sorting: ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.sql_name);
-    sql::<pragma_table_info::SqlType>(&query).load(conn)
+    let mut result = sql::<pragma_table_info::SqlType>(&query).load(conn)?;
+    match column_sorting {
+        ColumnSorting::OrdinalPosition => {}
+        ColumnSorting::Name => {
+            result.sort_by(|a: &ColumnInformation, b: &ColumnInformation| {
+                a.column_name.partial_cmp(&b.column_name).unwrap()
+            });
+        }
+    };
+    Ok(result)
 }
 
 #[derive(Queryable)]
