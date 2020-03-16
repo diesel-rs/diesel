@@ -37,7 +37,7 @@ impl Filtering {
 }
 
 /// How to sort columns when querying the table schema.
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum ColumnSorting {
     /// Order by ordinal position
     #[serde(rename = "ordinal_position")]
