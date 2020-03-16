@@ -3,6 +3,7 @@ use std::error::Error;
 use diesel::dsl::sql;
 use diesel::*;
 
+use super::ColumnSorting;
 use super::data_structures::*;
 use super::table_data::TableName;
 
@@ -91,9 +92,11 @@ pub fn load_foreign_key_constraints(
 pub fn get_table_data(
     conn: &SqliteConnection,
     table: &TableName,
+    _column_sorting: ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
-    sql::<pragma_table_info::SqlType>(&query).load(conn)
+    let result = sql::<pragma_table_info::SqlType>(&query).load(conn)?;
+    Ok(result)
 }
 
 #[derive(Queryable)]

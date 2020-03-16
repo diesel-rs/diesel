@@ -13,6 +13,7 @@ use diesel::*;
 
 use super::data_structures::*;
 use super::table_data::TableName;
+use super::ColumnSorting;
 
 pub trait UsesInformationSchema: Backend {
     type TypeColumn: SelectableExpression<
@@ -116,7 +117,11 @@ mod information_schema {
     allow_tables_to_appear_in_same_query!(key_column_usage, table_constraints);
 }
 
-pub fn get_table_data<Conn>(conn: &Conn, table: &TableName) -> QueryResult<Vec<ColumnInformation>>
+pub fn get_table_data<Conn>(
+    conn: &Conn,
+    table: &TableName,
+    column_sorting: ColumnSorting,
+) -> QueryResult<Vec<ColumnInformation>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
@@ -130,12 +135,13 @@ where
     };
 
     let type_column = Conn::Backend::type_column();
-    columns
+    let query = columns
         .select((column_name, type_column, is_nullable))
         .filter(table_name.eq(&table.name))
-        .filter(table_schema.eq(schema_name))
-        .order(ordinal_position)
-        .load(conn)
+        .filter(table_schema.eq(schema_name));
+    match column_sorting {
+        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn)
+    }
 }
 
 pub fn get_primary_keys<Conn>(conn: &Conn, table: &TableName) -> QueryResult<Vec<String>>
@@ -436,9 +442,9 @@ mod tests {
         let array_col = ColumnInformation::new("array_col", "_varchar", false);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
-            get_table_data(&connection, &table_1)
+            get_table_data(&connection, &table_1, ColumnSorting::OrdinalPosition)
         );
-        assert_eq!(Ok(vec![array_col]), get_table_data(&connection, &table_2));
+        assert_eq!(Ok(vec![array_col]), get_table_data(&connection, &table_2, ColumnSorting::OrdinalPosition));
     }
 
     #[test]
