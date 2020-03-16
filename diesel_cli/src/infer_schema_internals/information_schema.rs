@@ -140,7 +140,8 @@ where
         .filter(table_name.eq(&table.name))
         .filter(table_schema.eq(schema_name));
     match column_sorting {
-        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn)
+        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
+        ColumnSorting::Name => query.order(column_name).load(conn),
     }
 }
 

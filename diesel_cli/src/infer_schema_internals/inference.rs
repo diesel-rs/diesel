@@ -27,6 +27,9 @@ fn is_reserved(name: &str) -> bool {
 pub enum ColumnSorting {
     /// Order by ordinal position
     OrdinalPosition,
+    /// Order by column name
+    #[allow(dead_code)]
+    Name,
 }
 
 pub fn load_table_names(
