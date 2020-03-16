@@ -55,6 +55,11 @@ pub fn rust_name_for_sql_name(sql_name: &str) -> String {
         sql_name.to_string()
     }
 }
+/// How to sort columns when querying the table schema.
+pub enum ColumnSorting {
+    /// Order by ordinal position
+    OrdinalPosition,
+}
 
 pub fn load_table_names(
     database_url: &str,
@@ -78,11 +83,17 @@ fn get_column_information(
 ) -> Result<Vec<ColumnInformation>, Box<dyn Error>> {
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => super::sqlite::get_table_data(c, table),
+        InferConnection::Sqlite(ref c) => {
+            super::sqlite::get_table_data(c, table, ColumnSorting::OrdinalPosition)
+        }
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(ref c) => super::information_schema::get_table_data(c, table),
+        InferConnection::Pg(ref c) => {
+            super::information_schema::get_table_data(c, table, ColumnSorting::OrdinalPosition)
+        }
         #[cfg(feature = "mysql")]
-        InferConnection::Mysql(ref c) => super::information_schema::get_table_data(c, table),
+        InferConnection::Mysql(ref c) => {
+            super::information_schema::get_table_data(c, table, ColumnSorting::OrdinalPosition)
+        }
     };
     if let Err(NotFound) = column_info {
         Err(format!("no table exists named {}", table.to_string()).into())
