@@ -115,6 +115,46 @@ impl RawConnection {
             ))
         }
     }
+
+    // TODO @thekuom: abstract out some common code with register_sql_function
+    pub fn register_aggregate_function<'a, A>(
+        &self,
+        fn_name: &str,
+        num_args: usize,
+    ) -> QueryResult<()>
+    where
+        A: Aggregator<&'a [*mut ffi::sqlite3_value]> + Send + 'static,
+    {
+        let fn_name = CString::new(fn_name)?;
+        // Aggregate functions are always deterministic
+        let flags = ffi::SQLITE_UTF8 | ffi::SQLITE_DETERMINISTIC;
+
+        let user_data = Box::into_raw(Box::new(A::default));
+
+        let result = unsafe {
+            ffi::sqlite3_create_function_v2(
+                self.internal_connection.as_ptr(),
+                fn_name.as_ptr(),
+                num_args as _,
+                flags,
+                user_data as *mut _,
+                None,
+                Some(run_aggregator_step_function::<A>),
+                Some(run_aggregator_final_function::<A>),
+                None, // TODO @thekuom: figure this out
+            )
+        };
+
+        if result == ffi::SQLITE_OK {
+            Ok(())
+        } else {
+            let error_message = super::error_message(result);
+            Err(DatabaseError(
+                    DatabaseErrorKind::__Unknown,
+                    Box::new(error_message.to_string()),
+            ))
+        }
+    }
 }
 
 impl Drop for RawConnection {
@@ -200,6 +240,76 @@ extern "C" fn run_custom_function<F>(
 
         mem::forget(conn);
     }
+}
+
+#[allow(warnings)]
+extern "C" fn run_aggregator_step_function<'a, A>(
+    ctx: *mut ffi::sqlite3_context,
+    num_args: libc::c_int,
+    value_ptr: *mut *mut ffi::sqlite3_value,
+)
+    where A: Aggregator<&'a [*mut ffi::sqlite3_value]>,
+{
+    static NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
+    static NULL_CONN_ERR: &str = "An unknown error occurred. sqlite3_context_db_handle returned a null pointer. This should never happen.";
+    static NULL_AG_CTX_ERR: &str = "An unknown error occurred. sqlite3_aggregate_context returned a null pointer. This should never happen.";
+
+    unsafe {
+        let data_ptr = ffi::sqlite3_user_data(ctx);
+        let data_ptr = data_ptr as *mut FnMut() -> A;
+        let f = match data_ptr.as_mut() {
+            Some(f) => f,
+            None => {
+                ffi::sqlite3_result_error(
+                    ctx,
+                    NULL_DATA_ERR.as_ptr() as *const _ as *const _,
+                    NULL_DATA_ERR.len() as _,
+                );
+                return;
+            }
+        };
+
+        // Grab the aggregator instance out of memory
+        let aggregate_context = ffi::sqlite3_aggregate_context(ctx, std::mem::size_of::<*mut A>() as i32);
+        let aggregate_context = aggregate_context as *mut *mut A;
+        let aggregator = match aggregate_context.as_mut() {
+            Some(a) => match a.as_mut() {
+                Some(a) => a,
+                None => {
+                    ffi::sqlite3_result_error(
+                        ctx,
+                        NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
+                        NULL_AG_CTX_ERR.len() as _,
+                        );
+                    return;
+                }
+            },
+            None => {
+                ffi::sqlite3_result_error(
+                    ctx,
+                    NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
+                    NULL_AG_CTX_ERR.len() as _,
+                );
+                return;
+            }
+        };
+
+        // If this is the first time calling sqlite3_aggregate_context, we will need to instantiate the aggregator
+        if aggregator.is_null() {
+            (*aggregator) = f();
+        }
+
+        let args = slice::from_raw_parts(value_ptr, num_args as _);
+        aggregator.step(args);
+    }
+}
+
+extern "C" fn run_aggregator_final_function<'a, A>(
+    ctx: *mut ffi::sqlite3_context,
+)
+    where A: Aggregator<&'a [*mut ffi::sqlite3_value]> + Send + 'static,
+{
+    // TODO @thekuom: fill this out
 }
 
 extern "C" fn destroy_boxed_fn<F>(data: *mut libc::c_void)

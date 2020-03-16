@@ -10,7 +10,8 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
 
 [dependencies]
-syn = { version = "1", features = ["full", "fold"] }
+# TODO @thekuom: revert these extra features when done
+syn = { version = "1", features = ["full", "fold", "extra-traits", "parsing", "printing"] }
 quote = "1"
 proc-macro2 = "1"
 

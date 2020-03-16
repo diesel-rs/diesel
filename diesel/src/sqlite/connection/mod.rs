@@ -12,7 +12,7 @@ pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
 
-use self::raw::RawConnection;
+use self::raw::{Aggregator, RawConnection};
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use crate::connection::*;
@@ -30,7 +30,8 @@ use crate::sqlite::Sqlite;
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
-    raw_connection: RawConnection,
+    // TODO: remove this `pub` once done
+    pub raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
 }
 
@@ -238,6 +239,23 @@ impl SqliteConnection {
         )
     }
 
+    #[doc(hidden)]
+    pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
+        &self,
+        fn_name: &str,
+    ) -> QueryResult<()>
+    where
+        A: Aggregator<Args, Output=Ret> + Send,
+        Args: Queryable<ArgsSqlType, Sqlite>,
+        Ret: ToSql<RetSqlType, Sqlite>,
+        Sqlite: HasSqlType<RetSqlType>,
+    {
+        functions::register_aggregate::<_, _, _, _, A>(
+            &self.raw_connection,
+            fn_name
+        )
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -428,8 +446,7 @@ mod tests {
     impl<T: Default + Ord> Aggregator<(T, T, T)> for RangeMax<T> {
         type Output = Option<T>;
 
-        fn step(&mut self, args: (T, T, T)) {
-            let (x0, x1, x2) = args;
+        fn step(&mut self, (x0, x1, x2): (T, T, T)) {
             let values = [x0, x1, x2].iter().collect::<Vec<_>>();
             if let Some(max_value) = self.max_value {
                 values.push(&max_value);

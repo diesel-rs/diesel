@@ -1,6 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 
-use super::raw::RawConnection;
+use super::raw::{Aggregator, RawConnection};
 use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteValue};
 use crate::deserialize::{FromSqlRow, Queryable};
@@ -52,6 +52,32 @@ where
     })?;
     Ok(())
 }
+
+pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
+    conn: &RawConnection,
+    fn_name: &str,
+) -> QueryResult<()>
+where
+    A: Aggregator<Args, Output=Ret> + Send,
+    Args: Queryable<ArgsSqlType, Sqlite>,
+    Ret: ToSql<RetSqlType, Sqlite>,
+    Sqlite: HasSqlType<RetSqlType>,
+{
+    let fields_needed = Args::Row::FIELDS_NEEDED;
+    if fields_needed > 127 {
+        return Err(Error::DatabaseError(
+            DatabaseErrorKind::UnableToSendCommand,
+            Box::new("SQLite functions cannot take more than 127 parameters".to_string()),
+        ));
+    }
+
+    // TODO @thekuom: how do we convert this to ffi::sqlite3_value?
+
+    conn.register_aggregate_function::<A>(fn_name, fields_needed)?;
+
+    Ok(())
+}
+
 
 struct FunctionRow<'a> {
     args: &'a [*mut ffi::sqlite3_value],

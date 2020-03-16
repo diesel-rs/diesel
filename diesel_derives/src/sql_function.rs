@@ -47,9 +47,11 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .type_params()
         .map(|type_param| type_param.ident.clone())
         .collect::<Vec<_>>();
+
     for StrictFnArg { name, .. } in args {
         generics.params.push(parse_quote!(#name));
     }
+
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     // Even if we force an empty where clause, it still won't print the where
     // token with no bounds.
@@ -123,7 +125,39 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         }
     };
 
-    if !is_aggregate {
+    if is_aggregate {
+        if cfg!(feature = "sqlite") {
+            let type_params = &generics
+                .type_params()
+                .filter(|type_param| !type_param.bounds.is_empty())
+                .cloned()
+                .collect::<Vec<_>>();
+
+            tokens = quote! {
+                #tokens
+
+                use diesel::sqlite::{Sqlite, SqliteConnection};
+                use diesel::serialize::ToSql;
+                use diesel::deserialize::Queryable;
+                use diesel::sqlite::Aggregator;
+
+                #[allow(dead_code)]
+                pub fn register_impl<A, #(#arg_name),*, #(#type_args),*>(
+                    conn: &SqliteConnection
+                ) -> QueryResult<()>
+                where
+                     A: Aggregator<#(#arg_name),*, Output=ToSql<#return_type, Sqlite>> + Send + 'static,
+                     (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                     #(#type_params),*
+                {
+                    conn.register_aggregate::<(#(#arg_type,)*), #return_type, _, _, _>(#sql_name)
+                }
+            };
+
+            // TODO @thekuom: remove this when done
+            println!("{}\n\n\n", tokens);
+        }
+    } else {
         tokens = quote! {
             #tokens
 
