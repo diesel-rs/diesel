@@ -5,7 +5,7 @@ use diesel::*;
 
 use super::data_structures::*;
 use super::table_data::TableName;
-use super::ColumnSorting;
+use crate::print_schema::ColumnSorting;
 
 table! {
     sqlite_master (name) {
@@ -92,7 +92,7 @@ pub fn load_foreign_key_constraints(
 pub fn get_table_data(
     conn: &SqliteConnection,
     table: &TableName,
-    column_sorting: ColumnSorting,
+    column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.sql_name);
     let mut result = sql::<pragma_table_info::SqlType>(&query).load(conn)?;

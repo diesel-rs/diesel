@@ -16,7 +16,7 @@ use self::information_schema::{columns, key_column_usage, table_constraints, tab
 use super::data_structures::*;
 use super::inference;
 use super::table_data::TableName;
-use super::ColumnSorting;
+use crate::print_schema::ColumnSorting;
 
 pub trait UsesInformationSchema: Backend {
     type TypeColumn: SelectableExpression<self::information_schema::columns::table, SqlType = sql_types::Text>
@@ -126,7 +126,7 @@ mod information_schema {
 pub fn get_table_data<'a, Conn>(
     conn: &Conn,
     table: &'a TableName,
-    column_sorting: ColumnSorting,
+    column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>>
 where
     Conn: Connection,
@@ -504,7 +504,11 @@ mod tests {
         let array_col = ColumnInformation::new("array_col", "_varchar", false);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
-            get_table_data(&connection, &table_1, ColumnSorting::OrdinalPosition)
+            get_table_data(&connection, &table_1, &ColumnSorting::OrdinalPosition)
+        );
+        assert_eq!(
+            Ok(vec![array_col]),
+            get_table_data(&connection, &table_2, &ColumnSorting::OrdinalPosition)
         );
         assert_eq!(
             Ok(vec![array_col]),

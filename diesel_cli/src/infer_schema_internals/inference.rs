@@ -5,6 +5,7 @@ use diesel::result::Error::NotFound;
 use super::data_structures::*;
 use super::table_data::*;
 use crate::database::InferConnection;
+use crate::print_schema::ColumnSorting;
 
 static RESERVED_NAMES: &[&str] = &[
     "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",
@@ -83,19 +84,18 @@ pub fn load_table_names(
 fn get_column_information(
     conn: &InferConnection,
     table: &TableName,
+    column_sorting: &ColumnSorting,
 ) -> Result<Vec<ColumnInformation>, Box<dyn Error>> {
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(ref c) => {
-            super::sqlite::get_table_data(c, table, ColumnSorting::OrdinalPosition)
-        }
+        InferConnection::Sqlite(ref c) => super::sqlite::get_table_data(c, table, column_sorting),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref c) => {
-            super::information_schema::get_table_data(c, table, ColumnSorting::OrdinalPosition)
+            super::information_schema::get_table_data(c, table, column_sorting)
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(ref c) => {
-            super::information_schema::get_table_data(c, table, ColumnSorting::OrdinalPosition)
+            super::information_schema::get_table_data(c, table, column_sorting)
         }
     };
     if let Err(NotFound) = column_info {
@@ -185,7 +185,11 @@ macro_rules! doc_comment {
     };
 }
 
-pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData, Box<dyn Error>> {
+pub fn load_table_data(
+    database_url: &str,
+    name: TableName,
+    column_sorting: &ColumnSorting,
+) -> Result<TableData, Box<dyn Error>> {
     let connection = InferConnection::establish(database_url)?;
     let docs = doc_comment!(
         "Representation of the `{}` table.
@@ -199,7 +203,7 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
         .map(|k| rust_name_for_sql_name(&k))
         .collect();
 
-    let column_data = get_column_information(&connection, &name)?
+    let column_data = get_column_information(&connection, &name, column_sorting)?
         .into_iter()
         .map(|c| {
             let ty = determine_column_type(&c, &connection)?;
