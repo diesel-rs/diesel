@@ -14,8 +14,6 @@ static RESERVED_NAMES: &[&str] = &[
     "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield",
 ];
 
-static UNMAPPABLE_CHARS: &[char] = &['-', ' '];
-
 fn is_reserved_name(name: &str) -> bool {
     RESERVED_NAMES.contains(&name)
         || (
@@ -26,20 +24,21 @@ fn is_reserved_name(name: &str) -> bool {
 }
 
 fn contains_unmappable_chars(name: &str) -> bool {
-    UNMAPPABLE_CHARS.iter().any(|c| name.contains(*c))
+    // Rust identifier names are restricted to [a-zA-Z0-9_].
+    !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
 pub fn rust_name_for_sql_name(sql_name: &str) -> Option<String> {
     if is_reserved_name(sql_name) {
         Some(format!("{}_", sql_name))
     } else if contains_unmappable_chars(sql_name) {
-        Some(
-            UNMAPPABLE_CHARS
-                .iter()
-                .fold(sql_name.to_string(), |rust_name, c| {
-                    rust_name.replace(*c, "_")
-                }),
-        )
+        // Map each non-alphanumeric character ([^a-zA-Z0-9]) to an underscore.
+        let rust_name = sql_name
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+            .collect();
+
+        Some(rust_name)
     } else {
         None
     }
