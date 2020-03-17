@@ -203,7 +203,7 @@ pub fn build_cli() -> App<'static, 'static> {
                 .long("column-sorting")
                 .help("Sort order for table columns")
                 .takes_value(true)
-                .possible_values(&["ordinal_position", "name"])
+                .possible_values(&["ordinal_position", "name"]),
         )
         .arg(
             Arg::with_name("patch-file")
