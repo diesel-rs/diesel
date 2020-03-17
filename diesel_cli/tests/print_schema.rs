@@ -53,7 +53,10 @@ fn run_infer_schema_table_order() {
 
 #[test]
 fn run_infer_schema_column_order() {
-    test_print_schema("print_schema_column_order", vec!["--column-sorting", "name"]);
+    test_print_schema(
+        "print_schema_column_order",
+        vec!["--column-sorting", "name"],
+    );
 }
 
 #[test]
