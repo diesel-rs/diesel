@@ -1,7 +1,7 @@
 table! {
     abc (a) {
         a -> Int4,
-        b -> Text,
+        b -> Varchar,
         c -> Nullable<Bool>,
     }
 }
