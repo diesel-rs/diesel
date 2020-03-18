@@ -1,5 +1,5 @@
 CREATE TABLE self (id INTEGER PRIMARY KEY);
-CREATE TABLE `user-has-role` (
+CREATE TABLE `user-has::complex>>>role` (
   user INTEGER NOT NULL,
   role INTEGER NOT NULL,
   id INTEGER PRIMARY KEY,
