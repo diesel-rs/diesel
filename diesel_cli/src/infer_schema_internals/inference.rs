@@ -33,10 +33,21 @@ pub fn rust_name_for_sql_name(sql_name: &str) -> Option<String> {
         Some(format!("{}_", sql_name))
     } else if contains_unmappable_chars(sql_name) {
         // Map each non-alphanumeric character ([^a-zA-Z0-9]) to an underscore.
-        let rust_name = sql_name
+        let mut rust_name: String = sql_name
             .chars()
             .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
             .collect();
+
+        // Iteratively remove adjoining underscores ("__").
+        let mut last_len = rust_name.len();
+        'remove_adjoining: loop {
+            rust_name = rust_name.replace("__", "_");
+            if rust_name.len() == last_len {
+                // No more underscore pairs left.
+                break 'remove_adjoining;
+            }
+            last_len = rust_name.len();
+        }
 
         Some(rust_name)
     } else {
