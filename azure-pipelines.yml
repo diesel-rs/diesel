@@ -104,8 +104,7 @@ jobs:
       RUST_TEST_THREADS: 1
     setup:
       - bash: |
-          sudo apt-get update &&
-          sudo apt-get -y install mysql-server libmysqlclient-dev &&
+          sudo systemctl start mysql.service &&
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
         displayName: Install mysql
 
