@@ -153,8 +153,7 @@ macro_rules! __diesel_column {
 /// primary key.
 ///
 /// ```rust
-/// #     use diesel::prelude::*;
-/// table! {
+/// diesel::table! {
 ///     followings (user_id, post_id) {
 ///         user_id -> Integer,
 ///         post_id -> Integer,
