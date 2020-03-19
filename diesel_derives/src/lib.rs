@@ -256,6 +256,7 @@ pub fn derive_non_aggregate(input: TokenStream) -> TokenStream {
 /// For example, given this struct:
 ///
 /// ```rust
+/// # extern crate diesel;
 /// #[derive(diesel::query_builder::QueryId)]
 /// pub struct And<Left, Right> {
 ///     left: Left,
@@ -266,6 +267,7 @@ pub fn derive_non_aggregate(input: TokenStream) -> TokenStream {
 /// the following implementation will be generated
 ///
 /// ```rust
+/// # extern crate diesel;
 /// # struct And<Left, Right>(Left, Right);
 /// # use diesel::query_builder::QueryId;
 /// impl<Left, Right> QueryId for And<Left, Right>
@@ -474,6 +476,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # Adding Doc Comments
 ///
 /// ```no_run
+/// # extern crate diesel;
 /// # use diesel::*;
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
@@ -512,6 +515,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// of all of this:
 ///
 /// ```no_run
+/// # extern crate diesel;
 /// # use diesel::*;
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
@@ -543,6 +547,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// are not supported on SQLite.
 ///
 /// ```rust
+/// # extern crate diesel;
 /// # use diesel::*;
 /// #
 /// # #[cfg(feature = "sqlite")]
