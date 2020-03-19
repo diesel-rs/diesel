@@ -14,9 +14,6 @@
 )]
 #![cfg_attr(test, allow(clippy::result_unwrap_used))]
 
-#[macro_use]
-extern crate diesel;
-
 mod config;
 
 mod database_error;
