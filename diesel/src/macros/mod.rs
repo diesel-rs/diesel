@@ -161,6 +161,7 @@ macro_rules! __diesel_column {
 ///     }
 /// }
 /// # fn main() {
+/// #     use diesel::prelude::Table;
 /// #     use self::followings::dsl::*;
 /// #     // Poor man's assert_eq! -- since this is type level this would fail
 /// #     // to compile if the wrong primary key were generated
