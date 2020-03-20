@@ -60,8 +60,8 @@ use diagnostic_shim::*;
 /// For example, to derive this for a struct called `User`, you will
 /// likely need a line such as `use schema::users;`
 ///
-/// If the field name of your struct differs
-/// from the name of the column, you can annotate the field with
+/// If a field name of your struct differs
+/// from the name of the corresponding column, you can annotate the field with
 /// `#[column_name = "some_column_name"]`.
 ///
 /// By default, any `Option` fields on the struct are skipped if their value is
@@ -107,8 +107,8 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 /// - `impl AsExpression<Nullable<SqlType>> for &'a &'b YourType`
 ///
 /// If your type is unsized,
-/// you can specify this by adding the annotation `#[diesel(not_sized)]`.
-/// This will skip the impls for non-reference types.
+/// you can specify this by adding the annotation `#[diesel(not_sized)]`
+/// as attribute on the type. This will skip the impls for non-reference types.
 ///
 /// # Attributes:
 ///
@@ -127,7 +127,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, as_expression::derive)
 }
 
-/// Implement required traits for associations API
+/// Implement required traits for the associations API
 ///
 /// This derive implement support for diesels associations api. Check the
 /// module level documentation of the `diesel::associations` module for details.
@@ -137,7 +137,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 /// # Required type attributes
 ///
 /// * `#[belongs_to(User)]`, to specify a child-to-parent relation ship
-/// between the current table and the specified parent type (`User`).
+/// between the current type and the specified parent type (`User`).
 /// If this attribute is given multiple times, multiple relation ships
 /// are generated.
 /// * `#[belongs_to(User, foreign_key = "mykey")]`, variant of the attribute
@@ -227,9 +227,9 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// For example, to derive this for a struct called `User`, you will
 /// likely need a line such as `use schema::users;`
 ///
-/// If the field name of your
-/// struct differs from the name of the column, you can annotate the field
-/// with `#[column_name = "some_column_name"]`.
+/// If a field name of your
+/// struct differs from the name of the corresponding column,
+/// you can annotate the field with `#[column_name = "some_column_name"]`.
 ///
 /// Your struct can also contain fields which implement `Insertable`. This is
 /// useful when you want to have one field map to more than one column (for
@@ -352,8 +352,10 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// you can annotate the field with `#[column_name = "some_column"]`. For tuple
 /// structs, all fields must have this annotation.
 ///
-/// If a field is another struct which implements `QueryableByName`, instead of
-/// a column, you can annotate that struct with `#[diesel(embed)]`
+/// If a field is another struct which implements `QueryableByName`,
+/// instead of a column, you can annotate that struct with `#[diesel(embed)]`.
+/// Then all fields contained by that inner struct are loaded into
+/// the embedded struct.
 ///
 /// To provide custom deserialization behavior for a field, you can use
 /// `#[diesel(deserialize_as = "SomeType")]`. If this attribute is present, Diesel
@@ -405,7 +407,7 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///
 /// For PostgreSQL, add  `#[postgres(type_name = "pg_type_name")]`
 /// or `#[postgres(oid = "some_oid", array_oid = "some_oid")]` for
-/// build in types.
+/// builtin types.
 /// For MySQL, specify which variant of `MysqlType` should be used
 /// by adding `#[mysql_type = "Variant"]`.
 /// For SQLite, specify which variant of `SqliteType` should be used
