@@ -1,5 +1,6 @@
-#[macro_use]
 extern crate diesel;
+
+use diesel::sql_types::SqlType;
 
 #[derive(SqlType)]
 #[postgres]

@@ -66,15 +66,13 @@ pub trait MigrationConnection: Connection {
     /// Setup the following table:
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
-    /// table! {
+    /// diesel::table! {
     ///      __diesel_schema_migrations(version) {
     ///          version -> Text,
     ///          /// defaults to `CURRENT_TIMESTAMP`
     ///          run_on -> Timestamp,
     ///      }
     /// }
-    /// # fn main() {}
     /// ```
     fn setup(&self) -> QueryResult<usize>;
 }

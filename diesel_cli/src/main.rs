@@ -14,11 +14,6 @@
 )]
 #![cfg_attr(test, allow(clippy::result_unwrap_used))]
 
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate clap;
-
 mod config;
 
 mod database_error;
@@ -273,6 +268,8 @@ fn generate_bash_completion_command(_: &ArgMatches) {
 }
 
 fn generate_completions_command(matches: &ArgMatches) {
+    use clap::value_t;
+
     let shell = value_t!(matches, "SHELL", Shell).unwrap_or_else(|e| e.exit());
     cli::build_cli().gen_completions_to("diesel", shell, &mut stdout());
 }

@@ -83,7 +83,6 @@ pub trait QueryDsl: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -117,7 +116,6 @@ pub trait QueryDsl: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::animals;
     /// #
@@ -189,7 +187,6 @@ pub trait QueryDsl: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -213,7 +210,6 @@ pub trait QueryDsl: Sized {
     /// ### When used with a left join
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::{users, posts};
     /// #
@@ -296,7 +292,6 @@ pub trait QueryDsl: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -365,7 +360,6 @@ pub trait QueryDsl: Sized {
     /// ### With implicit `ON` clause
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::{users, posts};
     /// # /*
@@ -393,7 +387,6 @@ pub trait QueryDsl: Sized {
     /// ### With explicit `ON` clause
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::{users, posts};
     /// #
@@ -461,7 +454,6 @@ pub trait QueryDsl: Sized {
     /// # Example:
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -492,7 +484,6 @@ pub trait QueryDsl: Sized {
     /// # Example:
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -536,7 +527,6 @@ pub trait QueryDsl: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -573,7 +563,6 @@ pub trait QueryDsl: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -641,7 +630,6 @@ pub trait QueryDsl: Sized {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -689,7 +677,6 @@ pub trait QueryDsl: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -739,7 +726,6 @@ pub trait QueryDsl: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -922,7 +908,6 @@ pub trait QueryDsl: Sized {
     /// ### Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -953,7 +938,6 @@ pub trait QueryDsl: Sized {
     /// ### Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use schema::users;
     /// #
@@ -989,7 +973,6 @@ pub trait QueryDsl: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -1025,7 +1008,6 @@ pub trait QueryDsl: Sized {
     /// This is use full for writing queries that contain subselects on non null
     /// fields comparing them to nullable fields.
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -1078,7 +1060,6 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -1132,7 +1113,6 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// ## Returning a single field
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -1153,7 +1133,6 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// ## Returning a tuple
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -1178,7 +1157,6 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// ## Returning a struct
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// #[derive(Queryable, PartialEq, Debug)]
@@ -1225,7 +1203,6 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -1286,7 +1263,6 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// # Example:
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # fn main() {
     /// #     run_test();

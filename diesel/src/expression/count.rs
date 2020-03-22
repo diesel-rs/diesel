@@ -1,3 +1,4 @@
+use super::functions::sql_function;
 use super::Expression;
 use crate::backend::Backend;
 use crate::query_builder::*;
@@ -14,7 +15,6 @@ sql_function! {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use diesel::dsl::*;
     /// #
@@ -41,7 +41,6 @@ sql_function! {
 /// # Examples
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use diesel::dsl::*;
 /// #

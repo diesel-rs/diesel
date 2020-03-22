@@ -1,6 +1,15 @@
 #![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
 #![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
 
+pub(crate) mod prelude {
+    #[doc(inline)]
+    pub use crate::{
+        allow_tables_to_appear_in_same_query,
+        joinable,
+        table,
+    };
+}
+
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
@@ -13,7 +22,7 @@ macro_rules! __diesel_column {
     ) => {
         $($meta)*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, QueryId, Default)]
+        #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId, Default)]
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
@@ -95,8 +104,8 @@ macro_rules! __diesel_column {
             }
         }
 
-        __diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
-        __diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
+        $crate::__diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
+        $crate::__diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
     }
 }
 
@@ -118,38 +127,33 @@ macro_rules! __diesel_column {
 /// -------------
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
-/// table! {
+/// diesel::table! {
 ///     users {
 ///         id -> Integer,
 ///         name -> VarChar,
 ///         favorite_color -> Nullable<VarChar>,
 ///     }
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// You may also specify a primary key if it's called something other than `id`.
 /// Tables with no primary key are not supported.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
-/// table! {
+/// diesel::table! {
 ///     users (non_standard_primary_key) {
 ///         non_standard_primary_key -> Integer,
 ///         name -> VarChar,
 ///         favorite_color -> Nullable<VarChar>,
 ///     }
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// For tables with composite primary keys, list all of the columns in the
 /// primary key.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
-/// table! {
+/// diesel::table! {
 ///     followings (user_id, post_id) {
 ///         user_id -> Integer,
 ///         post_id -> Integer,
@@ -157,7 +161,7 @@ macro_rules! __diesel_column {
 ///     }
 /// }
 /// # fn main() {
-/// #     use diesel::prelude::*;
+/// #     use diesel::prelude::Table;
 /// #     use self::followings::dsl::*;
 /// #     // Poor man's assert_eq! -- since this is type level this would fail
 /// #     // to compile if the wrong primary key were generated
@@ -169,12 +173,11 @@ macro_rules! __diesel_column {
 /// which types to import.
 ///
 /// ```
-/// # #[macro_use] extern crate diesel;
 /// # mod diesel_full_text_search {
 /// #     pub struct TsVector;
 /// # }
 ///
-/// table! {
+/// diesel::table! {
 ///     use diesel::sql_types::*;
 /// #    use crate::diesel_full_text_search::*;
 /// # /*
@@ -194,10 +197,7 @@ macro_rules! __diesel_column {
 /// following syntax:
 ///
 /// ```
-/// #[macro_use] extern crate diesel;
-///
-/// table! {
-///
+/// diesel::table! {
 ///     /// The table containing all blog posts
 ///     posts {
 ///         /// The post's unique id
@@ -206,16 +206,13 @@ macro_rules! __diesel_column {
 ///         title -> Text,
 ///     }
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// If you have a column with the same name as a Rust reserved keyword, you can use
 /// the `sql_name` attribute like this:
 ///
 /// ```
-/// #[macro_use] extern crate diesel;
-///
-/// table! {
+/// diesel::table! {
 ///     posts {
 ///         id -> Integer,
 ///         /// This column is named `mytype` but references the table `type` column.
@@ -223,7 +220,6 @@ macro_rules! __diesel_column {
 ///         mytype -> Text,
 ///     }
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// This module will also contain several helper types:
@@ -269,7 +265,7 @@ macro_rules! __diesel_column {
 /// ```ignore
 /// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! table {
     ($($tokens:tt)*) => {
         __diesel_parse_table! {
@@ -304,7 +300,7 @@ macro_rules! __diesel_parse_table {
         imports = [$($imports:tt)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = [$($imports)* use $($import)::+;],
             $($args)*
@@ -319,7 +315,7 @@ macro_rules! __diesel_parse_table {
         sql_name = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -335,7 +331,7 @@ macro_rules! __diesel_parse_table {
         meta = [$($meta:tt)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = [$($meta)* #$new_meta],
@@ -353,7 +349,7 @@ macro_rules! __diesel_parse_table {
         schema = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -373,7 +369,7 @@ macro_rules! __diesel_parse_table {
         name = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -394,7 +390,7 @@ macro_rules! __diesel_parse_table {
         primary_key = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -412,7 +408,7 @@ macro_rules! __diesel_parse_table {
         imports = [],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [{$($columns)*}],
             imports = [use $crate::sql_types::*;],
             $($args)*
@@ -428,7 +424,7 @@ macro_rules! __diesel_parse_table {
         name = $name:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [{$($columns)*}],
             imports = $imports,
             meta = $meta,
@@ -443,7 +439,7 @@ macro_rules! __diesel_parse_table {
         tokens = [{$($columns:tt)*}],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             tokens = [$($columns)*],
             table = { $($args)* },
             columns = [],
@@ -452,7 +448,7 @@ macro_rules! __diesel_parse_table {
 
     // Invalid syntax
     ($($tokens:tt)*) => {
-        __diesel_invalid_table_syntax!();
+        $crate::__diesel_invalid_table_syntax!();
     }
 }
 
@@ -469,7 +465,7 @@ macro_rules! __diesel_parse_columns {
         ],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$(#$meta)*],
                 name = $name,
@@ -491,7 +487,7 @@ macro_rules! __diesel_parse_columns {
         ],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$(#$meta)*],
                 name = $name,
@@ -515,7 +511,7 @@ macro_rules! __diesel_parse_columns {
         },
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$($meta)*],
                 name = $name,
@@ -538,7 +534,7 @@ macro_rules! __diesel_parse_columns {
         },
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$($unchecked_meta)*],
                 name = $name,
@@ -562,7 +558,7 @@ macro_rules! __diesel_parse_columns {
         columns = [$($columns:tt,)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             tokens = $tokens,
             table = $table,
             columns = [$($columns,)* { $($current_column)* },],
@@ -575,12 +571,12 @@ macro_rules! __diesel_parse_columns {
         tokens = [],
         $($args:tt)*
     ) => {
-        __diesel_table_impl!($($args)*);
+        $crate::__diesel_table_impl!($($args)*);
     };
 
     // Invalid syntax
     ($($tokens:tt)*) => {
-        __diesel_invalid_table_syntax!();
+        $crate::__diesel_invalid_table_syntax!();
     }
 }
 
@@ -624,7 +620,7 @@ macro_rules! __diesel_table_impl {
             /// table struct renamed to the module name. This is meant to be
             /// glob imported for functions which only deal with one table.
             pub mod dsl {
-                $(static_cond! {
+                $($crate::static_cond! {
                     if $table_name == $column_name {
                         compile_error!(concat!(
                             "Column `",
@@ -649,7 +645,7 @@ macro_rules! __diesel_table_impl {
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
             #[allow(non_camel_case_types)]
-            #[derive(Debug, Clone, Copy, QueryId)]
+            #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]
             /// The actual table struct
             ///
             /// This is the type which provides the base methods of the query
@@ -672,7 +668,7 @@ macro_rules! __diesel_table_impl {
             /// Helper type for representing a boxed query from this table
             pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 
-            __diesel_table_query_source_impl!(table, $schema, $sql_name);
+            $crate::__diesel_table_query_source_impl!(table, $schema, $sql_name);
 
             impl AsQuery for table {
                 type SqlType = SqlType;
@@ -831,7 +827,7 @@ macro_rules! __diesel_table_impl {
                 impl AppearsOnTable<table> for star {
                 }
 
-                $(__diesel_column! {
+                $($crate::__diesel_column! {
                     table = table,
                     name = $column_name,
                     sql_name = $column_sql_name,
@@ -906,7 +902,6 @@ macro_rules! __diesel_table_query_source_impl {
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// use schema::*;
 ///
@@ -949,7 +944,7 @@ macro_rules! __diesel_table_query_source_impl {
 /// ```sql
 /// post JOIN users ON posts.user_id = users.id
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! joinable {
     ($($child:ident)::* -> $($parent:ident)::* ($source:ident)) => {
         joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
@@ -957,7 +952,7 @@ macro_rules! joinable {
     }
 }
 
-#[macro_export]
+#[macro_export(local_inner_macros)]
 #[doc(hidden)]
 macro_rules! joinable_inner {
     ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path)) => {
@@ -1026,7 +1021,7 @@ macro_rules! joinable_inner {
 /// allow_tables_to_appear_in_same_query!(comments, users);
 /// allow_tables_to_appear_in_same_query!(posts, users);
 /// ```
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! allow_tables_to_appear_in_same_query {
     ($left_mod:ident, $($right_mod:ident),+ $(,)*) => {
         $(

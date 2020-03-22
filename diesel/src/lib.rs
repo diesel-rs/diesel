@@ -131,11 +131,10 @@ extern crate bitflags;
 extern crate byteorder;
 #[macro_use]
 extern crate diesel_derives;
-#[doc(hidden)]
-pub use diesel_derives::*;
 
 #[macro_use]
-mod macros;
+#[doc(hidden)]
+pub mod macros;
 
 #[cfg(test)]
 #[macro_use]
@@ -175,6 +174,11 @@ pub mod sqlite;
 
 mod type_impls;
 mod util;
+
+#[doc(hidden)]
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "2.0.0", note = "Use explicit macro imports instead")]
+pub use diesel_derives::*;
 
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
@@ -292,31 +296,46 @@ pub mod helper_types {
 
 pub mod prelude {
     //! Re-exports important traits and types. Meant to be glob imported when using Diesel.
-    pub use crate::associations::{GroupedBy, Identifiable};
+
+    #[doc(inline)]
+    pub use crate::associations::{Associations, GroupedBy, Identifiable};
+    #[doc(inline)]
     pub use crate::connection::Connection;
-    #[deprecated(
-        since = "1.1.0",
-        note = "Explicitly `use diesel::deserialize::Queryable"
-    )]
-    pub use crate::deserialize::Queryable;
+    #[doc(inline)]
+    pub use crate::deserialize::{Queryable, QueryableByName};
+    #[doc(inline)]
     pub use crate::expression::{
         AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
     };
+
+    #[doc(inline)]
+    pub use crate::expression::functions::sql_function;
+
+    #[doc(inline)]
     pub use crate::expression_methods::*;
     #[doc(inline)]
     pub use crate::insertable::Insertable;
+    #[doc(inline)]
+    pub use crate::macros::prelude::*;
+    #[doc(inline)]
+    pub use crate::query_builder::AsChangeset;
     #[doc(hidden)]
     pub use crate::query_dsl::GroupByDsl;
+    #[doc(inline)]
     pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
-
+    #[doc(inline)]
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
+    #[doc(inline)]
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
 
     #[cfg(feature = "mysql")]
+    #[doc(inline)]
     pub use crate::mysql::MysqlConnection;
     #[cfg(feature = "postgres")]
+    #[doc(inline)]
     pub use crate::pg::PgConnection;
     #[cfg(feature = "sqlite")]
+    #[doc(inline)]
     pub use crate::sqlite::SqliteConnection;
 }
 

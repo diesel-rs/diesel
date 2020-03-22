@@ -19,28 +19,13 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// trait is to convert from a tuple of Rust values that have been deserialized
 /// into your struct.
 ///
-/// # Deriving
-///
-/// This trait can be derived automatically using `#[derive(Queryable)]`. This
-/// trait can only be derived for structs, not enums.
-///
-/// When this trait is derived, it will assume that the order of fields on your
-/// struct match the order of the fields in the query. This means that field
-/// order is significant if you are using `#[derive(Queryable)]`. Field name has
-/// no effect.
-///
-/// To provide custom deserialization behavior for a field, you can use
-/// `#[diesel(deserialize_as = "Type")]`. If this attribute is present, Diesel
-/// will deserialize into that type, rather than the type on your struct and
-/// call `.into` to convert it. This can be used to add custom behavior for a
-/// single field, or use types that are otherwise unsupported by Diesel.
+/// This trait can be [derived](derive.Queryable.html)
 ///
 /// # Examples
 ///
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// #[derive(Queryable, PartialEq, Debug)]
@@ -67,7 +52,6 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// `deserialize_as` to use a different implementation.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// # use schema::users;
@@ -118,7 +102,6 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// Alternatively, we can implement the trait for our struct manually.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// #
 /// use schema::users;
@@ -171,43 +154,20 @@ where
     fn build(row: Self::Row) -> Self;
 }
 
+#[doc(inline)]
+pub use diesel_derives::Queryable;
+
 /// Deserializes the result of a query constructed with [`sql_query`].
 ///
-/// # Deriving
-///
-/// To derive this trait, Diesel needs to know the SQL type of each field. You
-/// can do this by either annotating your struct with `#[table_name =
-/// "some_table"]` (in which case the SQL type will be
-/// `diesel::dsl::SqlTypeOf<table_name::column_name>`), or by annotating each
-/// field with `#[sql_type = "SomeType"]`.
-///
-/// If you are using `#[table_name]`, the module for that table must be in
-/// scope. For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
-///
-/// If the name of a field on your struct is different than the column in your
-/// `table!` declaration, or if you are deriving this trait on a tuple struct,
-/// you can annotate the field with `#[column_name = "some_column"]`. For tuple
-/// structs, all fields must have this annotation.
-///
-/// If a field is another struct which implements `QueryableByName`, instead of
-/// a column, you can annotate that struct with `#[diesel(embed)]`
-///
-/// To provide custom deserialization behavior for a field, you can use
-/// `#[diesel(deserialize_as = "Type")]`. If this attribute is present, Diesel
-/// will deserialize into that type, rather than the type on your struct and
-/// call `.into` to convert it. This can be used to add custom behavior for a
-/// single field, or use types that are otherwise unsupported by Diesel.
+/// This trait can be [derived](derive.QueryableByName.html)
 ///
 /// [`sql_query`]: ../fn.sql_query.html
 ///
 /// # Examples
 ///
-///
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// # use schema::users;
 /// # use diesel::sql_query;
@@ -237,7 +197,6 @@ where
 /// `deserialize_as` to use a different implementation.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("doctest_setup.rs");
 /// # use diesel::sql_query;
 /// # use schema::users;
@@ -292,6 +251,9 @@ where
     /// Construct an instance of `Self` from the database row
     fn build<R: NamedRow<DB>>(row: &R) -> Result<Self>;
 }
+
+#[doc(inline)]
+pub use diesel_derives::QueryableByName;
 
 /// Deserialize a single field of a given SQL type.
 ///
@@ -361,12 +323,7 @@ pub trait FromSql<A, DB: Backend>: Sized {
 /// for all types which implement `FromSql`. However, as of Diesel 1.0, such an
 /// impl would conflict with our impl for tuples.
 ///
-/// ## Deriving
-///
-/// This trait can be automatically derived by Diesel
-/// for any type which implements `FromSql`.
-/// There are no options or special considerations needed for this derive.
-/// Note that `#[derive(FromSqlRow)]` will also generate a `Queryable` implementation.
+/// This trait can be [derived](derive.FromSqlRow.html)
 pub trait FromSqlRow<A, DB: Backend>: Sized {
     /// The number of fields that this type will consume. Must be equal to
     /// the number of times you would call `row.take()` in `build_from_row`
@@ -375,6 +332,9 @@ pub trait FromSqlRow<A, DB: Backend>: Sized {
     /// See the trait documentation.
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self>;
 }
+
+#[doc(inline)]
+pub use diesel_derives::FromSqlRow;
 
 // Reasons we can't write this:
 //

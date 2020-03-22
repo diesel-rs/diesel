@@ -8,18 +8,7 @@ use crate::result::QueryResult;
 /// Types which can be passed to
 /// [`update.set`](struct.UpdateStatement.html#method.set).
 ///
-/// ### Deriving
-///
-/// This trait can be automatically derived using by adding `#[derive(AsChangeset)]`
-/// to your struct.  Structs which derive this trait must be annotated with
-/// `#[table_name = "something"]`. If the field name of your struct differs
-/// from the name of the column, you can annotate the field with
-/// `#[column_name = "some_column_name"]`.
-///
-/// By default, any `Option` fields on the struct are skipped if their value is
-/// `None`. If you would like to assign `NULL` to the field instead, you can
-/// annotate your struct with `#[changeset_options(treat_none_as_null =
-/// "true")]`.
+/// This trait can be [derived](derive.AsChangeset.html)
 pub trait AsChangeset {
     /// The table which `Self::Changeset` will be updating
     type Target: QuerySource;
@@ -30,6 +19,9 @@ pub trait AsChangeset {
     /// Convert `self` into the actual update statement being executed
     fn as_changeset(self) -> Self::Changeset;
 }
+
+#[doc(inline)]
+pub use diesel_derives::AsChangeset;
 
 impl<T: AsChangeset> AsChangeset for Option<T> {
     type Target = T::Target;

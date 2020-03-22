@@ -40,7 +40,6 @@ impl<'a> TransactionBuilder<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use diesel::sql_query;
     /// #
@@ -93,7 +92,6 @@ impl<'a> TransactionBuilder<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// # use diesel::result::Error::RollbackTransaction;
     /// # use diesel::sql_query;
@@ -137,7 +135,6 @@ impl<'a> TransactionBuilder<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -165,7 +162,6 @@ impl<'a> TransactionBuilder<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -193,7 +189,6 @@ impl<'a> TransactionBuilder<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -218,7 +213,6 @@ impl<'a> TransactionBuilder<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -243,7 +237,6 @@ impl<'a> TransactionBuilder<'a> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {

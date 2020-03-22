@@ -115,7 +115,6 @@ impl PgConnection {
     /// [`TransactionBuilder`]: ../pg/struct.TransactionBuilder.html
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {

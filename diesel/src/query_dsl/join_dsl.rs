@@ -52,7 +52,6 @@ where
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::{users, posts};
 /// #

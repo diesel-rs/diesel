@@ -12,7 +12,6 @@ use crate::sql_types::VarChar;
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {

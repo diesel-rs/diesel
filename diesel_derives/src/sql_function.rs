@@ -71,7 +71,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         use diesel::sql_types::*;
         use super::*;
 
-        #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, diesel::sql_types::DieselNumericOps)]
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
             #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*

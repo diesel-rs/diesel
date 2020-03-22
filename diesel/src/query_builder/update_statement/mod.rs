@@ -75,7 +75,6 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -114,7 +113,6 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// ### Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -250,7 +248,6 @@ impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// ### Updating a single record:
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # #[cfg(feature = "postgres")]

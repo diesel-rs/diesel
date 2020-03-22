@@ -5,7 +5,6 @@
 //! Unlike other ORMs, Diesel has no concept of `#[has_many`]
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! use schema::{posts, users};
 //!
@@ -54,7 +53,6 @@
 //! `unrestricted_attribute_tokens` is stable.
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::{posts, users};
 //! # use std::borrow::Cow;
@@ -98,7 +96,6 @@
 //! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::users;
 //! # use schema::posts;
@@ -153,7 +150,6 @@
 //! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::{posts, users};
 //! #
@@ -208,7 +204,6 @@
 //! and it will be combined with its parent.
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::{posts, users};
 //! #
@@ -270,7 +265,6 @@
 //! to make each line a bit more clear.
 //!
 //! ```rust
-//! # #[macro_use] extern crate diesel;
 //! # include!("../doctest_setup.rs");
 //! # use schema::{users, posts, comments};
 //! #
@@ -361,6 +355,9 @@ use crate::query_source::Table;
 
 pub use self::belongs_to::{BelongsTo, GroupedBy};
 
+#[doc(inline)]
+pub use diesel_derives::Associations;
+
 /// This trait indicates that a struct is associated with a single database table.
 ///
 /// This trait is implemented by structs which implement `Identifiable`,
@@ -389,25 +386,8 @@ impl<'a, T: HasTable> HasTable for &'a T {
 /// `update(YourStruct::table().find(&your_struct.primary_key())`).
 ///
 /// This trait is usually implemented on a reference to a struct,
-/// not the struct itself.
+/// not on the struct itself. It can be [derived](derive.Identifiable.html).
 ///
-/// ### Deriving
-///
-/// This trait can be automatically derived by adding `#[derive(Identifiable)]`
-/// to your struct.
-/// By default, the "id" field is assumed to be a single field called `id`.
-/// If it's not, you can put `#[primary_key(your_id)]` on your struct.
-/// If you have a composite primary key, the syntax is `#[primary_key(id1, id2)]`.
-///
-/// By default, `#[derive(Identifiable)]` will assume that your table
-/// name is the plural form of your struct name.
-/// Diesel uses very simple pluralization rules.
-/// It only adds an `s` to the end, and converts `CamelCase` to `snake_case`.
-/// If your table name does not follow this convention
-/// or the plural form isn't just an `s`,
-/// you can specify the table name with `#[table_name = "some_table_name"]`.
-/// Our rules for inferring table names is considered public API.
-/// It will never change without a major version bump.
 pub trait Identifiable: HasTable {
     /// The type of this struct's identifier.
     ///
@@ -428,3 +408,6 @@ pub trait Identifiable: HasTable {
     /// so that we have a lifetime to use for `Id`.
     fn id(self) -> Self::Id;
 }
+
+#[doc(inline)]
+pub use diesel_derives::Identifiable;

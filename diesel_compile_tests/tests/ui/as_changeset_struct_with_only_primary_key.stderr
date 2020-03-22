@@ -11,11 +11,11 @@ error[E0601]: `main` function not found in crate `as_changeset_struct_with_only_
   |
   = note: consider adding a `main` function to `$DIR/as_changeset_struct_with_only_primary_key.rs`
 
-error[E0277]: the trait bound `(): diesel::query_builder::AsChangeset` is not satisfied
+error[E0277]: the trait bound `(): diesel::AsChangeset` is not satisfied
   --> $DIR/as_changeset_struct_with_only_primary_key.rs:17:10
    |
 17 | #[derive(AsChangeset)]
-   |          ^^^^^^^^^^^ the trait `diesel::query_builder::AsChangeset` is not implemented for `()`
+   |          ^^^^^^^^^^^ the trait `diesel::AsChangeset` is not implemented for `()`
 
 error: aborting due to 3 previous errors
 

@@ -17,8 +17,6 @@
 #[macro_use]
 #[doc(hidden)]
 pub mod ops;
-#[doc(hidden)]
-#[macro_use]
 pub mod functions;
 
 #[doc(hidden)]
@@ -124,25 +122,8 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 ///   [`Timestamptz`]: ../pg/types/sql_types/struct.Timestamptz.html
 ///   [`ToSql`]: ../serialize/trait.ToSql.html
 ///
-/// ## Deriving
-///
-/// This trait can be automatically derived for any type which implements `ToSql`.
-/// The type must be annotated with `#[sql_type = "SomeType"]`.
-/// If that annotation appears multiple times,
-/// implementations will be generated for each one of them.
-///
-/// This will generate the following impls:
-///
-/// - `impl AsExpression<SqlType> for YourType`
-/// - `impl AsExpression<Nullable<SqlType>> for YourType`
-/// - `impl AsExpression<SqlType> for &'a YourType`
-/// - `impl AsExpression<Nullable<SqlType>> for &'a YourType`
-/// - `impl AsExpression<SqlType> for &'a &'b YourType`
-/// - `impl AsExpression<Nullable<SqlType>> for &'a &'b YourType`
-///
-/// If your type is unsized,
-/// you can specify this by adding the annotation `#[diesel(not_sized)]`.
-/// This will skip the impls for non-reference types.
+///  This trait could be [derived](derive.AsExpression.html)
+
 pub trait AsExpression<T> {
     /// The expression being returned
     type Expression: Expression<SqlType = T>;
@@ -150,6 +131,9 @@ pub trait AsExpression<T> {
     /// Perform the conversion
     fn as_expression(self) -> Self::Expression;
 }
+
+#[doc(inline)]
+pub use diesel_derives::AsExpression;
 
 impl<T: Expression> AsExpression<T::SqlType> for T {
     type Expression = Self;
@@ -169,7 +153,6 @@ impl<T: Expression> AsExpression<T::SqlType> for T {
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
 /// #
@@ -267,11 +250,7 @@ where
 /// non-aggregate expressions in a select clause, and that they're never
 /// included in a where clause.
 ///
-/// ## Deriving
-///
-/// This trait can be automatically derived for structs with no type parameters
-/// which are not aggregate, as well as for structs which are `NonAggregate`
-/// when all type parameters are `NonAggregate`. For example:
+/// This trait can be [derived](derive.NonAggregate.html);
 ///
 /// ```ignore
 /// #[derive(NonAggregate)]
@@ -286,6 +265,9 @@ where
 /// }
 /// ```
 pub trait NonAggregate {}
+
+#[doc(inline)]
+pub use diesel_derives::NonAggregate;
 
 impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}
 
@@ -308,7 +290,6 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # Examples
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
 /// use diesel::sql_types::Bool;
