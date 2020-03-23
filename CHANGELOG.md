@@ -90,6 +90,23 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 [2-0-migration]: FIXME write a migration guide
 
+## [1.4.4] - 2020-03-22
+
+### Fixed
+
+* Update several dependencies
+* Fixed a bug with printing embeded migrations
+
+## [1.4.3] - 2019-10-11
+
+### Fixed
+
+* Updated several dependencies
+* Fixed an issue where the postgresql backend exploits implementation defined behaviour
+* Fixed issue where rustdoc failed to build the documentation
+* `diesel_derives` and `diesel_migrations` are updated to syn 1.0
+
+
 ## [1.4.2] - 2019-03-19
 
 ### Fixed
@@ -1696,3 +1713,5 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.4.0]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.4.0
 [1.4.1]: https://github.com/diesel-rs/diesel/compare/v1.4.0...v1.4.1
 [1.4.2]: https://github.com/diesel-rs/diesel/compare/v1.4.1...v1.4.2
+[1.4.3]: https://github.com/diesel-rs/diesel/compare/v1.4.2...v1.4.3
+[1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
