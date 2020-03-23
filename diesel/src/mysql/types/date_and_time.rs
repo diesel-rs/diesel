@@ -30,6 +30,11 @@ macro_rules! mysql_time_impls {
             fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
                 let bytes = not_none!(bytes);
                 let bytes_ptr = bytes.as_ptr() as *const ffi::MYSQL_TIME;
+
+                // We cannot use `mem::MaybeUninit` here
+                // because that would require a bump of the 
+                // minimal supported rust version
+                #[allow(deprecated)]
                 unsafe {
                     let mut result = mem::uninitialized();
                     ptr::copy_nonoverlapping(bytes_ptr, &mut result, 1);

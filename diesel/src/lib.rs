@@ -142,7 +142,9 @@
     clippy::option_map_unwrap_or,
     clippy::match_same_arms,
     clippy::type_complexity,
-    clippy::redundant_field_names
+    clippy::redundant_field_names,
+    // we don't fix that in backports
+    unused_parens
 )]
 #![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
 #![warn(
