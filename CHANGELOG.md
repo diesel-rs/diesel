@@ -4,9 +4,16 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [1.4.4] - 2020-03-22
+
+### Fixed
+
+* Update several dependencies
+* Fixed a bug with printing embeded migrations
+
 ## [1.4.3] - 2019-10-11
 
-## Fixed
+### Fixed
 
 * Updated several dependencies 
 * Fixed an issue where the postgresql backend exploits implementation defined behaviour
@@ -1618,3 +1625,5 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.4.0]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.4.0
 [1.4.1]: https://github.com/diesel-rs/diesel/compare/v1.4.0...v1.4.1
 [1.4.2]: https://github.com/diesel-rs/diesel/compare/v1.4.1...v1.4.2
+[1.4.3]: https://github.com/diesel-rs/diesel/compare/v1.4.2...v1.4.3
+[1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
