@@ -82,6 +82,7 @@ jobs:
         run: |
           brew update
           brew uninstall --ignore-dependencies libpq
+          brew install krb5
           brew install postgres
           /usr/local/opt/postgres/bin/pg_ctl -D /usr/local/var/postgres start
           sleep 3
