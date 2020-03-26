@@ -7,7 +7,7 @@ jobs:
   parameters:
     name: macOS_sqlite
     displayName: macOS SQLite
-    vmImage: macOS-10.13
+    vmImage: macOS-10.15
     variables:
       BACKEND: sqlite
       SQLITE_DATABASE_URL: /tmp/test.db
@@ -21,18 +21,19 @@ jobs:
   parameters:
     name: macOS_postgres
     displayName: macOS PostgreSQL
-    vmImage: macOS-10.13
+    vmImage: macOS-10.15
     variables:
       BACKEND: postgres
       PG_DATABASE_URL: postgres://postgres@localhost/
       PG_EXAMPLE_DATABASE_URL: postgres://postgres@localhost/diesel_example
     setup:
       - bash: |
-          brew update &&
-          brew uninstall --ignore-dependencies libpq &&
-          brew install postgres &&
-          brew services start postgres &&
-          sleep 3 &&
+          brew update
+          brew uninstall --ignore-dependencies libpq
+          brew install postgres
+          /usr/local/Cellar/postgresql/12.2/bin/initdb --locale=C -E UTF-8 /usr/local/var/postgres
+          brew services start postgresql
+          sleep 3
           /usr/local/opt/postgres/bin/createuser -s postgres
         displayName: Install postgresql
 
@@ -40,7 +41,7 @@ jobs:
   parameters:
     name: macOS_mysql
     displayName: macOS MySQL
-    vmImage: macOS-10.13
+    vmImage: macOS-10.15
     variables:
       BACKEND: mysql
       MYSQL_DATABASE_URL: mysql://root@localhost/diesel_test
