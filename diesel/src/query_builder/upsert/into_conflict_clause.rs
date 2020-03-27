@@ -59,10 +59,9 @@ where
         // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
         self.0.build_query(pass, |where_clause, mut pass| {
             match where_clause {
-                BoxedWhereClause::None => pass.push_sql("WHERE 1=1"),
+                BoxedWhereClause::None => pass.push_sql(" WHERE 1=1 "),
                 w => w.walk_ast(pass.reborrow())?,
             }
-            pass.push_sql(" WHERE 1=1 ");
             Ok(())
         })
     }

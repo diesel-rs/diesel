@@ -350,5 +350,3 @@ impl<T, U, Op, Ret, Target> IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, T
         })
     }
 }
-
-mod private {}
