@@ -2,10 +2,10 @@ use crate::insertable::{BatchInsert, OwnedBatchInsert};
 use crate::query_builder::insert_statement::InsertFromSelect;
 #[cfg(feature = "sqlite")]
 use crate::query_builder::where_clause::{BoxedWhereClause, WhereClause};
-use crate::query_builder::{
-    AstPass, BoxedSelectStatement, Query, QueryFragment, SelectStatement, ValuesClause,
-};
-
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
+use crate::query_builder::{AstPass, QueryFragment};
+use crate::query_builder::{BoxedSelectStatement, Query, SelectStatement, ValuesClause};
+#[cfg(any(feature = "sqlite", feature = "postgres"))]
 use crate::result::QueryResult;
 
 pub trait IntoConflictValueClause {

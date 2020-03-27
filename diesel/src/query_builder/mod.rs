@@ -29,7 +29,6 @@ mod select_clause;
 mod select_statement;
 mod sql_query;
 mod update_statement;
-#[cfg(any(feature = "sqlite", feature = "postgres"))]
 pub(crate) mod upsert;
 mod where_clause;
 
