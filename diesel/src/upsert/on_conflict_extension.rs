@@ -19,6 +19,7 @@ where
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
@@ -40,6 +41,8 @@ where
     ///     .execute(&conn);
     /// assert_eq!(Ok(0), inserted_row_count);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     ///
     /// ### Vec of Records
@@ -47,6 +50,7 @@ where
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
@@ -63,6 +67,8 @@ where
     /// # #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(1), inserted_row_count);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     pub fn on_conflict_do_nothing(
         self,
@@ -87,6 +93,7 @@ where
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
@@ -115,6 +122,8 @@ where
     ///     .execute(&conn);
     /// assert!(pk_conflict_result.is_err());
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     ///
     /// ### Specifying multiple columns as the target
@@ -138,6 +147,7 @@ where
     /// #     hair_color: &'a str,
     /// # }
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::*;
@@ -166,6 +176,8 @@ where
     ///     .execute(&conn);
     /// assert_eq!(Ok(0), inserted_row_count);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     ///
     /// See the documentation for [`on_constraint`] and [`do_update`] for
@@ -227,6 +239,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
@@ -250,6 +263,8 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// let users_in_db = users.load(&conn);
     /// assert_eq!(Ok(vec![(1, "I DONT KNOW ANYMORE".to_string())]), users_in_db);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     ///
     /// ## Set `AsChangeset` struct on conflict
@@ -257,6 +272,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = establish_connection();
@@ -280,6 +296,8 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// let users_in_db = users.load(&conn);
     /// assert_eq!(Ok(vec![(1, "Sean".to_string())]), users_in_db);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     ///
     /// ## Use `excluded` to get the rejected value
@@ -287,6 +305,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::excluded;
@@ -316,6 +335,8 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(vec![(1, "Sean".to_string()), (2, "Tess".to_string())]), users_in_db);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     pub fn do_update(self) -> IncompleteDoUpdate<Stmt, Target> {
         IncompleteDoUpdate {
