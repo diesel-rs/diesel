@@ -30,7 +30,8 @@ use crate::sqlite::Sqlite;
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
-    // TODO: remove this `pub` once done
+    // TODO @thekuom: remove this `pub` once done
+    /// the raw connection
     pub raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
 }
@@ -245,7 +246,7 @@ impl SqliteConnection {
         fn_name: &str,
     ) -> QueryResult<()>
     where
-        A: Aggregator<Args, Output=Ret> + Send,
+        A: Aggregator<Args, Output=Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
@@ -390,11 +391,10 @@ mod tests {
     }
 
     use crate::sqlite::Aggregator;
-    use crate::sql_types::Foldable;
     use std::ops::AddAssign;
     sql_function! {
         #[aggregate]
-        fn my_sum<ST: Foldable>(expr: ST) -> ST::Sum;
+        fn my_sum(expr: Integer) -> Integer;
     }
 
     #[derive(Default)]
@@ -427,36 +427,35 @@ mod tests {
         connection.execute("CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)").unwrap();
         connection.execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)").unwrap();
 
-        my_sum::register_impl::<MySum>(&connection).unwrap();
+        my_sum::register_impl::<MySum<i32>, _>(&connection).unwrap();
 
-        let result = crate::select(my_sum(value)).get_result::<i32>(&connection);
+        let result = my_sum_example.select(my_sum(value)).get_result::<i32>(&connection);
         assert_eq!(Ok(6), result);
     }
 
-    use crate::sql_types::SqlOrd;
     sql_function! {
         #[aggregate]
-        fn range_max<T: SqlOrd>(exprs: (T, T, T)) -> Option<T>;
+        fn range_max(exprs: (Integer, Integer, Integer)) -> Integer;
     }
 
     #[derive(Default)]
     struct RangeMax<T: Default> {
         max_value: Option<T>,
     }
-    impl<T: Default + Ord> Aggregator<(T, T, T)> for RangeMax<T> {
-        type Output = Option<T>;
+    impl<T: Default + Ord + Copy + Clone> Aggregator<(T, T, T)> for RangeMax<T> {
+        type Output = T;
 
         fn step(&mut self, (x0, x1, x2): (T, T, T)) {
-            let values = [x0, x1, x2].iter().collect::<Vec<_>>();
+            let mut values = [x0, x1, x2].iter().cloned().collect::<Vec<_>>();
             if let Some(max_value) = self.max_value {
-                values.push(&max_value);
+                values.push(max_value.clone());
             };
 
-            self.max_value = values.iter().max();
+            self.max_value = values.iter().cloned().max();
         }
 
         fn finalize(self) -> Self::Output {
-            self.max_value
+            self.max_value.unwrap()
         }
     }
     table! {
@@ -481,8 +480,8 @@ mod tests {
             )"#).unwrap();
         connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1)").unwrap();
 
-        range_max::register_impl::<RangeMax>(&connection).unwrap();
-        let result = crate::select(range_max((value1, value2, value3))).get_result::<Option<i32>>(&connection).unwrap();
-        assert_eq!(Some(3), result);
+        range_max::register_impl::<RangeMax<i32>, _>(&connection).unwrap();
+        let result = range_max_example.select(range_max((value1, value2, value3))).get_result::<i32>(&connection).unwrap();
+        assert_eq!(3, result);
     }
 }

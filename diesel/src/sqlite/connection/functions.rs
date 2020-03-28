@@ -58,7 +58,7 @@ pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     fn_name: &str,
 ) -> QueryResult<()>
 where
-    A: Aggregator<Args, Output=Ret> + Send,
+    A: Aggregator<Args, Output=Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -71,16 +71,14 @@ where
         ));
     }
 
-    // TODO @thekuom: how do we convert this to ffi::sqlite3_value?
-
-    conn.register_aggregate_function::<A>(fn_name, fields_needed)?;
+    conn.register_aggregate_function::<ArgsSqlType, RetSqlType, Args, Ret, A>(fn_name, fields_needed)?;
 
     Ok(())
 }
 
 
-struct FunctionRow<'a> {
-    args: &'a [*mut ffi::sqlite3_value],
+pub(crate) struct FunctionRow<'a> {
+    pub(crate) args: &'a [*mut ffi::sqlite3_value],
 }
 
 impl<'a> Row<Sqlite> for FunctionRow<'a> {

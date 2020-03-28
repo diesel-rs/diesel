@@ -126,13 +126,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
     };
 
     if is_aggregate {
-        if cfg!(feature = "sqlite") {
-            let type_params = &generics
-                .type_params()
-                .filter(|type_param| !type_param.bounds.is_empty())
-                .cloned()
-                .collect::<Vec<_>>();
-
+        if cfg!(feature = "sqlite") && type_args.is_empty() {
             tokens = quote! {
                 #tokens
 
@@ -140,22 +134,44 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 use diesel::serialize::ToSql;
                 use diesel::deserialize::Queryable;
                 use diesel::sqlite::Aggregator;
-
-                #[allow(dead_code)]
-                pub fn register_impl<A, #(#arg_name),*, #(#type_args),*>(
-                    conn: &SqliteConnection
-                ) -> QueryResult<()>
-                where
-                     A: Aggregator<#(#arg_name),*, Output=ToSql<#return_type, Sqlite>> + Send + 'static,
-                     (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
-                     #(#type_params),*
-                {
-                    conn.register_aggregate::<(#(#arg_type,)*), #return_type, _, _, _>(#sql_name)
-                }
             };
 
-            // TODO @thekuom: remove this when done
-            println!("{}\n\n\n", tokens);
+            if arg_name.len() > 1 {
+                tokens = quote! {
+                    #tokens
+
+                    #[allow(dead_code)]
+                    pub fn register_impl<A, #(#arg_name,)*>(
+                        conn: &SqliteConnection
+                    ) -> QueryResult<()>
+                        where
+                        A: Aggregator<(#(#arg_name,)*)> + Send + 'static,
+                        A::Output: ToSql<#return_type, Sqlite>,
+                        (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                    {
+                        conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
+                    }
+                };
+            } else if arg_name.len() == 1 {
+                let arg_name = arg_name[0];
+                let arg_type = arg_type[0];
+
+                tokens = quote! {
+                    #tokens
+
+                    #[allow(dead_code)]
+                    pub fn register_impl<A, #arg_name>(
+                        conn: &SqliteConnection
+                    ) -> QueryResult<()>
+                        where
+                        A: Aggregator<#arg_name> + Send + 'static,
+                        A::Output: ToSql<#return_type, Sqlite>,
+                        #arg_name: Queryable<#arg_type, Sqlite>,
+                    {
+                        conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
+                    }
+                };
+            }
         }
     } else {
         tokens = quote! {
