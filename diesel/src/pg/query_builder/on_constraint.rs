@@ -1,12 +1,11 @@
-//! Used to specify the constraint name for an upsert statement in the form `ON
-//! CONFLICT ON CONSTRAINT`. Note that `constraint_name` must be the name of a
-//! unique constraint, not the name of an index.
-
 use crate::pg::Pg;
 use crate::query_builder::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 
+/// Used to specify the constraint name for an upsert statement in the form `ON
+/// CONFLICT ON CONSTRAINT`. Note that `constraint_name` must be the name of a
+/// unique constraint, not the name of an index.
 /// # Example
 ///
 /// ```rust
