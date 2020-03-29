@@ -280,7 +280,7 @@ fn on_conflict_do_update_with_boxed_select() {
 
     let conn = connection_with_sean_and_tess_in_users_table();
 
-    sql_query("CREATE UNIQUE INDEX index_on_title  ON posts (title)")
+    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
         .execute(&conn)
         .unwrap();
 

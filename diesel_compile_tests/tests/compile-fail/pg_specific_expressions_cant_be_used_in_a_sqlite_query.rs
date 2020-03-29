@@ -35,5 +35,5 @@ fn main() {
     insert_into(users).values(&NewUser("Sean"))
         .on_conflict(on_constraint("name"))
         .execute(&connection);
-    //~^ ERROR 0599
+    //~^ ERROR no method named `execute` found
 }
