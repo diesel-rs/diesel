@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `diesel::sqlite::Sqlite: diesel::backend::SupportsDefaultKeyword` is not satisfied
-  --> $DIR/upsert_with_multiple_values_not_supported_on_sqlite.rs:18:10
+  --> $DIR/upsert_with_multiple_values_not_supported_on_sqlite.rs:17:10
    |
-18 |         .execute(&connection);
+17 |         .execute(&connection);
    |          ^^^^^^^ the trait `diesel::backend::SupportsDefaultKeyword` is not implemented for `diesel::sqlite::Sqlite`
    |
    = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::insertable::OwnedBatchInsert<diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, users::table>`
