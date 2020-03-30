@@ -6,10 +6,11 @@ use crate::result::QueryResult;
 /// Used to specify the constraint name for an upsert statement in the form `ON
 /// CONFLICT ON CONSTRAINT`. Note that `constraint_name` must be the name of a
 /// unique constraint, not the name of an index.
+///
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
+/// # extern crate diesel;
 /// # include!("../../upsert/on_conflict_docs_setup.rs");
 /// #
 /// # fn main() {

@@ -7,6 +7,10 @@
 //!
 //! See [the methods on `InsertStatement`](../query_builder/struct.InsertStatement.html#impl-2)
 //! for usage examples.
+//!
+//! Constructing an upsert statement from an existing select statement
+//! requires a where clause on sqlite due to a ambiguity in their
+//! parser.
 use crate::query_builder::upsert::on_conflict_actions::Excluded;
 
 mod on_conflict_extension;
