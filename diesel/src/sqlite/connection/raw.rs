@@ -12,7 +12,7 @@ use super::Sqlite;
 use crate::deserialize::{FromSqlRow, Queryable};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
-use crate::serialize::ToSql;
+use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
 
 // Sticking this here for now until I find a better place
@@ -20,7 +20,7 @@ pub trait Aggregator<Args>: Default {
     type Output;
 
     fn step(&mut self, args: Args);
-    fn finalize(self) -> Self::Output;
+    fn finalize(&self) -> Self::Output;
 }
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -137,7 +137,8 @@ impl RawConnection {
         // Aggregate functions are always deterministic
         let flags = ffi::SQLITE_UTF8 | ffi::SQLITE_DETERMINISTIC;
 
-        let user_data = Box::into_raw(Box::new(A::default));
+        // TODO @thekuom: figure out a way to just pass nothing
+        let user_data = Box::into_raw(Box::new(0));
 
         let result = unsafe {
             ffi::sqlite3_create_function_v2(
@@ -149,7 +150,7 @@ impl RawConnection {
                 None,
                 Some(run_aggregator_step_function::<_, _, _, _, A>),
                 Some(run_aggregator_final_function::<_, _, _, _, A>),
-                None, // TODO @thekuom: figure this out
+                Some(destroy_boxed_type::<i32>),
             )
         };
 
@@ -250,6 +251,15 @@ extern "C" fn run_custom_function<F>(
     }
 }
 
+// Need a custom option type here, because the std lib one does not have guarantees about the discriminate values?
+#[repr(u8)]
+enum OptionalAggregator<A> {
+    // Discriminant is 0
+    #[allow(dead_code)]
+    None,
+    Some(A),
+}
+
 #[allow(warnings)]
 extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
     ctx: *mut ffi::sqlite3_context,
@@ -262,19 +272,9 @@ where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    static NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
-    static NULL_CONN_ERR: &str = "An unknown error occurred. sqlite3_context_db_handle returned a null pointer. This should never happen.";
     static NULL_AG_CTX_ERR: &str = "An unknown error occurred. sqlite3_aggregate_context returned a null pointer. This should never happen.";
 
     unsafe {
-        // Need a custom option type here, because the std lib one does not have guarantees about the discriminate values?
-        #[repr(u8)]
-        enum OptionalAggregator<A> {
-            // Discriminant is 0
-            None,
-            Some(A),
-        }
-
         let aggregate_context = ffi::sqlite3_aggregate_context(ctx, std::mem::size_of::<OptionalAggregator<A>>() as i32);
         let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
         let aggregator = match aggregate_context {
@@ -317,7 +317,7 @@ where
 }
 
 extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
-    _ctx: *mut ffi::sqlite3_context,
+    ctx: *mut ffi::sqlite3_context,
 )
 where
     A: Aggregator<Args, Output=Ret> + 'static + Send,
@@ -325,7 +325,63 @@ where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    // TODO @thekuom: fill this out
+    static NULL_AG_CTX_ERR: &str = "An unknown error occurred. sqlite3_aggregate_context returned a null pointer. This should never happen.";
+
+    unsafe {
+        let aggregate_context = ffi::sqlite3_aggregate_context(ctx, 0);
+        let aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
+        // TODO @thekuom: abstract this out
+        let aggregator = match aggregate_context {
+            // Check with someone that does more unsafe code reviews if this is ok. We do
+            // only access the tag of an zeroed variant here, right? That tag is guaranteed to be zero for
+            // our case and this variant.
+            Some(ref a) => match a.as_ref() {
+                &OptionalAggregator::Some(ref agg) => agg,
+                &OptionalAggregator::None => {
+                    ffi::sqlite3_result_error(
+                        ctx,
+                        NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
+                        NULL_AG_CTX_ERR.len() as _,
+                        );
+                    return;
+                }
+            },
+            None => {
+                ffi::sqlite3_result_error(
+                    ctx,
+                    NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
+                    NULL_AG_CTX_ERR.len() as _,
+                    );
+                return;
+            }
+        };
+
+        let result = aggregator.finalize();
+
+        let f = || -> QueryResult<SerializedValue> {
+            let mut buf = Output::new(Vec::new(), &());
+            let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError).unwrap(); // TODO @thekuom: error handling
+
+            let bytes = if let IsNull::Yes = is_null {
+                None
+            } else {
+                Some(buf.into_inner())
+            };
+
+            Ok(SerializedValue {
+                ty: Sqlite::metadata(&()),
+                data: bytes,
+            })
+        };
+
+        match f() {
+            Ok(value) => value.result_of(ctx),
+            Err(e) => {
+                let msg = e.to_string();
+                ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
+            }
+        }
+    }
 }
 
 extern "C" fn destroy_boxed_fn<F>(data: *mut libc::c_void)
@@ -334,6 +390,11 @@ where
         + Send
         + 'static,
 {
-    let ptr = data as *mut F;
+    destroy_boxed_type::<F>(data);
+}
+
+extern "C" fn destroy_boxed_type<T>(data: *mut libc::c_void)
+{
+    let ptr = data as *mut T;
     unsafe { Box::from_raw(ptr) };
 }

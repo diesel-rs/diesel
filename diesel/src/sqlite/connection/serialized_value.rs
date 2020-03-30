@@ -5,6 +5,7 @@ use std::ptr::{self, NonNull};
 
 use crate::sqlite::SqliteType;
 
+#[allow(missing_debug_implementations)]
 pub struct SerializedValue {
     pub ty: SqliteType,
     pub data: Option<Vec<u8>>,

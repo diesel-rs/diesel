@@ -401,14 +401,14 @@ mod tests {
     struct MySum<T> {
         sum: T,
     }
-    impl<T: Default + AddAssign> Aggregator<T> for MySum<T> {
+    impl<T: Default + Copy + AddAssign> Aggregator<T> for MySum<T> {
         type Output = T;
 
         fn step(&mut self, expr: T) {
             self.sum += expr;
         }
 
-        fn finalize(self) -> Self::Output {
+        fn finalize(&self) -> Self::Output {
             self.sum
         }
     }
@@ -454,7 +454,7 @@ mod tests {
             self.max_value = values.iter().cloned().max();
         }
 
-        fn finalize(self) -> Self::Output {
+        fn finalize(&self) -> Self::Output {
             self.max_value.unwrap()
         }
     }
