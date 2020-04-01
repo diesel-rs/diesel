@@ -599,9 +599,10 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// ## Custom Aggregate Functions
-/// Custom aggregate functions can be created in SQLite by adding the `aggregate`
-/// attribute and implementing the
-/// [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html) trait.
+/// Custom aggregate functions can be created in SQLite by adding an `#[aggregate]`
+/// attribute inside of `sql_function`. `register_impl` needs to be called on the generated function with
+/// a type implementing the [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html) trait
+/// as a type parameter as shown in the examples below.
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -616,6 +617,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # fn main() {
 /// # }
 /// use diesel::sql_types::Integer;
+/// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 /// use std::ops::AddAssign;
 ///
@@ -627,6 +629,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// #[derive(Default)]
 /// struct MySum<T> { sum: T }
 ///
+/// # #[cfg(feature = "sqlite")]
 /// impl<T: Default + Copy + AddAssign> SqliteAggregateFunction<T> for MySum<T> {
 ///     type Output = T;
 ///
@@ -634,7 +637,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 ///         self.sum += expr;
 ///     }
 ///
-///     fn finalize(&self) -> Self::Output {
+///     fn finalize(self) -> Self::Output {
 ///         self.sum
 ///     }
 /// }
@@ -664,7 +667,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// With multiple parameters
+/// With multiple function arguments the arguments are passed as a tuple to `SqliteAggregateFunction`
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -678,29 +681,27 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # #[cfg(not(feature = "sqlite"))]
 /// # fn main() {
 /// # }
-/// use diesel::sql_types::Integer;
+/// use diesel::sql_types::Float;
+/// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///
 /// sql_function! {
 ///     #[aggregate]
-///     fn range_max(x0: Integer, x1: Integer, x2: Integer, x3: Integer) -> Integer;
+///     fn range_max(x0: Float, x1: Float) -> Float;
 /// }
 ///
 /// #[derive(Default)]
 /// struct RangeMax<T> { max_value: Option<T> }
 ///
-/// impl<T: Default + Ord + Copy + Clone> SqliteAggregateFunction<(T, T, T, T)> for RangeMax<T> {
+/// # #[cfg(feature = "sqlite")]
+/// impl<T: Default + PartialOrd + Copy + Clone> SqliteAggregateFunction<(T, T)> for RangeMax<T> {
 ///     type Output = T;
 ///
-///     fn step(&mut self, (x0, x1, x2, x3): (T, T, T, T)) {
-/// #        let max = if x0 >= x1 && x0 >= x2 && x0 >= x3 {
+///     fn step(&mut self, (x0, x1): (T, T)) {
+/// #        let max = if x0 >= x1 {
 /// #            x0
-/// #        } else if x1 >= x0 && x1 >= x2 && x1 >= x3 {
-/// #            x1
-/// #        } else if x2 >= x0 && x2 >= x1 && x2 >= x3 {
-/// #            x2
 /// #        } else {
-/// #           x3
+/// #            x1
 /// #        };
 /// #
 /// #        self.max_value = match self.max_value {
@@ -708,38 +709,36 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// #            None => Some(max),
 /// #            _ => self.max_value,
 /// #        };
-///         // Compare self.max_value to x0, x1, x2, x3
+///         // Compare self.max_value to x0 and x1
 ///     }
 ///
-///     fn finalize(&self) -> Self::Output {
+///     fn finalize(self) -> Self::Output {
 ///         self.max_value.unwrap()
 ///     }
 /// }
 /// # table! {
-/// #     company_revenues {
+/// #     student_avgs {
 /// #         id -> Integer,
-/// #         q1_revenue -> Integer,
-/// #         q2_revenue -> Integer,
-/// #         q3_revenue -> Integer,
-/// #         q4_revenue -> Integer,
+/// #         s1_avg -> Float,
+/// #         s2_avg -> Float,
 /// #     }
 /// # }
 ///
 /// # #[cfg(feature = "sqlite")]
 /// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
-/// #    use self::company_revenues::dsl::*;
+/// #    use self::student_avgs::dsl::*;
 ///     let connection = SqliteConnection::establish(":memory:")?;
-/// #    connection.execute("create table company_revenues (id integer primary key autoincrement, q1_revenue integer, q2_revenue integer, q3_revenue integer, q4_revenue)").unwrap();
-/// #    connection.execute("insert into company_revenues (q1_revenue, q2_revenue, q3_revenue, q4_revenue) values (1000, 2000, 3000, 4000), (5000, 2000, 3000, 1000)").unwrap();
+/// #    connection.execute("create table student_avgs (id integer primary key autoincrement, s1_avg float, s2_avg float)").unwrap();
+/// #    connection.execute("insert into student_avgs (s1_avg, s2_avg) values (85.5, 90), (79.8, 80.1)").unwrap();
 ///
-///     range_max::register_impl::<RangeMax<i32>, _, _, _, _>(&connection)?;
+///     range_max::register_impl::<RangeMax<f32>, _, _>(&connection)?;
 ///
-///     let result = company_revenues.select(range_max(q1_revenue, q2_revenue, q3_revenue, q4_revenue))
-///         .get_result::<i32>(&connection)?;
+///     let result = student_avgs.select(range_max(s1_avg, s2_avg))
+///         .get_result::<f32>(&connection)?;
 ///
-///     println!("The largest quarterly revenue is: {}", result);
+///     println!("The largest semester average is: {}", result);
 ///
-/// #    assert_eq!(5000, result);
+/// #    assert_eq!(90f32, result);
 ///     Ok(())
 /// }
 /// ```

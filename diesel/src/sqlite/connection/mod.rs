@@ -407,7 +407,7 @@ mod tests {
             self.sum += expr;
         }
 
-        fn finalize(&self) -> Self::Output {
+        fn finalize(self) -> Self::Output {
             self.sum
         }
     }
@@ -457,7 +457,7 @@ mod tests {
             };
         }
 
-        fn finalize(&self) -> Self::Output {
+        fn finalize(self) -> Self::Output {
             self.max_value.unwrap()
         }
     }

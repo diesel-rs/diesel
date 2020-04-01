@@ -14,10 +14,11 @@ pub use self::backend::{Sqlite, SqliteType};
 pub use self::connection::SqliteConnection;
 pub use self::query_builder::SqliteQueryBuilder;
 
-/// The implementation details for a SQLite aggregate function
+/// Trait for the implementation of a SQLite aggregate function
 ///
 /// This trait is to be used in conjunction with the `sql_function!`
-/// macro for defining a custom SQLite aggregate function.
+/// macro for defining a custom SQLite aggregate function. See
+/// the documentation [there](../../diesel_derives/macro.sql_function_proc.html) for details.
 pub trait SqliteAggregateFunction<Args>: Default {
     /// The result type of the SQLite aggregate function
     type Output;
@@ -26,5 +27,5 @@ pub trait SqliteAggregateFunction<Args>: Default {
     fn step(&mut self, args: Args);
     /// After the last row has been processed, the `finalize()` method is
     /// called to compute the result of the aggregate function
-    fn finalize(&self) -> Self::Output;
+    fn finalize(self) -> Self::Output;
 }

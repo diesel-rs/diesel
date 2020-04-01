@@ -92,8 +92,8 @@ where
     })
 }
 
-pub(crate) struct FunctionRow<'a> {
-    pub(crate) args: &'a [*mut ffi::sqlite3_value],
+struct FunctionRow<'a> {
+    args: &'a [*mut ffi::sqlite3_value],
 }
 
 impl<'a> Row<Sqlite> for FunctionRow<'a> {
