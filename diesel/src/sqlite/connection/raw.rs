@@ -6,8 +6,8 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{mem, ptr, slice, str};
 
-use super::serialized_value::SerializedValue;
 use super::functions::{build_sql_function_args, process_sql_function_result};
+use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::Queryable;
 use crate::result::Error::DatabaseError;
@@ -108,7 +108,7 @@ impl RawConnection {
         num_args: usize,
     ) -> QueryResult<()>
     where
-        A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
+        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
@@ -151,8 +151,8 @@ impl RawConnection {
         } else {
             let error_message = super::error_message(result);
             Err(DatabaseError(
-                    DatabaseErrorKind::__Unknown,
-                    Box::new(error_message.to_string()),
+                DatabaseErrorKind::__Unknown,
+                Box::new(error_message.to_string()),
             ))
         }
     }
@@ -258,15 +258,17 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     ctx: *mut ffi::sqlite3_context,
     num_args: libc::c_int,
     value_ptr: *mut *mut ffi::sqlite3_value,
-)
-where
-    A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
+) where
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     unsafe {
-        let aggregate_context = ffi::sqlite3_aggregate_context(ctx, std::mem::size_of::<OptionalAggregator<A>>() as i32);
+        let aggregate_context = ffi::sqlite3_aggregate_context(
+            ctx,
+            std::mem::size_of::<OptionalAggregator<A>>() as i32,
+        );
         let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
         let aggregator = match aggregate_context.map(|a| &mut *a.as_ptr()) {
             Some(&mut OptionalAggregator::Some(ref mut agg)) => agg,
@@ -275,9 +277,11 @@ where
                 if let &mut OptionalAggregator::Some(ref mut agg) = a_ptr {
                     agg
                 } else {
-                    unreachable!("We've written the aggregator above to that location, it must be there")
+                    unreachable!(
+                        "We've written the aggregator above to that location, it must be there"
+                    )
                 }
-            },
+            }
             None => {
                 null_aggregate_context_error(ctx);
                 return;
@@ -295,17 +299,16 @@ where
             Err(e) => {
                 let msg = e.to_string();
                 ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
-            },
-            _ => ()
+            }
+            _ => (),
         };
     }
 }
 
 extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
     ctx: *mut ffi::sqlite3_context,
-)
-where
-    A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
+) where
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,

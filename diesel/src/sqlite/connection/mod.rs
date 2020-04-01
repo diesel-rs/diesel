@@ -15,6 +15,7 @@ use std::os::raw as libc;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+use super::SqliteAggregateFunction;
 use crate::connection::*;
 use crate::deserialize::{Queryable, QueryableByName};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
@@ -23,7 +24,6 @@ use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
 use crate::sqlite::Sqlite;
-use super::SqliteAggregateFunction;
 
 /// Connections for the SQLite backend. Unlike other backends, "connection URLs"
 /// for SQLite are file paths, [URIs](https://sqlite.org/uri.html), or special
@@ -245,15 +245,12 @@ impl SqliteConnection {
         fn_name: &str,
     ) -> QueryResult<()>
     where
-        A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
+        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        functions::register_aggregate::<_, _, _, _, A>(
-            &self.raw_connection,
-            fn_name
-        )
+        functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
@@ -423,12 +420,20 @@ mod tests {
         use self::my_sum_example::dsl::*;
 
         let connection = SqliteConnection::establish(":memory:").unwrap();
-        connection.execute("CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)").unwrap();
-        connection.execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)").unwrap();
+        connection
+            .execute(
+                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+            )
+            .unwrap();
+        connection
+            .execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
+            .unwrap();
 
         my_sum::register_impl::<MySum<i32>, _>(&connection).unwrap();
 
-        let result = my_sum_example.select(my_sum(value)).get_result::<i32>(&connection);
+        let result = my_sum_example
+            .select(my_sum(value))
+            .get_result::<i32>(&connection);
         assert_eq!(Ok(6), result);
     }
 
@@ -475,16 +480,23 @@ mod tests {
         use self::range_max_example::dsl::*;
 
         let connection = SqliteConnection::establish(":memory:").unwrap();
-        connection.execute(r#"CREATE TABLE range_max_example (
+        connection
+            .execute(
+                r#"CREATE TABLE range_max_example (
                 id integer primary key autoincrement,
                 value1 integer,
                 value2 integer,
                 value3 integer
-            )"#).unwrap();
+            )"#,
+            )
+            .unwrap();
         connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)").unwrap();
 
         range_max::register_impl::<RangeMax<i32>, _, _, _>(&connection).unwrap();
-        let result = range_max_example.select(range_max(value1, value2, value3)).get_result::<i32>(&connection).unwrap();
+        let result = range_max_example
+            .select(range_max(value1, value2, value3))
+            .get_result::<i32>(&connection)
+            .unwrap();
         assert_eq!(3, result);
     }
 }

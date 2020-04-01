@@ -44,7 +44,7 @@ pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     fn_name: &str,
 ) -> QueryResult<()>
 where
-    A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -57,14 +57,19 @@ where
         ));
     }
 
-    conn.register_aggregate_function::<ArgsSqlType, RetSqlType, Args, Ret, A>(fn_name, fields_needed)?;
+    conn.register_aggregate_function::<ArgsSqlType, RetSqlType, Args, Ret, A>(
+        fn_name,
+        fields_needed,
+    )?;
 
     Ok(())
 }
 
-pub(crate) fn build_sql_function_args<ArgsSqlType, Args>(args: &[*mut ffi::sqlite3_value]) -> Result<Args, Error>
+pub(crate) fn build_sql_function_args<ArgsSqlType, Args>(
+    args: &[*mut ffi::sqlite3_value],
+) -> Result<Args, Error>
 where
-    Args: Queryable<ArgsSqlType, Sqlite>
+    Args: Queryable<ArgsSqlType, Sqlite>,
 {
     let mut row = FunctionRow { args };
     let args_row = Args::Row::build_from_row(&mut row).map_err(Error::DeserializationError)?;
@@ -72,7 +77,9 @@ where
     Ok(Args::build(args_row))
 }
 
-pub(crate) fn process_sql_function_result<RetSqlType, Ret>(result: Ret) -> QueryResult<SerializedValue>
+pub(crate) fn process_sql_function_result<RetSqlType, Ret>(
+    result: Ret,
+) -> QueryResult<SerializedValue>
 where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
