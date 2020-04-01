@@ -432,10 +432,7 @@ mod tests {
         assert_eq!(Ok(6), result);
     }
 
-    sql_function! {
-        #[aggregate]
-        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Integer;
-    }
+    sql_function! { #[aggregate] fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Integer; }
 
     #[derive(Default)]
     struct RangeMax<T> {

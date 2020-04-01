@@ -726,15 +726,13 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # }
 ///
 /// # #[cfg(feature = "sqlite")]
-/// fn run() -> Result<(), Box<::std::error::Error>> {
+/// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
 /// #    use self::company_revenues::dsl::*;
 ///     let connection = SqliteConnection::establish(":memory:")?;
-/// #    connection.execute("create table company_revenues (id integer primary key autoincrement," +
-/// #       "q1_revenue integer, q2_revenue integer, q3_revenue integer, q4_revenue)").unwrap();
-/// #    connection.execute("insert into company_revenues (q1_revenue, q2_revenue, q3_revenue, q4_revenue)" +
-/// #       "(1000, 2000, 3000), (5000, 2000, 3000)"
+/// #    connection.execute("create table company_revenues (id integer primary key autoincrement, q1_revenue integer, q2_revenue integer, q3_revenue integer, q4_revenue)").unwrap();
+/// #    connection.execute("insert into company_revenues (q1_revenue, q2_revenue, q3_revenue, q4_revenue) values (1000, 2000, 3000, 4000), (5000, 2000, 3000, 1000)").unwrap();
 ///
-///     my_sum::register_impl::<RangeMax<i32>, _, _, _, _>(&connection)?;
+///     range_max::register_impl::<RangeMax<i32>, _, _, _, _>(&connection)?;
 ///
 ///     let result = company_revenues.select(range_max(q1_revenue, q2_revenue, q3_revenue, q4_revenue))
 ///         .get_result::<i32>(&connection)?;
