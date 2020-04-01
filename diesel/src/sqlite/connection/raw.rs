@@ -1,27 +1,19 @@
 extern crate libsqlite3_sys as ffi;
 
-use std::ffi::{CStr, CString};
+use std::ffi::{CStr, CString, NulError};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{mem, ptr, slice, str};
 
 use super::serialized_value::SerializedValue;
-use super::functions::FunctionRow;
-use super::Sqlite;
-use crate::deserialize::{FromSqlRow, Queryable};
+use super::functions::{build_sql_function_args, process_sql_function_result};
+use super::{Sqlite, SqliteAggregateFunction};
+use crate::deserialize::Queryable;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
-use crate::serialize::{IsNull, Output, ToSql};
+use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
-
-// Sticking this here for now until I find a better place
-pub trait Aggregator<Args>: Default {
-    type Output;
-
-    fn step(&mut self, args: Args);
-    fn finalize(&self) -> Self::Output;
-}
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
@@ -89,11 +81,8 @@ impl RawConnection {
             + Send
             + 'static,
     {
-        let fn_name = CString::new(fn_name)?;
-        let mut flags = ffi::SQLITE_UTF8;
-        if deterministic {
-            flags |= ffi::SQLITE_DETERMINISTIC;
-        }
+        let fn_name = Self::get_fn_name(fn_name)?;
+        let flags = Self::get_flags(deterministic);
         let callback_fn = Box::into_raw(Box::new(f));
 
         let result = unsafe {
@@ -110,35 +99,22 @@ impl RawConnection {
             )
         };
 
-        if result == ffi::SQLITE_OK {
-            Ok(())
-        } else {
-            let error_message = super::error_message(result);
-            Err(DatabaseError(
-                DatabaseErrorKind::__Unknown,
-                Box::new(error_message.to_string()),
-            ))
-        }
+        Self::process_sql_function_result(result)
     }
 
-    // TODO @thekuom: abstract out some common code with register_sql_function
     pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
         &self,
         fn_name: &str,
         num_args: usize,
     ) -> QueryResult<()>
     where
-        A: Aggregator<Args, Output=Ret> + 'static + Send,
+        A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
-        let fn_name = CString::new(fn_name)?;
-        // Aggregate functions are always deterministic
-        let flags = ffi::SQLITE_UTF8 | ffi::SQLITE_DETERMINISTIC;
-
-        // TODO @thekuom: figure out a way to just pass nothing
-        let user_data = Box::into_raw(Box::new(0));
+        let fn_name = Self::get_fn_name(fn_name)?;
+        let flags = Self::get_flags(false);
 
         let result = unsafe {
             ffi::sqlite3_create_function_v2(
@@ -146,14 +122,30 @@ impl RawConnection {
                 fn_name.as_ptr(),
                 num_args as _,
                 flags,
-                user_data as *mut _,
+                ptr::null_mut(),
                 None,
                 Some(run_aggregator_step_function::<_, _, _, _, A>),
                 Some(run_aggregator_final_function::<_, _, _, _, A>),
-                Some(destroy_boxed_type::<i32>),
+                None,
             )
         };
 
+        Self::process_sql_function_result(result)
+    }
+
+    fn get_fn_name(fn_name: &str) -> Result<CString, NulError> {
+        Ok(CString::new(fn_name)?)
+    }
+
+    fn get_flags(deterministic: bool) -> i32 {
+        let mut flags = ffi::SQLITE_UTF8;
+        if deterministic {
+            flags |= ffi::SQLITE_DETERMINISTIC;
+        }
+        flags
+    }
+
+    fn process_sql_function_result(result: i32) -> Result<(), Error> {
         if result == ffi::SQLITE_OK {
             Ok(())
         } else {
@@ -251,7 +243,8 @@ extern "C" fn run_custom_function<F>(
     }
 }
 
-// Need a custom option type here, because the std lib one does not have guarantees about the discriminate values?
+// Need a custom option type here, because the std lib one does not have guarantees about the discriminate values
+// See: https://github.com/rust-lang/rfcs/blob/master/text/2195-really-tagged-unions.md#opaque-tags
 #[repr(u8)]
 enum OptionalAggregator<A> {
     // Discriminant is 0
@@ -267,52 +260,44 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     value_ptr: *mut *mut ffi::sqlite3_value,
 )
 where
-    A: Aggregator<Args, Output=Ret> + 'static + Send,
+    A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    static NULL_AG_CTX_ERR: &str = "An unknown error occurred. sqlite3_aggregate_context returned a null pointer. This should never happen.";
-
     unsafe {
         let aggregate_context = ffi::sqlite3_aggregate_context(ctx, std::mem::size_of::<OptionalAggregator<A>>() as i32);
         let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
-        let aggregator = match aggregate_context {
-            // Check with someone that does more unsafe code reviews if this is ok. We do
-            // only access the tag of an zeroed variant here, right? That tag is guaranteed to be zero for
-            // our case and this variant.
-            Some(ref mut a) => match a.as_mut() {
-                &mut OptionalAggregator::Some(ref mut agg) => agg,
-                &mut OptionalAggregator::None => {
-                    // Not sure if we should use `write_unaligned` instead
-                    ptr::write(a.as_mut(), OptionalAggregator::Some(A::default()));
-                    if let &mut OptionalAggregator::Some(ref mut agg) = a.as_mut() {
-                        agg
-                    } else {
-                        unreachable!("We've written the aggregator above to that location, it must be there")
-                    }
+        let aggregator = match aggregate_context.map(|a| &mut *a.as_ptr()) {
+            Some(&mut OptionalAggregator::Some(ref mut agg)) => agg,
+            Some(mut a_ptr @ &mut OptionalAggregator::None) => {
+                ptr::write_unaligned(a_ptr as *mut _, OptionalAggregator::Some(A::default()));
+                if let &mut OptionalAggregator::Some(ref mut agg) = a_ptr {
+                    agg
+                } else {
+                    unreachable!("We've written the aggregator above to that location, it must be there")
                 }
             },
             None => {
-                ffi::sqlite3_result_error(
-                    ctx,
-                    NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
-                    NULL_AG_CTX_ERR.len() as _,
-                );
+                null_aggregate_context_error(ctx);
                 return;
             }
         };
 
-        let mut f = |args: &[*mut ffi::sqlite3_value]| {
-            let mut row = FunctionRow { args };
-            let args_row = Args::Row::build_from_row(&mut row).map_err(Error::DeserializationError).unwrap(); // TODO @thekuom: error handling
-            let args = Args::build(args_row);
+        let mut f = |args: &[*mut ffi::sqlite3_value]| -> Result<(), Error> {
+            let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
 
-            aggregator.step(args);
+            Ok(aggregator.step(args))
         };
 
         let args = slice::from_raw_parts(value_ptr, num_args as _);
-        f(args);
+        match f(args) {
+            Err(e) => {
+                let msg = e.to_string();
+                ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
+            },
+            _ => ()
+        };
     }
 }
 
@@ -320,61 +305,31 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     ctx: *mut ffi::sqlite3_context,
 )
 where
-    A: Aggregator<Args, Output=Ret> + 'static + Send,
+    A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    static NULL_AG_CTX_ERR: &str = "An unknown error occurred. sqlite3_aggregate_context returned a null pointer. This should never happen.";
-
     unsafe {
         let aggregate_context = ffi::sqlite3_aggregate_context(ctx, 0);
-        let aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
-        // TODO @thekuom: abstract this out
+        let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
         let aggregator = match aggregate_context {
-            // Check with someone that does more unsafe code reviews if this is ok. We do
-            // only access the tag of an zeroed variant here, right? That tag is guaranteed to be zero for
-            // our case and this variant.
-            Some(ref a) => match a.as_ref() {
-                &OptionalAggregator::Some(ref agg) => agg,
-                &OptionalAggregator::None => {
-                    ffi::sqlite3_result_error(
-                        ctx,
-                        NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
-                        NULL_AG_CTX_ERR.len() as _,
-                        );
+            Some(ref mut a) => match std::mem::replace(a.as_mut(), OptionalAggregator::None) {
+                OptionalAggregator::Some(agg) => agg,
+                OptionalAggregator::None => {
+                    null_aggregate_context_error(ctx);
                     return;
                 }
             },
             None => {
-                ffi::sqlite3_result_error(
-                    ctx,
-                    NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
-                    NULL_AG_CTX_ERR.len() as _,
-                    );
+                null_aggregate_context_error(ctx);
                 return;
             }
         };
 
         let result = aggregator.finalize();
 
-        let f = || -> QueryResult<SerializedValue> {
-            let mut buf = Output::new(Vec::new(), &());
-            let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError).unwrap(); // TODO @thekuom: error handling
-
-            let bytes = if let IsNull::Yes = is_null {
-                None
-            } else {
-                Some(buf.into_inner())
-            };
-
-            Ok(SerializedValue {
-                ty: Sqlite::metadata(&()),
-                data: bytes,
-            })
-        };
-
-        match f() {
+        match process_sql_function_result::<RetSqlType, Ret>(result) {
             Ok(value) => value.result_of(ctx),
             Err(e) => {
                 let msg = e.to_string();
@@ -384,17 +339,22 @@ where
     }
 }
 
+unsafe fn null_aggregate_context_error(ctx: *mut ffi::sqlite3_context) {
+    static NULL_AG_CTX_ERR: &str = "An unknown error occurred. sqlite3_aggregate_context returned a null pointer. This should never happen.";
+
+    ffi::sqlite3_result_error(
+        ctx,
+        NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
+        NULL_AG_CTX_ERR.len() as _,
+    );
+}
+
 extern "C" fn destroy_boxed_fn<F>(data: *mut libc::c_void)
 where
     F: FnMut(&RawConnection, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
         + Send
         + 'static,
 {
-    destroy_boxed_type::<F>(data);
-}
-
-extern "C" fn destroy_boxed_type<T>(data: *mut libc::c_void)
-{
-    let ptr = data as *mut T;
+    let ptr = data as *mut F;
     unsafe { Box::from_raw(ptr) };
 }

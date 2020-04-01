@@ -133,7 +133,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 use diesel::sqlite::{Sqlite, SqliteConnection};
                 use diesel::serialize::ToSql;
                 use diesel::deserialize::Queryable;
-                use diesel::sqlite::Aggregator;
+                use diesel::sqlite::SqliteAggregateFunction;
             };
 
             if arg_name.len() > 1 {
@@ -145,7 +145,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                         conn: &SqliteConnection
                     ) -> QueryResult<()>
                         where
-                        A: Aggregator<(#(#arg_name,)*)> + Send + 'static,
+                        A: SqliteAggregateFunction<(#(#arg_name,)*)> + Send + 'static,
                         A::Output: ToSql<#return_type, Sqlite>,
                         (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
                     {
@@ -164,7 +164,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                         conn: &SqliteConnection
                     ) -> QueryResult<()>
                         where
-                        A: Aggregator<#arg_name> + Send + 'static,
+                        A: SqliteAggregateFunction<#arg_name> + Send + 'static,
                         A::Output: ToSql<#return_type, Sqlite>,
                         #arg_name: Queryable<#arg_type, Sqlite>,
                     {

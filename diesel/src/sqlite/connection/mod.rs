@@ -12,7 +12,7 @@ pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
 
-use self::raw::{Aggregator, RawConnection};
+use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use crate::connection::*;
@@ -23,6 +23,7 @@ use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
 use crate::sqlite::Sqlite;
+use super::SqliteAggregateFunction;
 
 /// Connections for the SQLite backend. Unlike other backends, "connection URLs"
 /// for SQLite are file paths, [URIs](https://sqlite.org/uri.html), or special
@@ -30,9 +31,7 @@ use crate::sqlite::Sqlite;
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
-    // TODO @thekuom: remove this `pub` once done
-    /// the raw connection
-    pub raw_connection: RawConnection,
+    raw_connection: RawConnection,
     transaction_manager: AnsiTransactionManager,
 }
 
@@ -246,7 +245,7 @@ impl SqliteConnection {
         fn_name: &str,
     ) -> QueryResult<()>
     where
-        A: Aggregator<Args, Output=Ret> + 'static + Send,
+        A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
@@ -390,7 +389,7 @@ mod tests {
         assert_eq!(Ok((2, 3, 4)), added);
     }
 
-    use crate::sqlite::Aggregator;
+    use crate::sqlite::SqliteAggregateFunction;
     use std::ops::AddAssign;
     sql_function! {
         #[aggregate]
@@ -401,7 +400,7 @@ mod tests {
     struct MySum<T> {
         sum: T,
     }
-    impl<T: Default + Copy + AddAssign> Aggregator<T> for MySum<T> {
+    impl<T: Default + Copy + AddAssign> SqliteAggregateFunction<T> for MySum<T> {
         type Output = T;
 
         fn step(&mut self, expr: T) {
@@ -435,23 +434,30 @@ mod tests {
 
     sql_function! {
         #[aggregate]
-        fn range_max(exprs: (Integer, Integer, Integer)) -> Integer;
+        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Integer;
     }
 
     #[derive(Default)]
-    struct RangeMax<T: Default> {
+    struct RangeMax<T> {
         max_value: Option<T>,
     }
-    impl<T: Default + Ord + Copy + Clone> Aggregator<(T, T, T)> for RangeMax<T> {
+    impl<T: Default + Ord + Copy + Clone> SqliteAggregateFunction<(T, T, T)> for RangeMax<T> {
         type Output = T;
 
         fn step(&mut self, (x0, x1, x2): (T, T, T)) {
-            let mut values = [x0, x1, x2].iter().cloned().collect::<Vec<_>>();
-            if let Some(max_value) = self.max_value {
-                values.push(max_value.clone());
+            let max = if x0 >= x1 && x0 >= x2 {
+                x0
+            } else if x1 >= x0 && x1 >= x2 {
+                x1
+            } else {
+                x2
             };
 
-            self.max_value = values.iter().cloned().max();
+            self.max_value = match self.max_value {
+                Some(current_max_value) if max > current_max_value => Some(max),
+                None => Some(max),
+                _ => self.max_value,
+            };
         }
 
         fn finalize(&self) -> Self::Output {
@@ -478,10 +484,10 @@ mod tests {
                 value2 integer,
                 value3 integer
             )"#).unwrap();
-        connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1)").unwrap();
+        connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)").unwrap();
 
-        range_max::register_impl::<RangeMax<i32>, _>(&connection).unwrap();
-        let result = range_max_example.select(range_max((value1, value2, value3))).get_result::<i32>(&connection).unwrap();
+        range_max::register_impl::<RangeMax<i32>, _, _, _>(&connection).unwrap();
+        let result = range_max_example.select(range_max(value1, value2, value3)).get_result::<i32>(&connection).unwrap();
         assert_eq!(3, result);
     }
 }

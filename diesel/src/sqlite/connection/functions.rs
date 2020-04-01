@@ -1,8 +1,8 @@
 extern crate libsqlite3_sys as ffi;
 
-use super::raw::{Aggregator, RawConnection};
+use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
-use super::{Sqlite, SqliteValue};
+use super::{Sqlite, SqliteAggregateFunction, SqliteValue};
 use crate::deserialize::{FromSqlRow, Queryable};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::Row;
@@ -30,25 +30,11 @@ where
     }
 
     conn.register_sql_function(fn_name, fields_needed, deterministic, move |conn, args| {
-        let mut row = FunctionRow { args };
-        let args_row = Args::Row::build_from_row(&mut row).map_err(Error::DeserializationError)?;
-        let args = Args::build(args_row);
+        let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
 
         let result = f(conn, args);
 
-        let mut buf = Output::new(Vec::new(), &());
-        let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
-
-        let bytes = if let IsNull::Yes = is_null {
-            None
-        } else {
-            Some(buf.into_inner())
-        };
-
-        Ok(SerializedValue {
-            ty: Sqlite::metadata(&()),
-            data: bytes,
-        })
+        process_sql_function_result::<RetSqlType, Ret>(result)
     })?;
     Ok(())
 }
@@ -58,7 +44,7 @@ pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     fn_name: &str,
 ) -> QueryResult<()>
 where
-    A: Aggregator<Args, Output=Ret> + 'static + Send,
+    A: SqliteAggregateFunction<Args, Output=Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -76,6 +62,35 @@ where
     Ok(())
 }
 
+pub(crate) fn build_sql_function_args<ArgsSqlType, Args>(args: &[*mut ffi::sqlite3_value]) -> Result<Args, Error>
+where
+    Args: Queryable<ArgsSqlType, Sqlite>
+{
+    let mut row = FunctionRow { args };
+    let args_row = Args::Row::build_from_row(&mut row).map_err(Error::DeserializationError)?;
+
+    Ok(Args::build(args_row))
+}
+
+pub(crate) fn process_sql_function_result<RetSqlType, Ret>(result: Ret) -> QueryResult<SerializedValue>
+where
+    Ret: ToSql<RetSqlType, Sqlite>,
+    Sqlite: HasSqlType<RetSqlType>,
+{
+    let mut buf = Output::new(Vec::new(), &());
+    let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
+
+    let bytes = if let IsNull::Yes = is_null {
+        None
+    } else {
+        Some(buf.into_inner())
+    };
+
+    Ok(SerializedValue {
+        ty: Sqlite::metadata(&()),
+        data: bytes,
+    })
+}
 
 pub(crate) struct FunctionRow<'a> {
     pub(crate) args: &'a [*mut ffi::sqlite3_value],
