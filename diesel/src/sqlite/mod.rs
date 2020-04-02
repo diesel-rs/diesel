@@ -26,6 +26,8 @@ pub trait SqliteAggregateFunction<Args>: Default {
     /// The `step()` method is called once for every record of the query
     fn step(&mut self, args: Args);
     /// After the last row has been processed, the `finalize()` method is
-    /// called to compute the result of the aggregate function
+    /// called to compute the result of the aggregate function. If no rows
+    /// were processed, `finalize()` is not called and `None` is returned
+    /// instead
     fn finalize(self) -> Self::Output;
 }

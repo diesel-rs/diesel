@@ -390,13 +390,14 @@ mod tests {
     use std::ops::AddAssign;
     sql_function! {
         #[aggregate]
-        fn my_sum(expr: Integer) -> Integer;
+        fn my_sum(expr: Integer) -> Nullable<Integer>;
     }
 
     #[derive(Default)]
     struct MySum<T> {
         sum: T,
     }
+
     impl<T: Default + Copy + AddAssign> SqliteAggregateFunction<T> for MySum<T> {
         type Output = T;
 
@@ -408,6 +409,7 @@ mod tests {
             self.sum
         }
     }
+
     table! {
         my_sum_example {
             id -> Integer,
@@ -433,16 +435,39 @@ mod tests {
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<i32>(&connection);
-        assert_eq!(Ok(6), result);
+            .get_result::<Option<i32>>(&connection);
+        assert_eq!(Ok(Some(6)), result);
     }
 
-    sql_function! { #[aggregate] fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Integer; }
+    #[test]
+    fn register_aggregate_function_returns_none_on_empty_set() {
+        use self::my_sum_example::dsl::*;
+
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .execute(
+                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+            )
+            .unwrap();
+
+        my_sum::register_impl::<MySum<i32>, _>(&connection).unwrap();
+
+        let result = my_sum_example
+            .select(my_sum(value))
+            .get_result::<Option<i32>>(&connection);
+        assert_eq!(Ok(None), result);
+    }
+
+    sql_function! {
+        #[aggregate]
+        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
+    }
 
     #[derive(Default)]
     struct RangeMax<T> {
         max_value: Option<T>,
     }
+
     impl<T: Default + Ord + Copy + Clone> SqliteAggregateFunction<(T, T, T)> for RangeMax<T> {
         type Output = T;
 
@@ -466,6 +491,7 @@ mod tests {
             self.max_value.unwrap()
         }
     }
+
     table! {
         range_max_example {
             id -> Integer,
@@ -495,8 +521,8 @@ mod tests {
         range_max::register_impl::<RangeMax<i32>, _, _, _>(&connection).unwrap();
         let result = range_max_example
             .select(range_max(value1, value2, value3))
-            .get_result::<i32>(&connection)
+            .get_result::<Option<i32>>(&connection)
             .unwrap();
-        assert_eq!(3, result);
+        assert_eq!(Some(3), result);
     }
 }

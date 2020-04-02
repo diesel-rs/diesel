@@ -134,6 +134,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 use diesel::serialize::ToSql;
                 use diesel::deserialize::Queryable;
                 use diesel::sqlite::SqliteAggregateFunction;
+                use diesel::sql_types::IntoNullable;
             };
 
             if arg_name.len() > 1 {
@@ -147,6 +148,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                         where
                         A: SqliteAggregateFunction<(#(#arg_name,)*)> + Send + 'static,
                         A::Output: ToSql<#return_type, Sqlite>,
+                        #return_type: IntoNullable<Nullable = #return_type>,
                         (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
                     {
                         conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
@@ -166,6 +168,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                         where
                         A: SqliteAggregateFunction<#arg_name> + Send + 'static,
                         A::Output: ToSql<#return_type, Sqlite>,
+                        #return_type: IntoNullable<Nullable = #return_type>,
                         #arg_name: Queryable<#arg_type, Sqlite>,
                     {
                         conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)

@@ -616,24 +616,23 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # #[cfg(not(feature = "sqlite"))]
 /// # fn main() {
 /// # }
-/// use diesel::sql_types::Integer;
+/// use diesel::sql_types::{Integer, Nullable};
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
-/// use std::ops::AddAssign;
 ///
 /// sql_function! {
 ///     #[aggregate]
-///     fn my_sum(x: Integer) -> Integer;
+///     fn my_sum(x: Integer) -> Nullable<Integer>;
 /// }
 ///
 /// #[derive(Default)]
 /// struct MySum<T> { sum: T }
 ///
 /// # #[cfg(feature = "sqlite")]
-/// impl<T: Default + Copy + AddAssign> SqliteAggregateFunction<T> for MySum<T> {
-///     type Output = T;
+/// impl SqliteAggregateFunction<i32> for MySum<i32> {
+///     type Output = i32;
 ///
-///     fn step(&mut self, expr: T) {
+///     fn step(&mut self, expr: i32) {
 ///         self.sum += expr;
 ///     }
 ///
@@ -649,7 +648,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # }
 ///
 /// # #[cfg(feature = "sqlite")]
-/// fn run() -> Result<(), Box<::std::error::Error>> {
+/// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
 /// #    use self::players::dsl::*;
 ///     let connection = SqliteConnection::establish(":memory:")?;
 /// #    connection.execute("create table players (id integer primary key autoincrement, score integer)").unwrap();
@@ -658,11 +657,13 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 ///     my_sum::register_impl::<MySum<i32>, _>(&connection)?;
 ///
 ///     let result = players.select(my_sum(score))
-///         .get_result::<i32>(&connection)?;
+///         .get_result::<Option<i32>>(&connection)?;
 ///
-///     println!("The total score of all the players is: {}", result);
+///     if let Some(total_score) = result {
+///         println!("The total score of all the players is: {}", total_score);
+///     }
 ///
-/// #    assert_eq!(60, result);
+/// #    assert_eq!(Some(60), result);
 ///     Ok(())
 /// }
 /// ```
@@ -681,13 +682,13 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # #[cfg(not(feature = "sqlite"))]
 /// # fn main() {
 /// # }
-/// use diesel::sql_types::Float;
+/// use diesel::sql_types::{Float, Nullable};
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///
 /// sql_function! {
 ///     #[aggregate]
-///     fn range_max(x0: Float, x1: Float) -> Float;
+///     fn range_max(x0: Float, x1: Float) -> Nullable<Float>;
 /// }
 ///
 /// #[derive(Default)]
@@ -734,12 +735,30 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 ///     range_max::register_impl::<RangeMax<f32>, _, _>(&connection)?;
 ///
 ///     let result = student_avgs.select(range_max(s1_avg, s2_avg))
-///         .get_result::<f32>(&connection)?;
+///         .get_result::<Option<f32>>(&connection)?;
 ///
-///     println!("The largest semester average is: {}", result);
+///     if let Some(max_semeseter_avg) = result {
+///         println!("The largest semester average is: {}", max_semeseter_avg);
+///     }
 ///
-/// #    assert_eq!(90f32, result);
+/// #    assert_eq!(Some(90f32), result);
 ///     Ok(())
+/// }
+/// ```
+///
+/// Custom aggregate functions must return a `Nullable`.
+///
+/// ```compile_fail
+/// # extern crate diesel;
+/// # use diesel::*;
+/// # use diesel::sql_types::Integer;
+/// #
+/// # fn main() {
+/// # }
+/// #
+/// sql_function! {
+///     #[aggregate]
+///     fn my_sum(x: Integer) -> Integer;
 /// }
 /// ```
 #[proc_macro]

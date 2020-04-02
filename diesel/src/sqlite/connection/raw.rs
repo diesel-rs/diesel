@@ -248,7 +248,6 @@ extern "C" fn run_custom_function<F>(
 #[repr(u8)]
 enum OptionalAggregator<A> {
     // Discriminant is 0
-    #[allow(dead_code)]
     None,
     Some(A),
 }
@@ -314,20 +313,17 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     Sqlite: HasSqlType<RetSqlType>,
 {
     unsafe {
+        // Within the xFinal callback, it is customary to set nBytes to 0 so no pointless memory
+        // allocations occur
+        // See: https://www.sqlite.org/c3ref/aggregate_context.html
         let aggregate_context = ffi::sqlite3_aggregate_context(ctx, 0);
         let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
         let aggregator = match aggregate_context {
             Some(ref mut a) => match std::mem::replace(a.as_mut(), OptionalAggregator::None) {
                 OptionalAggregator::Some(agg) => agg,
-                OptionalAggregator::None => {
-                    null_aggregate_context_error(ctx);
-                    return;
-                }
+                OptionalAggregator::None => unreachable!("We've written to the aggregator in the xStep callback. If xStep was never called, then ffi::sqlite_aggregate_context() would have returned a NULL pointer")
             },
-            None => {
-                null_aggregate_context_error(ctx);
-                return;
-            }
+            None => return,
         };
 
         let result = aggregator.finalize();
