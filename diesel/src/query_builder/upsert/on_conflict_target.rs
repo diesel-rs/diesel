@@ -55,6 +55,21 @@ where
 
 impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> {}
 
+impl<DB, T> QueryFragment<DB> for ConflictTarget<(T,)>
+where
+    DB: Backend + SupportsOnConflictClause,
+    T: Column,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.push_sql(" (");
+        out.push_identifier(T::NAME)?;
+        out.push_sql(")");
+        Ok(())
+    }
+}
+
+impl<T> OnConflictTarget<T::Table> for ConflictTarget<(T,)> where T: Column {}
+
 macro_rules! on_conflict_tuples {
     ($(
         $Tuple:tt {
