@@ -761,6 +761,9 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 ///     #[aggregate]
 ///     fn my_sum(x: Integer) -> Integer;
 /// }
+///
+/// # #[cfg(not(feature = "sqlite"))]
+/// # let x: i32 = "foo";
 /// ```
 #[proc_macro]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
