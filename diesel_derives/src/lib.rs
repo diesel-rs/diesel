@@ -759,11 +759,11 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// sql_function! {
 ///     #[aggregate]
-///     fn my_sum(x: Integer) -> Integer;
+///     fn wont_work(x: Integer) -> Integer;
 /// }
 ///
 /// # #[cfg(not(feature = "sqlite"))]
-/// # let x: i32 = "foo";
+/// # compile_error!("Don't care if not sqlite");
 /// ```
 #[proc_macro]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
