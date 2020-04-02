@@ -7,11 +7,6 @@
 pub mod expression;
 pub mod types;
 
-#[doc(hidden)]
-#[cfg(feature = "with-deprecated")]
-#[deprecated(since = "2.0.0", note = "Use `diesel::upsert` instead")]
-pub use crate::upsert;
-
 mod backend;
 mod connection;
 mod metadata_lookup;
@@ -27,6 +22,10 @@ pub use self::query_builder::DistinctOnClause;
 pub use self::query_builder::PgQueryBuilder;
 pub use self::transaction::TransactionBuilder;
 pub use self::value::PgValue;
+#[doc(hidden)]
+#[cfg(feature = "with-deprecated")]
+#[deprecated(since = "2.0.0", note = "Use `diesel::upsert` instead")]
+pub use crate::upsert;
 
 /// Data structures for PG types which have no corresponding Rust type
 ///
