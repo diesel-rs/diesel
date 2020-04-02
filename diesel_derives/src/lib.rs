@@ -756,6 +756,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// # fn main() {
 /// # }
 /// #
+/// # #[cfg(feature = "sqlite")]
 /// sql_function! {
 ///     #[aggregate]
 ///     fn my_sum(x: Integer) -> Integer;
