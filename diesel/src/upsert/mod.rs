@@ -10,7 +10,8 @@
 //!
 //! Constructing an upsert statement from an existing select statement
 //! requires a where clause on sqlite due to a ambiguity in their
-//! parser.
+//! parser. See [the corresponding documentation](https://www.sqlite.org/lang_UPSERT.html)
+//! for details.
 use crate::query_builder::upsert::on_conflict_actions::Excluded;
 
 mod on_conflict_extension;
