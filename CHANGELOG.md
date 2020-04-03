@@ -26,7 +26,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The `MacAddr` SQL type can now be used without enabling the `network-address`
   feature.
-  
+
 * Added support for SQLite's `UPSERT`.
   You can use this feature above SQLite version 3.24.0.
 
