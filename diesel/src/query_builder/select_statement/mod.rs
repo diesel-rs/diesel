@@ -28,7 +28,7 @@ use super::{AstPass, Query, QueryFragment};
 use crate::backend::Backend;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
-use crate::query_builder::SelectQuery;
+use crate::query_builder::{QueryId, SelectQuery};
 use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
 use crate::result::QueryResult;

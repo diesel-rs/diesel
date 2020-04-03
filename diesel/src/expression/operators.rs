@@ -67,7 +67,7 @@ macro_rules! __diesel_operator_body {
             Copy,
             $crate::query_builder::QueryId,
             $crate::sql_types::DieselNumericOps,
-            ValidGrouping
+            $crate::expression::ValidGrouping
         )]
         #[doc(hidden)]
         pub struct $name<$($ty_param,)+> {
@@ -386,9 +386,11 @@ postfix_operator!(Desc, " DESC", ());
 
 prefix_operator!(Not, "NOT ");
 
+use crate::expression::ValidGrouping;
 use crate::insertable::{ColumnInsertValue, Insertable};
-use crate::query_builder::ValuesClause;
+use crate::query_builder::{QueryId, ValuesClause};
 use crate::query_source::Column;
+use crate::sql_types::DieselNumericOps;
 
 impl<T, U> Insertable<T::Table> for Eq<T, U>
 where

@@ -20,6 +20,8 @@ mod ord;
 pub use self::fold::Foldable;
 pub use self::ord::SqlOrd;
 
+use crate::query_builder::QueryId;
+
 /// The boolean SQL type.
 ///
 /// On backends without a native boolean type,

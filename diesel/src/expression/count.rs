@@ -3,7 +3,7 @@ use super::{is_aggregate, Expression, ValidGrouping};
 use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::BigInt;
+use crate::sql_types::{BigInt, DieselNumericOps};
 
 sql_function! {
     /// Creates a SQL `COUNT` expression

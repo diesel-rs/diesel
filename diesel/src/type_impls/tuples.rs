@@ -4,7 +4,7 @@ use crate::associations::BelongsTo;
 use crate::backend::Backend;
 use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByName};
 use crate::expression::{
-    AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression,
+    AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression, ValidGrouping,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use crate::query_builder::*;

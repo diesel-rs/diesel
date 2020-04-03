@@ -9,6 +9,7 @@ use std::io::Write;
 
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlTypeMetadata, MysqlValue};
+use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::ops::*;
 use crate::sql_types::*;

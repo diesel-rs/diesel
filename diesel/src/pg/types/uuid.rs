@@ -1,6 +1,8 @@
 use std::io::prelude::*;
 
+use crate::deserialize::FromSqlRow;
 use crate::deserialize::{self, FromSql};
+use crate::expression::AsExpression;
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::Uuid;

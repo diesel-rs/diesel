@@ -3,9 +3,11 @@ use std::io::Write;
 use std::num::NonZeroU32;
 
 use crate::deserialize::{self, FromSql, FromSqlRow, Queryable};
-use crate::expression::{AppearsOnTable, AsExpression, Expression, SelectableExpression};
+use crate::expression::{
+    AppearsOnTable, AsExpression, Expression, SelectableExpression, ValidGrouping,
+};
 use crate::pg::{Pg, PgValue};
-use crate::query_builder::{AstPass, QueryFragment};
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::result::QueryResult;
 use crate::row::Row;
 use crate::serialize::{self, IsNull, Output, ToSql, WriteTuple};

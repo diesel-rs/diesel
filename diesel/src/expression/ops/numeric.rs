@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::expression::Expression;
+use crate::expression::{Expression, ValidGrouping};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types;

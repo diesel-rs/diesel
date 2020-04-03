@@ -1,5 +1,5 @@
 use crate::expression::subselect::Subselect;
-use crate::expression::{AsExpression, Expression};
+use crate::expression::{AsExpression, Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;

@@ -24,6 +24,9 @@ mod uuid;
 ///
 /// Note: All types in this module can be accessed through `diesel::sql_types`
 pub mod sql_types {
+    use crate::query_builder::QueryId;
+    use crate::sql_types::SqlType;
+
     /// The `OID` SQL type. This is a PostgreSQL specific type.
     ///
     /// ### [`ToSql`] impls

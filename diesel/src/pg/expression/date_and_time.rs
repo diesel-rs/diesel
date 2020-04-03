@@ -1,4 +1,4 @@
-use crate::expression::Expression;
+use crate::expression::{Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
