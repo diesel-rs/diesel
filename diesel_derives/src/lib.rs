@@ -450,9 +450,9 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// where
 ///     Lhs: ValidGrouping<GroupByClause>,
 ///     Rhs: ValidGrouping<GroupByClause>,
-///     Lhs::IsAggregate: MixedAggregates<Rhs::GroupByClause>,
+///     Lhs::IsAggregate: MixedAggregates<Rhs::IsAggregate>,
 /// {
-///     type IsAggregate = <Lhs::IsAggregate as MixedAggregates<Rhs::GroupByClause>>::Output;
+///     type IsAggregate = <Lhs::IsAggregate as MixedAggregates<Rhs::IsAggregate>>::Output;
 /// }
 /// ```
 ///
