@@ -29,6 +29,7 @@ mod select_clause;
 mod select_statement;
 mod sql_query;
 mod update_statement;
+pub(crate) mod upsert;
 mod where_clause;
 
 pub use self::ast_pass::AstPass;

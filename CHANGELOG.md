@@ -27,6 +27,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `MacAddr` SQL type can now be used without enabling the `network-address`
   feature.
 
+* Added support for SQLite's `UPSERT`.
+  You can use this feature above SQLite version 3.24.0.
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -86,6 +89,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   are now available without the `diesel_` prefix. With Rust 2018 they can be
   invoked as `diesel::infix_operator!` instead.
 
+* `diesel::pg::upsert` has been deprecated to support upsert queries on more than one backend.
+  Please use `diesel::upsert` instead.
 
 
 [2-0-migration]: FIXME write a migration guide

@@ -160,6 +160,7 @@ pub mod query_source;
 pub mod r2d2;
 pub mod result;
 pub mod serialize;
+pub mod upsert;
 #[macro_use]
 pub mod sql_types;
 pub mod migration;

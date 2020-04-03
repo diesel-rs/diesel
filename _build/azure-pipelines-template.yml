@@ -16,6 +16,9 @@ jobs:
         rustup_toolchain: nightly
   steps:
   - ${{ parameters.setup }}
+  - template: install-sqlite3.yml
+    parameters:
+      name: ${{parameters.name}}
   - template: install-rust.yml
     parameters:
       platform: ${{parameters.name}}

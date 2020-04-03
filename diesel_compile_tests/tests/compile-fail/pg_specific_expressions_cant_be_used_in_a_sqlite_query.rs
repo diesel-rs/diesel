@@ -3,6 +3,7 @@
 use diesel::*;
 use diesel::sql_types::*;
 use diesel::dsl::*;
+use diesel::upsert::on_constraint;
 
 table! {
     users {
@@ -32,7 +33,7 @@ fn main() {
         .load::<i32>(&connection);
     //~^ ERROR type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
     insert_into(users).values(&NewUser("Sean"))
-        .on_conflict_do_nothing()
+        .on_conflict(on_constraint("name"))
         .execute(&connection);
-    //~^ ERROR type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+    //~^ ERROR no method named `execute` found
 }

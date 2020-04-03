@@ -207,17 +207,19 @@ fn insert_or_replace_with_select() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
-    sql_query("CREATE UNIQUE INDEX ON posts (title)")
+
+    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
         .execute(&conn)
         .unwrap();
     let query = users
         .select((id, name.concat(" says hi")))
+        .filter(id.ge(0)) // Sqlite needs a where claues
         .insert_into(posts)
         .into_columns((user_id, title))
         .on_conflict_do_nothing();
@@ -233,17 +235,19 @@ fn on_conflict_do_nothing_with_select() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_update_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
     let conn = connection_with_sean_and_tess_in_users_table();
-    sql_query("CREATE UNIQUE INDEX ON posts (title)")
+
+    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
         .execute(&conn)
         .unwrap();
     let query = users
         .select((id, name.concat(" says hi")))
+        .filter(id.ge(0)) // exists because sqlite needs a where clause
         .insert_into(posts)
         .into_columns((user_id, title))
         .on_conflict(title)
@@ -258,6 +262,54 @@ fn on_conflict_do_update_with_select() {
         .unwrap();
 
     query.execute(&conn).unwrap();
+
+    let data = posts.select((title, body)).load(&conn).unwrap();
+    let expected = vec![
+        (String::from("Sean says hi"), Some(String::from("updated"))),
+        (String::from("Tess says hi"), Some(String::from("updated"))),
+        (String::from("Ruby says hi"), None),
+    ];
+    assert_eq!(expected, data);
+}
+
+#[test]
+#[cfg(all(feature = "postgres", feature = "sqlite"))]
+fn on_conflict_do_update_with_boxed_select() {
+    use schema::posts::dsl::*;
+    use schema::users::dsl::{id, name, users};
+
+    let conn = connection_with_sean_and_tess_in_users_table();
+
+    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
+        .execute(&conn)
+        .unwrap();
+
+    users
+        .select((id, name.concat(" says hi")))
+        .into_boxed()
+        .insert_into(posts)
+        .into_columns((user_id, title))
+        .on_conflict(title)
+        .do_update()
+        .set(body.eq("updated"))
+        .execute(&conn)
+        .unwrap();
+
+    insert_into(users)
+        .values(name.eq("Ruby"))
+        .execute(&conn)
+        .unwrap();
+
+    users
+        .select((id, name.concat(" says hi")))
+        .into_boxed()
+        .insert_into(posts)
+        .into_columns((user_id, title))
+        .on_conflict(title)
+        .do_update()
+        .set(body.eq("updated"))
+        .execute(&conn)
+        .unwrap();
 
     let data = posts.select((title, body)).load(&conn).unwrap();
     let expected = vec![
