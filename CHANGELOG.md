@@ -27,6 +27,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `MacAddr` SQL type can now be used without enabling the `network-address`
   feature.
 
+* Added ability to create custom aggregate functions in SQLite.
+
 ### Removed
 
 * All previously deprecated items have been removed.
