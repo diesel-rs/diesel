@@ -192,7 +192,7 @@ where
     Ok(table_names
         .into_iter()
         .map(|name| TableName {
-            rust_name: inference::rust_name_for_sql_name(&name).to_string(),
+            rust_name: inference::rust_name_for_sql_name(&name),
             sql_name: name,
             schema: schema_name
                 .filter(|&schema| schema != default_schema)

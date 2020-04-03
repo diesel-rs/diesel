@@ -5,7 +5,6 @@ use diesel::result::Error::NotFound;
 use super::data_structures::*;
 use super::table_data::*;
 use crate::database::InferConnection;
-use std::borrow::Cow;
 
 static RESERVED_NAMES: &[&str] = &[
     "abstract", "alignof", "as", "become", "box", "break", "const", "continue", "crate", "do",
@@ -29,9 +28,9 @@ fn contains_unmappable_chars(name: &str) -> bool {
     !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
-pub fn rust_name_for_sql_name(sql_name: &str) -> Cow<str> {
+pub fn rust_name_for_sql_name(sql_name: &str) -> String {
     if is_reserved_name(sql_name) {
-        Cow::Owned(format!("{}_", sql_name))
+        format!("{}_", sql_name)
     } else if contains_unmappable_chars(sql_name) {
         // Map each non-alphanumeric character ([^a-zA-Z0-9]) to an underscore.
         let mut rust_name: String = sql_name
@@ -50,9 +49,9 @@ pub fn rust_name_for_sql_name(sql_name: &str) -> Cow<str> {
             last_len = rust_name.len();
         }
 
-        Cow::Owned(rust_name)
+        rust_name
     } else {
-        Cow::Borrowed(sql_name)
+        sql_name.to_string()
     }
 }
 
@@ -182,14 +181,14 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
     let primary_key = get_primary_keys(&connection, &name)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| rust_name_for_sql_name(&k).into())
+        .map(|k| rust_name_for_sql_name(&k))
         .collect();
 
     let column_data = get_column_information(&connection, &name)?
         .into_iter()
         .map(|c| {
             let ty = determine_column_type(&c, &connection)?;
-            let rust_name = rust_name_for_sql_name(&c.column_name).to_string();
+            let rust_name = rust_name_for_sql_name(&c.column_name);
 
             Ok(ColumnDefinition {
                 docs: doc_comment!(

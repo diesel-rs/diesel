@@ -18,7 +18,7 @@ impl TableName {
         let name = name.into();
 
         TableName {
-            rust_name: inference::rust_name_for_sql_name(&name).to_string(),
+            rust_name: inference::rust_name_for_sql_name(&name),
             sql_name: name,
             schema: None,
         }
@@ -32,7 +32,7 @@ impl TableName {
         let name = name.into();
 
         TableName {
-            rust_name: inference::rust_name_for_sql_name(&name).to_string(),
+            rust_name: inference::rust_name_for_sql_name(&name),
             sql_name: name,
             schema: Some(schema.into()),
         }
@@ -67,11 +67,9 @@ where
 
 impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let name = &self.rust_name;
-
         match self.schema {
-            Some(ref schema_name) => write!(out, "{}.{}", schema_name, name),
-            None => write!(out, "{}", name),
+            Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.rust_name),
+            None => write!(out, "{}", self.rust_name),
         }
     }
 }
