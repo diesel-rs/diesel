@@ -9,8 +9,8 @@ use super::inference;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TableName {
     pub sql_name: String,
+    pub rust_name: String,
     pub schema: Option<String>,
-    pub rust_name: Option<String>,
 }
 
 impl TableName {
@@ -18,7 +18,7 @@ impl TableName {
         let name = name.into();
 
         TableName {
-            rust_name: inference::rust_name_for_sql_name(&name),
+            rust_name: inference::rust_name_for_sql_name(&name).to_string(),
             sql_name: name,
             schema: None,
         }
@@ -32,7 +32,7 @@ impl TableName {
         let name = name.into();
 
         TableName {
-            rust_name: inference::rust_name_for_sql_name(&name),
+            rust_name: inference::rust_name_for_sql_name(&name).to_string(),
             sql_name: name,
             schema: Some(schema.into()),
         }
@@ -67,7 +67,7 @@ where
 
 impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let name = self.rust_name.as_ref().unwrap_or(&self.sql_name);
+        let name = &self.rust_name;
 
         match self.schema {
             Some(ref schema_name) => write!(out, "{}.{}", schema_name, name),

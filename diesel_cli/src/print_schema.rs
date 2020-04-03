@@ -163,10 +163,10 @@ impl<'a> Display for TableDefinitions<'a> {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
                 for table in &self.tables {
-                    if let Some(ref rust_name) = &table.name.rust_name {
-                        writeln!(out, "{},", rust_name)?;
-                    } else {
+                    if table.name.rust_name == table.name.sql_name {
                         writeln!(out, "{},", table.name.sql_name)?;
+                    } else {
+                        writeln!(out, "{},", table.name.rust_name)?;
                     }
                 }
             }
@@ -203,7 +203,7 @@ impl<'a> Display for TableDefinition<'a> {
                 }
             }
 
-            if self.table.name.rust_name.is_some() {
+            if self.table.name.rust_name != self.table.name.sql_name {
                 writeln!(
                     out,
                     r#"#[sql_name = "{}"]"#,
@@ -250,11 +250,11 @@ impl<'a> Display for ColumnDefinitions<'a> {
                         writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
                     }
                 }
-                if let Some(ref rust_name) = column.rust_name {
-                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
-                    writeln!(out, "{} -> {},", rust_name, column.ty)?;
-                } else {
+                if column.rust_name == column.sql_name {
                     writeln!(out, "{} -> {},", column.sql_name, column.ty)?;
+                } else {
+                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
+                    writeln!(out, "{} -> {},", column.rust_name, column.ty)?;
                 }
             }
         }
@@ -267,19 +267,9 @@ struct Joinable<'a>(&'a ForeignKeyConstraint);
 
 impl<'a> Display for Joinable<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let child_table_name = self
-            .0
-            .child_table
-            .rust_name
-            .as_ref()
-            .unwrap_or(&self.0.child_table.sql_name);
+        let child_table_name = &self.0.child_table.rust_name;
 
-        let parent_table_name = self
-            .0
-            .parent_table
-            .rust_name
-            .as_ref()
-            .unwrap_or(&self.0.parent_table.sql_name);
+        let parent_table_name = &self.0.parent_table.rust_name;
 
         write!(
             f,
