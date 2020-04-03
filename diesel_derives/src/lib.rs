@@ -626,10 +626,10 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// #[derive(Default)]
-/// struct MySum<T> { sum: T }
+/// struct MySum { sum: i32 }
 ///
 /// # #[cfg(feature = "sqlite")]
-/// impl SqliteAggregateFunction<i32> for MySum<i32> {
+/// impl SqliteAggregateFunction<i32> for MySum {
 ///     type Output = i32;
 ///
 ///     fn step(&mut self, expr: i32) {
@@ -654,7 +654,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// #    connection.execute("create table players (id integer primary key autoincrement, score integer)").unwrap();
 /// #    connection.execute("insert into players (score) values (10), (20), (30)").unwrap();
 ///
-///     my_sum::register_impl::<MySum<i32>, _>(&connection)?;
+///     my_sum::register_impl::<MySum, _>(&connection)?;
 ///
 ///     let result = players.select(my_sum(score))
 ///         .get_result::<Option<i32>>(&connection)?;
@@ -746,7 +746,8 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 ///
-/// Custom aggregate functions must return a `Nullable`.
+/// Custom aggregate functions must return a `Nullable` to handle cases where an empty set is
+/// passed to the aggregating function.
 ///
 /// ```compile_fail
 /// # extern crate diesel;

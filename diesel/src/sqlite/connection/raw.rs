@@ -323,7 +323,15 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
                 OptionalAggregator::Some(agg) => agg,
                 OptionalAggregator::None => unreachable!("We've written to the aggregator in the xStep callback. If xStep was never called, then ffi::sqlite_aggregate_context() would have returned a NULL pointer")
             },
-            None => return,
+            None => {
+                // explicitly set a null value as return value here, just to make it obvious what's returned in this case
+                SerializedValue {
+                    ty: Sqlite::metadata(&()),
+                    data: None,
+                }.result_of(ctx);
+
+                return;
+            }
         };
 
         let result = aggregator.finalize();
