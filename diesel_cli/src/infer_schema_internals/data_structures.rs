@@ -53,9 +53,9 @@ impl fmt::Display for ColumnType {
 #[derive(Debug)]
 pub struct ColumnDefinition {
     pub sql_name: String,
+    pub rust_name: String,
     pub ty: ColumnType,
     pub docs: String,
-    pub rust_name: Option<String>,
 }
 
 impl ColumnInformation {

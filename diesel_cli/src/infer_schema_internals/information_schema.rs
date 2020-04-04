@@ -12,6 +12,7 @@ use diesel::query_builder::{QueryFragment, QueryId};
 use diesel::*;
 
 use super::data_structures::*;
+use super::inference;
 use super::table_data::TableName;
 
 pub trait UsesInformationSchema: Backend {
@@ -134,7 +135,7 @@ where
     let type_column = Conn::Backend::type_column();
     columns
         .select((column_name, type_column, is_nullable))
-        .filter(table_name.eq(&table.name))
+        .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
         .load(conn)
@@ -161,7 +162,7 @@ where
     key_column_usage
         .select(column_name)
         .filter(constraint_name.eq_any(pk_query))
-        .filter(table_name.eq(&table.name))
+        .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
         .load(conn)
@@ -191,7 +192,8 @@ where
     Ok(table_names
         .into_iter()
         .map(|name| TableName {
-            name,
+            rust_name: inference::rust_name_for_sql_name(&name),
+            sql_name: name,
             schema: schema_name
                 .filter(|&schema| schema != default_schema)
                 .map(|schema| schema.to_owned()),
