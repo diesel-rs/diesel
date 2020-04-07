@@ -457,13 +457,14 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// For types which are always considered aggregate (such as an aggregate
-/// function), annotate your struct with `#[aggregate]`.
+/// function), annotate your struct with `#[diesel(aggregate)]` to set `IsAggregate`
+/// explicitly to `is_aggregate::Yes`.
 ///
 /// # Attributes
 ///
 /// ## Optional type attributes
 ///
-/// * `#[aggregate]` for cases where the type represents an aggregating
+/// * `#[diesel(aggregate)]` for cases where the type represents an aggregating
 ///   SQL expression
 #[proc_macro_derive(ValidGrouping, attributes(diesel))]
 pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {

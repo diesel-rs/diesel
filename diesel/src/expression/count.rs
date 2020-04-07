@@ -1,5 +1,5 @@
 use super::functions::sql_function;
-use super::{is_aggregate, Expression, ValidGrouping};
+use super::{Expression, ValidGrouping};
 use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;
@@ -54,16 +54,13 @@ pub fn count_star() -> CountStar {
     CountStar
 }
 
-#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps)]
+#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
+#[diesel(aggregate)]
 #[doc(hidden)]
 pub struct CountStar;
 
 impl Expression for CountStar {
     type SqlType = BigInt;
-}
-
-impl<GB> ValidGrouping<GB> for CountStar {
-    type IsAggregate = is_aggregate::Yes;
 }
 
 impl<DB: Backend> QueryFragment<DB> for CountStar {
