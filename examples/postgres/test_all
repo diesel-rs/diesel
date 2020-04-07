@@ -10,7 +10,7 @@ for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
   cd $dir
 
   if [ -d "migrations" ]; then
-    BACKEND=postgres ../../../bin/diesel database reset
+    ../../../bin/diesel database reset
   fi
 
   cargo test

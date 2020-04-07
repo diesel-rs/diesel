@@ -8,7 +8,7 @@ set +a
 
 for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
   cd $dir
-  BACKEND=mysql ../../../bin/diesel database reset
+  ../../../bin/diesel database reset
   cargo build
   cd ..
 done
