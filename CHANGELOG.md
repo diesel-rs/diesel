@@ -8,8 +8,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
-* `NonAggregate` can now be derived for simple cases.
-
 * `Connection` and `SimpleConnection` traits are implemented for a broader range
   of `r2d2::PooledConnection<M>` types when the `r2d2` feature is enabled.
 
@@ -42,9 +40,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * All previously deprecated items have been removed.
 * Support for uuid version < 0.7.0 has been removed.
-* `#[derive(NonAggregate)]` has been deprecated in favor of
-  `#[derive(ValidGrouping)]`. The `NonAggregate` trait is now a trait alias, and
-  cannot be directly implemented. Both derives generate identical code.
 
 ### Changed
 
@@ -134,7 +129,6 @@ Key points:
   - MySQL users can use `ANY_VALUE`, PG users can use `DISTINCT ON`. Also
     consider using max/min/etc to get deterministic values.
 - Any `impl NonAggregate` must be replaced with `impl ValidGrouping`
-- If you were deriving before you can still derive.
 - For most code, `T: NonAggregate` should continue to work. Unless you're
   getting a compiler error, you most likely don't need to change it.
 - The full equivalent of what `T: NonAggregate` used to mean is:
