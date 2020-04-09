@@ -181,7 +181,7 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: ../../../serialize/trait.ToSql.html
     /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [Uuid]: https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html
+    /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2950", array_oid = "2951")]
     pub struct Uuid;
