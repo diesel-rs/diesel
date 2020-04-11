@@ -3,14 +3,14 @@
 // Clippy lints
 #![allow(clippy::option_map_unwrap_or_else, clippy::option_map_unwrap_or)]
 #![warn(
-    clippy::wrong_pub_self_convention,
+    clippy::if_not_else,
+    clippy::items_after_statements,
     clippy::mut_mut,
     clippy::non_ascii_literal,
     clippy::similar_names,
     clippy::unicode_not_nfc,
-    clippy::if_not_else,
-    clippy::items_after_statements,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    clippy::wrong_pub_self_convention
 )]
 #![cfg_attr(test, allow(clippy::result_unwrap_used))]
 
