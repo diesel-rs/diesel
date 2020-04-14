@@ -255,7 +255,7 @@ where
 /// in the `GROUP BY` portion of the query. If there is no `GROUP BY`, it will
 /// be `()`.
 ///
-/// This trait could be [derived]
+/// This trait can be [derived]
 ///
 /// [derived]: derive.ValidGrouping.html
 /// [`MixedAggregates`]: trait.MixedAggregates.html

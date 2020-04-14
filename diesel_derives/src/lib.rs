@@ -438,14 +438,22 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 /// Implements `ValidGrouping`
 ///
 /// This trait can be automatically derived for structs with no type parameters
-/// which are not aggregate, as well as for structs which are `NonAggregate`
+/// which are never aggregate, as well as for structs which are `NonAggregate`
 /// when all type parameters are `NonAggregate`. For example:
 ///
 /// ```ignore
 /// #[derive(ValidGrouping)]
+/// struct LiteralOne;
+///
+/// #[derive(ValidGrouping)]
 /// struct Plus<Lhs, Rhs>(Lhs, Rhs);
 ///
 /// // The following impl will be generated:
+///
+/// impl<GroupByClause> ValidGrouping<GroupByClause> for LiteralOne {
+///     type IsAggregate = is_aggregate::Never;
+/// }
+///
 /// impl<Lhs, Rhs, GroupByClause> ValidGrouping<GroupByClause> for Plus<Lhs, Rhs>
 /// where
 ///     Lhs: ValidGrouping<GroupByClause>,
