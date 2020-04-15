@@ -32,6 +32,9 @@ impl RawConnection {
             }
             _ => {
                 let message = last_error_message(connection_ptr);
+				
+                unsafe { PQfinish(connection_ptr) }
+				
                 Err(ConnectionError::BadConnection(message))
             }
         }
