@@ -51,7 +51,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `Mysql::TypeMetadata`, you will need to take the new struct
   `MysqlTypeMetadata` instead.
 
-* The minimal officially supported rustc version is now 1.37.0
+* The minimal officially supported rustc version is now 1.40.0
 
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
   from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type

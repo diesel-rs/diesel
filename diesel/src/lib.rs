@@ -103,11 +103,12 @@
 )]
 // Clippy lints
 #![allow(
+    clippy::match_same_arms,
+    clippy::needless_doctest_main,
     clippy::option_map_unwrap_or_else,
     clippy::option_map_unwrap_or,
-    clippy::match_same_arms,
-    clippy::type_complexity,
-    clippy::redundant_field_names
+    clippy::redundant_field_names,
+    clippy::type_complexity
 )]
 #![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
 #![warn(
