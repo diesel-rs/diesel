@@ -4,7 +4,7 @@ error: Expected `bar` found `bar = "baz"`
 12 | #[primary_key(id, bar = "baz", qux(id))]
    |                   ^^^^^^^^^^^
 
-error: Expected `qux` found `qux (id)`
+error: Expected `qux` found `qux(id)`
   --> $DIR/as_changeset_bad_primary_key_syntax.rs:12:32
    |
 12 | #[primary_key(id, bar = "baz", qux(id))]
