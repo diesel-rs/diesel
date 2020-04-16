@@ -259,7 +259,12 @@ impl<'a> TransactionBuilder<'a> {
     /// Runs the given function inside of the transaction
     /// with the parameters given to this builder.
     ///
-    /// Returns an error if the connection is already inside a transaction.
+    /// Returns an error if the connection is already inside a transaction,
+    /// or if the transaction fails to commit or rollback
+    ///
+    /// If the transaction fails to commit due to a `SerializationFailure` or a
+    /// `ReadOnlyTransaction` rollback will be attempted. If it succeeds,
+    /// original error will be returned. If it fails, rollback error will be returned.
     pub fn run<T, E, F>(&self, f: F) -> Result<T, E>
     where
         F: FnOnce() -> Result<T, E>,

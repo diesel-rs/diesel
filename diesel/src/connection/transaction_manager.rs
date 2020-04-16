@@ -1,6 +1,6 @@
 use crate::backend::UsesAnsiSavepointSyntax;
 use crate::connection::{Connection, SimpleConnection};
-use crate::result::QueryResult;
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
 /// Manages the internal transaction state for a connection.
 ///
@@ -110,9 +110,12 @@ where
         )
     }
 
+    /// If the transaction fails to commit due to a `SerializationFailure` or a
+    /// `ReadOnlyTransaction` rollback will be attempted. If it succeeds,
+    /// original error will be returned. If it fails, rollback error will be returned.
     fn commit_transaction(&self, conn: &Conn) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(
+        let commit_result = self.change_transaction_depth(
             -1,
             if transaction_depth <= 1 {
                 conn.batch_execute("COMMIT")
@@ -122,7 +125,17 @@ where
                     transaction_depth - 1
                 ))
             },
-        )
+        );
+        if let Err(ref err) = commit_result {
+            match err {
+                Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
+                | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _) => {
+                    self.rollback_transaction(conn)?;
+                }
+                _ => {}
+            }
+        }
+        commit_result
     }
 
     fn get_transaction_depth(&self) -> u32 {

@@ -45,6 +45,10 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// If there is already an open transaction,
     /// savepoints will be used instead.
     ///
+    /// If the transaction fails to commit due to a `SerializationFailure` or a
+    /// `ReadOnlyTransaction` rollback will be attempted. If it succeeds,
+    /// original error will be returned. If it fails, rollback error will be returned.
+    ///
     /// # Example
     ///
     /// ```rust
