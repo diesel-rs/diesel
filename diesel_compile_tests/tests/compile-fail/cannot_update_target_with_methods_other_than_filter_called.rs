@@ -15,12 +15,8 @@ fn main() {
 
     let command = update(users.select(id)).set(id.eq(1));
     //~^ ERROR E0277
-    //~| NOTE
-    //~| NOTE IntoUpdateTarget
-    //~| NOTE
+    //~| ERROR E0277
     let command = update(users.order(id)).set(id.eq(1));
     //~^ ERROR E0277
-    //~| NOTE
-    //~| NOTE IntoUpdateTarget
-    //~| NOTE
+    //~| ERROR E0277
 }
