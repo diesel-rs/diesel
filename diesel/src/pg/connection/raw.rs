@@ -32,14 +32,14 @@ impl RawConnection {
             }
             _ => {
                 let message = last_error_message(connection_ptr);
-				
+
                 if !connection_ptr.is_null() {
-                     // Note that even if the server connection attempt fails (as indicated by PQstatus), 
-                     // the application should call PQfinish to free the memory used by the PGconn object.
-                     // https://www.postgresql.org/docs/current/libpq-connect.html
-                     unsafe { PQfinish(connection_ptr) }
+                    // Note that even if the server connection attempt fails (as indicated by PQstatus),
+                    // the application should call PQfinish to free the memory used by the PGconn object.
+                    // https://www.postgresql.org/docs/current/libpq-connect.html
+                    unsafe { PQfinish(connection_ptr) }
                 }
-				
+
                 Err(ConnectionError::BadConnection(message))
             }
         }
