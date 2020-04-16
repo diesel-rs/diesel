@@ -53,4 +53,5 @@ impl TypeMetadata for Sqlite {
     type MetadataLookup = ();
 }
 
+impl SupportsOnConflictClause for Sqlite {}
 impl UsesAnsiSavepointSyntax for Sqlite {}

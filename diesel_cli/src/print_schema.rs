@@ -163,7 +163,11 @@ impl<'a> Display for TableDefinitions<'a> {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
                 for table in &self.tables {
-                    writeln!(out, "{},", table.name.name)?;
+                    if table.name.rust_name == table.name.sql_name {
+                        writeln!(out, "{},", table.name.sql_name)?;
+                    } else {
+                        writeln!(out, "{},", table.name.rust_name)?;
+                    }
                 }
             }
             writeln!(f, ");")?;
@@ -199,7 +203,16 @@ impl<'a> Display for TableDefinition<'a> {
                 }
             }
 
+            if self.table.name.rust_name != self.table.name.sql_name {
+                writeln!(
+                    out,
+                    r#"#[sql_name = "{}"]"#,
+                    self.table.name.full_sql_name()
+                )?;
+            }
+
             write!(out, "{} (", self.table.name)?;
+
             for (i, pk) in self.table.primary_key.iter().enumerate() {
                 if i != 0 {
                     write!(out, ", ")?;
@@ -237,11 +250,11 @@ impl<'a> Display for ColumnDefinitions<'a> {
                         writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
                     }
                 }
-                if let Some(ref rust_name) = column.rust_name {
-                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
-                    writeln!(out, "{} -> {},", rust_name, column.ty)?;
-                } else {
+                if column.rust_name == column.sql_name {
                     writeln!(out, "{} -> {},", column.sql_name, column.ty)?;
+                } else {
+                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
+                    writeln!(out, "{} -> {},", column.rust_name, column.ty)?;
                 }
             }
         }
@@ -254,10 +267,14 @@ struct Joinable<'a>(&'a ForeignKeyConstraint);
 
 impl<'a> Display for Joinable<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let child_table_name = &self.0.child_table.rust_name;
+
+        let parent_table_name = &self.0.parent_table.rust_name;
+
         write!(
             f,
             "joinable!({} -> {} ({}));",
-            self.0.child_table.name, self.0.parent_table.name, self.0.foreign_key_rust_name,
+            child_table_name, parent_table_name, self.0.foreign_key_rust_name,
         )
     }
 }

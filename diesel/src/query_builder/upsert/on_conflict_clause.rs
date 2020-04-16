@@ -1,7 +1,7 @@
 use super::on_conflict_actions::*;
 use super::on_conflict_target::*;
+use crate::backend::{Backend, SupportsOnConflictClause};
 use crate::insertable::*;
-use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 
@@ -29,22 +29,25 @@ impl<Values, Target, Action> OnConflictValues<Values, Target, Action> {
     }
 }
 
-impl<Values, Target, Action> CanInsertInSingleQuery<Pg> for OnConflictValues<Values, Target, Action>
+impl<DB, Values, Target, Action> CanInsertInSingleQuery<DB>
+    for OnConflictValues<Values, Target, Action>
 where
-    Values: CanInsertInSingleQuery<Pg>,
+    DB: Backend + SupportsOnConflictClause,
+    Values: CanInsertInSingleQuery<DB>,
 {
     fn rows_to_insert(&self) -> Option<usize> {
         self.values.rows_to_insert()
     }
 }
 
-impl<Values, Target, Action> QueryFragment<Pg> for OnConflictValues<Values, Target, Action>
+impl<DB, Values, Target, Action> QueryFragment<DB> for OnConflictValues<Values, Target, Action>
 where
-    Values: QueryFragment<Pg>,
-    Target: QueryFragment<Pg>,
-    Action: QueryFragment<Pg>,
+    DB: Backend + SupportsOnConflictClause,
+    Values: QueryFragment<DB>,
+    Target: QueryFragment<DB>,
+    Action: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         self.values.walk_ast(out.reborrow())?;
         out.push_sql(" ON CONFLICT");
         self.target.walk_ast(out.reborrow())?;

@@ -3,6 +3,7 @@
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
 #![allow(
+    clippy::needless_doctest_main,
     clippy::needless_pass_by_value,
     clippy::option_map_unwrap_or_else,
     clippy::option_map_unwrap_or

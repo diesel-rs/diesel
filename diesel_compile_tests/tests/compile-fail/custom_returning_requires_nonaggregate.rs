@@ -26,5 +26,5 @@ fn main() {
         name: "Foobar".to_string(),
     };
     let stmt = insert_into(users).values(&new_user).returning((name, count(name)));
-    //~^ ERROR NonAggregate
+    //~^ ERROR E0277
 }

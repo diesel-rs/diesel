@@ -103,11 +103,12 @@
 )]
 // Clippy lints
 #![allow(
+    clippy::match_same_arms,
+    clippy::needless_doctest_main,
     clippy::option_map_unwrap_or_else,
     clippy::option_map_unwrap_or,
-    clippy::match_same_arms,
-    clippy::type_complexity,
-    clippy::redundant_field_names
+    clippy::redundant_field_names,
+    clippy::type_complexity
 )]
 #![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
 #![warn(
@@ -160,6 +161,7 @@ pub mod query_source;
 pub mod r2d2;
 pub mod result;
 pub mod serialize;
+pub mod upsert;
 #[macro_use]
 pub mod sql_types;
 pub mod migration;

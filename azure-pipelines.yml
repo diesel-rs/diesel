@@ -12,10 +12,8 @@ jobs:
       BACKEND: sqlite
       SQLITE_DATABASE_URL: /tmp/test.db
     setup:
-      - bash: |
-          brew update &&
-          brew install sqlite
-        displayName: Install sqlite
+      - script: |
+          echo "Skip this step"
 
 - template: _build/azure-pipelines-template.yml
   parameters:
@@ -27,7 +25,7 @@ jobs:
       PG_DATABASE_URL: postgres://postgres@localhost/
       PG_EXAMPLE_DATABASE_URL: postgres://postgres@localhost/diesel_example
     setup:
-      - bash: |
+      - script: |
           brew update
           brew uninstall --ignore-dependencies libpq
           brew install postgres
@@ -50,7 +48,7 @@ jobs:
       RUST_TEST_THREADS: 1
       MYSQLCLIENT_LIB_DIR: /usr/local/Cellar/mysql/8.0.19/lib
     setup:
-      - bash: |
+      - script: |
           brew update &&
           brew install mysql &&
           brew services start mysql &&
@@ -68,10 +66,8 @@ jobs:
       BACKEND: sqlite
       SQLITE_DATABASE_URL: /tmp/test.db
     setup:
-      - bash: |
-          sudo apt-get update &&
-          sudo apt-get -y install sqlite3 libsqlite3-dev
-        displayName: Install sqlite
+      - script: |
+          echo "Skip this step"
 
 - template: _build/azure-pipelines-template.yml
   parameters:
@@ -83,7 +79,7 @@ jobs:
       PG_DATABASE_URL: postgres://postgres:postgres@localhost/
       PG_EXAMPLE_DATABASE_URL: postgres://postgres:postgres@localhost/diesel_example
     setup:
-      - bash: |
+      - script: |
           sudo apt-get update &&
           sudo apt-get -y install postgresql libpq-dev &&
           echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/9.5/main/pg_hba.conf &&
@@ -104,7 +100,7 @@ jobs:
       MYSQL_UNIT_TEST_DATABASE_URL: mysql://root:root@localhost/diesel_unit_test
       RUST_TEST_THREADS: 1
     setup:
-      - bash: |
+      - script: |
           sudo systemctl start mysql.service &&
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
         displayName: Install mysql
@@ -120,16 +116,7 @@ jobs:
       SQLITE3_LIB_DIR: C:\sqlite
     setup:
       - script: |
-          choco install 7zip
-          mkdir C:\sqlite
-          CD /D C:\sqlite
-          curl -fsS --retry 3 --retry-connrefused -o sqlite3.zip https://sqlite.org/2017/sqlite-dll-win64-x64-3160200.zip
-          7z e sqlite3.zip -y
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
-          set PATH=%PATH%;C:\sqlite
-          echo "##vso[task.setvariable variable=PATH;]%PATH%;C:\sqlite"
-        displayName: Install sqlite
+          echo "Skip this step"
 
 - template: _build/azure-pipelines-template.yml
   parameters:
@@ -180,7 +167,7 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: nightly-2019-08-01
+        rust_version: nightly-2020-04-01
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
@@ -199,7 +186,7 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.36.0
+        rust_version: 1.40.0
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
@@ -240,14 +227,17 @@ jobs:
   pool:
     vmImage: ubuntu-16.04
   steps:
+    - template: _build/install-sqlite3.yml
+      parameters:
+          name: Linux_sqlite
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: 1.36.0
+        rust_version: 1.40.0
     - bash: |
         sudo apt-get update &&
-        sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+        sudo apt-get install libpq-dev libmysqlclient-dev
       displayName: Install build dependencies
     - bash: |
         cargo check --all
-      displayName: Check building with rust 1.36.0
+      displayName: Check building with rust 1.40.0
