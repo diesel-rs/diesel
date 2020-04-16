@@ -93,7 +93,7 @@ Thank you! We'll try to respond as quickly as possible.
      ! echo 'CREATE DATABASE diesel_test; CREATE DATABASE diesel_unit_test;' | docker exec -i diesel.mysql mysql
    do sleep 1; done
 
-   docker run -d --name diesel.postgres -p 5432:5432 postgres
+   docker run -d --name diesel.postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres
    while
      sleep 1;
      ! echo 'CREATE DATABASE diesel_test;' | docker exec -i diesel.postgres psql -U postgres
