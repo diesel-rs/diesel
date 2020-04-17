@@ -16,10 +16,8 @@ use super::inference;
 use super::table_data::TableName;
 
 pub trait UsesInformationSchema: Backend {
-    type TypeColumn: SelectableExpression<
-            self::information_schema::columns::table,
-            SqlType = sql_types::Text,
-        > + ValidGrouping<(), IsAggregate = is_aggregate::No>
+    type TypeColumn: SelectableExpression<self::information_schema::columns::table, SqlType = sql_types::Text>
+        + ValidGrouping<(), IsAggregate = is_aggregate::No>
         + QueryId
         + QueryFragment<Self>;
 
