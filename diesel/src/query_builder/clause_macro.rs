@@ -6,6 +6,7 @@ macro_rules! simple_clause {
     ($no_clause:ident, $clause:ident, $sql:expr, backend_bounds = $($backend_bounds:ident),*) => {
         use crate::backend::Backend;
         use crate::result::QueryResult;
+        use crate::query_builder::QueryId;
         use super::{QueryFragment, AstPass};
 
         #[derive(Debug, Clone, Copy, QueryId)]

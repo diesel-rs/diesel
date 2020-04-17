@@ -1,4 +1,4 @@
-use crate::expression::Expression;
+use crate::expression::{Expression, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
@@ -11,7 +11,7 @@ impl DateTimeLike for Timestamp {}
 impl DateTimeLike for Timestamptz {}
 impl<T: NotNull + DateTimeLike> DateTimeLike for Nullable<T> {}
 
-#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct AtTimeZone<Ts, Tz> {
     timestamp: Ts,
     timezone: Tz,

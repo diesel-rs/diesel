@@ -24,6 +24,8 @@ const PGSQL_AF_INET6: u8 = AF_INET + 1;
 #[allow(dead_code)]
 mod foreign_derives {
     use super::*;
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]

@@ -85,7 +85,13 @@ macro_rules! __diesel_column {
         {
         }
 
-        impl $crate::expression::NonAggregate for $column_name {}
+        impl $crate::expression::ValidGrouping<()> for $column_name {
+            type IsAggregate = $crate::expression::is_aggregate::No;
+        }
+
+        impl $crate::expression::ValidGrouping<$column_name> for $column_name {
+            type IsAggregate = $crate::expression::is_aggregate::Yes;
+        }
 
         impl $crate::query_source::Column for $column_name {
             type Table = $table;
@@ -799,12 +805,19 @@ macro_rules! __diesel_table_impl {
                 $($imports)*
 
                 #[allow(non_camel_case_types, dead_code)]
-                #[derive(Debug, Clone, Copy)]
+                #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]
                 /// Represents `table_name.*`, which is sometimes needed for
                 /// efficient count queries. It cannot be used in place of
                 /// `all_columns`, and has a `SqlType` of `()` to prevent it
                 /// being used that way
                 pub struct star;
+
+                impl<__GB> $crate::expression::ValidGrouping<__GB> for star
+                where
+                    ($($column_name,)+): $crate::expression::ValidGrouping<__GB>,
+                {
+                    type IsAggregate = <($($column_name,)+) as $crate::expression::ValidGrouping<__GB>>::IsAggregate;
+                }
 
                 impl Expression for star {
                     type SqlType = ();

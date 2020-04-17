@@ -9,6 +9,8 @@ use crate::sql_types::MacAddr;
 #[allow(dead_code)]
 mod foreign_derives {
     use super::*;
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]

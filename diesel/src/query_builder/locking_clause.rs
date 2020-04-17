@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::query_builder::{AstPass, QueryFragment};
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
