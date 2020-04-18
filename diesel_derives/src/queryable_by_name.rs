@@ -8,12 +8,20 @@ use util::*;
 pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
     let model = Model::from_item(&item)?;
 
+    let table_name = model.table_name();
     let struct_name = &item.ident;
     let field_expr = model
         .fields()
         .iter()
         .map(|f| field_expr(f, &model))
         .collect::<Result<Vec<_>, _>>()?;
+    let field_columns_names = model
+        .fields()
+        .iter()
+        .map(|f| f.column_name())
+        .collect::<Vec<_>>();
+    let field_columns_ty = field_columns_names.iter().map(|field_name| parse_quote!(#table_name::#field_name)).collect::<Vec<syn::Type>>();
+    let field_columns_inst = field_columns_names.iter().map(|field_name| parse_quote!(#table_name::#field_name)).collect::<Vec<syn::Expr>>();
 
     let (_, ty_generics, ..) = item.generics.split_for_impl();
     let mut generics = item.generics.clone();
@@ -36,10 +44,11 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         }
     }
 
+    let (ty_impl_generics, _, ty_where_caluse) = item.generics.split_for_impl();
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::{self, QueryableByName};
+        use diesel::deserialize::{self, QueryableByName, TableQueryable};
         use diesel::row::NamedRow;
 
         impl #impl_generics QueryableByName<__DB>
@@ -50,6 +59,16 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 std::result::Result::Ok(Self {
                     #(#field_expr,)*
                 })
+            }
+        }
+
+        impl #ty_impl_generics TableQueryable
+            for #struct_name #ty_generics
+        #ty_where_caluse
+        {
+            type Columns = (#(#field_columns_ty,)*);
+            fn columns() -> Self::Columns {
+                (#(#field_columns_inst,)*)
             }
         }
     }))
