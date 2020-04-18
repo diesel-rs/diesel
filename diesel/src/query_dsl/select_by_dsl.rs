@@ -1,7 +1,7 @@
 use super::select_dsl::SelectDsl;
 use crate::deserialize::TableQueryable;
-use crate::query_source::Table;
 use crate::query_builder::SelectByStatement;
+use crate::query_source::Table;
 
 /// The `select_by` method
 ///

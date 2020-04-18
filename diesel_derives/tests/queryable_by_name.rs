@@ -32,7 +32,9 @@ fn named_struct_definition() {
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
     assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
-    let data = my_structs::table.select_by::<MyStruct>().get_result::<MyStruct>(&conn);
+    let data = my_structs::table
+        .select_by::<MyStruct>()
+        .get_result::<MyStruct>(&conn);
     assert!(data.is_err());
 }
 
@@ -48,7 +50,9 @@ fn tuple_struct() {
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
     assert_eq!(Ok(MyStruct(1, 2)), data);
-    let data = my_structs::table.select_by::<MyStruct>().get_result::<MyStruct>(&conn);
+    let data = my_structs::table
+        .select_by::<MyStruct>()
+        .get_result::<MyStruct>(&conn);
     assert!(data.is_err());
 }
 

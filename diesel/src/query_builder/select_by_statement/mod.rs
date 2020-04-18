@@ -24,7 +24,7 @@ pub struct SelectByStatement<Selection, Statement> {
 
 impl<S, STMT> QueryId for SelectByStatement<S, STMT>
 where
-    STMT: QueryId
+    STMT: QueryId,
 {
     type QueryId = SelectByStatement<(), STMT::QueryId>;
     const HAS_STATIC_QUERY_ID: bool = STMT::HAS_STATIC_QUERY_ID;
