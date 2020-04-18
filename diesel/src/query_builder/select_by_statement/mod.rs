@@ -1,7 +1,7 @@
 use super::{AstPass, QueryFragment};
-use crate::deserialize::{QueryableByName, TableQueryable};
 use crate::backend::Backend;
 use crate::connection::Connection;
+use crate::deserialize::{QueryableByName, TableQueryable};
 // use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::{QueryId, SelectQuery};
@@ -25,7 +25,8 @@ pub struct SelectByStatement<Selection, Statement> {
 impl<S, ST> SelectByStatement<S, ST> {
     pub(crate) fn new(inner: ST) -> Self {
         SelectByStatement {
-            inner, select: Default::default()
+            inner,
+            select: Default::default(),
         }
     }
 }
@@ -45,7 +46,7 @@ impl<ST, S, STMT> SelectQuery for SelectByStatement<S, STMT>
 where
     S: TableQueryable,
     S::Columns: Expression<SqlType = ST>,
-    STMT: SelectQuery<SqlType=ST>,
+    STMT: SelectQuery<SqlType = ST>,
 {
     // TODO: check SelectByClause
     type SqlType = ST;

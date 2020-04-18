@@ -5,7 +5,7 @@ use crate::associations::HasTable;
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::insert_statement::InsertFromSelect;
-use crate::query_builder::{Query, SelectQuery, SelectByStatement};
+use crate::query_builder::{Query, SelectByStatement, SelectQuery};
 // use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
@@ -14,8 +14,7 @@ use crate::query_source::joins::JoinTo;
 // use crate::query_source::QuerySource;
 use crate::sql_types::Bool;
 
-impl<S, STMT, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
-    for SelectByStatement<S, STMT>
+impl<S, STMT, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStatement<S, STMT>
 where
     STMT: InternalJoinDsl<Rhs, Kind, On>,
 {
@@ -26,8 +25,7 @@ where
     }
 }
 
-impl<S, STMT, Selection> SelectDsl<Selection>
-    for SelectByStatement<S, STMT>
+impl<S, STMT, Selection> SelectDsl<Selection> for SelectByStatement<S, STMT>
 where
     Selection: Expression,
     STMT: SelectDsl<Selection>,
@@ -52,8 +50,7 @@ where
     }
 }
 
-impl<S, STMT, Predicate> FilterDsl<Predicate>
-    for SelectByStatement<S, STMT>
+impl<S, STMT, Predicate> FilterDsl<Predicate> for SelectByStatement<S, STMT>
 where
     Predicate: Expression<SqlType = Bool> + NonAggregate,
     STMT: FilterDsl<Predicate>,
@@ -65,8 +62,7 @@ where
     }
 }
 
-impl<S, STMT, Predicate> OrFilterDsl<Predicate>
-    for SelectByStatement<S, STMT>
+impl<S, STMT, Predicate> OrFilterDsl<Predicate> for SelectByStatement<S, STMT>
 where
     Predicate: Expression<SqlType = Bool> + NonAggregate,
     STMT: OrFilterDsl<Predicate>,
@@ -171,8 +167,7 @@ where
     }
 }
 
-impl<ST, S, STMT, Modifier> ModifyLockDsl<Modifier>
-    for SelectByStatement<S, STMT>
+impl<ST, S, STMT, Modifier> ModifyLockDsl<Modifier> for SelectByStatement<S, STMT>
 where
     Self: SelectQuery,
     STMT: ModifyLockDsl<Modifier>,
@@ -287,13 +282,9 @@ where
 
 impl<S, STMT> QueryDsl for SelectByStatement<S, STMT> {}
 
-impl<S, STMT, Conn> RunQueryDsl<Conn>
-    for SelectByStatement<S, STMT>
-{
-}
+impl<S, STMT, Conn> RunQueryDsl<Conn> for SelectByStatement<S, STMT> {}
 
-impl<S, STMT, Tab> Insertable<Tab>
-    for SelectByStatement<S, STMT>
+impl<S, STMT, Tab> Insertable<Tab> for SelectByStatement<S, STMT>
 where
     Tab: Table,
     Self: Query,
@@ -305,8 +296,7 @@ where
     }
 }
 
-impl<'a, S, STMT, Tab> Insertable<Tab>
-    for &'a SelectByStatement<S, STMT>
+impl<'a, S, STMT, Tab> Insertable<Tab> for &'a SelectByStatement<S, STMT>
 where
     Tab: Table,
     Self: Query,

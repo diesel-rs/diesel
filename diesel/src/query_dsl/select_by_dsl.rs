@@ -1,6 +1,6 @@
+use super::select_dsl::SelectDsl;
 use crate::deserialize::TableQueryable;
 use crate::query_source::Table;
-use super::select_dsl::SelectDsl;
 
 /// The `select_by` method
 ///

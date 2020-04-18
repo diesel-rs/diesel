@@ -20,8 +20,14 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         .iter()
         .map(|f| f.column_name())
         .collect::<Vec<_>>();
-    let field_columns_ty = field_columns_names.iter().map(|field_name| parse_quote!(#table_name::#field_name)).collect::<Vec<syn::Type>>();
-    let field_columns_inst = field_columns_names.iter().map(|field_name| parse_quote!(#table_name::#field_name)).collect::<Vec<syn::Expr>>();
+    let field_columns_ty = field_columns_names
+        .iter()
+        .map(|field_name| parse_quote!(#table_name::#field_name))
+        .collect::<Vec<syn::Type>>();
+    let field_columns_inst = field_columns_names
+        .iter()
+        .map(|field_name| parse_quote!(#table_name::#field_name))
+        .collect::<Vec<syn::Expr>>();
 
     let (_, ty_generics, ..) = item.generics.split_for_impl();
     let mut generics = item.generics.clone();

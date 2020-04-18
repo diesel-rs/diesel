@@ -4,8 +4,8 @@ use std::error::Error;
 use std::result;
 
 use crate::backend::{self, Backend};
-use crate::row::{NamedRow, Row};
 use crate::expression::Expression;
+use crate::row::{NamedRow, Row};
 
 /// A specialized result type representing the result of deserializing
 /// a value from the database.
