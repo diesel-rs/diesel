@@ -1,7 +1,6 @@
 // use super::BoxedSelectByStatement;
 use crate::associations::HasTable;
 // use crate::backend::Backend;
-use crate::dsl::AsExprOf;
 // use crate::expression::nullable::Nullable;
 use crate::expression::*;
 use crate::insertable::Insertable;
@@ -13,7 +12,7 @@ use crate::query_dsl::*;
 // use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::joins::JoinTo;
 // use crate::query_source::QuerySource;
-use crate::sql_types::{BigInt, Bool};
+use crate::sql_types::Bool;
 
 impl<S, STMT, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectByStatement<S, STMT>
@@ -120,9 +119,6 @@ where
     }
 }
 
-#[doc(hidden)]
-pub type Limit = AsExprOf<i64, BigInt>;
-
 impl<ST, S, STMT> LimitDsl for SelectByStatement<S, STMT>
 where
     Self: SelectQuery<SqlType = ST>,
@@ -135,9 +131,6 @@ where
         SelectByStatement::new(self.inner.limit(limit))
     }
 }
-
-#[doc(hidden)]
-pub type Offset = Limit;
 
 impl<ST, S, STMT> OffsetDsl for SelectByStatement<S, STMT>
 where

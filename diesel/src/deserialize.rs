@@ -396,10 +396,6 @@ pub trait TableQueryable {
     fn columns() -> Self::Columns;
 }
 
-pub trait TableQueryableStmt {
-    type Columns;
-}
-
 /// Deserialize a single field of a given SQL type.
 ///
 /// When possible, implementations of this trait should prefer to use an

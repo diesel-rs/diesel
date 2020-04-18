@@ -1,9 +1,11 @@
 use super::{AstPass, QueryFragment};
-use crate::deserialize::{TableQueryable, TableQueryableStmt};
+use crate::deserialize::{QueryableByName, TableQueryable};
 use crate::backend::Backend;
+use crate::connection::Connection;
 // use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::{QueryId, SelectQuery};
+use crate::query_dsl::LoadQuery;
 // use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
 use crate::result::QueryResult;
@@ -76,9 +78,13 @@ where
 
 // not implement AppendSelection
 
-impl<S, STMT> TableQueryableStmt for SelectByStatement<S, STMT>
+impl<Conn, S, ST> LoadQuery<Conn, S> for SelectByStatement<S, ST>
 where
-    S: TableQueryable,
+    Conn: Connection,
+    S: QueryableByName<Conn::Backend> + TableQueryable,
+    Self: QueryFragment<Conn::Backend> + SelectQuery + QueryId,
 {
-    type Columns = S::Columns;
+    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<S>> {
+        conn.query_by_name(&self)
+    }
 }
