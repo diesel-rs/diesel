@@ -219,6 +219,9 @@ pub mod helper_types {
     /// Represents the return type of `.select(selection)`
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
 
+    /// Represents the return type of `.select(selection)`
+    pub type SelectBy<Source, Selection> = <Source as SelectByDsl<Selection>>::Output;
+
     /// Represents the return type of `.filter(predicate)`
     pub type Filter<Source, Predicate> = <Source as FilterDsl<Predicate>>::Output;
 

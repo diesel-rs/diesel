@@ -2,6 +2,7 @@ use super::BoxedSelectStatement;
 use crate::associations::HasTable;
 use crate::backend::Backend;
 use crate::dsl::AsExprOf;
+use crate::deserialize::TableQueryable;
 use crate::expression::nullable::Nullable;
 use crate::expression::*;
 use crate::insertable::Insertable;
@@ -13,6 +14,7 @@ use crate::query_builder::locking_clause::*;
 use crate::query_builder::offset_clause::*;
 use crate::query_builder::order_clause::*;
 use crate::query_builder::select_clause::*;
+use crate::query_builder::select_by_statement::SelectByStatement;
 use crate::query_builder::update_statement::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectStatement};
@@ -66,6 +68,31 @@ where
             self.group_by,
             self.locking,
         )
+    }
+}
+
+impl<F, S, D, W, O, L, Of, LC, Selection> SelectByDsl<Selection>
+    for SelectStatement<F, S, D, W, O, L, Of, NoGroupByClause, LC>
+where
+    Selection: TableQueryable,
+    SelectStatement<F, SelectClause<Selection::Columns>, D, W, O, L, Of, NoGroupByClause, LC>: SelectQuery,
+{
+    // SELECTBY_TODO: SelectByClause
+    type Output = SelectByStatement<Selection, SelectStatement<F, SelectClause<Selection::Columns>, D, W, O, L, Of, NoGroupByClause, LC>>;
+
+    fn select_by(self) -> Self::Output {
+        let inner = SelectStatement::new(
+            SelectClause(Selection::columns()),
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit,
+            self.offset,
+            self.group_by,
+            self.locking,
+        );
+        SelectByStatement::new(inner)
     }
 }
 

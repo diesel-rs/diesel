@@ -23,8 +23,7 @@ pub struct SelectByStatement<Selection, Statement> {
 }
 
 impl<S, ST> SelectByStatement<S, ST> {
-    #[allow(clippy::too_many_arguments)]
-    pub fn new(inner: ST) -> Self {
+    pub(crate) fn new(inner: ST) -> Self {
         SelectByStatement {
             inner, select: Default::default()
         }
@@ -42,12 +41,14 @@ where
     }
 }
 
-impl<S, STMT> SelectQuery for SelectByStatement<S, STMT>
+impl<ST, S, STMT> SelectQuery for SelectByStatement<S, STMT>
 where
     S: TableQueryable,
-    STMT: SelectQuery,
+    S::Columns: Expression<SqlType = ST>,
+    STMT: SelectQuery<SqlType=ST>,
 {
-    type SqlType = STMT::SqlType;
+    // TODO: check SelectByClause
+    type SqlType = ST;
 }
 
 /// Allow `SelectStatement<S, Statement>` to act as if it were `Statement`.
