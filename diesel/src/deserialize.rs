@@ -4,8 +4,10 @@ use std::error::Error;
 use std::result;
 
 use crate::backend::{self, Backend};
+use crate::expression::select_by::SelectBy;
 use crate::row::{NamedRow, Row};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
+use crate::Selectable;
 
 /// A specialized result type representing the result of deserializing
 /// a value from the database.
@@ -385,10 +387,16 @@ pub trait FromStaticSqlRow<ST, DB: Backend>: Sized {
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self>;
 }
 
+#[doc(hidden)]
+pub trait SqlTypeOrSelectable {}
+
+impl<ST> SqlTypeOrSelectable for ST where ST: SqlType + SingleValue {}
+impl<U> SqlTypeOrSelectable for SelectBy<U> where U: Selectable {}
+
 impl<T, ST, DB> FromSqlRow<ST, DB> for T
 where
     T: Queryable<ST, DB>,
-    ST: SqlType,
+    ST: SqlTypeOrSelectable,
     DB: Backend,
     T::Row: FromStaticSqlRow<ST, DB>,
 {
@@ -434,7 +442,7 @@ where
 
 impl<T, ST, DB> StaticallySizedRow<ST, DB> for T
 where
-    ST: SqlType + crate::util::TupleSize,
+    ST: SqlTypeOrSelectable + crate::util::TupleSize,
     T: Queryable<ST, DB>,
     DB: Backend,
 {

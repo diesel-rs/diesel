@@ -72,7 +72,8 @@ fn lookup_type<T: Connection<Backend = Pg>>(
         }
         Some(schema) => vec![schema],
         None => {
-            search_path = crate::dsl::sql("SHOW search_path").get_result::<String>(conn)?;
+            search_path = crate::dsl::sql::<crate::sql_types::Text>("SHOW search_path")
+                .get_result::<String>(conn)?;
 
             search_path
                 .split(',')

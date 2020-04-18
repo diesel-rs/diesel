@@ -2,7 +2,7 @@ use super::RunQueryDsl;
 use crate::backend::Backend;
 use crate::connection::Connection;
 use crate::deserialize::FromSqlRow;
-use crate::expression::QueryMetadata;
+use crate::expression::{select_by::SelectBy, Expression, QueryMetadata, Selectable};
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 use crate::result::QueryResult;
 
@@ -18,13 +18,49 @@ pub trait LoadQuery<Conn, U>: RunQueryDsl<Conn> {
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>>;
 }
 
+use crate::expression::TypedExpressionType;
+use crate::sql_types::{SqlType, Untyped};
+
+pub trait CompatibleType<U, DB> {
+    type SqlType;
+}
+
+impl<ST, U, DB> CompatibleType<U, DB> for ST
+where
+    DB: Backend,
+    ST: SqlType + crate::sql_types::SingleValue,
+    U: FromSqlRow<ST, DB>,
+{
+    type SqlType = ST;
+}
+
+impl<U, DB> CompatibleType<U, DB> for Untyped
+where
+    U: FromSqlRow<Untyped, DB>,
+    DB: Backend,
+{
+    type SqlType = Untyped;
+}
+
+impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U>
+where
+    DB: Backend,
+    ST: SqlType + TypedExpressionType,
+    U: Selectable<Expression = E>,
+    E: Expression<SqlType = ST>,
+    U: FromSqlRow<ST, DB>,
+{
+    type SqlType = ST;
+}
+
 impl<Conn, T, U> LoadQuery<Conn, U> for T
 where
     Conn: Connection,
     T: AsQuery + RunQueryDsl<Conn>,
     T::Query: QueryFragment<Conn::Backend> + QueryId,
-    U: FromSqlRow<T::SqlType, Conn::Backend>,
+    T::SqlType: CompatibleType<U, Conn::Backend>,
     Conn::Backend: QueryMetadata<T::SqlType>,
+    U: FromSqlRow<<T::SqlType as CompatibleType<U, Conn::Backend>>::SqlType, Conn::Backend>,
 {
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>> {
         conn.load(self)

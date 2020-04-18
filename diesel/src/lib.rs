@@ -382,7 +382,7 @@ pub mod prelude {
     pub use crate::deserialize::{Queryable, QueryableByName};
     #[doc(inline)]
     pub use crate::expression::{
-        AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
+        AppearsOnTable, BoxableExpression, Expression, IntoSql, Selectable, SelectableExpression,
     };
 
     #[doc(inline)]
@@ -406,6 +406,8 @@ pub mod prelude {
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+
+    pub use crate::expression::SelectableHelper;
 
     #[cfg(feature = "mysql")]
     #[doc(inline)]

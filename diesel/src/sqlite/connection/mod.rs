@@ -80,16 +80,17 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U, ST>(&self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        U: FromSqlRow<T::SqlType, Self::Backend>,
+        T::SqlType: crate::query_dsl::load_dsl::CompatibleType<U, Sqlite, SqlType = ST>,
+        U: FromSqlRow<ST, Sqlite>,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         let mut statement = self.prepare_query(&source.as_query())?;
         let statement_use = StatementUse::new(&mut statement, true);
-        let iter = StatementIterator::new(statement_use);
+        let iter = StatementIterator::<_, U>::new(statement_use);
         iter.collect()
     }
 

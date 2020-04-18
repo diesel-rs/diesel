@@ -1,12 +1,16 @@
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
-use crate::deserialize::{self, FromSqlRow, FromStaticSqlRow, Queryable, StaticallySizedRow};
+use crate::deserialize::{
+    self, FromSqlRow, FromStaticSqlRow, Queryable, SqlTypeOrSelectable, StaticallySizedRow,
+};
 use crate::expression::{
     is_contained_in_group_by, AppearsOnTable, AsExpression, AsExpressionList, Expression,
-    IsContainedInGroupBy, QueryMetadata, SelectableExpression, TypedExpressionType, ValidGrouping,
+    IsContainedInGroupBy, QueryMetadata, Selectable, SelectableExpression, TypedExpressionType,
+    ValidGrouping,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use crate::query_builder::*;
+use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::*;
 use crate::result::QueryResult;
 use crate::row::*;
@@ -55,6 +59,16 @@ macro_rules! tuple_impls {
                 where Self: SqlType,
             {
                 type Nullable = Nullable<($($T,)*)>;
+            }
+
+            impl<$($T),+> Selectable for ($($T,)+) where
+                $($T: Selectable),+,
+            {
+                type Expression = ($($T::Expression,)+);
+
+                fn new_expression() -> Self::Expression {
+                    ($($T::new_expression(),)+)
+                }
             }
 
             impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+) {
@@ -316,6 +330,30 @@ macro_rules! tuple_impls {
                 }
             }
 
+            impl<__T, $($ST,)* __DB> CompatibleType<__T, __DB> for ($($ST,)*)
+            where
+                __DB: Backend,
+                __T: FromSqlRow<($($ST,)*), __DB>,
+            {
+                type SqlType = Self;
+            }
+
+            impl<__T, $($ST,)* __DB> CompatibleType<Option<__T>, __DB> for Nullable<($($ST,)*)>
+            where
+                __DB: Backend,
+                ($($ST,)*): CompatibleType<__T, __DB>
+            {
+                type SqlType = Nullable<<($($ST,)*) as CompatibleType<__T, __DB>>::SqlType>;
+            }
+
+            impl<$($ST,)*> SqlTypeOrSelectable for ($($ST,)*)
+            where $($ST: SqlTypeOrSelectable,)*
+            {}
+
+            impl<$($ST,)*> SqlTypeOrSelectable for Nullable<($($ST,)*)>
+            where ($($ST,)*): SqlTypeOrSelectable
+            {}
+
             #[cfg(feature = "postgres")]
             impl<__D, $($T,)*> crate::query_dsl::order_dsl::ValidOrderingForDistinct<crate::pg::DistinctOnClause<__D>>
                 for crate::query_builder::order_clause::OrderClause<(__D, $($T,)*)> {}
@@ -328,7 +366,8 @@ macro_rules! impl_from_sql_row {
     (($T1: ident,), ($ST1: ident,)) => {
         impl<$T1, $ST1, __DB> crate::deserialize::FromStaticSqlRow<($ST1,), __DB> for ($T1,) where
             __DB: Backend,
-            $T1: FromSqlRow<$ST1, __DB>,
+            $ST1: CompatibleType<$T1, __DB>,
+            $T1: FromSqlRow<<$ST1 as CompatibleType<$T1, __DB>>::SqlType, __DB>,
         {
 
             #[allow(non_snake_case, unused_variables, unused_mut)]
@@ -368,9 +407,11 @@ macro_rules! impl_from_sql_row {
 
         impl<$T1, $ST1, $($T,)* $($ST,)* __DB> FromStaticSqlRow<($($ST,)* $ST1,), __DB> for ($($T,)* $T1,) where
             __DB: Backend,
-            $T1: FromSqlRow<$ST1, __DB>,
+            $ST1: CompatibleType<$T1, __DB>,
+            $T1: FromSqlRow<<$ST1 as CompatibleType<$T1, __DB>>::SqlType, __DB>,
             $(
-                $T: FromSqlRow<$ST, __DB> + StaticallySizedRow<$ST, __DB>,
+                $ST: CompatibleType<$T, __DB>,
+                $T: FromSqlRow<<$ST as CompatibleType<$T, __DB>>::SqlType, __DB> + StaticallySizedRow<<$ST as CompatibleType<$T, __DB>>::SqlType, __DB>,
             )*
 
         {
@@ -385,7 +426,7 @@ macro_rules! impl_from_sql_row {
                 $(
                     let row = full_row.partial_row(static_field_count..static_field_count + $T::FIELD_COUNT);
                     static_field_count += $T::FIELD_COUNT;
-                    let $T = $T::build_from_row(&row)?;
+                    let $T = <$T as FromSqlRow<<$ST as CompatibleType<$T, __DB>>::SqlType, __DB>>::build_from_row(&row)?;
                 )*
 
                 let row = full_row.partial_row(static_field_count..field_count);

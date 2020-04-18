@@ -40,6 +40,8 @@ pub mod nullable;
 #[macro_use]
 pub mod operators;
 #[doc(hidden)]
+pub mod select_by;
+#[doc(hidden)]
 pub mod sql_literal;
 #[doc(hidden)]
 pub mod subselect;
@@ -316,6 +318,114 @@ where
     T: SelectableExpression<QS>,
     &'a T: AppearsOnTable<QS>,
 {
+}
+
+/// Trait indicating that a record can be selected and queried from the database.
+///
+/// Types which implement `Selectable` represent the select clause of a SQL query, and could
+/// be used to construct a select clause via [`select_by`] method. This does not necessarily
+/// mean they represent a single database table.
+///
+/// The trait is used only to construct a select clause, and to verify if a [`SelectByQuery`]
+/// is valid, in order to [`load`] the result we might also like to implement or derive
+/// [`Queryable`](trait.Queryable.html)
+///
+/// This trait can be [derived](derive.Selectable.html)
+///
+/// [`SelectByQuery`]: ..//query_builder/trait.SelectByQuery.html
+/// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
+/// [`select_by`]: ../query_dsl/methods/trait.SelectByDsl.html#tymethod.select_by
+///
+/// # Examples
+///
+/// If you just want to construct a select clause using an existing struct, you can use
+/// `#[derive(Selectable)]`, See [`Selectable`] for details.
+///
+/// [`Selectable`]: derive.Selectable.html
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// #
+/// use schema::users;
+///
+/// #[derive(Queryable, PartialEq, Debug, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.select_by::<User>().first(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// Alternatively, we can implement the trait for our struct manually.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// #
+/// use schema::users;
+/// use diesel::prelude::{Queryable, Selectable};
+///
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// impl Selectable for User {
+///     type Expression = (users::id, users::name);
+///
+///     fn new_expression() -> Self::Expression {
+///         (users::id, users::name)
+///     }
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.select_by::<User>().first(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+pub trait Selectable {
+    /// The expression you'd like to select.
+    ///
+    /// This is typically a tuple of corresponding to the table columns of your struct's fields.
+    type Expression: Expression;
+
+    /// Construct an instance of the expression
+    fn new_expression() -> Self::Expression;
+}
+
+#[doc(inline)]
+pub use diesel_derives::Selectable;
+
+/// TODO
+pub trait SelectableHelper: Selectable + Sized {
+    /// TODO
+    fn as_select() -> select_by::SelectBy<Self>;
+}
+
+impl<T: Selectable> SelectableHelper for T {
+    fn as_select() -> select_by::SelectBy<Self> {
+        select_by::SelectBy::new()
+    }
 }
 
 /// Is this expression valid for a given group by clause?
