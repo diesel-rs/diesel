@@ -32,6 +32,8 @@ fn named_struct_definition() {
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
     assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
+    let data = my_structs::table.select_by::<MyStruct>().get_result::<MyStruct>(&conn);
+    assert!(data.is_err());
 }
 
 #[test]
@@ -46,6 +48,8 @@ fn tuple_struct() {
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
     assert_eq!(Ok(MyStruct(1, 2)), data);
+    let data = my_structs::table.select_by::<MyStruct>().get_result::<MyStruct>(&conn);
+    assert!(data.is_err());
 }
 
 // FIXME: Test usage with renamed columns
@@ -63,6 +67,7 @@ fn struct_with_no_table() {
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
     assert_eq!(Ok(MyStructNamedSoYouCantInferIt { foo: 1, bar: 2 }), data);
+    // QueryableByName without table_names do not generate TableQueryable
 }
 
 #[test]
@@ -90,6 +95,8 @@ fn embedded_struct() {
         }),
         data
     );
+    let data = my_structs::table.select_by::<A>().get_result::<A>(&conn);
+    assert!(data.is_err());
 }
 
 #[test]
@@ -119,4 +126,6 @@ fn embedded_option() {
     );
     let data = sql_query("SELECT 1 AS foo, NULL AS bar").get_result(&conn);
     assert_eq!(Ok(A { foo: 1, b: None }), data);
+    let data = my_structs::table.select_by::<A>().get_result::<A>(&conn);
+    assert!(data.is_err());
 }

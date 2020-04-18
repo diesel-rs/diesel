@@ -14,12 +14,20 @@ mod dsl_impls;
 
 /// it is like `SelectStatement` but without
 /// `Query`, `ValidSubselect` and `AppendSelection`
-#[derive(Debug, Clone, Copy, QueryId)]
+#[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectByStatement<Selection, Statement> {
     pub(crate) select: std::marker::PhantomData<Selection>,
     pub(crate) inner: Statement,
+}
+
+impl<S, STMT> QueryId for SelectByStatement<S, STMT>
+where
+    STMT: QueryId
+{
+    type QueryId = SelectByStatement<(), STMT::QueryId>;
+    const HAS_STATIC_QUERY_ID: bool = STMT::HAS_STATIC_QUERY_ID;
 }
 
 impl<S, ST> SelectByStatement<S, ST> {

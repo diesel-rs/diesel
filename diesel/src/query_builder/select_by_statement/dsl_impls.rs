@@ -1,5 +1,6 @@
 // use super::BoxedSelectByStatement;
 use crate::associations::HasTable;
+use crate::deserialize::TableQueryable;
 // use crate::backend::Backend;
 // use crate::expression::nullable::Nullable;
 use crate::expression::*;
@@ -34,6 +35,18 @@ where
 
     fn select(self, selection: Selection) -> Self::Output {
         self.inner.select(selection)
+    }
+}
+
+impl<S, STMT, Selection> SelectByDsl<Selection> for SelectByStatement<S, STMT>
+where
+    Selection: TableQueryable,
+    STMT: SelectByDsl<Selection>,
+{
+    type Output = STMT::Output;
+
+    fn select_by(self) -> Self::Output {
+        self.inner.select_by()
     }
 }
 
