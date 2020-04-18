@@ -41,6 +41,8 @@ mod order_dsl;
 mod save_changes_dsl;
 #[doc(hidden)]
 pub mod select_dsl;
+#[doc(hidden)]
+pub mod select_by_dsl;
 mod single_value_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
@@ -69,6 +71,7 @@ pub mod methods {
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
+    pub use super::select_by_dsl::SelectByDsl;
     pub use super::single_value_dsl::SingleValueDsl;
 }
 

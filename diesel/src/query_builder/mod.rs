@@ -27,6 +27,7 @@ mod order_clause;
 mod returning_clause;
 mod select_clause;
 mod select_statement;
+mod select_by_statement;
 mod sql_query;
 mod update_statement;
 pub(crate) mod upsert;
@@ -43,6 +44,7 @@ pub use self::insert_statement::{
 pub use self::query_id::QueryId;
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
+pub use self::select_by_statement::SelectByStatement;
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
 pub use self::update_statement::{

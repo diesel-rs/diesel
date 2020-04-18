@@ -5,6 +5,7 @@ use std::result;
 
 use crate::backend::{self, Backend};
 use crate::row::{NamedRow, Row};
+use crate::expression::Expression;
 
 /// A specialized result type representing the result of deserializing
 /// a value from the database.
@@ -254,6 +255,150 @@ where
 
 #[doc(inline)]
 pub use diesel_derives::QueryableByName;
+
+/// Trait indicating that a record can be selected and queried from the database.
+///
+/// Types which implement `TableQueryable` represent the result of a SQL query. This
+/// does not necessarily mean they represent a single database table.
+///
+/// Diesel represents the return type of a query as the struct. The purpose of this
+/// trait is to provide name of select statement and use with QueryableByName.
+///
+/// This trait can be [derived](derive.QueryableByName.html)
+///
+/// # Examples
+///
+/// If we just want to map a query to our struct, we can use `derive`.
+///
+/// ```rust
+/// # include!("doctest_setup.rs");
+/// #
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// If we want to do additional work during deserialization, we can use
+/// `deserialize_as` to use a different implementation.
+///
+/// ```rust
+/// # include!("doctest_setup.rs");
+/// #
+/// # use schema::users;
+/// # use diesel::backend::{self, Backend};
+/// # use diesel::deserialize::Queryable;
+/// #
+/// struct LowercaseString(String);
+///
+/// impl Into<String> for LowercaseString {
+///     fn into(self) -> String {
+///         self.0
+///     }
+/// }
+///
+/// impl<DB, ST> Queryable<ST, DB> for LowercaseString
+/// where
+///     DB: Backend,
+///     String: Queryable<ST, DB>,
+/// {
+///     type Row = <String as Queryable<ST, DB>>::Row;
+///
+///     fn build(row: Self::Row) -> Self {
+///         LowercaseString(String::build(row).to_lowercase())
+///     }
+/// }
+///
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     #[diesel(deserialize_as = "LowercaseString")]
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// Alternatively, we can implement the trait for our struct manually.
+///
+/// ```rust
+/// # include!("doctest_setup.rs");
+/// #
+/// use schema::users;
+/// use diesel::deserialize::Queryable;
+///
+/// # /*
+/// type DB = diesel::sqlite::Sqlite;
+/// # */
+///
+/// #[derive(PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// impl Queryable<users::SqlType, DB> for User {
+///     type Row = (i32, String);
+///
+///     fn build(row: Self::Row) -> Self {
+///         User {
+///             id: row.0,
+///             name: row.1.to_lowercase(),
+///         }
+///     }
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+pub trait TableQueryable {
+    /// The Rust type you'd like to map from.
+    ///
+    /// This is typically a tuple of all of your struct's fields.
+    type Columns: Expression;
+
+    /// Construct an instance of this type
+    fn columns() -> Self::Columns;
+}
+
+pub trait TableQueryableStmt {
+    type Columns;
+}
 
 /// Deserialize a single field of a given SQL type.
 ///
