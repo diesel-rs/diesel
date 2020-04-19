@@ -120,13 +120,13 @@ where
 }
 
 impl<F, S, D, W, O, L, Of, LC, ST> SelectByQuery
-    for SelectStatement<F, SelectByClause<S>, D, W, O, L, Of, NoGroupByClause, LC>
+    for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, NoGroupByClause, LC>
 where
-    S: TableQueryable,
+    S: TableQueryable<Columns = S>,
     S::Columns: Expression<SqlType = ST>,
     Self: SelectQuery<SqlType = ST>,
 {
-    type Columns = S::Columns;
+    type Columns = S;
 }
 
 impl<F, S, D, W, O, L, Of, G, LC, DB> QueryFragment<DB>
