@@ -94,15 +94,13 @@ where
 
 // not implement AppendSelection
 
-impl<Conn, S, Stmt, Columns, ST> LoadQuery<Conn, S> for SelectByStatement<S, Stmt>
+impl<Conn, S, Stmt, CL, ST> LoadQuery<Conn, S> for SelectByStatement<S, Stmt>
 where
     Conn: Connection,
-    Columns: Expression<SqlType = ST>,
-    S: QueryableByName<Conn::Backend> + TableQueryable<Columns = Columns>,
-    Self: QueryFragment<Conn::Backend>
-        + SelectQuery<SqlType = ST>
-        + SelectByQuery<Columns = Columns>
-        + QueryId,
+    CL: Expression<SqlType = ST>,
+    S: QueryableByName<Conn::Backend> + TableQueryable<Columns = CL>,
+    Self: QueryFragment<Conn::Backend> + SelectByQuery<Columns = CL> + QueryId,
+    Stmt: SelectQuery<SqlType = ST>,
 {
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<S>> {
         conn.query_by_name(&self)

@@ -1,8 +1,8 @@
 // use super::BoxedSelectByStatement;
 use crate::associations::HasTable;
+use crate::backend::Backend;
 use crate::deserialize::TableQueryable;
-// use crate::backend::Backend;
-// use crate::expression::nullable::Nullable;
+use crate::expression::nullable::Nullable;
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::insert_statement::InsertFromSelect;
@@ -203,63 +203,19 @@ where
     }
 }
 
-// impl<'a, F, S, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
-//     for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, G>
-// where
-//     Self: AsQuery,
-//     DB: Backend,
-//     S: QueryFragment<DB> + SelectableExpression<F> + Send + 'a,
-//     D: QueryFragment<DB> + Send + 'a,
-//     W: Into<BoxedWhereClause<'a, DB>>,
-//     O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
-//     L: QueryFragment<DB> + Send + 'a,
-//     Of: QueryFragment<DB> + Send + 'a,
-//     G: QueryFragment<DB> + Send + 'a,
-// {
-//     type Output = BoxedSelectStatement<'a, S::SqlType, F, DB>;
+impl<'a, CL, S, Stmt, DB> BoxedDsl<'a, DB> for SelectByStatement<S, Stmt>
+where
+    DB: Backend,
+    Stmt: BoxedDsl<'a, DB>,
+    Self: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
+{
+    type Output = SelectByStatement<S, Stmt::Output>;
 
-//     fn internal_into_boxed(self) -> Self::Output {
-//         BoxedSelectStatement::new(
-//             Box::new(self.select.0),
-//             self.from,
-//             Box::new(self.distinct),
-//             self.where_clause.into(),
-//             self.order.into(),
-//             Box::new(self.limit),
-//             Box::new(self.offset),
-//             Box::new(self.group_by),
-//         )
-//     }
-// }
-
-// impl<'a, F, D, W, O, L, Of, G, DB> BoxedDsl<'a, DB>
-//     for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
-// where
-//     Self: AsQuery,
-//     DB: Backend,
-//     F: QuerySource,
-//     F::DefaultSelection: QueryFragment<DB> + Send + 'a,
-//     D: QueryFragment<DB> + Send + 'a,
-//     W: Into<BoxedWhereClause<'a, DB>>,
-//     O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
-//     L: QueryFragment<DB> + Send + 'a,
-//     Of: QueryFragment<DB> + Send + 'a,
-//     G: QueryFragment<DB> + Send + 'a,
-// {
-//     type Output = BoxedSelectStatement<'a, <F::DefaultSelection as Expression>::SqlType, F, DB>;
-//     fn internal_into_boxed(self) -> Self::Output {
-//         BoxedSelectStatement::new(
-//             Box::new(self.from.default_selection()),
-//             self.from,
-//             Box::new(self.distinct),
-//             self.where_clause.into(),
-//             self.order.into(),
-//             Box::new(self.limit),
-//             Box::new(self.offset),
-//             Box::new(self.group_by),
-//         )
-//     }
-// }
+    fn internal_into_boxed(self) -> Self::Output {
+        SelectByStatement::new(self.inner.internal_into_boxed())
+    }
+}
 
 impl<S, Stmt> HasTable for SelectByStatement<S, Stmt>
 where
@@ -305,45 +261,17 @@ where
     }
 }
 
-// impl<'a, F, S, D, W, O, L, Of, G> SelectNullableDsl
-//     for SelectStatement<F, SelectClause<S>, D, W, O, L, Of, G>
-// {
-//     type Output = SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, L, Of, G>;
+impl<CL, S, Stmt> SelectNullableDsl for SelectByStatement<S, Stmt>
+where
+    Nullable<CL>: Expression,
+    Option<S>: TableQueryable<Columns = Nullable<CL>>,
+    Stmt: SelectNullableDsl,
+    Self: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = Nullable<CL>>,
+{
+    type Output = SelectByStatement<Option<S>, Stmt::Output>;
 
-//     fn nullable(self) -> Self::Output {
-//         SelectStatement::new(
-//             SelectClause(Nullable::new(self.select.0)),
-//             self.from,
-//             self.distinct,
-//             self.where_clause,
-//             self.order,
-//             self.limit,
-//             self.offset,
-//             self.group_by,
-//             self.locking,
-//         )
-//     }
-// }
-
-// impl<'a, F, D, W, O, L, Of, G> SelectNullableDsl
-//     for SelectStatement<F, DefaultSelectClause, D, W, O, L, Of, G>
-// where
-//     F: QuerySource,
-// {
-//     type Output =
-//         SelectStatement<F, SelectClause<Nullable<F::DefaultSelection>>, D, W, O, L, Of, G>;
-
-//     fn nullable(self) -> Self::Output {
-//         SelectStatement::new(
-//             SelectClause(Nullable::new(self.from.default_selection())),
-//             self.from,
-//             self.distinct,
-//             self.where_clause,
-//             self.order,
-//             self.limit,
-//             self.offset,
-//             self.group_by,
-//             self.locking,
-//         )
-//     }
-// }
+    fn nullable(self) -> Self::Output {
+        SelectByStatement::new(self.inner.nullable())
+    }
+}

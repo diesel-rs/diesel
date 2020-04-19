@@ -4,7 +4,7 @@ use std::error::Error;
 use std::result;
 
 use crate::backend::{self, Backend};
-use crate::expression::Expression;
+use crate::expression::{nullable::Nullable, Expression};
 use crate::row::{NamedRow, Row};
 
 /// A specialized result type representing the result of deserializing
@@ -396,10 +396,14 @@ pub trait TableQueryable {
     fn columns() -> Self::Columns;
 }
 
-impl<T: TableQueryable> TableQueryable for Option<T> {
-    type Columns = T::Columns;
+impl<T> TableQueryable for Option<T>
+where
+    T: TableQueryable,
+    Nullable<T::Columns>: Expression,
+{
+    type Columns = Nullable<T::Columns>;
     fn columns() -> Self::Columns {
-        T::columns()
+        Nullable::new(T::columns())
     }
 }
 
