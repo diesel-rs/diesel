@@ -13,11 +13,10 @@ use crate::query_builder::limit_clause::*;
 use crate::query_builder::locking_clause::*;
 use crate::query_builder::offset_clause::*;
 use crate::query_builder::order_clause::*;
-use crate::query_builder::select_by_statement::SelectByStatement;
 use crate::query_builder::select_clause::*;
 use crate::query_builder::update_statement::*;
 use crate::query_builder::where_clause::*;
-use crate::query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectStatement};
+use crate::query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectByQuery, SelectStatement, SelectByStatement};
 use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
@@ -71,12 +70,13 @@ where
     }
 }
 
-impl<F, S, D, W, O, L, Of, LC, Selection> SelectByDsl<Selection>
+impl<CL, ST, F, S, D, W, O, L, Of, LC, Selection> SelectByDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, NoGroupByClause, LC>
 where
-    Selection: TableQueryable,
+    CL: Expression<SqlType = ST>,
+    Selection: TableQueryable<Columns = CL>,
     SelectStatement<F, SelectByClause<Selection>, D, W, O, L, Of, NoGroupByClause, LC>:
-        SelectQuery,
+        SelectQuery<SqlType = ST> + SelectByQuery<Columns = CL>,
 {
     // SELECTBY_TODO: SelectByClause
     type Output = SelectByStatement<

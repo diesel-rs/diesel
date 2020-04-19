@@ -6,7 +6,7 @@ use crate::deserialize::TableQueryable;
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::insert_statement::InsertFromSelect;
-use crate::query_builder::{Query, SelectByStatement, SelectQuery};
+use crate::query_builder::{Query, SelectByStatement, SelectByQuery};
 // use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
@@ -50,11 +50,11 @@ where
     }
 }
 
-impl<ST, S, STMT> DistinctDsl for SelectByStatement<S, STMT>
+impl<CL, S, STMT> DistinctDsl for SelectByStatement<S, STMT>
 where
-    Self: SelectQuery<SqlType = ST>,
+    Self: SelectByQuery<Columns = CL>,
     STMT: DistinctDsl,
-    SelectByStatement<S, STMT::Output>: SelectQuery<SqlType = ST>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -63,10 +63,12 @@ where
     }
 }
 
-impl<S, STMT, Predicate> FilterDsl<Predicate> for SelectByStatement<S, STMT>
+impl<CL, S, STMT, Predicate> FilterDsl<Predicate> for SelectByStatement<S, STMT>
 where
     Predicate: Expression<SqlType = Bool> + NonAggregate,
     STMT: FilterDsl<Predicate>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -75,10 +77,12 @@ where
     }
 }
 
-impl<S, STMT, Predicate> OrFilterDsl<Predicate> for SelectByStatement<S, STMT>
+impl<CL, S, STMT, Predicate> OrFilterDsl<Predicate> for SelectByStatement<S, STMT>
 where
     Predicate: Expression<SqlType = Bool> + NonAggregate,
     STMT: OrFilterDsl<Predicate>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -89,9 +93,11 @@ where
 
 use crate::query_source::Table;
 
-impl<S, STMT, PK> FindDsl<PK> for SelectByStatement<S, STMT>
+impl<CL, S, STMT, PK> FindDsl<PK> for SelectByStatement<S, STMT>
 where
     STMT: FindDsl<PK>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -100,12 +106,12 @@ where
     }
 }
 
-impl<ST, S, STMT, Expr> OrderDsl<Expr> for SelectByStatement<S, STMT>
+impl<CL, S, STMT, Expr> OrderDsl<Expr> for SelectByStatement<S, STMT>
 where
     Expr: Expression,
-    Self: SelectQuery<SqlType = ST>,
     STMT: OrderDsl<Expr>,
-    SelectByStatement<S, STMT::Output>: SelectQuery<SqlType = ST>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -114,12 +120,12 @@ where
     }
 }
 
-impl<ST, S, STMT, Expr> ThenOrderDsl<Expr> for SelectByStatement<S, STMT>
+impl<CL, S, STMT, Expr> ThenOrderDsl<Expr> for SelectByStatement<S, STMT>
 where
     Expr: Expression,
-    Self: SelectQuery<SqlType = ST>,
     STMT: ThenOrderDsl<Expr>,
-    SelectByStatement<S, STMT::Output>: SelectQuery<SqlType = ST>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -128,11 +134,11 @@ where
     }
 }
 
-impl<ST, S, STMT> LimitDsl for SelectByStatement<S, STMT>
+impl<CL, S, STMT> LimitDsl for SelectByStatement<S, STMT>
 where
-    Self: SelectQuery<SqlType = ST>,
     STMT: LimitDsl,
-    SelectByStatement<S, STMT::Output>: SelectQuery<SqlType = ST>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -141,11 +147,11 @@ where
     }
 }
 
-impl<ST, S, STMT> OffsetDsl for SelectByStatement<S, STMT>
+impl<CL, S, STMT> OffsetDsl for SelectByStatement<S, STMT>
 where
-    Self: SelectQuery<SqlType = ST>,
     STMT: OffsetDsl,
-    SelectByStatement<S, STMT::Output>: SelectQuery<SqlType = ST>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -154,11 +160,12 @@ where
     }
 }
 
-impl<S, STMT, Expr> GroupByDsl<Expr> for SelectByStatement<S, STMT>
+impl<CL, S, STMT, Expr> GroupByDsl<Expr> for SelectByStatement<S, STMT>
 where
-    Self: SelectQuery,
     Expr: Expression,
     STMT: GroupByDsl<Expr>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = STMT::Output;
 
@@ -167,11 +174,11 @@ where
     }
 }
 
-impl<ST, S, STMT, Lock> LockingDsl<Lock> for SelectByStatement<S, STMT>
+impl<CL, S, STMT, Lock> LockingDsl<Lock> for SelectByStatement<S, STMT>
 where
-    Self: SelectQuery<SqlType = ST>,
     STMT: LockingDsl<Lock>,
-    SelectByStatement<S, STMT::Output>: SelectQuery<SqlType = ST>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -180,11 +187,11 @@ where
     }
 }
 
-impl<ST, S, STMT, Modifier> ModifyLockDsl<Modifier> for SelectByStatement<S, STMT>
+impl<CL, S, STMT, Modifier> ModifyLockDsl<Modifier> for SelectByStatement<S, STMT>
 where
-    Self: SelectQuery,
     STMT: ModifyLockDsl<Modifier>,
-    SelectByStatement<S, STMT::Output>: SelectQuery<SqlType = ST>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
 {
     type Output = SelectByStatement<S, STMT::Output>;
 
@@ -297,6 +304,7 @@ impl<S, STMT> QueryDsl for SelectByStatement<S, STMT> {}
 
 impl<S, STMT, Conn> RunQueryDsl<Conn> for SelectByStatement<S, STMT> {}
 
+// SELECTBY_TODO: Self is never Query
 impl<S, STMT, Tab> Insertable<Tab> for SelectByStatement<S, STMT>
 where
     Tab: Table,
