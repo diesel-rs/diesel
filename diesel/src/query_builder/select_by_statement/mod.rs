@@ -4,7 +4,7 @@ use crate::connection::Connection;
 use crate::deserialize::{QueryableByName, TableQueryable};
 // use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
-use crate::query_builder::{QueryId, SelectQuery, SelectByQuery};
+use crate::query_builder::{QueryId, SelectByQuery, SelectQuery};
 use crate::query_dsl::LoadQuery;
 // use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
@@ -29,7 +29,8 @@ where
     STMT: QueryId,
 {
     type QueryId = SelectByStatement<<S::Columns as QueryId>::QueryId, STMT::QueryId>;
-    const HAS_STATIC_QUERY_ID: bool = <S::Columns as QueryId>::HAS_STATIC_QUERY_ID && STMT::HAS_STATIC_QUERY_ID;
+    const HAS_STATIC_QUERY_ID: bool =
+        <S::Columns as QueryId>::HAS_STATIC_QUERY_ID && STMT::HAS_STATIC_QUERY_ID;
 }
 
 impl<S, ST> SelectByStatement<S, ST> {
@@ -61,7 +62,6 @@ where
     // TODO: check SelectByClause
     type SqlType = ST;
 }
-
 
 impl<S, STMT> SelectByQuery for SelectByStatement<S, STMT>
 where
@@ -104,7 +104,10 @@ where
     Conn: Connection,
     Columns: Expression<SqlType = ST>,
     S: QueryableByName<Conn::Backend> + TableQueryable<Columns = Columns>,
-    Self: QueryFragment<Conn::Backend> + SelectQuery<SqlType = ST> + SelectByQuery<Columns = Columns> + QueryId,
+    Self: QueryFragment<Conn::Backend>
+        + SelectQuery<SqlType = ST>
+        + SelectByQuery<Columns = Columns>
+        + QueryId,
 {
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<S>> {
         conn.query_by_name(&self)

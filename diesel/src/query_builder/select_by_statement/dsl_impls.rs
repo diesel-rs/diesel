@@ -6,7 +6,7 @@ use crate::deserialize::TableQueryable;
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::insert_statement::InsertFromSelect;
-use crate::query_builder::{Query, SelectByStatement, SelectByQuery};
+use crate::query_builder::{Query, SelectByQuery, SelectByStatement};
 // use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;

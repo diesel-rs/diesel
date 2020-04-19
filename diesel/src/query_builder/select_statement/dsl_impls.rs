@@ -16,7 +16,9 @@ use crate::query_builder::order_clause::*;
 use crate::query_builder::select_clause::*;
 use crate::query_builder::update_statement::*;
 use crate::query_builder::where_clause::*;
-use crate::query_builder::{AsQuery, Query, QueryFragment, SelectQuery, SelectByQuery, SelectStatement, SelectByStatement};
+use crate::query_builder::{
+    AsQuery, Query, QueryFragment, SelectByQuery, SelectByStatement, SelectQuery, SelectStatement,
+};
 use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;

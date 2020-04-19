@@ -29,7 +29,7 @@ use crate::backend::Backend;
 use crate::deserialize::TableQueryable;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
-use crate::query_builder::{QueryId, SelectQuery, SelectByQuery};
+use crate::query_builder::{QueryId, SelectByQuery, SelectQuery};
 use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
 use crate::result::QueryResult;
@@ -119,7 +119,8 @@ where
     type SqlType = S::SelectClauseSqlType;
 }
 
-impl<F, S, D, W, O, L, Of, LC, ST> SelectByQuery for SelectStatement<F, SelectByClause<S>, D, W, O, L, Of, NoGroupByClause, LC>
+impl<F, S, D, W, O, L, Of, LC, ST> SelectByQuery
+    for SelectStatement<F, SelectByClause<S>, D, W, O, L, Of, NoGroupByClause, LC>
 where
     S: TableQueryable,
     S::Columns: Expression<SqlType = ST>,
