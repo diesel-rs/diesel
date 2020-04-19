@@ -1,3 +1,6 @@
+use std::fmt;
+use std::marker::PhantomData;
+
 use super::{AstPass, QueryFragment};
 use crate::backend::Backend;
 use crate::connection::Connection;
@@ -12,12 +15,35 @@ mod dsl_impls;
 
 /// it is like `SelectStatement` but without
 /// `Query`, `ValidSubselect` and `AppendSelection`
-#[derive(Debug, Clone, Copy)]
 #[doc(hidden)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectByStatement<Selection, Statement> {
-    pub(crate) select: std::marker::PhantomData<Selection>,
+    pub(crate) select: PhantomData<Selection>,
     pub(crate) inner: Statement,
+}
+
+impl<S, Stmt> fmt::Debug for SelectByStatement<S, Stmt>
+where
+    Stmt: fmt::Debug
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SelectByStatement").field("inner", &self.inner).finish()
+    }
+}
+
+impl<S, Stmt> Clone for SelectByStatement<S, Stmt>
+where
+    Stmt: Clone
+{
+    fn clone(&self) -> Self {
+        SelectByStatement::new(self.inner.clone())
+    }
+}
+
+impl<S, Stmt> Copy for SelectByStatement<S, Stmt>
+where
+    Stmt: Copy
+{
 }
 
 impl<S, Stmt> QueryId for SelectByStatement<S, Stmt>

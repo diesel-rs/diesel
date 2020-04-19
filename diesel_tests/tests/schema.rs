@@ -24,6 +24,12 @@ pub struct User {
     pub hair_color: Option<String>,
 }
 
+#[derive(
+    PartialEq, Eq, Debug, Clone, Queryable, QueryableByColumn,
+)]
+#[table_name = "users"]
+pub struct UserName(#[column_name = "name"] pub String);
+
 impl User {
     pub fn new(id: i32, name: &str) -> Self {
         User {

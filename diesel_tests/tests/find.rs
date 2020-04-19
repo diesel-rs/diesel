@@ -104,3 +104,15 @@ fn select_then_find() {
     assert_eq!(Ok(String::from("Sean")), sean);
     assert_eq!(Ok(String::from("Tess")), tess);
 }
+
+#[test]
+fn select_by_then_find() {
+    use crate::schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let sean = users.select_by::<UserName>().find(1).first(&connection);
+    let tess = users.select_by::<UserName>().find(2).first(&connection);
+
+    assert_eq!(Ok(UserName(String::from("Sean"))), sean);
+    assert_eq!(Ok(UserName(String::from("Tess"))), tess);
+}

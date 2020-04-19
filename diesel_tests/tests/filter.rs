@@ -209,6 +209,56 @@ fn filter_then_select() {
 }
 
 #[test]
+fn select_by_then_filter() {
+    use crate::schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let source = users.select_by::<UserName>();
+    assert_eq!(
+        Ok(UserName("Sean".to_string())),
+        source.filter(name.eq("Sean")).first(&connection)
+    );
+    assert_eq!(
+        Ok(UserName("Tess".to_string())),
+        source.filter(name.eq("Tess")).first(&connection)
+    );
+    assert_eq!(
+        Err(NotFound),
+        source.filter(name.eq("Jim")).first::<UserName>(&connection)
+    );
+}
+
+#[test]
+fn filter_then_select_by() {
+    use crate::schema::users::dsl::*;
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    assert_eq!(
+        Ok(UserName("Sean".to_string())),
+        users
+            .filter(name.eq("Sean"))
+            .select_by::<UserName>()
+            .first(&connection)
+    );
+    assert_eq!(
+        Ok(UserName("Tess".to_string())),
+        users
+            .filter(name.eq("Tess"))
+            .select_by::<UserName>()
+            .first(&connection)
+    );
+    assert_eq!(
+        Err(NotFound),
+        users
+            .filter(name.eq("Jim"))
+            .select_by::<UserName>()
+            .first::<UserName>(&connection)
+    );
+}
+
+#[test]
 fn filter_on_multiple_columns() {
     use crate::schema::users::dsl::*;
 
