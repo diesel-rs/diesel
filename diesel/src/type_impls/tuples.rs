@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
-use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByName};
+use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByColumn, QueryableByName};
 use crate::expression::{
     AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression, ValidGrouping,
 };
@@ -57,6 +57,16 @@ macro_rules! tuple_impls {
 
                 fn build(row: Self::Row) -> Self {
                     ($($T::build(row.$idx),)+)
+                }
+            }
+
+            impl<$($T),+> QueryableByColumn for ($($T,)+) where
+                $($T: QueryableByColumn),+,
+            {
+                type Columns = ($($T::Columns,)+);
+
+                fn columns() -> Self::Columns {
+                    ($($T::columns(),)+)
                 }
             }
 

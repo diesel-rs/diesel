@@ -291,29 +291,28 @@ pub trait QueryDsl: Sized {
         methods::SelectDsl::select(self, selection)
     }
 
-    // SELECTBY_TODO: Needs usage example and doc rewrite
-    /// Adds a `SELECT` clause to the query.
+    /// Adds a `SELECT` clause to the query using given struct.
     ///
     /// If there was already a select clause present, it will be overridden.
-    /// For example, `foo.select(bar).select(baz)` will produce the same
-    /// query as `foo.select(baz)`.
+    /// For example, `foo.select(bar).select_by::<Baz>()` will produce the same
+    /// query as `foo.select_by::<Baz>()`, `foo.select_by::<Baz>().select(bar)`
+    /// as `foo.select(bar)`, `foo.select_by::<Bar>().select_by::<Baz>()` as
+    /// `foo.select_by::<Baz>()`
     ///
-    /// By default, the select clause will be roughly equivalent to `SELECT *`
-    /// (however, Diesel will list all columns to ensure that they are in the
-    /// order we expect).
-    ///
-    /// `select` has slightly stricter bounds on its arguments than other
-    /// methods. In particular, when used with a left outer join, `.nullable`
-    /// must be called on columns that come from the right side of a join. It
-    /// can be called on the column itself, or on an expression containing that
-    /// column. `title.nullable()`, `lower(title).nullable()`, and `(id,
-    /// title).nullable()` would all be valid.
+    /// `select_by` has slightly stricter bounds on its arguments than other
+    /// methods. In particular, when used with a left outer join, `Option`
+    /// must be wrapped on `QueryableByColumn` that come from the right side
+    /// of a join. Just like `.nullable()` of `select`.
     ///
     /// # Examples
     ///
     /// ```rust
     /// # include!("../doctest_setup.rs");
     /// # use schema::users;
+    /// #
+    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, QueryableByColumn)]
+    /// # #[table_name = "users"]
+    /// # pub struct UserName(#[column_name = "name"] String);
     /// #
     /// # fn main() {
     /// #     run_test().unwrap();
@@ -326,8 +325,8 @@ pub trait QueryDsl: Sized {
     /// let all_users = users.load::<(i32, String)>(&connection)?;
     /// assert_eq!(vec![(1, String::from("Sean")), (2, String::from("Tess"))], all_users);
     ///
-    /// let all_names = users.select(name).load::<String>(&connection)?;
-    /// assert_eq!(vec!["Sean", "Tess"], all_names);
+    /// let all_names = users.select_by::<UserName>().load::<UserName>(&connection)?;
+    /// assert_eq!(vec![UserName("Sean".into()), UserName("Tess".into())], all_names);
     /// #     Ok(())
     /// # }
     /// ```
@@ -353,6 +352,10 @@ pub trait QueryDsl: Sized {
     /// #     }
     /// # }
     /// #
+    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, QueryableByColumn)]
+    /// # #[table_name = "users"]
+    /// # pub struct UserName(#[column_name = "name"] String);
+    /// #
     /// # #[derive(Queryable, PartialEq, Eq, Debug)]
     /// # struct Post {
     /// #     id: i32,
@@ -369,6 +372,10 @@ pub trait QueryDsl: Sized {
     /// #         }
     /// #     }
     /// # }
+    /// #
+    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, QueryableByColumn)]
+    /// # #[table_name = "posts"]
+    /// # pub struct PostTitle(#[column_name = "title"] String);
     /// #
     /// # fn main() {
     /// #     run_test().unwrap();
@@ -392,13 +399,13 @@ pub trait QueryDsl: Sized {
     /// ];
     /// assert_eq!(expected_data, all_data);
     ///
-    /// // Since `posts` is on the right side of a left join, `.nullable` is
+    /// // Since `PostTitle` is on the right side of a left join, `Option` is
     /// // needed.
-    /// let names_and_titles = join.select((users::name, posts::title.nullable()))
-    ///     .load::<(String, Option<String>)>(&connection)?;
+    /// let names_and_titles = join.select_by::<(UserName, Option<PostTitle>)>()
+    ///     .load::<(UserName, Option<PostTitle>)>(&connection)?;
     /// let expected_data = vec![
-    ///     (String::from("Sean"), Some(String::from("Sean's Post"))),
-    ///     (String::from("Tess"), None),
+    ///     (UserName(String::from("Sean")), Some(PostTitle(String::from("Sean's Post")))),
+    ///     (UserName(String::from("Tess")), None),
     /// ];
     /// assert_eq!(expected_data, names_and_titles);
     /// #     Ok(())

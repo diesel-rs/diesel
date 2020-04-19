@@ -262,9 +262,9 @@ pub use diesel_derives::QueryableByName;
 /// does not necessarily mean they represent a single database table.
 ///
 /// Diesel represents the return type of a query as the struct. The purpose of this
-/// trait is to provide name of select statement and use with QueryableByName.
+/// trait is to provide columns of select_by statement and use with QueryableByColumn.
 ///
-/// This trait can be [derived](derive.QueryableByName.html)
+/// This trait can be [derived](derive.QueryableByColumn.html)
 ///
 /// # Examples
 ///
@@ -273,7 +273,9 @@ pub use diesel_derives::QueryableByName;
 /// ```rust
 /// # include!("doctest_setup.rs");
 /// #
-/// #[derive(Queryable, PartialEq, Debug)]
+/// use schema::users;
+///
+/// #[derive(Queryable, PartialEq, Debug, QueryableByColumn)]
 /// struct User {
 ///     id: i32,
 ///     name: String,
@@ -286,59 +288,8 @@ pub use diesel_derives::QueryableByName;
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
+/// let first_user = users.select_by::<User>().first(&connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
-/// assert_eq!(expected, first_user);
-/// #     Ok(())
-/// # }
-/// ```
-///
-/// If we want to do additional work during deserialization, we can use
-/// `deserialize_as` to use a different implementation.
-///
-/// ```rust
-/// # include!("doctest_setup.rs");
-/// #
-/// # use schema::users;
-/// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::Queryable;
-/// #
-/// struct LowercaseString(String);
-///
-/// impl Into<String> for LowercaseString {
-///     fn into(self) -> String {
-///         self.0
-///     }
-/// }
-///
-/// impl<DB, ST> Queryable<ST, DB> for LowercaseString
-/// where
-///     DB: Backend,
-///     String: Queryable<ST, DB>,
-/// {
-///     type Row = <String as Queryable<ST, DB>>::Row;
-///
-///     fn build(row: Self::Row) -> Self {
-///         LowercaseString(String::build(row).to_lowercase())
-///     }
-/// }
-///
-/// #[derive(Queryable, PartialEq, Debug)]
-/// struct User {
-///     id: i32,
-///     #[diesel(deserialize_as = "LowercaseString")]
-///     name: String,
-/// }
-///
-/// # fn main() {
-/// #     run_test();
-/// # }
-/// #
-/// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
@@ -350,26 +301,19 @@ pub use diesel_derives::QueryableByName;
 /// # include!("doctest_setup.rs");
 /// #
 /// use schema::users;
-/// use diesel::deserialize::Queryable;
+/// use diesel::deserialize::{Queryable, QueryableByColumn};
 ///
-/// # /*
-/// type DB = diesel::sqlite::Sqlite;
-/// # */
-///
-/// #[derive(PartialEq, Debug)]
+/// #[derive(Queryable, PartialEq, Debug)]
 /// struct User {
 ///     id: i32,
 ///     name: String,
 /// }
 ///
-/// impl Queryable<users::SqlType, DB> for User {
-///     type Row = (i32, String);
+/// impl QueryableByColumn for User {
+///     type Columns = (users::id, users::name);
 ///
-///     fn build(row: Self::Row) -> Self {
-///         User {
-///             id: row.0,
-///             name: row.1.to_lowercase(),
-///         }
+///     fn columns() -> Self::Columns {
+///         (users::id, users::name)
 ///     }
 /// }
 ///
@@ -380,21 +324,24 @@ pub use diesel_derives::QueryableByName;
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
-/// let expected = User { id: 1, name: "sean".into() };
+/// let first_user = users.select_by::<User>().first(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
 /// ```
 pub trait QueryableByColumn {
-    /// The Rust type you'd like to map from.
+    /// The columns you'd like to select.
     ///
     /// This is typically a tuple of all of your struct's fields.
     type Columns: Expression;
 
-    /// Construct an instance of this type
+    /// Construct an instance of the columns
     fn columns() -> Self::Columns;
 }
+
+#[doc(inline)]
+pub use diesel_derives::QueryableByColumn;
 
 impl<T> QueryableByColumn for Option<T>
 where
