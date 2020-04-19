@@ -4,7 +4,7 @@ use std::marker::PhantomData;
 use super::{AstPass, QueryFragment};
 use crate::backend::Backend;
 use crate::connection::Connection;
-use crate::deserialize::TableQueryable;
+use crate::deserialize::QueryableByColumn;
 use crate::expression::*;
 use crate::query_builder::{QueryId, SelectByQuery, SelectQuery};
 use crate::query_dsl::LoadQuery;
@@ -74,7 +74,7 @@ where
 
 impl<ST, S, Stmt> SelectQuery for SelectByStatement<S, Stmt>
 where
-    S: TableQueryable,
+    S: QueryableByColumn,
     S::Columns: Expression<SqlType = ST>,
     Stmt: SelectQuery<SqlType = ST>,
 {
@@ -84,7 +84,7 @@ where
 
 impl<S, Stmt> SelectByQuery for SelectByStatement<S, Stmt>
 where
-    S: TableQueryable,
+    S: QueryableByColumn,
     Stmt: SelectByQuery<Columns = S::Columns>,
 {
     type Columns = S::Columns;
@@ -100,7 +100,7 @@ where
 
 impl<S, Stmt> QuerySource for SelectByStatement<S, Stmt>
 where
-    S: TableQueryable,
+    S: QueryableByColumn,
     Stmt: QuerySource,
     S::Columns: SelectableExpression<Self>,
 {

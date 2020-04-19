@@ -15,7 +15,7 @@
 
 use crate::backend::Backend;
 use crate::connection::Connection;
-use crate::deserialize::TableQueryable;
+use crate::deserialize::QueryableByColumn;
 use crate::expression::count::CountStar;
 use crate::expression::Expression;
 use crate::helper_types::*;
@@ -406,7 +406,7 @@ pub trait QueryDsl: Sized {
     /// ```
     fn select_by<Selection>(self) -> SelectBy<Self, Selection>
     where
-        Selection: TableQueryable,
+        Selection: QueryableByColumn,
         Self: methods::SelectByDsl<Selection>,
     {
         methods::SelectByDsl::select_by(self)

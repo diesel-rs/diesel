@@ -23,9 +23,9 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::TableQueryable;
+        use diesel::deserialize::QueryableByColumn;
 
-        impl #impl_generics TableQueryable
+        impl #impl_generics QueryableByColumn
             for #struct_name #ty_generics
         #where_clause
         {
@@ -40,7 +40,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 fn field_column_ty(field: &Field, model: &Model) -> Result<syn::Type, Diagnostic> {
     if field.has_flag("embed") {
         let embed_ty = &field.ty;
-        Ok(parse_quote!(<#embed_ty as TableQueryable>::Columns))
+        Ok(parse_quote!(<#embed_ty as QueryableByColumn>::Columns))
     } else {
         let table_name = model.table_name();
         let column_name = field.column_name();
@@ -51,7 +51,7 @@ fn field_column_ty(field: &Field, model: &Model) -> Result<syn::Type, Diagnostic
 fn field_column_inst(field: &Field, model: &Model) -> Result<syn::Expr, Diagnostic> {
     if field.has_flag("embed") {
         let embed_ty = &field.ty;
-        Ok(parse_quote!(<#embed_ty as TableQueryable>::columns()))
+        Ok(parse_quote!(<#embed_ty as QueryableByColumn>::columns()))
     } else {
         let table_name = model.table_name();
         let column_name = field.column_name();

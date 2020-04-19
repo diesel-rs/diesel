@@ -1,4 +1,4 @@
-use crate::deserialize::TableQueryable;
+use crate::deserialize::QueryableByColumn;
 use crate::query_source::Table;
 
 /// The `select_by` method
@@ -8,7 +8,7 @@ use crate::query_source::Table;
 /// to call `select_by` from generic code.
 ///
 /// [`QueryDsl`]: ../trait.QueryDsl.html
-pub trait SelectByDsl<Selection: TableQueryable> {
+pub trait SelectByDsl<Selection: QueryableByColumn> {
     // FIXME: Once we've refactored the `impl Expression` on `SelectStatement`
     // to not conditionally be `sql_types::Array`, it is probably worthwhile to
     // add a `: Expression<SqlType = Selection::SqlType>` bound here.
@@ -21,7 +21,7 @@ pub trait SelectByDsl<Selection: TableQueryable> {
 
 impl<T, Selection> SelectByDsl<Selection> for T
 where
-    Selection: TableQueryable,
+    Selection: QueryableByColumn,
     T: Table,
     T::Query: SelectByDsl<Selection>,
 {

@@ -258,7 +258,7 @@ pub use diesel_derives::QueryableByName;
 
 /// Trait indicating that a record can be selected and queried from the database.
 ///
-/// Types which implement `TableQueryable` represent the result of a SQL query. This
+/// Types which implement `QueryableByColumn` represent the result of a SQL query. This
 /// does not necessarily mean they represent a single database table.
 ///
 /// Diesel represents the return type of a query as the struct. The purpose of this
@@ -386,7 +386,7 @@ pub use diesel_derives::QueryableByName;
 /// #     Ok(())
 /// # }
 /// ```
-pub trait TableQueryable {
+pub trait QueryableByColumn {
     /// The Rust type you'd like to map from.
     ///
     /// This is typically a tuple of all of your struct's fields.
@@ -396,9 +396,9 @@ pub trait TableQueryable {
     fn columns() -> Self::Columns;
 }
 
-impl<T> TableQueryable for Option<T>
+impl<T> QueryableByColumn for Option<T>
 where
-    T: TableQueryable,
+    T: QueryableByColumn,
     Nullable<T::Columns>: Expression,
 {
     type Columns = Nullable<T::Columns>;
