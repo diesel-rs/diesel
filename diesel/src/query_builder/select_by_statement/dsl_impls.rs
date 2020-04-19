@@ -1,4 +1,3 @@
-// use super::BoxedSelectByStatement;
 use crate::associations::HasTable;
 use crate::backend::Backend;
 use crate::deserialize::TableQueryable;
@@ -7,12 +6,9 @@ use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::{AsQuery, Query, SelectByQuery, SelectByStatement};
-// use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
-// use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::joins::JoinTo;
-// use crate::query_source::QuerySource;
 use crate::sql_types::Bool;
 
 impl<CL, S, Stmt, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStatement<S, Stmt>

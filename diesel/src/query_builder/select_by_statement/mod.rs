@@ -24,27 +24,25 @@ pub struct SelectByStatement<Selection, Statement> {
 
 impl<S, Stmt> fmt::Debug for SelectByStatement<S, Stmt>
 where
-    Stmt: fmt::Debug
+    Stmt: fmt::Debug,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("SelectByStatement").field("inner", &self.inner).finish()
+        f.debug_struct("SelectByStatement")
+            .field("inner", &self.inner)
+            .finish()
     }
 }
 
 impl<S, Stmt> Clone for SelectByStatement<S, Stmt>
 where
-    Stmt: Clone
+    Stmt: Clone,
 {
     fn clone(&self) -> Self {
         SelectByStatement::new(self.inner.clone())
     }
 }
 
-impl<S, Stmt> Copy for SelectByStatement<S, Stmt>
-where
-    Stmt: Copy
-{
-}
+impl<S, Stmt> Copy for SelectByStatement<S, Stmt> where Stmt: Copy {}
 
 impl<S, Stmt> QueryId for SelectByStatement<S, Stmt>
 where
