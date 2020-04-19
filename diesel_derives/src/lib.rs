@@ -45,6 +45,7 @@ mod identifiable;
 mod insertable;
 mod query_id;
 mod queryable;
+mod queryable_by_column;
 mod queryable_by_name;
 mod sql_function;
 mod sql_type;
@@ -391,6 +392,15 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, queryable_by_name::derive)
+}
+
+/// SELECTBY_TODO: document
+#[proc_macro_derive(
+    QueryableByColumn,
+    attributes(table_name, column_name, sql_type, diesel)
+)]
+pub fn derive_queryable_by_column(input: TokenStream) -> TokenStream {
+    expand_proc_macro(input, queryable_by_column::derive)
 }
 
 /// Implement necessary traits for adding a new sql type

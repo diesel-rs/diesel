@@ -38,36 +38,8 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    let impl_table_queryable: Option<syn::Item> = if model.has_table_name_attribute() {
-        let field_columns_ty = model
-            .fields()
-            .iter()
-            .map(|f| field_column_ty(f, &model))
-            .collect::<Result<Vec<_>, _>>()?;
-        let field_columns_inst = model
-            .fields()
-            .iter()
-            .map(|f| field_column_inst(f, &model))
-            .collect::<Result<Vec<_>, _>>()?;
-
-        let (ty_impl_generics, _, ty_where_caluse) = item.generics.split_for_impl();
-        Some(parse_quote!(
-            impl #ty_impl_generics TableQueryable
-            for #struct_name #ty_generics
-            #ty_where_caluse
-            {
-                type Columns = (#(#field_columns_ty,)*);
-                fn columns() -> Self::Columns {
-                    (#(#field_columns_inst,)*)
-                }
-            }
-        ))
-    } else {
-        None
-    };
-
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::{self, QueryableByName, TableQueryable};
+        use diesel::deserialize::{self, QueryableByName};
         use diesel::row::NamedRow;
 
         impl #impl_generics QueryableByName<__DB>
@@ -80,8 +52,6 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 })
             }
         }
-
-        #impl_table_queryable
     }))
 }
 
@@ -97,28 +67,6 @@ fn field_expr(field: &Field, model: &Model) -> Result<syn::FieldValue, Diagnosti
         Ok(field
             .name
             .assign(parse_quote!(row.get::<#st, #ty>(stringify!(#column_name))?.into())))
-    }
-}
-
-fn field_column_ty(field: &Field, model: &Model) -> Result<syn::Type, Diagnostic> {
-    if field.has_flag("embed") {
-        let embed_ty = &field.ty;
-        Ok(parse_quote!(<#embed_ty as TableQueryable>::Columns))
-    } else {
-        let table_name = model.table_name();
-        let column_name = field.column_name();
-        Ok(parse_quote!(#table_name::#column_name))
-    }
-}
-
-fn field_column_inst(field: &Field, model: &Model) -> Result<syn::Expr, Diagnostic> {
-    if field.has_flag("embed") {
-        let embed_ty = &field.ty;
-        Ok(parse_quote!(<#embed_ty as TableQueryable>::columns()))
-    } else {
-        let table_name = model.table_name();
-        let column_name = field.column_name();
-        Ok(parse_quote!(#table_name::#column_name))
     }
 }
 

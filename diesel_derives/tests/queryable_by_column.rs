@@ -22,7 +22,7 @@ table! {
 
 #[test]
 fn named_struct_definition() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName, QueryableByColumn)]
     #[table_name = "my_structs"]
     struct MyStruct {
         foo: IntRust,
@@ -32,11 +32,15 @@ fn named_struct_definition() {
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
     assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
+    let data = my_structs::table
+        .select_by::<MyStruct>()
+        .get_result::<MyStruct>(&conn);
+    assert!(data.is_err());
 }
 
 #[test]
 fn tuple_struct() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName, QueryableByColumn)]
     #[table_name = "my_structs"]
     struct MyStruct(
         #[column_name = "foo"] IntRust,
@@ -46,28 +50,17 @@ fn tuple_struct() {
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
     assert_eq!(Ok(MyStruct(1, 2)), data);
+    let data = my_structs::table
+        .select_by::<MyStruct>()
+        .get_result::<MyStruct>(&conn);
+    assert!(data.is_err());
 }
 
 // FIXME: Test usage with renamed columns
 
 #[test]
-fn struct_with_no_table() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
-    struct MyStructNamedSoYouCantInferIt {
-        #[sql_type = "IntSql"]
-        foo: IntRust,
-        #[sql_type = "IntSql"]
-        bar: IntRust,
-    }
-
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
-    assert_eq!(Ok(MyStructNamedSoYouCantInferIt { foo: 1, bar: 2 }), data);
-}
-
-#[test]
 fn embedded_struct() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName, QueryableByColumn)]
     #[table_name = "my_structs"]
     struct A {
         foo: IntRust,
@@ -75,7 +68,7 @@ fn embedded_struct() {
         b: B,
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName, QueryableByColumn)]
     #[table_name = "my_structs"]
     struct B {
         bar: IntRust,
@@ -90,11 +83,13 @@ fn embedded_struct() {
         }),
         data
     );
+    let data = my_structs::table.select_by::<A>().get_result::<A>(&conn);
+    assert!(data.is_err());
 }
 
 #[test]
 fn embedded_option() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName, QueryableByColumn)]
     #[table_name = "my_structs"]
     struct A {
         foo: IntRust,
@@ -102,7 +97,7 @@ fn embedded_option() {
         b: Option<B>,
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName, QueryableByColumn)]
     #[table_name = "my_structs"]
     struct B {
         bar: IntRust,
@@ -119,4 +114,6 @@ fn embedded_option() {
     );
     let data = sql_query("SELECT 1 AS foo, NULL AS bar").get_result(&conn);
     assert_eq!(Ok(A { foo: 1, b: None }), data);
+    let data = my_structs::table.select_by::<A>().get_result::<A>(&conn);
+    assert!(data.is_err());
 }
