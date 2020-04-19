@@ -2,11 +2,9 @@ use super::{AstPass, QueryFragment};
 use crate::backend::Backend;
 use crate::connection::Connection;
 use crate::deserialize::{QueryableByName, TableQueryable};
-// use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::{QueryId, SelectByQuery, SelectQuery};
 use crate::query_dsl::LoadQuery;
-// use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
 use crate::result::QueryResult;
 
@@ -24,13 +22,10 @@ pub struct SelectByStatement<Selection, Statement> {
 
 impl<S, Stmt> QueryId for SelectByStatement<S, Stmt>
 where
-    S: TableQueryable,
-    S::Columns: QueryId,
     Stmt: QueryId,
 {
-    type QueryId = SelectByStatement<<S::Columns as QueryId>::QueryId, Stmt::QueryId>;
-    const HAS_STATIC_QUERY_ID: bool =
-        <S::Columns as QueryId>::HAS_STATIC_QUERY_ID && Stmt::HAS_STATIC_QUERY_ID;
+    type QueryId = Stmt::QueryId;
+    const HAS_STATIC_QUERY_ID: bool = Stmt::HAS_STATIC_QUERY_ID;
 }
 
 impl<S, ST> SelectByStatement<S, ST> {

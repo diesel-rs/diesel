@@ -6,7 +6,7 @@ use crate::deserialize::TableQueryable;
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::insert_statement::InsertFromSelect;
-use crate::query_builder::{Query, SelectByQuery, SelectByStatement};
+use crate::query_builder::{AsQuery, Query, SelectByQuery, SelectByStatement};
 // use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
@@ -15,9 +15,11 @@ use crate::query_source::joins::JoinTo;
 // use crate::query_source::QuerySource;
 use crate::sql_types::Bool;
 
-impl<S, Stmt, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStatement<S, Stmt>
+impl<CL, S, Stmt, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStatement<S, Stmt>
 where
     Stmt: InternalJoinDsl<Rhs, Kind, On>,
+    Self: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL> + AsQuery,
 {
     type Output = Stmt::Output;
 
@@ -160,6 +162,21 @@ where
     }
 }
 
+// SELECTBY_TODO: rethink
+impl<CL, S, STMT, Expr> GroupByDsl<Expr> for SelectByStatement<S, STMT>
+where
+    Expr: Expression,
+    STMT: GroupByDsl<Expr>,
+    Self: SelectByQuery<Columns = CL>,
+    STMT::Output: SelectByQuery<Columns = CL>,
+{
+    type Output = STMT::Output;
+
+    fn group_by(self, expr: Expr) -> Self::Output {
+        self.inner.group_by(expr)
+    }
+}
+
 impl<CL, S, Stmt, Lock> LockingDsl<Lock> for SelectByStatement<S, Stmt>
 where
     Stmt: LockingDsl<Lock>,
@@ -276,28 +293,15 @@ impl<S, Stmt> QueryDsl for SelectByStatement<S, Stmt> {}
 
 impl<S, Stmt, Conn> RunQueryDsl<Conn> for SelectByStatement<S, Stmt> {}
 
-// SELECTBY_TODO: Self is never Query
 impl<S, Stmt, Tab> Insertable<Tab> for SelectByStatement<S, Stmt>
 where
     Tab: Table,
-    Self: Query,
+    Stmt: Query,
 {
-    type Values = InsertFromSelect<Self, Tab::AllColumns>;
+    type Values = InsertFromSelect<Stmt, Tab::AllColumns>;
 
     fn values(self) -> Self::Values {
-        InsertFromSelect::new(self)
-    }
-}
-
-impl<'a, S, Stmt, Tab> Insertable<Tab> for &'a SelectByStatement<S, Stmt>
-where
-    Tab: Table,
-    Self: Query,
-{
-    type Values = InsertFromSelect<Self, Tab::AllColumns>;
-
-    fn values(self) -> Self::Values {
-        InsertFromSelect::new(self)
+        InsertFromSelect::new(self.inner)
     }
 }
 
