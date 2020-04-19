@@ -15,76 +15,76 @@ use crate::query_source::joins::JoinTo;
 // use crate::query_source::QuerySource;
 use crate::sql_types::Bool;
 
-impl<S, STMT, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStatement<S, STMT>
+impl<S, Stmt, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStatement<S, Stmt>
 where
-    STMT: InternalJoinDsl<Rhs, Kind, On>,
+    Stmt: InternalJoinDsl<Rhs, Kind, On>,
 {
-    type Output = STMT::Output;
+    type Output = Stmt::Output;
 
     fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
         self.inner.join(rhs, kind, on)
     }
 }
 
-impl<S, STMT, Selection> SelectDsl<Selection> for SelectByStatement<S, STMT>
+impl<S, Stmt, Selection> SelectDsl<Selection> for SelectByStatement<S, Stmt>
 where
     Selection: Expression,
-    STMT: SelectDsl<Selection>,
+    Stmt: SelectDsl<Selection>,
 {
-    type Output = STMT::Output;
+    type Output = Stmt::Output;
 
     fn select(self, selection: Selection) -> Self::Output {
         self.inner.select(selection)
     }
 }
 
-impl<S, STMT, Selection> SelectByDsl<Selection> for SelectByStatement<S, STMT>
+impl<S, Stmt, Selection> SelectByDsl<Selection> for SelectByStatement<S, Stmt>
 where
     Selection: TableQueryable,
-    STMT: SelectByDsl<Selection>,
+    Stmt: SelectByDsl<Selection>,
 {
-    type Output = STMT::Output;
+    type Output = Stmt::Output;
 
     fn select_by(self) -> Self::Output {
         self.inner.select_by()
     }
 }
 
-impl<CL, S, STMT> DistinctDsl for SelectByStatement<S, STMT>
+impl<CL, S, Stmt> DistinctDsl for SelectByStatement<S, Stmt>
 where
     Self: SelectByQuery<Columns = CL>,
-    STMT: DistinctDsl,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt: DistinctDsl,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn distinct(self) -> Self::Output {
         SelectByStatement::new(self.inner.distinct())
     }
 }
 
-impl<CL, S, STMT, Predicate> FilterDsl<Predicate> for SelectByStatement<S, STMT>
+impl<CL, S, Stmt, Predicate> FilterDsl<Predicate> for SelectByStatement<S, Stmt>
 where
     Predicate: Expression<SqlType = Bool> + NonAggregate,
-    STMT: FilterDsl<Predicate>,
+    Stmt: FilterDsl<Predicate>,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn filter(self, predicate: Predicate) -> Self::Output {
         SelectByStatement::new(self.inner.filter(predicate))
     }
 }
 
-impl<CL, S, STMT, Predicate> OrFilterDsl<Predicate> for SelectByStatement<S, STMT>
+impl<CL, S, Stmt, Predicate> OrFilterDsl<Predicate> for SelectByStatement<S, Stmt>
 where
     Predicate: Expression<SqlType = Bool> + NonAggregate,
-    STMT: OrFilterDsl<Predicate>,
+    Stmt: OrFilterDsl<Predicate>,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn or_filter(self, predicate: Predicate) -> Self::Output {
         SelectByStatement::new(self.inner.or_filter(predicate))
@@ -93,107 +93,93 @@ where
 
 use crate::query_source::Table;
 
-impl<CL, S, STMT, PK> FindDsl<PK> for SelectByStatement<S, STMT>
+impl<CL, S, Stmt, PK> FindDsl<PK> for SelectByStatement<S, Stmt>
 where
-    STMT: FindDsl<PK>,
+    Stmt: FindDsl<PK>,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn find(self, id: PK) -> Self::Output {
         SelectByStatement::new(self.inner.find(id))
     }
 }
 
-impl<CL, S, STMT, Expr> OrderDsl<Expr> for SelectByStatement<S, STMT>
+impl<CL, S, Stmt, Expr> OrderDsl<Expr> for SelectByStatement<S, Stmt>
 where
     Expr: Expression,
-    STMT: OrderDsl<Expr>,
+    Stmt: OrderDsl<Expr>,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn order(self, expr: Expr) -> Self::Output {
         SelectByStatement::new(self.inner.order(expr))
     }
 }
 
-impl<CL, S, STMT, Expr> ThenOrderDsl<Expr> for SelectByStatement<S, STMT>
+impl<CL, S, Stmt, Expr> ThenOrderDsl<Expr> for SelectByStatement<S, Stmt>
 where
     Expr: Expression,
-    STMT: ThenOrderDsl<Expr>,
+    Stmt: ThenOrderDsl<Expr>,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn then_order_by(self, expr: Expr) -> Self::Output {
         SelectByStatement::new(self.inner.then_order_by(expr))
     }
 }
 
-impl<CL, S, STMT> LimitDsl for SelectByStatement<S, STMT>
+impl<CL, S, Stmt> LimitDsl for SelectByStatement<S, Stmt>
 where
-    STMT: LimitDsl,
+    Stmt: LimitDsl,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn limit(self, limit: i64) -> Self::Output {
         SelectByStatement::new(self.inner.limit(limit))
     }
 }
 
-impl<CL, S, STMT> OffsetDsl for SelectByStatement<S, STMT>
+impl<CL, S, Stmt> OffsetDsl for SelectByStatement<S, Stmt>
 where
-    STMT: OffsetDsl,
+    Stmt: OffsetDsl,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn offset(self, offset: i64) -> Self::Output {
         SelectByStatement::new(self.inner.offset(offset))
     }
 }
 
-impl<CL, S, STMT, Expr> GroupByDsl<Expr> for SelectByStatement<S, STMT>
+impl<CL, S, Stmt, Lock> LockingDsl<Lock> for SelectByStatement<S, Stmt>
 where
-    Expr: Expression,
-    STMT: GroupByDsl<Expr>,
+    Stmt: LockingDsl<Lock>,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = STMT::Output;
-
-    fn group_by(self, expr: Expr) -> Self::Output {
-        self.inner.group_by(expr)
-    }
-}
-
-impl<CL, S, STMT, Lock> LockingDsl<Lock> for SelectByStatement<S, STMT>
-where
-    STMT: LockingDsl<Lock>,
-    Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
-{
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn with_lock(self, lock: Lock) -> Self::Output {
         SelectByStatement::new(self.inner.with_lock(lock))
     }
 }
 
-impl<CL, S, STMT, Modifier> ModifyLockDsl<Modifier> for SelectByStatement<S, STMT>
+impl<CL, S, Stmt, Modifier> ModifyLockDsl<Modifier> for SelectByStatement<S, Stmt>
 where
-    STMT: ModifyLockDsl<Modifier>,
+    Stmt: ModifyLockDsl<Modifier>,
     Self: SelectByQuery<Columns = CL>,
-    STMT::Output: SelectByQuery<Columns = CL>,
+    Stmt::Output: SelectByQuery<Columns = CL>,
 {
-    type Output = SelectByStatement<S, STMT::Output>;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn modify_lock(self, modifier: Modifier) -> Self::Output {
         SelectByStatement::new(self.inner.modify_lock(modifier))
@@ -258,54 +244,40 @@ where
 //     }
 // }
 
-impl<S, STMT> HasTable for SelectByStatement<S, STMT>
+impl<S, Stmt> HasTable for SelectByStatement<S, Stmt>
 where
-    STMT: HasTable,
+    Stmt: HasTable,
 {
-    type Table = STMT::Table;
+    type Table = Stmt::Table;
 
     fn table() -> Self::Table {
-        STMT::table()
+        Stmt::table()
     }
 }
 
 // no IntoUpdateTarget: if you'd like to `.into_update_target`, you should not first `.select_by`
-// impl<F, W> IntoUpdateTarget for SelectStatement<F, DefaultSelectClause, NoDistinctClause, W>
-// where
-//     SelectStatement<F, DefaultSelectClause, NoDistinctClause, W>: HasTable,
-//     W: ValidWhereClause<F>,
-// {
-//     type WhereClause = W;
-
-//     fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
-//         UpdateTarget {
-//             table: Self::table(),
-//             where_clause: self.where_clause,
-//         }
-//     }
-// }
 
 // FIXME: Should we disable joining when `.group_by` has been called? Are there
 // any other query methods where a join no longer has the same semantics as
 // joining on just the table?
-impl<S, STMT, Rhs> JoinTo<Rhs> for SelectByStatement<S, STMT>
+impl<S, Stmt, Rhs> JoinTo<Rhs> for SelectByStatement<S, Stmt>
 where
-    STMT: JoinTo<Rhs>,
+    Stmt: JoinTo<Rhs>,
 {
-    type FromClause = STMT::FromClause;
-    type OnClause = STMT::OnClause;
+    type FromClause = Stmt::FromClause;
+    type OnClause = Stmt::OnClause;
 
     fn join_target(rhs: Rhs) -> (Self::FromClause, Self::OnClause) {
-        STMT::join_target(rhs)
+        Stmt::join_target(rhs)
     }
 }
 
-impl<S, STMT> QueryDsl for SelectByStatement<S, STMT> {}
+impl<S, Stmt> QueryDsl for SelectByStatement<S, Stmt> {}
 
-impl<S, STMT, Conn> RunQueryDsl<Conn> for SelectByStatement<S, STMT> {}
+impl<S, Stmt, Conn> RunQueryDsl<Conn> for SelectByStatement<S, Stmt> {}
 
 // SELECTBY_TODO: Self is never Query
-impl<S, STMT, Tab> Insertable<Tab> for SelectByStatement<S, STMT>
+impl<S, Stmt, Tab> Insertable<Tab> for SelectByStatement<S, Stmt>
 where
     Tab: Table,
     Self: Query,
@@ -317,7 +289,7 @@ where
     }
 }
 
-impl<'a, S, STMT, Tab> Insertable<Tab> for &'a SelectByStatement<S, STMT>
+impl<'a, S, Stmt, Tab> Insertable<Tab> for &'a SelectByStatement<S, Stmt>
 where
     Tab: Table,
     Self: Query,

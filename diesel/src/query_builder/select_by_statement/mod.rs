@@ -22,15 +22,15 @@ pub struct SelectByStatement<Selection, Statement> {
     pub(crate) inner: Statement,
 }
 
-impl<S, STMT> QueryId for SelectByStatement<S, STMT>
+impl<S, Stmt> QueryId for SelectByStatement<S, Stmt>
 where
     S: TableQueryable,
     S::Columns: QueryId,
-    STMT: QueryId,
+    Stmt: QueryId,
 {
-    type QueryId = SelectByStatement<<S::Columns as QueryId>::QueryId, STMT::QueryId>;
+    type QueryId = SelectByStatement<<S::Columns as QueryId>::QueryId, Stmt::QueryId>;
     const HAS_STATIC_QUERY_ID: bool =
-        <S::Columns as QueryId>::HAS_STATIC_QUERY_ID && STMT::HAS_STATIC_QUERY_ID;
+        <S::Columns as QueryId>::HAS_STATIC_QUERY_ID && Stmt::HAS_STATIC_QUERY_ID;
 }
 
 impl<S, ST> SelectByStatement<S, ST> {
@@ -42,10 +42,10 @@ impl<S, ST> SelectByStatement<S, ST> {
     }
 }
 
-impl<DB, S, STMT> QueryFragment<DB> for SelectByStatement<S, STMT>
+impl<DB, S, Stmt> QueryFragment<DB> for SelectByStatement<S, Stmt>
 where
     DB: Backend,
-    STMT: QueryFragment<DB>,
+    Stmt: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         self.inner.walk_ast(out.reborrow())?;
@@ -53,39 +53,39 @@ where
     }
 }
 
-impl<ST, S, STMT> SelectQuery for SelectByStatement<S, STMT>
+impl<ST, S, Stmt> SelectQuery for SelectByStatement<S, Stmt>
 where
     S: TableQueryable,
     S::Columns: Expression<SqlType = ST>,
-    STMT: SelectQuery<SqlType = ST>,
+    Stmt: SelectQuery<SqlType = ST>,
 {
     // TODO: check SelectByClause
     type SqlType = ST;
 }
 
-impl<S, STMT> SelectByQuery for SelectByStatement<S, STMT>
+impl<S, Stmt> SelectByQuery for SelectByStatement<S, Stmt>
 where
     S: TableQueryable,
-    STMT: SelectByQuery<Columns = S::Columns>,
+    Stmt: SelectByQuery<Columns = S::Columns>,
 {
     type Columns = S::Columns;
 }
 
 /// Allow `SelectStatement<S, Statement>` to act as if it were `Statement`.
-impl<S, STMT, T> AppearsInFromClause<T> for SelectByStatement<S, STMT>
+impl<S, Stmt, T> AppearsInFromClause<T> for SelectByStatement<S, Stmt>
 where
-    STMT: AppearsInFromClause<T>,
+    Stmt: AppearsInFromClause<T>,
 {
-    type Count = STMT::Count;
+    type Count = Stmt::Count;
 }
 
-impl<S, STMT> QuerySource for SelectByStatement<S, STMT>
+impl<S, Stmt> QuerySource for SelectByStatement<S, Stmt>
 where
     S: TableQueryable,
-    STMT: QuerySource,
+    Stmt: QuerySource,
     S::Columns: SelectableExpression<Self>,
 {
-    type FromClause = STMT::FromClause;
+    type FromClause = Stmt::FromClause;
     type DefaultSelection = S::Columns;
 
     fn from_clause(&self) -> Self::FromClause {
@@ -99,7 +99,7 @@ where
 
 // not implement AppendSelection
 
-impl<Conn, S, STMT, Columns, ST> LoadQuery<Conn, S> for SelectByStatement<S, STMT>
+impl<Conn, S, Stmt, Columns, ST> LoadQuery<Conn, S> for SelectByStatement<S, Stmt>
 where
     Conn: Connection,
     Columns: Expression<SqlType = ST>,
