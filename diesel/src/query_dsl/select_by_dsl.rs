@@ -1,6 +1,4 @@
-use super::select_dsl::SelectDsl;
 use crate::deserialize::TableQueryable;
-use crate::query_builder::SelectByStatement;
 use crate::query_source::Table;
 
 /// The `select_by` method
@@ -25,11 +23,11 @@ impl<T, Selection> SelectByDsl<Selection> for T
 where
     Selection: TableQueryable,
     T: Table,
-    T::Query: SelectDsl<Selection::Columns>,
+    T::Query: SelectByDsl<Selection>,
 {
-    type Output = SelectByStatement<Selection, <T::Query as SelectDsl<Selection::Columns>>::Output>;
+    type Output = <T::Query as SelectByDsl<Selection>>::Output;
 
     fn select_by(self) -> Self::Output {
-        SelectByStatement::new(self.as_query().select(Selection::columns()))
+        self.as_query().select_by()
     }
 }

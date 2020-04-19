@@ -4,7 +4,7 @@ use crate::connection::Connection;
 use crate::deserialize::{QueryableByName, TableQueryable};
 // use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
-use crate::query_builder::{QueryId, SelectQuery};
+use crate::query_builder::{QueryId, SelectQuery, SelectByQuery};
 use crate::query_dsl::LoadQuery;
 // use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
@@ -24,10 +24,12 @@ pub struct SelectByStatement<Selection, Statement> {
 
 impl<S, STMT> QueryId for SelectByStatement<S, STMT>
 where
+    S: TableQueryable,
+    S::Columns: QueryId,
     STMT: QueryId,
 {
-    type QueryId = SelectByStatement<(), STMT::QueryId>;
-    const HAS_STATIC_QUERY_ID: bool = STMT::HAS_STATIC_QUERY_ID;
+    type QueryId = SelectByStatement<<S::Columns as QueryId>::QueryId, STMT::QueryId>;
+    const HAS_STATIC_QUERY_ID: bool = <S::Columns as QueryId>::HAS_STATIC_QUERY_ID && STMT::HAS_STATIC_QUERY_ID;
 }
 
 impl<S, ST> SelectByStatement<S, ST> {
@@ -60,6 +62,15 @@ where
     type SqlType = ST;
 }
 
+
+impl<S, STMT> SelectByQuery for SelectByStatement<S, STMT>
+where
+    S: TableQueryable,
+    STMT: SelectByQuery<Columns = S::Columns>,
+{
+    type Columns = S::Columns;
+}
+
 /// Allow `SelectStatement<S, Statement>` to act as if it were `Statement`.
 impl<S, STMT, T> AppearsInFromClause<T> for SelectByStatement<S, STMT>
 where
@@ -88,11 +99,12 @@ where
 
 // not implement AppendSelection
 
-impl<Conn, S, ST> LoadQuery<Conn, S> for SelectByStatement<S, ST>
+impl<Conn, S, STMT, Columns, ST> LoadQuery<Conn, S> for SelectByStatement<S, STMT>
 where
     Conn: Connection,
-    S: QueryableByName<Conn::Backend> + TableQueryable,
-    Self: QueryFragment<Conn::Backend> + SelectQuery + QueryId,
+    Columns: Expression<SqlType = ST>,
+    S: QueryableByName<Conn::Backend> + TableQueryable<Columns = Columns>,
+    Self: QueryFragment<Conn::Backend> + SelectQuery<SqlType = ST> + SelectByQuery<Columns = Columns> + QueryId,
 {
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<S>> {
         conn.query_by_name(&self)

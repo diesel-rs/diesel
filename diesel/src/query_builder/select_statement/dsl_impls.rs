@@ -75,18 +75,18 @@ impl<F, S, D, W, O, L, Of, LC, Selection> SelectByDsl<Selection>
     for SelectStatement<F, S, D, W, O, L, Of, NoGroupByClause, LC>
 where
     Selection: TableQueryable,
-    SelectStatement<F, SelectClause<Selection::Columns>, D, W, O, L, Of, NoGroupByClause, LC>:
+    SelectStatement<F, SelectByClause<Selection>, D, W, O, L, Of, NoGroupByClause, LC>:
         SelectQuery,
 {
     // SELECTBY_TODO: SelectByClause
     type Output = SelectByStatement<
         Selection,
-        SelectStatement<F, SelectClause<Selection::Columns>, D, W, O, L, Of, NoGroupByClause, LC>,
+        SelectStatement<F, SelectByClause<Selection>, D, W, O, L, Of, NoGroupByClause, LC>,
     >;
 
     fn select_by(self) -> Self::Output {
         let inner = SelectStatement::new(
-            SelectClause(Selection::columns()),
+            SelectByClause::default(),
             self.from,
             self.distinct,
             self.where_clause,

@@ -26,9 +26,10 @@ use super::select_clause::*;
 use super::where_clause::*;
 use super::{AstPass, Query, QueryFragment};
 use crate::backend::Backend;
+use crate::deserialize::TableQueryable;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
-use crate::query_builder::{QueryId, SelectQuery};
+use crate::query_builder::{QueryId, SelectQuery, SelectByQuery};
 use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
 use crate::result::QueryResult;
@@ -116,6 +117,15 @@ where
     S: SelectClauseExpression<F>,
 {
     type SqlType = S::SelectClauseSqlType;
+}
+
+impl<F, S, D, W, O, L, Of, LC, ST> SelectByQuery for SelectStatement<F, SelectByClause<S>, D, W, O, L, Of, NoGroupByClause, LC>
+where
+    S: TableQueryable,
+    S::Columns: Expression<SqlType = ST>,
+    Self: SelectQuery<SqlType = ST>,
+{
+    type Columns = S::Columns;
 }
 
 impl<F, S, D, W, O, L, Of, G, LC, DB> QueryFragment<DB>
