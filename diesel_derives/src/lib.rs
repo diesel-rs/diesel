@@ -431,7 +431,7 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///    `#[table_name = "some_table"]` is used, otherwise it's optional.
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 ///   single database column, but is a type that implements
-///   `QueryableByName` on it's own
+///   `QueryableByColumn` on it's own
 #[proc_macro_derive(
     QueryableByColumn,
     attributes(table_name, column_name, sql_type, diesel)
