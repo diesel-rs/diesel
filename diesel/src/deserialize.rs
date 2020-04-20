@@ -258,17 +258,23 @@ pub use diesel_derives::QueryableByName;
 
 /// Trait indicating that a record can be selected and queried from the database.
 ///
-/// Types which implement `QueryableByColumn` represent the result of a SQL query. This
-/// does not necessarily mean they represent a single database table.
+/// Types which implement `QueryableByColumn` represent the result of a SQL query, and could
+/// be used to construct a select clause via [`select_by`] method. This does not necessarily
+/// mean they represent a single database table.
 ///
-/// Diesel represents the return type of a query as the struct. The purpose of this
-/// trait is to provide columns of select_by statement and use with QueryableByColumn.
+/// The trait is used only to construct a select clause, and to verify if a [`SelectByQuery`]
+/// is valid, in order to [`load`] the result we might also like to implement or derive
+/// [`Queryable`](trait.Queryable.html)
 ///
 /// This trait can be [derived](derive.QueryableByColumn.html)
 ///
+/// [`SelectByQuery`]: ..//query_builder/trait.SelectByQuery.html
+/// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
+/// [`select_by`]: ../query_dsl/methods/trait.SelectByDsl.html#tymethod.select_by
+///
 /// # Examples
 ///
-/// If we just want to map a query to our struct, we can use `derive`.
+/// If we just want to construct a query using our struct, we can use `derive`.
 ///
 /// ```rust
 /// # include!("doctest_setup.rs");
