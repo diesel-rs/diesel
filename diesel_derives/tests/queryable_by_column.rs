@@ -42,7 +42,9 @@ fn tuple_struct() {
     #[table_name = "my_structs"]
     struct MyStruct(
         #[column_name = "foo"] IntRust,
-        #[column_name = "bar"] IntRust,
+        #[table_name = "my_structs"]
+        #[column_name = "bar"]
+        IntRust,
     );
 
     let conn = connection();
@@ -65,8 +67,8 @@ fn embedded_struct() {
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, QueryableByColumn)]
-    #[table_name = "my_structs"]
     struct B {
+        #[table_name = "my_structs"]
         bar: IntRust,
     }
 

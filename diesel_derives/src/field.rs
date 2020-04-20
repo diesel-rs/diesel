@@ -12,12 +12,15 @@ pub struct Field {
     pub name: FieldName,
     pub span: Span,
     pub sql_type: Option<syn::Type>,
+    table_name_from_attribute: Option<syn::Ident>,
     column_name_from_attribute: Option<syn::Ident>,
     flags: MetaItem,
 }
 
 impl Field {
     pub fn from_struct_field(field: &syn::Field, index: usize) -> Self {
+        let table_name_from_attribute =
+            MetaItem::with_name(&field.attrs, "table_name").map(|m| m.expect_ident_value());
         let column_name_from_attribute =
             MetaItem::with_name(&field.attrs, "column_name").map(|m| m.expect_ident_value());
         let name = match field.ident.clone() {
@@ -41,12 +44,17 @@ impl Field {
 
         Self {
             ty: field.ty.clone(),
+            table_name_from_attribute,
             column_name_from_attribute,
             name,
             sql_type,
             flags,
             span,
         }
+    }
+
+    pub fn table_name(&self) -> Option<syn::Ident> {
+        self.table_name_from_attribute.clone()
     }
 
     pub fn column_name(&self) -> syn::Ident {

@@ -42,7 +42,7 @@ fn field_column_ty(field: &Field, model: &Model) -> Result<syn::Type, Diagnostic
         let embed_ty = &field.ty;
         Ok(parse_quote!(<#embed_ty as QueryableByColumn>::Columns))
     } else {
-        let table_name = model.table_name();
+        let table_name = field.table_name().unwrap_or_else(|| model.table_name());
         let column_name = field.column_name();
         Ok(parse_quote!(#table_name::#column_name))
     }
@@ -53,7 +53,7 @@ fn field_column_inst(field: &Field, model: &Model) -> Result<syn::Expr, Diagnost
         let embed_ty = &field.ty;
         Ok(parse_quote!(<#embed_ty as QueryableByColumn>::columns()))
     } else {
-        let table_name = model.table_name();
+        let table_name = field.table_name().unwrap_or_else(|| model.table_name());
         let column_name = field.column_name();
         Ok(parse_quote!(#table_name::#column_name))
     }

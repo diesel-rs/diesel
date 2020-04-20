@@ -425,13 +425,15 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///   the derive will use the sql type of the corresponding column.
 ///
 /// ## Field attributes
+/// * `#[table_name = "some_table"]`, overrides the table name for
+///    a given field. This attribute is optional.
 /// * `#[column_name = "some_column"]`, overrides the column name for
 ///    a given field. If not set, the name of the field is used as column
 ///    name. This attribute is required on tuple structs, if
 ///    `#[table_name = "some_table"]` is used, otherwise it's optional.
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
-///   single database column, but is a type that implements
-///   `QueryableByColumn` on it's own
+///    single database column, but is a type that implements
+///    `QueryableByColumn` on it's own
 #[proc_macro_derive(
     QueryableByColumn,
     attributes(table_name, column_name, sql_type, diesel)
