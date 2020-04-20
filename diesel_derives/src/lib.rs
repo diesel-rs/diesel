@@ -394,7 +394,44 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, queryable_by_name::derive)
 }
 
-/// SELECTBY_TODO: document
+/// Implements `QueryableByColumn`
+///
+/// To implement `QueryableByColumn` this derive needs to know the corresponding table
+/// type. By default it uses the `snake_case` type name with an added `s`.
+/// It is possible to change this default by using `#[table_name = "something"]`.
+/// In both cases the module for that table must be in scope.
+/// For example, to derive this for a struct called `User`, you will
+/// likely need a line such as `use schema::users;`
+///
+/// If the name of a field on your struct is different than the column in your
+/// `table!` declaration, or if you are deriving this trait on a tuple struct,
+/// you can annotate the field with `#[column_name = "some_column"]`. For tuple
+/// structs, all fields must have this annotation.
+///
+/// If a field is another struct which implements `QueryableByColumn`,
+/// instead of a column, you can annotate that struct with `#[diesel(embed)]`.
+/// Then all fields contained by that inner struct are loaded into
+/// the embedded struct (not necessary the same table).
+///
+/// The derive enables SelectByDsl for the statement, in order to
+/// use LoadDsl, you might also check the `Queryable` trait and derive.
+///
+/// # Attributes
+///
+/// ## Type attributes
+///
+/// * `#[table_name = "some_table"]`, to specify that this type contains
+///   columns for the specified table. If no field attributes are specified
+///   the derive will use the sql type of the corresponding column.
+///
+/// ## Field attributes
+/// * `#[column_name = "some_column"]`, overrides the column name for
+///    a given field. If not set, the name of the field is used as column
+///    name. This attribute is required on tuple structs, if
+///    `#[table_name = "some_table"]` is used, otherwise it's optional.
+/// * `#[diesel(embed)]`, specifies that the current field maps not only
+///   single database column, but is a type that implements
+///   `QueryableByName` on it's own
 #[proc_macro_derive(
     QueryableByColumn,
     attributes(table_name, column_name, sql_type, diesel)

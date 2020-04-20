@@ -80,7 +80,6 @@ where
     SelectStatement<F, SelectClause<CL>, D, W, O, L, Of, NoGroupByClause, LC>:
         SelectQuery<SqlType = ST> + SelectByQuery<Columns = CL>,
 {
-    // SELECTBY_TODO: SelectByClause
     type Output = SelectByStatement<
         Selection,
         SelectStatement<F, SelectClause<CL>, D, W, O, L, Of, NoGroupByClause, LC>,

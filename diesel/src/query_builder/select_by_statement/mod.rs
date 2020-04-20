@@ -5,6 +5,7 @@ use super::{AstPass, QueryFragment};
 use crate::backend::Backend;
 use crate::connection::Connection;
 use crate::deserialize::QueryableByColumn;
+use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::{QueryId, SelectByQuery, SelectQuery};
 use crate::query_dsl::LoadQuery;
@@ -13,8 +14,14 @@ use crate::result::QueryResult;
 
 mod dsl_impls;
 
-/// it is like `SelectStatement` but without
-/// `Query`, `ValidSubselect` and `AppendSelection`
+/// It is like `SelectStatement` but without
+/// `Query`/`AsQuery`, `AppendSelection` and `IntoUpdateTarget`.
+/// note: it would have conflicting implementation of `LoadQuery` if
+/// this implements `AsQuery`.
+/// It does not support `GroupByDsl` and `InternalJoinDsl` right now
+/// (using these dsl would unboxing into inner statement).
+/// When using `SelectDsl`/`SelectByDsl` would intendedly unbox/rebox
+/// Other operation should keep Selection invariant.
 #[doc(hidden)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectByStatement<Selection, Statement> {
@@ -74,11 +81,8 @@ where
 
 impl<ST, S, Stmt> SelectQuery for SelectByStatement<S, Stmt>
 where
-    S: QueryableByColumn,
-    S::Columns: Expression<SqlType = ST>,
     Stmt: SelectQuery<SqlType = ST>,
 {
-    // TODO: check SelectByClause
     type SqlType = ST;
 }
 
@@ -90,7 +94,13 @@ where
     type Columns = S::Columns;
 }
 
-/// Allow `SelectStatement<S, Statement>` to act as if it were `Statement`.
+impl<S, Stmt, QS> ValidSubselect<QS> for SelectByStatement<S, Stmt>
+where
+    Self: SelectQuery,
+    Stmt: ValidSubselect<QS>,
+{
+}
+
 impl<S, Stmt, T> AppearsInFromClause<T> for SelectByStatement<S, Stmt>
 where
     Stmt: AppearsInFromClause<T>,
@@ -115,8 +125,6 @@ where
         S::columns()
     }
 }
-
-// not implement AppendSelection
 
 impl<Conn, S, Stmt> LoadQuery<Conn, S> for SelectByStatement<S, Stmt>
 where

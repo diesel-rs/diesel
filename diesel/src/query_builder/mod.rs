@@ -124,15 +124,12 @@ pub trait SelectQuery {
     type SqlType;
 }
 
-/// SELECTBY_TODO: doc
-/// Indicates that a type is a `SELECT` statement, and could load by columns.
+/// Indicates that a type has specific `SELECT` clause, and could load by columns.
 ///
-/// This trait differs from `Query` in two ways:
-/// - It is implemented only for select statements, rather than all queries
-///   which return a value.
-/// - It has looser constraints. A type implementing `SelectQuery` is known to
-///   be potentially valid if used as a subselect, but it is not necessarily
-///   able to be executed.
+/// This trait is implemented for select_by statements, with columns information rather
+/// than only SQL type compared to `SelectQuery`. A statement implementing `SelectByQuery`
+/// is not necessary a select statements, it might also requires `SelectQuery` in order to
+/// be able to be executed.
 pub trait SelectByQuery {
     /// The columns of the `SELECT` clause
     type Columns;
