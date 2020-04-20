@@ -291,18 +291,17 @@ pub trait QueryDsl: Sized {
         methods::SelectDsl::select(self, selection)
     }
 
-    /// Adds a `SELECT` clause to the query using given struct.
+    /// Adds a `SELECT` clause to the query using based on a struct implementing [QueryableByColumn].
     ///
     /// If there was already a select clause present, it will be overridden.
     /// For example, `foo.select(bar).select_by::<Baz>()` will produce the same
     /// query as `foo.select_by::<Baz>()`, `foo.select_by::<Baz>().select(bar)`
-    /// as `foo.select(bar)`, `foo.select_by::<Bar>().select_by::<Baz>()` as
+    /// as `foo.select(bar)` and `foo.select_by::<Bar>().select_by::<Baz>()` as
     /// `foo.select_by::<Baz>()`
     ///
     /// `select_by` has slightly stricter bounds on its arguments than other
-    /// methods. In particular, when used with a left outer join, `Option`
-    /// must be wrapped on `QueryableByColumn` that come from the right side
-    /// of a join. Just like `.nullable()` of `select`.
+    /// methods. In particular, the select clause constructed by `QueryableByColumn` 
+    /// must be valid for the current query.
     ///
     /// # Examples
     ///
