@@ -13,8 +13,10 @@
 
 mod boxed;
 mod dsl_impls;
+mod select_by;
 
 pub use self::boxed::BoxedSelectStatement;
+pub use self::select_by::SelectByStatement;
 
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::*;
