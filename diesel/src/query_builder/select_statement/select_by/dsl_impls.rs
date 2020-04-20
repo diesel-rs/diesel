@@ -9,6 +9,7 @@ use crate::query_builder::{AsQuery, Query, SelectByQuery, SelectByStatement};
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
 use crate::query_source::joins::JoinTo;
+use crate::query_source::Table;
 use crate::sql_types::Bool;
 
 impl<CL, S, Stmt, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStatement<S, Stmt>
@@ -88,8 +89,6 @@ where
         SelectByStatement::new(self.inner.or_filter(predicate))
     }
 }
-
-use crate::query_source::Table;
 
 impl<CL, S, Stmt, PK> FindDsl<PK> for SelectByStatement<S, Stmt>
 where

@@ -42,7 +42,7 @@ pub use self::insert_statement::{
 };
 pub use self::query_id::QueryId;
 #[doc(hidden)]
-pub use self::select_statement::{BoxedSelectStatement, SelectStatement, SelectByStatement};
+pub use self::select_statement::{BoxedSelectStatement, SelectByStatement, SelectStatement};
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
 pub use self::update_statement::{

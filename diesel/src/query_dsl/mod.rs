@@ -300,7 +300,7 @@ pub trait QueryDsl: Sized {
     /// `foo.select_by::<Baz>()`
     ///
     /// `select_by` has slightly stricter bounds on its arguments than other
-    /// methods. In particular, the select clause constructed by `QueryableByColumn` 
+    /// methods. In particular, the select clause constructed by `QueryableByColumn`
     /// must be valid for the current query.
     ///
     /// # Examples
