@@ -5,8 +5,8 @@ use crate::result::QueryResult;
 
 impl<'a, L, O> IntoBoxedClause<'a, Pg> for LimitOffsetClause<L, O>
 where
-    L: QueryFragment<Pg> + 'a,
-    O: QueryFragment<Pg> + 'a,
+    L: QueryFragment<Pg> + Send + 'a,
+    O: QueryFragment<Pg> + Send + 'a,
 {
     type BoxedClause = BoxedLimitOffsetClause<'a, Pg>;
 

@@ -351,7 +351,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::backend::Backend;
     use crate::prelude::*;
 
     table! {
@@ -366,20 +365,26 @@ mod tests {
     {
     }
 
-    fn assert_boxed_query_send<B: Backend>() {
-        assert_send(users::table.into_boxed::<B>());
-        assert_send(users::table.filter(users::id.eq(10)).into_boxed::<B>());
+    macro_rules! assert_boxed_query_send {
+        ($backend:ty) => {{
+            assert_send(users::table.into_boxed::<$backend>());
+            assert_send(
+                users::table
+                    .filter(users::id.eq(10))
+                    .into_boxed::<$backend>(),
+            );
+        };};
     }
 
     #[test]
     fn boxed_is_send() {
         #[cfg(feature = "postgres")]
-        assert_boxed_query_send::<crate::pg::Pg>();
+        assert_boxed_query_send!(crate::pg::Pg);
 
         #[cfg(feature = "sqlite")]
-        assert_boxed_query_send::<crate::sqlite::Sqlite>();
+        assert_boxed_query_send!(crate::sqlite::Sqlite);
 
         #[cfg(feature = "mysql")]
-        assert_boxed_query_send::<crate::mysql::Mysql>();
+        assert_boxed_query_send!(crate::mysql::Mysql);
     }
 }

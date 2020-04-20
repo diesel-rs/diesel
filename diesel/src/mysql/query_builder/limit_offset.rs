@@ -76,7 +76,7 @@ impl<'a> IntoBoxedClause<'a, Mysql> for LimitOffsetClause<NoLimitClause, NoOffse
 
 impl<'a, L> IntoBoxedClause<'a, Mysql> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
-    L: QueryFragment<Mysql> + 'a,
+    L: QueryFragment<Mysql> + Send + 'a,
 {
     type BoxedClause = BoxedLimitOffsetClause<'a, Mysql>;
 
@@ -90,8 +90,8 @@ where
 
 impl<'a, L, O> IntoBoxedClause<'a, Mysql> for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where
-    L: QueryFragment<Mysql> + 'a,
-    O: QueryFragment<Mysql> + 'a,
+    L: QueryFragment<Mysql> + Send + 'a,
+    O: QueryFragment<Mysql> + Send + 'a,
 {
     type BoxedClause = BoxedLimitOffsetClause<'a, Mysql>;
 

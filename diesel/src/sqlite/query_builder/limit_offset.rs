@@ -81,7 +81,7 @@ impl<'a> IntoBoxedClause<'a, Sqlite> for LimitOffsetClause<NoLimitClause, NoOffs
 
 impl<'a, L> IntoBoxedClause<'a, Sqlite> for LimitOffsetClause<LimitClause<L>, NoOffsetClause>
 where
-    L: QueryFragment<Sqlite> + 'a,
+    L: QueryFragment<Sqlite> + Send + 'a,
 {
     type BoxedClause = BoxedLimitOffsetClause<'a, Sqlite>;
 
@@ -95,7 +95,7 @@ where
 
 impl<'a, O> IntoBoxedClause<'a, Sqlite> for LimitOffsetClause<NoLimitClause, OffsetClause<O>>
 where
-    O: QueryFragment<Sqlite> + 'a,
+    O: QueryFragment<Sqlite> + Send + 'a,
 {
     type BoxedClause = BoxedLimitOffsetClause<'a, Sqlite>;
 
@@ -109,8 +109,8 @@ where
 
 impl<'a, L, O> IntoBoxedClause<'a, Sqlite> for LimitOffsetClause<LimitClause<L>, OffsetClause<O>>
 where
-    L: QueryFragment<Sqlite> + 'a,
-    O: QueryFragment<Sqlite> + 'a,
+    L: QueryFragment<Sqlite> + Send + 'a,
+    O: QueryFragment<Sqlite> + Send + 'a,
 {
     type BoxedClause = BoxedLimitOffsetClause<'a, Sqlite>;
 

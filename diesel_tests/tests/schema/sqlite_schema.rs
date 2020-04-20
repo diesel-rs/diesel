@@ -161,6 +161,13 @@ table! {
 }
 
 table! {
+    pokes (user_id) {
+        user_id -> Integer,
+        poke_count -> Integer,
+    }
+}
+
+table! {
     posts (id) {
         id -> Integer,
         user_id -> Integer,
@@ -235,6 +242,7 @@ joinable!(followings -> posts (post_id));
 joinable!(followings -> users (user_id));
 joinable!(likes -> comments (comment_id));
 joinable!(likes -> users (user_id));
+joinable!(pokes -> users (user_id));
 joinable!(posts -> users (user_id));
 
 allow_tables_to_appear_in_same_query!(
@@ -257,6 +265,7 @@ allow_tables_to_appear_in_same_query!(
     nullable_table,
     numbers,
     points,
+    pokes,
     posts,
     precision_numbers,
     self_referential_fk,

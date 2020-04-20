@@ -3,7 +3,7 @@ use diesel::*;
 
 #[test]
 fn limit() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -22,7 +22,7 @@ fn limit() {
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 #[test]
 fn offset() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -37,7 +37,7 @@ fn offset() {
 
 #[test]
 fn limit_offset() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -52,7 +52,7 @@ fn limit_offset() {
 
 #[test]
 fn boxed_limit() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -80,7 +80,7 @@ fn boxed_limit() {
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
 #[test]
 fn boxed_offset() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection
@@ -108,7 +108,7 @@ fn boxed_offset() {
 
 #[test]
 fn boxed_limit_offset() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
     let connection = connection();
     connection

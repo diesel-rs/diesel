@@ -37,10 +37,10 @@ where
 // The corresponding impl for`NoWhereClause` is missing because of
 // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
 #[cfg(feature = "sqlite")]
-impl<F, S, D, W, O, L, Of, G, LC> QueryFragment<crate::sqlite::Sqlite>
-    for OnConflictSelectWrapper<SelectStatement<F, S, D, WhereClause<W>, O, L, Of, G, LC>>
+impl<F, S, D, W, O, LOf, G, LC> QueryFragment<crate::sqlite::Sqlite>
+    for OnConflictSelectWrapper<SelectStatement<F, S, D, WhereClause<W>, O, LOf, G, LC>>
 where
-    SelectStatement<F, S, D, WhereClause<W>, O, L, Of, G, LC>: QueryFragment<crate::sqlite::Sqlite>,
+    SelectStatement<F, S, D, WhereClause<W>, O, LOf, G, LC>: QueryFragment<crate::sqlite::Sqlite>,
 {
     fn walk_ast(&self, out: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
         self.0.walk_ast(out)

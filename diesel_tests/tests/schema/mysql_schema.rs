@@ -109,6 +109,13 @@ table! {
 }
 
 table! {
+    pokes (user_id) {
+        user_id -> Integer,
+        poke_count -> Integer,
+    }
+}
+
+table! {
     posts (id) {
         id -> Integer,
         user_id -> Integer,
@@ -149,6 +156,13 @@ table! {
     trees (id) {
         id -> Integer,
         parent_id -> Nullable<Integer>,
+    }
+}
+
+table! {
+    unsigned_table (id) {
+        id -> Unsigned<Integer>,
+        value -> Unsigned<Integer>,
     }
 }
 
@@ -202,12 +216,14 @@ allow_tables_to_appear_in_same_query!(
     nullable_table,
     numbers,
     points,
+    pokes,
     posts,
     precision_numbers,
     self_referential_fk,
     special_comments,
     special_posts,
     trees,
+    unsigned_table,
     users,
     users_with_name_pk,
     with_keywords,

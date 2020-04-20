@@ -1,5 +1,5 @@
 use diesel::*;
-use schema::connection;
+use crate::schema::connection;
 
 include!("pg_custom_schema.rs");
 use self::custom_schema::users;
