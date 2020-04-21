@@ -365,7 +365,6 @@ pub fn database_url(matches: &ArgMatches) -> String {
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
-    dbg!(&database_url);
     let base = ::url::Url::parse(database_url).unwrap();
     let database = base.path_segments().unwrap().last().unwrap().to_owned();
     let mut new_url = base.join(default_database).unwrap();
