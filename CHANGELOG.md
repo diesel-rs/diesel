@@ -4,6 +4,13 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [1.4.5] - 2020-??-??
+
+### Fixed
+
+* Fixed an issue where transactions that would fail to commit would leave the connection
+  in a broken non-committed non-rolled-back state.
+
 ## [1.4.4] - 2020-03-22
 
 ### Fixed
