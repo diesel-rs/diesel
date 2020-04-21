@@ -232,7 +232,7 @@ where
             self.where_clause,
             self.order,
             LimitOffsetClause {
-                limit_clause: limit_clause,
+                limit_clause,
                 offset_clause: self.limit_offset.offset_clause,
             },
             self.group_by,

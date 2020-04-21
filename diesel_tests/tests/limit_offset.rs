@@ -77,7 +77,6 @@ fn boxed_limit() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[cfg(any(feature = "sqlite", feature = "postgres"))]
 #[test]
 fn boxed_offset() {
     use crate::schema::users::dsl::*;
@@ -97,13 +96,16 @@ fn boxed_offset() {
         .unwrap();
     assert_eq!(expected_data, actual_data);
 
-    let actual_data: Vec<_> = users
-        .select((name, hair_color))
-        .offset(1)
-        .into_boxed()
-        .load(&connection)
-        .unwrap();
-    assert_eq!(expected_data, actual_data);
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    {
+        let actual_data: Vec<_> = users
+            .select((name, hair_color))
+            .offset(1)
+            .into_boxed()
+            .load(&connection)
+            .unwrap();
+        assert_eq!(expected_data, actual_data);
+    }
 }
 
 #[test]
@@ -134,4 +136,25 @@ fn boxed_limit_offset() {
         .load(&connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
+
+    let actual_data: Vec<_> = users
+        .select((name, hair_color))
+        .limit(1)
+        .into_boxed()
+        .offset(2)
+        .load(&connection)
+        .unwrap();
+    assert_eq!(expected_data, actual_data);
+
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    {
+        let actual_data: Vec<_> = users
+            .select((name, hair_color))
+            .offset(2)
+            .into_boxed()
+            .limit(1)
+            .load(&connection)
+            .unwrap();
+        assert_eq!(expected_data, actual_data);
+    }
 }

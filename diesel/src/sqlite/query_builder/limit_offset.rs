@@ -68,6 +68,10 @@ impl<'a> QueryFragment<Sqlite> for BoxedLimitOffsetClause<'a, Sqlite> {
     }
 }
 
+
+// Have explicit impls here because we need to set `Some`/`None` for the clauses
+// correspondingly, otherwise we cannot match on it in the `QueryFragment` impl
+// above
 impl<'a> IntoBoxedClause<'a, Sqlite> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
     type BoxedClause = BoxedLimitOffsetClause<'a, Sqlite>;
 
