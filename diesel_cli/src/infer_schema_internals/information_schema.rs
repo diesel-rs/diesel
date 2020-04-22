@@ -12,8 +12,6 @@ use diesel::pg::Pg;
 use diesel::query_builder::{QueryFragment, QueryId};
 use diesel::*;
 
-#[cfg(feature = "postgres")]
-use self::information_schema::referential_constraints;
 use self::information_schema::{columns, key_column_usage, table_constraints, tables};
 use super::data_structures::*;
 use super::inference;
@@ -256,75 +254,16 @@ where
 
 #[allow(clippy::similar_names)]
 #[cfg(feature = "postgres")]
-pub fn load_foreign_key_constraints<'a, Conn>(
-    connection: &Conn,
+pub fn load_foreign_key_constraints<'a>(
+    connection: &PgConnection,
     schema_name: Option<&'a str>,
-) -> QueryResult<Vec<ForeignKeyConstraint>>
-where
-    Conn: Connection,
-    Conn::Backend: UsesInformationSchema,
-    String: FromSql<sql_types::Text, Conn::Backend>,
-    Select<
-        InnerJoinOn<
-            Filter<
-                Filter<
-                    table_constraints::table,
-                    Eq<table_constraints::constraint_type, &'static str>,
-                >,
-                Eq<table_constraints::table_schema, Cow<'a, str>>,
-            >,
-            referential_constraints::table,
-            And<
-                Eq<
-                    table_constraints::constraint_schema,
-                    referential_constraints::constraint_schema,
-                >,
-                Eq<table_constraints::constraint_name, referential_constraints::constraint_name>,
-            >,
-        >,
-        (
-            referential_constraints::constraint_schema,
-            referential_constraints::constraint_name,
-            referential_constraints::unique_constraint_schema,
-            referential_constraints::unique_constraint_name,
-        ),
-    >: QueryFragment<Conn::Backend>,
-    Limit<
-        Select<
-            Filter<
-                Filter<
-                    key_column_usage::table,
-                    Eq<diesel::dsl::Nullable<key_column_usage::constraint_schema>, Option<String>>,
-                >,
-                Eq<diesel::dsl::Nullable<key_column_usage::constraint_name>, Option<String>>,
-            >,
-            (
-                (key_column_usage::table_name, key_column_usage::table_schema),
-                key_column_usage::column_name,
-            ),
-        >,
-    >: QueryFragment<Conn::Backend>,
-    Limit<
-        Select<
-            Filter<
-                Filter<key_column_usage::table, Eq<key_column_usage::constraint_schema, String>>,
-                Eq<key_column_usage::constraint_name, String>,
-            >,
-            (
-                (key_column_usage::table_name, key_column_usage::table_schema),
-                key_column_usage::column_name,
-            ),
-        >,
-    >: QueryFragment<Conn::Backend>,
-{
+) -> QueryResult<Vec<ForeignKeyConstraint>> {
     use self::information_schema::key_column_usage as kcu;
     use self::information_schema::referential_constraints as rc;
     use self::information_schema::table_constraints as tc;
 
-    let default_schema = Conn::Backend::default_schema(connection)?;
-    let schema_name = schema_name
-        .map(Cow::Borrowed)
-        .unwrap_or_else(|| Cow::Owned(default_schema.clone()));
+    let default_schema = Pg::default_schema(connection)?;
+    let schema_name = schema_name.unwrap_or(&default_schema);
 
     let constraint_names = tc::table
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
@@ -347,8 +286,8 @@ where
         .map(
             |(foreign_key_schema, foreign_key_name, primary_key_schema, primary_key_name)| {
                 let (mut foreign_key_table, foreign_key_column) = kcu::table
-                    .filter(kcu::constraint_schema.eq(foreign_key_schema))
-                    .filter(kcu::constraint_name.eq(foreign_key_name))
+                    .filter(kcu::constraint_schema.eq(&foreign_key_schema))
+                    .filter(kcu::constraint_name.eq(&foreign_key_name))
                     .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
                     .first::<(TableName, String)>(connection)?;
                 let (mut primary_key_table, primary_key_column) = kcu::table
