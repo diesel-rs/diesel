@@ -11,6 +11,7 @@ use std::fmt::{self, Display};
 ///
 /// This type is not intended to be exhaustively matched, and new variants may
 /// be added in the future without a major version bump.
+#[non_exhaustive]
 pub enum Error {
     /// The query contained a nul byte.
     ///
@@ -72,9 +73,6 @@ pub enum Error {
     /// Attempted to perform an operation that cannot be done inside a transaction
     /// when a transaction was already open.
     AlreadyInTransaction,
-
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -192,6 +190,7 @@ impl DatabaseErrorInformation for String {
 ///
 /// [`Connection::establish`]: ../connection/trait.Connection.html#tymethod.establish
 #[derive(Debug, PartialEq)]
+#[non_exhaustive]
 pub enum ConnectionError {
     /// The connection URL contained a `NUL` byte.
     InvalidCString(NulError),
@@ -206,8 +205,6 @@ pub enum ConnectionError {
     /// This variant is returned if an error occurred executing the query to set
     /// those options. Diesel will never affect global configuration.
     CouldntSetupConfiguration(Error),
-    #[doc(hidden)]
-    __Nonexhaustive, // Match against _ instead, more variants may be added in the future
 }
 
 /// A specialized result type for queries.
@@ -284,7 +281,6 @@ impl Display for Error {
                 f,
                 "Cannot perform this operation while a transaction is open",
             ),
-            Error::__Nonexhaustive => unreachable!(),
         }
     }
 }
@@ -308,7 +304,6 @@ impl Display for ConnectionError {
             ConnectionError::BadConnection(ref s) => write!(f, "{}", s),
             ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{}", s),
             ConnectionError::CouldntSetupConfiguration(ref e) => e.fmt(f),
-            ConnectionError::__Nonexhaustive => unreachable!(),
         }
     }
 }
