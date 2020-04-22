@@ -3,12 +3,16 @@ error: No field with column name id
    |
 10 | #[derive(Identifiable)]
    |          ^^^^^^^^^^^^
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: No field with column name id
   --> $DIR/identifiable_missing_pk_field.rs:15:10
    |
 15 | #[derive(Identifiable)]
    |          ^^^^^^^^^^^^
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: No field with column name bar
   --> $DIR/identifiable_missing_pk_field.rs:23:15

@@ -4,6 +4,8 @@
 mod bigdecimal {
     extern crate bigdecimal;
     use self::bigdecimal::BigDecimal;
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
     use crate::sql_types::Numeric;
 
     #[derive(FromSqlRow, AsExpression)]

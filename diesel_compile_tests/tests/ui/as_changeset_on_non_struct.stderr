@@ -3,10 +3,20 @@ error: This derive can only be used on structs
    |
 12 | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0601]: `main` function not found in crate `as_changeset_on_non_struct`
-  |
-  = note: consider adding a `main` function to `$DIR/as_changeset_on_non_struct.rs`
+  --> $DIR/as_changeset_on_non_struct.rs:1:1
+   |
+1  | / #[macro_use]
+2  | | extern crate diesel;
+3  | |
+4  | | table! {
+...  |
+13 | | #[table_name = "users"]
+14 | | enum User {}
+   | |____________^ consider adding a `main` function to `$DIR/as_changeset_on_non_struct.rs`
 
 error: aborting due to 2 previous errors
 

@@ -93,7 +93,7 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
-#![cfg_attr(feature = "unstable", feature(specialization))]
+#![cfg_attr(feature = "unstable", feature(specialization, trait_alias))]
 // Built-in Lints
 #![deny(warnings)]
 #![warn(
@@ -103,11 +103,12 @@
 )]
 // Clippy lints
 #![allow(
+    clippy::match_same_arms,
+    clippy::needless_doctest_main,
     clippy::option_map_unwrap_or_else,
     clippy::option_map_unwrap_or,
-    clippy::match_same_arms,
-    clippy::type_complexity,
-    clippy::redundant_field_names
+    clippy::redundant_field_names,
+    clippy::type_complexity
 )]
 #![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
 #![warn(
@@ -129,7 +130,6 @@
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
-#[macro_use]
 extern crate diesel_derives;
 
 #[macro_use]

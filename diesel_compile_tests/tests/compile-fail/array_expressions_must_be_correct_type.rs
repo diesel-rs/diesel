@@ -16,6 +16,5 @@ fn main() {
     //~| ERROR E0277
     //~| ERROR E0277
     //~| ERROR E0277
-    //~| ERROR E0277
     select(array((1f64, 3f64))).get_result::<Vec<f64>>(&connection);
 }

@@ -1,7 +1,7 @@
 use crate::backend::Backend;
 use crate::expression::coerce::Coerce;
 use crate::expression::functions::sql_function;
-use crate::expression::{AsExpression, Expression};
+use crate::expression::{AsExpression, Expression, ValidGrouping};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::*;
@@ -9,7 +9,7 @@ use crate::sql_types::*;
 /// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct now;
 
 impl Expression for now {

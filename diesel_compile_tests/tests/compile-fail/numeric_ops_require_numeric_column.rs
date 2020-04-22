@@ -14,5 +14,5 @@ fn main() {
     use self::users::dsl::*;
 
     let _ = users.select(name + name);
-    //~^ ERROR binary operation `+` cannot be applied to type `users::columns::name`
+    //~^ ERROR cannot add `users::columns::name` to `users::columns::name`
 }

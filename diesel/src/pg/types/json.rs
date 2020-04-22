@@ -12,6 +12,8 @@ use crate::sql_types;
 #[allow(dead_code)]
 mod foreign_derives {
     use super::serde_json;
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
     use crate::sql_types::{Json, Jsonb};
 
     #[derive(FromSqlRow, AsExpression)]

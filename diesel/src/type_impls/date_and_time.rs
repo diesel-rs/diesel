@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use crate::deserialize::FromSqlRow;
+use crate::expression::AsExpression;
 use std::time::SystemTime;
 
 #[derive(FromSqlRow, AsExpression)]
@@ -11,6 +13,8 @@ struct SystemTimeProxy(SystemTime);
 mod chrono {
     extern crate chrono;
     use self::chrono::*;
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::AsExpression;
     use crate::sql_types::{Date, Time, Timestamp};
 
     #[derive(FromSqlRow, AsExpression)]

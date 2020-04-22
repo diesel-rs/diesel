@@ -15,13 +15,13 @@ addons:
 services:
   - mysql
 before_install:
- # install sqlite3 version 3.24.0
+  # install sqlite3 version 3.24.0
   - |
     if [[ "$BACKEND" == sqlite ]]; then
       (sudo apt-get update) &&
-      (wget --quiet -c https://www.sqlite.org/2018/sqlite-autoconf-3240000.tar.gz) &&
-      (tar zxf sqlite-autoconf-3240000.tar.gz;) &&
-      (cd sqlite-autoconf-3240000; \
+      (wget --quiet -c https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz) &&
+      (tar zxf sqlite-autoconf-3310100.tar.gz;) &&
+      (cd sqlite-autoconf-3310100; \
        CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
                    -DSQLITE_DEFAULT_FOREIGN_KEYS=1 \
                    -DSQLITE_SECURE_DELETE \
@@ -48,7 +48,7 @@ before_install:
                    --enable-dynamic-extensions \
                    --libdir=/usr/lib/x86_64-linux-gnu \
                    --libexecdir=/usr/lib/x86_64-linux-gnu/sqlite3) &&
-      (cd sqlite-autoconf-3240000; sudo make; sudo make install)
+      (cd sqlite-autoconf-3310100; sudo make; sudo make install)
     fi
 before_script:
   - pip install 'travis-cargo<0.2' --user
@@ -87,7 +87,7 @@ matrix:
     env: RUSTFLAGS="--cap-lints=warn"
     script:
     - (cd diesel_compile_tests && cargo test)
-  - rust: 1.37.0
+  - rust: 1.40.0
     name: "Rustfmt && Clippy"
     script:
     - rustup component add rustfmt clippy
@@ -99,8 +99,8 @@ matrix:
     - SQLITE_DATABASE_URL=/tmp/test.db
     script:
     - (cd diesel_cli && cargo test --no-default-features --features "sqlite-bundled")
-  - rust: 1.37.0
-     name: "Minimal supported rust version == 1.37.0"
+  - rust: 1.40.0
+    name: "Minimal supported rust version == 1.40.0"
     script:
     - cargo check --all
 

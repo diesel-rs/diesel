@@ -24,6 +24,9 @@ mod uuid;
 ///
 /// Note: All types in this module can be accessed through `diesel::sql_types`
 pub mod sql_types {
+    use crate::query_builder::QueryId;
+    use crate::sql_types::SqlType;
+
     /// The `OID` SQL type. This is a PostgreSQL specific type.
     ///
     /// ### [`ToSql`] impls
@@ -181,7 +184,7 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: ../../../serialize/trait.ToSql.html
     /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [Uuid]: https://doc.rust-lang.org/uuid/uuid/struct.Uuid.html
+    /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2950", array_oid = "2951")]
     pub struct Uuid;

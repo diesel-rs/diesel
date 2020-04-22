@@ -2,7 +2,8 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
 use std::io::prelude::*;
 
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, FromSql, FromSqlRow};
+use crate::expression::AsExpression;
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;

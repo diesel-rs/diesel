@@ -3,9 +3,6 @@ error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Conn
    |
 19 |         .execute(&connection)
    |          ^^^^^^^ expected struct `diesel::sqlite::Sqlite`, found struct `diesel::pg::Pg`
-   |
-   = note: expected type `diesel::sqlite::Sqlite`
-              found type `diesel::pg::Pg`
 
 error: aborting due to previous error
 

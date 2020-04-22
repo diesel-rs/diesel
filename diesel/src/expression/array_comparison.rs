@@ -5,13 +5,13 @@ use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::Bool;
 
-#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct In<T, U> {
     left: T,
     values: U,
 }
 
-#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct NotIn<T, U> {
     left: T,
     values: U,
@@ -140,7 +140,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, NonAggregate)]
+#[derive(Debug, Clone, ValidGrouping)]
 pub struct Many<T>(Vec<T>);
 
 impl<T: Expression> Expression for Many<T> {

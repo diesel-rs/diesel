@@ -243,35 +243,158 @@ where
 {
 }
 
-/// Marker trait to indicate that an expression does not include any aggregate
-/// functions.
+/// Is this expression valid for a given group by clause?
 ///
-/// Used to ensure that aggregate expressions aren't mixed with
-/// non-aggregate expressions in a select clause, and that they're never
-/// included in a where clause.
+/// Implementations of this trait must ensure that aggregate expressions are
+/// not mixed with non-aggregate expressions.
 ///
-/// This trait can be [derived](derive.NonAggregate.html);
+/// For generic types, you can determine if your sub-expresssions can appear
+/// together using the [`MixedAggregates`] trait.
 ///
-/// ```ignore
-/// #[derive(NonAggregate)]
-/// struct Plus<Lhs, Rhs>(Lhs, Rhs);
+/// `GroupByClause` will be a tuple containing the set of expressions appearing
+/// in the `GROUP BY` portion of the query. If there is no `GROUP BY`, it will
+/// be `()`.
 ///
-/// // The following impl will be generated:
-/// impl<Lhs, Rhs> NonAggregate for Plus<Lhs, Rhs>
-/// where
-///     Lhs: NonAggregate,
-///     Rhs: NonAggregate,
-/// {
-/// }
-/// ```
-pub trait NonAggregate {}
+/// This trait can be [derived]
+///
+/// [derived]: derive.ValidGrouping.html
+/// [`MixedAggregates`]: trait.MixedAggregates.html
+pub trait ValidGrouping<GroupByClause> {
+    /// Is this expression aggregate?
+    ///
+    /// This type should always be one of the structs in the [`is_aggregate`]
+    /// module. See the documentation of those structs for more details.
+    ///
+    /// [`is_aggregate`]: is_aggregate/index.html
+    type IsAggregate;
+}
+
+impl<T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for Box<T> {
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<'a, T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &'a T {
+    type IsAggregate = T::IsAggregate;
+}
 
 #[doc(inline)]
-pub use diesel_derives::NonAggregate;
+pub use diesel_derives::ValidGrouping;
 
-impl<T: NonAggregate + ?Sized> NonAggregate for Box<T> {}
+/// Can two `IsAggregate` types appear in the same expression?
+///
+/// You should never implement this trait. It will eventually become a trait
+/// alias.
+///
+/// [`is_aggregate::Yes`] and [`is_aggregate::No`] can only appear with
+/// themselves or [`is_aggregate::Never`]. [`is_aggregate::Never`] can appear
+/// with anything.
+///
+/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
+/// [`is_aggregate::No`]: is_aggregate/struct.No.html
+/// [`is_aggregate::Never`]: is_aggregate/struct.Never.html
+pub trait MixedAggregates<Other> {
+    /// What is the resulting `IsAggregate` type?
+    type Output;
+}
 
-impl<'a, T: NonAggregate + ?Sized> NonAggregate for &'a T {}
+#[allow(missing_debug_implementations, missing_copy_implementations)]
+/// Possible values for `ValidGrouping::IsAggregate`
+pub mod is_aggregate {
+    use super::MixedAggregates;
+
+    /// Yes, this expression is aggregate for the given group by clause.
+    pub struct Yes;
+
+    /// No, this expression is not aggregate with the given group by clause,
+    /// but it might be aggregate with a different group by clause.
+    pub struct No;
+
+    /// This expression is never aggregate, and can appear with any other
+    /// expression, regardless of whether it is aggregate.
+    ///
+    /// Examples of this are literals. `1` does not care about aggregation.
+    /// `foo + 1` is always valid, regardless of whether `foo` appears in the
+    /// group by clause or not.
+    pub struct Never;
+
+    impl MixedAggregates<Yes> for Yes {
+        type Output = Yes;
+    }
+
+    impl MixedAggregates<Never> for Yes {
+        type Output = Yes;
+    }
+
+    impl MixedAggregates<No> for No {
+        type Output = No;
+    }
+
+    impl MixedAggregates<Never> for No {
+        type Output = No;
+    }
+
+    impl<T> MixedAggregates<T> for Never {
+        type Output = T;
+    }
+}
+
+// Note that these docs are similar to but slightly different than the stable
+// docs below. Make sure if you change these that you also change the docs
+// below.
+/// Trait alias to represent an expression that isn't aggregate by default.
+///
+/// This alias represents a type which is not aggregate if there is no group by
+/// clause. More specifically, it represents for types which implement
+/// [`ValidGrouping<()>`] where `IsAggregate` is [`is_aggregate::No`] or
+/// [`is_aggregate::Yes`].
+///
+/// While this trait is a useful stand-in for common cases, `T: NonAggregate`
+/// cannot always be used when `T: ValidGrouping<(), IsAggregate = No>` or
+/// `T: ValidGrouping<(), IsAggregate = Never>` could be. For that reason,
+/// unless you need to abstract over both columns and literals, you should
+/// prefer to use [`ValidGrouping<()>`] in your bounds instead.
+///
+/// [`ValidGrouping<()>`]: trait.ValidGrouping.html
+/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
+/// [`is_aggregate::No`]: is_aggregate/struct.No.html
+#[cfg(feature = "unstable")]
+pub trait NonAggregate = ValidGrouping<()>
+where
+    <Self as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>;
+
+// Note that these docs are similar to but slightly different than the unstable
+// docs above. Make sure if you change these that you also change the docs
+// above.
+/// Trait alias to represent an expression that isn't aggregate by default.
+///
+/// This trait should never be implemented directly. It is replaced with a
+/// trait alias when the `unstable` feature is enabled.
+///
+/// This alias represents a type which is not aggregate if there is no group by
+/// clause. More specifically, it represents for types which implement
+/// [`ValidGrouping<()>`] where `IsAggregate` is [`is_aggregate::No`] or
+/// [`is_aggregate::Yes`].
+///
+/// While this trait is a useful stand-in for common cases, `T: NonAggregate`
+/// cannot always be used when `T: ValidGrouping<(), IsAggregate = No>` or
+/// `T: ValidGrouping<(), IsAggregate = Never>` could be. For that reason,
+/// unless you need to abstract over both columns and literals, you should
+/// prefer to use [`ValidGrouping<()>`] in your bounds instead.
+///
+/// [`ValidGrouping<()>`]: trait.ValidGrouping.html
+/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
+/// [`is_aggregate::No`]: is_aggregate/struct.No.html
+#[cfg(not(feature = "unstable"))]
+pub trait NonAggregate: ValidGrouping<()> {}
+
+#[cfg(not(feature = "unstable"))]
+impl<T> NonAggregate for T
+where
+    T: ValidGrouping<()>,
+    T::IsAggregate: MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
+{
+}
 
 use crate::query_builder::{QueryFragment, QueryId};
 
@@ -333,7 +456,7 @@ where
     DB: Backend,
     Self: Expression,
     Self: SelectableExpression<QS>,
-    Self: NonAggregate,
+    Self: ValidGrouping<(), IsAggregate = is_aggregate::No>,
     Self: QueryFragment<DB>,
 {
 }
@@ -343,7 +466,7 @@ where
     DB: Backend,
     T: Expression,
     T: SelectableExpression<QS>,
-    T: NonAggregate,
+    T: ValidGrouping<(), IsAggregate = is_aggregate::No>,
     T: QueryFragment<DB>,
 {
 }

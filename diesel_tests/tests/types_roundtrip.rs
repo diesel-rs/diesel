@@ -12,7 +12,7 @@ pub use diesel::serialize::ToSql;
 pub use diesel::sql_types::HasSqlType;
 pub use diesel::*;
 
-use diesel::expression::AsExpression;
+use diesel::expression::{AsExpression, NonAggregate};
 use diesel::query_builder::{QueryFragment, QueryId};
 #[cfg(feature = "postgres")]
 use std::collections::Bound;
@@ -31,6 +31,7 @@ where
         + Clone
         + ::std::fmt::Debug,
     <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType = ST>
+        + NonAggregate
         + QueryFragment<<TestConnection as Connection>::Backend>
         + QueryId,
 {

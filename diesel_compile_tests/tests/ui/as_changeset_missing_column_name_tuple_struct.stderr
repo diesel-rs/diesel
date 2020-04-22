@@ -35,8 +35,16 @@ error[E0425]: cannot find value `unknown_column` in module `users`
    |                                                  ^^^^^^ not found in `users`
 
 error[E0601]: `main` function not found in crate `as_changeset_missing_column_name_tuple_struct`
-  |
-  = note: consider adding a `main` function to `$DIR/as_changeset_missing_column_name_tuple_struct.rs`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:1:1
+   |
+1  | / #[macro_use]
+2  | | extern crate diesel;
+3  | |
+4  | | table! {
+...  |
+13 | | #[table_name = "users"]
+14 | | struct User(i32, #[column_name = "name"] String, String);
+   | |_________________________________________________________^ consider adding a `main` function to `$DIR/as_changeset_missing_column_name_tuple_struct.rs`
 
 error: aborting due to 7 previous errors
 

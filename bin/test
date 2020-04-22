@@ -40,5 +40,6 @@ else
   (cd diesel_compile_tests && cargo test $*)
   (cd diesel_migrations/migrations_internals && cargo test $*)
   (cd diesel_migrations/migrations_macros && cargo test $*)
+  export BACKEND="mysql sqlite postgres"
   (cd examples && ./test_all $*)
 fi;
