@@ -9,6 +9,7 @@ use crate::query_builder::distinct_clause::DistinctClause;
 use crate::query_builder::group_by_clause::GroupByClause;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::LimitClause;
+use crate::query_builder::limit_offset_clause::BoxedLimitOffsetClause;
 use crate::query_builder::offset_clause::OffsetClause;
 use crate::query_builder::order_clause::OrderClause;
 use crate::query_builder::where_clause::*;
@@ -27,8 +28,7 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB> {
     distinct: Box<dyn QueryFragment<DB> + Send + 'a>,
     where_clause: BoxedWhereClause<'a, DB>,
     order: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
-    limit: Box<dyn QueryFragment<DB> + Send + 'a>,
-    offset: Box<dyn QueryFragment<DB> + Send + 'a>,
+    limit_offset: BoxedLimitOffsetClause<'a, DB>,
     group_by: Box<dyn QueryFragment<DB> + Send + 'a>,
     _marker: PhantomData<ST>,
 }
@@ -41,19 +41,17 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
         distinct: Box<dyn QueryFragment<DB> + Send + 'a>,
         where_clause: BoxedWhereClause<'a, DB>,
         order: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
-        limit: Box<dyn QueryFragment<DB> + Send + 'a>,
-        offset: Box<dyn QueryFragment<DB> + Send + 'a>,
+        limit_offset: BoxedLimitOffsetClause<'a, DB>,
         group_by: Box<dyn QueryFragment<DB> + Send + 'a>,
     ) -> Self {
         BoxedSelectStatement {
-            select: select,
-            from: from,
-            distinct: distinct,
-            where_clause: where_clause,
-            order: order,
-            limit: limit,
-            offset: offset,
-            group_by: group_by,
+            select,
+            from,
+            distinct,
+            where_clause,
+            order,
+            limit_offset,
+            group_by,
             _marker: PhantomData,
         }
     }
@@ -67,6 +65,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
         DB: Backend,
         QS: QuerySource,
         QS::FromClause: QueryFragment<DB>,
+        BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
     {
         out.push_sql("SELECT ");
         self.distinct.walk_ast(out.reborrow())?;
@@ -80,9 +79,7 @@ impl<'a, ST, QS, DB> BoxedSelectStatement<'a, ST, QS, DB> {
             out.push_sql(" ORDER BY ");
             order.walk_ast(out.reborrow())?;
         }
-
-        self.limit.walk_ast(out.reborrow())?;
-        self.offset.walk_ast(out.reborrow())?;
+        self.limit_offset.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -111,6 +108,7 @@ where
     DB: Backend,
     QS: QuerySource,
     QS::FromClause: QueryFragment<DB>,
+    BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
 {
     fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
         self.build_query(out, |where_clause, out| where_clause.walk_ast(out))
@@ -120,6 +118,7 @@ where
 impl<'a, ST, DB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB>
 where
     DB: Backend,
+    BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
@@ -128,8 +127,7 @@ where
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
-        self.limit.walk_ast(out.reborrow())?;
-        self.offset.walk_ast(out.reborrow())?;
+        self.limit_offset.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -154,8 +152,7 @@ where
             self.distinct,
             self.where_clause,
             self.order,
-            self.limit,
-            self.offset,
+            self.limit_offset,
             self.group_by,
         )
     }
@@ -188,8 +185,7 @@ where
             self.distinct,
             self.where_clause,
             self.order,
-            self.limit,
-            self.offset,
+            self.limit_offset,
             self.group_by,
         )
     }
@@ -229,7 +225,7 @@ where
     type Output = Self;
 
     fn limit(mut self, limit: i64) -> Self::Output {
-        self.limit = Box::new(LimitClause(limit.into_sql::<BigInt>()));
+        self.limit_offset.limit = Some(Box::new(LimitClause(limit.into_sql::<BigInt>())));
         self
     }
 }
@@ -242,7 +238,7 @@ where
     type Output = Self;
 
     fn offset(mut self, offset: i64) -> Self::Output {
-        self.offset = Box::new(OffsetClause(offset.into_sql::<BigInt>()));
+        self.limit_offset.offset = Some(Box::new(OffsetClause(offset.into_sql::<BigInt>())));
         self
     }
 }
@@ -346,8 +342,7 @@ where
             distinct: self.distinct,
             where_clause: self.where_clause,
             order: self.order,
-            limit: self.limit,
-            offset: self.offset,
+            limit_offset: self.limit_offset,
             group_by: self.group_by,
             _marker: PhantomData,
         }
@@ -356,7 +351,6 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::backend::Backend;
     use crate::prelude::*;
 
     table! {
@@ -371,20 +365,26 @@ mod tests {
     {
     }
 
-    fn assert_boxed_query_send<B: Backend>() {
-        assert_send(users::table.into_boxed::<B>());
-        assert_send(users::table.filter(users::id.eq(10)).into_boxed::<B>());
+    macro_rules! assert_boxed_query_send {
+        ($backend:ty) => {{
+            assert_send(users::table.into_boxed::<$backend>());
+            assert_send(
+                users::table
+                    .filter(users::id.eq(10))
+                    .into_boxed::<$backend>(),
+            );
+        };};
     }
 
     #[test]
     fn boxed_is_send() {
         #[cfg(feature = "postgres")]
-        assert_boxed_query_send::<crate::pg::Pg>();
+        assert_boxed_query_send!(crate::pg::Pg);
 
         #[cfg(feature = "sqlite")]
-        assert_boxed_query_send::<crate::sqlite::Sqlite>();
+        assert_boxed_query_send!(crate::sqlite::Sqlite);
 
         #[cfg(feature = "mysql")]
-        assert_boxed_query_send::<crate::mysql::Mysql>();
+        assert_boxed_query_send!(crate::mysql::Mysql);
     }
 }

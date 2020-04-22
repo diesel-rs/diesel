@@ -1,14 +1,35 @@
 macro_rules! simple_clause {
-    ($no_clause:ident, $clause:ident, $sql:expr) => {
-        simple_clause!($no_clause, $clause, $sql, backend_bounds = );
+    (
+        $(#[doc = $($no_clause_doc:tt)*])*
+        $no_clause:ident,
+        $(#[doc = $($clause_doc:tt)*])*
+        $clause:ident,
+        $sql:expr
+    ) => {
+        simple_clause!(
+            $(#[doc = $($no_clause_doc)*])*
+            $no_clause,
+            $(#[doc = $($clause_doc)*])*
+            $clause,
+            $sql,
+            backend_bounds =
+        );
     };
 
-    ($no_clause:ident, $clause:ident, $sql:expr, backend_bounds = $($backend_bounds:ident),*) => {
+    (
+        $(#[doc = $($no_clause_doc:tt)*])*
+        $no_clause:ident,
+        $(#[doc = $($clause_doc:tt)*])*
+        $clause:ident,
+        $sql:expr,
+        backend_bounds = $($backend_bounds:ident),*
+    ) => {
         use crate::backend::Backend;
         use crate::result::QueryResult;
         use crate::query_builder::QueryId;
         use super::{QueryFragment, AstPass};
 
+        $(#[doc = $($no_clause_doc)*])*
         #[derive(Debug, Clone, Copy, QueryId)]
         pub struct $no_clause;
 
@@ -18,6 +39,7 @@ macro_rules! simple_clause {
             }
         }
 
+        $(#[doc = $($clause_doc)*])*
         #[derive(Debug, Clone, Copy, QueryId)]
         pub struct $clause<Expr>(pub Expr);
 

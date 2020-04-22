@@ -265,9 +265,17 @@ pub mod helper_types {
     pub type InnerJoin<Source, Rhs> =
         <Source as JoinWithImplicitOnClause<Rhs, joins::Inner>>::Output;
 
+    /// Represents the return type of `.inner_join(rhs.on(on))`
+    pub type InnerJoinOn<Source, Rhs, On> =
+        <Source as InternalJoinDsl<Rhs, joins::Inner, On>>::Output;
+
     /// Represents the return type of `.left_join(rhs)`
     pub type LeftJoin<Source, Rhs> =
         <Source as JoinWithImplicitOnClause<Rhs, joins::LeftOuter>>::Output;
+
+    /// Represents the return type of `.left_join(rhs.on(on))`
+    pub type LeftJoinOn<Source, Rhs, On> =
+        <Source as InternalJoinDsl<Rhs, joins::LeftOuter, On>>::Output;
 
     use super::associations::HasTable;
     use super::query_builder::{AsChangeset, IntoUpdateTarget, UpdateStatement};
