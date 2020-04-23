@@ -135,7 +135,7 @@ pub trait SelectQuery {
 /// be able to be executed.
 pub trait SelectByQuery {
     /// The columns of the `SELECT` clause
-    type Columns;
+    type SelectExpression;
 }
 
 /// An untyped fragment of SQL.

@@ -88,9 +88,9 @@ where
 impl<S, Stmt> SelectByQuery for SelectByStatement<S, Stmt>
 where
     S: Selectable,
-    Stmt: SelectByQuery<Columns = S::Columns>,
+    Stmt: SelectByQuery<SelectExpression = S::SelectExpression>,
 {
-    type Columns = S::Columns;
+    type SelectExpression = S::SelectExpression;
 }
 
 impl<S, Stmt, QS> ValidSubselect<QS> for SelectByStatement<S, Stmt>
@@ -111,17 +111,17 @@ impl<S, Stmt> QuerySource for SelectByStatement<S, Stmt>
 where
     S: Selectable,
     Stmt: QuerySource,
-    S::Columns: SelectableExpression<Self>,
+    S::SelectExpression: SelectableExpression<Self>,
 {
     type FromClause = Stmt::FromClause;
-    type DefaultSelection = S::Columns;
+    type DefaultSelection = S::SelectExpression;
 
     fn from_clause(&self) -> Self::FromClause {
         self.inner.from_clause()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        S::columns()
+        S::select_expression()
     }
 }
 

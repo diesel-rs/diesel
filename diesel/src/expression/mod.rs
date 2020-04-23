@@ -306,9 +306,9 @@ where
 /// }
 ///
 /// impl Selectable for User {
-///     type Columns = (users::id, users::name);
+///     type SelectExpression = (users::id, users::name);
 ///
-///     fn columns() -> Self::Columns {
+///     fn select_expression() -> Self::SelectExpression {
 ///         (users::id, users::name)
 ///     }
 /// }
@@ -327,13 +327,13 @@ where
 /// # }
 /// ```
 pub trait Selectable {
-    /// The columns you'd like to select.
+    /// The expression you'd like to select.
     ///
     /// This is typically a tuple of all of your struct's fields.
-    type Columns: Expression;
+    type SelectExpression: Expression;
 
-    /// Construct an instance of the columns
-    fn columns() -> Self::Columns;
+    /// Construct an instance of the expression
+    fn select_expression() -> Self::SelectExpression;
 }
 
 #[doc(inline)]

@@ -50,11 +50,11 @@ impl<T: QueryId> QueryId for Nullable<T> {
 impl<T> Selectable for Option<T>
 where
     T: Selectable,
-    Nullable<T::Columns>: Expression,
+    Nullable<T::SelectExpression>: Expression,
 {
-    type Columns = Nullable<T::Columns>;
-    fn columns() -> Self::Columns {
-        Nullable::new(T::columns())
+    type SelectExpression = Nullable<T::SelectExpression>;
+    fn select_expression() -> Self::SelectExpression {
+        Nullable::new(T::select_expression())
     }
 }
 

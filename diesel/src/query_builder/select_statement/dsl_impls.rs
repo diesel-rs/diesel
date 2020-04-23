@@ -75,9 +75,9 @@ impl<CL, ST, F, S, D, W, O, LOf, LC, Selection> SelectByDsl<Selection>
     for SelectStatement<F, S, D, W, O, LOf, NoGroupByClause, LC>
 where
     CL: Expression<SqlType = ST>,
-    Selection: Selectable<Columns = CL>,
+    Selection: Selectable<SelectExpression = CL>,
     SelectStatement<F, SelectClause<CL>, D, W, O, LOf, NoGroupByClause, LC>:
-        SelectQuery<SqlType = ST> + SelectByQuery<Columns = CL>,
+        SelectQuery<SqlType = ST> + SelectByQuery<SelectExpression = CL>,
 {
     type Output = SelectByStatement<
         Selection,
@@ -86,7 +86,7 @@ where
 
     fn select_by(self) -> Self::Output {
         let inner = SelectStatement::new(
-            SelectClause(Selection::columns()),
+            SelectClause(Selection::select_expression()),
             self.from,
             self.distinct,
             self.where_clause,
