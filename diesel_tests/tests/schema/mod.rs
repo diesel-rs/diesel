@@ -11,7 +11,16 @@ include!("sqlite_schema.rs");
 include!("mysql_schema.rs");
 
 #[derive(
-    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName, Selectable
+    PartialEq,
+    Eq,
+    Debug,
+    Clone,
+    Queryable,
+    Identifiable,
+    Insertable,
+    AsChangeset,
+    QueryableByName,
+    Selectable,
 )]
 #[table_name = "users"]
 pub struct User {

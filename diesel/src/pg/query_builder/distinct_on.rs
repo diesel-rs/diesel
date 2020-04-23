@@ -1,6 +1,8 @@
 use crate::expression::SelectableExpression;
 use crate::pg::Pg;
-use crate::query_builder::{AstPass, QueryFragment, QueryId, SelectQuery, SelectStatement, SelectByStatement};
+use crate::query_builder::{
+    AstPass, QueryFragment, QueryId, SelectByStatement, SelectQuery, SelectStatement,
+};
 use crate::query_dsl::methods::DistinctOnDsl;
 use crate::result::QueryResult;
 

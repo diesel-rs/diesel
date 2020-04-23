@@ -54,10 +54,7 @@ fn distinct_on_select_by() {
         )
         .unwrap();
 
-    let source = users
-        .select_by::<NewUser>()
-        .order(name)
-        .distinct_on(name);
+    let source = users.select_by::<NewUser>().order(name).distinct_on(name);
     let expected_data = vec![
         NewUser::new("Sean", Some("black")),
         NewUser::new("Tess", None),

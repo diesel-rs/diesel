@@ -15,7 +15,11 @@ fn selecting_basic_data() {
         ("Sean".to_string(), None::<String>),
         ("Tess".to_string(), None::<String>),
     ];
-    let actual_data: Vec<_> = users.select_by::<UserName>().select((name, hair_color)).load(&connection).unwrap();
+    let actual_data: Vec<_> = users
+        .select_by::<UserName>()
+        .select((name, hair_color))
+        .load(&connection)
+        .unwrap();
     assert_eq!(expected_data, actual_data);
 }
 
@@ -74,11 +78,17 @@ fn selecting_columns_and_tables_with_reserved_names() {
     #[derive(Debug, PartialEq, Queryable, Selectable)]
     #[table_name = "select"]
     struct Select {
-      join: i32,
+        join: i32,
     }
 
-    let expected_data = vec![1, 2, 3].into_iter().map(|join| Select { join }).collect::<Vec<_>>();
-    let actual_data: Vec<Select> = select::table.select_by::<Select>().load(&connection).unwrap();
+    let expected_data = vec![1, 2, 3]
+        .into_iter()
+        .map(|join| Select { join })
+        .collect::<Vec<_>>();
+    let actual_data: Vec<Select> = select::table
+        .select_by::<Select>()
+        .load(&connection)
+        .unwrap();
     assert_eq!(expected_data, actual_data);
 }
 
@@ -148,7 +158,6 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
         .execute(&connection)
         .unwrap();
 
-
     #[derive(Queryable, Selectable)]
     #[table_name = "posts"]
     struct PostId(#[column_name = "user_id"] i32);
@@ -167,7 +176,7 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
 #[test]
 fn selecting_multiple_aggregate_expressions_without_group_by() {
     use self::users::dsl::*;
-    use diesel::dsl::{CountStar, count_star, max};
+    use diesel::dsl::{count_star, max, CountStar};
     use diesel::helper_types::max;
 
     #[derive(Queryable)]
