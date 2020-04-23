@@ -89,6 +89,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   have been. All types in Diesel are now correctly only considered
   non-aggregate if their parts are.
 
+* Offset clauses without limit clauses resulted into invalid sql using the mysql or
+  sqlite backend. Both do not support such clauses without a preceding limit clause.
+  For those backend Diesel does now generate a fake limit clause in case no explicit
+  limit clause was given. As consequence of this change generic query code may
+  require additional trait bounds as requested from the compiler. Third party
+  backends are required to explicitly provide `QueryFragment` impls for
+  `LimitOffsetClause<L, O>` now.
+
 * Nullability requirements are now properly enforced for nested joins.
   Previously, only the rules for the outer-most join were considered. For
   example, `users.left_join(posts).left_join(comments)` would allow selecting

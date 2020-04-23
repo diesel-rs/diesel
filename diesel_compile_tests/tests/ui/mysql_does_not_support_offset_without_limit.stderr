@@ -1,0 +1,32 @@
+error[E0277]: the trait bound `diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::OffsetClause<diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>: diesel::query_builder::QueryFragment<diesel::mysql::Mysql>` is not satisfied
+  --> $DIR/mysql_does_not_support_offset_without_limit.rs:18:29
+   |
+18 |     users::table.offset(42).get_result::<(i32, String)>(&connection);
+   |                             ^^^^^^^^^^ the trait `diesel::query_builder::QueryFragment<diesel::mysql::Mysql>` is not implemented for `diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::OffsetClause<diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>`
+   |
+   = help: the following implementations were found:
+             <diesel::query_builder::LimitOffsetClause<L, O> as diesel::query_builder::QueryFragment<diesel::pg::Pg>>
+             <diesel::query_builder::LimitOffsetClause<diesel::query_builder::LimitClause<L>, diesel::query_builder::NoOffsetClause> as diesel::query_builder::QueryFragment<diesel::mysql::Mysql>>
+             <diesel::query_builder::LimitOffsetClause<diesel::query_builder::LimitClause<L>, diesel::query_builder::NoOffsetClause> as diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>>
+             <diesel::query_builder::LimitOffsetClause<diesel::query_builder::LimitClause<L>, diesel::query_builder::OffsetClause<O>> as diesel::query_builder::QueryFragment<diesel::mysql::Mysql>>
+           and 4 others
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::mysql::Mysql>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::OffsetClause<diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::MysqlConnection, (i32, std::string::String)>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::OffsetClause<diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>>`
+
+error[E0277]: the trait bound `diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::OffsetClause<diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>: diesel::query_builder::IntoBoxedClause<'_, diesel::mysql::Mysql>` is not satisfied
+  --> $DIR/mysql_does_not_support_offset_without_limit.rs:20:29
+   |
+20 |     users::table.offset(42).into_boxed().get_result::<(i32, String)>(&connection);
+   |                             ^^^^^^^^^^ the trait `diesel::query_builder::IntoBoxedClause<'_, diesel::mysql::Mysql>` is not implemented for `diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::OffsetClause<diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>`
+   |
+   = help: the following implementations were found:
+             <diesel::query_builder::LimitOffsetClause<L, O> as diesel::query_builder::IntoBoxedClause<'a, diesel::pg::Pg>>
+             <diesel::query_builder::LimitOffsetClause<diesel::query_builder::LimitClause<L>, diesel::query_builder::NoOffsetClause> as diesel::query_builder::IntoBoxedClause<'a, diesel::mysql::Mysql>>
+             <diesel::query_builder::LimitOffsetClause<diesel::query_builder::LimitClause<L>, diesel::query_builder::NoOffsetClause> as diesel::query_builder::IntoBoxedClause<'a, diesel::sqlite::Sqlite>>
+             <diesel::query_builder::LimitOffsetClause<diesel::query_builder::LimitClause<L>, diesel::query_builder::OffsetClause<O>> as diesel::query_builder::IntoBoxedClause<'a, diesel::mysql::Mysql>>
+           and 4 others
+   = note: required because of the requirements on the impl of `diesel::query_dsl::boxed_dsl::BoxedDsl<'_, diesel::mysql::Mysql>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::OffsetClause<diesel::expression::bound::Bound<diesel::sql_types::BigInt, i64>>>>`
+
+error: aborting due to 2 previous errors
+
+For more information about this error, try `rustc --explain E0277`.

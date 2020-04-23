@@ -1,18 +1,14 @@
 use diesel::*;
 
-#[cfg(all(feature = "postgres", feature = "backend_specific_database_url"))]
-infer_schema!("dotenv:PG_DATABASE_URL");
-#[cfg(all(feature = "sqlite", feature = "backend_specific_database_url"))]
-infer_schema!("dotenv:SQLITE_DATABASE_URL");
-#[cfg(all(feature = "mysql", feature = "backend_specific_database_url"))]
-infer_schema!("dotenv:MYSQL_DATABASE_URL");
-#[cfg(not(feature = "backend_specific_database_url"))]
-infer_schema!("dotenv:DATABASE_URL");
+#[cfg(feature = "postgres")]
+mod custom_schemas;
 
+#[cfg(feature = "postgres")]
+include!("pg_schema.rs");
 #[cfg(feature = "sqlite")]
-mod test_infer_schema_works_on_empty_database {
-    infer_schema!(":memory:");
-}
+include!("sqlite_schema.rs");
+#[cfg(feature = "mysql")]
+include!("mysql_schema.rs");
 
 #[derive(
     PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
