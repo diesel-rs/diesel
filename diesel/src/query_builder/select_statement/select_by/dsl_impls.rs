@@ -14,8 +14,8 @@ use crate::sql_types::Bool;
 impl<SE, S, Stmt, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStatement<S, Stmt>
 where
     Stmt: InternalJoinDsl<Rhs, Kind, On>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE> + AsQuery,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE> + AsQuery,
 {
     type Output = Stmt::Output;
 
@@ -50,9 +50,9 @@ where
 
 impl<SE, S, Stmt> DistinctDsl for SelectByStatement<S, Stmt>
 where
-    Self: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
     Stmt: DistinctDsl,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -65,8 +65,8 @@ impl<SE, S, Stmt, Predicate> FilterDsl<Predicate> for SelectByStatement<S, Stmt>
 where
     Predicate: Expression<SqlType = Bool> + NonAggregate,
     Stmt: FilterDsl<Predicate>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -79,8 +79,8 @@ impl<SE, S, Stmt, Predicate> OrFilterDsl<Predicate> for SelectByStatement<S, Stm
 where
     Predicate: Expression<SqlType = Bool> + NonAggregate,
     Stmt: OrFilterDsl<Predicate>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -92,8 +92,8 @@ where
 impl<SE, S, Stmt, PK> FindDsl<PK> for SelectByStatement<S, Stmt>
 where
     Stmt: FindDsl<PK>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -106,8 +106,8 @@ impl<SE, S, Stmt, Expr> OrderDsl<Expr> for SelectByStatement<S, Stmt>
 where
     Expr: Expression,
     Stmt: OrderDsl<Expr>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -120,8 +120,8 @@ impl<SE, S, Stmt, Expr> ThenOrderDsl<Expr> for SelectByStatement<S, Stmt>
 where
     Expr: Expression,
     Stmt: ThenOrderDsl<Expr>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -133,8 +133,8 @@ where
 impl<SE, S, Stmt> LimitDsl for SelectByStatement<S, Stmt>
 where
     Stmt: LimitDsl,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -146,8 +146,8 @@ where
 impl<SE, S, Stmt> OffsetDsl for SelectByStatement<S, Stmt>
 where
     Stmt: OffsetDsl,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -161,8 +161,8 @@ impl<SE, S, STMT, Expr> GroupByDsl<Expr> for SelectByStatement<S, STMT>
 where
     Expr: Expression,
     STMT: GroupByDsl<Expr>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    STMT::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    STMT::Output: SelectByQuery<Expression = SE>,
 {
     type Output = STMT::Output;
 
@@ -174,8 +174,8 @@ where
 impl<SE, S, Stmt, Lock> LockingDsl<Lock> for SelectByStatement<S, Stmt>
 where
     Stmt: LockingDsl<Lock>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -187,8 +187,8 @@ where
 impl<SE, S, Stmt, Modifier> ModifyLockDsl<Modifier> for SelectByStatement<S, Stmt>
 where
     Stmt: ModifyLockDsl<Modifier>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -201,8 +201,8 @@ impl<'a, SE, S, Stmt, DB> BoxedDsl<'a, DB> for SelectByStatement<S, Stmt>
 where
     DB: Backend,
     Stmt: BoxedDsl<'a, DB>,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = SE>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
     type Output = SelectByStatement<S, Stmt::Output>;
 
@@ -258,10 +258,10 @@ where
 impl<SE, S, Stmt> SelectNullableDsl for SelectByStatement<S, Stmt>
 where
     Nullable<SE>: Expression,
-    Option<S>: Selectable<SelectExpression = Nullable<SE>>,
+    Option<S>: Selectable<Expression = Nullable<SE>>,
     Stmt: SelectNullableDsl,
-    Self: SelectByQuery<SelectExpression = SE>,
-    Stmt::Output: SelectByQuery<SelectExpression = Nullable<SE>>,
+    Self: SelectByQuery<Expression = SE>,
+    Stmt::Output: SelectByQuery<Expression = Nullable<SE>>,
 {
     type Output = SelectByStatement<Option<S>, Stmt::Output>;
 

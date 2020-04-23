@@ -29,8 +29,8 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             for #struct_name #ty_generics
         #where_clause
         {
-            type SelectExpression = (#(#field_columns_ty,)*);
-            fn select_expression() -> Self::SelectExpression {
+            type Expression = (#(#field_columns_ty,)*);
+            fn new_expression() -> Self::Expression {
                 (#(#field_columns_inst,)*)
             }
         }
@@ -40,7 +40,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 fn field_column_ty(field: &Field, model: &Model) -> Result<syn::Type, Diagnostic> {
     if field.has_flag("embed") {
         let embed_ty = &field.ty;
-        Ok(parse_quote!(<#embed_ty as Selectable>::SelectExpression))
+        Ok(parse_quote!(<#embed_ty as Selectable>::Expression))
     } else {
         let table_name = field.table_name().unwrap_or_else(|| model.table_name());
         let column_name = field.column_name();
@@ -51,7 +51,7 @@ fn field_column_ty(field: &Field, model: &Model) -> Result<syn::Type, Diagnostic
 fn field_column_inst(field: &Field, model: &Model) -> Result<syn::Expr, Diagnostic> {
     if field.has_flag("embed") {
         let embed_ty = &field.ty;
-        Ok(parse_quote!(<#embed_ty as Selectable>::select_expression()))
+        Ok(parse_quote!(<#embed_ty as Selectable>::new_expression()))
     } else {
         let table_name = field.table_name().unwrap_or_else(|| model.table_name());
         let column_name = field.column_name();

@@ -125,7 +125,7 @@ where
     S: Expression<SqlType = ST>,
     Self: SelectQuery<SqlType = ST>,
 {
-    type SelectExpression = S;
+    type Expression = S;
 }
 
 impl<F, S, D, W, O, LOf, G, LC, DB> QueryFragment<DB> for SelectStatement<F, S, D, W, O, LOf, G, LC>

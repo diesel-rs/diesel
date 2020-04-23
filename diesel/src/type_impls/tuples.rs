@@ -64,10 +64,10 @@ macro_rules! tuple_impls {
             impl<$($T),+> Selectable for ($($T,)+) where
                 $($T: Selectable),+,
             {
-                type SelectExpression = ($($T::SelectExpression,)+);
+                type Expression = ($($T::Expression,)+);
 
-                fn select_expression() -> Self::SelectExpression {
-                    ($($T::select_expression(),)+)
+                fn new_expression() -> Self::Expression {
+                    ($($T::new_expression(),)+)
                 }
             }
 
