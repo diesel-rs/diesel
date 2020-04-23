@@ -274,7 +274,10 @@ pub use diesel_derives::QueryableByName;
 ///
 /// # Examples
 ///
-/// If we just want to construct a query using our struct, we can use `derive`.
+/// If you just want to construct a select clause using an existing struct, you can use
+/// `#[derive(QueryableByColumn)]`, See [`QueryableByColumn`] for details.
+///
+/// [`QueryableByColumn`]: derive.QueryableByColumn.html
 ///
 /// ```rust
 /// # include!("doctest_setup.rs");

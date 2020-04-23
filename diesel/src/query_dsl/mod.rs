@@ -291,7 +291,7 @@ pub trait QueryDsl: Sized {
         methods::SelectDsl::select(self, selection)
     }
 
-    /// Adds a `SELECT` clause to the query using based on a struct implementing [QueryableByColumn].
+    /// Adds a `SELECT` clause to the query using based on a struct implementing [`QueryableByColumn`].
     ///
     /// If there was already a select clause present, it will be overridden.
     /// For example, `foo.select(bar).select_by::<Baz>()` will produce the same
@@ -302,6 +302,8 @@ pub trait QueryDsl: Sized {
     /// `select_by` has slightly stricter bounds on its arguments than other
     /// methods. In particular, the select clause constructed by `QueryableByColumn`
     /// must be valid for the current query.
+    ///
+    /// [`QueryableByColumn`]: ../deserialize/trait.QueryableByColumn.html
     ///
     /// # Examples
     ///
