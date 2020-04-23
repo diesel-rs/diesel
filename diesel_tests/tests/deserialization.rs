@@ -20,6 +20,10 @@ fn generated_queryable_allows_lifetimes() {
     };
     assert_eq!(
         Ok(expected_user),
+        users.select((id, name)).first(&connection)
+    );
+    assert_eq!(
+        users.select((id, name)).first(&connection),
         users.select_by::<CowUser>().first(&connection)
     );
 }

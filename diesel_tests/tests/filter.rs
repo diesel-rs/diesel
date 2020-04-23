@@ -216,11 +216,11 @@ fn select_by_then_filter() {
 
     let source = users.select_by::<UserName>();
     assert_eq!(
-        Ok(UserName("Sean".to_string())),
+        Ok(UserName::new("Sean")),
         source.filter(name.eq("Sean")).first(&connection)
     );
     assert_eq!(
-        Ok(UserName("Tess".to_string())),
+        Ok(UserName::new("Tess")),
         source.filter(name.eq("Tess")).first(&connection)
     );
     assert_eq!(
@@ -236,14 +236,14 @@ fn filter_then_select_by() {
     let connection = connection_with_sean_and_tess_in_users_table();
 
     assert_eq!(
-        Ok(UserName("Sean".to_string())),
+        Ok(UserName::new("Sean")),
         users
             .filter(name.eq("Sean"))
             .select_by::<UserName>()
             .first(&connection)
     );
     assert_eq!(
-        Ok(UserName("Tess".to_string())),
+        Ok(UserName::new("Tess")),
         users
             .filter(name.eq("Tess"))
             .select_by::<UserName>()

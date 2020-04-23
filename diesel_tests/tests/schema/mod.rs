@@ -11,7 +11,7 @@ include!("sqlite_schema.rs");
 include!("mysql_schema.rs");
 
 #[derive(
-    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
+    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName, Selectable
 )]
 #[table_name = "users"]
 pub struct User {
@@ -19,10 +19,6 @@ pub struct User {
     pub name: String,
     pub hair_color: Option<String>,
 }
-
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
-#[table_name = "users"]
-pub struct UserName(#[column_name = "name"] pub String);
 
 impl User {
     pub fn new(id: i32, name: &str) -> Self {
@@ -43,6 +39,16 @@ impl User {
 
     pub fn new_post(&self, title: &str, body: Option<&str>) -> NewPost {
         NewPost::new(self.id, title, body)
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
+#[table_name = "users"]
+pub struct UserName(#[column_name = "name"] pub String);
+
+impl UserName {
+    pub fn new(name: &str) -> Self {
+        UserName(name.to_string())
     }
 }
 
@@ -82,7 +88,7 @@ mod backend_specifics;
 
 pub use self::backend_specifics::*;
 
-#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
+#[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
 #[table_name = "users"]
 pub struct NewUser {
     pub name: String,

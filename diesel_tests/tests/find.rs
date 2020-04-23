@@ -113,6 +113,6 @@ fn select_by_then_find() {
     let sean = users.select_by::<UserName>().find(1).first(&connection);
     let tess = users.select_by::<UserName>().find(2).first(&connection);
 
-    assert_eq!(Ok(UserName(String::from("Sean"))), sean);
-    assert_eq!(Ok(UserName(String::from("Tess"))), tess);
+    assert_eq!(Ok(UserName::new("Sean")), sean);
+    assert_eq!(Ok(UserName::new("Tess")), tess);
 }

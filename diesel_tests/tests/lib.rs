@@ -42,6 +42,7 @@ mod schema;
 mod schema_dsl;
 mod schema_inference;
 mod select;
+mod select_by;
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 mod transactions;
 mod types;
