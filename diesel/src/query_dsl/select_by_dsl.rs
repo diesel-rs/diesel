@@ -1,4 +1,4 @@
-use crate::deserialize::Selectable;
+use crate::expression::Selectable;
 use crate::query_source::Table;
 
 /// The `select_by` method

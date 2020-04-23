@@ -47,6 +47,17 @@ impl<T: QueryId> QueryId for Nullable<T> {
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
+impl<T> Selectable for Option<T>
+where
+    T: Selectable,
+    Nullable<T::Columns>: Expression,
+{
+    type Columns = Nullable<T::Columns>;
+    fn columns() -> Self::Columns {
+        Nullable::new(T::columns())
+    }
+}
+
 impl<T, QS> SelectableExpression<QS> for Nullable<T>
 where
     Self: AppearsOnTable<QS>,

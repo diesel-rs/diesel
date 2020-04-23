@@ -314,10 +314,10 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::connection::Connection;
     #[doc(inline)]
-    pub use crate::deserialize::{Queryable, Selectable, QueryableByName};
+    pub use crate::deserialize::{Queryable, QueryableByName};
     #[doc(inline)]
     pub use crate::expression::{
-        AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
+        AppearsOnTable, BoxableExpression, Expression, IntoSql, Selectable, SelectableExpression,
     };
 
     #[doc(inline)]

@@ -1,6 +1,5 @@
 use crate::associations::HasTable;
 use crate::backend::Backend;
-use crate::deserialize::Selectable;
 use crate::expression::nullable::Nullable;
 use crate::expression::*;
 use crate::insertable::Insertable;

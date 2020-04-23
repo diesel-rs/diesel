@@ -4,7 +4,6 @@ use std::marker::PhantomData;
 use super::{AstPass, QueryFragment};
 use crate::backend::Backend;
 use crate::connection::Connection;
-use crate::deserialize::Selectable;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::{QueryId, SelectByQuery, SelectQuery};

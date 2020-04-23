@@ -2,9 +2,9 @@ use std::error::Error;
 
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
-use crate::deserialize::{self, FromSqlRow, Queryable, Selectable, QueryableByName};
+use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByName};
 use crate::expression::{
-    AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression, ValidGrouping,
+    AppearsOnTable, AsExpression, AsExpressionList, Expression, Selectable, SelectableExpression, ValidGrouping,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use crate::query_builder::*;

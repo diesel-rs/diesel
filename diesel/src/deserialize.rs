@@ -4,7 +4,6 @@ use std::error::Error;
 use std::result;
 
 use crate::backend::{self, Backend};
-use crate::expression::{nullable::Nullable, Expression};
 use crate::row::{NamedRow, Row};
 
 /// A specialized result type representing the result of deserializing
@@ -255,113 +254,6 @@ where
 
 #[doc(inline)]
 pub use diesel_derives::QueryableByName;
-
-/// Trait indicating that a record can be selected and queried from the database.
-///
-/// Types which implement `Selectable` represent the result of a SQL query, and could
-/// be used to construct a select clause via [`select_by`] method. This does not necessarily
-/// mean they represent a single database table.
-///
-/// The trait is used only to construct a select clause, and to verify if a [`SelectByQuery`]
-/// is valid, in order to [`load`] the result we might also like to implement or derive
-/// [`Queryable`](trait.Queryable.html)
-///
-/// This trait can be [derived](derive.Selectable.html)
-///
-/// [`SelectByQuery`]: ..//query_builder/trait.SelectByQuery.html
-/// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
-/// [`select_by`]: ../query_dsl/methods/trait.SelectByDsl.html#tymethod.select_by
-///
-/// # Examples
-///
-/// If you just want to construct a select clause using an existing struct, you can use
-/// `#[derive(Selectable)]`, See [`Selectable`] for details.
-///
-/// [`Selectable`]: derive.Selectable.html
-///
-/// ```rust
-/// # include!("doctest_setup.rs");
-/// #
-/// use schema::users;
-///
-/// #[derive(Queryable, PartialEq, Debug, Selectable)]
-/// struct User {
-///     id: i32,
-///     name: String,
-/// }
-///
-/// # fn main() {
-/// #     run_test();
-/// # }
-/// #
-/// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.select_by::<User>().first(&connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
-/// assert_eq!(expected, first_user);
-/// #     Ok(())
-/// # }
-/// ```
-///
-/// Alternatively, we can implement the trait for our struct manually.
-///
-/// ```rust
-/// # include!("doctest_setup.rs");
-/// #
-/// use schema::users;
-/// use diesel::deserialize::{Queryable, Selectable};
-///
-/// #[derive(Queryable, PartialEq, Debug)]
-/// struct User {
-///     id: i32,
-///     name: String,
-/// }
-///
-/// impl Selectable for User {
-///     type Columns = (users::id, users::name);
-///
-///     fn columns() -> Self::Columns {
-///         (users::id, users::name)
-///     }
-/// }
-///
-/// # fn main() {
-/// #     run_test();
-/// # }
-/// #
-/// # fn run_test() -> QueryResult<()> {
-/// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.select_by::<User>().first(&connection)?;
-/// let expected = User { id: 1, name: "Sean".into() };
-/// assert_eq!(expected, first_user);
-/// #     Ok(())
-/// # }
-/// ```
-pub trait Selectable {
-    /// The columns you'd like to select.
-    ///
-    /// This is typically a tuple of all of your struct's fields.
-    type Columns: Expression;
-
-    /// Construct an instance of the columns
-    fn columns() -> Self::Columns;
-}
-
-#[doc(inline)]
-pub use diesel_derives::Selectable;
-
-impl<T> Selectable for Option<T>
-where
-    T: Selectable,
-    Nullable<T::Columns>: Expression,
-{
-    type Columns = Nullable<T::Columns>;
-    fn columns() -> Self::Columns {
-        Nullable::new(T::columns())
-    }
-}
 
 /// Deserialize a single field of a given SQL type.
 ///

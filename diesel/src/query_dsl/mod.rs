@@ -15,9 +15,8 @@
 
 use crate::backend::Backend;
 use crate::connection::Connection;
-use crate::deserialize::Selectable;
 use crate::expression::count::CountStar;
-use crate::expression::Expression;
+use crate::expression::{Expression, Selectable};
 use crate::helper_types::*;
 use crate::query_builder::locking_clause as lock;
 use crate::query_source::{joins, Table};
@@ -303,7 +302,7 @@ pub trait QueryDsl: Sized {
     /// methods. In particular, the select clause constructed by `Selectable`
     /// must be valid for the current query.
     ///
-    /// [`Selectable`]: ../deserialize/trait.Selectable.html
+    /// [`Selectable`]: ../expression/trait.Selectable.html
     ///
     /// # Examples
     ///

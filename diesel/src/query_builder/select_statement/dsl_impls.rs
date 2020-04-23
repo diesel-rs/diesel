@@ -1,7 +1,6 @@
 use super::BoxedSelectStatement;
 use crate::associations::HasTable;
 use crate::backend::Backend;
-use crate::deserialize::Selectable;
 use crate::dsl::AsExprOf;
 use crate::expression::nullable::Nullable;
 use crate::expression::*;

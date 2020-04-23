@@ -23,7 +23,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         .collect::<Result<Vec<_>, _>>()?;
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::Selectable;
+        use diesel::expression::Selectable;
 
         impl #impl_generics Selectable
             for #struct_name #ty_generics
