@@ -71,17 +71,17 @@ where
     }
 }
 
-impl<CL, ST, F, S, D, W, O, LOf, LC, Selection> SelectByDsl<Selection>
+impl<SE, ST, F, S, D, W, O, LOf, LC, Selection> SelectByDsl<Selection>
     for SelectStatement<F, S, D, W, O, LOf, NoGroupByClause, LC>
 where
-    CL: Expression<SqlType = ST>,
-    Selection: Selectable<SelectExpression = CL>,
-    SelectStatement<F, SelectClause<CL>, D, W, O, LOf, NoGroupByClause, LC>:
-        SelectQuery<SqlType = ST> + SelectByQuery<SelectExpression = CL>,
+    SE: Expression<SqlType = ST>,
+    Selection: Selectable<SelectExpression = SE>,
+    SelectStatement<F, SelectClause<SE>, D, W, O, LOf, NoGroupByClause, LC>:
+        SelectQuery<SqlType = ST> + SelectByQuery<SelectExpression = SE>,
 {
     type Output = SelectByStatement<
         Selection,
-        SelectStatement<F, SelectClause<CL>, D, W, O, LOf, NoGroupByClause, LC>,
+        SelectStatement<F, SelectClause<SE>, D, W, O, LOf, NoGroupByClause, LC>,
     >;
 
     fn select_by(self) -> Self::Output {
