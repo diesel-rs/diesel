@@ -17,8 +17,8 @@ mod dsl_impls;
 /// `Query`/`AsQuery`, `AppendSelection` and `IntoUpdateTarget`.
 /// note: it would have conflicting implementation of `LoadQuery` if
 /// this implements `AsQuery`.
-/// It does not support `GroupByDsl` and `InternalJoinDsl` right now
-/// (using these dsl would unboxing into inner statement).
+/// It does not support `GroupByDsl` right now (using these dsl would
+/// unboxing into inner statement).
 /// When using `SelectDsl`/`SelectByDsl` would intendedly unbox/rebox
 /// Other operation should keep Selection invariant.
 #[doc(hidden)]

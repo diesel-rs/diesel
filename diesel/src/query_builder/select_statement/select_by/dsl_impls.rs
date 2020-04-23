@@ -4,7 +4,7 @@ use crate::expression::nullable::Nullable;
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::insert_statement::InsertFromSelect;
-use crate::query_builder::{AsQuery, Query, SelectByQuery, SelectByStatement};
+use crate::query_builder::{Query, SelectByQuery, SelectByStatement};
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
 use crate::query_source::joins::JoinTo;
@@ -15,12 +15,12 @@ impl<SE, S, Stmt, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for SelectByStat
 where
     Stmt: InternalJoinDsl<Rhs, Kind, On>,
     Self: SelectByQuery<Expression = SE>,
-    Stmt::Output: SelectByQuery<Expression = SE> + AsQuery,
+    Stmt::Output: SelectByQuery<Expression = SE>,
 {
-    type Output = Stmt::Output;
+    type Output = SelectByStatement<S, Stmt::Output>;
 
     fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
-        self.inner.join(rhs, kind, on)
+        SelectByStatement::new(self.inner.join(rhs, kind, on))
     }
 }
 
