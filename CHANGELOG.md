@@ -83,6 +83,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   represent everything it used to, so in some rare cases code changes may be
   required. See [the upgrade notes](#2-0-0-upgrade-non-aggregate) for details.
 
+* Various `__NonExhaustive` variants in different (error-) enums are replaced with
+  `#[non_exhaustive]`. If you matched on one of those variants explicitly you need to
+  introduce a wild card match instead.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not

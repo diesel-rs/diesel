@@ -11,6 +11,7 @@ use crate::result;
 
 /// Errors that occur while preparing to run migrations
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum MigrationError {
     /// The migration directory wasn't found
     MigrationDirectoryNotFound(PathBuf),
@@ -22,9 +23,6 @@ pub enum MigrationError {
     UnknownMigrationVersion(String),
     /// No migrations had to be/ could be run
     NoMigrationRun,
-    ///
-    #[doc(hidden)]
-    __NonExhaustive,
 }
 
 impl Error for MigrationError {}
@@ -51,7 +49,6 @@ impl fmt::Display for MigrationError {
                 f,
                 "No migrations have been run. Did you forget `diesel migration run`?"
             ),
-            MigrationError::__NonExhaustive => unreachable!(),
         }
     }
 }
@@ -81,6 +78,7 @@ impl From<io::Error> for MigrationError {
 /// Errors that occur while running migrations
 #[derive(Debug, PartialEq)]
 #[allow(clippy::enum_variant_names)]
+#[non_exhaustive]
 pub enum RunMigrationsError {
     /// A general migration error occured
     MigrationError(MigrationError),
@@ -88,9 +86,6 @@ pub enum RunMigrationsError {
     QueryError(result::Error),
     /// The provided migration was empty
     EmptyMigration,
-    ///
-    #[doc(hidden)]
-    __NonExhaustive,
 }
 
 impl Error for RunMigrationsError {}
@@ -103,7 +98,6 @@ impl fmt::Display for RunMigrationsError {
             RunMigrationsError::EmptyMigration => {
                 write!(f, "Failed with: Attempted to run an empty migration.")
             }
-            RunMigrationsError::__NonExhaustive => unreachable!(),
         }
     }
 }
