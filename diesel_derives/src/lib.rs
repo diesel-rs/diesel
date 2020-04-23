@@ -434,10 +434,7 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 ///    single database column, but is a type that implements
 ///    `Selectable` on it's own
-#[proc_macro_derive(
-    Selectable,
-    attributes(table_name, column_name, sql_type, diesel)
-)]
+#[proc_macro_derive(Selectable, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, selectable::derive)
 }
