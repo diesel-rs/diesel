@@ -1,6 +1,6 @@
 use crate::expression::SelectableExpression;
 use crate::pg::Pg;
-use crate::query_builder::{AstPass, QueryFragment, QueryId, SelectQuery, SelectStatement};
+use crate::query_builder::{AstPass, QueryFragment, QueryId, SelectQuery, SelectStatement, SelectByStatement};
 use crate::query_dsl::methods::DistinctOnDsl;
 use crate::result::QueryResult;
 
@@ -40,5 +40,17 @@ where
             self.group_by,
             self.locking,
         )
+    }
+}
+
+impl<ST, S, Stmt, Selection> DistinctOnDsl<Selection> for SelectByStatement<S, Stmt>
+where
+    Stmt: DistinctOnDsl<Selection>,
+    Stmt::Output: SelectQuery<SqlType = ST>,
+{
+    type Output = SelectByStatement<S, Stmt::Output>;
+
+    fn distinct_on(self, selection: Selection) -> Self::Output {
+        SelectByStatement::new(self.inner.distinct_on(selection))
     }
 }

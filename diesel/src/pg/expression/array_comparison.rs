@@ -166,3 +166,14 @@ where
         Subselect::new(self)
     }
 }
+
+impl<ST, S, Stmt> AsArrayExpression<ST> for SelectByStatement<S, Stmt>
+where
+    Stmt: SelectQuery<SqlType = ST>,
+{
+    type Expression = Subselect<Stmt, Array<ST>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Subselect::new(self.inner)
+    }
+}
