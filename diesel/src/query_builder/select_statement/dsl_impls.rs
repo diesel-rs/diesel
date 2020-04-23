@@ -1,7 +1,7 @@
 use super::BoxedSelectStatement;
 use crate::associations::HasTable;
 use crate::backend::Backend;
-use crate::deserialize::QueryableByColumn;
+use crate::deserialize::Selectable;
 use crate::dsl::AsExprOf;
 use crate::expression::nullable::Nullable;
 use crate::expression::*;
@@ -76,7 +76,7 @@ impl<CL, ST, F, S, D, W, O, LOf, LC, Selection> SelectByDsl<Selection>
     for SelectStatement<F, S, D, W, O, LOf, NoGroupByClause, LC>
 where
     CL: Expression<SqlType = ST>,
-    Selection: QueryableByColumn<Columns = CL>,
+    Selection: Selectable<Columns = CL>,
     SelectStatement<F, SelectClause<CL>, D, W, O, LOf, NoGroupByClause, LC>:
         SelectQuery<SqlType = ST> + SelectByQuery<Columns = CL>,
 {

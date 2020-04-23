@@ -22,7 +22,7 @@ table! {
 
 #[test]
 fn named_struct_definition() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, QueryableByColumn)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[table_name = "my_structs"]
     struct MyStruct {
         foo: IntRust,
@@ -38,7 +38,7 @@ fn named_struct_definition() {
 
 #[test]
 fn tuple_struct() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, QueryableByColumn)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[table_name = "my_structs"]
     struct MyStruct(
         #[column_name = "foo"] IntRust,
@@ -58,7 +58,7 @@ fn tuple_struct() {
 
 #[test]
 fn embedded_struct() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, QueryableByColumn)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[table_name = "my_structs"]
     struct A {
         foo: IntRust,
@@ -66,7 +66,7 @@ fn embedded_struct() {
         b: B,
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, QueryableByColumn)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     struct B {
         #[table_name = "my_structs"]
         bar: IntRust,
@@ -79,7 +79,7 @@ fn embedded_struct() {
 
 #[test]
 fn embedded_option() {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, QueryableByColumn)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[table_name = "my_structs"]
     struct A {
         foo: IntRust,
@@ -87,7 +87,7 @@ fn embedded_option() {
         b: Option<B>,
     }
 
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, QueryableByColumn)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[table_name = "my_structs"]
     struct B {
         bar: IntRust,

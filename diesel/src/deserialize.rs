@@ -258,7 +258,7 @@ pub use diesel_derives::QueryableByName;
 
 /// Trait indicating that a record can be selected and queried from the database.
 ///
-/// Types which implement `QueryableByColumn` represent the result of a SQL query, and could
+/// Types which implement `Selectable` represent the result of a SQL query, and could
 /// be used to construct a select clause via [`select_by`] method. This does not necessarily
 /// mean they represent a single database table.
 ///
@@ -266,7 +266,7 @@ pub use diesel_derives::QueryableByName;
 /// is valid, in order to [`load`] the result we might also like to implement or derive
 /// [`Queryable`](trait.Queryable.html)
 ///
-/// This trait can be [derived](derive.QueryableByColumn.html)
+/// This trait can be [derived](derive.Selectable.html)
 ///
 /// [`SelectByQuery`]: ..//query_builder/trait.SelectByQuery.html
 /// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
@@ -275,16 +275,16 @@ pub use diesel_derives::QueryableByName;
 /// # Examples
 ///
 /// If you just want to construct a select clause using an existing struct, you can use
-/// `#[derive(QueryableByColumn)]`, See [`QueryableByColumn`] for details.
+/// `#[derive(Selectable)]`, See [`Selectable`] for details.
 ///
-/// [`QueryableByColumn`]: derive.QueryableByColumn.html
+/// [`Selectable`]: derive.Selectable.html
 ///
 /// ```rust
 /// # include!("doctest_setup.rs");
 /// #
 /// use schema::users;
 ///
-/// #[derive(Queryable, PartialEq, Debug, QueryableByColumn)]
+/// #[derive(Queryable, PartialEq, Debug, Selectable)]
 /// struct User {
 ///     id: i32,
 ///     name: String,
@@ -310,7 +310,7 @@ pub use diesel_derives::QueryableByName;
 /// # include!("doctest_setup.rs");
 /// #
 /// use schema::users;
-/// use diesel::deserialize::{Queryable, QueryableByColumn};
+/// use diesel::deserialize::{Queryable, Selectable};
 ///
 /// #[derive(Queryable, PartialEq, Debug)]
 /// struct User {
@@ -318,7 +318,7 @@ pub use diesel_derives::QueryableByName;
 ///     name: String,
 /// }
 ///
-/// impl QueryableByColumn for User {
+/// impl Selectable for User {
 ///     type Columns = (users::id, users::name);
 ///
 ///     fn columns() -> Self::Columns {
@@ -339,7 +339,7 @@ pub use diesel_derives::QueryableByName;
 /// #     Ok(())
 /// # }
 /// ```
-pub trait QueryableByColumn {
+pub trait Selectable {
     /// The columns you'd like to select.
     ///
     /// This is typically a tuple of all of your struct's fields.
@@ -350,11 +350,11 @@ pub trait QueryableByColumn {
 }
 
 #[doc(inline)]
-pub use diesel_derives::QueryableByColumn;
+pub use diesel_derives::Selectable;
 
-impl<T> QueryableByColumn for Option<T>
+impl<T> Selectable for Option<T>
 where
-    T: QueryableByColumn,
+    T: Selectable,
     Nullable<T::Columns>: Expression,
 {
     type Columns = Nullable<T::Columns>;

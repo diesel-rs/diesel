@@ -15,7 +15,7 @@
 
 use crate::backend::Backend;
 use crate::connection::Connection;
-use crate::deserialize::QueryableByColumn;
+use crate::deserialize::Selectable;
 use crate::expression::count::CountStar;
 use crate::expression::Expression;
 use crate::helper_types::*;
@@ -291,7 +291,7 @@ pub trait QueryDsl: Sized {
         methods::SelectDsl::select(self, selection)
     }
 
-    /// Adds a `SELECT` clause to the query using based on a struct implementing [`QueryableByColumn`].
+    /// Adds a `SELECT` clause to the query using based on a struct implementing [`Selectable`].
     ///
     /// If there was already a select clause present, it will be overridden.
     /// For example, `foo.select(bar).select_by::<Baz>()` will produce the same
@@ -300,10 +300,10 @@ pub trait QueryDsl: Sized {
     /// `foo.select_by::<Baz>()`
     ///
     /// `select_by` has slightly stricter bounds on its arguments than other
-    /// methods. In particular, the select clause constructed by `QueryableByColumn`
+    /// methods. In particular, the select clause constructed by `Selectable`
     /// must be valid for the current query.
     ///
-    /// [`QueryableByColumn`]: ../deserialize/trait.QueryableByColumn.html
+    /// [`Selectable`]: ../deserialize/trait.Selectable.html
     ///
     /// # Examples
     ///
@@ -311,7 +311,7 @@ pub trait QueryDsl: Sized {
     /// # include!("../doctest_setup.rs");
     /// # use schema::users;
     /// #
-    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, QueryableByColumn)]
+    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
     /// # #[table_name = "users"]
     /// # pub struct UserName(#[column_name = "name"] String);
     /// #
@@ -353,7 +353,7 @@ pub trait QueryDsl: Sized {
     /// #     }
     /// # }
     /// #
-    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, QueryableByColumn)]
+    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
     /// # #[table_name = "users"]
     /// # pub struct UserName(#[column_name = "name"] String);
     /// #
@@ -374,7 +374,7 @@ pub trait QueryDsl: Sized {
     /// #     }
     /// # }
     /// #
-    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, QueryableByColumn)]
+    /// # #[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
     /// # #[table_name = "posts"]
     /// # pub struct PostTitle(#[column_name = "title"] String);
     /// #
@@ -414,7 +414,7 @@ pub trait QueryDsl: Sized {
     /// ```
     fn select_by<Selection>(self) -> SelectBy<Self, Selection>
     where
-        Selection: QueryableByColumn,
+        Selection: Selectable,
         Self: methods::SelectByDsl<Selection>,
     {
         methods::SelectByDsl::select_by(self)

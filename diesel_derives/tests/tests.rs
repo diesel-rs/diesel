@@ -13,5 +13,5 @@ mod associations;
 mod identifiable;
 mod insertable;
 mod queryable;
-mod queryable_by_column;
 mod queryable_by_name;
+mod selectable;

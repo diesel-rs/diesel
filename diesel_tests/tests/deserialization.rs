@@ -2,7 +2,7 @@ use crate::schema::*;
 use diesel::*;
 use std::borrow::Cow;
 
-#[derive(Queryable, PartialEq, Debug, QueryableByColumn)]
+#[derive(Queryable, PartialEq, Debug, Selectable)]
 #[table_name = "users"]
 struct CowUser<'a> {
     id: i32,

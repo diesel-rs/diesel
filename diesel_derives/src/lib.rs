@@ -45,8 +45,8 @@ mod identifiable;
 mod insertable;
 mod query_id;
 mod queryable;
-mod queryable_by_column;
 mod queryable_by_name;
+mod selectable;
 mod sql_function;
 mod sql_type;
 mod valid_grouping;
@@ -394,9 +394,9 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, queryable_by_name::derive)
 }
 
-/// Implements `QueryableByColumn`
+/// Implements `Selectable`
 ///
-/// To implement `QueryableByColumn` this derive needs to know the corresponding table
+/// To implement `Selectable` this derive needs to know the corresponding table
 /// type. By default it uses the `snake_case` type name with an added `s`.
 /// It is possible to change this default by using `#[table_name = "something"]`.
 /// In both cases the module for that table must be in scope.
@@ -408,7 +408,7 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// you can annotate the field with `#[column_name = "some_column"]`. For tuple
 /// structs, all fields must have this annotation.
 ///
-/// If a field is another struct which implements `QueryableByColumn`,
+/// If a field is another struct which implements `Selectable`,
 /// instead of a column, you can annotate that struct with `#[diesel(embed)]`.
 /// Then all fields contained by that inner struct are loaded into
 /// the embedded struct (not necessary the same table).
@@ -433,13 +433,13 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///    `#[table_name = "some_table"]` is used, otherwise it's optional.
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 ///    single database column, but is a type that implements
-///    `QueryableByColumn` on it's own
+///    `Selectable` on it's own
 #[proc_macro_derive(
-    QueryableByColumn,
+    Selectable,
     attributes(table_name, column_name, sql_type, diesel)
 )]
-pub fn derive_queryable_by_column(input: TokenStream) -> TokenStream {
-    expand_proc_macro(input, queryable_by_column::derive)
+pub fn derive_selectable(input: TokenStream) -> TokenStream {
+    expand_proc_macro(input, selectable::derive)
 }
 
 /// Implement necessary traits for adding a new sql type

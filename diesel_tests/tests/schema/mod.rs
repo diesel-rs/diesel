@@ -20,7 +20,7 @@ pub struct User {
     pub hair_color: Option<String>,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, QueryableByColumn)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
 #[table_name = "users"]
 pub struct UserName(#[column_name = "name"] pub String);
 

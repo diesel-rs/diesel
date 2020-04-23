@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
-use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByColumn, QueryableByName};
+use crate::deserialize::{self, FromSqlRow, Queryable, Selectable, QueryableByName};
 use crate::expression::{
     AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression, ValidGrouping,
 };
@@ -60,8 +60,8 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<$($T),+> QueryableByColumn for ($($T,)+) where
-                $($T: QueryableByColumn),+,
+            impl<$($T),+> Selectable for ($($T,)+) where
+                $($T: Selectable),+,
             {
                 type Columns = ($($T::Columns,)+);
 

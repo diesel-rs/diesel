@@ -1,6 +1,6 @@
 use crate::associations::HasTable;
 use crate::backend::Backend;
-use crate::deserialize::QueryableByColumn;
+use crate::deserialize::Selectable;
 use crate::expression::nullable::Nullable;
 use crate::expression::*;
 use crate::insertable::Insertable;
@@ -39,7 +39,7 @@ where
 
 impl<S, Stmt, Selection> SelectByDsl<Selection> for SelectByStatement<S, Stmt>
 where
-    Selection: QueryableByColumn,
+    Selection: Selectable,
     Stmt: SelectByDsl<Selection>,
 {
     type Output = Stmt::Output;
@@ -259,7 +259,7 @@ where
 impl<CL, S, Stmt> SelectNullableDsl for SelectByStatement<S, Stmt>
 where
     Nullable<CL>: Expression,
-    Option<S>: QueryableByColumn<Columns = Nullable<CL>>,
+    Option<S>: Selectable<Columns = Nullable<CL>>,
     Stmt: SelectNullableDsl,
     Self: SelectByQuery<Columns = CL>,
     Stmt::Output: SelectByQuery<Columns = Nullable<CL>>,
