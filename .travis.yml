@@ -82,7 +82,7 @@ matrix:
   allow_failures:
     - rust: nightly
   include:
-  - rust: nightly-2019-08-01
+  - rust: nightly-2020-04-01
     name: "Compile tests"
     env: RUSTFLAGS="--cap-lints=warn"
     script:
