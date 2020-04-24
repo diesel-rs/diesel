@@ -487,7 +487,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 /// The syntax for this macro is very similar to that of a normal Rust function,
 /// except the argument and return types will be the SQL types being used.
-/// Typically these types will come from [`diesel::sql_types`].
+/// Typically these types will come from [`diesel::sql_types`](../diesel/sql_types/index.html)
 ///
 /// This macro will generate two items. A function with the name that you've
 /// given, and a module with a helper type representing the return type of your
