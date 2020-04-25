@@ -87,11 +87,23 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   represent everything it used to, so in some rare cases code changes may be
   required. See [the upgrade notes](#2-0-0-upgrade-non-aggregate) for details.
 
+* Various `__NonExhaustive` variants in different (error-) enums are replaced with
+  `#[non_exhaustive]`. If you matched on one of those variants explicitly you need to
+  introduce a wild card match instead.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
   have been. All types in Diesel are now correctly only considered
   non-aggregate if their parts are.
+
+* Offset clauses without limit clauses resulted into invalid sql using the mysql or
+  sqlite backend. Both do not support such clauses without a preceding limit clause.
+  For those backend Diesel does now generate a fake limit clause in case no explicit
+  limit clause was given. As consequence of this change generic query code may
+  require additional trait bounds as requested from the compiler. Third party
+  backends are required to explicitly provide `QueryFragment` impls for
+  `LimitOffsetClause<L, O>` now.
 
 * Nullability requirements are now properly enforced for nested joins.
   Previously, only the rules for the outer-most join were considered. For

@@ -17,7 +17,6 @@ assert_matches = "1.0.1"
 chrono = { version = "0.4" }
 diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "network-address", "numeric", "with-deprecated"] }
 diesel_migrations = { path = "../diesel_migrations" }
-diesel_infer_schema = { version = "1.4.0" }
 dotenv = ">=0.8, <0.11"
 quickcheck = { version = "0.4", features = ["unstable"] }
 uuid = { version = ">=0.7.0, <0.9.0" }
@@ -28,9 +27,9 @@ bigdecimal = ">= 0.0.10, <= 0.1.0"
 [features]
 default = []
 unstable = ["diesel/unstable"]
-postgres = ["diesel/postgres", "diesel_infer_schema/postgres"]
-sqlite = ["diesel/sqlite", "diesel_infer_schema/sqlite"]
-mysql = ["diesel/mysql", "diesel_infer_schema/mysql"]
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
+mysql = ["diesel/mysql"]
 
 [[test]]
 name = "integration_tests"
