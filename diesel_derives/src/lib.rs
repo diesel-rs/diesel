@@ -681,8 +681,8 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///         self.sum += expr;
 ///     }
 ///
-///     fn finalize(self) -> Self::Output {
-///         self.sum
+///     fn finalize(aggregator: Option<Self>) -> Option<Self::Output> {
+///         Some(aggregator?.sum)
 ///     }
 /// }
 /// # table! {
@@ -758,8 +758,8 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///         // Compare self.max_value to x0 and x1
 ///     }
 ///
-///     fn finalize(self) -> Self::Output {
-///         self.max_value.unwrap()
+///     fn finalize(aggregator: Option<Self>) -> Option<Self::Output> {
+///         aggregator?.max_value
 ///     }
 /// }
 /// # table! {

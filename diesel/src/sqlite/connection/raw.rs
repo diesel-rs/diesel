@@ -13,7 +13,7 @@ use crate::deserialize::Queryable;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
-use crate::sql_types::HasSqlType;
+use crate::sql_types::{HasSqlType, IntoNullable};
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
@@ -111,6 +111,7 @@ impl RawConnection {
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
+        RetSqlType: IntoNullable<Nullable = RetSqlType>,
         Sqlite: HasSqlType<RetSqlType>,
     {
         let fn_name = Self::get_fn_name(fn_name)?;
@@ -310,6 +311,7 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
+    RetSqlType: IntoNullable<Nullable = RetSqlType>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     unsafe {
@@ -320,23 +322,15 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
         let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
         let aggregator = match aggregate_context {
             Some(ref mut a) => match std::mem::replace(a.as_mut(), OptionalAggregator::None) {
-                OptionalAggregator::Some(agg) => agg,
+                OptionalAggregator::Some(agg) => Some(agg),
                 OptionalAggregator::None => unreachable!("We've written to the aggregator in the xStep callback. If xStep was never called, then ffi::sqlite_aggregate_context() would have returned a NULL pointer")
             },
-            None => {
-                // explicitly set a null value as return value here, just to make it obvious what's returned in this case
-                SerializedValue {
-                    ty: Sqlite::metadata(&()),
-                    data: None,
-                }.result_of(ctx);
-
-                return;
-            }
+            None => None,
         };
 
-        let result = aggregator.finalize();
+        let result = A::finalize(aggregator);
 
-        match process_sql_function_result::<RetSqlType, Ret>(result) {
+        match process_sql_function_result::<RetSqlType, Option<Ret>>(result) {
             Ok(value) => value.result_of(ctx),
             Err(e) => {
                 let msg = e.to_string();

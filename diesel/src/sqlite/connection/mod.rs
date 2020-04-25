@@ -22,7 +22,7 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
-use crate::sql_types::HasSqlType;
+use crate::sql_types::{HasSqlType, IntoNullable};
 use crate::sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, "connection URLs"
@@ -248,6 +248,7 @@ impl SqliteConnection {
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
+        RetSqlType: IntoNullable<Nullable = RetSqlType>,
         Sqlite: HasSqlType<RetSqlType>,
     {
         functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
@@ -405,8 +406,12 @@ mod tests {
             self.sum += expr;
         }
 
-        fn finalize(self) -> Self::Output {
-            self.sum
+        fn finalize(aggregator: Option<Self>) -> Option<Self::Output> {
+            if let Some(a) = aggregator {
+                return Some(a.sum);
+            }
+
+            Some(T::default())
         }
     }
 
@@ -440,7 +445,7 @@ mod tests {
     }
 
     #[test]
-    fn register_aggregate_function_returns_none_on_empty_set() {
+    fn register_aggregate_function_returns_finalize_default_on_empty_set() {
         use self::my_sum_example::dsl::*;
 
         let connection = SqliteConnection::establish(":memory:").unwrap();
@@ -455,7 +460,7 @@ mod tests {
         let result = my_sum_example
             .select(my_sum(value))
             .get_result::<Option<i32>>(&connection);
-        assert_eq!(Ok(None), result);
+        assert_eq!(Ok(Some(0)), result);
     }
 
     sql_function! {
@@ -487,8 +492,8 @@ mod tests {
             };
         }
 
-        fn finalize(self) -> Self::Output {
-            self.max_value.unwrap()
+        fn finalize(aggregator: Option<Self>) -> Option<Self::Output> {
+            aggregator?.max_value
         }
     }
 

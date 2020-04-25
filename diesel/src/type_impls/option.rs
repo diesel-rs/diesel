@@ -8,7 +8,7 @@ use crate::query_builder::QueryId;
 use crate::result::UnexpectedNullError;
 use crate::row::NamedRow;
 use crate::serialize::{self, IsNull, Output, ToSql};
-use crate::sql_types::{HasSqlType, NotNull, Nullable};
+use crate::sql_types::{HasSqlType, IntoNullable, NotNull, Nullable};
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
@@ -100,11 +100,11 @@ where
     }
 }
 
-impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T>
+impl<T, ST, DB> ToSql<ST, DB> for Option<T>
 where
+    ST: IntoNullable<Nullable = ST>,
     T: ToSql<ST, DB>,
     DB: Backend,
-    ST: NotNull,
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         if let Some(ref value) = *self {

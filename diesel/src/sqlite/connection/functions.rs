@@ -7,7 +7,7 @@ use crate::deserialize::{FromSqlRow, Queryable};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::Row;
 use crate::serialize::{IsNull, Output, ToSql};
-use crate::sql_types::HasSqlType;
+use crate::sql_types::{HasSqlType, IntoNullable};
 
 pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,
@@ -47,6 +47,7 @@ where
     A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
+    RetSqlType: IntoNullable<Nullable = RetSqlType>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     let fields_needed = Args::Row::FIELDS_NEEDED;
