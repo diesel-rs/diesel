@@ -46,5 +46,5 @@ error: `postgres` must be in the form `postgres(...)`
 26 | #[postgres = "foo"]
    |   ^^^^^^^^^^^^^^^^
 
-error: aborting due to 5 previous errors
+error: aborting due to 5 previous errors; 3 warnings emitted
 
