@@ -22,7 +22,7 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
-use crate::sql_types::{HasSqlType, IntoNullable};
+use crate::sql_types::HasSqlType;
 use crate::sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, "connection URLs"
@@ -248,7 +248,6 @@ impl SqliteConnection {
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
-        RetSqlType: IntoNullable<Nullable = RetSqlType>,
         Sqlite: HasSqlType<RetSqlType>,
     {
         functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
@@ -388,30 +387,26 @@ mod tests {
     }
 
     use crate::sqlite::SqliteAggregateFunction;
-    use std::ops::AddAssign;
+
     sql_function! {
         #[aggregate]
-        fn my_sum(expr: Integer) -> Nullable<Integer>;
+        fn my_sum(expr: Integer) -> Integer;
     }
 
     #[derive(Default)]
-    struct MySum<T> {
-        sum: T,
+    struct MySum {
+        sum: i32,
     }
 
-    impl<T: Default + Copy + AddAssign> SqliteAggregateFunction<T> for MySum<T> {
-        type Output = T;
+    impl SqliteAggregateFunction<i32> for MySum {
+        type Output = i32;
 
-        fn step(&mut self, expr: T) {
+        fn step(&mut self, expr: i32) {
             self.sum += expr;
         }
 
-        fn finalize(aggregator: Option<Self>) -> Option<Self::Output> {
-            if let Some(a) = aggregator {
-                return Some(a.sum);
-            }
-
-            Some(T::default())
+        fn finalize(aggregator: Option<Self>) -> Self::Output {
+            aggregator.map(|a| a.sum).unwrap_or_default()
         }
     }
 
@@ -436,12 +431,12 @@ mod tests {
             .execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
             .unwrap();
 
-        my_sum::register_impl::<MySum<i32>, _>(&connection).unwrap();
+        my_sum::register_impl::<MySum, _>(&connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<Option<i32>>(&connection);
-        assert_eq!(Ok(Some(6)), result);
+            .get_result::<i32>(&connection);
+        assert_eq!(Ok(6), result);
     }
 
     #[test]
@@ -455,12 +450,12 @@ mod tests {
             )
             .unwrap();
 
-        my_sum::register_impl::<MySum<i32>, _>(&connection).unwrap();
+        my_sum::register_impl::<MySum, _>(&connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<Option<i32>>(&connection);
-        assert_eq!(Ok(Some(0)), result);
+            .get_result::<i32>(&connection);
+        assert_eq!(Ok(0), result);
     }
 
     sql_function! {
@@ -474,7 +469,7 @@ mod tests {
     }
 
     impl<T: Default + Ord + Copy + Clone> SqliteAggregateFunction<(T, T, T)> for RangeMax<T> {
-        type Output = T;
+        type Output = Option<T>;
 
         fn step(&mut self, (x0, x1, x2): (T, T, T)) {
             let max = if x0 >= x1 && x0 >= x2 {
@@ -492,7 +487,7 @@ mod tests {
             };
         }
 
-        fn finalize(aggregator: Option<Self>) -> Option<Self::Output> {
+        fn finalize(aggregator: Option<Self>) -> Self::Output {
             aggregator?.max_value
         }
     }

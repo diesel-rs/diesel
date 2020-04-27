@@ -644,10 +644,12 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// ## Custom Aggregate Functions
+///
 /// Custom aggregate functions can be created in SQLite by adding an `#[aggregate]`
-/// attribute inside of `sql_function`. `register_impl` needs to be called on the generated function with
-/// a type implementing the [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html) trait
-/// as a type parameter as shown in the examples below.
+/// attribute inside of `sql_function`. `register_impl` needs to be called on
+/// the generated function with a type implementing the
+/// [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html)
+/// trait as a type parameter as shown in the examples below.
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -667,7 +669,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 /// sql_function! {
 ///     #[aggregate]
-///     fn my_sum(x: Integer) -> Nullable<Integer>;
+///     fn my_sum(x: Integer) -> Integer;
 /// }
 ///
 /// #[derive(Default)]
@@ -681,8 +683,8 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///         self.sum += expr;
 ///     }
 ///
-///     fn finalize(aggregator: Option<Self>) -> Option<Self::Output> {
-///         Some(aggregator?.sum)
+///     fn finalize(aggregator: Option<Self>) -> Self::Output {
+///         aggregator.map(|a| a.sum).unwrap_or_default()
 ///     }
 /// }
 /// # table! {
@@ -701,14 +703,12 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 ///     my_sum::register_impl::<MySum, _>(&connection)?;
 ///
-///     let result = players.select(my_sum(score))
-///         .get_result::<Option<i32>>(&connection)?;
+///     let total_score = players.select(my_sum(score))
+///         .get_result::<i32>(&connection)?;
 ///
-///     if let Some(total_score) = result {
-///         println!("The total score of all the players is: {}", total_score);
-///     }
+///     println!("The total score of all the players is: {}", total_score);
 ///
-/// #    assert_eq!(Some(60), result);
+/// #    assert_eq!(60, total_score);
 ///     Ok(())
 /// }
 /// ```
@@ -741,7 +741,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 /// # #[cfg(feature = "sqlite")]
 /// impl<T: Default + PartialOrd + Copy + Clone> SqliteAggregateFunction<(T, T)> for RangeMax<T> {
-///     type Output = T;
+///     type Output = Option<T>;
 ///
 ///     fn step(&mut self, (x0, x1): (T, T)) {
 /// #        let max = if x0 >= x1 {
@@ -758,7 +758,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///         // Compare self.max_value to x0 and x1
 ///     }
 ///
-///     fn finalize(aggregator: Option<Self>) -> Option<Self::Output> {
+///     fn finalize(aggregator: Option<Self>) -> Self::Output {
 ///         aggregator?.max_value
 ///     }
 /// }
@@ -789,27 +789,6 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #    assert_eq!(Some(90f32), result);
 ///     Ok(())
 /// }
-/// ```
-///
-/// Custom aggregate functions must return a `Nullable` to handle cases where an empty set is
-/// passed to the aggregating function.
-///
-/// ```compile_fail
-/// # extern crate diesel;
-/// # use diesel::*;
-/// # use diesel::sql_types::Integer;
-/// #
-/// # fn main() {
-/// # }
-/// #
-/// # #[cfg(feature = "sqlite")]
-/// sql_function! {
-///     #[aggregate]
-///     fn wont_work(x: Integer) -> Integer;
-/// }
-///
-/// # #[cfg(not(feature = "sqlite"))]
-/// # compile_error!("Don't care if not sqlite");
 /// ```
 #[proc_macro]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {

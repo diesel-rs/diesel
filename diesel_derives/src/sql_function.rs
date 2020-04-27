@@ -163,7 +163,6 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                             where
                             A: SqliteAggregateFunction<(#(#arg_name,)*)> + Send + 'static,
                             A::Output: ToSql<#return_type, Sqlite>,
-                            #return_type: IntoNullable<Nullable = #return_type>,
                             (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
                         {
                             conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
@@ -189,7 +188,6 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                             where
                             A: SqliteAggregateFunction<#arg_name> + Send + 'static,
                             A::Output: ToSql<#return_type, Sqlite>,
-                            #return_type: IntoNullable<Nullable = #return_type>,
                             #arg_name: Queryable<#arg_type, Sqlite>,
                             {
                                 conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)

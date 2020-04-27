@@ -13,7 +13,7 @@ use crate::deserialize::Queryable;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
-use crate::sql_types::{HasSqlType, IntoNullable};
+use crate::sql_types::HasSqlType;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
@@ -111,7 +111,6 @@ impl RawConnection {
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
-        RetSqlType: IntoNullable<Nullable = RetSqlType>,
         Sqlite: HasSqlType<RetSqlType>,
     {
         let fn_name = Self::get_fn_name(fn_name)?;
@@ -311,7 +310,6 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
-    RetSqlType: IntoNullable<Nullable = RetSqlType>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     unsafe {
@@ -330,7 +328,7 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
 
         let result = A::finalize(aggregator);
 
-        match process_sql_function_result::<RetSqlType, Option<Ret>>(result) {
+        match process_sql_function_result::<RetSqlType, Ret>(result) {
             Ok(value) => value.result_of(ctx),
             Err(e) => {
                 let msg = e.to_string();
