@@ -15,6 +15,7 @@ use std::os::raw as libc;
 use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
+use super::SqliteAggregateFunction;
 use crate::connection::*;
 use crate::deserialize::{Queryable, QueryableByName};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
@@ -238,6 +239,20 @@ impl SqliteConnection {
         )
     }
 
+    #[doc(hidden)]
+    pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
+        &self,
+        fn_name: &str,
+    ) -> QueryResult<()>
+    where
+        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
+        Args: Queryable<ArgsSqlType, Sqlite>,
+        Ret: ToSql<RetSqlType, Sqlite>,
+        Sqlite: HasSqlType<RetSqlType>,
+    {
+        functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -369,5 +384,145 @@ mod tests {
         let added = crate::select((add_counter(1), add_counter(1), add_counter(1)))
             .get_result::<(i32, i32, i32)>(&connection);
         assert_eq!(Ok((2, 3, 4)), added);
+    }
+
+    use crate::sqlite::SqliteAggregateFunction;
+
+    sql_function! {
+        #[aggregate]
+        fn my_sum(expr: Integer) -> Integer;
+    }
+
+    #[derive(Default)]
+    struct MySum {
+        sum: i32,
+    }
+
+    impl SqliteAggregateFunction<i32> for MySum {
+        type Output = i32;
+
+        fn step(&mut self, expr: i32) {
+            self.sum += expr;
+        }
+
+        fn finalize(aggregator: Option<Self>) -> Self::Output {
+            aggregator.map(|a| a.sum).unwrap_or_default()
+        }
+    }
+
+    table! {
+        my_sum_example {
+            id -> Integer,
+            value -> Integer,
+        }
+    }
+
+    #[test]
+    fn register_aggregate_function() {
+        use self::my_sum_example::dsl::*;
+
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .execute(
+                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+            )
+            .unwrap();
+        connection
+            .execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
+            .unwrap();
+
+        my_sum::register_impl::<MySum, _>(&connection).unwrap();
+
+        let result = my_sum_example
+            .select(my_sum(value))
+            .get_result::<i32>(&connection);
+        assert_eq!(Ok(6), result);
+    }
+
+    #[test]
+    fn register_aggregate_function_returns_finalize_default_on_empty_set() {
+        use self::my_sum_example::dsl::*;
+
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .execute(
+                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+            )
+            .unwrap();
+
+        my_sum::register_impl::<MySum, _>(&connection).unwrap();
+
+        let result = my_sum_example
+            .select(my_sum(value))
+            .get_result::<i32>(&connection);
+        assert_eq!(Ok(0), result);
+    }
+
+    sql_function! {
+        #[aggregate]
+        fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
+    }
+
+    #[derive(Default)]
+    struct RangeMax<T> {
+        max_value: Option<T>,
+    }
+
+    impl<T: Default + Ord + Copy + Clone> SqliteAggregateFunction<(T, T, T)> for RangeMax<T> {
+        type Output = Option<T>;
+
+        fn step(&mut self, (x0, x1, x2): (T, T, T)) {
+            let max = if x0 >= x1 && x0 >= x2 {
+                x0
+            } else if x1 >= x0 && x1 >= x2 {
+                x1
+            } else {
+                x2
+            };
+
+            self.max_value = match self.max_value {
+                Some(current_max_value) if max > current_max_value => Some(max),
+                None => Some(max),
+                _ => self.max_value,
+            };
+        }
+
+        fn finalize(aggregator: Option<Self>) -> Self::Output {
+            aggregator?.max_value
+        }
+    }
+
+    table! {
+        range_max_example {
+            id -> Integer,
+            value1 -> Integer,
+            value2 -> Integer,
+            value3 -> Integer,
+        }
+    }
+
+    #[test]
+    fn register_aggregate_multiarg_function() {
+        use self::range_max_example::dsl::*;
+
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .execute(
+                r#"CREATE TABLE range_max_example (
+                id integer primary key autoincrement,
+                value1 integer,
+                value2 integer,
+                value3 integer
+            )"#,
+            )
+            .unwrap();
+        connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)").unwrap();
+
+        range_max::register_impl::<RangeMax<i32>, _, _, _>(&connection).unwrap();
+        let result = range_max_example
+            .select(range_max(value1, value2, value3))
+            .get_result::<Option<i32>>(&connection)
+            .unwrap();
+        assert_eq!(Some(3), result);
     }
 }

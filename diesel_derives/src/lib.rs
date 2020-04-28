@@ -642,6 +642,154 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #     Ok(())
 /// # }
 /// ```
+///
+/// ## Custom Aggregate Functions
+///
+/// Custom aggregate functions can be created in SQLite by adding an `#[aggregate]`
+/// attribute inside of `sql_function`. `register_impl` needs to be called on
+/// the generated function with a type implementing the
+/// [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html)
+/// trait as a type parameter as shown in the examples below.
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::*;
+/// #
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {
+/// #   run().unwrap();
+/// # }
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// # }
+/// use diesel::sql_types::Integer;
+/// # #[cfg(feature = "sqlite")]
+/// use diesel::sqlite::SqliteAggregateFunction;
+///
+/// sql_function! {
+///     #[aggregate]
+///     fn my_sum(x: Integer) -> Integer;
+/// }
+///
+/// #[derive(Default)]
+/// struct MySum { sum: i32 }
+///
+/// # #[cfg(feature = "sqlite")]
+/// impl SqliteAggregateFunction<i32> for MySum {
+///     type Output = i32;
+///
+///     fn step(&mut self, expr: i32) {
+///         self.sum += expr;
+///     }
+///
+///     fn finalize(aggregator: Option<Self>) -> Self::Output {
+///         aggregator.map(|a| a.sum).unwrap_or_default()
+///     }
+/// }
+/// # table! {
+/// #     players {
+/// #         id -> Integer,
+/// #         score -> Integer,
+/// #     }
+/// # }
+///
+/// # #[cfg(feature = "sqlite")]
+/// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
+/// #    use self::players::dsl::*;
+///     let connection = SqliteConnection::establish(":memory:")?;
+/// #    connection.execute("create table players (id integer primary key autoincrement, score integer)").unwrap();
+/// #    connection.execute("insert into players (score) values (10), (20), (30)").unwrap();
+///
+///     my_sum::register_impl::<MySum, _>(&connection)?;
+///
+///     let total_score = players.select(my_sum(score))
+///         .get_result::<i32>(&connection)?;
+///
+///     println!("The total score of all the players is: {}", total_score);
+///
+/// #    assert_eq!(60, total_score);
+///     Ok(())
+/// }
+/// ```
+///
+/// With multiple function arguments the arguments are passed as a tuple to `SqliteAggregateFunction`
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::*;
+/// #
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {
+/// #   run().unwrap();
+/// # }
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// # }
+/// use diesel::sql_types::{Float, Nullable};
+/// # #[cfg(feature = "sqlite")]
+/// use diesel::sqlite::SqliteAggregateFunction;
+///
+/// sql_function! {
+///     #[aggregate]
+///     fn range_max(x0: Float, x1: Float) -> Nullable<Float>;
+/// }
+///
+/// #[derive(Default)]
+/// struct RangeMax<T> { max_value: Option<T> }
+///
+/// # #[cfg(feature = "sqlite")]
+/// impl<T: Default + PartialOrd + Copy + Clone> SqliteAggregateFunction<(T, T)> for RangeMax<T> {
+///     type Output = Option<T>;
+///
+///     fn step(&mut self, (x0, x1): (T, T)) {
+/// #        let max = if x0 >= x1 {
+/// #            x0
+/// #        } else {
+/// #            x1
+/// #        };
+/// #
+/// #        self.max_value = match self.max_value {
+/// #            Some(current_max_value) if max > current_max_value => Some(max),
+/// #            None => Some(max),
+/// #            _ => self.max_value,
+/// #        };
+///         // Compare self.max_value to x0 and x1
+///     }
+///
+///     fn finalize(aggregator: Option<Self>) -> Self::Output {
+///         aggregator?.max_value
+///     }
+/// }
+/// # table! {
+/// #     student_avgs {
+/// #         id -> Integer,
+/// #         s1_avg -> Float,
+/// #         s2_avg -> Float,
+/// #     }
+/// # }
+///
+/// # #[cfg(feature = "sqlite")]
+/// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
+/// #    use self::student_avgs::dsl::*;
+///     let connection = SqliteConnection::establish(":memory:")?;
+/// #    connection.execute("create table student_avgs (id integer primary key autoincrement, s1_avg float, s2_avg float)").unwrap();
+/// #    connection.execute("insert into student_avgs (s1_avg, s2_avg) values (85.5, 90), (79.8, 80.1)").unwrap();
+///
+///     range_max::register_impl::<RangeMax<f32>, _, _>(&connection)?;
+///
+///     let result = student_avgs.select(range_max(s1_avg, s2_avg))
+///         .get_result::<Option<f32>>(&connection)?;
+///
+///     if let Some(max_semeseter_avg) = result {
+///         println!("The largest semester average is: {}", max_semeseter_avg);
+///     }
+///
+/// #    assert_eq!(Some(90f32), result);
+///     Ok(())
+/// }
+/// ```
 #[proc_macro]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, sql_function::expand)

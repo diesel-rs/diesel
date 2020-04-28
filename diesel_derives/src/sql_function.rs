@@ -47,9 +47,11 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .type_params()
         .map(|type_param| type_param.ident.clone())
         .collect::<Vec<_>>();
+
     for StrictFnArg { name, .. } in args {
         generics.params.push(parse_quote!(#name));
     }
+
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     // Even if we force an empty where clause, it still won't print the where
     // token with no bounds.
@@ -131,6 +133,68 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 for #fn_name #ty_generics
             {
                 type IsAggregate = diesel::expression::is_aggregate::Yes;
+            }
+        };
+        if cfg!(feature = "sqlite") && type_args.is_empty() {
+            tokens = quote! {
+                #tokens
+
+                use diesel::sqlite::{Sqlite, SqliteConnection};
+                use diesel::serialize::ToSql;
+                use diesel::deserialize::Queryable;
+                use diesel::sqlite::SqliteAggregateFunction;
+                use diesel::sql_types::IntoNullable;
+            };
+
+            match arg_name.len() {
+                x if x > 1 => {
+                    tokens = quote! {
+                        #tokens
+
+                        #[allow(dead_code)]
+                        /// Registers an implementation for this aggregate function on the given connection
+                        ///
+                        /// This function must be called for every `SqliteConnection` before
+                        /// this SQL function can be used on SQLite. The implementation must be
+                        /// deterministic (returns the same result given the same arguments).
+                        pub fn register_impl<A, #(#arg_name,)*>(
+                            conn: &SqliteConnection
+                        ) -> QueryResult<()>
+                            where
+                            A: SqliteAggregateFunction<(#(#arg_name,)*)> + Send + 'static,
+                            A::Output: ToSql<#return_type, Sqlite>,
+                            (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                        {
+                            conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
+                        }
+                    };
+                }
+                x if x == 1 => {
+                    let arg_name = arg_name[0];
+                    let arg_type = arg_type[0];
+
+                    tokens = quote! {
+                        #tokens
+
+                        #[allow(dead_code)]
+                        /// Registers an implementation for this aggregate function on the given connection
+                        ///
+                        /// This function must be called for every `SqliteConnection` before
+                        /// this SQL function can be used on SQLite. The implementation must be
+                        /// deterministic (returns the same result given the same arguments).
+                        pub fn register_impl<A, #arg_name>(
+                            conn: &SqliteConnection
+                        ) -> QueryResult<()>
+                            where
+                            A: SqliteAggregateFunction<#arg_name> + Send + 'static,
+                            A::Output: ToSql<#return_type, Sqlite>,
+                            #arg_name: Queryable<#arg_type, Sqlite>,
+                            {
+                                conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
+                            }
+                    };
+                }
+                _ => (),
             }
         }
     } else {

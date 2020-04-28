@@ -28,6 +28,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for SQLite's `UPSERT`.
   You can use this feature above SQLite version 3.24.0.
 
+
+* Added ability to create custom aggregate functions in SQLite.
+
 * Multiple aggregate expressions can now appear together in the same select
   clause. See [the upgrade notes](#2-0-0-upgrade-non-aggregate) for details.
 
@@ -35,6 +38,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   a given group by clause, and whether or not it's aggregate. It replaces the
   functionality of `NonAggregate`. See [the upgrade
   notes](#2-0-0-upgrade-non-aggregate) for details.
+
 
 ### Removed
 
