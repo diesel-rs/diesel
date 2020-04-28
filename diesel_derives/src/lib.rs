@@ -663,7 +663,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(not(feature = "sqlite"))]
 /// # fn main() {
 /// # }
-/// use diesel::sql_types::{Integer, Nullable};
+/// use diesel::sql_types::Integer;
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///

@@ -264,6 +264,27 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     Sqlite: HasSqlType<RetSqlType>,
 {
     unsafe {
+        // This block of unsafe code makes the following assumptions:
+        //
+        // * sqlite3_aggregate_context allocates sizeof::<OptionalAggregator<A>>
+        //   bytes of zeroed memory as documented here:
+        //   https://www.sqlite.org/c3ref/aggregate_context.html
+        //   A null pointer is returned for negative or zero sized types,
+        //   which should be impossible in theory. We check that nevertheless
+        //
+        // * OptionalAggregator::None has a discriminant of 0 as specified by
+        //   #[repr(u8)] + RFC 2195
+        //
+        // * If all bytes are zero, the discriminant is also zero, so we can
+        //   assume that we get OptionalAggregator::None in this case. This is
+        //   not UB as we only access the discriminant here, so we do not try
+        //   to read any other zeroed memory. After that we initialize our enum
+        //   by writing a correct value at this location via ptr::write_unaligned
+        //
+        // * We use ptr::write_unaligned as we did not found any guarantees that
+        //   the memory will have a correct alignment.
+        //   (Note I(weiznich): would assume that it is aligned correctly, but we
+        //    we cannot guarantee it, so better be safe than sorry)
         let aggregate_context = ffi::sqlite3_aggregate_context(
             ctx,
             std::mem::size_of::<OptionalAggregator<A>>() as i32,
@@ -314,8 +335,11 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
 {
     unsafe {
         // Within the xFinal callback, it is customary to set nBytes to 0 so no pointless memory
-        // allocations occur
+        // allocations occur, a null pointer is returned in this case
         // See: https://www.sqlite.org/c3ref/aggregate_context.html
+        //
+        // For the reasoning about the safety of the OptionalAggregator handling
+        // see the comment in run_aggregator_step_function.
         let aggregate_context = ffi::sqlite3_aggregate_context(ctx, 0);
         let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
         let aggregator = match aggregate_context {
