@@ -1,0 +1,8 @@
+[package]
+name = "transaction_and_lock"
+version = "0.1.0"
+authors = ["吴翱翔 <pylint@yandex.com>"]
+
+[dependencies]
+diesel = { version = "2.0.0", path = "../../../diesel", features = ["mysql"] }
+dotenv = "0.10"

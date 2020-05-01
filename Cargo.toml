@@ -13,6 +13,7 @@ members = [
     "examples/mysql/getting_started_step_1",
     "examples/mysql/getting_started_step_2",
     "examples/mysql/getting_started_step_3",
+    "examples/mysql/transaction_and_lock",
     "examples/postgres/advanced-blog-cli",
     "examples/postgres/all_about_inserts",
     "examples/postgres/all_about_updates",
