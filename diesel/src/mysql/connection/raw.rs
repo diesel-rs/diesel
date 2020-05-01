@@ -45,6 +45,7 @@ impl RawConnection {
         let password = connection_options.password();
         let database = connection_options.database();
         let port = connection_options.port();
+        let unix_socket = connection_options.unix_socket();
 
         unsafe {
             // Make sure you don't use the fake one!
@@ -59,7 +60,9 @@ impl RawConnection {
                     .map(CStr::as_ptr)
                     .unwrap_or_else(|| ptr::null_mut()),
                 u32::from(port.unwrap_or(0)),
-                ptr::null_mut(),
+                unix_socket
+                    .map(CStr::as_ptr)
+                    .unwrap_or_else(|| ptr::null_mut()),
                 0,
             )
         };
