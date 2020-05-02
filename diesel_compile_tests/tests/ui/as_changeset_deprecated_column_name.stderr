@@ -10,3 +10,5 @@ warning: The form `column_name(value)` is deprecated. Use `column_name = "value"
 15 |     #[column_name(name)]
    |       ^^^^^^^^^^^^^^^^^
 
+warning: 2 warnings emitted
+

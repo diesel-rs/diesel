@@ -8,3 +8,5 @@ to
 29 | #[belongs_to(Bar, Baz)]
    |   ^^^^^^^^^^^^^^^^^^^^
 
+warning: 1 warning emitted
+

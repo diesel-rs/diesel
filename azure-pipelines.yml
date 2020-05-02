@@ -167,7 +167,7 @@ jobs:
     - template: _build/install-rust.yml
       parameters:
         platform: Linux
-        rust_version: nightly-2020-04-01
+        rust_version: nightly-2020-05-01
     - bash: |
         sudo apt-get update &&
         sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
