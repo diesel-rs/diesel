@@ -410,9 +410,9 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///
 /// If a field is another struct which implements `Selectable`,
 /// instead of a column, you can annotate that struct with `#[diesel(embed)]`.
-/// Then all fields contained by that inner struct are selected as separate tuple. Fields 
-/// from a inner struct can come from a different table, as long as the select clause is valid 
-/// current query.
+/// Then all fields contained by that inner struct are selected as separate tuple.
+/// Fields from a inner struct can come from a different table, as long as the
+/// select clause is valid in current query.
 ///
 /// The derive enables SelectByDsl for the statement, in order to
 /// use LoadDsl, you might also check the `Queryable` trait and derive.
