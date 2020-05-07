@@ -140,17 +140,6 @@ where
     }
 }
 
-impl<ST, S, Stmt> AsInExpression<ST> for SelectByStatement<S, Stmt>
-where
-    Subselect<Stmt, ST>: Expression<SqlType = ST>,
-{
-    type InExpression = Subselect<Stmt, ST>;
-
-    fn as_in_expression(self) -> Self::InExpression {
-        Subselect::new(self.inner)
-    }
-}
-
 #[derive(Debug, Clone, ValidGrouping)]
 pub struct Many<T>(Vec<T>);
 

@@ -128,15 +128,12 @@ fn selection_using_subselect() {
     );
     connection.execute(&query).unwrap();
 
-    #[derive(Queryable, Selectable)]
-    #[table_name = "users"]
-    struct UserId(#[column_name = "id"] i32);
     #[derive(Debug, PartialEq, Queryable, Selectable)]
     struct Post(#[column_name = "title"] String);
 
     let users = users::table
         .filter(users::name.eq("Sean"))
-        .select_by::<UserId>();
+        .select(users::id);
     let data = posts::table
         .select_by::<Post>()
         .filter(posts::user_id.eq_any(users))
@@ -159,12 +156,8 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
         .execute(&connection)
         .unwrap();
 
-    #[derive(Queryable, Selectable)]
-    #[table_name = "posts"]
-    struct PostId(#[column_name = "user_id"] i32);
-
     let invalid_query_but_valid_subselect = posts::table
-        .select_by::<PostId>()
+        .select(posts::user_id)
         .filter(posts::title.eq(users::name));
     let users_with_post_using_name_as_title = users::table
         .select_by::<User>()
