@@ -85,16 +85,7 @@ where
     >;
 
     fn select_by(self) -> Self::Output {
-        let inner = SelectStatement::new(
-            SelectClause(Selection::new_expression()),
-            self.from,
-            self.distinct,
-            self.where_clause,
-            self.order,
-            self.limit_offset,
-            self.group_by,
-            self.locking,
-        );
+        let inner = self.select(Selection::new_expression());
         SelectByStatement::new(inner)
     }
 }

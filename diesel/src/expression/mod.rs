@@ -245,7 +245,7 @@ where
 
 /// Trait indicating that a record can be selected and queried from the database.
 ///
-/// Types which implement `Selectable` represent the result of a SQL query, and could
+/// Types which implement `Selectable` represent the select clause of a SQL query, and could
 /// be used to construct a select clause via [`select_by`] method. This does not necessarily
 /// mean they represent a single database table.
 ///
