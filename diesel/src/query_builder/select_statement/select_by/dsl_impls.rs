@@ -224,9 +224,6 @@ where
 
 // no IntoUpdateTarget: if you'd like to `.into_update_target`, you should not first `.select_by`
 
-// FIXME: Should we disable joining when `.group_by` has been called? Are there
-// any other query methods where a join no longer has the same semantics as
-// joining on just the table?
 impl<S, Stmt, Rhs> JoinTo<Rhs> for SelectByStatement<S, Stmt>
 where
     Stmt: JoinTo<Rhs>,
