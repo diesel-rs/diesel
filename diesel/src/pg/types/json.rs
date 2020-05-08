@@ -39,6 +39,7 @@ impl ToSql<sql_types::Json, Pg> for serde_json::Value {
 impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
+        println!("{:?}", std::str::from_utf8(&bytes));
         if bytes[0] != 1 {
             return Err(format!("Unsupported JSONB encoding version {}", bytes[0]).into());
         }
