@@ -40,7 +40,7 @@ impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
         let bytes = not_none!(bytes);
         if bytes[0] != 1 {
-            return Err("Unsupported JSONB encoding version".into());
+            return Err(format!("Unsupported JSONB encoding version {}", bytes[0]).into());
         }
         serde_json::from_slice(&bytes[1..]).map_err(Into::into)
     }
