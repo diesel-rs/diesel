@@ -41,8 +41,8 @@ impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
         let bytes = not_none!(bytes);
         let offset = match bytes[0] {
             1 => 1,
-            123 => 0,
-            version => return Err(format!("Unsupported JSONB encoding version {}", version).into());
+            b'{' | b'[' => 0,
+            version => return Err(format!("Unsupported JSONB encoding version {}", version).into()),
         }
         serde_json::from_slice(&bytes[offset..]).map_err(Into::into)
     }
