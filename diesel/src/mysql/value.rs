@@ -50,7 +50,7 @@ impl<'a> MysqlValue<'a> {
         Ok(match self.tpe.data_type {
             MysqlType::Tiny => Tiny(self.raw[0] as i8),
             MysqlType::Short => Small(i16::from_ne_bytes(self.raw.try_into()?)),
-            MysqlType::Long => Medium(i32::from_ne_bytes(self.raw.try_into()?)),
+            MysqlType::Medium | MysqlType::Long => Medium(i32::from_ne_bytes(self.raw.try_into()?)),
             MysqlType::LongLong => Big(i64::from_ne_bytes(self.raw.try_into()?)),
             MysqlType::Float => Float(f32::from_ne_bytes(self.raw.try_into()?)),
             MysqlType::Double => Double(f64::from_ne_bytes(self.raw.try_into()?)),
@@ -71,6 +71,7 @@ impl<'a> MysqlValue<'a> {
 
 /// Represents all possible forms MySQL transmits integers
 #[derive(Debug, Clone, Copy)]
+#[non_exhaustive]
 pub enum NumericRepresentation<'a> {
     /// Correponds to `MYSQL_TYPE_TINY`
     Tiny(i8),

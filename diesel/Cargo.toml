@@ -43,7 +43,7 @@ dotenv = "0.15"
 quickcheck = "0.9"
 
 [features]
-default = ["with-deprecated", "32-column-tables"]
+default = ["mysql", "extras"]
 extras = ["chrono", "serde_json", "uuid", "deprecated-time", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]
@@ -53,7 +53,7 @@ huge-tables = ["64-column-tables"]
 128-column-tables = ["64-column-tables"]
 postgres = ["pq-sys", "bitflags", "diesel_derives/postgres"]
 sqlite = ["libsqlite3-sys", "diesel_derives/sqlite"]
-mysql = ["mysqlclient-sys", "url", "percent-encoding", "diesel_derives/mysql"]
+mysql = ["mysqlclient-sys", "url", "percent-encoding", "diesel_derives/mysql", "bitflags"]
 with-deprecated = []
 deprecated-time = ["time"]
 network-address = ["ipnetwork", "libc"]

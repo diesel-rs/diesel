@@ -1,6 +1,6 @@
 extern crate mysqlclient_sys as ffi;
 
-mod iterator;
+pub(super) mod iterator;
 mod metadata;
 
 use std::ffi::CStr;
@@ -14,7 +14,7 @@ use crate::mysql::MysqlTypeMetadata;
 use crate::result::{DatabaseErrorKind, QueryResult};
 
 pub struct Statement {
-    stmt: NonNull<ffi::MYSQL_STMT>,
+    pub(super) stmt: NonNull<ffi::MYSQL_STMT>,
     input_binds: Option<Binds>,
 }
 
@@ -124,7 +124,7 @@ impl Statement {
             .ok_or_else(|| DeserializationError("No metadata exists".into()))
     }
 
-    fn did_an_error_occur(&self) -> QueryResult<()> {
+    pub(super) fn did_an_error_occur(&self) -> QueryResult<()> {
         use crate::result::Error::DatabaseError;
 
         let error_message = self.last_error_message();

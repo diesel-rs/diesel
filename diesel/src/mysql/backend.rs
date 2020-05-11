@@ -42,6 +42,8 @@ pub enum MysqlType {
     Tiny,
     /// Sets `buffer_type` to `MYSQL_TYPE_SHORT`
     Short,
+    /// Sets `buffer_type` to `MYSQL_TYPE_INT24`
+    Medium,
     /// Sets `buffer_type` to `MYSQL_TYPE_LONG`
     Long,
     /// Sets `buffer_type` to `MYSQL_TYPE_LONGLONG`
@@ -64,6 +66,8 @@ pub enum MysqlType {
     String,
     /// Sets `buffer_type` to `MYSQL_TYPE_BLOB`
     Blob,
+    /// Sets `buffer_type` to `MYSQL_TYPE_BIT`
+    Bit,
 }
 
 impl Backend for Mysql {

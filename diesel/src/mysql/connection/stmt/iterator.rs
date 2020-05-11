@@ -62,9 +62,9 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
 }
 
 pub struct NamedStatementIterator<'a> {
-    stmt: &'a mut Statement,
-    output_binds: Binds,
-    metadata: StatementMetadata,
+    pub(crate) stmt: &'a mut Statement,
+    pub(crate) output_binds: Binds,
+    pub(crate) metadata: StatementMetadata,
 }
 
 #[allow(clippy::should_implement_trait)] // don't need `Iterator` here
@@ -121,7 +121,7 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
     }
 }
 
-fn execute_statement(stmt: &mut Statement, binds: &mut Binds) -> QueryResult<()> {
+pub(in crate::mysql::connection) fn execute_statement(stmt: &mut Statement, binds: &mut Binds) -> QueryResult<()> {
     unsafe {
         binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?;
         stmt.execute()?;
@@ -129,7 +129,7 @@ fn execute_statement(stmt: &mut Statement, binds: &mut Binds) -> QueryResult<()>
     Ok(())
 }
 
-fn populate_row_buffers(stmt: &Statement, binds: &mut Binds) -> QueryResult<Option<()>> {
+pub(crate) fn populate_row_buffers(stmt: &Statement, binds: &mut Binds) -> QueryResult<Option<()>> {
     let next_row_result = unsafe { ffi::mysql_stmt_fetch(stmt.stmt.as_ptr()) };
     match next_row_result as libc::c_uint {
         ffi::MYSQL_NO_DATA => Ok(None),
