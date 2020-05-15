@@ -4,7 +4,7 @@ use std::mem;
 use std::os::raw as libc;
 
 use super::stmt::Statement;
-use crate::mysql::{MysqlType, MysqlTypeMetadata, MysqlValue};
+use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
 #[derive(Debug)]
@@ -15,31 +15,20 @@ pub struct Binds {
 impl Binds {
     pub fn from_input_data<Iter>(input: Iter) -> Self
     where
-        Iter: IntoIterator<Item = (MysqlTypeMetadata, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
         let data = input
             .into_iter()
-            .map(|(metadata, bytes)| {
-                BindData::for_input(metadata.data_type, metadata.is_unsigned as _, bytes)
-            })
+            .map(|(metadata, bytes)| BindData::for_input(metadata, bytes))
             .collect();
 
         Binds { data }
     }
 
-    pub fn from_output_types(types: Vec<MysqlTypeMetadata>) -> Self {
+    pub fn from_output_types(types: Vec<MysqlType>) -> Self {
         let data = types
             .into_iter()
-            .map(|metadata| {
-                (
-                    metadata.data_type.into(),
-                    if metadata.is_unsigned {
-                        Flags::UNSIGNED_FLAG
-                    } else {
-                        Flags::empty()
-                    },
-                )
-            })
+            .map(|metadata| metadata.into())
             .map(BindData::for_output)
             .collect();
 
@@ -99,14 +88,8 @@ impl Binds {
     pub fn field_data(&self, idx: usize) -> Option<MysqlValue<'_>> {
         let data = &self.data[idx];
         self.data[idx].bytes().map(|bytes| {
-            let tpe = data.tpe.into();
-            MysqlValue::new(
-                bytes,
-                MysqlTypeMetadata {
-                    data_type: tpe,
-                    is_unsigned: data.flags.contains(Flags::UNSIGNED_FLAG),
-                },
-            )
+            let tpe = (data.tpe, data.flags).into();
+            MysqlValue::new(bytes, tpe)
         })
     }
 }
@@ -148,22 +131,18 @@ struct BindData {
 }
 
 impl BindData {
-    fn for_input(tpe: MysqlType, is_unsigned: bool, data: Option<Vec<u8>>) -> Self {
+    fn for_input(tpe: MysqlType, data: Option<Vec<u8>>) -> Self {
         let is_null = if data.is_none() { 1 } else { 0 };
         let bytes = data.unwrap_or_default();
         let length = bytes.len() as libc::c_ulong;
-
+        let (tpe, flags) = tpe.into();
         BindData {
-            tpe: tpe.into(),
+            tpe,
             bytes,
             length,
             is_null,
             is_truncated: None,
-            flags: if is_unsigned {
-                Flags::UNSIGNED_FLAG
-            } else {
-                Flags::empty()
-            },
+            flags,
         }
     }
 
@@ -264,14 +243,13 @@ impl BindData {
     }
 }
 
-impl From<MysqlType> for ffi::enum_field_types {
+impl From<MysqlType> for (ffi::enum_field_types, Flags) {
     fn from(tpe: MysqlType) -> Self {
         use self::ffi::enum_field_types::*;
-
-        match tpe {
+        let mut flags = Flags::empty();
+        let tpe = match tpe {
             MysqlType::Tiny => MYSQL_TYPE_TINY,
             MysqlType::Short => MYSQL_TYPE_SHORT,
-            MysqlType::Medium => MYSQL_TYPE_INT24,
             MysqlType::Long => MYSQL_TYPE_LONG,
             MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
             MysqlType::Float => MYSQL_TYPE_FLOAT,
@@ -284,55 +262,137 @@ impl From<MysqlType> for ffi::enum_field_types {
             MysqlType::Blob => MYSQL_TYPE_BLOB,
             MysqlType::Numeric => MYSQL_TYPE_NEWDECIMAL,
             MysqlType::Bit => MYSQL_TYPE_BIT,
-        }
+            MysqlType::UnsignedTiny => {
+                flags = Flags::UNSIGNED_FLAG;
+                MYSQL_TYPE_TINY
+            }
+            MysqlType::UnsignedShort => {
+                flags = Flags::UNSIGNED_FLAG;
+                MYSQL_TYPE_SHORT
+            }
+            MysqlType::UnsignedLong => {
+                flags = Flags::UNSIGNED_FLAG;
+                MYSQL_TYPE_LONG
+            }
+            MysqlType::UnsignedLongLong => {
+                flags = Flags::UNSIGNED_FLAG;
+                MYSQL_TYPE_LONGLONG
+            }
+            MysqlType::Set => {
+                flags = Flags::SET_FLAG;
+                MYSQL_TYPE_STRING
+            }
+            MysqlType::Enum => {
+                flags = Flags::ENUM_FLAG;
+                MYSQL_TYPE_STRING
+            }
+        };
+        (tpe, flags)
     }
 }
 
-impl From<ffi::enum_field_types> for MysqlType {
-    fn from(tpe: ffi::enum_field_types) -> Self {
+impl From<(ffi::enum_field_types, Flags)> for MysqlType {
+    fn from((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
         use self::ffi::enum_field_types::*;
+
+        let is_unsigned = flags.contains(Flags::UNSIGNED_FLAG);
 
         // https://docs.oracle.com/cd/E17952_01/mysql-8.0-en/c-api-data-structures.html
         // https://dev.mysql.com/doc/dev/mysql-server/8.0.12/binary__log__types_8h.html
         // https://dev.mysql.com/doc/internals/en/binary-protocol-value.html
         // https://mariadb.com/kb/en/packet_bindata/
         match tpe {
+            MYSQL_TYPE_TINY if is_unsigned => MysqlType::UnsignedTiny,
+            MYSQL_TYPE_YEAR | MYSQL_TYPE_SHORT if is_unsigned => MysqlType::UnsignedShort,
+            MYSQL_TYPE_INT24 | MYSQL_TYPE_LONG if is_unsigned => MysqlType::UnsignedLong,
+            MYSQL_TYPE_LONGLONG if is_unsigned => MysqlType::UnsignedLongLong,
             MYSQL_TYPE_TINY => MysqlType::Tiny,
-            MYSQL_TYPE_YEAR | MYSQL_TYPE_SHORT => MysqlType::Short,
-            MYSQL_TYPE_INT24 => MysqlType::Medium,
-            MYSQL_TYPE_LONG => MysqlType::Long,
+            MYSQL_TYPE_SHORT => MysqlType::Short,
+            MYSQL_TYPE_INT24 | MYSQL_TYPE_LONG => MysqlType::Long,
             MYSQL_TYPE_LONGLONG => MysqlType::LongLong,
             MYSQL_TYPE_FLOAT => MysqlType::Float,
             MYSQL_TYPE_DOUBLE => MysqlType::Double,
+            MYSQL_TYPE_DECIMAL | MYSQL_TYPE_NEWDECIMAL => MysqlType::Numeric,
+            MYSQL_TYPE_BIT => MysqlType::Bit,
+
             MYSQL_TYPE_TIME => MysqlType::Time,
             MYSQL_TYPE_DATE => MysqlType::Date,
             MYSQL_TYPE_DATETIME => MysqlType::DateTime,
             MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
-            MYSQL_TYPE_BIT => MysqlType::Bit,
-            MYSQL_TYPE_ENUM
-            | MYSQL_TYPE_SET
-            | MYSQL_TYPE_JSON
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_VARCHAR
-            | MYSQL_TYPE_STRING => MysqlType::String,
+
+            // The documentation states that
+            // MYSQL_TYPE_STRING is used for enums and sets
+            // but experimentation has shown that
+            // just any string like type works, so
+            // better be safe here
             MYSQL_TYPE_BLOB
             | MYSQL_TYPE_TINY_BLOB
             | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB => MysqlType::Blob,
-            MYSQL_TYPE_DECIMAL | MYSQL_TYPE_NEWDECIMAL => MysqlType::Numeric,
+            | MYSQL_TYPE_LONG_BLOB
+            | MYSQL_TYPE_VAR_STRING
+            | MYSQL_TYPE_STRING
+                if flags.contains(Flags::ENUM_FLAG) =>
+            {
+                MysqlType::Enum
+            }
+            MYSQL_TYPE_BLOB
+            | MYSQL_TYPE_TINY_BLOB
+            | MYSQL_TYPE_MEDIUM_BLOB
+            | MYSQL_TYPE_LONG_BLOB
+            | MYSQL_TYPE_VAR_STRING
+            | MYSQL_TYPE_STRING
+                if flags.contains(Flags::SET_FLAG) =>
+            {
+                MysqlType::Set
+            }
+
+            // "blobs" may contain binary data
+            // also "strings" can contain binary data
+            // but all only if the binary flag is set
+            // (see the check_all_the_types test case)
+            MYSQL_TYPE_BLOB
+            | MYSQL_TYPE_TINY_BLOB
+            | MYSQL_TYPE_MEDIUM_BLOB
+            | MYSQL_TYPE_LONG_BLOB
+            | MYSQL_TYPE_VAR_STRING
+            | MYSQL_TYPE_STRING
+                if flags.contains(Flags::BINARY_FLAG) =>
+            {
+                MysqlType::Blob
+            }
+
+            // If the binary flag is not set consider everything as string
+            MYSQL_TYPE_BLOB
+            | MYSQL_TYPE_TINY_BLOB
+            | MYSQL_TYPE_MEDIUM_BLOB
+            | MYSQL_TYPE_LONG_BLOB
+            | MYSQL_TYPE_JSON
+            | MYSQL_TYPE_VAR_STRING
+            | MYSQL_TYPE_STRING => MysqlType::String,
+
+            // unsigned seems to be set for year in any case
+            MYSQL_TYPE_YEAR => unreachable!(
+                "The year type should have set the unsigned flag. If you ever \
+                 see this error message, something has gone very wrong. Please \
+                 open an issue at the diesel githup repo in this case"
+            ),
             // Null value
             MYSQL_TYPE_NULL => unreachable!(
                 "We ensure at the call side that we do not hit this type here. \
                  If you ever see this error, something has gone very wrong. \
-                 Please open a issue at the diesel github repo in this case"
+                 Please open an issue at the diesel github repo in this case"
             ),
-            // spatial type
-            // same encoding as string
-            MYSQL_TYPE_GEOMETRY => unimplemented!(
-                "Hit currently unsupported type, those variants should \
-                 probably be variants of MysqlType or at least be mapped \
-                 to one of the existing types"
-            ),
+            // Those exist in libmysqlclient
+            // but are just not supported
+            //
+            MYSQL_TYPE_VARCHAR | MYSQL_TYPE_ENUM | MYSQL_TYPE_SET | MYSQL_TYPE_GEOMETRY => {
+                unimplemented!(
+                    "Hit a type that should be unsupported in libmysqlclient. If \
+                     you ever see this error, they probably have added support for \
+                     one of those types. Please open an issue at the diesel github \
+                     repo in this case."
+                )
+            }
 
             MYSQL_TYPE_NEWDATE
             | MYSQL_TYPE_TIME2
@@ -370,7 +430,7 @@ mod tests {
     use super::*;
     use crate::prelude::*;
 
-    use super::{MysqlTypeMetadata, MysqlValue};
+    use super::MysqlValue;
     use crate::deserialize::FromSql;
     use crate::mysql::connection::stmt::iterator::NamedStatementIterator;
     use crate::sql_types::*;
@@ -381,11 +441,8 @@ mod tests {
     where
         T: FromSql<ST, crate::mysql::Mysql> + std::fmt::Debug,
     {
-        let meta = MysqlTypeMetadata {
-            data_type: bind.tpe.into(),
-            is_unsigned: bind.flags.contains(Flags::UNSIGNED_FLAG),
-        };
-
+        let meta = (bind.tpe, bind.flags).into();
+        dbg!(meta);
         let value = MysqlValue::new(&bind.bytes, meta);
         dbg!(T::from_sql(Some(value)))
     }
@@ -861,11 +918,11 @@ mod tests {
     fn query_single_table(
         query: &'static str,
         conn: &MysqlConnection,
-        bind_tpe: ffi::enum_field_types,
+        bind_tpe: impl Into<(ffi::enum_field_types, Flags)>,
     ) -> BindData {
         let mut stmt: Statement = conn.raw_connection.prepare(query).unwrap();
 
-        let bind = BindData::for_output((bind_tpe, Flags::UNSIGNED_FLAG));
+        let bind = BindData::for_output(bind_tpe.into());
 
         let mut binds = Binds { data: vec![bind] };
 
@@ -880,16 +937,17 @@ mod tests {
         query: &'static str,
         conn: &MysqlConnection,
         id: i32,
-        (field, tpe): (Vec<u8>, ffi::enum_field_types),
+        (field, tpe): (Vec<u8>, impl Into<(ffi::enum_field_types, Flags)>),
     ) {
         let mut stmt = conn.raw_connection.prepare(query).unwrap();
         let length = field.len() as _;
+        let (tpe, flags) = tpe.into();
 
-        let json_bind = BindData {
+        let field_bind = BindData {
             tpe,
             bytes: field,
             length,
-            flags: Flags::empty(),
+            flags,
             is_null: 0,
             is_truncated: None,
         };
@@ -907,7 +965,7 @@ mod tests {
         };
 
         let mut binds = Binds {
-            data: vec![id_bind, json_bind],
+            data: vec![id_bind, field_bind],
         };
 
         binds.with_mysql_binds(|bind_ptr| unsafe {
@@ -945,7 +1003,7 @@ mod tests {
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_JSON,
+            (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
         assert_eq!(json_col_as_json.tpe, ffi::enum_field_types::MYSQL_TYPE_JSON);
@@ -962,7 +1020,7 @@ mod tests {
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
         assert_eq!(json_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
@@ -985,14 +1043,14 @@ mod tests {
             41,
             (
                 b"{\"abc\": 42}".to_vec(),
-                ffi::enum_field_types::MYSQL_TYPE_JSON,
+                (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
             ),
         );
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_JSON,
+            (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
         assert_eq!(json_col_as_json.tpe, ffi::enum_field_types::MYSQL_TYPE_JSON);
@@ -1009,7 +1067,7 @@ mod tests {
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
         assert_eq!(json_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
@@ -1030,16 +1088,13 @@ mod tests {
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
             &conn,
             41,
-            (
-                b"{\"abca\": 42}".to_vec(),
-                ffi::enum_field_types::MYSQL_TYPE_BLOB,
-            ),
+            (b"{\"abca\": 42}".to_vec(), MysqlType::String),
         );
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_JSON,
+            (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
         assert_eq!(json_col_as_json.tpe, ffi::enum_field_types::MYSQL_TYPE_JSON);
@@ -1056,7 +1111,7 @@ mod tests {
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
         assert_eq!(json_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
@@ -1085,13 +1140,13 @@ mod tests {
         conn.execute("INSERT INTO enum_test(id, enum_field) VALUES (1, 'green')")
             .unwrap();
 
-        let enum_col_as_enum: BindData = query_single_table(
-            "SELECT enum_field FROM enum_test",
-            &conn,
-            ffi::enum_field_types::MYSQL_TYPE_ENUM,
-        );
+        let enum_col_as_enum: BindData =
+            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
 
-        assert_eq!(enum_col_as_enum.tpe, ffi::enum_field_types::MYSQL_TYPE_ENUM);
+        assert_eq!(
+            enum_col_as_enum.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_STRING
+        );
         assert!(!enum_col_as_enum.flags.contains(Flags::NUM_FLAG));
         assert!(!enum_col_as_enum.flags.contains(Flags::BLOB_FLAG));
         assert!(!enum_col_as_enum.flags.contains(Flags::SET_FLAG));
@@ -1102,17 +1157,43 @@ mod tests {
             "green"
         );
 
+        for tpe in &[
+            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            ffi::enum_field_types::MYSQL_TYPE_VAR_STRING,
+            ffi::enum_field_types::MYSQL_TYPE_TINY_BLOB,
+            ffi::enum_field_types::MYSQL_TYPE_MEDIUM_BLOB,
+            ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB,
+        ] {
+            let enum_col_as_text = query_single_table(
+                "SELECT enum_field FROM enum_test",
+                &conn,
+                (*tpe, Flags::ENUM_FLAG),
+            );
+
+            assert_eq!(enum_col_as_text.tpe, *tpe);
+            assert!(!enum_col_as_text.flags.contains(Flags::NUM_FLAG));
+            assert!(!enum_col_as_text.flags.contains(Flags::BLOB_FLAG));
+            assert!(!enum_col_as_text.flags.contains(Flags::SET_FLAG));
+            assert!(enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
+            assert!(!enum_col_as_text.flags.contains(Flags::BINARY_FLAG));
+            assert_eq!(
+                to_value::<Text, String>(&enum_col_as_text).unwrap(),
+                "green"
+            );
+            assert_eq!(enum_col_as_enum.bytes, enum_col_as_text.bytes);
+        }
+
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
         assert_eq!(enum_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
         assert!(!enum_col_as_text.flags.contains(Flags::NUM_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::BLOB_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::SET_FLAG));
-        assert!(enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
+        assert!(!enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(
             to_value::<Text, String>(&enum_col_as_text).unwrap(),
@@ -1126,16 +1207,16 @@ mod tests {
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
             &conn,
             41,
-            (b"blue".to_vec(), ffi::enum_field_types::MYSQL_TYPE_ENUM),
+            (b"blue".to_vec(), MysqlType::Enum),
         );
 
-        let enum_col_as_enum = query_single_table(
-            "SELECT enum_field FROM enum_test",
-            &conn,
-            ffi::enum_field_types::MYSQL_TYPE_ENUM,
-        );
+        let enum_col_as_enum =
+            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
 
-        assert_eq!(enum_col_as_enum.tpe, ffi::enum_field_types::MYSQL_TYPE_ENUM);
+        assert_eq!(
+            enum_col_as_enum.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_STRING
+        );
         assert!(!enum_col_as_enum.flags.contains(Flags::NUM_FLAG));
         assert!(!enum_col_as_enum.flags.contains(Flags::BLOB_FLAG));
         assert!(!enum_col_as_enum.flags.contains(Flags::SET_FLAG));
@@ -1146,7 +1227,22 @@ mod tests {
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
+        );
+
+        assert_eq!(enum_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
+        assert!(!enum_col_as_text.flags.contains(Flags::NUM_FLAG));
+        assert!(!enum_col_as_text.flags.contains(Flags::BLOB_FLAG));
+        assert!(!enum_col_as_text.flags.contains(Flags::SET_FLAG));
+        assert!(enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
+        assert!(!enum_col_as_text.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Text, String>(&enum_col_as_text).unwrap(), "blue");
+        assert_eq!(enum_col_as_enum.bytes, enum_col_as_text.bytes);
+
+        let enum_col_as_text = query_single_table(
+            "SELECT enum_field FROM enum_test",
+            &conn,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
         );
 
         assert_eq!(enum_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
@@ -1164,16 +1260,19 @@ mod tests {
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
             &conn,
             41,
-            (b"red".to_vec(), ffi::enum_field_types::MYSQL_TYPE_BLOB),
+            (
+                b"red".to_vec(),
+                (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
+            ),
         );
 
-        let enum_col_as_enum = query_single_table(
-            "SELECT enum_field FROM enum_test",
-            &conn,
-            ffi::enum_field_types::MYSQL_TYPE_ENUM,
-        );
+        let enum_col_as_enum =
+            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
 
-        assert_eq!(enum_col_as_enum.tpe, ffi::enum_field_types::MYSQL_TYPE_ENUM);
+        assert_eq!(
+            enum_col_as_enum.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_STRING
+        );
         assert!(!enum_col_as_enum.flags.contains(Flags::NUM_FLAG));
         assert!(!enum_col_as_enum.flags.contains(Flags::BLOB_FLAG));
         assert!(!enum_col_as_enum.flags.contains(Flags::SET_FLAG));
@@ -1184,14 +1283,14 @@ mod tests {
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
         );
 
         assert_eq!(enum_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
         assert!(!enum_col_as_text.flags.contains(Flags::NUM_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::BLOB_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::SET_FLAG));
-        assert!(!enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
+        assert!(enum_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!enum_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&enum_col_as_text).unwrap(), "red");
         assert_eq!(enum_col_as_enum.bytes, enum_col_as_text.bytes);
@@ -1210,13 +1309,10 @@ mod tests {
         conn.execute("INSERT INTO set_test(id, set_field) VALUES (1, 'green')")
             .unwrap();
 
-        let set_col_as_set: BindData = query_single_table(
-            "SELECT set_field FROM set_test",
-            &conn,
-            ffi::enum_field_types::MYSQL_TYPE_SET,
-        );
+        let set_col_as_set: BindData =
+            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
 
-        assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_ENUM);
+        assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
         assert!(!set_col_as_set.flags.contains(Flags::BLOB_FLAG));
         assert!(set_col_as_set.flags.contains(Flags::SET_FLAG));
@@ -1224,16 +1320,38 @@ mod tests {
         assert!(!set_col_as_set.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&set_col_as_set).unwrap(), "green");
 
-        let set_col_as_text = query_single_table(
-            "SELECT set_field FROM enum_test",
-            &conn,
+        for tpe in &[
             ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            ffi::enum_field_types::MYSQL_TYPE_VAR_STRING,
+            ffi::enum_field_types::MYSQL_TYPE_TINY_BLOB,
+            ffi::enum_field_types::MYSQL_TYPE_MEDIUM_BLOB,
+            ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB,
+        ] {
+            let set_col_as_text = query_single_table(
+                "SELECT set_field FROM set_test",
+                &conn,
+                (*tpe, Flags::SET_FLAG),
+            );
+
+            assert_eq!(set_col_as_text.tpe, *tpe);
+            assert!(!set_col_as_text.flags.contains(Flags::NUM_FLAG));
+            assert!(!set_col_as_text.flags.contains(Flags::BLOB_FLAG));
+            assert!(set_col_as_text.flags.contains(Flags::SET_FLAG));
+            assert!(!set_col_as_text.flags.contains(Flags::ENUM_FLAG));
+            assert!(!set_col_as_text.flags.contains(Flags::BINARY_FLAG));
+            assert_eq!(to_value::<Text, String>(&set_col_as_text).unwrap(), "green");
+            assert_eq!(set_col_as_set.bytes, set_col_as_text.bytes);
+        }
+        let set_col_as_text = query_single_table(
+            "SELECT set_field FROM set_test",
+            &conn,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
         assert_eq!(set_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
         assert!(!set_col_as_text.flags.contains(Flags::NUM_FLAG));
         assert!(!set_col_as_text.flags.contains(Flags::BLOB_FLAG));
-        assert!(set_col_as_text.flags.contains(Flags::SET_FLAG));
+        assert!(!set_col_as_text.flags.contains(Flags::SET_FLAG));
         assert!(!set_col_as_text.flags.contains(Flags::ENUM_FLAG));
         assert!(!set_col_as_text.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(to_value::<Text, String>(&set_col_as_text).unwrap(), "green");
@@ -1245,16 +1363,13 @@ mod tests {
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",
             &conn,
             41,
-            (b"blue".to_vec(), ffi::enum_field_types::MYSQL_TYPE_SET),
+            (b"blue".to_vec(), MysqlType::Set),
         );
 
-        let set_col_as_set = query_single_table(
-            "SELECT set_field FROM set_test",
-            &conn,
-            ffi::enum_field_types::MYSQL_TYPE_SET,
-        );
+        let set_col_as_set =
+            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
 
-        assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_SET);
+        assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
         assert!(!set_col_as_set.flags.contains(Flags::BLOB_FLAG));
         assert!(set_col_as_set.flags.contains(Flags::SET_FLAG));
@@ -1265,7 +1380,7 @@ mod tests {
         let set_col_as_text = query_single_table(
             "SELECT set_field FROM set_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::SET_FLAG),
         );
 
         assert_eq!(set_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
@@ -1283,16 +1398,13 @@ mod tests {
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",
             &conn,
             41,
-            (b"red".to_vec(), ffi::enum_field_types::MYSQL_TYPE_BLOB),
+            (b"red".to_vec(), MysqlType::String),
         );
 
-        let set_col_as_set = query_single_table(
-            "SELECT set_field FROM set_test",
-            &conn,
-            ffi::enum_field_types::MYSQL_TYPE_SET,
-        );
+        let set_col_as_set =
+            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
 
-        assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_SET);
+        assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
         assert!(!set_col_as_set.flags.contains(Flags::BLOB_FLAG));
         assert!(set_col_as_set.flags.contains(Flags::SET_FLAG));
@@ -1303,7 +1415,7 @@ mod tests {
         let set_col_as_text = query_single_table(
             "SELECT set_field FROM set_test",
             &conn,
-            ffi::enum_field_types::MYSQL_TYPE_BLOB,
+            (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::SET_FLAG),
         );
 
         assert_eq!(set_col_as_text.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);

@@ -10,7 +10,7 @@ use std::ptr::NonNull;
 use self::iterator::*;
 use self::metadata::*;
 use super::bind::Binds;
-use crate::mysql::MysqlTypeMetadata;
+use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, QueryResult};
 
 pub struct Statement {
@@ -39,7 +39,7 @@ impl Statement {
 
     pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()>
     where
-        Iter: IntoIterator<Item = (MysqlTypeMetadata, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
         let mut input_binds = Binds::from_input_data(binds);
         input_binds.with_mysql_binds(|bind_ptr| {
@@ -74,7 +74,7 @@ impl Statement {
     /// be called on this statement.
     pub unsafe fn results(
         &mut self,
-        types: Vec<MysqlTypeMetadata>,
+        types: Vec<MysqlType>,
     ) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
     }

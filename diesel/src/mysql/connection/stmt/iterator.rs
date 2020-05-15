@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use super::{ffi, libc, Binds, Statement, StatementMetadata};
-use crate::mysql::{Mysql, MysqlTypeMetadata, MysqlValue};
+use crate::mysql::{Mysql, MysqlType, MysqlValue};
 use crate::result::QueryResult;
 use crate::row::*;
 
@@ -13,7 +13,7 @@ pub struct StatementIterator<'a> {
 #[allow(clippy::should_implement_trait)] // don't neet `Iterator` here
 impl<'a> StatementIterator<'a> {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(stmt: &'a mut Statement, types: Vec<MysqlTypeMetadata>) -> QueryResult<Self> {
+    pub fn new(stmt: &'a mut Statement, types: Vec<MysqlType>) -> QueryResult<Self> {
         let mut output_binds = Binds::from_output_types(types);
 
         execute_statement(stmt, &mut output_binds)?;

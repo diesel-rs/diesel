@@ -9,7 +9,7 @@ use byteorder::WriteBytesExt;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql};
-use crate::mysql::{Mysql, MysqlTypeMetadata, MysqlValue};
+use crate::mysql::{Mysql, MysqlType, MysqlValue};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::ops::*;
@@ -130,15 +130,27 @@ impl FromSql<Bool, Mysql> for bool {
     }
 }
 
-impl<ST> HasSqlType<Unsigned<ST>> for Mysql
-where
-    Mysql: HasSqlType<ST>,
-{
-    fn metadata(lookup: &()) -> MysqlTypeMetadata {
-        MysqlTypeMetadata {
-            is_unsigned: true,
-            ..<Mysql as HasSqlType<ST>>::metadata(lookup)
-        }
+impl HasSqlType<Unsigned<TinyInt>> for Mysql {
+    fn metadata(_lookup: &()) -> MysqlType {
+        MysqlType::UnsignedTiny
+    }
+}
+
+impl HasSqlType<Unsigned<SmallInt>> for Mysql {
+    fn metadata(_lookup: &()) -> MysqlType {
+        MysqlType::UnsignedShort
+    }
+}
+
+impl HasSqlType<Unsigned<Integer>> for Mysql {
+    fn metadata(_lookup: &()) -> MysqlType {
+        MysqlType::UnsignedLong
+    }
+}
+
+impl HasSqlType<Unsigned<BigInt>> for Mysql {
+    fn metadata(_lookup: &()) -> MysqlType {
+        MysqlType::UnsignedLongLong
     }
 }
 

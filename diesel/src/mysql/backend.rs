@@ -12,42 +12,28 @@ use crate::sql_types::TypeMetadata;
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Mysql;
 
-/// The full type metadata for MySQL
-///
-/// This includes the type of the value, and whether it is signed.
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
-pub struct MysqlTypeMetadata {
-    /// The underlying data type
-    ///
-    /// Affects the `buffer_type` sent to libmysqlclient
-    pub data_type: MysqlType,
-
-    /// Is this type signed?
-    ///
-    /// Affects the `is_unsigned` flag sent to libmysqlclient
-    pub is_unsigned: bool,
-}
-
 #[allow(missing_debug_implementations)]
-/// Represents the possible forms a bind parameter can be transmitted as.
-/// Each variant represents one of the forms documented at
-/// <https://dev.mysql.com/doc/refman/5.7/en/c-api-prepared-statement-type-codes.html>
-///
-/// The null variant is omitted, as we will never prepare a statement in which
-/// one of the bind parameters can always be NULL
+/// Represents the possible types, that can be transmitted as via the
+/// Mysql wire protocol
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub enum MysqlType {
-    /// Sets `buffer_type` to `MYSQL_TYPE_TINY`
+    ///
     Tiny,
+    /// Sets
+    UnsignedTiny,
     /// Sets `buffer_type` to `MYSQL_TYPE_SHORT`
     Short,
-    /// Sets `buffer_type` to `MYSQL_TYPE_INT24`
-    Medium,
+    ///
+    UnsignedShort,
     /// Sets `buffer_type` to `MYSQL_TYPE_LONG`
     Long,
+    ///
+    UnsignedLong,
     /// Sets `buffer_type` to `MYSQL_TYPE_LONGLONG`
     LongLong,
+    ///
+    UnsignedLongLong,
     /// Sets `buffer_type` to `MYSQL_TYPE_FLOAT`
     Float,
     /// Sets `buffer_type` to `MYSQL_TYPE_DOUBLE`
@@ -68,6 +54,10 @@ pub enum MysqlType {
     Blob,
     /// Sets `buffer_type` to `MYSQL_TYPE_BIT`
     Bit,
+    ///
+    Set,
+    ///
+    Enum,
 }
 
 impl Backend for Mysql {
@@ -81,7 +71,7 @@ impl<'a> HasRawValue<'a> for Mysql {
 }
 
 impl TypeMetadata for Mysql {
-    type TypeMetadata = MysqlTypeMetadata;
+    type TypeMetadata = MysqlType;
     type MetadataLookup = ();
 }
 

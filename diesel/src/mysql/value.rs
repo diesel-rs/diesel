@@ -1,4 +1,4 @@
-use super::{MysqlType, MysqlTypeMetadata};
+use super::MysqlType;
 use crate::deserialize;
 use mysqlclient_sys as ffi;
 use std::error::Error;
@@ -7,11 +7,11 @@ use std::error::Error;
 #[derive(Copy, Clone, Debug)]
 pub struct MysqlValue<'a> {
     raw: &'a [u8],
-    tpe: MysqlTypeMetadata,
+    tpe: MysqlType,
 }
 
 impl<'a> MysqlValue<'a> {
-    pub(crate) fn new(raw: &'a [u8], tpe: MysqlTypeMetadata) -> Self {
+    pub(crate) fn new(raw: &'a [u8], tpe: MysqlType) -> Self {
         Self { raw, tpe }
     }
 
@@ -27,7 +27,7 @@ impl<'a> MysqlValue<'a> {
     // https://github.com/rust-lang/rust-clippy/issues/2881
     #[allow(dead_code, clippy::cast_ptr_alignment)]
     pub(crate) fn time_value(&self) -> deserialize::Result<ffi::MYSQL_TIME> {
-        match self.tpe.data_type {
+        match self.tpe {
             MysqlType::Time | MysqlType::Date | MysqlType::DateTime | MysqlType::Timestamp => {
                 let ptr = self.raw.as_ptr() as *const ffi::MYSQL_TIME;
                 let result = unsafe { ptr.read_unaligned() };
@@ -47,11 +47,17 @@ impl<'a> MysqlValue<'a> {
         use self::NumericRepresentation::*;
         use std::convert::TryInto;
 
-        Ok(match self.tpe.data_type {
-            MysqlType::Tiny => Tiny(self.raw[0] as i8),
-            MysqlType::Short => Small(i16::from_ne_bytes(self.raw.try_into()?)),
-            MysqlType::Medium | MysqlType::Long => Medium(i32::from_ne_bytes(self.raw.try_into()?)),
-            MysqlType::LongLong => Big(i64::from_ne_bytes(self.raw.try_into()?)),
+        Ok(match self.tpe {
+            MysqlType::UnsignedTiny | MysqlType::Tiny => Tiny(self.raw[0] as i8),
+            MysqlType::UnsignedShort | MysqlType::Short => {
+                Small(i16::from_ne_bytes(self.raw.try_into()?))
+            }
+            MysqlType::UnsignedLong | MysqlType::Long => {
+                Medium(i32::from_ne_bytes(self.raw.try_into()?))
+            }
+            MysqlType::UnsignedLongLong | MysqlType::LongLong => {
+                Big(i64::from_ne_bytes(self.raw.try_into()?))
+            }
             MysqlType::Float => Float(f32::from_ne_bytes(self.raw.try_into()?)),
             MysqlType::Double => Double(f64::from_ne_bytes(self.raw.try_into()?)),
 
