@@ -262,6 +262,7 @@ impl From<MysqlType> for (ffi::enum_field_types, Flags) {
             MysqlType::Blob => MYSQL_TYPE_BLOB,
             MysqlType::Numeric => MYSQL_TYPE_NEWDECIMAL,
             MysqlType::Bit => MYSQL_TYPE_BIT,
+            MysqlType::Json => MYSQL_TYPE_JSON,
             MysqlType::UnsignedTiny => {
                 flags = Flags::UNSIGNED_FLAG;
                 MYSQL_TYPE_TINY
@@ -319,6 +320,7 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             MYSQL_TYPE_DATE => MysqlType::Date,
             MYSQL_TYPE_DATETIME => MysqlType::DateTime,
             MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
+            MYSQL_TYPE_JSON => MysqlType::Json,
 
             // The documentation states that
             // MYSQL_TYPE_STRING is used for enums and sets
@@ -366,7 +368,6 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             | MYSQL_TYPE_TINY_BLOB
             | MYSQL_TYPE_MEDIUM_BLOB
             | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_JSON
             | MYSQL_TYPE_VAR_STRING
             | MYSQL_TYPE_STRING => MysqlType::String,
 
@@ -667,7 +668,6 @@ mod tests {
 
         let date_col = &results[12].0;
         assert_eq!(date_col.tpe, ffi::enum_field_types::MYSQL_TYPE_DATE);
-        assert!(!date_col.flags.contains(Flags::TIMESTAMP_FLAG));
         assert!(!date_col.flags.contains(Flags::NUM_FLAG));
         assert_eq!(
             to_value::<Date, chrono::NaiveDate>(date_col).unwrap(),
@@ -679,7 +679,6 @@ mod tests {
             date_time_col.tpe,
             ffi::enum_field_types::MYSQL_TYPE_DATETIME
         );
-        assert!(!date_time_col.flags.contains(Flags::TIMESTAMP_FLAG));
         assert!(!date_time_col.flags.contains(Flags::NUM_FLAG));
         assert_eq!(
             to_value::<Datetime, chrono::NaiveDateTime>(date_time_col).unwrap(),
@@ -692,7 +691,6 @@ mod tests {
             timestamp_col.tpe,
             ffi::enum_field_types::MYSQL_TYPE_TIMESTAMP
         );
-        assert!(timestamp_col.flags.contains(Flags::TIMESTAMP_FLAG));
         assert!(!timestamp_col.flags.contains(Flags::NUM_FLAG));
         assert_eq!(
             to_value::<Datetime, chrono::NaiveDateTime>(timestamp_col).unwrap(),
@@ -702,7 +700,6 @@ mod tests {
 
         let time_col = &results[15].0;
         assert_eq!(time_col.tpe, ffi::enum_field_types::MYSQL_TYPE_TIME);
-        assert!(!time_col.flags.contains(Flags::TIMESTAMP_FLAG));
         assert!(!time_col.flags.contains(Flags::NUM_FLAG));
         assert_eq!(
             to_value::<Time, chrono::NaiveTime>(time_col).unwrap(),
@@ -711,7 +708,6 @@ mod tests {
 
         let year_col = &results[16].0;
         assert_eq!(year_col.tpe, ffi::enum_field_types::MYSQL_TYPE_YEAR);
-        assert!(!year_col.flags.contains(Flags::TIMESTAMP_FLAG));
         assert!(year_col.flags.contains(Flags::NUM_FLAG));
         assert!(year_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert!(matches!(to_value::<SmallInt, i16>(year_col), Ok(2020)));
@@ -855,9 +851,13 @@ mod tests {
         assert!(!multipoint_col.flags.contains(Flags::SET_FLAG));
         assert!(!multipoint_col.flags.contains(Flags::ENUM_FLAG));
         assert!(!multipoint_col.flags.contains(Flags::BINARY_FLAG));
-        assert_eq!(
-            to_value::<Text, String>(multipoint_col).unwrap(),
-            "MULTIPOINT(0 0,10 10,10 20,20 20)"
+        // older mysql and mariadb versions get back another encoding here
+        // we test for both as there seems to be no clear pattern when one or
+        // the other is returned
+        let multipoint_res = to_value::<Text, String>(multipoint_col).unwrap();
+        assert!(
+            multipoint_res == "MULTIPOINT((0 0),(10 10),(10 20),(20 20))"
+                || multipoint_res == "MULTIPOINT(0 0,10 10,10 20,20 20)"
         );
 
         let multilinestring_col = &results[30].0;
@@ -903,7 +903,14 @@ mod tests {
         );
 
         let json_col = &results[33].0;
-        assert_eq!(json_col.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
+        // mariadb >= 10.2 and mysql >=8.0 are supporting a json type
+        // from those mariadb >= 10.3 and mysql >= 8.0 are reporting
+        // json here, so we assert that we get back json
+        // mariadb 10.5 returns again blob
+        assert!(
+            json_col.tpe == ffi::enum_field_types::MYSQL_TYPE_JSON
+                || json_col.tpe == ffi::enum_field_types::MYSQL_TYPE_BLOB
+        );
         assert!(!json_col.flags.contains(Flags::NUM_FLAG));
         assert!(json_col.flags.contains(Flags::BLOB_FLAG));
         assert!(!json_col.flags.contains(Flags::SET_FLAG));
@@ -1043,7 +1050,8 @@ mod tests {
             41,
             (
                 b"{\"abc\": 42}".to_vec(),
-                (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
+                MysqlType::String,
+                //                (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
             ),
         );
 
