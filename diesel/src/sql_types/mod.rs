@@ -341,6 +341,28 @@ pub struct Time;
 #[mysql_type = "Timestamp"]
 pub struct Timestamp;
 
+/// The JSON SQL type.  This type can only be used with `feature =
+/// "serde_json"`
+///
+/// Normally you should prefer [`Jsonb`](struct.Jsonb.html) instead, for the reasons
+/// discussed there.
+///
+/// ### [`ToSql`] impls
+///
+/// - [`serde_json::Value`]
+///
+/// ### [`FromSql`] impls
+///
+/// - [`serde_json::Value`]
+///
+/// [`ToSql`]: /serialize/trait.ToSql.html
+/// [`FromSql`]: /deserialize/trait.FromSql.html
+/// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "114", array_oid = "199")]
+#[mysql_type = "Json"]
+pub struct Json;
+
 /// The nullable SQL type.
 ///
 /// This wraps another SQL type to indicate that it can be null.

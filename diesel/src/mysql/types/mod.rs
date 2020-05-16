@@ -4,6 +4,8 @@
 mod date_and_time;
 mod numeric;
 mod primitives;
+#[cfg(featuer = "serde_json")]
+mod json;
 
 use byteorder::WriteBytesExt;
 use std::io::Write;
