@@ -1,27 +1,17 @@
-use proc_macro2;
-use syn;
-
-use migrations::migration_directory_from_given_path;
+use crate::migrations::migration_directory_from_given_path;
 use migrations_internals::{migration_paths_in_directory, version_from_path};
+use quote::quote;
 use std::error::Error;
 use std::fs::DirEntry;
 use std::path::Path;
 
-use util::{get_option, get_options_from_input};
-
-pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
-    fn bug() -> ! {
-        panic!(
-            "This is a bug. Please open a Github issue \
-             with your invocation of `embed_migrations!"
-        );
-    }
-
-    let options =
-        get_options_from_input(&parse_quote!(embed_migrations_options), &input.attrs, bug);
-    let migrations_path_opt = options
-        .as_ref()
-        .map(|o| get_option(o, "migrations_path", bug));
+pub fn expand(path: String) -> proc_macro2::TokenStream {
+    dbg!(&path);
+    let migrations_path_opt = if path.is_empty() {
+        None
+    } else {
+        Some(path.replace("\"", ""))
+    };
     let migrations_expr =
         migration_directory_from_given_path(migrations_path_opt.as_ref().map(String::as_str))
             .and_then(|path| migration_literals_from_path(&path));
@@ -30,54 +20,48 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
         Err(e) => panic!("Error reading migrations: {}", e),
     };
 
-    // These are split into multiple `quote!` calls to avoid recursion limit
-    let embedded_migration_def = quote!(
-        struct EmbeddedMigration {
-            version: &'static str,
-            up_sql: &'static str,
-        }
-
-        impl Migration for EmbeddedMigration {
-            fn version(&self) -> &str {
-                self.version
-            }
-
-            fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-                conn.batch_execute(self.up_sql).map_err(Into::into)
-            }
-
-            fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-                unreachable!()
-            }
-        }
-    );
-
-    let run_fns = quote!(
-        pub fn run<C: MigrationConnection>(conn: &C) -> Result<(), RunMigrationsError> {
-            run_with_output(conn, &mut io::sink())
-        }
-
-        pub fn run_with_output<C: MigrationConnection>(
-            conn: &C,
-            out: &mut io::Write,
-        ) -> Result<(), RunMigrationsError> {
-            run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| *v), out)
-        }
-    );
-
     quote! {
-        extern crate diesel;
-        extern crate diesel_migrations;
+        #[allow(dead_code)]
+        mod embedded_migrations {
+            extern crate diesel;
+            extern crate diesel_migrations;
 
-        use self::diesel_migrations::*;
-        use self::diesel::connection::SimpleConnection;
-        use std::io;
+            use self::diesel_migrations::*;
+            use self::diesel::connection::SimpleConnection;
+            use std::io;
 
-        const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
+            const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
 
-        #embedded_migration_def
+            struct EmbeddedMigration {
+                version: &'static str,
+                up_sql: &'static str,
+            }
 
-        #run_fns
+            impl Migration for EmbeddedMigration {
+                fn version(&self) -> &str {
+                    self.version
+                }
+
+                fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+                    conn.batch_execute(self.up_sql).map_err(Into::into)
+                }
+
+                fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
+                    unreachable!()
+                }
+            }
+
+            pub fn run<C: MigrationConnection>(conn: &C) -> Result<(), RunMigrationsError> {
+                run_with_output(conn, &mut io::sink())
+            }
+
+            pub fn run_with_output<C: MigrationConnection>(
+                conn: &C,
+                out: &mut io::Write,
+            ) -> Result<(), RunMigrationsError> {
+                run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| *v), out)
+            }
+        }
     }
 }
 

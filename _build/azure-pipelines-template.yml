@@ -60,7 +60,7 @@ jobs:
       rust_version: $(RUSTUP_TOOLCHAIN)
       bash: |
         (cd diesel_migrations/migrations_internals && cargo test  ) &&
-        (cd diesel_migrations/migrations_macros && cargo test ) &&
+        (cd diesel_migrations/migrations_macros && cargo test --features "$BACKEND diesel/$BACKEND" ) &&
         (cd diesel_migrations/ && cargo test --features "$BACKEND diesel/$BACKEND" )
       displayName: Test diesel-migrations
   - template: failable_step.yml

@@ -6,9 +6,9 @@ license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
 documentation = "https://docs.diesel.rs"
 homepage = "https://diesel.rs"
+edition = "2018"
 
 [dependencies]
-syn = { version = "1", features = ["extra-traits"] }
 quote = "1"
 proc-macro2 = "1"
 
@@ -18,9 +18,24 @@ path = "../migrations_internals"
 
 [dev-dependencies]
 tempfile = "3.0.0"
+dotenv = ">=0.8, <0.11"
+cfg-if = "0.1.0"
+
+[dev-dependencies.diesel]
+version = "~2.0.0"
+path = "../../diesel"
+default-features = false
+
+[dev-dependencies.diesel_migrations]
+version = "~1.4.0"
+path = "../"
+default-features = false
 
 [lib]
 proc-macro = true
 
 [features]
 default = []
+sqlite = []
+postgresql = []
+mysql = []
