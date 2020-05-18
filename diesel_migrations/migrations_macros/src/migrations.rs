@@ -32,7 +32,7 @@ fn resolve_migrations_directory(
 
 #[cfg(test)]
 mod tests {
-    extern crate tempfile;
+    use tempfile;
 
     use self::tempfile::Builder;
     use super::resolve_migrations_directory;
