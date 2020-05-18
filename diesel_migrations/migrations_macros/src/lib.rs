@@ -5,7 +5,8 @@
     clippy::option_map_unwrap_or_else,
     clippy::option_map_unwrap_or,
     clippy::match_same_arms,
-    clippy::type_complexity
+    clippy::type_complexity,
+    clippy::needless_doctest_main
 )]
 #![warn(
     clippy::option_unwrap_used,

@@ -1,10 +1,7 @@
-extern crate dotenv;
-#[macro_use] extern crate cfg_if;
-
 use diesel::prelude::*;
-use self::dotenv::dotenv;
+use dotenv::dotenv;
 
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "postgres")] {
         #[allow(dead_code)]
         type DB = diesel::pg::Pg;
@@ -104,7 +101,7 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
-            
+
             connection.execute("CREATE TABLE comments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_id INTEGER NOT NULL,
@@ -161,7 +158,7 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
-            
+
             connection.execute("CREATE TABLE comments (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 post_id INTEGER NOT NULL,
@@ -194,7 +191,6 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
         .or_else(|_| env::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests")
 }
-
 
 mod schema {
     use diesel::prelude::*;
