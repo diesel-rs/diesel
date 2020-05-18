@@ -117,28 +117,27 @@ where
     /// as it contains a uncommitted unabortable open transaction.
     fn commit_transaction(&self, conn: &Conn) -> QueryResult<()> {
         let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(
-            -1,
-            if transaction_depth <= 1 {
-                conn.batch_execute("COMMIT").or_else(|err| {
-                    // When any of these kinds of error happen on `COMMIT`, it is expected
-                    // that a `ROLLBACK` would succeed, leaving the transaction in a non-broken state.
-                    // If there are other such errors, it is fine to add them here.
-                    match err {
-                        Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
-                        | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _) => {
-                            conn.batch_execute("ROLLBACK").and(Err(err))
-                        }
-                        other_err => Err(other_err),
-                    }
-                })
-            } else {
+        if transaction_depth <= 1 {
+            match conn.batch_execute("COMMIT") {
+                // When any of these kinds of error happen on `COMMIT`, it is expected
+                // that a `ROLLBACK` would succeed, leaving the transaction in a non-broken state.
+                // If there are other such errors, it is fine to add them here.
+                e @ Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _))
+                | e @ Err(Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)) => {
+                    self.change_transaction_depth(-1, conn.batch_execute("ROLLBACK"))?;
+                    e
+                }
+                result => self.change_transaction_depth(-1, result),
+            }
+        } else {
+            self.change_transaction_depth(
+                -1,
                 conn.batch_execute(&format!(
                     "RELEASE SAVEPOINT diesel_savepoint_{}",
                     transaction_depth - 1
-                ))
-            },
-        )
+                )),
+            )
+        }
     }
 
     fn get_transaction_depth(&self) -> u32 {
