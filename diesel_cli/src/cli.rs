@@ -18,11 +18,37 @@ pub fn build_cli() -> App<'static, 'static> {
         .setting(AppSettings::VersionlessSubcommands)
         .arg(migration_dir_arg())
         .subcommand(SubCommand::with_name("run").about("Runs all pending migrations"))
-        .subcommand(SubCommand::with_name("revert").about("Reverts the latest run migration"))
-        .subcommand(SubCommand::with_name("redo").about(
-            "Reverts and re-runs the latest migration. Useful \
-             for testing that a migration can in fact be reverted.",
-        ))
+        .subcommand(
+            SubCommand::with_name("revert")
+                .about("Reverts the latest run migration")
+                .arg(
+                    Arg::with_name("REVERT_ALL")
+                        .long("all")
+                        .help("Reverts all migrations")
+                        .long_help(
+                            "When this option is specified all migrations \
+                            will be reverted. Useful for testing your revert \
+                            scripts only.",
+                        )
+                )
+        )
+        .subcommand(
+            SubCommand::with_name("redo")
+                .about(
+                    "Reverts and re-runs the latest migration. Useful \
+                    for testing that a migration can in fact be reverted.",
+                )
+                .arg(
+                    Arg::with_name("REDO_ALL")
+                        .long("all")
+                        .help("Reverts and re-runs all migrations.")
+                        .long_help(
+                            "When this option is specified all migrations \
+                            will be reverts and re-runs. Useful for testing \
+                            that your migrations can be reverted and applied."
+                        )
+                )
+            )
         .subcommand(
             SubCommand::with_name("list")
                 .about("Lists all available migrations, marking those that have been applied."),
