@@ -6,7 +6,6 @@ use std::fs::DirEntry;
 use std::path::Path;
 
 pub fn expand(path: String) -> proc_macro2::TokenStream {
-    dbg!(&path);
     let migrations_path_opt = if path.is_empty() {
         None
     } else {
