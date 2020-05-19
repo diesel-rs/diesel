@@ -27,7 +27,7 @@ use crate::sql_types::HasSqlType;
 #[allow(missing_debug_implementations)]
 pub struct PgConnection {
     pub(crate) raw_connection: RawConnection,
-    transaction_manager: AnsiTransactionManager,
+    pub(crate) transaction_manager: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
 }

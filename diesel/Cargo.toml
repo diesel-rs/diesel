@@ -38,6 +38,7 @@ version = "~2.0.0"
 path = "../diesel_derives"
 
 [dev-dependencies]
+assert_matches = "1.0.1"
 cfg-if = "0.1.0"
 dotenv = ">=0.8, <0.11"
 quickcheck = "0.4"
