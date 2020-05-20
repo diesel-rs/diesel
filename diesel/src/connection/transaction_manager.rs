@@ -147,6 +147,14 @@ where
 
 #[cfg(test)]
 mod test {
+    macro_rules! matches {
+        ($expression:expr, $( $pattern:pat )|+ $( if $guard: expr )?) => {
+            match $expression {
+                $( $pattern )|+ $( if $guard )? => true,
+                _ => false
+            }
+        }
+    }
 
     #[test]
     #[cfg(feature = "postgres")]
@@ -154,7 +162,6 @@ mod test {
         use crate::result::DatabaseErrorKind::SerializationFailure;
         use crate::result::Error::DatabaseError;
         use crate::*;
-        use assert_matches::assert_matches;
         use std::sync::{Arc, Barrier};
         use std::thread;
 
@@ -202,12 +209,12 @@ mod test {
 
                     let result =
                     conn.build_transaction().serializable().run(|| {
+                        assert_eq!(1, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(&conn.transaction_manager));
+
                         let _ = serialization_example::table
                             .filter(serialization_example::class.eq(i))
                             .count()
                             .execute(&conn)?;
-
-                        assert_eq!(1, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(&conn.transaction_manager));
 
                         barrier.wait();
 
@@ -230,7 +237,10 @@ mod test {
 
         results.sort_by_key(|r| r.is_err());
 
-        assert_matches!(results[0], Ok(_));
-        assert_matches!(results[1], Err(DatabaseError(SerializationFailure, _)));
+        assert!(matches!(results[0], Ok(_)));
+        assert!(matches!(
+            results[1],
+            Err(DatabaseError(SerializationFailure, _))
+        ));
     }
 }
