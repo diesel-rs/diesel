@@ -23,9 +23,16 @@ pub struct RawConnection {
 impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut conn_pointer = ptr::null_mut();
-        let database_url = CString::new(database_url.trim_start_matches("sqlite://"))?;
-        let connection_status =
-            unsafe { ffi::sqlite3_open(database_url.as_ptr(), &mut conn_pointer) };
+
+        let database_url = if database_url.starts_with("sqlite://") {
+            CString::new(database_url.replacen("sqlite://", "file:", 1))?
+        } else {
+            CString::new(database_url)?
+        };
+        let flags = ffi::SQLITE_OPEN_READWRITE | ffi::SQLITE_OPEN_CREATE | ffi::SQLITE_OPEN_URI;
+        let connection_status = unsafe {
+            ffi::sqlite3_open_v2(database_url.as_ptr(), &mut conn_pointer, flags, ptr::null())
+        };
 
         match connection_status {
             ffi::SQLITE_OK => {

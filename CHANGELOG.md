@@ -119,6 +119,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   They are no longer dependent on the current working directory (for all
   directories in the same project)
 
+* The SQLite backend is now configured to interpret URIs.
+  See [the SQLite URI documentation] for additional details.
+
+[the SQLite URI documentation]: https://www.sqlite.org/uri.html
+
 ### Deprecated
 
 * `diesel_(prefix|postfix|infix)_operator!` have been deprecated. These macros
