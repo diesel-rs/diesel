@@ -147,6 +147,7 @@ where
 
 #[cfg(test)]
 mod test {
+    #[cfg(feature = "postgres")]
     macro_rules! matches {
         ($expression:expr, $( $pattern:pat )|+ $( if $guard: expr )?) => {
             match $expression {
