@@ -134,6 +134,7 @@ branches:
     - ಠ_ಠ
 notifications:
   webhooks:
+    if: fork = false
     urls:
       - https://webhooks.gitter.im/e/1d32e0ad32841bd56b02
     on_success: change
