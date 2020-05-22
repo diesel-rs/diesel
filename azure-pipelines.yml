@@ -46,7 +46,7 @@ jobs:
       MYSQL_EXAMPLE_DATABASE_URL: mysql://root@localhost/diesel_example
       MYSQL_UNIT_TEST_DATABASE_URL: mysql://root@localhost/diesel_unit_test
       RUST_TEST_THREADS: 1
-      MYSQLCLIENT_LIB_DIR: /usr/local/Cellar/mysql/8.0.19/lib
+      MYSQLCLIENT_LIB_DIR: /usr/local/Cellar/mysql/8.0.19_1/lib
     setup:
       - script: |
           brew update &&
@@ -54,7 +54,7 @@ jobs:
           brew services start mysql &&
           brew services stop mysql;sleep 3;brew services start mysql &&
           sleep 2 &&
-          /usr/local/Cellar/mysql/8.0.19/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          /usr/local/Cellar/mysql/8.0.19_1/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
         displayName: Install mysql
 
 - template: _build/azure-pipelines-template.yml
