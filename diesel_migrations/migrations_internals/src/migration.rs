@@ -54,9 +54,15 @@ impl<'a> fmt::Display for MigrationFileName<'a> {
     }
 }
 
-pub fn migration_from(path: PathBuf) -> Result<Box<dyn Migration>, MigrationError> {
+pub fn migration_from<Conn>(
+    _conn: &Conn,
+    path: PathBuf,
+) -> Result<Box<dyn Migration>, MigrationError>
+where
+    Conn: MigrationConnection,
+{
     #[cfg(feature = "barrel")]
-    match ::barrel::integrations::diesel::migration_from(&path) {
+    match ::barrel::integrations::diesel::migration_from(_conn, &path) {
         Some(migration) => return Ok(migration),
         None => {}
     }

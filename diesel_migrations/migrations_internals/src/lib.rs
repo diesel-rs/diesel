@@ -143,7 +143,7 @@ pub fn run_pending_migrations_in_directory<Conn>(
 where
     Conn: MigrationConnection,
 {
-    let all_migrations = migrations_in_directory(migrations_dir)?;
+    let all_migrations = migrations_in_directory(conn, migrations_dir)?;
     run_migrations(conn, all_migrations, output)
 }
 
@@ -156,7 +156,7 @@ pub fn mark_migrations_in_directory<Conn>(
 where
     Conn: MigrationConnection,
 {
-    let migrations = migrations_in_directory(migrations_dir)?;
+    let migrations = migrations_in_directory(conn, migrations_dir)?;
     setup_database(conn)?;
     let already_run = conn.previously_run_migration_versions()?;
     let migrations = migrations
@@ -189,7 +189,7 @@ pub fn any_pending_migrations_in_directory<Conn>(
 where
     Conn: MigrationConnection,
 {
-    let all_migrations = migrations_in_directory(&migrations_dir)?;
+    let all_migrations = migrations_in_directory(conn, &migrations_dir)?;
     setup_database(conn)?;
     let already_run = conn.previously_run_migration_versions()?;
 
@@ -234,8 +234,11 @@ pub fn revert_migration_with_version<Conn: Connection>(
     migrations_dir: &Path,
     ver: &str,
     output: &mut dyn Write,
-) -> Result<(), RunMigrationsError> {
-    migration_with_version(migrations_dir, ver)
+) -> Result<(), RunMigrationsError>
+where
+    Conn: MigrationConnection,
+{
+    migration_with_version(conn, migrations_dir, ver)
         .map_err(Into::into)
         .and_then(|m| revert_migration(conn, &m, output))
 }
@@ -250,16 +253,20 @@ pub fn run_migration_with_version<Conn>(
 where
     Conn: MigrationConnection,
 {
-    migration_with_version(migrations_dir, ver)
+    migration_with_version(conn, migrations_dir, ver)
         .map_err(Into::into)
         .and_then(|m| run_migration(conn, &*m, output))
 }
 
-fn migration_with_version(
+fn migration_with_version<Conn>(
+    conn: &Conn,
     migrations_dir: &Path,
     ver: &str,
-) -> Result<Box<dyn Migration>, MigrationError> {
-    let all_migrations = migrations_in_directory(migrations_dir)?;
+) -> Result<Box<dyn Migration>, MigrationError>
+where
+    Conn: MigrationConnection,
+{
+    let all_migrations = migrations_in_directory(conn, migrations_dir)?;
     let migration = all_migrations.into_iter().find(|m| m.version() == ver);
     match migration {
         Some(m) => Ok(m),
@@ -289,10 +296,16 @@ pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, Migrat
         .collect()
 }
 
-fn migrations_in_directory(path: &Path) -> Result<Vec<Box<dyn Migration>>, MigrationError> {
+fn migrations_in_directory<Conn>(
+    conn: &Conn,
+    path: &Path,
+) -> Result<Vec<Box<dyn Migration>>, MigrationError>
+where
+    Conn: MigrationConnection,
+{
     migration_paths_in_directory(path)?
         .iter()
-        .map(|e| migration_from(e.path()))
+        .map(|e| migration_from(conn, e.path()))
         .collect()
 }
 
