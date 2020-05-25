@@ -39,7 +39,7 @@ path = "../diesel_derives"
 
 [dev-dependencies]
 cfg-if = "0.1.0"
-dotenv = ">=0.8, <0.11"
+dotenv = "0.15"
 quickcheck = "0.9"
 
 [features]
