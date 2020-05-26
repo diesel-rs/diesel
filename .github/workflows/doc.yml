@@ -5,9 +5,7 @@ on:
       - '0.[0-9]+.x'
       - '1.[0-9]+.x'
 
-
 name: Publish Docs
-
 jobs:
   publish_docs:
     if: github.repository == 'diesel-rs/diesel'
@@ -21,6 +19,10 @@ jobs:
         toolchain: stable
         profile: minimal
         override: true
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install libmysqlclient-dev libsqlite3-dev libpq-dev
     - name: Build documentation
       uses: actions-rs/cargo@v1
       with:
@@ -31,7 +33,7 @@ jobs:
       if: success()
       uses: JamesIves/github-pages-deploy-action@releases/v3
       with:
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         BRANCH: gh-pages # The branch the action should deploy to.
         FOLDER: target/doc # The folder the action should deploy.
         # Store documentation for each branch in a different folder
