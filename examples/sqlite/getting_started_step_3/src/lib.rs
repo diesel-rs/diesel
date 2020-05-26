@@ -1,8 +1,6 @@
 #[macro_use]
 extern crate diesel;
 
-extern crate dotenv;
-
 pub mod models;
 pub mod schema;
 
@@ -21,7 +19,7 @@ pub fn establish_connection() -> SqliteConnection {
 }
 
 pub fn create_post(conn: &SqliteConnection, title: &str, body: &str) -> usize {
-    use schema::posts;
+    use crate::schema::posts;
 
     let new_post = NewPost { title, body };
 
