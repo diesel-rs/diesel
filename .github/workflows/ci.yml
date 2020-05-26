@@ -63,7 +63,37 @@ jobs:
       - name: Install sqlite (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'sqlite'
         run: |
-          sudo apt-get update && sudo apt-get install -y libsqlite3-dev sqlite3
+          curl -fsS --retry 3 -o sqlite-autoconf-3310100.tar.gz https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
+          tar zxf sqlite-autoconf-3310100.tar.gz
+          cd sqlite-autoconf-3310100
+          CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
+              -DSQLITE_DEFAULT_FOREIGN_KEYS=1 \
+              -DSQLITE_SECURE_DELETE \
+              -DSQLITE_ENABLE_COLUMN_METADATA \
+              -DSQLITE_ENABLE_FTS3_PARENTHESIS \
+              -DSQLITE_ENABLE_RTREE=1 \
+              -DSQLITE_SOUNDEX=1 \
+              -DSQLITE_ENABLE_UNLOCK_NOTIFY \
+              -DSQLITE_OMIT_LOOKASIDE=1 \
+              -DSQLITE_ENABLE_DBSTAT_VTAB \
+              -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1 \
+              -DSQLITE_ENABLE_LOAD_EXTENSION \
+              -DSQLITE_ENABLE_JSON1 \
+              -DSQLITE_LIKE_DOESNT_MATCH_BLOBS \
+              -DSQLITE_THREADSAFE=1 \
+              -DSQLITE_ENABLE_FTS3_TOKENIZER=1 \
+              -DSQLITE_MAX_SCHEMA_RETRY=25 \
+              -DSQLITE_ENABLE_PREUPDATE_HOOK \
+              -DSQLITE_ENABLE_SESSION \
+              -DSQLITE_ENABLE_STMTVTAB \
+              -DSQLITE_MAX_VARIABLE_NUMBER=250000" \
+          ./configure --prefix=/usr \
+              --enable-threadsafe \
+              --enable-dynamic-extensions \
+              --libdir=/usr/lib/x86_64-linux-gnu \
+              --libexecdir=/usr/lib/x86_64-linux-gnu/sqlite3
+          sudo make
+          sudo make install
           echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
 
       - name: Install mysql (Linux)
@@ -79,9 +109,6 @@ jobs:
       - name: Install postgres (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'postgres'
         run: |
-          brew update
-          brew uninstall --ignore-dependencies libpq
-          brew install postgres
           /usr/local/opt/postgres/bin/pg_ctl -D /usr/local/var/postgres start
           sleep 3
           /usr/local/opt/postgres/bin/createuser -s postgres
@@ -282,7 +309,7 @@ jobs:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: 1.37.0
+            toolchain: 1.40.0
             profile: minimal
             components: clippy, rustfmt
             override: true
@@ -345,13 +372,13 @@ jobs:
           args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
 
   minimal_rust_version:
-    name: Check Minimal supported rust version (1.37.0)
+    name: Check Minimal supported rust version (1.40.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: 1.37.0
+            toolchain: 1.40.0
             profile: minimal
             override: true
       - name: Cache cargo registry
@@ -370,7 +397,7 @@ jobs:
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
 
-      - name: Check building with rust 1.36.0
+      - name: Check building with rust 1.40.0
         uses: actions-rs/cargo@v1
         with:
           command: check
