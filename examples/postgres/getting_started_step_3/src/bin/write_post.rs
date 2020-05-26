@@ -1,6 +1,3 @@
-extern crate diesel;
-extern crate diesel_demo_step_3_pg;
-
 use diesel_demo_step_3_pg::*;
 use std::io::{stdin, Read};
 

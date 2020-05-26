@@ -1,20 +1,9 @@
 #![deny(warnings)]
 
-extern crate bcrypt;
-extern crate chrono;
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
-extern crate structopt;
 #[macro_use]
 extern crate structopt_derive;
-
-#[cfg(test)]
-#[macro_use]
-extern crate assert_matches;
-#[cfg(test)]
-#[macro_use]
-extern crate lazy_static;
 
 mod auth;
 mod cli;

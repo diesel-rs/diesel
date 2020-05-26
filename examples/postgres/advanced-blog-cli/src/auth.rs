@@ -1,9 +1,8 @@
 use bcrypt::*;
 use diesel::prelude::*;
 use diesel::{self, insert_into};
-use dotenv;
 
-use schema::users;
+use crate::schema::users;
 
 #[derive(Debug)]
 pub enum AuthenticationError {
@@ -109,8 +108,9 @@ fn if_not_present<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test_helpers::*;
+    use crate::test_helpers::*;
 
+    use assert_matches::assert_matches;
     use std::env;
 
     #[test]

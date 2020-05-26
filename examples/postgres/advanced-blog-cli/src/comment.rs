@@ -1,8 +1,8 @@
 use chrono::NaiveDateTime;
 
-use auth::User;
-use post::Post;
-use schema::comments;
+use crate::auth::User;
+use crate::post::Post;
+use crate::schema::comments;
 
 #[derive(Queryable, Identifiable, Associations)]
 #[belongs_to(User)]

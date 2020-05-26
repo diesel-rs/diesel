@@ -1,8 +1,7 @@
 #[macro_use]
 extern crate diesel;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
+
+use serde_derive::Deserialize;
 
 #[cfg(test)]
 use diesel::debug_query;
