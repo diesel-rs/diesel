@@ -45,7 +45,7 @@ jobs:
       - name: Set environment variables
         shell: bash
         if: matrix.rust == 'nightly'
-        run:
+        run: |
           echo '::set-env name=RUSTFLAGS::--cap-lints=warn'
 
       - name: Install postgres (Linux)
@@ -103,11 +103,11 @@ jobs:
           brew services start mysql &&
           brew services stop mysql;sleep 3;brew services start mysql &&
           sleep 2 &&
-          /usr/local/Cellar/mysql/8.0.19/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          /usr/local/Cellar/mysql/8.0.19_1/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
           echo '::set-env name=MYSQL_DATABASE_URL::mysql://root@localhost/diesel_test'
           echo '::set-env name=MYSQL_EXAMPLE_DATABASE_URL::mysql://root@localhost/diesel_example'
           echo '::set-env name=MYSQL_UNIT_TEST_DATABASE_URL::mysql://root@localhost/diesel_unit_test'
-          echo '::set-env name=MYSQLCLIENT_LIB_DIR::/usr/local/Cellar/mysql/8.0.19/lib'
+          echo '::set-env name=MYSQLCLIENT_LIB_DIR::/usr/local/Cellar/mysql/8.0.19_1/lib'
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -149,7 +149,10 @@ jobs:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
-
+      - name: Rust version check
+        uses: actions-rs/cargo@v1
+        with:
+          command: version
       - name: Test diesel (nightly)
         if: matrix.rust == 'nightly'
         uses: actions-rs/cargo@v1
@@ -192,7 +195,7 @@ jobs:
       - name: Test diesel examples
         shell: bash
         run: |
-          (cd examples/${{matrix.backend}} && BACKEND=${{matrix.backend}} ./test_all)
+          (cd examples/${{ matrix.backend }} && BACKEND=${{ matrix.backend }} ./test_all)
 
       - name: Test migrations-internals
         uses: actions-rs/cargo@v1
@@ -204,7 +207,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --manifest-path diesel_migrations/migrations_macros/Cargo.toml
+          args: --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
 
       - name: Test diesel_migrations
         uses: actions-rs/cargo@v1
