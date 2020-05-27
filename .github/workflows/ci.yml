@@ -22,16 +22,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
 
       - name: Cache cargo registry
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-${{ matrix.backend }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Cache cargo index
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-${{ matrix.backend }}-cargo-index-${{ hashFiles('**/Cargo.toml') }}
@@ -275,19 +275,19 @@ jobs:
     name: Compiletests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
             toolchain: nightly-2020-05-01
             profile: minimal
             override: true
       - name: Cache cargo registry
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/registry
           key: compile_test-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
       - name: Cache cargo index
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/git
           key: compile_test-cargo-index-${{ hashFiles('**/Cargo.toml') }}
@@ -307,7 +307,7 @@ jobs:
     name: Check rustfmt style && run clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
             toolchain: 1.40.0
@@ -315,12 +315,12 @@ jobs:
             components: clippy, rustfmt
             override: true
       - name: Cache cargo registry
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/registry
           key: clippy-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
       - name: Cache cargo index
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/git
           key: clippy-cargo-index-${{ hashFiles('**/Cargo.toml') }}
@@ -345,19 +345,19 @@ jobs:
     name: Check sqlite bundled
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
             toolchain: stable
             profile: minimal
             override: true
       - name: Cache cargo registry
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/registry
           key: sqlite_bundled-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
       - name: Cache cargo index
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/git
           key: sqlite_bundled-cargo-index-${{ hashFiles('**/Cargo.toml') }}
@@ -376,19 +376,19 @@ jobs:
     name: Check Minimal supported rust version (1.40.0)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
             toolchain: 1.40.0
             profile: minimal
             override: true
       - name: Cache cargo registry
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/registry
           key: minimal_rust_version-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
       - name: Cache cargo index
-        uses: actions/cache@v1
+        uses: actions/cache@v2
         with:
           path: ~/.cargo/git
           key: minimal_rust_version-cargo-index-${{ hashFiles('**/Cargo.toml') }}
