@@ -2,10 +2,7 @@
 
 A safe, extensible ORM and Query Builder for Rust
 ==========================================================
-
-[![Build Status](https://travis-ci.org/diesel-rs/diesel.svg)](https://travis-ci.org/diesel-rs/diesel)
-[![Azure Pipeline Build Status](https://dev.azure.com/diesel-rs/diesel/_apis/build/status/diesel-rs.diesel)](https://dev.azure.com/diesel-rs/diesel/_build/latest?definitionId=1)
-[![Appveyor Build Status](https://ci.appveyor.com/api/projects/status/hw4sbb2po2qbkjiv?svg=true)](https://ci.appveyor.com/project/sgrif/diesel)
+[![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amaster)
 [![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
@@ -57,7 +54,7 @@ Licensed under either of these:
    https://opensource.org/licenses/MIT)
 
 ### Contributing
-Before contributing, please read the [contributors guide](https://github.com/diesel-rs/diesel/blob/master/CONTRIBUTING.md) 
+Before contributing, please read the [contributors guide](https://github.com/diesel-rs/diesel/blob/master/CONTRIBUTING.md)
 for useful information about setting up Diesel locally, coding style and common abbreviations.
 
 Unless you explicitly state otherwise, any contribution you intentionally submit

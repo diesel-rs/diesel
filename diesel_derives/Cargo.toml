@@ -34,7 +34,3 @@ nightly = ["proc-macro2/nightly"]
 postgres = []
 sqlite = []
 mysql = []
-
-[badges]
-travis-ci = { repository = "diesel-rs/diesel" }
-appveyor = { repository = "diesel-rs/diesel" }
