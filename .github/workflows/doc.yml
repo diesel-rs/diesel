@@ -13,7 +13,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
+    - name: Cache cargo registry
+      uses: actions/cache@v2
+      with:
+        path: ~/.cargo/registry
+        key: cargo-doc-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
+
+    - name: Cache cargo index
+      uses: actions/cache@v2
+      with:
+        path: ~/.cargo/git
+        key: cargo-doc-cargo-index-${{ hashFiles('**/Cargo.toml') }}
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
