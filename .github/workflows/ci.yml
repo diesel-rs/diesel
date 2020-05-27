@@ -101,6 +101,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install mysql-server libmysqlclient-dev
+          sudo /etc/init.d/mysql start
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
           echo '::set-env name=MYSQL_DATABASE_URL::mysql://root:root@localhost/diesel_test'
           echo '::set-env name=MYSQL_EXAMPLE_DATABASE_URL::mysql://root:root@localhost/diesel_example'
