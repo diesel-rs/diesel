@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate diesel;
-
 use chrono::NaiveDateTime;
 #[cfg(test)]
 use diesel::debug_query;
@@ -12,7 +9,7 @@ use serde_derive::Deserialize;
 use std::error::Error;
 
 mod schema {
-    table! {
+    diesel::table! {
         users {
             id -> Integer,
             name -> Text,
