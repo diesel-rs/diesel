@@ -44,7 +44,6 @@ jobs:
 
       - name: Set environment variables
         shell: bash
-        if: matrix.rust == 'nightly'
         run: |
           echo '::set-env name=RUSTFLAGS::--cap-lints=warn'
 
