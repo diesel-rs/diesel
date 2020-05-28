@@ -273,44 +273,6 @@ jobs:
           command: test
           args: --manifest-path diesel_compile_tests/Cargo.toml
 
-  rustfmt_and_clippy:
-    name: Check rustfmt style && run clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-            toolchain: 1.31.0
-            profile: minimal
-            components: clippy, rustfmt
-            override: true
-      - name: Cache cargo registry
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/registry
-          key: clippy-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: clippy-cargo-index-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
-
-      - name: Run clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-
-      - name: Check formating
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
   sqlite_bundled:
     name: Check sqlite bundled
     runs-on: ubuntu-latest
