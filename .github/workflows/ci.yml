@@ -344,7 +344,7 @@ jobs:
 
   minimal_rust_version:
     name: Check Minimal supported rust version (1.31.0)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-16.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -366,7 +366,21 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev clang
+      - name: Fix minimal dependencies
+        run: |
+          RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
+          cargo update -p diesel:1.4.0
+          cargo update -p diesel_derives:1.4.0
+          cargo update -p rustc-serialize --precise=0.3.20
+          cargo update -p regex:0.1.0 --precise=0.1.31
+          cargo update -p cexpr --precise=0.2.2
+          cargo update -p num-bigint:0.1.36 --precise=0.1.41
+          cargo update -p num-bigint:0.2.0 --precise=0.1.41
+          cargo update -p num-integer --precise=0.1.33
+          cargo update -p syn:0.12.0 --precise=0.12.3
+          cargo update -p libloading --precise=0.3.1
+
 
       - name: Check building with rust 1.31.0
         uses: actions-rs/cargo@v1
