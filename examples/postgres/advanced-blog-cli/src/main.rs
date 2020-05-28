@@ -1,10 +1,5 @@
 #![deny(warnings)]
 
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate structopt_derive;
-
 mod auth;
 mod cli;
 mod comment;
@@ -17,6 +12,8 @@ mod schema;
 mod test_helpers;
 
 use diesel::prelude::*;
+use structopt::StructOpt;
+
 use std::error::Error;
 
 use self::cli::Cli;
@@ -25,7 +22,6 @@ use self::post::*;
 use self::schema::*;
 
 fn main() {
-    use structopt::StructOpt;
     let matches = Cli::from_args();
 
     let database_url = dotenv::var("DATABASE_URL").expect("DATABASE_URL must be set");
