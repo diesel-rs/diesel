@@ -297,6 +297,7 @@ jobs:
       - name: Setup environment
         run: |
           echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+          echo '::set-env name=RUSTFLAGS::--cap-lints=warn'
 
       - name: Test diesel-cli
         uses: actions-rs/cargo@v1
@@ -314,6 +315,7 @@ jobs:
             toolchain: 1.31.0
             profile: minimal
             override: true
+            components: clippy, rustfmt
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -349,3 +351,11 @@ jobs:
         with:
           command: check
           args: --all
+      - name: Run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+      - name: Check formating
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
