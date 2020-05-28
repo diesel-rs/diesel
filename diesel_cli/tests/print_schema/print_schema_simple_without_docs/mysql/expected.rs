@@ -1,16 +1,16 @@
-table! {
+diesel::table! {
     users1 (id) {
         id -> Integer,
     }
 }
 
-table! {
+diesel::table! {
     users2 (id) {
         id -> Integer,
     }
 }
 
-allow_tables_to_appear_in_same_query!(
+diesel::allow_tables_to_appear_in_same_query!(
     users1,
     users2,
 );
