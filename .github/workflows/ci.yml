@@ -366,7 +366,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev clang
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev libclang-dev
       - name: Fix minimal dependencies
         run: |
           RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
