@@ -7,3 +7,11 @@ authors = ["Taryn Hill <taryn@phrohdoh.com>"]
 [dependencies]
 diesel = { version = "2.0.0", path = "../../../diesel", features = ["sqlite"] }
 dotenv = "0.15"
+
+[[bin]]
+name = "show_posts"
+doc = false
+
+[[bin]]
+name = "write_post"
+doc = false
