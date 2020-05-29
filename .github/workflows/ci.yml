@@ -37,6 +37,10 @@ jobs:
         if: matrix.backend == 'mysql'
         run: |
           echo '::set-env name=RUST_TEST_THREADS::1'
+
+      - name: Set environment variables
+        shell: bash
+        run: |
           echo '::set-env name=RUSTFLAGS::--cap-lints=warn'
 
       - name: Install postgres (Linux)

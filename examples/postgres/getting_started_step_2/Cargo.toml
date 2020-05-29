@@ -6,3 +6,11 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [dependencies]
 diesel = { version = "1.4.0", features = ["postgres"] }
 dotenv = "0.10"
+
+[[bin]]
+name = "show_posts"
+doc = false
+
+[[bin]]
+name = "write_post"
+doc = false
