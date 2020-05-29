@@ -8,3 +8,6 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [dependencies]
 diesel = { path = "../diesel", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"] }
 compiletest_rs = "=0.3.17"
+
+[patch.crates-io]
+diesel_derives = {path = "../diesel_derives"}
