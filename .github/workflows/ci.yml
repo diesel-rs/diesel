@@ -397,6 +397,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+      - name: Use minimal dependencies
+        run: |
+          RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
 
       - name: Check building with rust 1.40.0
         uses: actions-rs/cargo@v1

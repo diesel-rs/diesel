@@ -43,7 +43,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 ### Removed
 
 * All previously deprecated items have been removed.
-* Support for uuid version < 0.7.0 has been removed.
+* Support for `uuid` version < 0.7.0 has been removed.
+* Support for `bigdecimal` < 0.0.13 has been removed.
+* Support for `pq-sys` < 0.4.0 has been removed.
+* Support for `mysqlclient-sys` < 0.2.0 has been removed.
 
 ### Changed
 
