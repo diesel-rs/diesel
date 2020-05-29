@@ -27,14 +27,10 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-${{ matrix.backend }}-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-${{ matrix.backend }}-cargo-index-${{ hashFiles('**/Cargo.toml') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Set environment variables
         shell: bash
@@ -284,13 +280,10 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
-          path: ~/.cargo/registry
-          key: compile_test-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: compile_test-cargo-index-${{ hashFiles('**/Cargo.toml') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install dependencies
         run: |
@@ -317,13 +310,10 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
-          path: ~/.cargo/registry
-          key: clippy-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: clippy-cargo-index-${{ hashFiles('**/Cargo.toml') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install dependencies
         run: |
@@ -354,13 +344,10 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
-          path: ~/.cargo/registry
-          key: sqlite_bundled-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: sqlite_bundled-cargo-index-${{ hashFiles('**/Cargo.toml') }}
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Setup environment
         run: |
@@ -385,14 +372,10 @@ jobs:
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
-          path: ~/.cargo/registry
-          key: minimal_rust_version-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
-      - name: Cache cargo index
-        uses: actions/cache@v2
-        with:
-          path: ~/.cargo/git
-          key: minimal_rust_version-cargo-index-${{ hashFiles('**/Cargo.toml') }}
-
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install dependencies
         run: |
           sudo apt-get update

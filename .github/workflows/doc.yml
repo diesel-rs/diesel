@@ -17,14 +17,10 @@ jobs:
     - name: Cache cargo registry
       uses: actions/cache@v2
       with:
-        path: ~/.cargo/registry
-        key: cargo-doc-cargo-registry-${{ hashFiles('**/Cargo.toml') }}
-
-    - name: Cache cargo index
-      uses: actions/cache@v2
-      with:
-        path: ~/.cargo/git
-        key: cargo-doc-cargo-index-${{ hashFiles('**/Cargo.toml') }}
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
