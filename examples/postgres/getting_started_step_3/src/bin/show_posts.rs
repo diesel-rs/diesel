@@ -1,6 +1,3 @@
-extern crate diesel;
-extern crate diesel_demo_step_3_pg;
-
 use self::models::*;
 use diesel::prelude::*;
 use diesel_demo_step_3_pg::*;

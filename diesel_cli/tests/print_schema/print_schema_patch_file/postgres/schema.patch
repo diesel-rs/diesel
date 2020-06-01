@@ -1,7 +1,7 @@
 @@ -5,8 +5,9 @@
  }
- 
- table! {
+
+ diesel::table! {
 -    users2 (id) {
 -        id -> Int4,
 +    users2 (myid) {
@@ -9,4 +9,4 @@
 +        myid -> Int4,
      }
  }
- 
+

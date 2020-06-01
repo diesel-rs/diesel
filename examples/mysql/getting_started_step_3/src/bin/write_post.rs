@@ -1,6 +1,3 @@
-extern crate diesel;
-extern crate diesel_demo_step_3_mysql;
-
 use diesel_demo_step_3_mysql::*;
 use std::io::{stdin, Read};
 

@@ -2,6 +2,7 @@
 name = "all_about_inserts_sqlite"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+edition = "2018"
 
 [dependencies]
 diesel = { version = "2.0.0", path = "../../../diesel", features = ["sqlite", "chrono"] }

@@ -158,7 +158,7 @@ impl<'a> Display for TableDefinitions<'a> {
         }
 
         if self.tables.len() > 1 {
-            write!(f, "\nallow_tables_to_appear_in_same_query!(")?;
+            write!(f, "\ndiesel::allow_tables_to_appear_in_same_query!(")?;
             {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
@@ -185,7 +185,7 @@ struct TableDefinition<'a> {
 
 impl<'a> Display for TableDefinition<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "table! {{")?;
+        write!(f, "diesel::table! {{")?;
         {
             let mut out = PadAdapter::new(f);
             writeln!(out)?;
@@ -273,7 +273,7 @@ impl<'a> Display for Joinable<'a> {
 
         write!(
             f,
-            "joinable!({} -> {} ({}));",
+            "diesel::joinable!({} -> {} ({}));",
             child_table_name, parent_table_name, self.0.foreign_key_rust_name,
         )
     }

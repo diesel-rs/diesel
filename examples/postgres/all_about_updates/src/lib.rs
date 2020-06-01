@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate diesel;
-
 use std::time::SystemTime;
 
 #[cfg(test)]
@@ -31,14 +28,14 @@ pub struct Post {
 }
 
 pub fn publish_all_posts(conn: &PgConnection) -> QueryResult<usize> {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     diesel::update(posts).set(draft.eq(false)).execute(conn)
 }
 
 #[test]
 fn examine_sql_from_publish_all_posts() {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 -- binds: [false]",
@@ -47,8 +44,8 @@ fn examine_sql_from_publish_all_posts() {
 }
 
 pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
+    use crate::posts::dsl::*;
     use diesel::dsl::now;
-    use posts::dsl::*;
 
     diesel::update(posts)
         .filter(publish_at.lt(now))
@@ -58,8 +55,8 @@ pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
 
 #[test]
 fn examine_sql_from_publish_pending_posts() {
+    use crate::posts::dsl::*;
     use diesel::dsl::now;
-    use posts::dsl::*;
 
     let query = diesel::update(posts)
         .filter(publish_at.lt(now))
@@ -96,7 +93,7 @@ fn examine_sql_from_publish_post() {
 }
 
 pub fn increment_visit_counts(conn: &PgConnection) -> QueryResult<usize> {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     diesel::update(posts)
         .set(visit_count.eq(visit_count + 1))
@@ -105,7 +102,7 @@ pub fn increment_visit_counts(conn: &PgConnection) -> QueryResult<usize> {
 
 #[test]
 fn examine_sql_from_increment_visit_counts() {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     assert_eq!(
         "UPDATE \"posts\" SET \"visit_count\" = (\"posts\".\"visit_count\" + $1) \
@@ -116,7 +113,7 @@ fn examine_sql_from_increment_visit_counts() {
 }
 
 pub fn hide_everything(conn: &PgConnection) -> QueryResult<usize> {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     diesel::update(posts)
         .set((
@@ -128,7 +125,7 @@ pub fn hide_everything(conn: &PgConnection) -> QueryResult<usize> {
 
 #[test]
 fn examine_sql_from_hide_everything() {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     let query = diesel::update(posts).set((
         title.eq("[REDACTED]"),
