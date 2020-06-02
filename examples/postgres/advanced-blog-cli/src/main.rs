@@ -1,21 +1,5 @@
 #![deny(warnings)]
 
-extern crate bcrypt;
-extern crate chrono;
-#[macro_use]
-extern crate diesel;
-extern crate dotenv;
-extern crate structopt;
-#[macro_use]
-extern crate structopt_derive;
-
-#[cfg(test)]
-#[macro_use]
-extern crate assert_matches;
-#[cfg(test)]
-#[macro_use]
-extern crate lazy_static;
-
 mod auth;
 mod cli;
 mod comment;
@@ -28,6 +12,8 @@ mod schema;
 mod test_helpers;
 
 use diesel::prelude::*;
+use structopt::StructOpt;
+
 use std::error::Error;
 
 use self::cli::Cli;
@@ -36,7 +22,6 @@ use self::post::*;
 use self::schema::*;
 
 fn main() {
-    use structopt::StructOpt;
     let matches = Cli::from_args();
 
     let database_url = dotenv::var("DATABASE_URL").expect("DATABASE_URL must be set");

@@ -1,12 +1,12 @@
 @@ -1,12 +1,13 @@
- table! {
+ diesel::table! {
      users1 (id) {
 -        id -> Nullable<Integer>,
 +        id -> Integer,
      }
  }
 
- table! {
+ diesel::table! {
 -    users2 (id) {
 -        id -> Nullable<Integer>,
 +    users2 (myid) {

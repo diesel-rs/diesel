@@ -1,3 +1,5 @@
+use diesel::prelude::*;
+
 #[derive(Queryable)]
 pub struct Post {
     pub id: i32,
