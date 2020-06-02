@@ -114,7 +114,7 @@ bitflags::bitflags! {
         const PART_KEY_FLAG = 16384;
         const GROUP_FLAG = 32768;
         const UNIQUE_FLAG = 65536;
-        const BINCMP_FLAG = 130172;
+        const BINCMP_FLAG = 130_172;
         const GET_FIXED_FIELDS_FLAG = (1<<18);
         const FIELD_IN_PART_FUNC_FLAG = (1 << 19);
     }
@@ -448,6 +448,7 @@ mod tests {
         dbg!(T::from_sql(Some(value)))
     }
 
+    #[cfg(feature = "extras")]
     #[test]
     fn check_all_the_types() {
         let conn = crate::test_helpers::connection();

@@ -43,7 +43,7 @@ dotenv = "0.15"
 quickcheck = "0.9"
 
 [features]
-default = ["mysql", "extras"]
+default = []
 extras = ["chrono", "serde_json", "uuid", "deprecated-time", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]
