@@ -4,11 +4,8 @@ extern crate diesel;
 use diesel::prelude::*;
 use schema::translations::{self, dsl};
 
-mod schema {
-    include!("schema.rs");
-}
-
 mod model;
+mod schema;
 
 #[derive(Debug, Queryable, Insertable)]
 #[table_name = "translations"]
