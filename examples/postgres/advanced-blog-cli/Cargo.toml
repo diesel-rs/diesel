@@ -16,3 +16,8 @@ tempfile = "3.0.0"
 assert_matches = "1.1"
 diesel_migrations = { version = "1.4.0", features = ["postgres"], path = "../../../diesel_migrations" }
 lazy_static = "1.0"
+
+[[bin]]
+name = "advanced-blog-cli"
+path = "src/main.rs"
+doc = false

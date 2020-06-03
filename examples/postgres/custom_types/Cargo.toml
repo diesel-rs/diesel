@@ -6,3 +6,8 @@ edition = "2018"
 
 [dependencies]
 diesel = { path = "../../../diesel", version = "2.0.0", features = ["postgres"] }
+
+[[bin]]
+name = "custom-types"
+path = "src/main.rs"
+doc = false

@@ -24,3 +24,6 @@ doc = false
 [[bin]]
 name = "publish_post"
 doc = false
+
+[lib]
+doc = false
