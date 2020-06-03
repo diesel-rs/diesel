@@ -204,6 +204,9 @@ mod pg_types {
         mk_tstz_bounds
     );
 
+    test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
+    test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
+
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
         let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
@@ -293,6 +296,7 @@ mod mysql_types {
     test_round_trip!(u16_roundtrips, Unsigned<SmallInt>, u16);
     test_round_trip!(u32_roundtrips, Unsigned<Integer>, u32);
     test_round_trip!(u64_roundtrips, Unsigned<BigInt>, u64);
+    test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
 }
 
 pub fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
@@ -342,6 +346,64 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
         .signed_duration_since(earliest_sqlite_date)
         .num_days();
     earliest_sqlite_date + Duration::days(days as i64 % num_days_representable)
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+#[derive(Clone, Debug)]
+struct SerdeWrapper(serde_json::Value);
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+impl quickcheck::Arbitrary for SerdeWrapper {
+    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+        SerdeWrapper(arbitrary_serde(g, 0))
+    }
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+fn arbitrary_serde<G: quickcheck::Gen>(g: &mut G, depth: usize) -> serde_json::Value {
+    use rand::distributions::Alphanumeric;
+    use rand::Rng;
+    let variant = match g.gen_range(0, 6) {
+        4 | 5 if depth > 0 => g.gen_range(0, 4),
+        i => i,
+    };
+    match variant {
+        0 => serde_json::Value::Null,
+        1 => serde_json::Value::Bool(g.gen()),
+        2 => {
+            // don't use floats here
+            // comparing floats is complicated
+            let n: i32 = g.gen();
+            serde_json::Value::Number(n.into())
+        }
+        3 => {
+            let len = g.gen_range(0, 15);
+            let s: String = g.sample_iter(Alphanumeric).take(len).collect();
+            serde_json::Value::String(s)
+        }
+        4 => {
+            let len = g.gen_range(0, 15);
+            let values = (0..len).map(|_| arbitrary_serde(g, depth + 1)).collect();
+            serde_json::Value::Array(values)
+        }
+        5 => {
+            let fields = g.gen_range(1, 5);
+            let map = (0..fields)
+                .map(|_| {
+                    let len = g.gen_range(0, 5);
+                    let name = g.sample_iter(Alphanumeric).take(len).collect();
+                    (name, arbitrary_serde(g, depth + 1))
+                })
+                .collect();
+            serde_json::Value::Object(map)
+        }
+        _ => unimplemented!(),
+    }
+}
+
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+fn mk_serde_json(data: SerdeWrapper) -> serde_json::Value {
+    data.0
 }
 
 #[cfg(feature = "postgres")]

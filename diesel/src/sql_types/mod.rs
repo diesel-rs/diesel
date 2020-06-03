@@ -344,8 +344,8 @@ pub struct Timestamp;
 /// The JSON SQL type.  This type can only be used with `feature =
 /// "serde_json"`
 ///
-/// Normally you should prefer [`Jsonb`](struct.Jsonb.html) instead, for the reasons
-/// discussed there.
+/// For postgresql you should normally prefer [`Jsonb`](struct.Jsonb.html) instead,
+/// for the reasons discussed there.
 ///
 /// ### [`ToSql`] impls
 ///

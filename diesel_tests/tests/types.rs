@@ -354,6 +354,28 @@ fn i64_to_sql_bigint() {
     ));
 }
 
+#[test]
+#[cfg(feature = "mysql")]
+fn mysql_json_from_sql() {
+    let query = "'true'";
+    let expected_value = serde_json::Value::Bool(true);
+    assert_eq!(
+        expected_value,
+        query_single_value::<Json, serde_json::Value>(query)
+    );
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn mysql_json_to_sql_json() {
+    let expected_value = "'false'";
+    let value = serde_json::Value::Bool(false);
+    assert!(query_to_sql_equality::<Json, serde_json::Value>(
+        expected_value,
+        value
+    ));
+}
+
 use std::{f32, f64};
 
 #[test]
