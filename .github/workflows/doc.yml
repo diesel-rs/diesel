@@ -21,6 +21,11 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
         key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
+    - name: Get the branch name
+      id: current_branch
+      shell: bash
+      run: |
+        echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
@@ -46,4 +51,4 @@ jobs:
         # Store documentation for each branch in a different folder
         # This allows us to differentiate between docs for master
         # and docs for already released versions
-        TARGET_FOLDER: ${GITHUB_REF##*/}
+        TARGET_FOLDER: ${{ steps.current_branch.outputs.branch }}
