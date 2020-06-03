@@ -6,7 +6,7 @@ A safe, extensible ORM and Query Builder for Rust
 [![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
 
-API Documentation: [latest release](https://docs.rs/diesel) – [master branch](https://docs.diesel.rs)
+API Documentation: [latest release](https://docs.rs/diesel) – [master branch](https://docs.diesel.rs/master/diesel/index.html)
 
 [Homepage](https://diesel.rs)
 
