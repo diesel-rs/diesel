@@ -58,8 +58,6 @@ pub enum MysqlType {
     Set,
     ///
     Enum,
-    ///
-    Json,
 }
 
 impl Backend for Mysql {

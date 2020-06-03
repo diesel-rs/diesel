@@ -360,7 +360,7 @@ pub struct Timestamp;
 /// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "114", array_oid = "199")]
-#[mysql_type = "Json"]
+#[mysql_type = "String"]
 pub struct Json;
 
 /// The nullable SQL type.

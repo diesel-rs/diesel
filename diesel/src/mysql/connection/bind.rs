@@ -262,7 +262,6 @@ impl From<MysqlType> for (ffi::enum_field_types, Flags) {
             MysqlType::Blob => MYSQL_TYPE_BLOB,
             MysqlType::Numeric => MYSQL_TYPE_NEWDECIMAL,
             MysqlType::Bit => MYSQL_TYPE_BIT,
-            MysqlType::Json => MYSQL_TYPE_JSON,
             MysqlType::UnsignedTiny => {
                 flags = Flags::UNSIGNED_FLAG;
                 MYSQL_TYPE_TINY
@@ -320,7 +319,9 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             MYSQL_TYPE_DATE => MysqlType::Date,
             MYSQL_TYPE_DATETIME => MysqlType::DateTime,
             MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
-            MYSQL_TYPE_JSON => MysqlType::Json,
+            // Treat json as string because even mysql 8.0
+            // throws errors sometimes if we use json for json
+            MYSQL_TYPE_JSON => MysqlType::String,
 
             // The documentation states that
             // MYSQL_TYPE_STRING is used for enums and sets
