@@ -26,6 +26,10 @@ jobs:
       shell: bash
       run: |
         echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+    - name: Set environment variables
+      shell: bash
+      run: |
+        echo '::set-env name=RUSTFLAGS::--cap-lints=warn'
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
