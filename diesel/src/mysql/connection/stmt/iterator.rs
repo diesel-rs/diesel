@@ -121,7 +121,10 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
     }
 }
 
-pub(in crate::mysql::connection) fn execute_statement(stmt: &mut Statement, binds: &mut Binds) -> QueryResult<()> {
+pub(in crate::mysql::connection) fn execute_statement(
+    stmt: &mut Statement,
+    binds: &mut Binds,
+) -> QueryResult<()> {
     unsafe {
         binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?;
         stmt.execute()?;

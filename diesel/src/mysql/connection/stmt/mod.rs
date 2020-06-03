@@ -72,10 +72,7 @@ impl Statement {
     /// This function should be called instead of `execute` for queries which
     /// have a return value. After calling this function, `execute` can never
     /// be called on this statement.
-    pub unsafe fn results(
-        &mut self,
-        types: Vec<MysqlType>,
-    ) -> QueryResult<StatementIterator> {
+    pub unsafe fn results(&mut self, types: Vec<MysqlType>) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
     }
 
