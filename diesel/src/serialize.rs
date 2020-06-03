@@ -38,7 +38,7 @@ where
     DB::MetadataLookup: 'a,
 {
     out: T,
-    metadata_lookup: &'a DB::MetadataLookup,
+    metadata_lookup: Option<&'a DB::MetadataLookup>,
 }
 
 impl<'a, T, DB: TypeMetadata> Output<'a, T, DB> {
@@ -46,7 +46,7 @@ impl<'a, T, DB: TypeMetadata> Output<'a, T, DB> {
     pub fn new(out: T, metadata_lookup: &'a DB::MetadataLookup) -> Self {
         Output {
             out,
-            metadata_lookup,
+            metadata_lookup: Some(metadata_lookup),
         }
     }
 
@@ -66,7 +66,7 @@ impl<'a, T, DB: TypeMetadata> Output<'a, T, DB> {
     /// Returns the backend's mechanism for dynamically looking up type
     /// metadata at runtime, if relevant for the given backend.
     pub fn metadata_lookup(&self) -> &'a DB::MetadataLookup {
-        self.metadata_lookup
+        self.metadata_lookup.expect("Lookup is there")
     }
 }
 
@@ -75,9 +75,10 @@ impl<DB: TypeMetadata> Output<'static, Vec<u8>, DB> {
     /// Returns a `Output` suitable for testing `ToSql` implementations.
     /// Unsafe to use for testing types which perform dynamic metadata lookup.
     pub fn test() -> Self {
-        use std::mem;
-        #[allow(clippy::invalid_ref)]
-        Self::new(Vec::new(), unsafe { mem::uninitialized() })
+        Self {
+            out: Vec::new(),
+            metadata_lookup: None,
+        }
     }
 }
 

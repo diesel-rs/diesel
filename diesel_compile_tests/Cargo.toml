@@ -6,9 +6,8 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 [workspace]
 
 [dependencies]
-diesel = { version = "1.4.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"] }
+diesel = { path = "../diesel", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"] }
 compiletest_rs = "=0.3.17"
 
-[replace]
-"diesel:1.4.0" = { path = "../diesel" }
-"diesel_derives:1.4.0" = { path = "../diesel_derives" }
+[patch.crates-io]
+diesel_derives = {path = "../diesel_derives"}
