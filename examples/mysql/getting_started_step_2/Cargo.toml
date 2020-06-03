@@ -14,3 +14,6 @@ doc = false
 [[bin]]
 name = "write_post"
 doc = false
+
+[lib]
+doc = false

@@ -10,3 +10,6 @@ dotenv = "0.10"
 [[bin]]
 name = "show_posts"
 doc = false
+
+[lib]
+doc = false

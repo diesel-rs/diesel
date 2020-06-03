@@ -14,6 +14,7 @@ autotests = false
 [[bin]]
 name = "diesel"
 path = "src/main.rs"
+doc = false
 
 [dependencies]
 chrono = "0.4"

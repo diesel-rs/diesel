@@ -5,3 +5,6 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
 diesel = { version = "1.4.0", features = ["postgres"] }
+
+[lib]
+doc = false
