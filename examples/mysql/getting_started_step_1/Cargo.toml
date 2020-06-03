@@ -7,3 +7,7 @@ edition = "2018"
 [dependencies]
 diesel = { version = "2.0.0", path = "../../../diesel", features = ["mysql"] }
 dotenv = "0.15"
+
+[[bin]]
+name = "show_posts"
+doc = false

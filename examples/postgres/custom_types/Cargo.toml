@@ -5,4 +5,4 @@ authors = ["Kitsu <mail@kitsu.me>"]
 edition = "2018"
 
 [dependencies]
-diesel = { version = "1.4.4", features = ["postgres"] }
+diesel = { path = "../../../diesel", version = "2.0.0", features = ["postgres"] }

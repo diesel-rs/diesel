@@ -1,0 +1,391 @@
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+      - '0.[0-9]+.x'
+      - '1.[0-9]+.x'
+
+
+name: CI Tests
+
+jobs:
+  check_and_test:
+    name: Check
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ["stable", "beta", "nightly"]
+        backend: ["postgres", "sqlite", "mysql"]
+        os: [ubuntu-18.04, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Set environment variables
+        shell: bash
+        if: matrix.backend == 'mysql'
+        run: |
+          echo '::set-env name=RUST_TEST_THREADS::1'
+
+      - name: Set environment variables
+        shell: bash
+        if: matrix.rust == 'nightly'
+        run: |
+          echo '::set-env name=RUSTFLAGS::--cap-lints=warn'
+
+      - name: Install postgres (Linux)
+        if: runner.os == 'Linux' && matrix.backend == 'postgres'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql
+          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
+          sudo service postgresql restart && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart && sleep 3
+          echo '::set-env name=PG_DATABASE_URL::postgres://postgres:postgres@localhost/'
+          echo '::set-env name=PG_EXAMPLE_DATABASE_URL::postgres://postgres:postgres@localhost/diesel_example'
+
+      - name: Install sqlite (Linux)
+        if: runner.os == 'Linux' && matrix.backend == 'sqlite'
+        run: |
+          curl -fsS --retry 3 -o sqlite-autoconf-3310100.tar.gz https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
+          tar zxf sqlite-autoconf-3310100.tar.gz
+          cd sqlite-autoconf-3310100
+          CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
+              -DSQLITE_DEFAULT_FOREIGN_KEYS=1 \
+              -DSQLITE_SECURE_DELETE \
+              -DSQLITE_ENABLE_COLUMN_METADATA \
+              -DSQLITE_ENABLE_FTS3_PARENTHESIS \
+              -DSQLITE_ENABLE_RTREE=1 \
+              -DSQLITE_SOUNDEX=1 \
+              -DSQLITE_ENABLE_UNLOCK_NOTIFY \
+              -DSQLITE_OMIT_LOOKASIDE=1 \
+              -DSQLITE_ENABLE_DBSTAT_VTAB \
+              -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1 \
+              -DSQLITE_ENABLE_LOAD_EXTENSION \
+              -DSQLITE_ENABLE_JSON1 \
+              -DSQLITE_LIKE_DOESNT_MATCH_BLOBS \
+              -DSQLITE_THREADSAFE=1 \
+              -DSQLITE_ENABLE_FTS3_TOKENIZER=1 \
+              -DSQLITE_MAX_SCHEMA_RETRY=25 \
+              -DSQLITE_ENABLE_PREUPDATE_HOOK \
+              -DSQLITE_ENABLE_SESSION \
+              -DSQLITE_ENABLE_STMTVTAB \
+              -DSQLITE_MAX_VARIABLE_NUMBER=250000" \
+          ./configure --prefix=/usr \
+              --enable-threadsafe \
+              --enable-dynamic-extensions \
+              --libdir=/usr/lib/x86_64-linux-gnu \
+              --libexecdir=/usr/lib/x86_64-linux-gnu/sqlite3
+          sudo make
+          sudo make install
+          echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+
+      - name: Install mysql (Linux)
+        if: runner.os == 'Linux' && matrix.backend == 'mysql'
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install mysql-server libmysqlclient-dev
+          sudo /etc/init.d/mysql start
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+          echo '::set-env name=MYSQL_DATABASE_URL::mysql://root:root@localhost/diesel_test'
+          echo '::set-env name=MYSQL_EXAMPLE_DATABASE_URL::mysql://root:root@localhost/diesel_example'
+          echo '::set-env name=MYSQL_UNIT_TEST_DATABASE_URL::mysql://root:root@localhost/diesel_unit_test'
+
+      - name: Install postgres (MacOS)
+        if: runner.os == 'macOS' && matrix.backend == 'postgres'
+        run: |
+          /usr/local/opt/postgres/bin/pg_ctl -D /usr/local/var/postgres start
+          sleep 3
+          /usr/local/opt/postgres/bin/createuser -s postgres
+          echo '::set-env name=PG_DATABASE_URL::postgres://postgres@localhost/'
+          echo '::set-env name=PG_EXAMPLE_DATABASE_URL::postgres://postgres@localhost/diesel_example'
+
+      - name: Install sqlite (MacOS)
+        if: runner.os == 'macOS' && matrix.backend == 'sqlite'
+        run: |
+          brew update
+          brew install sqlite
+          echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+
+      - name: Install mysql (MacOS)
+        if: runner.os == 'macOS' && matrix.backend == 'mysql'
+        run: |
+          brew update &&
+          brew install mysql &&
+          brew services start mysql &&
+          brew services stop mysql;sleep 3;brew services start mysql &&
+          sleep 2 &&
+          /usr/local/Cellar/mysql/8.0.19_1/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          echo '::set-env name=MYSQL_DATABASE_URL::mysql://root@localhost/diesel_test'
+          echo '::set-env name=MYSQL_EXAMPLE_DATABASE_URL::mysql://root@localhost/diesel_example'
+          echo '::set-env name=MYSQL_UNIT_TEST_DATABASE_URL::mysql://root@localhost/diesel_unit_test'
+          echo '::set-env name=MYSQLCLIENT_LIB_DIR::/usr/local/Cellar/mysql/8.0.19_1/lib'
+
+      - name: Install sqlite (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        shell: cmd
+        run: |
+          choco install sqlite
+          cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
+          echo ::add-path::C:\ProgramData\chocolatey\lib\SQLite\tools
+          echo ::set-env name=SQLITE3_LIB_DIR::C:\ProgramData\chocolatey\lib\SQLite\tools
+          echo ::set-env name=SQLITE_DATABASE_URL::C:\test.db
+
+      - name: Install postgres (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'postgres'
+        shell: bash
+        run: |
+          choco install postgresql12 --force --params '/Password:postgres'
+          echo '::add-path::C:\Program Files\PostgreSQL\12\bin'
+          echo '::add-path::C:\Program Files\PostgreSQL\12\lib'
+          echo '::set-env name=PQ_LIB_DIR::C:\Program Files\PostgreSQL\12\lib'
+          echo '::set-env name=PG_DATABASE_URL::postgres://postgres:postgres@localhost/'
+          echo '::set-env name=PG_EXAMPLE_DATABASE_URL::postgres://postgres:postgres@localhost/diesel_example'
+
+      - name: Install mysql (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'mysql'
+        shell: cmd
+        run: |
+            choco install mysql
+            "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
+            echo ::set-env name=MYSQL_DATABASE_URL::mysql://root@localhost/diesel_test
+            echo ::set-env name=MYSQL_EXAMPLE_DATABASE_URL::mysql://root@localhost/diesel_example
+            echo ::set-env name=MYSQL_UNIT_TEST_DATABASE_URL::mysql://root@localhost/diesel_unit_test
+            echo ::set-env name=MYSQLCLIENT_LIB_DIR::C:\tools\mysql\current\lib
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Rust version check
+        uses: actions-rs/cargo@v1
+        with:
+          command: version
+      - name: Test diesel (nightly)
+        if: matrix.rust == 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable extras"
+
+      - name: Test diesel
+        if: matrix.rust != 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras"
+
+      - name: Test diesel (with-deprecated)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras with-deprecated"
+
+      - name: Test diesel-derives (nightly)
+        if: matrix.rust == 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} diesel/unstable"
+
+      - name: Test diesel-derives
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }}"
+
+      - name: Test diesel-cli
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+
+      - name: Test diesel examples
+        shell: bash
+        run: |
+          (cd examples/${{ matrix.backend }} && BACKEND=${{ matrix.backend }} ./test_all)
+
+      - name: Test migrations-internals
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_migrations/migrations_internals/Cargo.toml
+
+      - name: Test migrations-macros
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
+
+      - name: Test diesel_migrations
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_migrations/Cargo.toml --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
+
+      - name: Run diesel_tests (nightly)
+        if: matrix.run == 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
+
+      - name: Run diesel_tests
+        if: matrix.run != 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+
+      - name: Run rustdoc (nightly)
+        if: matrix.run == 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable"
+
+      - name: Run rustdoc
+        if: matrix.run != 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }}"
+
+  compile_tests:
+    name: Compiletests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly-2020-05-01
+            profile: minimal
+            override: true
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+
+      - name: Run compile tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_compile_tests/Cargo.toml
+
+  rustfmt_and_clippy:
+    name: Check rustfmt style && run clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: 1.40.0
+            profile: minimal
+            components: clippy, rustfmt
+            override: true
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+
+      - name: Run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+
+      - name: Check formating
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  sqlite_bundled:
+    name: Check sqlite bundled
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            profile: minimal
+            override: true
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Setup environment
+        run: |
+          echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+
+      - name: Test diesel-cli
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
+
+  minimal_rust_version:
+    name: Check Minimal supported rust version (1.40.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+            toolchain: 1.40.0
+            profile: minimal
+            override: true
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+      - name: Use minimal dependencies
+        run: |
+          RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
+
+      - name: Check building with rust 1.40.0
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all

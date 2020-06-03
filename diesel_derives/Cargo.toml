@@ -10,7 +10,7 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
 
 [dependencies]
-syn = { version = "1", features = ["full", "fold"] }
+syn = { version = "1.0.1", features = ["full", "fold"] }
 quote = "1"
 proc-macro2 = "1"
 
@@ -34,7 +34,3 @@ nightly = ["proc-macro2/nightly"]
 postgres = []
 sqlite = []
 mysql = []
-
-[badges]
-travis-ci = { repository = "diesel-rs/diesel" }
-appveyor = { repository = "diesel-rs/diesel" }
