@@ -1,6 +1,6 @@
 use super::MysqlType;
 use crate::deserialize;
-use mysqlclient_sys as ffi;
+use crate::mysql::types::MYSQL_TIME;
 use std::error::Error;
 
 /// Raw mysql value as received from the database
@@ -26,15 +26,15 @@ impl<'a> MysqlValue<'a> {
     // so clippy is clearly wrong here
     // https://github.com/rust-lang/rust-clippy/issues/2881
     #[allow(dead_code, clippy::cast_ptr_alignment)]
-    pub(crate) fn time_value(&self) -> deserialize::Result<ffi::MYSQL_TIME> {
+    pub(crate) fn time_value(&self) -> deserialize::Result<MYSQL_TIME> {
         match self.tpe {
             MysqlType::Time | MysqlType::Date | MysqlType::DateTime | MysqlType::Timestamp => {
-                let ptr = self.raw.as_ptr() as *const ffi::MYSQL_TIME;
+                let ptr = self.raw.as_ptr() as *const MYSQL_TIME;
                 let result = unsafe { ptr.read_unaligned() };
-                if result.neg == 0 {
-                    Ok(result)
-                } else {
+                if result.neg {
                     Err("Negative dates/times are not yet supported".into())
+                } else {
+                    Ok(result)
                 }
             }
             _ => Err(self.invalid_type_code("timestamp")),

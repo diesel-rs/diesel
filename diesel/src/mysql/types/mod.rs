@@ -8,7 +8,9 @@ mod numeric;
 mod primitives;
 
 use byteorder::WriteBytesExt;
+use mysqlclient_sys as ffi;
 use std::io::Write;
+use std::os::raw as libc;
 
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlType, MysqlValue};
@@ -16,6 +18,21 @@ use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::ops::*;
 use crate::sql_types::*;
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct MYSQL_TIME {
+    pub year: libc::c_uint,
+    pub month: libc::c_uint,
+    pub day: libc::c_uint,
+    pub hour: libc::c_uint,
+    pub minute: libc::c_uint,
+    pub second: libc::c_uint,
+    pub second_part: libc::c_ulong,
+    pub neg: bool,
+    pub time_type: ffi::enum_mysql_timestamp_type,
+    pub time_zone_displacement: libc::c_int,
+}
 
 impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
