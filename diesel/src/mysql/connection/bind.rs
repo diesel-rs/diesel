@@ -1,5 +1,4 @@
-extern crate mysqlclient_sys as ffi;
-
+use mysqlclient_sys as ffi;
 use std::mem;
 use std::os::raw as libc;
 
@@ -42,7 +41,11 @@ impl Binds {
             .map(|field| {
                 (
                     field.type_,
-                    Flags::from_bits(field.flags).expect("No unknown flags"),
+                    Flags::from_bits(field.flags).expect(
+                        "We encountered a unknown type flag while parsing \
+                         Mysql's type information. If you see this error message \
+                         please open an issue at diesels github page.",
+                    ),
                 )
             })
             .map(BindData::for_output)
@@ -427,7 +430,6 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
     }
 }
 
-#[allow(warnings)]
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -435,7 +437,6 @@ mod tests {
 
     use super::MysqlValue;
     use crate::deserialize::FromSql;
-    use crate::mysql::connection::stmt::iterator::NamedStatementIterator;
     use crate::sql_types::*;
 
     fn to_value<ST, T>(
@@ -552,16 +553,10 @@ mod tests {
             ))
             .unwrap();
 
-        let results = unsafe { stmt.named_results().unwrap() };
-
-        let NamedStatementIterator {
-            stmt,
-            mut output_binds,
-            metadata,
-        } = results;
-
-        crate::mysql::connection::stmt::iterator::populate_row_buffers(stmt, &mut output_binds)
-            .unwrap();
+        let metadata = stmt.metadata().unwrap();
+        let mut output_binds = Binds::from_result_metadata(metadata.fields());
+        stmt.execute_statement(&mut output_binds).unwrap();
+        stmt.populate_row_buffers(&mut output_binds).unwrap();
 
         let results: Vec<(BindData, &ffi::st_mysql_field)> = output_binds
             .data
@@ -654,13 +649,13 @@ mod tests {
         assert_eq!(float_col.tpe, ffi::enum_field_types::MYSQL_TYPE_FLOAT);
         assert!(float_col.flags.contains(Flags::NUM_FLAG));
         assert!(!float_col.flags.contains(Flags::UNSIGNED_FLAG));
-        assert!(matches!(to_value::<Float, f32>(float_col), Ok(1.23)));
+        assert_eq!(to_value::<Float, f32>(float_col).unwrap(), 1.23);
 
         let double_col = &results[10].0;
         assert_eq!(double_col.tpe, ffi::enum_field_types::MYSQL_TYPE_DOUBLE);
         assert!(double_col.flags.contains(Flags::NUM_FLAG));
         assert!(!double_col.flags.contains(Flags::UNSIGNED_FLAG));
-        assert!(matches!(to_value::<Double, f64>(double_col), Ok(4.5678)));
+        assert_eq!(to_value::<Double, f64>(double_col).unwrap(), 4.5678);
 
         let bit_col = &results[11].0;
         assert_eq!(bit_col.tpe, ffi::enum_field_types::MYSQL_TYPE_BIT);
@@ -936,9 +931,8 @@ mod tests {
 
         let mut binds = Binds { data: vec![bind] };
 
-        crate::mysql::connection::stmt::iterator::execute_statement(&mut stmt, &mut binds).unwrap();
-
-        crate::mysql::connection::stmt::iterator::populate_row_buffers(&stmt, &mut binds).unwrap();
+        stmt.execute_statement(&mut binds).unwrap();
+        stmt.populate_row_buffers(&mut binds).unwrap();
 
         binds.data.remove(0)
     }
@@ -974,18 +968,11 @@ mod tests {
             is_truncated: None,
         };
 
-        let mut binds = Binds {
+        let binds = Binds {
             data: vec![id_bind, field_bind],
         };
-
-        binds.with_mysql_binds(|bind_ptr| unsafe {
-            ffi::mysql_stmt_bind_param(stmt.stmt.as_ptr(), bind_ptr);
-        });
-
+        stmt.input_bind(binds).unwrap();
         stmt.did_an_error_occur().unwrap();
-
-        let mut out_binds = Binds { data: vec![] };
-
         unsafe {
             stmt.execute().unwrap();
         }

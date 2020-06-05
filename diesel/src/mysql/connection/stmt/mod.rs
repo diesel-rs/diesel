@@ -1,6 +1,6 @@
 extern crate mysqlclient_sys as ffi;
 
-pub(super) mod iterator;
+mod iterator;
 mod metadata;
 
 use std::ffi::CStr;
@@ -14,7 +14,7 @@ use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, QueryResult};
 
 pub struct Statement {
-    pub(super) stmt: NonNull<ffi::MYSQL_STMT>,
+    stmt: NonNull<ffi::MYSQL_STMT>,
     input_binds: Option<Binds>,
 }
 
@@ -41,7 +41,11 @@ impl Statement {
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
-        let mut input_binds = Binds::from_input_data(binds);
+        let input_binds = Binds::from_input_data(binds);
+        self.input_bind(input_binds)
+    }
+
+    pub(super) fn input_bind(&mut self, mut input_binds: Binds) -> QueryResult<()> {
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called
@@ -111,7 +115,7 @@ impl Statement {
         self.did_an_error_occur()
     }
 
-    fn metadata(&self) -> QueryResult<StatementMetadata> {
+    pub(super) fn metadata(&self) -> QueryResult<StatementMetadata> {
         use crate::result::Error::DeserializationError;
 
         let result_ptr = unsafe { ffi::mysql_stmt_result_metadata(self.stmt.as_ptr()).as_mut() };
@@ -147,6 +151,27 @@ impl Statement {
             1048 | 1364 => DatabaseErrorKind::NotNullViolation,
             3819 => DatabaseErrorKind::CheckViolation,
             _ => DatabaseErrorKind::__Unknown,
+        }
+    }
+
+    pub(super) fn execute_statement(&mut self, binds: &mut Binds) -> QueryResult<()> {
+        unsafe {
+            binds.with_mysql_binds(|bind_ptr| self.bind_result(bind_ptr))?;
+            self.execute()?;
+        }
+        Ok(())
+    }
+
+    pub(super) fn populate_row_buffers(&self, binds: &mut Binds) -> QueryResult<Option<()>> {
+        let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.stmt.as_ptr()) };
+        match next_row_result as libc::c_uint {
+            ffi::MYSQL_NO_DATA => Ok(None),
+            ffi::MYSQL_DATA_TRUNCATED => binds.populate_dynamic_buffers(self).map(Some),
+            0 => {
+                binds.update_buffer_lengths();
+                Ok(Some(()))
+            }
+            _error => self.did_an_error_occur().map(Some),
         }
     }
 }

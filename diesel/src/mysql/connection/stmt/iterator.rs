@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::{ffi, libc, Binds, Statement, StatementMetadata};
+use super::{Binds, Statement, StatementMetadata};
 use crate::mysql::{Mysql, MysqlType, MysqlValue};
 use crate::result::QueryResult;
 use crate::row::*;
@@ -16,7 +16,7 @@ impl<'a> StatementIterator<'a> {
     pub fn new(stmt: &'a mut Statement, types: Vec<MysqlType>) -> QueryResult<Self> {
         let mut output_binds = Binds::from_output_types(types);
 
-        execute_statement(stmt, &mut output_binds)?;
+        stmt.execute_statement(&mut output_binds)?;
 
         Ok(StatementIterator { stmt, output_binds })
     }
@@ -33,7 +33,7 @@ impl<'a> StatementIterator<'a> {
     }
 
     fn next(&mut self) -> Option<QueryResult<MysqlRow>> {
-        match populate_row_buffers(self.stmt, &mut self.output_binds) {
+        match self.stmt.populate_row_buffers(&mut self.output_binds) {
             Ok(Some(())) => Some(Ok(MysqlRow {
                 col_idx: 0,
                 binds: &mut self.output_binds,
@@ -62,9 +62,9 @@ impl<'a> Row<Mysql> for MysqlRow<'a> {
 }
 
 pub struct NamedStatementIterator<'a> {
-    pub(crate) stmt: &'a mut Statement,
-    pub(crate) output_binds: Binds,
-    pub(crate) metadata: StatementMetadata,
+    stmt: &'a mut Statement,
+    output_binds: Binds,
+    metadata: StatementMetadata,
 }
 
 #[allow(clippy::should_implement_trait)] // don't need `Iterator` here
@@ -74,7 +74,7 @@ impl<'a> NamedStatementIterator<'a> {
         let metadata = stmt.metadata()?;
         let mut output_binds = Binds::from_result_metadata(metadata.fields());
 
-        execute_statement(stmt, &mut output_binds)?;
+        stmt.execute_statement(&mut output_binds)?;
 
         Ok(NamedStatementIterator {
             stmt,
@@ -95,7 +95,7 @@ impl<'a> NamedStatementIterator<'a> {
     }
 
     fn next(&mut self) -> Option<QueryResult<NamedMysqlRow>> {
-        match populate_row_buffers(self.stmt, &mut self.output_binds) {
+        match self.stmt.populate_row_buffers(&mut self.output_binds) {
             Ok(Some(())) => Some(Ok(NamedMysqlRow {
                 binds: &self.output_binds,
                 column_indices: self.metadata.column_indices(),
@@ -118,29 +118,5 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
 
     fn get_raw_value(&self, idx: usize) -> Option<MysqlValue<'_>> {
         self.binds.field_data(idx)
-    }
-}
-
-pub(in crate::mysql::connection) fn execute_statement(
-    stmt: &mut Statement,
-    binds: &mut Binds,
-) -> QueryResult<()> {
-    unsafe {
-        binds.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr))?;
-        stmt.execute()?;
-    }
-    Ok(())
-}
-
-pub(crate) fn populate_row_buffers(stmt: &Statement, binds: &mut Binds) -> QueryResult<Option<()>> {
-    let next_row_result = unsafe { ffi::mysql_stmt_fetch(stmt.stmt.as_ptr()) };
-    match next_row_result as libc::c_uint {
-        ffi::MYSQL_NO_DATA => Ok(None),
-        ffi::MYSQL_DATA_TRUNCATED => binds.populate_dynamic_buffers(stmt).map(Some),
-        0 => {
-            binds.update_buffer_lengths();
-            Ok(Some(()))
-        }
-        _error => stmt.did_an_error_occur().map(Some),
     }
 }
