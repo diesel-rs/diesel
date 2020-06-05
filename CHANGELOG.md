@@ -94,6 +94,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   `#[non_exhaustive]`. If you matched on one of those variants explicitly you need to
   introduce a wild card match instead.
 
+* The `TypeMetadata` type for `Mysql` changed to `MysqlType`
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
@@ -126,6 +128,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   See [the SQLite URI documentation] for additional details.
 
 [the SQLite URI documentation]: https://www.sqlite.org/uri.html
+
+* We've refactored our type translation layer for Mysql to handle more types now.
 
 ### Deprecated
 
