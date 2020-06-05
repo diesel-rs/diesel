@@ -19,6 +19,11 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::ops::*;
 use crate::sql_types::*;
 
+// A internal helper type
+// This type also exists in mysqlclient_sys
+// but the definition changed over time
+// to remain backward compatible with old mysqlclient_sys
+// version we just have our own copy here
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct MYSQL_TIME {
