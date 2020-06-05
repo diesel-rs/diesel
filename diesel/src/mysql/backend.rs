@@ -13,50 +13,52 @@ use crate::sql_types::TypeMetadata;
 pub struct Mysql;
 
 #[allow(missing_debug_implementations)]
-/// Represents the possible types, that can be transmitted as via the
+/// Represents possible types, that can be transmitted as via the
 /// Mysql wire protocol
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub enum MysqlType {
-    ///
+    /// A 8 bit signed integer
     Tiny,
-    /// Sets
+    /// A 8 bit unsigned integer
     UnsignedTiny,
-    /// Sets `buffer_type` to `MYSQL_TYPE_SHORT`
+    /// A 16 bit signed integer
     Short,
-    ///
+    /// A 16 bit unsigned integer
     UnsignedShort,
-    /// Sets `buffer_type` to `MYSQL_TYPE_LONG`
+    /// A 32 bit signed integer
     Long,
-    ///
+    /// A 32 bit unsigned integer
     UnsignedLong,
-    /// Sets `buffer_type` to `MYSQL_TYPE_LONGLONG`
+    /// A 64 bit signed integer
     LongLong,
-    ///
+    /// A 64 bit unsigned integer
     UnsignedLongLong,
-    /// Sets `buffer_type` to `MYSQL_TYPE_FLOAT`
+    /// A 32 bit floating point number
     Float,
-    /// Sets `buffer_type` to `MYSQL_TYPE_DOUBLE`
+    /// A 64 bit floating point number
     Double,
-    /// Sets `buffer_type` to `MYSQL_TYPE_NEWDECIMAL`
+    /// A fixed point decimal value
     Numeric,
-    /// Sets `buffer_type` to `MYSQL_TYPE_TIME`
+    /// A datatype to store a time value
     Time,
-    /// Sets `buffer_type` to `MYSQL_TYPE_DATE`
+    /// A datatype to store a date value
     Date,
-    /// Sets `buffer_type` to `MYSQL_TYPE_DATETIME`
+    /// A datatype containing timestamp values ranging from
+    /// '1000-01-01 00:00:00' to '9999-12-31 23:59:59'.
     DateTime,
-    /// Sets `buffer_type` to `MYSQL_TYPE_TIMESTAMP`
+    /// A datatype containing timestamp values ranging from
+    /// 1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
     Timestamp,
-    /// Sets `buffer_type` to `MYSQL_TYPE_STRING`
+    /// A datatype for string values
     String,
-    /// Sets `buffer_type` to `MYSQL_TYPE_BLOB`
+    /// A datatype containing binary large objects
     Blob,
-    /// Sets `buffer_type` to `MYSQL_TYPE_BIT`
+    /// A value containing a set of bit's
     Bit,
-    ///
+    /// A user defined set type
     Set,
-    ///
+    /// A user defined enum type
     Enum,
 }
 
