@@ -1,4 +1,5 @@
 //! MySQL specific types
+extern crate mysqlclient_sys as ffi;
 
 #[cfg(feature = "chrono")]
 mod date_and_time;
@@ -6,11 +7,85 @@ mod numeric;
 
 use byteorder::WriteBytesExt;
 use std::io::Write;
+use std::os::raw as libc;
 
 use deserialize::{self, FromSql};
 use mysql::{Mysql, MysqlType};
 use serialize::{self, IsNull, Output, ToSql};
 use sql_types::*;
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct MYSQL_TIME {
+    pub year: libc::c_uint,
+    pub month: libc::c_uint,
+    pub day: libc::c_uint,
+    pub hour: libc::c_uint,
+    pub minute: libc::c_uint,
+    pub second: libc::c_uint,
+    pub second_part: libc::c_ulong,
+    pub neg: bool,
+    pub time_type: ffi::enum_mysql_timestamp_type,
+    pub time_zone_displacement: libc::c_int,
+}
+
+impl From<ffi::MYSQL_TIME> for MYSQL_TIME {
+    fn from(item: ffi::MYSQL_TIME) -> Self {
+        let ffi::MYSQL_TIME {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            second_part,
+            neg,
+            time_type,
+        } = item;
+
+        MYSQL_TIME {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            second_part,
+            neg: neg != 0,
+            time_type,
+            time_zone_displacement: 0,
+        }
+    }
+}
+
+impl From<MYSQL_TIME> for ffi::MYSQL_TIME {
+    fn from(item: MYSQL_TIME) -> Self {
+        let MYSQL_TIME {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            second_part,
+            neg,
+            time_type,
+            time_zone_displacement: _,
+        } = item;
+
+        ffi::MYSQL_TIME {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            second_part,
+            neg: if neg {1} else {0},
+            time_type,
+        }
+    }
+}
 
 impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {

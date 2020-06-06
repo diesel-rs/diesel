@@ -6,6 +6,7 @@ use std::io::Write;
 use std::os::raw as libc;
 use std::{mem, ptr, slice};
 
+use super::MYSQL_TIME;
 use deserialize::{self, FromSql};
 use mysql::Mysql;
 use serialize::{self, IsNull, Output, ToSql};
@@ -13,23 +14,23 @@ use sql_types::{Date, Datetime, Time, Timestamp};
 
 macro_rules! mysql_time_impls {
     ($ty:ty) => {
-        impl ToSql<$ty, Mysql> for ffi::MYSQL_TIME {
+        impl ToSql<$ty, Mysql> for MYSQL_TIME {
             fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
                 let bytes = unsafe {
-                    let bytes_ptr = self as *const ffi::MYSQL_TIME as *const u8;
-                    slice::from_raw_parts(bytes_ptr, mem::size_of::<ffi::MYSQL_TIME>())
+                    let bytes_ptr = self as *const MYSQL_TIME as *const u8;
+                    slice::from_raw_parts(bytes_ptr, mem::size_of::<MYSQL_TIME>())
                 };
                 out.write_all(bytes)?;
                 Ok(IsNull::No)
             }
         }
 
-        impl FromSql<$ty, Mysql> for ffi::MYSQL_TIME {
+        impl FromSql<$ty, Mysql> for MYSQL_TIME {
             // ptr::copy_nonoverlapping does not require aligned pointers
             #[allow(clippy::cast_ptr_alignment)]
             fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
                 let bytes = not_none!(bytes);
-                let bytes_ptr = bytes.as_ptr() as *const ffi::MYSQL_TIME;
+                let bytes_ptr = bytes.as_ptr() as *const MYSQL_TIME;
 
                 // We cannot use `mem::MaybeUninit` here
                 // because that would require a bump of the 
@@ -38,12 +39,24 @@ macro_rules! mysql_time_impls {
                 unsafe {
                     let mut result = mem::uninitialized();
                     ptr::copy_nonoverlapping(bytes_ptr, &mut result, 1);
-                    if result.neg == 0 {
-                        Ok(result)
-                    } else {
+                    if result.neg {
                         Err("Negative dates/times are not yet supported".into())
+                    } else {
+                        Ok(result)
                     }
                 }
+            }
+        }
+
+        impl ToSql<$ty, Mysql> for ffi::MYSQL_TIME {
+            fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+                <MYSQL_TIME as ToSql<$ty, Mysql>>::to_sql(&MYSQL_TIME::from(*self), out)
+            }
+        }
+
+        impl FromSql<$ty, Mysql> for ffi::MYSQL_TIME {
+            fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
+                <MYSQL_TIME as FromSql<$ty, Mysql>>::from_sql(bytes).map(|r| r.into())
             }
         }
     };
@@ -68,7 +81,7 @@ impl FromSql<Datetime, Mysql> for NaiveDateTime {
 
 impl ToSql<Timestamp, Mysql> for NaiveDateTime {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
+        let mut mysql_time: MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.year = self.year() as libc::c_uint;
         mysql_time.month = self.month() as libc::c_uint;
@@ -78,13 +91,13 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
         mysql_time.second = self.second() as libc::c_uint;
         mysql_time.second_part = libc::c_ulong::from(self.timestamp_subsec_micros());
 
-        <ffi::MYSQL_TIME as ToSql<Timestamp, Mysql>>::to_sql(&mysql_time, out)
+        <MYSQL_TIME as ToSql<Timestamp, Mysql>>::to_sql(&mysql_time, out)
     }
 }
 
 impl FromSql<Timestamp, Mysql> for NaiveDateTime {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mysql_time = <ffi::MYSQL_TIME as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
+        let mysql_time = <MYSQL_TIME as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
 
         NaiveDate::from_ymd_opt(
             mysql_time.year as i32,
@@ -105,19 +118,19 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
 
 impl ToSql<Time, Mysql> for NaiveTime {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
+        let mut mysql_time: MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.hour = self.hour() as libc::c_uint;
         mysql_time.minute = self.minute() as libc::c_uint;
         mysql_time.second = self.second() as libc::c_uint;
 
-        <ffi::MYSQL_TIME as ToSql<Time, Mysql>>::to_sql(&mysql_time, out)
+        <MYSQL_TIME as ToSql<Time, Mysql>>::to_sql(&mysql_time, out)
     }
 }
 
 impl FromSql<Time, Mysql> for NaiveTime {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mysql_time = <ffi::MYSQL_TIME as FromSql<Time, Mysql>>::from_sql(bytes)?;
+        let mysql_time = <MYSQL_TIME as FromSql<Time, Mysql>>::from_sql(bytes)?;
         NaiveTime::from_hms_opt(
             mysql_time.hour as u32,
             mysql_time.minute as u32,
@@ -129,19 +142,19 @@ impl FromSql<Time, Mysql> for NaiveTime {
 
 impl ToSql<Date, Mysql> for NaiveDate {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        let mut mysql_time: ffi::MYSQL_TIME = unsafe { mem::zeroed() };
+        let mut mysql_time: MYSQL_TIME = unsafe { mem::zeroed() };
 
         mysql_time.year = self.year() as libc::c_uint;
         mysql_time.month = self.month() as libc::c_uint;
         mysql_time.day = self.day() as libc::c_uint;
 
-        <ffi::MYSQL_TIME as ToSql<Date, Mysql>>::to_sql(&mysql_time, out)
+        <MYSQL_TIME as ToSql<Date, Mysql>>::to_sql(&mysql_time, out)
     }
 }
 
 impl FromSql<Date, Mysql> for NaiveDate {
     fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-        let mysql_time = <ffi::MYSQL_TIME as FromSql<Date, Mysql>>::from_sql(bytes)?;
+        let mysql_time = <MYSQL_TIME as FromSql<Date, Mysql>>::from_sql(bytes)?;
         NaiveDate::from_ymd_opt(
             mysql_time.year as i32,
             mysql_time.month as u32,
