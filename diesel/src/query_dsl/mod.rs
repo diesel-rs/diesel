@@ -943,7 +943,7 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn main() {
     /// #     let connection = establish_connection();
-    /// fn users_by_name<'a>(name: &'a str) -> users::BoxedQuery<'a, DB> {
+    /// fn users_by_name(name: &str) -> users::BoxedQuery<DB> {
     ///     users::table.filter(users::name.eq(name)).into_boxed()
     /// }
     ///

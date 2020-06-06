@@ -2,31 +2,31 @@ use diesel::sql_types;
 
 use super::structures::*;
 
-pub fn create_table<'a, Cols>(name: &'a str, columns: Cols) -> CreateTable<'a, Cols> {
+pub fn create_table<Cols>(name: &str, columns: Cols) -> CreateTable<Cols> {
     CreateTable::new(name, columns)
 }
 
-pub fn integer<'a>(name: &'a str) -> Column<'a, sql_types::Integer> {
+pub fn integer(name: &str) -> Column<sql_types::Integer> {
     Column::new(name, "INTEGER")
 }
 
-pub fn string<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
+pub fn string(name: &str) -> Column<sql_types::VarChar> {
     Column::new(name, "VARCHAR(255)")
 }
 
-pub fn timestamp<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
+pub fn timestamp(name: &str) -> Column<sql_types::VarChar> {
     Column::new(name, "TIMESTAMP")
 }
 
 #[cfg(feature = "postgres")]
-pub fn timestamptz<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
+pub fn timestamptz(name: &str) -> Column<sql_types::VarChar> {
     Column::new(name, "TIMESTAMPTZ")
 }
 
-pub fn time<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
+pub fn time(name: &str) -> Column<sql_types::VarChar> {
     Column::new(name, "TIME")
 }
 
-pub fn date<'a>(name: &'a str) -> Column<'a, sql_types::VarChar> {
+pub fn date(name: &str) -> Column<sql_types::VarChar> {
     Column::new(name, "DATE")
 }
