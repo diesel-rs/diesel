@@ -254,9 +254,9 @@ where
 
 #[allow(clippy::similar_names)]
 #[cfg(feature = "postgres")]
-pub fn load_foreign_key_constraints<'a>(
+pub fn load_foreign_key_constraints(
     connection: &PgConnection,
-    schema_name: Option<&'a str>,
+    schema_name: Option<&str>,
 ) -> QueryResult<Vec<ForeignKeyConstraint>> {
     use self::information_schema::key_column_usage as kcu;
     use self::information_schema::referential_constraints as rc;

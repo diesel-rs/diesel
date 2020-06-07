@@ -54,7 +54,7 @@ pub struct AutoIncrement<Col>(Col);
 pub struct NotNull<Col>(Col);
 
 impl<'a, T> NotNull<Column<'a, T>> {
-    pub fn default<'b>(self, expr: &'b str) -> Default<'b, Self> {
+    pub fn default(self, expr: &str) -> Default<Self> {
         Default {
             column: self,
             value: expr,
