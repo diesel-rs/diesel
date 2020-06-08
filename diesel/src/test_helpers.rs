@@ -53,9 +53,14 @@ cfg_if! {
 
 #[cfg(feature = "postgres")]
 pub fn pg_connection() -> PgConnection {
-    let conn = PgConnection::establish(&pg_database_url()).unwrap();
+    let conn = pg_connection_no_transaction();
     conn.begin_test_transaction().unwrap();
     conn
+}
+
+#[cfg(feature = "postgres")]
+pub fn pg_connection_no_transaction() -> PgConnection {
+    PgConnection::establish(&pg_database_url()).unwrap()
 }
 
 #[cfg(feature = "postgres")]
