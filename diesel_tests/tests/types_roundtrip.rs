@@ -363,11 +363,7 @@ impl quickcheck::Arbitrary for SerdeWrapper {
 fn arbitrary_serde<G: quickcheck::Gen>(g: &mut G, depth: usize) -> serde_json::Value {
     use rand::distributions::Alphanumeric;
     use rand::Rng;
-    let variant = match g.gen_range(0, 6) {
-        4 | 5 if depth > 0 => g.gen_range(0, 4),
-        i => i,
-    };
-    match variant {
+    match g.gen_range(0, if depth > 0 { 4 } else { 6 }) {
         0 => serde_json::Value::Null,
         1 => serde_json::Value::Bool(g.gen()),
         2 => {
