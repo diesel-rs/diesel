@@ -32,12 +32,8 @@ macro_rules! mysql_time_impls {
                 let bytes = not_none!(bytes);
                 let bytes_ptr = bytes.as_ptr() as *const MYSQL_TIME;
 
-                // We cannot use `mem::MaybeUninit` here
-                // because that would require a bump of the 
-                // minimal supported rust version
-                #[allow(deprecated)]
                 unsafe {
-                    let mut result = mem::uninitialized();
+                    let mut result = mem::zeroed();
                     ptr::copy_nonoverlapping(bytes_ptr, &mut result, 1);
                     if result.neg {
                         Err("Negative dates/times are not yet supported".into())
