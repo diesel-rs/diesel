@@ -291,8 +291,7 @@ macro_rules! table {
 macro_rules! __diesel_invalid_table_syntax {
     () => {
         compile_error!(
-            "Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
-             `https://docs.diesel.rs/diesel/macro.table.html`"
+            "Invalid `table!` syntax. Please see the `table!` macro docs for more info."
         );
     };
 }

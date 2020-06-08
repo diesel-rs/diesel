@@ -4,7 +4,6 @@ version = "1.4.2"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
-documentation = "https://docs.diesel.rs"
 homepage = "https://diesel.rs"
 edition = "2018"
 
