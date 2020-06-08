@@ -7,7 +7,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 bcrypt = "0.2.0"
 chrono = "0.4.0"
 diesel = { version = "1.4.0", features = ["postgres", "chrono"] }
-dotenv = "0.15"
+dotenv = "0.10.0"
 structopt = "0.1.6"
 structopt-derive = "0.1.6"
 tempfile = "2.2.0"

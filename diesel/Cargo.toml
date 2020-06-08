@@ -35,7 +35,7 @@ r2d2 = { version = ">= 0.8, < 0.9", optional = true }
 
 [dev-dependencies]
 cfg-if = "0.1.0"
-dotenv = "0.15"
+dotenv = ">=0.8, <0.11"
 quickcheck = "0.4"
 tempdir = "^0.3.4"
 
