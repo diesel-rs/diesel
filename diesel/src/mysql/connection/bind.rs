@@ -4,6 +4,7 @@ use std::mem;
 use std::os::raw as libc;
 
 use super::stmt::Statement;
+use crate::mysql::types::MYSQL_TIME;
 use mysql::MysqlType;
 use result::QueryResult;
 use sql_types::IsSigned;
@@ -238,7 +239,7 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
         t::MYSQL_TYPE_TIME
         | t::MYSQL_TYPE_DATE
         | t::MYSQL_TYPE_DATETIME
-        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<ffi::MYSQL_TIME>()),
+        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<MYSQL_TIME>()),
         _ => None,
     }
 }
