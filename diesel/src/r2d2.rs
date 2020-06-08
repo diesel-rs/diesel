@@ -116,7 +116,6 @@ where
     type Error = Error;
 
     fn connect(&self) -> Result<T, Error> {
-        // T::establish(&self.database_url).map_err(Error::ConnectionError)
         let db_url = match &self.url_provider {
             Some(url_provider) => url_provider.provide_url(),
             _ => self.database_url.to_owned(),
@@ -272,7 +271,7 @@ mod tests {
     struct TestUrlProvider {}
     impl UrlProvider for TestUrlProvider {
         fn provide_url(&self) -> String {
-            ":memory:".into()
+            database_url()
         }
     }
 
