@@ -22,6 +22,7 @@ use crate::deserialize::{Queryable, QueryableByName};
 use crate::prelude::*;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 use crate::sql_types::HasSqlType;
+use std::sync::Arc;
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -31,6 +32,7 @@ use crate::sql_types::HasSqlType;
 #[derive(Debug, Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,
+    url_provider: Option<Arc<dyn UrlProvider>>,
     _marker: PhantomData<T>,
 }
 
@@ -42,6 +44,17 @@ impl<T> ConnectionManager<T> {
     pub fn new<S: Into<String>>(database_url: S) -> Self {
         ConnectionManager {
             database_url: database_url.into(),
+            url_provider: None,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Returns a new connection manager,
+    /// which establishes connections with the given UrlProvider
+    pub fn new_with_url_provider(url_provider: Arc<dyn UrlProvider>) -> Self {
+        ConnectionManager {
+            database_url: "".into(),
+            url_provider: Some(url_provider),
             _marker: PhantomData,
         }
     }
@@ -103,7 +116,12 @@ where
     type Error = Error;
 
     fn connect(&self) -> Result<T, Error> {
-        T::establish(&self.database_url).map_err(Error::ConnectionError)
+        // T::establish(&self.database_url).map_err(Error::ConnectionError)
+        let db_url = match &self.url_provider {
+            Some(url_provider) => url_provider.provide_url(),
+            _ => self.database_url.to_owned(),
+        };
+        T::establish(&db_url).map_err(Error::ConnectionError)
     }
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
@@ -175,6 +193,13 @@ where
     }
 }
 
+/// Trait to provide the user the option to change parameters of the URL at runtime.
+/// E.g. to implement password rotation
+pub trait UrlProvider: Send + Sync + fmt::Debug + 'static {
+    /// Provides database url to create a new connection
+    fn provide_url(&self) -> String;
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::mpsc;
@@ -241,5 +266,27 @@ mod tests {
 
         let query = select("foo".into_sql::<Text>());
         assert_eq!("foo", query.get_result::<String>(&conn).unwrap());
+    }
+
+    #[derive(Debug)]
+    struct TestUrlProvider {}
+    impl UrlProvider for TestUrlProvider {
+        fn provide_url(&self) -> String {
+            ":memory:".into()
+        }
+    }
+
+    #[test]
+    fn provide_dynamic_url() {
+        let url_provider: Arc<dyn UrlProvider> = Arc::new(TestUrlProvider {});
+        let manager =
+            ConnectionManager::<TestConnection>::new_with_url_provider(url_provider.clone());
+        let pool = Pool::builder()
+            .max_size(1)
+            .test_on_check_out(true)
+            .build(manager)
+            .unwrap();
+
+        pool.get().unwrap();
     }
 }
