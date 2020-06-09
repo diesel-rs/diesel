@@ -171,6 +171,18 @@ Key points:
 
 [2-0-migration]: FIXME write a migration guide
 
+## [1.4.5] - 2020-06-09
+
+### Fixed
+
+* Update several dependencies
+* Fixed an issue where transactions that would fail to commit would leave the connection
+  in a broken non-committed non-rolled-back state.
+* Fix a bug that result in leaking sockets/file descriptors on failed connection attempts
+  for postgresql
+* Fix an incompatibility with newer `libmysqlclient` versions
+* Remove some potential harmful usages of `mem::uninitialized`
+
 ## [1.4.4] - 2020-03-22
 
 ### Fixed
