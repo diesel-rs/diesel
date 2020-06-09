@@ -4,12 +4,17 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
-## [1.4.5] - 2020-??-??
+## [1.4.5] - 2020-06-09
 
 ### Fixed
 
+* Update several dependencies
 * Fixed an issue where transactions that would fail to commit would leave the connection
   in a broken non-committed non-rolled-back state.
+* Fix a bug that result in leaking sockets/file descriptors on failed connection attempts
+  for postgresql
+* Fix an incompatibility with newer `libmysqlclient` versions
+* Remove some potential harmful usages of `mem::uninitialized`
 
 ## [1.4.4] - 2020-03-22
 
@@ -1634,3 +1639,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.4.2]: https://github.com/diesel-rs/diesel/compare/v1.4.1...v1.4.2
 [1.4.3]: https://github.com/diesel-rs/diesel/compare/v1.4.2...v1.4.3
 [1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
+[1.4.5]: https://github.com/diesel-rs/diesel/compare/v1.4.4...v1.4.5

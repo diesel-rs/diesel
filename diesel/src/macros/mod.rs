@@ -280,8 +280,7 @@ macro_rules! table {
 macro_rules! __diesel_invalid_table_syntax {
     () => {
         compile_error!(
-            "Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
-             `https://docs.diesel.rs/diesel/macro.table.html`"
+            "Invalid `table!` syntax. Please see the `table!` macro docs for more info."
         );
     };
 }
@@ -626,7 +625,7 @@ macro_rules! __diesel_table_impl {
                             "\"]` to reference the table's `",
                             stringify!($column_name),
                             "` column. \n \
-                            Docs available at: `https://docs.diesel.rs/diesel/macro.table.html`\n"
+                            See the documentation of the `table!` macro for details`\n"
                         ));
                     } else {
                         pub use super::columns::{$column_name};
@@ -928,13 +927,13 @@ macro_rules! __diesel_table_query_source_impl {
 ///
 /// * `child_table` is the Table with the Foreign key.
 ///
-/// So given the Table decaration from [Associations docs](http://docs.diesel.rs/diesel/associations/index.html)
+/// So given the Table decaration from [Associations docs](/associations/index.html)
 ///
 /// * The parent table would be `User`
 /// * The child table would be `Post`
 /// * and the Foreign key would be `Post.user_id`
 ///
-/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](http://docs.diesel.rs/diesel/prelude/trait.JoinOnDsl.html)
+/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](/prelude/trait.JoinOnDsl.html)
 /// the following on clause is generated implicitly:
 /// ```sql
 /// post JOIN users ON posts.user_id = users.id
