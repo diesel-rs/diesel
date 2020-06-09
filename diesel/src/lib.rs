@@ -15,7 +15,7 @@
 //! For Diesel to validate your queries at compile time
 //! it requires you to specify your schema in your code,
 //! which you can do with [the `table!` macro][`table!`].
-//! `diesel print-schema` or `infer_schema!` can be used
+//! `diesel print-schema` can be used
 //! to automatically generate these macro calls
 //! (by connecting to your database and querying its schema).
 //!

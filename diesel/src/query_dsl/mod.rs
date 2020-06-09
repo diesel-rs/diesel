@@ -326,7 +326,7 @@ pub trait QueryDsl: Sized {
     /// aliases.
     ///
     /// You will also need to call [`allow_tables_to_appear_in_same_query!`].
-    /// If you are using `infer_schema!` or `diesel print-schema`, this will
+    /// If you are using `diesel print-schema`, this will
     /// have been generated for you.
     /// See the documentation for [`allow_tables_to_appear_in_same_query!`] for
     /// details.
