@@ -131,7 +131,6 @@
 #![cfg_attr(feature = "unstable", feature(specialization, try_from))]
 // Built-in Lints
 #![deny(
-    warnings,
     missing_debug_implementations,
     missing_copy_implementations,
     missing_docs

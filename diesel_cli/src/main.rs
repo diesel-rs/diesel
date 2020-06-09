@@ -1,5 +1,5 @@
 // Built-in Lints
-#![deny(warnings, missing_copy_implementations)]
+#![deny(missing_copy_implementations)]
 // Clippy lints
 #![allow(clippy::option_map_unwrap_or_else, clippy::option_map_unwrap_or)]
 #![warn(
