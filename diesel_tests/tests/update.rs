@@ -234,28 +234,28 @@ fn upsert_with_no_changes_executes_do_nothing() {
         hair_color: Option<String>,
     }
     {
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let result = insert_into(users::table)
-        .values(&User::new(1, "Sean"))
-        .on_conflict(users::id)
-        .do_update()
-        .set(&Changes { hair_color: None })
-        .execute(&connection);
+        let connection = connection_with_sean_and_tess_in_users_table();
+        let result = insert_into(users::table)
+            .values(&User::new(1, "Sean"))
+            .on_conflict(users::id)
+            .do_update()
+            .set(&Changes { hair_color: None })
+            .execute(&connection);
 
-    assert_eq!(Ok(0), result);
+        assert_eq!(Ok(0), result);
     }
 
     {
-    // Try the same thing with an owned type.
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let result = insert_into(users::table)
-        .values(User::new(1, "Sean"))
-        .on_conflict(users::id)
-        .do_update()
-        .set(&Changes { hair_color: None })
-        .execute(&connection);
+        // Try the same thing with an owned type.
+        let connection = connection_with_sean_and_tess_in_users_table();
+        let result = insert_into(users::table)
+            .values(User::new(1, "Sean"))
+            .on_conflict(users::id)
+            .do_update()
+            .set(&Changes { hair_color: None })
+            .execute(&connection);
 
-    assert_eq!(Ok(0), result);
+        assert_eq!(Ok(0), result);
     }
 }
 

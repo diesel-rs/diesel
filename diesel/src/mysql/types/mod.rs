@@ -81,7 +81,7 @@ impl From<MYSQL_TIME> for ffi::MYSQL_TIME {
             minute,
             second,
             second_part,
-            neg: if neg {1} else {0},
+            neg: if neg { 1 } else { 0 },
             time_type,
         }
     }

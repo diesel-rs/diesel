@@ -80,7 +80,9 @@ pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenSt
     }
 }
 
-fn migration_literals_from_path(path: &Path) -> Result<Vec<proc_macro2::TokenStream>, Box<dyn Error>> {
+fn migration_literals_from_path(
+    path: &Path,
+) -> Result<Vec<proc_macro2::TokenStream>, Box<dyn Error>> {
     let mut migrations = migration_paths_in_directory(path)?;
 
     migrations.sort_by_key(|a| a.path());
