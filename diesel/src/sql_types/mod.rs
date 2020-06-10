@@ -178,7 +178,7 @@ pub type Float8 = Double;
 /// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "1700", array_oid = "1231")]
-#[mysql_type = "String"]
+#[mysql_type = "Numeric"]
 #[sqlite_type = "Double"]
 pub struct Numeric;
 
@@ -340,6 +340,28 @@ pub struct Time;
 #[sqlite_type = "Text"]
 #[mysql_type = "Timestamp"]
 pub struct Timestamp;
+
+/// The JSON SQL type.  This type can only be used with `feature =
+/// "serde_json"`
+///
+/// For postgresql you should normally prefer [`Jsonb`](struct.Jsonb.html) instead,
+/// for the reasons discussed there.
+///
+/// ### [`ToSql`] impls
+///
+/// - [`serde_json::Value`]
+///
+/// ### [`FromSql`] impls
+///
+/// - [`serde_json::Value`]
+///
+/// [`ToSql`]: /serialize/trait.ToSql.html
+/// [`FromSql`]: /deserialize/trait.FromSql.html
+/// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[postgres(oid = "114", array_oid = "199")]
+#[mysql_type = "String"]
+pub struct Json;
 
 /// The nullable SQL type.
 ///

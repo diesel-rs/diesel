@@ -1,5 +1,8 @@
-use diesel::pg::PgValue;
+use diesel::deserialize::{self, FromSql, FromSqlRow};
+use diesel::expression::AsExpression;
+use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{self, IsNull, Output, ToSql};
+use diesel::sql_types::SqlType;
 use std::io::Write;
 
 pub mod exports {
@@ -28,9 +31,6 @@ impl ToSql<LanguageType, Pg> for Language {
         Ok(IsNull::No)
     }
 }
-
-use diesel::deserialize::{self, FromSql};
-use diesel::pg::Pg;
 
 impl FromSql<LanguageType, Pg> for Language {
     fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {

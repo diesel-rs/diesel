@@ -60,9 +60,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [raw-value-2-0-0]: http://docs.diesel.rs/diesel/backend/type.RawValue.html
 
 * The type metadata for MySQL has been changed to include sign information. If
-  you are implementing `HasSqlType` for `Mysql` manually, or manipulating a
-  `Mysql::TypeMetadata`, you will need to take the new struct
-  `MysqlTypeMetadata` instead.
+  you are implementing `HasSqlType` for `Mysql` manually, you may need to adjust
+  your implementation to fully use the new unsigned variants in `MysqlType`
 
 * The minimal officially supported rustc version is now 1.40.0
 
@@ -93,6 +92,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Various `__NonExhaustive` variants in different (error-) enums are replaced with
   `#[non_exhaustive]`. If you matched on one of those variants explicitly you need to
   introduce a wild card match instead.
+
 
 ### Fixed
 
@@ -126,6 +126,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   See [the SQLite URI documentation] for additional details.
 
 [the SQLite URI documentation]: https://www.sqlite.org/uri.html
+
+* We've refactored our type translation layer for Mysql to handle more types now.
 
 ### Deprecated
 

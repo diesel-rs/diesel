@@ -12,56 +12,54 @@ use crate::sql_types::TypeMetadata;
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
 pub struct Mysql;
 
-/// The full type metadata for MySQL
-///
-/// This includes the type of the value, and whether it is signed.
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
-pub struct MysqlTypeMetadata {
-    /// The underlying data type
-    ///
-    /// Affects the `buffer_type` sent to libmysqlclient
-    pub data_type: MysqlType,
-
-    /// Is this type signed?
-    ///
-    /// Affects the `is_unsigned` flag sent to libmysqlclient
-    pub is_unsigned: bool,
-}
-
 #[allow(missing_debug_implementations)]
-/// Represents the possible forms a bind parameter can be transmitted as.
-/// Each variant represents one of the forms documented at
-/// <https://dev.mysql.com/doc/refman/5.7/en/c-api-prepared-statement-type-codes.html>
-///
-/// The null variant is omitted, as we will never prepare a statement in which
-/// one of the bind parameters can always be NULL
+/// Represents possible types, that can be transmitted as via the
+/// Mysql wire protocol
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 #[non_exhaustive]
 pub enum MysqlType {
-    /// Sets `buffer_type` to `MYSQL_TYPE_TINY`
+    /// A 8 bit signed integer
     Tiny,
-    /// Sets `buffer_type` to `MYSQL_TYPE_SHORT`
+    /// A 8 bit unsigned integer
+    UnsignedTiny,
+    /// A 16 bit signed integer
     Short,
-    /// Sets `buffer_type` to `MYSQL_TYPE_LONG`
+    /// A 16 bit unsigned integer
+    UnsignedShort,
+    /// A 32 bit signed integer
     Long,
-    /// Sets `buffer_type` to `MYSQL_TYPE_LONGLONG`
+    /// A 32 bit unsigned integer
+    UnsignedLong,
+    /// A 64 bit signed integer
     LongLong,
-    /// Sets `buffer_type` to `MYSQL_TYPE_FLOAT`
+    /// A 64 bit unsigned integer
+    UnsignedLongLong,
+    /// A 32 bit floating point number
     Float,
-    /// Sets `buffer_type` to `MYSQL_TYPE_DOUBLE`
+    /// A 64 bit floating point number
     Double,
-    /// Sets `buffer_type` to `MYSQL_TYPE_TIME`
+    /// A fixed point decimal value
+    Numeric,
+    /// A datatype to store a time value
     Time,
-    /// Sets `buffer_type` to `MYSQL_TYPE_DATE`
+    /// A datatype to store a date value
     Date,
-    /// Sets `buffer_type` to `MYSQL_TYPE_DATETIME`
+    /// A datatype containing timestamp values ranging from
+    /// '1000-01-01 00:00:00' to '9999-12-31 23:59:59'.
     DateTime,
-    /// Sets `buffer_type` to `MYSQL_TYPE_TIMESTAMP`
+    /// A datatype containing timestamp values ranging from
+    /// 1970-01-01 00:00:01' UTC to '2038-01-19 03:14:07' UTC.
     Timestamp,
-    /// Sets `buffer_type` to `MYSQL_TYPE_STRING`
+    /// A datatype for string values
     String,
-    /// Sets `buffer_type` to `MYSQL_TYPE_BLOB`
+    /// A datatype containing binary large objects
     Blob,
+    /// A value containing a set of bit's
+    Bit,
+    /// A user defined set type
+    Set,
+    /// A user defined enum type
+    Enum,
 }
 
 impl Backend for Mysql {
@@ -75,7 +73,7 @@ impl<'a> HasRawValue<'a> for Mysql {
 }
 
 impl TypeMetadata for Mysql {
-    type TypeMetadata = MysqlTypeMetadata;
+    type TypeMetadata = MysqlType;
     type MetadataLookup = ();
 }
 
