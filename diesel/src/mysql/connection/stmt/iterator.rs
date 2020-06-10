@@ -150,4 +150,3 @@ impl<'a> NamedRow<Mysql> for NamedMysqlRow<'a> {
             .collect()
     }
 }
-
