@@ -7,7 +7,6 @@ use crate::mysql::types::MYSQL_TIME;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
-#[derive(Debug)]
 pub struct Binds {
     data: Vec<BindData>,
 }
@@ -124,7 +123,6 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Debug)]
 struct BindData {
     tpe: ffi::enum_field_types,
     bytes: Vec<u8>,

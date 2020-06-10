@@ -37,9 +37,9 @@ cfg_if! {
         }
 
         pub fn database_url() -> String {
-            dbg!(dotenv::var("MYSQL_UNIT_TEST_DATABASE_URL")
+            dotenv::var("MYSQL_UNIT_TEST_DATABASE_URL")
                 .or_else(|_| dotenv::var("DATABASE_URL"))
-                .expect("DATABASE_URL must be set in order to run tests"))
+                .expect("DATABASE_URL must be set in order to run tests")
         }
     } else {
         compile_error!(
