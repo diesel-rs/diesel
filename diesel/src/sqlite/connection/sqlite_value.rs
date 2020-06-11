@@ -13,8 +13,8 @@ use crate::sqlite::{Sqlite, SqliteType};
 /// Use existing `FromSql` implementations to convert this into
 /// rust values:
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct SqliteValue {
-    value: ffi::sqlite3_value,
+pub struct SqliteValue<'a> {
+    value: &'a ffi::sqlite3_value,
 }
 
 pub struct SqliteRow {
@@ -22,16 +22,21 @@ pub struct SqliteRow {
     next_col_index: libc::c_int,
 }
 
-impl SqliteValue {
+impl<'a> SqliteValue<'a> {
     #[allow(clippy::new_ret_no_self)]
-    pub(crate) unsafe fn new<'a>(inner: *mut ffi::sqlite3_value) -> Option<&'a Self> {
-        (inner as *const _ as *const Self).as_ref().and_then(|v| {
-            if v.is_null() {
-                None
-            } else {
-                Some(v)
-            }
-        })
+    pub(crate) unsafe fn new(inner: *mut ffi::sqlite3_value) -> Option<Self> {
+        inner
+            .as_ref()
+            .map(|value| SqliteValue { value })
+            .and_then(|value| {
+                // We check here that the actual value represented by the inner
+                // `sqlite3_value` is not `NULL` (is sql meaning, not ptr meaning)
+                if value.is_null() {
+                    None
+                } else {
+                    Some(value)
+                }
+            })
     }
 
     pub(crate) fn read_text(&self) -> &str {
@@ -65,10 +70,6 @@ impl SqliteValue {
         unsafe { ffi::sqlite3_value_double(self.value()) as f64 }
     }
 
-    pub(crate) fn is_null(&self) -> bool {
-        self.value_type().is_none()
-    }
-
     /// Get the type of the value as returned by sqlite
     pub fn value_type(&self) -> Option<SqliteType> {
         let tpe = unsafe { ffi::sqlite3_value_type(self.value()) };
@@ -78,12 +79,16 @@ impl SqliteValue {
             ffi::SQLITE_FLOAT => Some(SqliteType::Double),
             ffi::SQLITE_BLOB => Some(SqliteType::Binary),
             ffi::SQLITE_NULL => None,
-            _ => unreachable!("Sqlite does saying this is not reachable"),
+            _ => unreachable!("Sqlite docs saying this is not reachable"),
         }
     }
 
+    pub(crate) fn is_null(&self) -> bool {
+        self.value_type().is_none()
+    }
+
     fn value(&self) -> *mut ffi::sqlite3_value {
-        &self.value as *const _ as _
+        self.value as *const _ as _
     }
 }
 
@@ -104,7 +109,7 @@ impl SqliteRow {
 }
 
 impl Row<Sqlite> for SqliteRow {
-    fn take(&mut self) -> Option<&SqliteValue> {
+    fn take(&mut self) -> Option<SqliteValue<'_>> {
         let col_index = self.next_col_index;
         self.next_col_index += 1;
 
@@ -141,7 +146,7 @@ impl<'a> NamedRow<Sqlite> for SqliteNamedRow<'a> {
         self.column_indices.get(column_name).cloned()
     }
 
-    fn get_raw_value(&self, idx: usize) -> Option<&SqliteValue> {
+    fn get_raw_value(&self, idx: usize) -> Option<SqliteValue<'_>> {
         unsafe {
             let ptr = ffi::sqlite3_column_value(self.stmt.as_ptr(), idx as libc::c_int);
             SqliteValue::new(ptr)

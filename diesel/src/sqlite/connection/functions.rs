@@ -104,7 +104,7 @@ struct FunctionRow<'a> {
 }
 
 impl<'a> Row<Sqlite> for FunctionRow<'a> {
-    fn take(&mut self) -> Option<&SqliteValue> {
+    fn take(&mut self) -> Option<SqliteValue<'_>> {
         self.args.split_first().and_then(|(&first, rest)| {
             self.args = rest;
             unsafe { SqliteValue::new(first) }
