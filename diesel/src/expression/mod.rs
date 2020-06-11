@@ -70,7 +70,7 @@ pub mod dsl {
     /// The return type of [`count(expr)`](../dsl/fn.count.html)
     pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
 
-    /// The return type of [`count_star)(`](../dsl/fn.count_star.html)
+    /// The return type of [`count_star()`](../dsl/fn.count_star.html)
     pub type count_star = super::count::CountStar;
 
     /// The return type of [`date(expr)`](../dsl/fn.date.html)
