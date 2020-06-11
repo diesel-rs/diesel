@@ -1,10 +1,3 @@
-extern crate chrono;
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-
 use chrono::NaiveDateTime;
 #[cfg(test)]
 use diesel::debug_query;
@@ -12,10 +5,11 @@ use diesel::insert_into;
 #[cfg(test)]
 use diesel::mysql::Mysql;
 use diesel::prelude::*;
+use serde_derive::Deserialize;
 use std::error::Error;
 
 mod schema {
-    table! {
+    diesel::table! {
         users {
             id -> Integer,
             name -> Text,

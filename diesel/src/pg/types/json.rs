@@ -9,20 +9,6 @@ use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 
-#[allow(dead_code)]
-mod foreign_derives {
-    use super::serde_json;
-    use crate::deserialize::FromSqlRow;
-    use crate::expression::AsExpression;
-    use crate::sql_types::{Json, Jsonb};
-
-    #[derive(FromSqlRow, AsExpression)]
-    #[diesel(foreign_derive)]
-    #[sql_type = "Json"]
-    #[sql_type = "Jsonb"]
-    struct SerdeJsonValueProxy(serde_json::Value);
-}
-
 impl FromSql<sql_types::Json, Pg> for serde_json::Value {
     fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
         let value = not_none!(value);

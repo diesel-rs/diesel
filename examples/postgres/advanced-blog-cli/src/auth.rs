@@ -1,9 +1,8 @@
 use bcrypt::*;
 use diesel::prelude::*;
 use diesel::{self, insert_into};
-use dotenv;
 
-use schema::users;
+use crate::schema::users;
 
 #[derive(Debug)]
 pub enum AuthenticationError {
@@ -98,11 +97,10 @@ fn if_not_present<T>(
     res: Result<T, dotenv::Error>,
     on_not_present: AuthenticationError,
 ) -> Result<T, AuthenticationError> {
-    use dotenv::ErrorKind::EnvVar;
     use std::env::VarError::NotPresent;
 
     res.map_err(|e| match e {
-        dotenv::Error(EnvVar(NotPresent), _) => on_not_present,
+        dotenv::Error::EnvVar(NotPresent) => on_not_present,
         e => AuthenticationError::EnvironmentError(e),
     })
 }
@@ -110,8 +108,9 @@ fn if_not_present<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test_helpers::*;
+    use crate::test_helpers::*;
 
+    use assert_matches::assert_matches;
     use std::env;
 
     #[test]

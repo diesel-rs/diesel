@@ -48,5 +48,5 @@ to
 35 | #[belongs_to(Baz, foreign_key = "bar_id", random_option)]
    |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-error: aborting due to 5 previous errors
+error: aborting due to 5 previous errors; 2 warnings emitted
 

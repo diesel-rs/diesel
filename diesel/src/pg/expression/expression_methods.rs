@@ -2,7 +2,7 @@
 
 use super::operators::*;
 use crate::expression::{AsExpression, Expression};
-use crate::sql_types::{Array, Nullable, Text};
+use crate::sql_types::{Array, Nullable, Range, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -486,3 +486,71 @@ where
     T::SqlType: TextOrNullableText,
 {
 }
+
+#[doc(hidden)]
+/// Marker trait used to extract the inner type
+/// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
+pub trait RangeHelper {
+    type Inner;
+}
+
+impl<ST> RangeHelper for Range<ST> {
+    type Inner = ST;
+}
+
+/// PostgreSQL specific methods present on range expressions.
+pub trait PgRangeExpressionMethods: Expression + Sized {
+    /// Creates a PostgreSQL `@>` expression.
+    ///
+    /// This operator returns whether a range contains an specific element
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # #[macro_use] extern crate diesel;
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         versions -> Range<Integer>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     use std::collections::Bound;
+    /// #     let conn = establish_connection();
+    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
+    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
+    ///     .execute(&conn)?;
+    ///
+    /// let cool_posts = posts.select(id)
+    ///     .filter(versions.contains(42))
+    ///     .load::<i32>(&conn)?;
+    /// assert_eq!(vec![1], cool_posts);
+    ///
+    /// let amazing_posts = posts.select(id)
+    ///     .filter(versions.contains(1))
+    ///     .load::<i32>(&conn)?;
+    /// assert!(amazing_posts.is_empty());
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn contains<T>(self, other: T) -> Contains<Self, T::Expression>
+    where
+        Self::SqlType: RangeHelper,
+        T: AsExpression<<Self::SqlType as RangeHelper>::Inner>,
+    {
+        Contains::new(self, other.as_expression())
+    }
+}
+
+impl<T, ST> PgRangeExpressionMethods for T where T: Expression<SqlType = Range<ST>> {}

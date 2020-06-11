@@ -28,6 +28,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for SQLite's `UPSERT`.
   You can use this feature above SQLite version 3.24.0.
 
+
+* Added ability to create custom aggregate functions in SQLite.
+
 * Multiple aggregate expressions can now appear together in the same select
   clause. See [the upgrade notes](#2-0-0-upgrade-non-aggregate) for details.
 
@@ -36,10 +39,14 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   functionality of `NonAggregate`. See [the upgrade
   notes](#2-0-0-upgrade-non-aggregate) for details.
 
+
 ### Removed
 
 * All previously deprecated items have been removed.
-* Support for uuid version < 0.7.0 has been removed.
+* Support for `uuid` version < 0.7.0 has been removed.
+* Support for `bigdecimal` < 0.0.13 has been removed.
+* Support for `pq-sys` < 0.4.0 has been removed.
+* Support for `mysqlclient-sys` < 0.2.0 has been removed.
 
 ### Changed
 
@@ -53,9 +60,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [raw-value-2-0-0]: http://docs.diesel.rs/diesel/backend/type.RawValue.html
 
 * The type metadata for MySQL has been changed to include sign information. If
-  you are implementing `HasSqlType` for `Mysql` manually, or manipulating a
-  `Mysql::TypeMetadata`, you will need to take the new struct
-  `MysqlTypeMetadata` instead.
+  you are implementing `HasSqlType` for `Mysql` manually, you may need to adjust
+  your implementation to fully use the new unsigned variants in `MysqlType`
 
 * The minimal officially supported rustc version is now 1.40.0
 
@@ -82,6 +88,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   Due to language limitations, we cannot make the new trait alias by itself
   represent everything it used to, so in some rare cases code changes may be
   required. See [the upgrade notes](#2-0-0-upgrade-non-aggregate) for details.
+
+* Various `__NonExhaustive` variants in different (error-) enums are replaced with
+  `#[non_exhaustive]`. If you matched on one of those variants explicitly you need to
+  introduce a wild card match instead.
+
 
 ### Fixed
 
@@ -110,6 +121,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   project root (the directory containing either `diesel.toml` or `Cargo.toml`).
   They are no longer dependent on the current working directory (for all
   directories in the same project)
+
+* The SQLite backend is now configured to interpret URIs.
+  See [the SQLite URI documentation] for additional details.
+
+[the SQLite URI documentation]: https://www.sqlite.org/uri.html
+
+* We've refactored our type translation layer for Mysql to handle more types now.
 
 ### Deprecated
 
@@ -154,6 +172,18 @@ Key points:
   - With `feature = "unstable"`, `(T, OtherType): NonAggregate` is still implied.
 
 [2-0-migration]: FIXME write a migration guide
+
+## [1.4.5] - 2020-06-09
+
+### Fixed
+
+* Update several dependencies
+* Fixed an issue where transactions that would fail to commit would leave the connection
+  in a broken non-committed non-rolled-back state.
+* Fix a bug that result in leaking sockets/file descriptors on failed connection attempts
+  for postgresql
+* Fix an incompatibility with newer `libmysqlclient` versions
+* Remove some potential harmful usages of `mem::uninitialized`
 
 ## [1.4.4] - 2020-03-22
 

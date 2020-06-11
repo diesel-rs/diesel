@@ -82,3 +82,22 @@ fn strips_sqlite_url_prefix() {
     path.push("diesel_test_sqlite.db");
     assert!(SqliteConnection::establish(&format!("sqlite://{}", path.display())).is_ok());
 }
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn file_uri_created_in_memory() {
+    use std::path::Path;
+
+    assert!(SqliteConnection::establish("file::memory:").is_ok());
+    assert!(!Path::new("file::memory:").exists());
+    assert!(!Path::new(":memory:").exists());
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn sqlite_uri_prefix_interpreted_as_file() {
+    let mut path = std::env::temp_dir();
+    path.push("diesel_test_sqlite_readonly.db");
+    assert!(SqliteConnection::establish(&format!("sqlite://{}?mode=rwc", path.display())).is_ok());
+    assert!(path.exists());
+}

@@ -1,7 +1,3 @@
-#[macro_use]
-extern crate diesel;
-extern crate dotenv;
-
 pub mod models;
 pub mod schema;
 
@@ -20,7 +16,7 @@ pub fn establish_connection() -> MysqlConnection {
 }
 
 pub fn create_post(conn: &MysqlConnection, title: &str, body: &str) -> Post {
-    use schema::posts;
+    use crate::schema::posts;
 
     let new_post = NewPost { title, body };
 

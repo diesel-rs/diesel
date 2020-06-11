@@ -1,8 +1,4 @@
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
+use serde_derive::Deserialize;
 
 #[cfg(test)]
 use diesel::debug_query;
@@ -14,7 +10,7 @@ use std::error::Error;
 use std::time::SystemTime;
 
 mod schema {
-    table! {
+    diesel::table! {
         users {
             id -> Integer,
             name -> Text,
