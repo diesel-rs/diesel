@@ -19,15 +19,6 @@ pub trait Row<DB: Backend> {
     /// would all return `None`.
     fn next_is_null(&self, count: usize) -> bool;
 
-    /// Skips the next `count` columns. This method must be called if you are
-    /// choosing not to call `take` as a result of `next_is_null` returning
-    /// `true`.
-    fn advance(&mut self, count: usize) {
-        for _ in 0..count {
-            self.take();
-        }
-    }
-
     /// Number of columns in the current result set
     fn column_count(&self) -> usize;
 

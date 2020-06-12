@@ -325,16 +325,27 @@ pub trait FromSql<A, DB: Backend>: Sized {
 ///
 /// This trait can be [derived](derive.FromSqlRow.html)
 pub trait FromSqlRow<A, DB: Backend>: Sized {
-    /// The number of fields that this type will consume. Must be equal to
-    /// the number of times you would call `row.take()` in `build_from_row`
-    const FIELDS_NEEDED: usize = 1;
-
     /// See the trait documentation.
     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self>;
 }
 
 #[doc(inline)]
 pub use diesel_derives::FromSqlRow;
+
+/// A marker trait indicating that the corresponding type is a statically sized row
+///
+/// This trait is implemented for all types provided by diesel, that
+/// implement `FromSqlRow`.
+///
+/// For dynamically sized types, like `diesel_dynamic_schema::DynamicRow`
+/// this traits should not be implemented.
+///
+/// This trait can be [derived](derive.FromSqlRow.html)
+pub trait StaticallySizedRow<A, DB: Backend>: FromSqlRow<A, DB> {
+    /// The number of fields that this type will consume. Must be equal to
+    /// the number of times you would call `row.take()` in `build_from_row`
+    const FIELD_COUNT: usize = 1;
+}
 
 // Reasons we can't write this:
 //

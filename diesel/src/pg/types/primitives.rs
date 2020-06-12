@@ -7,10 +7,8 @@ use crate::sql_types;
 
 impl FromSql<sql_types::Bool, Pg> for bool {
     fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        match bytes {
-            Some(bytes) => Ok(bytes.as_bytes()[0] != 0),
-            None => Ok(false),
-        }
+        let bytes = not_none!(bytes);
+        Ok(bytes.as_bytes()[0] != 0)
     }
 }
 

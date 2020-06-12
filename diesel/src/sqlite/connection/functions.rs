@@ -3,7 +3,7 @@ extern crate libsqlite3_sys as ffi;
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteAggregateFunction, SqliteValue};
-use crate::deserialize::{FromSqlRow, Queryable};
+use crate::deserialize::{FromSqlRow, Queryable, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::Row;
 use crate::serialize::{IsNull, Output, ToSql};
@@ -18,10 +18,11 @@ pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
 where
     F: FnMut(&RawConnection, Args) -> Ret + Send + 'static,
     Args: Queryable<ArgsSqlType, Sqlite>,
+    Args::Row: StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    let fields_needed = Args::Row::FIELDS_NEEDED;
+    let fields_needed = Args::Row::FIELD_COUNT;
     if fields_needed > 127 {
         return Err(Error::DatabaseError(
             DatabaseErrorKind::UnableToSendCommand,
@@ -46,10 +47,11 @@ pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
 where
     A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
     Args: Queryable<ArgsSqlType, Sqlite>,
+    Args::Row: StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    let fields_needed = Args::Row::FIELDS_NEEDED;
+    let fields_needed = Args::Row::FIELD_COUNT;
     if fields_needed > 127 {
         return Err(Error::DatabaseError(
             DatabaseErrorKind::UnableToSendCommand,

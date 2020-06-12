@@ -87,15 +87,11 @@ where
     DB: Backend,
     ST: NotNull,
 {
-    const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
-
     fn build_from_row<R: crate::row::Row<DB>>(row: &mut R) -> deserialize::Result<Self> {
-        let fields_needed = Self::FIELDS_NEEDED;
-        if row.next_is_null(fields_needed) {
-            row.advance(fields_needed);
-            Ok(None)
-        } else {
-            T::build_from_row(row).map(Some)
+        match T::build_from_row(row) {
+            Ok(v) => Ok(Some(v)),
+            Err(e) if e.is::<UnexpectedNullError>() => Ok(None),
+            Err(e) => Err(e),
         }
     }
 }

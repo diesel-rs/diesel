@@ -73,8 +73,6 @@ macro_rules! tuple_impls {
         where
             Self: FromSql<Record<($($ST,)+)>, Pg>,
         {
-            const FIELDS_NEEDED: usize = 1;
-
             fn build_from_row<RowT: Row<Pg>>(row: &mut RowT) -> deserialize::Result<Self> {
                 Self::from_sql(row.take())
             }

@@ -26,7 +26,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
     let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::{self, FromSql, FromSqlRow, Queryable};
+        use diesel::deserialize::{self, FromSql, FromSqlRow, Queryable, StaticallySizedRow};
 
         impl #impl_generics FromSqlRow<__ST, __DB> for #struct_ty
         #where_clause
@@ -47,5 +47,9 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
                 row
             }
         }
+
+        impl #impl_generics StaticallySizedRow<__ST, __DB> for #struct_ty
+        #where_clause
+        {}
     }))
 }

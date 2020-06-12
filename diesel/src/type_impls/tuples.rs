@@ -2,7 +2,7 @@ use std::error::Error;
 
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
-use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByName};
+use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByName, StaticallySizedRow};
 use crate::expression::{
     AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression, ValidGrouping,
 };
@@ -42,11 +42,34 @@ macro_rules! tuple_impls {
                 __DB: Backend,
                 $($T: FromSqlRow<$ST, __DB>),+,
             {
-                const FIELDS_NEEDED: usize = $($T::FIELDS_NEEDED +)+ 0;
 
+                #[allow(non_snake_case)]
                 fn build_from_row<RowT: Row<__DB>>(row: &mut RowT) -> Result<Self, Box<dyn Error + Send + Sync>> {
-                    Ok(($($T::build_from_row(row)?,)+))
+                    // First call `build_from_row` for all tuple elements
+                    // to advance the row iterator correctly
+                    $(
+                        let $ST = $T::build_from_row(row);
+                    )+
+
+                    // Afterwards bubble up any possible errors
+                    Ok(($($ST?,)+))
+
+                    // As a note for anyone trying to optimize this:
+                    // We cannot just call something like `row.take()` for the
+                    // remaining tuple elements as we cannot know how much childs
+                    // they have on their own. For example one of them could be
+                    // `Option<(A, B)>`. Just calling `row.take()` as many times
+                    // as tuple elements are left would cause calling `row.take()`
+                    // at least one time less then required (as the child has two)
+                    // elements, not one.
                 }
+            }
+
+            impl<$($T),+, $($ST),+, __DB > StaticallySizedRow<($($ST,)+), __DB> for ($($T,)+) where
+                __DB: Backend,
+                $($T: StaticallySizedRow<$ST, __DB>,)+
+            {
+                const FIELD_COUNT: usize = $($T::FIELD_COUNT +)+ 0;
             }
 
             impl<$($T),+, $($ST),+, __DB> Queryable<($($ST,)+), __DB> for ($($T,)+) where

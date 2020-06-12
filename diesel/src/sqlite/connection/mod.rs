@@ -17,7 +17,7 @@ use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
 use crate::connection::*;
-use crate::deserialize::{Queryable, QueryableByName};
+use crate::deserialize::{Queryable, QueryableByName, StaticallySizedRow};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
@@ -228,6 +228,7 @@ impl SqliteConnection {
     where
         F: FnMut(Args) -> Ret + Send + 'static,
         Args: Queryable<ArgsSqlType, Sqlite>,
+        Args::Row: StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
@@ -247,6 +248,7 @@ impl SqliteConnection {
     where
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
         Args: Queryable<ArgsSqlType, Sqlite>,
+        Args::Row: StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {

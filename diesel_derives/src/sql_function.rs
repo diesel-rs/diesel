@@ -141,7 +141,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
                 use diesel::sqlite::{Sqlite, SqliteConnection};
                 use diesel::serialize::ToSql;
-                use diesel::deserialize::Queryable;
+                use diesel::deserialize::{Queryable, StaticallySizedRow};
                 use diesel::sqlite::SqliteAggregateFunction;
                 use diesel::sql_types::IntoNullable;
             };
@@ -164,6 +164,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                             A: SqliteAggregateFunction<(#(#arg_name,)*)> + Send + 'static,
                             A::Output: ToSql<#return_type, Sqlite>,
                             (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                            <(#(#arg_name,)*) as Queryable<(#(#arg_type,)*), Sqlite>>::Row: StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                         {
                             conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
                         }
@@ -189,6 +190,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                             A: SqliteAggregateFunction<#arg_name> + Send + 'static,
                             A::Output: ToSql<#return_type, Sqlite>,
                             #arg_name: Queryable<#arg_type, Sqlite>,
+                            <#arg_name as Queryable<#arg_type, Sqlite>>::Row: StaticallySizedRow<#arg_type, Sqlite>,
                             {
                                 conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
                             }
@@ -219,7 +221,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
                 use diesel::sqlite::{Sqlite, SqliteConnection};
                 use diesel::serialize::ToSql;
-                use diesel::deserialize::Queryable;
+                use diesel::deserialize::{Queryable, StaticallySizedRow};
 
                 #[allow(dead_code)]
                 /// Registers an implementation for this function on the given connection
@@ -236,6 +238,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 where
                     F: Fn(#(#arg_name,)*) -> Ret + Send + 'static,
                     (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                    <(#(#arg_name,)*) as Queryable<(#(#arg_type,)*), Sqlite>>::Row: StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                     Ret: ToSql<#return_type, Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
@@ -261,6 +264,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 where
                     F: FnMut(#(#arg_name,)*) -> Ret + Send + 'static,
                     (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                    <(#(#arg_name,)*) as Queryable<(#(#arg_type,)*), Sqlite>>::Row: StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                     Ret: ToSql<#return_type, Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
