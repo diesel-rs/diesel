@@ -71,7 +71,7 @@ pub(crate) fn build_sql_function_args<ArgsSqlType, Args>(
 where
     Args: Queryable<ArgsSqlType, Sqlite>,
 {
-    let mut row = FunctionRow { args };
+    let mut row = FunctionRow::new(args);
     let args_row = Args::Row::build_from_row(&mut row).map_err(Error::DeserializationError)?;
 
     Ok(Args::build(args_row))
@@ -100,7 +100,17 @@ where
 }
 
 struct FunctionRow<'a> {
+    column_count: usize,
     args: &'a [*mut ffi::sqlite3_value],
+}
+
+impl<'a> FunctionRow<'a> {
+    fn new(args: &'a [*mut ffi::sqlite3_value]) -> Self {
+        Self {
+            column_count: args.len(),
+            args,
+        }
+    }
 }
 
 impl<'a> Row<Sqlite> for FunctionRow<'a> {
@@ -118,7 +128,7 @@ impl<'a> Row<Sqlite> for FunctionRow<'a> {
     }
 
     fn column_count(&self) -> usize {
-        self.args.len()
+        self.column_count
     }
 
     fn column_name(&self) -> Option<&str> {
