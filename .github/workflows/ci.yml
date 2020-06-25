@@ -2,10 +2,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
-    branches:
-      - master
-      - "0.[0-9]+.x"
-      - "1.[0-9]+.x"
 
 name: CI Tests
 
