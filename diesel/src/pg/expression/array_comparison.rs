@@ -1,9 +1,9 @@
 use crate::expression::subselect::Subselect;
-use crate::expression::{AsExpression, Expression, ValidGrouping};
+use crate::expression::{AsExpression, Expression, TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::Array;
+use crate::sql_types::{Array, SqlType};
 
 /// Creates a PostgreSQL `ANY` expression.
 ///
@@ -75,6 +75,7 @@ impl<Expr> Any<Expr> {
 impl<Expr, ST> Expression for Any<Expr>
 where
     Expr: Expression<SqlType = Array<ST>>,
+    ST: SqlType + TypedExpressionType,
 {
     type SqlType = ST;
 }
@@ -108,6 +109,7 @@ impl<Expr> All<Expr> {
 impl<Expr, ST> Expression for All<Expr>
 where
     Expr: Expression<SqlType = Array<ST>>,
+    ST: SqlType + TypedExpressionType,
 {
     type SqlType = ST;
 }

@@ -1,18 +1,28 @@
-use std::error::Error;
-
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
-use crate::deserialize::{self, FromSqlRow, Queryable, QueryableByName, StaticallySizedRow};
+use crate::deserialize::{self, FromSqlRow, FromStaticSqlRow, Queryable, StaticallySizedRow};
 use crate::expression::{
-    AppearsOnTable, AsExpression, AsExpressionList, Expression, SelectableExpression, ValidGrouping,
+    AppearsOnTable, AsExpression, AsExpressionList, Expression, QueryMetadata,
+    SelectableExpression, TypedExpressionType, ValidGrouping,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use crate::query_builder::*;
 use crate::query_source::*;
 use crate::result::QueryResult;
 use crate::row::*;
-use crate::sql_types::{HasSqlType, NotNull};
+use crate::sql_types::{HasSqlType, IntoNullable, Nullable, OneIsNullable, SqlType};
 use crate::util::TupleAppend;
+
+pub trait TupleSize {
+    const SIZE: usize;
+}
+
+impl<T> TupleSize for T
+where
+    T: crate::sql_types::SingleValue,
+{
+    const SIZE: usize = 1;
+}
 
 macro_rules! tuple_impls {
     ($(
@@ -28,73 +38,27 @@ macro_rules! tuple_impls {
                 fn metadata(_: &__DB::MetadataLookup) -> __DB::TypeMetadata {
                     unreachable!("Tuples should never implement `ToSql` directly");
                 }
-
-                #[cfg(feature = "mysql")]
-                fn mysql_row_metadata(out: &mut Vec<__DB::TypeMetadata>, lookup: &__DB::MetadataLookup) {
-                    $(<__DB as HasSqlType<$T>>::mysql_row_metadata(out, lookup);)+
-                }
             }
 
-            impl<$($T),+> NotNull for ($($T,)+) {
-            }
+            impl_from_sql_row!(($($T,)+), ($($ST,)+));
 
-            impl<$($T),+, $($ST),+, __DB> FromSqlRow<($($ST,)+), __DB> for ($($T,)+) where
-                __DB: Backend,
-                $($T: FromSqlRow<$ST, __DB>),+,
+
+            impl<$($T: Expression),+> Expression for ($($T,)+)
+            where ($($T::SqlType, )*): TypedExpressionType
             {
-
-                #[allow(non_snake_case)]
-                fn build_from_row<RowT: Row<__DB>>(row: &mut RowT) -> Result<Self, Box<dyn Error + Send + Sync>> {
-                    // First call `build_from_row` for all tuple elements
-                    // to advance the row iterator correctly
-                    $(
-                        let $ST = $T::build_from_row(row);
-                    )+
-
-                    // Afterwards bubble up any possible errors
-                    Ok(($($ST?,)+))
-
-                    // As a note for anyone trying to optimize this:
-                    // We cannot just call something like `row.take()` for the
-                    // remaining tuple elements as we cannot know how much childs
-                    // they have on their own. For example one of them could be
-                    // `Option<(A, B)>`. Just calling `row.take()` as many times
-                    // as tuple elements are left would cause calling `row.take()`
-                    // at least one time less then required (as the child has two)
-                    // elements, not one.
-                }
-            }
-
-            impl<$($T),+, $($ST),+, __DB > StaticallySizedRow<($($ST,)+), __DB> for ($($T,)+) where
-                __DB: Backend,
-                $($T: StaticallySizedRow<$ST, __DB>,)+
-            {
-                const FIELD_COUNT: usize = $($T::FIELD_COUNT +)+ 0;
-            }
-
-            impl<$($T),+, $($ST),+, __DB> Queryable<($($ST,)+), __DB> for ($($T,)+) where
-                __DB: Backend,
-                $($T: Queryable<$ST, __DB>),+,
-            {
-                type Row = ($($T::Row,)+);
-
-                fn build(row: Self::Row) -> Self {
-                    ($($T::build(row.$idx),)+)
-                }
-            }
-
-            impl<$($T,)+ __DB> QueryableByName<__DB> for ($($T,)+)
-            where
-                __DB: Backend,
-                $($T: QueryableByName<__DB>,)+
-            {
-                fn build<RowT: NamedRow<__DB>>(row: &RowT) -> deserialize::Result<Self> {
-                    Ok(($($T::build(row)?,)+))
-                }
-            }
-
-            impl<$($T: Expression),+> Expression for ($($T,)+) {
                 type SqlType = ($(<$T as Expression>::SqlType,)+);
+            }
+
+            impl<$($T: TypedExpressionType,)*> TypedExpressionType for ($($T,)*) {}
+            impl<$($T: SqlType + TypedExpressionType,)*> TypedExpressionType for Nullable<($($T,)*)>
+            where ($($T,)*): SqlType
+            {
+            }
+
+            impl<$($T: SqlType,)*> IntoNullable for ($($T,)*)
+                where Self: SqlType,
+            {
+                type Nullable = Nullable<($($T,)*)>;
             }
 
             impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+) {
@@ -256,6 +220,7 @@ macro_rules! tuple_impls {
 
             impl<$($T,)+ ST> AsExpressionList<ST> for ($($T,)+) where
                 $($T: AsExpression<ST>,)+
+                ST: SqlType + TypedExpressionType,
             {
                 type Expression = ($($T::Expression,)+);
 
@@ -263,7 +228,176 @@ macro_rules! tuple_impls {
                     ($(self.$idx.as_expression(),)+)
                 }
             }
+
+            impl_sql_type!($($T,)*);
+
+            impl<$($T,)* __DB, $($ST,)*> Queryable<($($ST,)*), __DB> for ($($T,)*)
+            where __DB: Backend,
+                  Self: FromStaticSqlRow<($($ST,)*), __DB>,
+            {
+                type Row = Self;
+
+                fn build(row: Self::Row) -> Self {
+                    row
+                }
+            }
+
+            impl<__T, $($ST,)*  __DB> FromStaticSqlRow<Nullable<($($ST,)*)>, __DB> for Option<__T> where
+                __DB: Backend,
+                ($($ST,)*): SqlType,
+                __T: FromSqlRow<($($ST,)*), __DB>,
+            {
+
+                #[allow(non_snake_case, unused_variables, unused_mut)]
+                fn build_from_row<'a>(row: &impl Row<'a, __DB>)
+                                      -> deserialize::Result<Self>
+                {
+                    match <__T as FromSqlRow<($($ST,)*), __DB>>::build_from_row(row) {
+                        Ok(v) => Ok(Some(v)),
+                        Err(e) if e.is::<crate::result::UnexpectedNullError>() => Ok(None),
+                        Err(e) => Err(e)
+                    }
+                }
+            }
+
+            impl<__T,  __DB, $($ST,)*> Queryable<Nullable<($($ST,)*)>, __DB> for Option<__T>
+            where __DB: Backend,
+                  Self: FromStaticSqlRow<Nullable<($($ST,)*)>, __DB>,
+                  ($($ST,)*): SqlType,
+            {
+                type Row = Self;
+
+                fn build(row: Self::Row) -> Self {
+                    row
+                }
+            }
+
+            impl<$($T,)*> TupleSize for ($($T,)*)
+                where $($T: TupleSize,)*
+            {
+                const SIZE: usize = $($T::SIZE +)* 0;
+            }
+
+            impl<$($T,)*> TupleSize for Nullable<($($T,)*)>
+            where $($T: TupleSize,)*
+                  ($($T,)*): SqlType,
+            {
+                const SIZE: usize = $($T::SIZE +)* 0;
+            }
+
+            impl<$($T,)* __DB> QueryMetadata<($($T,)*)> for __DB
+            where __DB: Backend,
+                 $(__DB: QueryMetadata<$T>,)*
+            {
+                fn row_metadata(lookup: &Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
+                    $(
+                        <__DB as QueryMetadata<$T>>::row_metadata(lookup, row);
+                    )*
+                }
+            }
+
+            impl<$($T,)* __DB> QueryMetadata<Nullable<($($T,)*)>> for __DB
+            where __DB: Backend,
+                  $(__DB: QueryMetadata<$T>,)*
+            {
+                fn row_metadata(lookup: &Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
+                    $(
+                        <__DB as QueryMetadata<$T>>::row_metadata(lookup, row);
+                    )*
+                }
+            }
         )+
+    }
+}
+
+macro_rules! impl_from_sql_row {
+    (($T1: ident,), ($ST1: ident,)) => {
+        impl<$T1, $ST1, __DB> crate::deserialize::FromStaticSqlRow<($ST1,), __DB> for ($T1,) where
+            __DB: Backend,
+            $T1: FromSqlRow<$ST1, __DB>,
+        {
+
+            #[allow(non_snake_case, unused_variables, unused_mut)]
+            fn build_from_row<'a>(row: &impl Row<'a, __DB>)
+                                                       -> deserialize::Result<Self>
+            {
+                Ok(($T1::build_from_row(row)?,))
+            }
+        }
+    };
+    (($T1: ident, $($T: ident,)*), ($ST1: ident, $($ST: ident,)*)) => {
+        impl<$T1, $($T,)* $($ST,)* __DB> FromSqlRow<($($ST,)* crate::sql_types::Untyped), __DB> for ($($T,)* $T1)
+        where __DB: Backend,
+              $T1: FromSqlRow<crate::sql_types::Untyped, __DB>,
+            $(
+                $T: FromSqlRow<$ST, __DB> + StaticallySizedRow<$ST, __DB>,
+        )*
+        {
+            #[allow(non_snake_case, unused_variables, unused_mut)]
+            fn build_from_row<'a>(full_row: &impl Row<'a, __DB>)
+                -> deserialize::Result<Self>
+            {
+                let field_count = full_row.field_count();
+
+                let mut static_field_count = 0;
+                $(
+                    let row = full_row.partial_row(static_field_count..static_field_count + $T::FIELD_COUNT);
+                    static_field_count += $T::FIELD_COUNT;
+                    let $T = $T::build_from_row(&row)?;
+                )*
+
+                let row = full_row.partial_row(static_field_count..field_count);
+
+                Ok(($($T,)* $T1::build_from_row(&row)?,))
+            }
+        }
+
+        impl<$T1, $ST1, $($T,)* $($ST,)* __DB> FromStaticSqlRow<($($ST,)* $ST1,), __DB> for ($($T,)* $T1,) where
+            __DB: Backend,
+            $T1: FromSqlRow<$ST1, __DB>,
+            $(
+                $T: FromSqlRow<$ST, __DB> + StaticallySizedRow<$ST, __DB>,
+            )*
+
+        {
+
+            #[allow(non_snake_case, unused_variables, unused_mut)]
+            fn build_from_row<'a>(full_row: &impl Row<'a, __DB>)
+                -> deserialize::Result<Self>
+            {
+                let field_count = full_row.field_count();
+
+                let mut static_field_count = 0;
+                $(
+                    let row = full_row.partial_row(static_field_count..static_field_count + $T::FIELD_COUNT);
+                    static_field_count += $T::FIELD_COUNT;
+                    let $T = $T::build_from_row(&row)?;
+                )*
+
+                let row = full_row.partial_row(static_field_count..field_count);
+
+                Ok(($($T,)* $T1::build_from_row(&row)?,))
+            }
+        }
+    }
+}
+
+macro_rules! impl_sql_type {
+    ($T1: ident, $($T: ident,)+) => {
+        impl<$T1, $($T,)+> SqlType for ($T1, $($T,)*)
+        where $T1: SqlType,
+              ($($T,)*): SqlType,
+              $T1::IsNull: OneIsNullable<<($($T,)*) as SqlType>::IsNull>,
+        {
+            type IsNull = <$T1::IsNull as OneIsNullable<<($($T,)*) as SqlType>::IsNull>>::Out;
+        }
+    };
+    ($T1: ident,) => {
+        impl<$T1> SqlType for ($T1,)
+        where $T1: SqlType,
+        {
+            type IsNull = $T1::IsNull;
+        }
     }
 }
 

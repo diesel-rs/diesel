@@ -355,3 +355,15 @@ impl fmt::Display for UnexpectedNullError {
 }
 
 impl StdError for UnexpectedNullError {}
+
+/// Expected more fields then present in the current row while deserialising results
+#[derive(Debug, Clone, Copy)]
+pub struct UnexpectedEndOfRow;
+
+impl fmt::Display for UnexpectedEndOfRow {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Unexpected end of row")
+    }
+}
+
+impl StdError for UnexpectedEndOfRow {}

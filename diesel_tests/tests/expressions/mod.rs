@@ -10,7 +10,9 @@ use crate::schema::{
 };
 use diesel::backend::Backend;
 use diesel::dsl::*;
+use diesel::expression::TypedExpressionType;
 use diesel::query_builder::*;
+use diesel::sql_types::SqlType;
 use diesel::*;
 
 #[test]
@@ -152,7 +154,10 @@ struct Arbitrary<T> {
     _marker: PhantomData<T>,
 }
 
-impl<T> Expression for Arbitrary<T> {
+impl<T> Expression for Arbitrary<T>
+where
+    T: SqlType + TypedExpressionType,
+{
     type SqlType = T;
 }
 
@@ -165,9 +170,9 @@ where
     }
 }
 
-impl<T, QS> SelectableExpression<QS> for Arbitrary<T> {}
+impl<T, QS> SelectableExpression<QS> for Arbitrary<T> where Self: Expression {}
 
-impl<T, QS> AppearsOnTable<QS> for Arbitrary<T> {}
+impl<T, QS> AppearsOnTable<QS> for Arbitrary<T> where Self: Expression {}
 
 fn arbitrary<T>() -> Arbitrary<T> {
     Arbitrary {

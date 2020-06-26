@@ -324,7 +324,7 @@ fn select_left_join_right_side_with_non_null_inside() {
             users::id,
         ))
         .order_by((users::id.desc(), posts::id.asc()));
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<(Option<(i32, String, String)>, i32)> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }

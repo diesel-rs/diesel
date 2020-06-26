@@ -131,7 +131,7 @@ fn now_can_be_used_as_nullable() {
     let nullable_timestamp = sql::<Nullable<Timestamp>>("CURRENT_TIMESTAMP");
     let result = select(nullable_timestamp.eq(now)).get_result(&connection());
 
-    assert_eq!(Ok(true), result);
+    assert_eq!(Ok(Some(true)), result);
 }
 
 #[test]

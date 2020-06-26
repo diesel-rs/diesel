@@ -145,7 +145,7 @@ where
 /// database, you should use `i32::to_sql(x, out)` instead of writing to `out`
 /// yourself.
 ///
-/// Any types which implement this trait should also `#[derive(AsExpression)]`.
+/// Any types which implement this trait should also [`#[derive(AsExpression)]`].
 ///
 /// ### Backend specific details
 ///
@@ -157,6 +157,7 @@ where
 /// - For third party backends, consult that backend's documentation.
 ///
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
+/// [`#[derive(AsExpression)]`]: ../expression/derive.AsExpression.html;
 ///
 /// ### Examples
 ///
@@ -165,12 +166,14 @@ where
 ///
 /// ```rust
 /// # use diesel::backend::Backend;
+/// # use diesel::expression::AsExpression;
 /// # use diesel::sql_types::*;
 /// # use diesel::serialize::{self, ToSql, Output};
 /// # use std::io::Write;
 /// #
 /// #[repr(i32)]
-/// #[derive(Debug, Clone, Copy)]
+/// #[derive(Debug, Clone, Copy, AsExpression)]
+/// #[sql_type = "Integer"]
 /// pub enum MyEnum {
 ///     A = 1,
 ///     B = 2,

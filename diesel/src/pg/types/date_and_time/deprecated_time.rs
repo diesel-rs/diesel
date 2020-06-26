@@ -10,7 +10,7 @@ use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types;
 
-#[derive(FromSqlRow, AsExpression)]
+#[derive(AsExpression, FromSqlRow)]
 #[diesel(foreign_derive)]
 #[sql_type = "sql_types::Timestamp"]
 #[allow(dead_code)]
@@ -28,7 +28,7 @@ impl ToSql<sql_types::Timestamp, Pg> for Timespec {
 }
 
 impl FromSql<sql_types::Timestamp, Pg> for Timespec {
-    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let t = <i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes)?;
         let pg_epoch = Timespec::new(TIME_SEC_CONV, 0);
         let duration = Duration::microseconds(t);

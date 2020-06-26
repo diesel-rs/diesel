@@ -46,8 +46,8 @@ where
 impl<DB, Select, Columns> QueryFragment<DB> for InsertFromSelect<Select, Columns>
 where
     DB: Backend,
-    Columns: ColumnList + Expression<SqlType = Select::SqlType>,
-    Select: Query + QueryFragment<DB>,
+    Columns: ColumnList + Expression,
+    Select: Query<SqlType = Columns::SqlType> + QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("(");
@@ -60,7 +60,7 @@ where
 
 impl<Select, Columns> UndecoratedInsertRecord<Columns::Table> for InsertFromSelect<Select, Columns>
 where
-    Columns: ColumnList + Expression<SqlType = Select::SqlType>,
-    Select: Query,
+    Columns: ColumnList + Expression,
+    Select: Query<SqlType = Columns::SqlType>,
 {
 }

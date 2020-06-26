@@ -1,8 +1,5 @@
-#[macro_use]
-extern crate diesel;
-
+use self::schema::translations;
 use diesel::prelude::*;
-use schema::translations::{self, dsl};
 
 mod model;
 mod schema;
@@ -20,7 +17,7 @@ fn main() {
     let conn = PgConnection::establish(&database_url)
         .unwrap_or_else(|e| panic!("Error connecting to {}: {}", database_url, e));
 
-    let _ = diesel::insert_into(dsl::translations)
+    let _ = diesel::insert_into(translations::table)
         .values(&Translation {
             word_id: 1,
             translation_id: 1,
@@ -28,8 +25,12 @@ fn main() {
         })
         .execute(&conn);
 
-    let t = dsl::translations
-        .select((dsl::word_id, dsl::translation_id, dsl::language))
+    let t = translations::table
+        .select((
+            translations::word_id,
+            translations::translation_id,
+            translations::language,
+        ))
         .get_results::<Translation>(&conn)
         .expect("select");
     println!("{:?}", t);

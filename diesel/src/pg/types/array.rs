@@ -23,8 +23,7 @@ impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
 where
     T: FromSql<ST, Pg>,
 {
-    fn from_sql(value: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
         let num_dimensions = bytes.read_i32::<NetworkEndian>()?;
         let has_null = bytes.read_i32::<NetworkEndian>()? != 0;
@@ -45,11 +44,11 @@ where
             .map(|_| {
                 let elem_size = bytes.read_i32::<NetworkEndian>()?;
                 if has_null && elem_size == -1 {
-                    T::from_sql(None)
+                    T::from_nullable_sql(None)
                 } else {
                     let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                     bytes = new_bytes;
-                    T::from_sql(Some(PgValue::new(elem_bytes, value.get_oid())))
+                    T::from_sql(PgValue::new(elem_bytes, value.get_oid()))
                 }
             })
             .collect()

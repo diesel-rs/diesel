@@ -8,7 +8,7 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 
 use self::iterator::*;
-use super::bind::Binds;
+use super::bind::{BindData, Binds};
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, QueryResult};
 
@@ -40,7 +40,7 @@ impl Statement {
 
     pub fn bind<Iter>(&mut self, binds: Iter) -> QueryResult<()>
     where
-        Iter: IntoIterator<Item = (Option<MysqlType>, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
         let input_binds = Binds::from_input_data(binds)?;
         self.input_bind(input_binds)
@@ -82,13 +82,6 @@ impl Statement {
         types: Vec<Option<MysqlType>>,
     ) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
-    }
-
-    /// This function should be called instead of `execute` for queries which
-    /// have a return value. After calling this function, `execute` can never
-    /// be called on this statement.
-    pub unsafe fn named_results(&mut self) -> QueryResult<NamedStatementIterator> {
-        NamedStatementIterator::new(self)
     }
 
     fn last_error_message(&self) -> String {

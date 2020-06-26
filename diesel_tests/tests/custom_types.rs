@@ -37,8 +37,8 @@ impl ToSql<MyType, Pg> for MyEnum {
 }
 
 impl FromSql<MyType, Pg> for MyEnum {
-    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        match not_none!(bytes).as_bytes() {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        match bytes.as_bytes() {
             b"foo" => Ok(MyEnum::Foo),
             b"bar" => Ok(MyEnum::Bar),
             _ => Err("Unrecognized enum variant".into()),

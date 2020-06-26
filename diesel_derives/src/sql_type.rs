@@ -13,10 +13,11 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let pg_tokens = pg_tokens(&item);
 
     Ok(wrap_in_dummy_mod(quote! {
-        impl #impl_generics diesel::sql_types::NotNull
+        impl #impl_generics diesel::sql_types::SqlType
             for #struct_name #ty_generics
         #where_clause
         {
+            type IsNull = diesel::sql_types::is_nullable::NotNull;
         }
 
         impl #impl_generics diesel::sql_types::SingleValue
@@ -71,8 +72,8 @@ fn mysql_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
                     for diesel::mysql::Mysql
                 #where_clause
                 {
-                    fn metadata(_: &()) -> std::option::Option<diesel::mysql::MysqlType> {
-                        std::option::Option::Some(diesel::mysql::MysqlType::#ty)
+                    fn metadata(_: &()) -> diesel::mysql::MysqlType {
+                        diesel::mysql::MysqlType::#ty
                     }
                 }
             })

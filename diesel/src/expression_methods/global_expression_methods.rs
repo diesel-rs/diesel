@@ -1,7 +1,7 @@
 use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::operators::*;
 use crate::expression::{nullable, AsExpression, Expression};
-use crate::sql_types::SingleValue;
+use crate::sql_types::{SingleValue, SqlType};
 
 /// Methods present on all expressions, except tuples
 pub trait ExpressionMethods: Expression + Sized {
@@ -19,7 +19,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), data.first(&connection));
     /// # }
     /// ```
-    fn eq<T: AsExpression<Self::SqlType>>(self, other: T) -> Eq<Self, T::Expression> {
+    fn eq<T>(self, other: T) -> Eq<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
         Eq::new(self, other.as_expression())
     }
 
@@ -37,7 +41,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(2), data.first(&connection));
     /// # }
     /// ```
-    fn ne<T: AsExpression<Self::SqlType>>(self, other: T) -> NotEq<Self, T::Expression> {
+    fn ne<T>(self, other: T) -> NotEq<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
         NotEq::new(self, other.as_expression())
     }
 
@@ -68,6 +76,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn eq_any<T>(self, values: T) -> In<Self, T::InExpression>
     where
+        Self::SqlType: SqlType,
         T: AsInExpression<Self::SqlType>,
     {
         In::new(self, values.as_in_expression())
@@ -103,6 +112,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn ne_all<T>(self, values: T) -> NotIn<Self, T::InExpression>
     where
+        Self::SqlType: SqlType,
         T: AsInExpression<Self::SqlType>,
     {
         NotIn::new(self, values.as_in_expression())
@@ -182,7 +192,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn gt<T: AsExpression<Self::SqlType>>(self, other: T) -> Gt<Self, T::Expression> {
+    fn gt<T>(self, other: T) -> Gt<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
         Gt::new(self, other.as_expression())
     }
 
@@ -208,7 +222,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn ge<T: AsExpression<Self::SqlType>>(self, other: T) -> GtEq<Self, T::Expression> {
+    fn ge<T>(self, other: T) -> GtEq<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
         GtEq::new(self, other.as_expression())
     }
 
@@ -234,7 +252,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn lt<T: AsExpression<Self::SqlType>>(self, other: T) -> Lt<Self, T::Expression> {
+    fn lt<T>(self, other: T) -> Lt<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
         Lt::new(self, other.as_expression())
     }
 
@@ -259,7 +281,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("Sean", data);
     /// #     Ok(())
     /// # }
-    fn le<T: AsExpression<Self::SqlType>>(self, other: T) -> LtEq<Self, T::Expression> {
+    fn le<T>(self, other: T) -> LtEq<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
         LtEq::new(self, other.as_expression())
     }
 
@@ -285,6 +311,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn between<T, U>(self, lower: T, upper: U) -> Between<Self, And<T::Expression, U::Expression>>
     where
+        Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
         U: AsExpression<Self::SqlType>,
     {
@@ -320,6 +347,7 @@ pub trait ExpressionMethods: Expression + Sized {
         upper: U,
     ) -> NotBetween<Self, And<T::Expression, U::Expression>>
     where
+        Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
         U: AsExpression<Self::SqlType>,
     {
@@ -365,11 +393,12 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// ```rust
     /// # include!("../doctest_setup.rs");
+    /// # use diesel::expression::expression_types::NotSelectable;
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
     /// #     let order = "name";
-    /// let ordering: Box<BoxableExpression<users, DB, SqlType=()>> =
+    /// let ordering: Box<dyn BoxableExpression<users, DB, SqlType = NotSelectable>> =
     ///     if order == "name" {
     ///         Box::new(name.desc())
     ///     } else {

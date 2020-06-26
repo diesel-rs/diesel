@@ -14,7 +14,7 @@ fn main() {
     use diesel::dsl::sum;
 
     let _ = users::table.filter(users::name);
-    //~^ ERROR type mismatch resolving `<users::columns::name as diesel::Expression>::SqlType == diesel::sql_types::Bool`
+    //~^ ERROR the trait bound `diesel::sql_types::Text: diesel::sql_types::BoolOrNullableBool` is not satisfied
     let _ = users::table.filter(sum(users::id).eq(1));
     //~^ ERROR MixedAggregates
 }

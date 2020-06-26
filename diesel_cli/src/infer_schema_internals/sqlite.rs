@@ -52,7 +52,7 @@ pub fn load_table_names(
         .select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
-        .filter(sql("type='table'"))
+        .filter(sql::<sql_types::Bool>("type='table'"))
         .order(name)
         .load::<String>(connection)?
         .into_iter()

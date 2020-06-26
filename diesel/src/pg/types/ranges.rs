@@ -2,7 +2,7 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
 
-use crate::deserialize::{self, FromSql, FromSqlRow, Queryable};
+use crate::deserialize::{self, FromSql, Queryable};
 use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
 use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
@@ -20,16 +20,6 @@ bitflags! {
         const LB_NULL = 0x20;
         const UB_NULL = 0x40;
         const CONTAIN_EMPTY = 0x80;
-    }
-}
-
-impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
-where
-    T: FromSql<ST, Pg> + Queryable<ST, Pg>,
-{
-    type Row = Self;
-    fn build(row: Self) -> Self {
-        row
     }
 }
 
@@ -65,21 +55,11 @@ impl<'a, ST, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
     }
 }
 
-impl<T, ST> FromSqlRow<Range<ST>, Pg> for (Bound<T>, Bound<T>)
-where
-    (Bound<T>, Bound<T>): FromSql<Range<ST>, Pg>,
-{
-    fn build_from_row<R: crate::row::Row<Pg>>(row: &mut R) -> deserialize::Result<Self> {
-        FromSql::<Range<ST>, Pg>::from_sql(row.take())
-    }
-}
-
 impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: FromSql<ST, Pg>,
 {
-    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        let value = not_none!(bytes);
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
         let flags: RangeFlags = RangeFlags::from_bits_truncate(bytes.read_u8()?);
         let mut lower_bound = Bound::Unbounded;
@@ -89,7 +69,7 @@ where
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
-            let value = T::from_sql(Some(PgValue::new(elem_bytes, value.get_oid())))?;
+            let value = T::from_sql(PgValue::new(elem_bytes, value.get_oid()))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
                 Bound::Included(value)
@@ -100,7 +80,7 @@ where
 
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
-            let value = T::from_sql(Some(PgValue::new(bytes, value.get_oid())))?;
+            let value = T::from_sql(PgValue::new(bytes, value.get_oid()))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {
                 Bound::Included(value)
@@ -110,6 +90,17 @@ where
         }
 
         Ok((lower_bound, upper_bound))
+    }
+}
+
+impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
+where
+    T: FromSql<ST, Pg>,
+{
+    type Row = Self;
+
+    fn build(row: Self) -> Self {
+        row
     }
 }
 

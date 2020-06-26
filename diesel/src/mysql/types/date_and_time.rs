@@ -24,9 +24,8 @@ macro_rules! mysql_time_impls {
         }
 
         impl FromSql<$ty, Mysql> for MYSQL_TIME {
-            fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
-                let data = not_none!(value);
-                data.time_value()
+            fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
+                value.time_value()
             }
         }
     };
@@ -44,7 +43,7 @@ impl ToSql<Datetime, Mysql> for NaiveDateTime {
 }
 
 impl FromSql<Datetime, Mysql> for NaiveDateTime {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         <NaiveDateTime as FromSql<Timestamp, Mysql>>::from_sql(bytes)
     }
 }
@@ -69,7 +68,7 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
 }
 
 impl FromSql<Timestamp, Mysql> for NaiveDateTime {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MYSQL_TIME as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
 
         NaiveDate::from_ymd_opt(
@@ -109,7 +108,7 @@ impl ToSql<Time, Mysql> for NaiveTime {
 }
 
 impl FromSql<Time, Mysql> for NaiveTime {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MYSQL_TIME as FromSql<Time, Mysql>>::from_sql(bytes)?;
         NaiveTime::from_hms_opt(
             mysql_time.hour as u32,
@@ -140,7 +139,7 @@ impl ToSql<Date, Mysql> for NaiveDate {
 }
 
 impl FromSql<Date, Mysql> for NaiveDate {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MYSQL_TIME as FromSql<Date, Mysql>>::from_sql(bytes)?;
         NaiveDate::from_ymd_opt(
             mysql_time.year as i32,

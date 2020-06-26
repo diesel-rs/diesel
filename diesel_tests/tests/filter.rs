@@ -328,14 +328,14 @@ fn or_doesnt_mess_with_precedence_of_previous_statements() {
     let f = false.into_sql::<sql_types::Bool>();
     let count = users
         .filter(f)
-        .filter(f.or(true))
+        .filter(f.or(true.into_sql::<sql_types::Bool>()))
         .count()
         .first(&connection);
 
     assert_eq!(Ok(0), count);
 
     let count = users
-        .filter(f.or(f).and(f.or(true)))
+        .filter(f.or(f).and(f.or(true.into_sql::<sql_types::Bool>())))
         .count()
         .first(&connection);
 

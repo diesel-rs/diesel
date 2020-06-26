@@ -39,7 +39,7 @@ macro_rules! numeric_expr {
 #[doc(hidden)]
 macro_rules! __diesel_generate_ops_impls_if_numeric {
     ($column_name:ident, Nullable<$($inner:tt)::*>) => { __diesel_generate_ops_impls_if_numeric!($column_name, $($inner)::*); };
-    
+
     ($column_name:ident, Unsigned<$($inner:tt)::*>) => { __diesel_generate_ops_impls_if_numeric!($column_name, $($inner)::*); };
 
     ($column_name:ident, SmallInt) => { numeric_expr!($column_name); };

@@ -101,9 +101,9 @@ macro_rules! __diesel_column {
 
         impl<T> $crate::EqAll<T> for $column_name where
             T: $crate::expression::AsExpression<$($Type)*>,
-            $crate::dsl::Eq<$column_name, T>: $crate::Expression<SqlType=$crate::sql_types::Bool>,
+            $crate::dsl::Eq<$column_name, T::Expression>: $crate::Expression<SqlType=$crate::sql_types::Bool>,
         {
-            type Output = $crate::dsl::Eq<Self, T>;
+            type Output = $crate::dsl::Eq<Self, T::Expression>;
 
             fn eq_all(self, rhs: T) -> Self::Output {
                 $crate::expression::operators::Eq::new(self, rhs.as_expression())
@@ -180,6 +180,7 @@ macro_rules! __diesel_column {
 ///
 /// ```
 /// # mod diesel_full_text_search {
+/// #     #[derive(diesel::sql_types::SqlType)]
 /// #     pub struct TsVector;
 /// # }
 ///
@@ -819,7 +820,7 @@ macro_rules! __diesel_table_impl {
                 }
 
                 impl Expression for star {
-                    type SqlType = ();
+                    type SqlType = $crate::expression::expression_types::NotSelectable;
                 }
 
                 impl<DB: Backend> QueryFragment<DB> for star where
@@ -1057,19 +1058,6 @@ macro_rules! allow_tables_to_appear_in_same_query {
     () => {};
 }
 
-/// Gets the value out of an option, or returns an error.
-///
-/// This is used by `FromSql` implementations.
-#[macro_export]
-macro_rules! not_none {
-    ($bytes:expr) => {
-        match $bytes {
-            Some(bytes) => bytes,
-            None => return Err(Box::new($crate::result::UnexpectedNullError)),
-        }
-    };
-}
-
 // The order of these modules is important (at least for those which have tests).
 // Utility macros which don't call any others need to come first.
 #[macro_use]
@@ -1093,7 +1081,7 @@ mod tests {
     }
 
     mod my_types {
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, crate::sql_types::SqlType)]
         pub struct MyCustomType;
     }
 
@@ -1141,11 +1129,11 @@ mod tests {
         table_with_arbitrarily_complex_types {
             id -> sql_types::Integer,
             qualified_nullable -> sql_types::Nullable<sql_types::Integer>,
-            deeply_nested_type -> Option<Nullable<Integer>>,
+            deeply_nested_type -> Nullable<Nullable<Integer>>,
             // This actually should work, but there appears to be a rustc bug
             // on the `AsExpression` bound for `EqAll` when the ty param is a projection
             // projected_type -> <Nullable<Integer> as sql_types::IntoNullable>::Nullable,
-            random_tuple -> (Integer, Integer),
+            //random_tuple -> (Integer, Integer),
         }
     }
 

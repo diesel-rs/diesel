@@ -6,10 +6,10 @@ mod transaction_manager;
 use std::fmt::Debug;
 
 use crate::backend::Backend;
-use crate::deserialize::{Queryable, QueryableByName};
+use crate::deserialize::FromSqlRow;
+use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 use crate::result::*;
-use crate::sql_types::HasSqlType;
 
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
@@ -169,18 +169,12 @@ pub trait Connection: SimpleConnection + Sized + Send {
     fn execute(&self, query: &str) -> QueryResult<usize>;
 
     #[doc(hidden)]
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>;
-
-    #[doc(hidden)]
-    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
-    where
-        T: QueryFragment<Self::Backend> + QueryId,
-        U: QueryableByName<Self::Backend>;
+        U: FromSqlRow<T::SqlType, Self::Backend>,
+        Self::Backend: QueryMetadata<T::SqlType>;
 
     #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>

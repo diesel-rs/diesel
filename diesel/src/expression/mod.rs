@@ -82,6 +82,7 @@ pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
 use crate::backend::Backend;
 use crate::dsl::AsExprOf;
+use crate::sql_types::{HasSqlType, SingleValue, SqlType};
 
 /// Represents a typed fragment of SQL.
 ///
@@ -92,7 +93,52 @@ use crate::dsl::AsExprOf;
 /// implementing this directly.
 pub trait Expression {
     /// The type that this expression represents in SQL
-    type SqlType;
+    type SqlType: TypedExpressionType;
+}
+
+/// Marker trait for possible types of [`Expression::SqlType`]
+///
+/// [`Expression::SqlType`]: trait.Expression.html#associatedtype.SqlType
+pub trait TypedExpressionType {}
+
+/// Possible types for []`Expression::SqlType`]
+///
+/// [`Expression::SqlType`]: trait.Expression.html#associatedtype.SqlType
+pub mod expression_types {
+    use super::{QueryMetadata, TypedExpressionType};
+    use crate::backend::Backend;
+    use crate::sql_types::SingleValue;
+
+    /// Query nodes with this expression type do not have a statically at compile
+    /// time known expression type.
+    ///
+    /// An example for such a query node in diesel itself, is `sql_query` as
+    /// we do not know which fields are returned from such a query at compile time.
+    ///
+    /// For loading values from queries returning a type of this expression, consider
+    /// using [`#[derive(QueryableByName)]`] on the corresponding result type.
+    ///
+    /// [`#[derive(QueryableByName)]`]: ../deserialize/derive.QueryableByName.html
+    #[derive(Clone, Copy, Debug)]
+    pub struct Untyped;
+
+    /// Query nodes witch cannot be part of a select clause.
+    ///
+    /// If you see an error message containing `FromSqlRow` and this type
+    /// recheck that you have written a valid select clause
+    #[derive(Debug, Clone, Copy)]
+    pub struct NotSelectable;
+
+    impl TypedExpressionType for Untyped {}
+    impl TypedExpressionType for NotSelectable {}
+
+    impl<ST> TypedExpressionType for ST where ST: SingleValue {}
+
+    impl<DB: Backend> QueryMetadata<Untyped> for DB {
+        fn row_metadata(_: &DB::MetadataLookup, row: &mut Vec<Option<DB::TypeMetadata>>) {
+            row.push(None)
+        }
+    }
 }
 
 impl<T: Expression + ?Sized> Expression for Box<T> {
@@ -101,6 +147,28 @@ impl<T: Expression + ?Sized> Expression for Box<T> {
 
 impl<'a, T: Expression + ?Sized> Expression for &'a T {
     type SqlType = T::SqlType;
+}
+
+/// A helper to translate type level sql type information into
+/// runtime type information for specific queries
+///
+/// If you do not implement a custom backend implementation
+/// this trait is likely not relevant for you.
+pub trait QueryMetadata<T>: Backend {
+    /// The exact return value of this function is considerded to be a
+    /// backend specific implementation detail. You should not rely on those
+    /// values if you not own the corresponding backend
+    fn row_metadata(lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>);
+}
+
+impl<T, DB> QueryMetadata<T> for DB
+where
+    DB: Backend + HasSqlType<T>,
+    T: SingleValue,
+{
+    fn row_metadata(lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+        out.push(Some(<DB as HasSqlType<T>>::metadata(lookup)))
+    }
 }
 
 /// Converts a type to its representation for use in Diesel's query builder.
@@ -124,7 +192,10 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 ///
 ///  This trait could be [derived](derive.AsExpression.html)
 
-pub trait AsExpression<T> {
+pub trait AsExpression<T>
+where
+    T: SqlType + TypedExpressionType,
+{
     /// The expression being returned
     type Expression: Expression<SqlType = T>;
 
@@ -135,7 +206,11 @@ pub trait AsExpression<T> {
 #[doc(inline)]
 pub use diesel_derives::AsExpression;
 
-impl<T: Expression> AsExpression<T::SqlType> for T {
+impl<T, ST> AsExpression<ST> for T
+where
+    T: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
+{
     type Expression = Self;
 
     fn as_expression(self) -> Self {
@@ -177,6 +252,7 @@ pub trait IntoSql {
     fn into_sql<T>(self) -> AsExprOf<Self, T>
     where
         Self: AsExpression<T> + Sized,
+        T: SqlType + TypedExpressionType,
     {
         self.as_expression()
     }
@@ -188,6 +264,7 @@ pub trait IntoSql {
     fn as_sql<'a, T>(&'a self) -> AsExprOf<&'a Self, T>
     where
         &'a Self: AsExpression<T>,
+        T: SqlType + TypedExpressionType,
     {
         self.as_expression()
     }
@@ -432,7 +509,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// type DB = diesel::sqlite::Sqlite;
 /// # */
 ///
-/// fn find_user(search: Search) -> Box<BoxableExpression<users::table, DB, SqlType = Bool>> {
+/// fn find_user(search: Search) -> Box<dyn BoxableExpression<users::table, DB, SqlType = Bool>> {
 ///     match search {
 ///         Search::Id(id) => Box::new(users::id.eq(id)),
 ///         Search::Name(name) => Box::new(users::name.eq(name)),

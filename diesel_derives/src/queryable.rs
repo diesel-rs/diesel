@@ -19,31 +19,41 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         let i = syn::Index::from(i);
         f.name.assign(parse_quote!(row.#i.into()))
     });
+    let sql_type = (0..model.fields().len())
+        .map(|i| {
+            let i = syn::Ident::new(&format!("__ST{}", i), proc_macro2::Span::call_site());
+            quote!(#i)
+        })
+        .collect::<Vec<_>>();
+    let sql_type = &sql_type;
 
     let (_, ty_generics, _) = item.generics.split_for_impl();
     let mut generics = item.generics.clone();
     generics
         .params
         .push(parse_quote!(__DB: diesel::backend::Backend));
-    generics.params.push(parse_quote!(__ST));
+    for id in 0..model.fields().len() {
+        let ident = syn::Ident::new(&format!("__ST{}", id), proc_macro2::Span::call_site());
+        generics.params.push(parse_quote!(#ident));
+    }
     {
         let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
         where_clause
             .predicates
-            .push(parse_quote!((#(#field_ty,)*): Queryable<__ST, __DB>));
+            .push(parse_quote!((#(#field_ty,)*): FromStaticSqlRow<(#(#sql_type,)*), __DB>));
     }
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::Queryable;
+        use diesel::deserialize::{FromStaticSqlRow, Queryable};
+        use diesel::row::{Row, Field};
 
-        impl #impl_generics Queryable<__ST, __DB> for #struct_name #ty_generics
-        #where_clause
+        impl #impl_generics Queryable<(#(#sql_type,)*), __DB> for #struct_name #ty_generics
+            #where_clause
         {
-            type Row = <(#(#field_ty,)*) as Queryable<__ST, __DB>>::Row;
+            type Row = (#(#field_ty,)*);
 
             fn build(row: Self::Row) -> Self {
-                let row: (#(#field_ty,)*) = Queryable::build(row);
                 Self {
                     #(#build_expr,)*
                 }

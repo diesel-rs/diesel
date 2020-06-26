@@ -22,10 +22,13 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
     Ok(wrap_in_dummy_mod(quote! {
         use diesel::expression::{ops, Expression, AsExpression};
         use diesel::sql_types::ops::{Add, Sub, Mul, Div};
+        use diesel::sql_types::{SqlType, SingleValue};
 
         impl #impl_generics ::std::ops::Add<__Rhs> for #struct_name #ty_generics
         #where_clause
+            Self: Expression,
             <Self as Expression>::SqlType: Add,
+            <<Self as Expression>::SqlType as Add>::Rhs: SqlType + SingleValue,
             __Rhs: AsExpression<<<Self as Expression>::SqlType as Add>::Rhs>,
         {
             type Output = ops::Add<Self, __Rhs::Expression>;
@@ -37,7 +40,9 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
 
         impl #impl_generics ::std::ops::Sub<__Rhs> for #struct_name #ty_generics
         #where_clause
+            Self: Expression,
             <Self as Expression>::SqlType: Sub,
+            <<Self as Expression>::SqlType as Sub>::Rhs: SqlType + SingleValue,
             __Rhs: AsExpression<<<Self as Expression>::SqlType as Sub>::Rhs>,
         {
             type Output = ops::Sub<Self, __Rhs::Expression>;
@@ -49,7 +54,9 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
 
         impl #impl_generics ::std::ops::Mul<__Rhs> for #struct_name #ty_generics
         #where_clause
+            Self: Expression,
             <Self as Expression>::SqlType: Mul,
+            <<Self as Expression>::SqlType as Mul>::Rhs: SqlType + SingleValue,
             __Rhs: AsExpression<<<Self as Expression>::SqlType as Mul>::Rhs>,
         {
             type Output = ops::Mul<Self, __Rhs::Expression>;
@@ -61,7 +68,9 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
 
         impl #impl_generics ::std::ops::Div<__Rhs> for #struct_name #ty_generics
         #where_clause
+            Self: Expression,
             <Self as Expression>::SqlType: Div,
+            <<Self as Expression>::SqlType as Div>::Rhs: SqlType + SingleValue,
             __Rhs: AsExpression<<<Self as Expression>::SqlType as Div>::Rhs>,
         {
             type Output = ops::Div<Self, __Rhs::Expression>;

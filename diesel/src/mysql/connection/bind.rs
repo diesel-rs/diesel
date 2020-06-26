@@ -1,5 +1,6 @@
 use mysqlclient_sys as ffi;
 use std::mem;
+use std::ops::Index;
 use std::os::raw as libc;
 
 use super::stmt::Statement;
@@ -15,52 +16,28 @@ pub struct Binds {
 impl Binds {
     pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
     where
-        Iter: IntoIterator<Item = (Option<MysqlType>, Option<Vec<u8>>)>,
+        Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
         let data = input
             .into_iter()
-            .map(|(metadata, bytes)| {
-                if let Some(metadata) = metadata {
-                    Ok(BindData::for_input(metadata, bytes))
-                } else {
-                    Err("Unknown bind type.")
-                }
-            })
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| crate::result::Error::QueryBuilderError(e.into()))?;
+            .map(BindData::for_input)
+            .collect::<Vec<_>>();
 
         Ok(Binds { data })
     }
 
-    pub fn from_output_types(
-        types: Vec<Option<MysqlType>>,
-        metadata: Option<&StatementMetadata>,
-    ) -> Self {
-        let data = if let Some(metadata) = metadata {
-            metadata
-                .fields()
-                .iter()
-                .map(|f| (f.field_type(), f.flags()))
-                .map(BindData::for_output)
-                .collect()
-        } else {
-            types
-                .into_iter()
-                .map(|metadata| metadata.expect("We checked that before calling from_output_types, otherwise we would have passed metadata"))
-                .map(|metadata| metadata.into())
-                .map(BindData::for_output)
-                .collect()
-        };
-
-        Binds { data }
-    }
-
-    pub fn from_result_metadata(metadata: &StatementMetadata) -> Self {
+    pub fn from_output_types(types: Vec<Option<MysqlType>>, metadata: &StatementMetadata) -> Self {
         let data = metadata
             .fields()
             .iter()
-            .map(|field| (field.field_type(), field.flags()))
-            .map(BindData::for_output)
+            .zip(types.into_iter().chain(std::iter::repeat(None)))
+            .map(|(field, tpe)| {
+                if let Some(tpe) = tpe {
+                    BindData::for_output(tpe.into())
+                } else {
+                    BindData::for_output((field.field_type(), field.flags()))
+                }
+            })
             .collect();
 
         Binds { data }
@@ -101,16 +78,15 @@ impl Binds {
         }
     }
 
-    pub fn field_data(&self, idx: usize) -> Option<MysqlValue<'_>> {
-        let data = &self.data[idx];
-        self.data[idx].bytes().map(|bytes| {
-            let tpe = (data.tpe, data.flags).into();
-            MysqlValue::new(bytes, tpe)
-        })
-    }
-
     pub fn len(&self) -> usize {
         self.data.len()
+    }
+}
+
+impl Index<usize> for Binds {
+    type Output = BindData;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.data[index]
     }
 }
 
@@ -150,7 +126,8 @@ impl From<u32> for Flags {
     }
 }
 
-struct BindData {
+#[derive(Debug)]
+pub struct BindData {
     tpe: ffi::enum_field_types,
     bytes: Vec<u8>,
     length: libc::c_ulong,
@@ -160,7 +137,7 @@ struct BindData {
 }
 
 impl BindData {
-    fn for_input(tpe: MysqlType, data: Option<Vec<u8>>) -> Self {
+    fn for_input((tpe, data): (MysqlType, Option<Vec<u8>>)) -> Self {
         let is_null = if data.is_none() { 1 } else { 0 };
         let bytes = data.unwrap_or_default();
         let length = bytes.len() as libc::c_ulong;
@@ -199,12 +176,17 @@ impl BindData {
         known_buffer_size_for_ffi_type(self.tpe).is_some()
     }
 
-    fn bytes(&self) -> Option<&[u8]> {
-        if self.is_null == 0 {
-            Some(&*self.bytes)
-        } else {
+    pub fn value(&'_ self) -> Option<MysqlValue<'_>> {
+        if self.is_null() {
             None
+        } else {
+            let tpe = (self.tpe, self.flags).into();
+            Some(MysqlValue::new(&self.bytes, tpe))
         }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.is_null != 0
     }
 
     fn update_buffer_length(&mut self) {
@@ -473,7 +455,7 @@ mod tests {
         let meta = (bind.tpe, bind.flags).into();
         dbg!(meta);
         let value = MysqlValue::new(&bind.bytes, meta);
-        dbg!(T::from_sql(Some(value)))
+        dbg!(T::from_sql(value))
     }
 
     #[cfg(feature = "extras")]
@@ -579,7 +561,8 @@ mod tests {
             .unwrap();
 
         let metadata = stmt.metadata().unwrap();
-        let mut output_binds = Binds::from_result_metadata(&metadata);
+        let mut output_binds =
+            Binds::from_output_types(vec![None; metadata.fields().len()], &metadata);
         stmt.execute_statement(&mut output_binds).unwrap();
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 

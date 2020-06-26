@@ -46,8 +46,7 @@ impl ToSql<TinyInt, Mysql> for i8 {
 }
 
 impl FromSql<TinyInt, Mysql> for i8 {
-    fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         let bytes = value.as_bytes();
         Ok(bytes[0] as i8)
     }
@@ -96,7 +95,7 @@ impl ToSql<Unsigned<TinyInt>, Mysql> for u8 {
 }
 
 impl FromSql<Unsigned<TinyInt>, Mysql> for u8 {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i8 = FromSql::<TinyInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u8)
     }
@@ -109,7 +108,7 @@ impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
 }
 
 impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i16 = FromSql::<SmallInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u16)
     }
@@ -122,7 +121,7 @@ impl ToSql<Unsigned<Integer>, Mysql> for u32 {
 }
 
 impl FromSql<Unsigned<Integer>, Mysql> for u32 {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
         Ok(signed as u32)
     }
@@ -135,7 +134,7 @@ impl ToSql<Unsigned<BigInt>, Mysql> for u64 {
 }
 
 impl FromSql<Unsigned<BigInt>, Mysql> for u64 {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u64)
     }
@@ -149,32 +148,32 @@ impl ToSql<Bool, Mysql> for bool {
 }
 
 impl FromSql<Bool, Mysql> for bool {
-    fn from_sql(bytes: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
-        Ok(not_none!(bytes).as_bytes().iter().any(|x| *x != 0))
+    fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
+        Ok(bytes.as_bytes().iter().any(|x| *x != 0))
     }
 }
 
 impl HasSqlType<Unsigned<TinyInt>> for Mysql {
-    fn metadata(_lookup: &()) -> Option<MysqlType> {
-        Some(MysqlType::UnsignedTiny)
+    fn metadata(_lookup: &()) -> MysqlType {
+        MysqlType::UnsignedTiny
     }
 }
 
 impl HasSqlType<Unsigned<SmallInt>> for Mysql {
-    fn metadata(_lookup: &()) -> Option<MysqlType> {
-        Some(MysqlType::UnsignedShort)
+    fn metadata(_lookup: &()) -> MysqlType {
+        MysqlType::UnsignedShort
     }
 }
 
 impl HasSqlType<Unsigned<Integer>> for Mysql {
-    fn metadata(_lookup: &()) -> Option<MysqlType> {
-        Some(MysqlType::UnsignedLong)
+    fn metadata(_lookup: &()) -> MysqlType {
+        MysqlType::UnsignedLong
     }
 }
 
 impl HasSqlType<Unsigned<BigInt>> for Mysql {
-    fn metadata(_lookup: &()) -> Option<MysqlType> {
-        Some(MysqlType::UnsignedLongLong)
+    fn metadata(_lookup: &()) -> MysqlType {
+        MysqlType::UnsignedLongLong
     }
 }
 

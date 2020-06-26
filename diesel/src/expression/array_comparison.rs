@@ -2,6 +2,7 @@ use crate::backend::Backend;
 use crate::expression::subselect::Subselect;
 use crate::expression::*;
 use crate::query_builder::*;
+use crate::query_builder::{BoxedSelectStatement, SelectStatement};
 use crate::result::QueryResult;
 use crate::sql_types::Bool;
 
@@ -92,9 +93,7 @@ where
 impl_selectable_expression!(In<T, U>);
 impl_selectable_expression!(NotIn<T, U>);
 
-use crate::query_builder::{BoxedSelectStatement, SelectStatement};
-
-pub trait AsInExpression<T> {
+pub trait AsInExpression<T: SqlType + TypedExpressionType> {
     type InExpression: MaybeEmpty + Expression<SqlType = T>;
 
     fn as_in_expression(self) -> Self::InExpression;
@@ -104,6 +103,7 @@ impl<I, T, ST> AsInExpression<ST> for I
 where
     I: IntoIterator<Item = T>,
     T: AsExpression<ST>,
+    ST: SqlType + TypedExpressionType,
 {
     type InExpression = Many<T::Expression>;
 
@@ -119,6 +119,7 @@ pub trait MaybeEmpty {
 
 impl<ST, S, F, W, O, L, Of, G, LC> AsInExpression<ST> for SelectStatement<S, F, W, O, L, Of, G, LC>
 where
+    ST: SqlType + TypedExpressionType,
     Subselect<Self, ST>: Expression<SqlType = ST>,
     Self: SelectQuery<SqlType = ST>,
 {
@@ -131,6 +132,7 @@ where
 
 impl<'a, ST, QS, DB> AsInExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB>
 where
+    ST: SqlType + TypedExpressionType,
     Subselect<BoxedSelectStatement<'a, ST, QS, DB>, ST>: Expression<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;

@@ -24,7 +24,7 @@ use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
 use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::QuerySource;
-use crate::sql_types::{BigInt, Bool};
+use crate::sql_types::{BigInt, BoolOrNullableBool};
 
 impl<F, S, D, W, O, LOf, G, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, LOf, G, LC>
@@ -94,7 +94,8 @@ where
 impl<F, S, D, W, O, LOf, G, LC, Predicate> FilterDsl<Predicate>
     for SelectStatement<F, S, D, W, O, LOf, G, LC>
 where
-    Predicate: Expression<SqlType = Bool> + NonAggregate,
+    Predicate: Expression + NonAggregate,
+    Predicate::SqlType: BoolOrNullableBool,
     W: WhereAnd<Predicate>,
 {
     type Output = SelectStatement<F, S, D, W::Output, O, LOf, G, LC>;
@@ -116,7 +117,8 @@ where
 impl<F, S, D, W, O, LOf, G, LC, Predicate> OrFilterDsl<Predicate>
     for SelectStatement<F, S, D, W, O, LOf, G, LC>
 where
-    Predicate: Expression<SqlType = Bool> + NonAggregate,
+    Predicate: Expression + NonAggregate,
+    Predicate::SqlType: BoolOrNullableBool,
     W: WhereOr<Predicate>,
 {
     type Output = SelectStatement<F, S, D, W::Output, O, LOf, G, LC>;

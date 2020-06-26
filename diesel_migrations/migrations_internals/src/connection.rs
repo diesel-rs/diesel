@@ -1,11 +1,12 @@
 use diesel::deserialize::FromSql;
 use diesel::expression::bound::Bound;
+use diesel::expression::QueryMetadata;
 use diesel::helper_types::{max, Limit, Select};
 use diesel::insertable::ColumnInsertValue;
 use diesel::prelude::*;
 use diesel::query_builder::{InsertStatement, QueryFragment, ValuesClause};
 use diesel::query_dsl::methods::{self, ExecuteDsl, LoadQuery};
-use diesel::sql_types::VarChar;
+use diesel::sql_types::{Nullable, VarChar};
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
@@ -36,6 +37,7 @@ where
     __diesel_schema_migrations: methods::SelectDsl<version>,
     Select<__diesel_schema_migrations, version>: LoadQuery<T, String>,
     Limit<Select<__diesel_schema_migrations, max<version>>>: QueryFragment<T::Backend>,
+    T::Backend: QueryMetadata<Nullable<VarChar>>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
         __diesel_schema_migrations

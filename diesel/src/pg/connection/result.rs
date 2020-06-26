@@ -1,7 +1,7 @@
 extern crate pq_sys;
 
 use self::pq_sys::*;
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::num::NonZeroU32;
 use std::os::raw as libc;
 use std::{slice, str};
@@ -12,6 +12,8 @@ use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryRes
 
 pub struct PgResult {
     internal_result: RawResult,
+    column_count: usize,
+    row_count: usize,
 }
 
 impl PgResult {
@@ -21,7 +23,15 @@ impl PgResult {
 
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
-            PGRES_COMMAND_OK | PGRES_TUPLES_OK => Ok(PgResult { internal_result }),
+            PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
+                let column_count = unsafe { PQnfields(internal_result.as_ptr()) as usize };
+                let row_count = unsafe { PQntuples(internal_result.as_ptr()) as usize };
+                Ok(PgResult {
+                    internal_result,
+                    column_count,
+                    row_count,
+                })
+            }
             PGRES_EMPTY_QUERY => {
                 let error_message = "Received an empty query".to_string();
                 Err(Error::DatabaseError(
@@ -71,7 +81,7 @@ impl PgResult {
     }
 
     pub fn num_rows(&self) -> usize {
-        unsafe { PQntuples(self.internal_result.as_ptr()) as usize }
+        self.row_count
     }
 
     pub fn get_row(&self, idx: usize) -> PgRow {
@@ -105,11 +115,10 @@ impl PgResult {
 
     pub fn column_type(&self, col_idx: usize) -> NonZeroU32 {
         unsafe {
-            NonZeroU32::new(PQftype(
+            NonZeroU32::new_unchecked(PQftype(
                 self.internal_result.as_ptr(),
                 col_idx as libc::c_int,
             ))
-            .expect("Oid's aren't zero")
         }
     }
 
@@ -125,16 +134,7 @@ impl PgResult {
     }
 
     pub fn column_count(&self) -> usize {
-        unsafe { PQnfields(self.internal_result.as_ptr()) as usize }
-    }
-
-    pub fn field_number(&self, column_name: &str) -> Option<usize> {
-        let cstr = CString::new(column_name).unwrap_or_default();
-        let fnum = unsafe { PQfnumber(self.internal_result.as_ptr(), cstr.as_ptr()) };
-        match fnum {
-            -1 => None,
-            x => Some(x as usize),
-        }
+        self.column_count
     }
 }
 

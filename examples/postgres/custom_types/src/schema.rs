@@ -1,4 +1,4 @@
-table! {
+diesel::table! {
     use diesel::sql_types::*;
     use crate::model::exports::*;
 

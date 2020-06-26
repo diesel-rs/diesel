@@ -1,6 +1,6 @@
 #[cfg(feature = "uses_information_schema")]
 use diesel::backend::Backend;
-use diesel::deserialize::{FromSqlRow, Queryable};
+use diesel::deserialize::{FromStaticSqlRow, Queryable};
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
@@ -76,7 +76,7 @@ impl ColumnInformation {
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation
 where
     DB: Backend + UsesInformationSchema,
-    (String, String, String): FromSqlRow<ST, DB>,
+    (String, String, String): FromStaticSqlRow<ST, DB>,
 {
     type Row = (String, String, String);
 
@@ -88,7 +88,7 @@ where
 #[cfg(feature = "sqlite")]
 impl<ST> Queryable<ST, Sqlite> for ColumnInformation
 where
-    (i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
+    (i32, String, String, bool, Option<String>, bool): FromStaticSqlRow<ST, Sqlite>,
 {
     type Row = (i32, String, String, bool, Option<String>, bool);
 
