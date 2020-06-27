@@ -149,12 +149,12 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'postgres'
         shell: bash
         run: |
-          choco install postgresql12 --force --params '/Password:postgres'
+          choco install postgresql12 --force --params '/Password:root'
           echo '::add-path::C:\Program Files\PostgreSQL\12\bin'
           echo '::add-path::C:\Program Files\PostgreSQL\12\lib'
           echo '::set-env name=PQ_LIB_DIR::C:\Program Files\PostgreSQL\12\lib'
-          echo '::set-env name=PG_DATABASE_URL::postgres://postgres:postgres@localhost/'
-          echo '::set-env name=PG_EXAMPLE_DATABASE_URL::postgres://postgres:postgres@localhost/diesel_example'
+          echo '::set-env name=PG_DATABASE_URL::postgres://postgres:root@localhost/'
+          echo '::set-env name=PG_EXAMPLE_DATABASE_URL::postgres://postgres:root@localhost/diesel_example'
 
       - name: Install mysql (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
