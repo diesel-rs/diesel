@@ -5,7 +5,6 @@ pub mod result;
 mod row;
 mod stmt;
 
-use std::ffi::CString;
 use std::os::raw as libc;
 
 use self::cursor::*;
@@ -36,9 +35,7 @@ unsafe impl Send for PgConnection {}
 
 impl SimpleConnection for PgConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
-        let query = CString::new(query)?;
-        let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
-        PgResult::new(inner_result?)?;
+        self.raw_connection.exec(query)?;
         Ok(())
     }
 }
@@ -169,7 +166,7 @@ impl PgConnection {
         self.execute("SET TIME ZONE 'UTC'")?;
         self.execute("SET CLIENT_ENCODING TO 'UTF8'")?;
         self.raw_connection
-            .set_notice_processor(noop_notice_processor);
+            .set_notice_processor(Some(noop_notice_processor));
         Ok(())
     }
 
