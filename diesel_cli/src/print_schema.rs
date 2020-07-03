@@ -5,11 +5,7 @@ use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
-use std::fs::File;
-use std::io::{self, Error as IoError, ErrorKind, Write as IoWrite};
-use std::path::Path;
-use std::process::Command;
-use tempfile::NamedTempFile;
+use std::io::Write as IoWrite;
 
 pub enum Filtering {
     OnlyTables(Vec<TableName>),
@@ -40,30 +36,16 @@ pub fn run_print_schema<W: IoWrite>(
     config: &config::PrintSchema,
     output: &mut W,
 ) -> Result<(), Box<dyn Error>> {
-    let tempfile = NamedTempFile::new()?;
-    let file = tempfile.reopen()?;
-    output_schema(database_url, config, file, tempfile.path())?;
+    let schema = output_schema(database_url, config)?;
 
-    // patch "replaces" our tempfile, meaning the old handle
-    // does not include the patched output.
-    let mut file = File::open(tempfile.path())?;
-    io::copy(&mut file, output)?;
+    output.write_all(schema.as_bytes())?;
     Ok(())
-}
-
-fn simplify_patch_error(err: IoError) -> Box<dyn Error> {
-    match err.kind() {
-        ErrorKind::NotFound => "Unable to find `patch` command, is it installed?".into(),
-        _ => err.into(),
-    }
 }
 
 pub fn output_schema(
     database_url: &str,
     config: &config::PrintSchema,
-    mut out: File,
-    out_path: &Path,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<String, Box<dyn Error>> {
     let table_names = load_table_names(database_url, config.schema_name())?
         .into_iter()
         .filter(|t| !config.filter.should_ignore_table(t))
@@ -82,6 +64,8 @@ pub fn output_schema(
         import_types: config.import_types(),
     };
 
+    let mut out = String::new();
+
     if let Some(schema_name) = config.schema_name() {
         write!(out, "{}", ModuleDefinition(schema_name, definitions))?;
     } else {
@@ -89,23 +73,13 @@ pub fn output_schema(
     }
 
     if let Some(ref patch_file) = config.patch_file {
-        let output = Command::new("patch")
-            .arg(out_path)
-            .arg(patch_file)
-            .output()
-            .map_err(simplify_patch_error)?;
-        if !output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!(
-                "Failed to apply schema patch. stdout: {} stderr: {}",
-                stdout, stderr,
-            )
-            .into());
-        }
+        let patch = std::fs::read_to_string(patch_file)?;
+        let patch = diffy::Patch::from_str(&patch)?;
+
+        out = diffy::apply(&out, &patch)?;
     }
 
-    Ok(())
+    Ok(out)
 }
 
 struct ModuleDefinition<'a>(&'a str, TableDefinitions<'a>);

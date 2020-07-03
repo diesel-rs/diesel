@@ -443,8 +443,11 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<d
                 .into());
             }
         } else {
-            let file = fs::File::create(path)?;
-            print_schema::output_schema(&database_url, &config.print_schema, file, path)?;
+            use std::io::Write;
+
+            let mut file = fs::File::create(path)?;
+            let schema = print_schema::output_schema(&database_url, &config.print_schema)?;
+            file.write_all(schema.as_bytes())?;
         }
     }
     Ok(())
