@@ -23,7 +23,9 @@ use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
 #[cfg(feature = "sqlite")]
-use crate::sqlite::{Sqlite, SqliteConnection};
+use crate::sqlite::Sqlite;
+#[cfg(feature = "sqlite")]
+use crate::Connection;
 
 /// The structure returned by [`insert_into`].
 ///
@@ -202,15 +204,15 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, BatchInsert<'a, U, T>, Op>
+impl<'a, T, U, Op, C> ExecuteDsl<C, Sqlite> for InsertStatement<T, BatchInsert<'a, U, T>, Op>
 where
+    C: Connection<Backend = Sqlite>,
     &'a U: Insertable<T>,
     InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>: QueryFragment<Sqlite>,
     T: Copy,
     Op: Copy,
 {
-    fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
-        use crate::connection::Connection;
+    fn execute(query: Self, conn: &C) -> QueryResult<usize> {
         conn.transaction(|| {
             let mut result = 0;
             for record in query.records.records {
@@ -284,15 +286,15 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-impl<T, U, Op> ExecuteDsl<SqliteConnection>
+impl<T, U, Op, C> ExecuteDsl<C, Sqlite>
     for InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>
 where
+    C: Connection<Backend = Sqlite>,
     InsertStatement<T, ValuesClause<U, T>, Op>: QueryFragment<Sqlite>,
     T: Copy,
     Op: Copy,
 {
-    fn execute(query: Self, conn: &SqliteConnection) -> QueryResult<usize> {
-        use crate::connection::Connection;
+    fn execute(query: Self, conn: &C) -> QueryResult<usize> {
         conn.transaction(|| {
             let mut result = 0;
             for value in query.records.values {
