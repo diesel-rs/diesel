@@ -8,7 +8,7 @@ use crate::sql_types::Array;
 /// Creates a PostgreSQL `ANY` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically from `diesel::expression::any`, or glob import
+/// it specifically from `diesel::pg::expression::dsl::any`, or glob import
 /// `diesel::dsl::*`
 ///
 /// # Example
@@ -37,7 +37,8 @@ where
 /// Creates a PostgreSQL `ALL` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically as `diesel::dsl::all`.
+/// it specifically as `diesel::pg::expression::dsl::all`, or glob import
+/// `diesel::dsl::*`.
 ///
 /// # Example
 ///
