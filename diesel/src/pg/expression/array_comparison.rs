@@ -9,7 +9,7 @@ use crate::sql_types::Array;
 ///
 /// As with most bare functions, this is not exported by default. You can import
 /// it specifically from `diesel::pg::expression::dsl::any`, or glob import
-/// `diesel::dsl::*`.
+/// `diesel::dsl::any`.
 ///
 /// # Example
 ///
