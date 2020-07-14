@@ -38,7 +38,7 @@ where
 ///
 /// As with most bare functions, this is not exported by default. You can import
 /// it specifically as `diesel::pg::expression::dsl::all`, or glob import
-/// `diesel::dsl::*`.
+/// `diesel::dsl::all`.
 ///
 /// # Example
 ///
