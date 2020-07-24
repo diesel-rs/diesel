@@ -1,3 +1,5 @@
+// @generated automatically by Diesel CLI.
+
 diesel::table! {
     users1 (id) {
         id -> Int4,

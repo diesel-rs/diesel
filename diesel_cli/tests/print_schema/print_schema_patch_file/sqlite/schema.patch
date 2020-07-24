@@ -1,4 +1,4 @@
-@@ -1,12 +1,13 @@
+@@ -3,12 +3,13 @@
  diesel::table! {
      users1 (id) {
 -        id -> Nullable<Integer>,

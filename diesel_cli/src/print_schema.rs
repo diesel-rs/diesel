@@ -7,6 +7,8 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::Write as IoWrite;
 
+const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
+
 pub enum Filtering {
     OnlyTables(Vec<TableName>),
     ExceptTables(Vec<TableName>),
@@ -65,6 +67,7 @@ pub fn output_schema(
     };
 
     let mut out = String::new();
+    writeln!(out, "{}", SCHEMA_HEADER)?;
 
     if let Some(schema_name) = config.schema_name() {
         write!(out, "{}", ModuleDefinition(schema_name, definitions))?;

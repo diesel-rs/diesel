@@ -1,3 +1,5 @@
+// @generated automatically by Diesel CLI.
+
 pub mod custom_schema {
     diesel::table! {
         /// Representation of the `custom_schema.self` table.
