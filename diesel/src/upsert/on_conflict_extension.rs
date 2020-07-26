@@ -1,9 +1,15 @@
+use crate::expression::Expression;
 use crate::query_builder::upsert::into_conflict_clause::IntoConflictValueClause;
 use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
 use crate::query_builder::upsert::on_conflict_target::*;
+use crate::query_builder::upsert::on_conflict_target_decorations::{
+    FilteredConflictTarget, UndecoratedConflictTarget,
+};
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
+use crate::query_dsl::filter_dsl::FilterDsl;
 use crate::query_source::QuerySource;
+use crate::sql_types::Bool;
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
 where
@@ -195,6 +201,19 @@ where
         IncompleteOnConflict {
             stmt: self.replace_values(IntoConflictValueClause::into_value_clause),
             target: ConflictTarget(target),
+        }
+    }
+}
+
+impl<Stmt, Target, Predicate> FilterDsl<Predicate> for IncompleteOnConflict<Stmt, Target>
+where
+    Predicate: Expression<SqlType = Bool>,
+{
+    type Output = IncompleteOnConflict<Stmt, FilteredConflictTarget<Target, Predicate>>;
+    fn filter(self: Self, predicate: Predicate) -> Self::Output {
+        IncompleteOnConflict {
+            stmt: self.stmt,
+            target: UndecoratedConflictTarget(self.target).filter(predicate),
         }
     }
 }

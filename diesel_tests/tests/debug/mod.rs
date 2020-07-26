@@ -115,3 +115,28 @@ COMMIT;
         );
     }
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn test_upsert() {
+    // this test ensures we get the right debug string for upserts
+    use crate::schema::users::dsl::*;
+
+    let values = vec![
+        (name.eq("Sean"), hair_color.eq(Some("black"))),
+        (name.eq("Tess"), hair_color.eq(None::<&str>)),
+    ];
+
+    let upsert_command = insert_into(users)
+        .values(values)
+        .on_conflict(hair_color)
+        .filter(hair_color.eq(Some("black")))
+        .do_nothing();
+    let upsert_sql_display = debug_query::<TestBackend, _>(&upsert_command).to_string();
+    // let upsert_sql_debug = format!("{:?}", debug_query::<TestBackend, _>(&upsert_command));
+
+    assert_eq!(
+        upsert_sql_display,
+        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE hair_color="black" DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None]"#
+    );
+}
