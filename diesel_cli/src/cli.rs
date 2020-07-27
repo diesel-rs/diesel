@@ -22,21 +22,24 @@ pub fn build_cli() -> App<'static, 'static> {
             SubCommand::with_name("revert")
                 .about("Reverts the latest run migration")
                 .arg(
-                    Arg::with_name("REVERT_ALL")
-                        .long("all")
-                        .help("Reverts all migrations")
+                    Arg::with_name("REVERT_NUMBER")
+                        .long("number")
+                        .short("n")
+                        .help("Reverts the last migration files")
                         .long_help(
-                            "When this option is specified all migrations \
-                            will be reverted. Useful for testing your revert \
-                            scripts only.",
+                            "When this option is specified the last `n` migration files \
+                             will be reverted. By default revert the last one.",
                         )
-                )
+                        .takes_value(true)
+                        .required(true)
+                        .default_value("1"),
+                ),
         )
         .subcommand(
             SubCommand::with_name("redo")
                 .about(
                     "Reverts and re-runs the latest migration. Useful \
-                    for testing that a migration can in fact be reverted.",
+                     for testing that a migration can in fact be reverted.",
                 )
                 .arg(
                     Arg::with_name("REDO_ALL")
@@ -44,11 +47,11 @@ pub fn build_cli() -> App<'static, 'static> {
                         .help("Reverts and re-runs all migrations.")
                         .long_help(
                             "When this option is specified all migrations \
-                            will be reverts and re-runs. Useful for testing \
-                            that your migrations can be reverted and applied."
-                        )
-                )
-            )
+                             will be reverted and re-runs. Useful for testing \
+                             that your migrations can be reverted and applied.",
+                        ),
+                ),
+        )
         .subcommand(
             SubCommand::with_name("list")
                 .about("Lists all available migrations, marking those that have been applied."),

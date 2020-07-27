@@ -128,3 +128,54 @@ fn migration_revert_respects_migration_dir_from_diesel_toml() {
     );
     assert!(!db.table_exists("users"));
 }
+
+#[test]
+fn migration_revert_runs_the_last_two_migration_down() {
+    let p = project("migration_revert").folder("migrations").build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2017-08-31-210424_create_customers",
+        "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE customers",
+    );
+
+    p.create_migration(
+        "2017-09-03-210424_create_contracts",
+        "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE contracts",
+    );
+
+    p.create_migration(
+        "2017-09-12-210424_create_bills",
+        "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE bills",
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("contracts"));
+    assert!(db.table_exists("bills"));
+
+    // Reverts the last two migration files. The `contracts` and `bills` tables should be dropped.
+    // The `customers` table shouldn't be reverted.
+    let result = p
+        .command("migration")
+        .arg("revert")
+        .arg("-n")
+        .arg("2")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Rolling back migration 2017-09-12-210424_create_bills\nRolling back migration 2017-09-03-210424_create_contracts"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+
+    assert!(db.table_exists("customers"));
+    assert!(!db.table_exists("contracts"));
+    assert!(!db.table_exists("bills"));
+}

@@ -71,13 +71,23 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             )?;
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("revert", Some(_)) => {
+        ("revert", Some(args)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            call_with_conn!(
-                database_url,
-                migrations::revert_latest_migration_in_directory(&dir)
-            )?;
+
+            match args.value_of("REVERT_NUMBER") {
+                Some("all") => println!("Match on all files"),
+                Some(n) => {
+                    let x = n.parse::<i64>().unwrap_or_else(handle_error);
+
+                    call_with_conn!(
+                        database_url,
+                        migrations::revert_latest_migrations_in_directory(&dir, x)
+                    )?;
+                }
+                None => unreachable!("REVERT_NUMBER has a default value"),
+            }
+
             regenerate_schema_if_file_specified(matches)?;
         }
         ("redo", Some(_)) => {
