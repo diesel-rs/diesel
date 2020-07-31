@@ -200,6 +200,24 @@ where
     Ok(pending)
 }
 
+pub fn revert_all_migrations_in_directory<Conn>(
+    conn: &Conn,
+    path: &Path,
+) -> Result<Vec<String>, RunMigrationsError>
+where
+    Conn: MigrationConnection,
+{
+    let mut number = migrations_in_directory(path)?.len() as i64;
+
+    // Avoid to take the migration
+    // 00000000000000_diesel_initial_setup into account
+    if number > 0 {
+        number -= 1;
+    }
+
+    revert_latest_migrations_in_directory(conn, path, number)
+}
+
 // TODO : see if we need a function named revert_latest_migrations
 // to call this one.
 pub fn revert_latest_migrations_in_directory<Conn>(

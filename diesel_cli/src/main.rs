@@ -76,7 +76,12 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
 
             match args.value_of("REVERT_NUMBER") {
-                Some("all") => println!("Match on all files"),
+                Some("all") => {
+                    call_with_conn!(
+                        database_url,
+                        migrations::revert_all_migrations_in_directory(&dir)
+                    )?;
+                }
                 Some(n) => {
                     let x = n.parse::<i64>().unwrap_or_else(handle_error);
 
