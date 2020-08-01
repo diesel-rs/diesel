@@ -221,11 +221,64 @@ fn migration_revert_all_runs_the_migrations_down() {
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
-    assert!(result.stdout() == "Rolling back migration 2017-09-12-210424_create_bills\nRolling back migration 2017-09-03-210424_create_contracts\nRolling back migration 2017-08-31-210424_create_customers\n",
-    "Unexpected stdout : {}",
-    result.stdout());
+    assert!(
+        result.stdout()
+            == "Rolling back migration 2017-09-12-210424_create_bills\n\
+                Rolling back migration 2017-09-03-210424_create_contracts\n\
+                Rolling back migration 2017-08-31-210424_create_customers\n",
+        "Unexpected stdout : {}",
+        result.stdout()
+    );
 
     assert!(!db.table_exists("customers"));
     assert!(!db.table_exists("contracts"));
     assert!(!db.table_exists("bills"));
+}
+
+#[test]
+fn migration_revert_with_zero_should_throw_an_error() {
+    let p = project("migration_revert").folder("migrations").build();
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    // Should not revert any migration.
+    let result = p
+        .command("migration")
+        .arg("revert")
+        .arg("-n")
+        .arg("0")
+        .run();
+
+    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(
+        result.stderr() == "error: Invalid value for '--number <REVERT_NUMBER>': <REVERT_NUMBER> must be at least equal to 1.\n",
+        "Unexpected stderr : {}",
+        result.stderr()
+    );
+}
+
+#[test]
+fn migration_revert_with_an_invalid_input_should_throw_an_error() {
+    let p = project("migration_revert").folder("migrations").build();
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    // Should not revert any migration.
+    let result = p
+        .command("migration")
+        .arg("revert")
+        .arg("-n")
+        .arg("infinite")
+        .run();
+
+    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(
+        result.stderr() == "error: Invalid value for '--number <REVERT_NUMBER>': Cannot parse <REVERT_NUMBER>. The input must be an integer or 'all'.\n",
+        "Unexpected stderr : {}",
+        result.stderr()
+    );
 }
