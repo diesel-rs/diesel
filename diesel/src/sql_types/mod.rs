@@ -501,7 +501,7 @@ pub use diesel_derives::SqlType;
 /// # Deriving
 ///
 /// This trait is automatically implemented by [`#[derive(SqlType)]`]
-/// by setting `IsNull` to [`is_nullable::NotNull`]
+/// which sets `IsNull` to [`is_nullable::NotNull`]
 ///
 /// [`#[derive(SqlType)]`]: derive.SqlType.html
 /// [`is_nullable::NotNull`]: is_nullable/struct.NotNull.html

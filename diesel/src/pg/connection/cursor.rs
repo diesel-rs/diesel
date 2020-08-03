@@ -17,7 +17,11 @@ impl<'a> Cursor<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Cursor<'a> {}
+impl<'a> ExactSizeIterator for Cursor<'a> {
+    fn len(&self) -> usize {
+        self.db_result.num_rows() - self.current_row
+    }
+}
 
 impl<'a> Iterator for Cursor<'a> {
     type Item = PgRow<'a>;
@@ -34,12 +38,12 @@ impl<'a> Iterator for Cursor<'a> {
     }
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.current_row += n;
+        self.current_row = (self.current_row + n).min(self.db_result.num_rows());
         self.next()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.db_result.num_rows();
+        let len = self.len();
         (len, Some(len))
     }
 }

@@ -417,7 +417,7 @@ where
 // diesel may implement `SingleValue` for tuples
 // in the future. While that is theoretically true,
 // that will likly not happen in practice.
-// If we get negative trait impls at some point it time
+// If we get negative trait impls at some point in time
 // it should be possible to make this work.
 /*impl<T, ST, DB> Queryable<ST, DB> for T
 where

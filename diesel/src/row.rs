@@ -68,7 +68,7 @@ pub trait Field<'a, DB: Backend> {
     /// The name of the current field
     ///
     /// Returns `None` if it's an unnamed field
-    fn field_name(&self) -> Option<&str>;
+    fn field_name(&self) -> Option<&'a str>;
 
     /// Get the value representing the current field in the raw representation
     /// as it is transmitted by the database
@@ -154,7 +154,7 @@ where
     R: RowIndex<usize>,
 {
     fn idx(&self, idx: usize) -> Option<usize> {
-        let idx = self.inner.idx(idx)? + self.range.start;
+        let idx = self.inner.idx(idx + self.range.start)?;
         if self.range.contains(&idx) {
             Some(idx)
         } else {

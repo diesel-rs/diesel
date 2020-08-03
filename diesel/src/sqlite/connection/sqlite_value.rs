@@ -26,7 +26,6 @@ pub struct SqliteRow<'a> {
 }
 
 impl<'a> SqliteValue<'a> {
-    #[allow(clippy::new_ret_no_self)]
     pub(crate) unsafe fn new(inner: *mut ffi::sqlite3_value) -> Option<Self> {
         NonNull::new(inner)
             .map(|value| SqliteValue {
