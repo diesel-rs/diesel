@@ -89,7 +89,7 @@ where
     DB: Backend,
     T: QueryableByName<DB>,
 {
-    fn build(row: &impl crate::row::NamedRow<DB>) -> deserialize::Result<Self> {
+    fn build<'a>(row: &impl crate::row::NamedRow<'a, DB>) -> deserialize::Result<Self> {
         match T::build(row) {
             Ok(v) => Ok(Some(v)),
             Err(e) if e.is::<crate::result::UnexpectedNullError>() => Ok(None),

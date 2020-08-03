@@ -96,8 +96,17 @@ pub struct PartialRow<'a, R> {
 
 impl<'a, R> PartialRow<'a, R> {
     #[doc(hidden)]
-    pub fn new(inner: &'a R, range: Range<usize>) -> Self {
-        Self { inner, range }
+    pub fn new<'b, DB>(inner: &'a R, range: Range<usize>) -> Self
+    where
+        R: Row<'b, DB>,
+        DB: Backend,
+    {
+        let range_lower = std::cmp::min(range.start, inner.field_count());
+        let range_upper = std::cmp::min(range.end, inner.field_count());
+        Self {
+            inner,
+            range: range_lower..range_upper,
+        }
     }
 }
 
@@ -110,12 +119,7 @@ where
     type InnerPartialRow = R;
 
     fn field_count(&self) -> usize {
-        let inner_length = self.inner.field_count();
-        if self.range.start < inner_length {
-            std::cmp::min(inner_length - self.range.start, self.range.len())
-        } else {
-            0
-        }
+        self.range.len()
     }
 
     fn get<I>(&self, idx: I) -> Option<Self::Field>
@@ -123,11 +127,12 @@ where
         Self: RowIndex<I>,
     {
         let idx = self.idx(idx)?;
-        Some(self.inner.get(idx).unwrap())
+        self.inner.get(idx)
     }
 
     fn partial_row(&self, range: Range<usize>) -> PartialRow<R> {
-        let range = (self.range.start + range.start)..(self.range.start + range.end);
+        let range_upper_bound = std::cmp::min(self.range.end, self.range.start + range.end);
+        let range = (self.range.start + range.start)..range_upper_bound;
         PartialRow {
             inner: self.inner,
             range,
@@ -168,7 +173,7 @@ where
 ///
 /// This trait is used by implementations of
 /// [`QueryableByName`](../deserialize/trait.QueryableByName.html)
-pub trait NamedRow<DB: Backend> {
+pub trait NamedRow<'a, DB: Backend>: Row<'a, DB> {
     /// Retrieve and deserialize a single value from the query
     ///
     /// Note that `ST` *must* be the exact type of the value with that name in
@@ -178,12 +183,12 @@ pub trait NamedRow<DB: Backend> {
     ///
     /// If two or more fields in the query have the given name, the result of
     /// this function is undefined.
-    fn get<'a, ST, T>(&self, column_name: &'a str) -> deserialize::Result<T>
+    fn get<'b, ST, T>(&self, column_name: &'b str) -> deserialize::Result<T>
     where
         T: FromSql<ST, DB>;
 }
 
-impl<'a, R, DB> NamedRow<DB> for R
+impl<'a, R, DB> NamedRow<'a, DB> for R
 where
     R: Row<'a, DB>,
     DB: Backend,

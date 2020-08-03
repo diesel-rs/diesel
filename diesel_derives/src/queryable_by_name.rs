@@ -27,7 +27,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 let deserialize_ty = f.ty_for_deserialize()?;
                 Ok(quote!(
                    {
-                       let field = row.get(stringify!(#name))?;
+                       let field = diesel::row::NamedRow::get(row, stringify!(#name))?;
                        <#deserialize_ty as Into<#field_ty>>::into(field)
                    }
                 ))
@@ -67,7 +67,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             for #struct_name #ty_generics
         #where_clause
         {
-            fn build(row: &impl NamedRow<__DB>) -> deserialize::Result<Self>
+            fn build<'__a>(row: &impl NamedRow<'__a, __DB>) -> deserialize::Result<Self>
             {
 
 

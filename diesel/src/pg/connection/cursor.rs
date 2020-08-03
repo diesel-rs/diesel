@@ -27,13 +27,12 @@ impl<'a> Iterator for Cursor<'a> {
     type Item = PgRow<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_row >= self.db_result.num_rows() {
-            None
-        } else {
+        if self.current_row < self.db_result.num_rows() {
             let row = self.db_result.get_row(self.current_row);
             self.current_row += 1;
-
             Some(row)
+        } else {
+            None
         }
     }
 

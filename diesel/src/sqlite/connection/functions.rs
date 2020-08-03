@@ -136,7 +136,11 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
 
 impl<'a> RowIndex<usize> for FunctionRow<'a> {
     fn idx(&self, idx: usize) -> Option<usize> {
-        Some(idx)
+        if idx < self.args.len() {
+            Some(idx)
+        } else {
+            None
+        }
     }
 }
 
@@ -152,7 +156,7 @@ struct FunctionArgument<'a> {
 }
 
 impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
-    fn field_name(&self) -> Option<&str> {
+    fn field_name(&self) -> Option<&'a str> {
         None
     }
 

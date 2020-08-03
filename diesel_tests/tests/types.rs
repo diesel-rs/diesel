@@ -145,7 +145,7 @@ fn boolean_from_sql() {
 }
 
 #[test]
-fn boolean_treats_null_as_false_when_predicates_return_null() {
+fn nullable_boolean_from_sql() {
     let connection = connection();
     let one = Some(1).into_sql::<diesel::sql_types::Nullable<Integer>>();
     let query = select(one.eq(None::<i32>));

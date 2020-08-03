@@ -114,12 +114,11 @@ impl PgResult {
     }
 
     pub fn column_type(&self, col_idx: usize) -> NonZeroU32 {
-        unsafe {
-            NonZeroU32::new_unchecked(PQftype(
-                self.internal_result.as_ptr(),
-                col_idx as libc::c_int,
-            ))
-        }
+        let type_oid = unsafe { PQftype(self.internal_result.as_ptr(), col_idx as libc::c_int) };
+        NonZeroU32::new(type_oid).expect(
+            "Got a zero oid from postgres. If you see this error message \
+             please report it as issue on the diesel github bug tracker.",
+        )
     }
 
     pub fn column_name(&self, col_idx: usize) -> Option<&str> {
@@ -128,7 +127,10 @@ impl PgResult {
             if ptr.is_null() {
                 None
             } else {
-                Some(CStr::from_ptr(ptr).to_str().expect("Utf8"))
+                Some(CStr::from_ptr(ptr).to_str().expect(
+                    "Expect postgres field names to be UTF-8, because we \
+                     requested UTF-8 encoding on connection setup",
+                ))
             }
         }
     }

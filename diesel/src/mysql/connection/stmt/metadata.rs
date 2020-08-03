@@ -41,7 +41,12 @@ impl<'a> MysqlFieldMetadata<'a> {
         if self.0.name.is_null() {
             None
         } else {
-            unsafe { CStr::from_ptr(self.0.name).to_str().ok() }
+            unsafe {
+                Some(CStr::from_ptr(self.0.name).to_str().expect(
+                    "Expect mysql field names to be UTF-8, because we \
+                     requested UTF-8 encoding on connection setup",
+                ))
+            }
         }
     }
 

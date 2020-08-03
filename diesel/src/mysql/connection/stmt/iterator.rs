@@ -108,7 +108,7 @@ pub struct MysqlField<'a> {
 }
 
 impl<'a> Field<'a, Mysql> for MysqlField<'a> {
-    fn field_name(&self) -> Option<&str> {
+    fn field_name(&self) -> Option<&'a str> {
         self.metadata.field_name()
     }
 

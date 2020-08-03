@@ -306,6 +306,18 @@ macro_rules! tuple_impls {
                     )*
                 }
             }
+
+            impl<$($T,)* __DB> deserialize::QueryableByName< __DB> for ($($T,)*)
+            where __DB: Backend,
+            $($T: deserialize::QueryableByName<__DB>,)*
+            {
+                fn build<'a>(row: &impl NamedRow<'a, __DB>) -> deserialize::Result<Self> {
+                    Ok(($(
+                        <$T as deserialize::QueryableByName<__DB>>::build(row)?,
+                    )*))
+                }
+            }
+
         )+
     }
 }

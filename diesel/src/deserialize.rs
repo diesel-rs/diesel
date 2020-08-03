@@ -251,7 +251,7 @@ where
     DB: Backend,
 {
     /// Construct an instance of `Self` from the database row
-    fn build(row: &impl NamedRow<DB>) -> Result<Self>;
+    fn build<'a>(row: &impl NamedRow<'a, DB>) -> Result<Self>;
 }
 
 #[doc(inline)]

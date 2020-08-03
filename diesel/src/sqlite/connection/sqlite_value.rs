@@ -152,7 +152,7 @@ pub struct SqliteField<'a> {
 }
 
 impl<'a> Field<'a, Sqlite> for SqliteField<'a> {
-    fn field_name(&self) -> Option<&str> {
+    fn field_name(&self) -> Option<&'a str> {
         column_name(self.stmt, self.col_idx)
     }
 

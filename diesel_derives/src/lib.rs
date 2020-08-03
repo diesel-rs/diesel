@@ -630,9 +630,9 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///     i32: FromSql<diesel::dsl::SqlTypeOf<users::id>, DB>,
 ///     String: FromSql<diesel::dsl::SqlTypeOf<users::name>, DB>,
 /// {
-///     fn build(row: &impl NamedRow<DB>) -> deserialize::Result<Self> {
-///         let id = row.get::<diesel::dsl::SqlTypeOf<users::id>, _>("id")?;
-///         let name = row.get::<diesel::dsl::SqlTypeOf<users::name>, _>("name")?;
+///     fn build<'a>(row: &impl NamedRow<'a, DB>) -> deserialize::Result<Self> {
+///         let id = NamedRow::get::<diesel::dsl::SqlTypeOf<users::id>, _>(row, "id")?;
+///         let name = NamedRow::get::<diesel::dsl::SqlTypeOf<users::name>, _>(row, "name")?;
 ///
 ///         Ok(Self { id, name })
 ///     }

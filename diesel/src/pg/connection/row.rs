@@ -27,15 +27,11 @@ impl<'a> Row<'a, Pg> for PgRow<'a> {
         Self: RowIndex<I>,
     {
         let idx = self.idx(idx)?;
-        if idx < self.field_count() {
-            Some(PgField {
-                db_result: self.db_result,
-                row_idx: self.row_idx,
-                col_idx: idx,
-            })
-        } else {
-            None
-        }
+        Some(PgField {
+            db_result: self.db_result,
+            row_idx: self.row_idx,
+            col_idx: idx,
+        })
     }
 
     fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
@@ -45,7 +41,11 @@ impl<'a> Row<'a, Pg> for PgRow<'a> {
 
 impl<'a> RowIndex<usize> for PgRow<'a> {
     fn idx(&self, idx: usize) -> Option<usize> {
-        Some(idx)
+        if idx < self.field_count() {
+            Some(idx)
+        } else {
+            None
+        }
     }
 }
 
@@ -62,7 +62,7 @@ pub struct PgField<'a> {
 }
 
 impl<'a> Field<'a, Pg> for PgField<'a> {
-    fn field_name(&self) -> Option<&str> {
+    fn field_name(&self) -> Option<&'a str> {
         self.db_result.column_name(self.col_idx)
     }
 
