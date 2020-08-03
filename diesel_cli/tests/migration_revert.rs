@@ -2,7 +2,7 @@ use crate::support::{database, project};
 
 #[test]
 fn migration_revert_runs_the_last_migration_down() {
-    let p = project("migration_revert").folder("migrations").build();
+    let p = project("migration_revert_runs_the_last_migration_down").folder("migrations").build();
     let db = database(&p.database_url());
 
     p.create_migration(
@@ -131,7 +131,7 @@ fn migration_revert_respects_migration_dir_from_diesel_toml() {
 
 #[test]
 fn migration_revert_runs_the_last_two_migration_down() {
-    let p = project("migration_revert").folder("migrations").build();
+    let p = project("migration_revert_runs_the_last_two_migration_down").folder("migrations").build();
     let db = database(&p.database_url());
 
     p.create_migration(
@@ -182,7 +182,7 @@ fn migration_revert_runs_the_last_two_migration_down() {
 
 #[test]
 fn migration_revert_all_runs_the_migrations_down() {
-    let p = project("migration_revert").folder("migrations").build();
+    let p = project("migration_revert_all_runs_the_migrations_down").folder("migrations").build();
     let db = database(&p.database_url());
 
     p.create_migration(
@@ -239,7 +239,7 @@ fn migration_revert_all_runs_the_migrations_down() {
 
 #[test]
 fn migration_revert_with_zero_should_throw_an_error() {
-    let p = project("migration_revert").folder("migrations").build();
+    let p = project("migration_revert_with_zero_should_throw_an_error").folder("migrations").build();
 
     // Make sure the project is setup
     p.command("setup").run();
@@ -263,7 +263,7 @@ fn migration_revert_with_zero_should_throw_an_error() {
 
 #[test]
 fn migration_revert_with_an_invalid_input_should_throw_an_error() {
-    let p = project("migration_revert").folder("migrations").build();
+    let p = project("migration_revert_with_an_invalid_input_should_throw_an_error").folder("migrations").build();
 
     // Make sure the project is setup
     p.command("setup").run();
