@@ -236,15 +236,13 @@ fn migration_dir_arg<'a, 'b>() -> Arg<'a, 'b> {
 }
 
 fn migration_revert_number_validator(val: String) -> Result<(), String> {
-
     if val == "all" {
         return Ok(());
     }
 
-    let number = match val.parse::<i64>() {
-        Ok(number) => number,
-        Err(_) => return Err("Cannot parse <REVERT_NUMBER>. The input must be an integer or 'all'.".to_string())
-    };
+    let number = val.parse::<i64>().map_err(|_| {
+        "Cannot parse <REVERT_NUMBER>. The input must be an integer or 'all'.".to_string()
+    })?;
 
     if number < 1 {
         return Err("<REVERT_NUMBER> must be at least equal to 1.".to_string());

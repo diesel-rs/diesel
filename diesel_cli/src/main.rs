@@ -75,22 +75,24 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
 
-            match args.value_of("REVERT_NUMBER") {
-                Some("all") => {
+            // We can unwrap since the argument is validated from the cli module.
+            // The value is required and is a number greater than 0 or "all".
+            let number = args.value_of("REVERT_NUMBER").unwrap();
+
+            // Test if we have an integer or "all"
+            match number.parse::<i64>() {
+                Ok(number) => {
+                    call_with_conn!(
+                        database_url,
+                        migrations::revert_latest_migrations_in_directory(&dir, number)
+                    )?;
+                }
+                _ => {
                     call_with_conn!(
                         database_url,
                         migrations::revert_all_migrations_in_directory(&dir)
                     )?;
                 }
-                Some(n) => {
-                    let x = n.parse::<i64>().unwrap_or_else(handle_error);
-
-                    call_with_conn!(
-                        database_url,
-                        migrations::revert_latest_migrations_in_directory(&dir, x)
-                    )?;
-                }
-                None => unreachable!("REVERT_NUMBER has a default value"),
             }
 
             regenerate_schema_if_file_specified(matches)?;
