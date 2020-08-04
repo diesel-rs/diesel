@@ -240,7 +240,6 @@ fn migration_revert_all_runs_the_migrations_down() {
     assert!(!db.table_exists("customers"));
     assert!(!db.table_exists("contracts"));
     assert!(!db.table_exists("bills"));
-    assert!(!db.table_exists("00000000000000_diesel_initial_setup"));
 }
 
 #[test]
@@ -293,4 +292,62 @@ fn migration_revert_with_an_invalid_input_should_throw_an_error() {
         "Unexpected stderr : {}",
         result.stderr()
     );
+}
+
+#[test]
+fn migration_revert_with_more_than_the_number_of_migrations_should_run_all_the_migrations_down() {
+    let p = project("migration_revert_with_more_than_the_number_of_migrations_should_run_all_the_migrations_down")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2017-08-31-210424_create_customers",
+        "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE customers",
+    );
+
+    p.create_migration(
+        "2017-09-03-210424_create_contracts",
+        "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE contracts",
+    );
+
+    p.create_migration(
+        "2017-09-12-210424_create_bills",
+        "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE bills",
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("contracts"));
+    assert!(db.table_exists("bills"));
+
+    // Reverts all migrations. The migrations `contracts`, `bills`, `customers` and
+    // `00000000000000_diesel_initial_setup` should be reverted.
+    let result = p
+        .command("migration")
+        .arg("revert")
+        .arg("-n")
+        .arg("1000")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(
+        result.stdout()
+            == "Rolling back migration 2017-09-12-210424_create_bills\n\
+                Rolling back migration 2017-09-03-210424_create_contracts\n\
+                Rolling back migration 2017-08-31-210424_create_customers\n\
+                Rolling back migration 00000000000000_diesel_initial_setup\n",
+        "Unexpected stdout : {}",
+        result.stdout()
+    );
+
+    assert!(!db.table_exists("customers"));
+    assert!(!db.table_exists("contracts"));
+    assert!(!db.table_exists("bills"));
 }
