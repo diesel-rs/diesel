@@ -5,6 +5,7 @@ extern crate bigdecimal;
 extern crate chrono;
 
 use crate::schema::*;
+use diesel::deserialize::FromSqlRow;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::sql_types::*;
@@ -144,12 +145,11 @@ fn boolean_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
-fn boolean_treats_null_as_false_when_predicates_return_null() {
+fn nullable_boolean_from_sql() {
     let connection = connection();
-    let one = Some(1).into_sql::<Nullable<Integer>>();
+    let one = Some(1).into_sql::<diesel::sql_types::Nullable<Integer>>();
     let query = select(one.eq(None::<i32>));
-    assert_eq!(Ok(false), query.first(&connection));
+    assert_eq!(Ok(Option::<bool>::None), query.first(&connection));
 }
 
 #[test]
@@ -670,16 +670,16 @@ fn pg_specific_option_to_sql() {
         "'t'::bool",
         Some(true)
     ));
-    assert!(!query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
+    assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
         "'f'::bool",
-        Some(true)
+        Some(false)
     ));
     assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
         "NULL", None
     ));
-    assert!(!query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
+    assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
         "NULL::bool",
-        Some(false)
+        None
     ));
 }
 
@@ -1231,7 +1231,7 @@ fn third_party_crates_can_add_new_types() {
     }
 
     impl FromSql<MyInt, Pg> for i32 {
-        fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+        fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
             FromSql::<Integer, Pg>::from_sql(bytes)
         }
     }
@@ -1241,17 +1241,18 @@ fn third_party_crates_can_add_new_types() {
     assert_eq!(70_000, query_single_value::<MyInt, i32>("70000"));
 }
 
-fn query_single_value<T, U: Queryable<T, TestBackend>>(sql_str: &str) -> U
+fn query_single_value<T, U: FromSqlRow<T, TestBackend>>(sql_str: &str) -> U
 where
     TestBackend: HasSqlType<T>,
-    T: QueryId + SingleValue,
+    T: QueryId + SingleValue + SqlType,
 {
     use diesel::dsl::sql;
     let connection = connection();
     select(sql::<T>(sql_str)).first(&connection).unwrap()
 }
 
-use diesel::expression::{is_aggregate, AsExpression, ValidGrouping};
+use diesel::dsl::{And, AsExprOf, Eq, IsNull};
+use diesel::expression::{is_aggregate, AsExpression, SqlLiteral, ValidGrouping};
 use diesel::query_builder::{QueryFragment, QueryId};
 use std::fmt::Debug;
 
@@ -1261,7 +1262,16 @@ where
     U::Expression: SelectableExpression<(), SqlType = T>
         + ValidGrouping<(), IsAggregate = is_aggregate::Never>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
-    T: QueryId + SingleValue,
+    T: QueryId + SingleValue + SqlType,
+    T::IsNull: OneIsNullable<T::IsNull, Out = T::IsNull>,
+    T::IsNull: MaybeNullableType<Bool>,
+    <T::IsNull as MaybeNullableType<Bool>>::Out: SqlType,
+    diesel::sql_types::is_nullable::NotNull: diesel::sql_types::AllAreNullable<
+        <<T::IsNull as MaybeNullableType<Bool>>::Out as SqlType>::IsNull,
+        Out = diesel::sql_types::is_nullable::NotNull,
+    >,
+    Eq<SqlLiteral<T>, U>: Expression<SqlType = <T::IsNull as MaybeNullableType<Bool>>::Out>,
+    And<IsNull<SqlLiteral<T>>, IsNull<AsExprOf<U, T>>>: Expression<SqlType = Bool>,
 {
     use diesel::dsl::sql;
     let connection = connection();
@@ -1272,7 +1282,7 @@ where
             .or(sql::<T>(sql_str).eq(value.clone())),
     );
     query
-        .get_result(&connection)
+        .get_result::<bool>(&connection)
         .expect(&format!("Error comparing {}, {:?}", sql_str, value))
 }
 

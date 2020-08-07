@@ -13,7 +13,7 @@ pub mod exports {
 #[postgres(type_name = "Language")]
 pub struct LanguageType;
 
-#[derive(Debug, FromSqlRow, AsExpression)]
+#[derive(Debug, AsExpression, FromSqlRow)]
 #[sql_type = "LanguageType"]
 pub enum Language {
     En,
@@ -33,8 +33,8 @@ impl ToSql<LanguageType, Pg> for Language {
 }
 
 impl FromSql<LanguageType, Pg> for Language {
-    fn from_sql(bytes: Option<PgValue>) -> deserialize::Result<Self> {
-        match not_none!(bytes).as_bytes() {
+    fn from_sql(bytes: PgValue) -> deserialize::Result<Self> {
+        match bytes.as_bytes() {
             b"en" => Ok(Language::En),
             b"ru" => Ok(Language::Ru),
             b"de" => Ok(Language::De),

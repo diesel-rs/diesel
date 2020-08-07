@@ -19,7 +19,7 @@ use crate::query_dsl::*;
 use crate::query_source::joins::*;
 use crate::query_source::{QuerySource, Table};
 use crate::result::QueryResult;
-use crate::sql_types::{BigInt, Bool, NotNull, Nullable};
+use crate::sql_types::{BigInt, BoolOrNullableBool, IntoNullable};
 
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB> {
@@ -194,7 +194,8 @@ where
 impl<'a, ST, QS, DB, Predicate> FilterDsl<Predicate> for BoxedSelectStatement<'a, ST, QS, DB>
 where
     BoxedWhereClause<'a, DB>: WhereAnd<Predicate, Output = BoxedWhereClause<'a, DB>>,
-    Predicate: AppearsOnTable<QS, SqlType = Bool> + NonAggregate,
+    Predicate: AppearsOnTable<QS> + NonAggregate,
+    Predicate::SqlType: BoolOrNullableBool,
 {
     type Output = Self;
 
@@ -207,7 +208,8 @@ where
 impl<'a, ST, QS, DB, Predicate> OrFilterDsl<Predicate> for BoxedSelectStatement<'a, ST, QS, DB>
 where
     BoxedWhereClause<'a, DB>: WhereOr<Predicate, Output = BoxedWhereClause<'a, DB>>,
-    Predicate: AppearsOnTable<QS, SqlType = Bool> + NonAggregate,
+    Predicate: AppearsOnTable<QS> + NonAggregate,
+    Predicate::SqlType: BoolOrNullableBool,
 {
     type Output = Self;
 
@@ -331,9 +333,9 @@ where
 
 impl<'a, ST, QS, DB> SelectNullableDsl for BoxedSelectStatement<'a, ST, QS, DB>
 where
-    ST: NotNull,
+    ST: IntoNullable,
 {
-    type Output = BoxedSelectStatement<'a, Nullable<ST>, QS, DB>;
+    type Output = BoxedSelectStatement<'a, ST::Nullable, QS, DB>;
 
     fn nullable(self) -> Self::Output {
         BoxedSelectStatement {

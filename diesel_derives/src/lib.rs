@@ -171,7 +171,7 @@ pub fn derive_diesel_numeric_ops(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, diesel_numeric_ops::derive)
 }
 
-/// Implements `FromSqlRow` and `Queryable`
+/// Implements `Queryable` for primitive types
 ///
 /// This derive is mostly useful to implement support deserializing
 /// into rust types not supported by diesel itself.
@@ -307,7 +307,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, query_id::derive)
 }
 
-/// Implements `Queryable`
+/// Implements `Queryable` to load the result of statically typed queries
 ///
 /// This trait can only be derived for structs, not enums.
 ///
@@ -331,12 +331,144 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///   into the field type, the implementation will deserialize into `Type`.
 ///   Then `Type` is converted via `.into()` into the field type. By default
 ///   this derive will deserialize directly into the field type
+///
+///
+/// # Examples
+///
+/// If we just want to map a query to our struct, we can use `derive`.
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenv;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// If we want to do additional work during deserialization, we can use
+/// `deserialize_as` to use a different implementation.
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenv;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// # use schema::users;
+/// # use diesel::backend::{self, Backend};
+/// # use diesel::deserialize::{Queryable, FromSql};
+/// # use diesel::sql_types::Text;
+/// #
+/// struct LowercaseString(String);
+///
+/// impl Into<String> for LowercaseString {
+///     fn into(self) -> String {
+///         self.0
+///     }
+/// }
+///
+/// impl<DB> Queryable<Text, DB> for LowercaseString
+/// where
+///     DB: Backend,
+///     String: FromSql<Text, DB>
+/// {
+///
+///     type Row = String;
+///
+///     fn build(s: String) -> Self {
+///         LowercaseString(s.to_lowercase())
+///     }
+/// }
+///
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     #[diesel(deserialize_as = "LowercaseString")]
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// Alternatively, we can implement the trait for our struct manually.
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenv;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// #
+/// use schema::users;
+/// use diesel::deserialize::{Queryable, FromSqlRow};
+/// use diesel::row::Row;
+///
+/// # /*
+/// type DB = diesel::sqlite::Sqlite;
+/// # */
+///
+/// #[derive(PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// impl Queryable<users::SqlType, DB> for User
+/// where
+///    (i32, String): FromSqlRow<users::SqlType, DB>,
+/// {
+///     type Row = (i32, String);
+///
+///     fn build((id, name): Self::Row) -> Self {
+///         User { id, name: name.to_lowercase() }
+///     }
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.first(&connection)?;
+/// let expected = User { id: 1, name: "sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
 #[proc_macro_derive(Queryable, attributes(column_name, diesel))]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, queryable::derive)
 }
 
-/// Implements `QueryableByName`
+/// Implements `QueryableByName` for untyped sql queries, such as that one generated
+/// by `sql_query`
 ///
 /// To derive this trait, Diesel needs to know the SQL type of each field. You
 /// can do this by either annotating your struct with `#[table_name =
@@ -388,6 +520,137 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 ///   single database column, but is a type that implements
 ///   `QueryableByName` on it's own
+///
+/// /// # Examples
+///
+/// If we just want to map a query to our struct, we can use `derive`.
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenv;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// # use schema::users;
+/// # use diesel::sql_query;
+/// #
+/// #[derive(QueryableByName, PartialEq, Debug)]
+/// #[table_name = "users"]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let connection = establish_connection();
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
+///     .get_result(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// If we want to do additional work during deserialization, we can use
+/// `deserialize_as` to use a different implementation.
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenv;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// # use diesel::sql_query;
+/// # use schema::users;
+/// # use diesel::backend::{self, Backend};
+/// # use diesel::deserialize::{self, FromSql};
+/// #
+/// struct LowercaseString(String);
+///
+/// impl Into<String> for LowercaseString {
+///     fn into(self) -> String {
+///         self.0
+///     }
+/// }
+///
+/// impl<DB, ST> FromSql<ST, DB> for LowercaseString
+/// where
+///     DB: Backend,
+///     String: FromSql<ST, DB>,
+/// {
+///     fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+///         String::from_sql(bytes)
+///             .map(|s| LowercaseString(s.to_lowercase()))
+///     }
+/// }
+///
+/// #[derive(QueryableByName, PartialEq, Debug)]
+/// #[table_name = "users"]
+/// struct User {
+///     id: i32,
+///     #[diesel(deserialize_as = "LowercaseString")]
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let connection = establish_connection();
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
+///     .get_result(&connection)?;
+/// let expected = User { id: 1, name: "sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// The custom derive generates impls similar to the follownig one
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenv;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// # use schema::users;
+/// # use diesel::sql_query;
+/// # use diesel::deserialize::{self, QueryableByName, FromSql};
+/// # use diesel::row::NamedRow;
+/// # use diesel::backend::Backend;
+/// #
+/// #[derive(PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// impl<DB> QueryableByName<DB> for User
+/// where
+///     DB: Backend,
+///     i32: FromSql<diesel::dsl::SqlTypeOf<users::id>, DB>,
+///     String: FromSql<diesel::dsl::SqlTypeOf<users::name>, DB>,
+/// {
+///     fn build<'a>(row: &impl NamedRow<'a, DB>) -> deserialize::Result<Self> {
+///         let id = NamedRow::get::<diesel::dsl::SqlTypeOf<users::id>, _>(row, "id")?;
+///         let name = NamedRow::get::<diesel::dsl::SqlTypeOf<users::name>, _>(row, "name")?;
+///
+///         Ok(Self { id, name })
+///     }
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let connection = establish_connection();
+/// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
+///     .get_result(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
 #[proc_macro_derive(QueryableByName, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, queryable_by_name::derive)

@@ -6,7 +6,7 @@ use crate::expression::SelectableExpression;
 use crate::prelude::*;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::Bool;
+use crate::sql_types::BoolOrNullableBool;
 use crate::util::TupleAppend;
 
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -84,7 +84,8 @@ where
 impl<Join, On> QuerySource for JoinOn<Join, On>
 where
     Join: QuerySource,
-    On: AppearsOnTable<Join::FromClause, SqlType = Bool> + Clone,
+    On: AppearsOnTable<Join::FromClause> + Clone,
+    On::SqlType: BoolOrNullableBool,
     Join::DefaultSelection: SelectableExpression<Self>,
 {
     type FromClause = Grouped<nodes::InfixNode<'static, Join::FromClause, On>>;

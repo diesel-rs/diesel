@@ -2,7 +2,7 @@
 extern crate diesel;
 
 use diesel::*;
-use diesel::dsl::count;
+use diesel::dsl::count_star;
 
 table! {
     users {
@@ -13,6 +13,6 @@ table! {
 fn main() {
     use self::users::dsl::*;
 
-    let source = users.select((id, count(users.star())));
+    let source = users.select((id, count_star()));
     //~^ ERROR MixedAggregates
 }

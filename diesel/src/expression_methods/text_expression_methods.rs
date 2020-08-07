@@ -1,6 +1,6 @@
 use crate::expression::operators::{Concat, Like, NotLike};
 use crate::expression::{AsExpression, Expression};
-use crate::sql_types::{Nullable, Text};
+use crate::sql_types::{Nullable, SqlType, Text};
 
 /// Methods present on text expressions
 pub trait TextExpressionMethods: Expression + Sized {
@@ -54,7 +54,11 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
-    fn concat<T: AsExpression<Self::SqlType>>(self, other: T) -> Concat<Self, T::Expression> {
+    fn concat<T>(self, other: T) -> Concat<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
         Concat::new(self, other.as_expression())
     }
 
@@ -86,8 +90,12 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn like<T: AsExpression<Self::SqlType>>(self, other: T) -> Like<Self, T::Expression> {
-        Like::new(self.as_expression(), other.as_expression())
+    fn like<T>(self, other: T) -> Like<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        Like::new(self, other.as_expression())
     }
 
     /// Returns a SQL `NOT LIKE` expression
@@ -118,8 +126,12 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn not_like<T: AsExpression<Self::SqlType>>(self, other: T) -> NotLike<Self, T::Expression> {
-        NotLike::new(self.as_expression(), other.as_expression())
+    fn not_like<T>(self, other: T) -> NotLike<Self, T::Expression>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        NotLike::new(self, other.as_expression())
     }
 }
 

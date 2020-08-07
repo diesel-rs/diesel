@@ -1,30 +1,169 @@
 //! Contains the `Row` trait
 
-use crate::backend::{self, Backend};
-use crate::deserialize::{self, FromSql};
+use crate::{
+    backend::{self, Backend},
+    deserialize,
+};
+use deserialize::FromSql;
+use std::ops::Range;
+
+/// Representing a way to index into database rows
+///
+/// * Crates using existing backends should use existing implementations of
+///   this traits. Diesel provides `RowIndex<usize>` and `RowIndex<&str>` for
+///   all bulit-in backends
+///
+/// * Crates implementing custom backends need to provide `RowIndex<usize>` and
+///   `RowIndex<&str>` impls for their [`Row`] type.
+///
+/// [`Row`]: trait.Row.html
+pub trait RowIndex<I> {
+    /// Get the numeric index inside the current row for the provided index value
+    fn idx(&self, idx: I) -> Option<usize>;
+}
 
 /// Represents a single database row.
-/// Apps should not need to concern themselves with this trait.
 ///
-/// This trait is only used as an argument to [`FromSqlRow`].
+/// This trait is used as an argument to [`FromSqlRow`].
 ///
 /// [`FromSqlRow`]: ../deserialize/trait.FromSqlRow.html
-pub trait Row<DB: Backend> {
-    /// Returns the value of the next column in the row.
-    fn take(&mut self) -> Option<backend::RawValue<DB>>;
-
-    /// Returns whether the next `count` columns are all `NULL`.
+pub trait Row<'a, DB: Backend>: RowIndex<usize> + for<'b> RowIndex<&'b str> + Sized {
+    /// Field type returned by a `Row` implementation
     ///
-    /// If this method returns `true`, then the next `count` calls to `take`
-    /// would all return `None`.
-    fn next_is_null(&self, count: usize) -> bool;
+    /// * Crates using existing backend should not concern themself with the
+    ///   concrete type of this associated type.
+    ///
+    /// * Crates implementing custom backends should provide their own type
+    ///   meeting the required trait bounds
+    type Field: Field<'a, DB>;
 
-    /// Skips the next `count` columns. This method must be called if you are
-    /// choosing not to call `take` as a result of `next_is_null` returning
-    /// `true`.
-    fn advance(&mut self, count: usize) {
-        for _ in 0..count {
-            self.take();
+    /// Return type of `PartialRow`
+    ///
+    /// For all implementations, beside of the `Row` implementation on `PartialRow` itself
+    /// this should be `Self`.
+    #[doc(hidden)]
+    type InnerPartialRow: Row<'a, DB>;
+
+    /// Get the number of fields in the current row
+    fn field_count(&self) -> usize;
+
+    /// Get the field with the provided index from the row.
+    ///
+    /// Returns `None` if there is no matching field for the given index
+    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    where
+        Self: RowIndex<I>;
+
+    /// Returns a wrapping row that allows only to access fields, where the index is part of
+    /// the provided range.
+    #[doc(hidden)]
+    fn partial_row(&self, range: Range<usize>) -> PartialRow<Self::InnerPartialRow>;
+}
+
+/// Represents a single field in a database row.
+///
+/// This trait allows retrieving information on the name of the colum and on the value of the
+/// field.
+pub trait Field<'a, DB: Backend> {
+    /// The name of the current field
+    ///
+    /// Returns `None` if it's an unnamed field
+    fn field_name(&self) -> Option<&'a str>;
+
+    /// Get the value representing the current field in the raw representation
+    /// as it is transmitted by the database
+    fn value(&self) -> Option<backend::RawValue<'a, DB>>;
+
+    /// Checks whether this field is null or not.
+    fn is_null(&self) -> bool {
+        self.value().is_none()
+    }
+}
+
+/// A row type that wraps an inner row
+///
+/// This type only allows to access fields of the inner row, whose index is
+/// part of `range`.
+///
+/// Indexing via `usize` starts with 0 for this row type. The index is then shifted
+/// by `self.range.start` to match the corresponding field in the underlying row.
+#[derive(Debug)]
+#[doc(hidden)]
+pub struct PartialRow<'a, R> {
+    inner: &'a R,
+    range: Range<usize>,
+}
+
+impl<'a, R> PartialRow<'a, R> {
+    #[doc(hidden)]
+    pub fn new<'b, DB>(inner: &'a R, range: Range<usize>) -> Self
+    where
+        R: Row<'b, DB>,
+        DB: Backend,
+    {
+        let range_lower = std::cmp::min(range.start, inner.field_count());
+        let range_upper = std::cmp::min(range.end, inner.field_count());
+        Self {
+            inner,
+            range: range_lower..range_upper,
+        }
+    }
+}
+
+impl<'a, 'b, DB, R> Row<'a, DB> for PartialRow<'b, R>
+where
+    DB: Backend,
+    R: Row<'a, DB>,
+{
+    type Field = R::Field;
+    type InnerPartialRow = R;
+
+    fn field_count(&self) -> usize {
+        self.range.len()
+    }
+
+    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    where
+        Self: RowIndex<I>,
+    {
+        let idx = self.idx(idx)?;
+        self.inner.get(idx)
+    }
+
+    fn partial_row(&self, range: Range<usize>) -> PartialRow<R> {
+        let range_upper_bound = std::cmp::min(self.range.end, self.range.start + range.end);
+        let range = (self.range.start + range.start)..range_upper_bound;
+        PartialRow {
+            inner: self.inner,
+            range,
+        }
+    }
+}
+
+impl<'a, 'b, R> RowIndex<&'a str> for PartialRow<'b, R>
+where
+    R: RowIndex<&'a str>,
+{
+    fn idx(&self, idx: &'a str) -> Option<usize> {
+        let idx = self.inner.idx(idx)?;
+        if self.range.contains(&idx) {
+            Some(idx)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a, R> RowIndex<usize> for PartialRow<'a, R>
+where
+    R: RowIndex<usize>,
+{
+    fn idx(&self, idx: usize) -> Option<usize> {
+        let idx = self.inner.idx(idx + self.range.start)?;
+        if self.range.contains(&idx) {
+            Some(idx)
+        } else {
+            None
         }
     }
 }
@@ -34,7 +173,7 @@ pub trait Row<DB: Backend> {
 ///
 /// This trait is used by implementations of
 /// [`QueryableByName`](../deserialize/trait.QueryableByName.html)
-pub trait NamedRow<DB: Backend> {
+pub trait NamedRow<'a, DB: Backend>: Row<'a, DB> {
     /// Retrieve and deserialize a single value from the query
     ///
     /// Note that `ST` *must* be the exact type of the value with that name in
@@ -44,23 +183,23 @@ pub trait NamedRow<DB: Backend> {
     ///
     /// If two or more fields in the query have the given name, the result of
     /// this function is undefined.
+    fn get<'b, ST, T>(&self, column_name: &'b str) -> deserialize::Result<T>
+    where
+        T: FromSql<ST, DB>;
+}
+
+impl<'a, R, DB> NamedRow<'a, DB> for R
+where
+    R: Row<'a, DB>,
+    DB: Backend,
+{
     fn get<ST, T>(&self, column_name: &str) -> deserialize::Result<T>
     where
         T: FromSql<ST, DB>,
     {
-        let idx = self
-            .index_of(column_name)
-            .ok_or_else(|| format!("Column `{}` was not present in query", column_name).into());
-        let idx = match idx {
-            Ok(x) => x,
-            Err(e) => return Err(e),
-        };
-        let raw_value = self.get_raw_value(idx);
-        T::from_sql(raw_value)
-    }
+        let field = Row::get(self, column_name)
+            .ok_or_else(|| format!("Column `{}` was not present in query", column_name))?;
 
-    #[doc(hidden)]
-    fn index_of(&self, column_name: &str) -> Option<usize>;
-    #[doc(hidden)]
-    fn get_raw_value(&self, index: usize) -> Option<backend::RawValue<DB>>;
+        T::from_nullable_sql(field.value())
+    }
 }

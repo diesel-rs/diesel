@@ -9,10 +9,11 @@ pub use crate::schema::{connection_without_transaction, TestConnection};
 pub use diesel::data_types::*;
 pub use diesel::result::Error;
 pub use diesel::serialize::ToSql;
-pub use diesel::sql_types::HasSqlType;
+pub use diesel::sql_types::{HasSqlType, SingleValue, SqlType};
 pub use diesel::*;
 
-use diesel::expression::{AsExpression, NonAggregate};
+use deserialize::FromSqlRow;
+use diesel::expression::{AsExpression, NonAggregate, TypedExpressionType};
 use diesel::query_builder::{QueryFragment, QueryId};
 #[cfg(feature = "postgres")]
 use std::collections::Bound;
@@ -23,10 +24,10 @@ thread_local! {
 
 pub fn test_type_round_trips<ST, T>(value: T) -> bool
 where
-    ST: QueryId,
+    ST: QueryId + SqlType + TypedExpressionType + SingleValue,
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
     T: AsExpression<ST>
-        + Queryable<ST, <TestConnection as Connection>::Backend>
+        + FromSqlRow<ST, <TestConnection as Connection>::Backend>
         + PartialEq
         + Clone
         + ::std::fmt::Debug,

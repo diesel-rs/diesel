@@ -153,7 +153,7 @@ mod bigdecimal {
     }
 
     impl FromSql<Numeric, Pg> for BigDecimal {
-        fn from_sql(numeric: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+        fn from_sql(numeric: PgValue<'_>) -> deserialize::Result<Self> {
             PgNumeric::from_sql(numeric)?.try_into()
         }
     }

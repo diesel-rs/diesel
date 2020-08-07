@@ -20,6 +20,11 @@ impl<'a> MysqlValue<'a> {
         self.raw
     }
 
+    /// Get the mysql type of the current value
+    pub fn value_type(&self) -> MysqlType {
+        self.tpe
+    }
+
     /// Checks that the type code is valid, and interprets the data as a
     /// `MYSQL_TIME` pointer
     // We use `ptr.read_unaligned()` to read the potential unaligned ptr,

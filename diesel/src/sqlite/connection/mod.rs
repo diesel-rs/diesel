@@ -17,7 +17,8 @@ use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
 use crate::connection::*;
-use crate::deserialize::{Queryable, QueryableByName};
+use crate::deserialize::{FromSqlRow, StaticallySizedRow};
+use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
@@ -71,28 +72,16 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>,
+        U: FromSqlRow<T::SqlType, Self::Backend>,
+        Self::Backend: QueryMetadata<T::SqlType>,
     {
         let mut statement = self.prepare_query(&source.as_query())?;
         let statement_use = StatementUse::new(&mut statement);
         let iter = StatementIterator::new(statement_use);
-        iter.collect()
-    }
-
-    #[doc(hidden)]
-    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
-    where
-        T: QueryFragment<Self::Backend> + QueryId,
-        U: QueryableByName<Self::Backend>,
-    {
-        let mut statement = self.prepare_query(source)?;
-        let statement_use = StatementUse::new(&mut statement);
-        let iter = NamedStatementIterator::new(statement_use)?;
         iter.collect()
     }
 
@@ -227,7 +216,7 @@ impl SqliteConnection {
     ) -> QueryResult<()>
     where
         F: FnMut(Args) -> Ret + Send + 'static,
-        Args: Queryable<ArgsSqlType, Sqlite>,
+        Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
@@ -246,7 +235,7 @@ impl SqliteConnection {
     ) -> QueryResult<()>
     where
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-        Args: Queryable<ArgsSqlType, Sqlite>,
+        Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {

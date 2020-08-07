@@ -1,8 +1,8 @@
 //! PostgreSQL specific expression methods
 
 use super::operators::*;
-use crate::expression::{AsExpression, Expression};
-use crate::sql_types::{Array, Nullable, Range, Text};
+use crate::expression::{AsExpression, Expression, TypedExpressionType};
+use crate::sql_types::{Array, Nullable, Range, SqlType, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -27,6 +27,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// ```
     fn is_not_distinct_from<T>(self, other: T) -> IsNotDistinctFrom<Self, T::Expression>
     where
+        Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
         IsNotDistinctFrom::new(self, other.as_expression())
@@ -53,6 +54,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// ```
     fn is_distinct_from<T>(self, other: T) -> IsDistinctFrom<Self, T::Expression>
     where
+        Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
         IsDistinctFrom::new(self, other.as_expression())
@@ -187,6 +189,7 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// ```
     fn overlaps_with<T>(self, other: T) -> OverlapsWith<Self, T::Expression>
     where
+        Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
         OverlapsWith::new(self, other.as_expression())
@@ -236,6 +239,7 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// ```
     fn contains<T>(self, other: T) -> Contains<Self, T::Expression>
     where
+        Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
         Contains::new(self, other.as_expression())
@@ -286,6 +290,7 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// ```
     fn is_contained_by<T>(self, other: T) -> IsContainedBy<Self, T::Expression>
     where
+        Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
         IsContainedBy::new(self, other.as_expression())
@@ -309,6 +314,7 @@ impl<T> ArrayOrNullableArray for Array<T> {}
 impl<T> ArrayOrNullableArray for Nullable<Array<T>> {}
 
 use crate::expression::operators::{Asc, Desc};
+use crate::EscapeExpressionMethods;
 
 /// PostgreSQL expression methods related to sorting.
 ///
@@ -440,8 +446,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn ilike<T: AsExpression<Text>>(self, other: T) -> ILike<Self, T::Expression> {
-        ILike::new(self.as_expression(), other.as_expression())
+    fn ilike<T>(self, other: T) -> ILike<Self, T::Expression>
+    where
+        T: AsExpression<Text>,
+    {
+        ILike::new(self, other.as_expression())
     }
 
     /// Creates a PostgreSQL `NOT ILIKE` expression
@@ -466,8 +475,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn not_ilike<T: AsExpression<Text>>(self, other: T) -> NotILike<Self, T::Expression> {
-        NotILike::new(self.as_expression(), other.as_expression())
+    fn not_ilike<T>(self, other: T) -> NotILike<Self, T::Expression>
+    where
+        T: AsExpression<Text>,
+    {
+        NotILike::new(self, other.as_expression())
     }
 }
 
@@ -487,10 +499,13 @@ where
 {
 }
 
+impl<T, U> EscapeExpressionMethods for ILike<T, U> {}
+impl<T, U> EscapeExpressionMethods for NotILike<T, U> {}
+
 #[doc(hidden)]
 /// Marker trait used to extract the inner type
 /// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
-pub trait RangeHelper {
+pub trait RangeHelper: SqlType {
     type Inner;
 }
 
@@ -547,10 +562,25 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     fn contains<T>(self, other: T) -> Contains<Self, T::Expression>
     where
         Self::SqlType: RangeHelper,
+        <Self::SqlType as RangeHelper>::Inner: SqlType + TypedExpressionType,
         T: AsExpression<<Self::SqlType as RangeHelper>::Inner>,
     {
         Contains::new(self, other.as_expression())
     }
 }
 
-impl<T, ST> PgRangeExpressionMethods for T where T: Expression<SqlType = Range<ST>> {}
+#[doc(hidden)]
+/// Marker trait used to implement `PgRangeExpressionMethods` on the appropriate
+/// types. Once coherence takes associated types into account, we can remove
+/// this trait.
+pub trait RangeOrNullableRange {}
+
+impl<ST> RangeOrNullableRange for Range<ST> {}
+impl<ST> RangeOrNullableRange for Nullable<Range<ST>> {}
+
+impl<T> PgRangeExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: RangeOrNullableRange,
+{
+}

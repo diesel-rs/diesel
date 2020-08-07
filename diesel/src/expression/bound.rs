@@ -5,7 +5,7 @@ use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
-use crate::sql_types::{DieselNumericOps, HasSqlType};
+use crate::sql_types::{DieselNumericOps, HasSqlType, SqlType};
 
 #[derive(Debug, Clone, Copy, DieselNumericOps)]
 pub struct Bound<T, U> {
@@ -22,7 +22,10 @@ impl<T, U> Bound<T, U> {
     }
 }
 
-impl<T, U> Expression for Bound<T, U> {
+impl<T, U> Expression for Bound<T, U>
+where
+    T: SqlType + TypedExpressionType,
+{
     type SqlType = T;
 }
 

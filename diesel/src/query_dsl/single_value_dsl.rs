@@ -3,7 +3,7 @@ use crate::dsl::Limit;
 use crate::expression::grouped::Grouped;
 use crate::expression::subselect::Subselect;
 use crate::query_builder::SelectQuery;
-use crate::sql_types::{IntoNullable, SingleValue};
+use crate::sql_types::IntoNullable;
 
 /// The `single_value` method
 ///
@@ -20,13 +20,13 @@ pub trait SingleValueDsl {
     fn single_value(self) -> Self::Output;
 }
 
-impl<T, ST> SingleValueDsl for T
+impl<T> SingleValueDsl for T
 where
-    Self: SelectQuery<SqlType = ST> + LimitDsl,
-    ST: IntoNullable,
-    ST::Nullable: SingleValue,
+    Self: SelectQuery + LimitDsl,
+    <Self as SelectQuery>::SqlType: IntoNullable,
 {
-    type Output = Grouped<Subselect<Limit<Self>, ST::Nullable>>;
+    type Output =
+        Grouped<Subselect<Limit<Self>, <<Self as SelectQuery>::SqlType as IntoNullable>::Nullable>>;
 
     fn single_value(self) -> Self::Output {
         Grouped(Subselect::new(self.limit(1)))

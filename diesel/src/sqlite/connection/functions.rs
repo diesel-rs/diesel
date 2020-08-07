@@ -3,11 +3,12 @@ extern crate libsqlite3_sys as ffi;
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteAggregateFunction, SqliteValue};
-use crate::deserialize::{FromSqlRow, Queryable};
+use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
-use crate::row::Row;
+use crate::row::{Field, PartialRow, Row, RowIndex};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
+use std::marker::PhantomData;
 
 pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,
@@ -17,11 +18,11 @@ pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
 ) -> QueryResult<()>
 where
     F: FnMut(&RawConnection, Args) -> Ret + Send + 'static,
-    Args: Queryable<ArgsSqlType, Sqlite>,
+    Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    let fields_needed = Args::Row::FIELDS_NEEDED;
+    let fields_needed = Args::FIELD_COUNT;
     if fields_needed > 127 {
         return Err(Error::DatabaseError(
             DatabaseErrorKind::UnableToSendCommand,
@@ -45,11 +46,11 @@ pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
 ) -> QueryResult<()>
 where
     A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-    Args: Queryable<ArgsSqlType, Sqlite>,
+    Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    let fields_needed = Args::Row::FIELDS_NEEDED;
+    let fields_needed = Args::FIELD_COUNT;
     if fields_needed > 127 {
         return Err(Error::DatabaseError(
             DatabaseErrorKind::UnableToSendCommand,
@@ -69,12 +70,10 @@ pub(crate) fn build_sql_function_args<ArgsSqlType, Args>(
     args: &[*mut ffi::sqlite3_value],
 ) -> Result<Args, Error>
 where
-    Args: Queryable<ArgsSqlType, Sqlite>,
+    Args: FromSqlRow<ArgsSqlType, Sqlite>,
 {
-    let mut row = FunctionRow { args };
-    let args_row = Args::Row::build_from_row(&mut row).map_err(Error::DeserializationError)?;
-
-    Ok(Args::build(args_row))
+    let row = FunctionRow::new(args);
+    Args::build_from_row(&row).map_err(Error::DeserializationError)
 }
 
 pub(crate) fn process_sql_function_result<RetSqlType, Ret>(
@@ -99,21 +98,73 @@ where
     })
 }
 
+#[derive(Clone)]
 struct FunctionRow<'a> {
     args: &'a [*mut ffi::sqlite3_value],
 }
 
-impl<'a> Row<Sqlite> for FunctionRow<'a> {
-    fn take(&mut self) -> Option<&SqliteValue> {
-        self.args.split_first().and_then(|(&first, rest)| {
-            self.args = rest;
-            unsafe { SqliteValue::new(first) }
+impl<'a> FunctionRow<'a> {
+    fn new(args: &'a [*mut ffi::sqlite3_value]) -> Self {
+        Self { args }
+    }
+}
+
+impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
+    type Field = FunctionArgument<'a>;
+    type InnerPartialRow = Self;
+
+    fn field_count(&self) -> usize {
+        self.args.len()
+    }
+
+    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    where
+        Self: crate::row::RowIndex<I>,
+    {
+        let idx = self.idx(idx)?;
+
+        self.args.get(idx).map(|arg| FunctionArgument {
+            arg: *arg,
+            p: PhantomData,
         })
     }
 
-    fn next_is_null(&self, count: usize) -> bool {
-        self.args[..count]
-            .iter()
-            .all(|&p| unsafe { SqliteValue::new(p) }.is_none())
+    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
+        PartialRow::new(self, range)
+    }
+}
+
+impl<'a> RowIndex<usize> for FunctionRow<'a> {
+    fn idx(&self, idx: usize) -> Option<usize> {
+        if idx < self.args.len() {
+            Some(idx)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a, 'b> RowIndex<&'a str> for FunctionRow<'b> {
+    fn idx(&self, _idx: &'a str) -> Option<usize> {
+        None
+    }
+}
+
+struct FunctionArgument<'a> {
+    arg: *mut ffi::sqlite3_value,
+    p: PhantomData<&'a ()>,
+}
+
+impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
+    fn field_name(&self) -> Option<&'a str> {
+        None
+    }
+
+    fn is_null(&self) -> bool {
+        self.value().is_none()
+    }
+
+    fn value(&self) -> Option<crate::backend::RawValue<'a, Sqlite>> {
+        unsafe { SqliteValue::new(self.arg) }
     }
 }

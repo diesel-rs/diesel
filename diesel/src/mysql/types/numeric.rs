@@ -19,10 +19,10 @@ pub mod bigdecimal {
     }
 
     impl FromSql<Numeric, Mysql> for BigDecimal {
-        fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+        fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
             use crate::mysql::NumericRepresentation::*;
-            let data = not_none!(value);
-            match data.numeric_value()? {
+
+            match value.numeric_value()? {
                 Tiny(x) => Ok(x.into()),
                 Small(x) => Ok(x.into()),
                 Medium(x) => Ok(x.into()),

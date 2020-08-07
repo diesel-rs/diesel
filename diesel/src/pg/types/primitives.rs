@@ -6,11 +6,8 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 
 impl FromSql<sql_types::Bool, Pg> for bool {
-    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        match bytes {
-            Some(bytes) => Ok(bytes.as_bytes()[0] != 0),
-            None => Ok(false),
-        }
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        Ok(bytes.as_bytes()[0] != 0)
     }
 }
 
@@ -31,7 +28,10 @@ fn bool_to_sql() {
 }
 
 #[test]
-fn bool_from_sql_treats_null_as_false() {
-    let result = <bool as FromSql<sql_types::Bool, Pg>>::from_sql(None).unwrap();
-    assert!(!result);
+fn no_bool_from_sql() {
+    let result = <bool as FromSql<sql_types::Bool, Pg>>::from_nullable_sql(None);
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "Unexpected null for non-null column"
+    );
 }

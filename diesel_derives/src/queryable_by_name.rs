@@ -9,11 +9,31 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let model = Model::from_item(&item)?;
 
     let struct_name = &item.ident;
-    let field_expr = model
+    let fields = model.fields().iter().map(get_ident).collect::<Vec<_>>();
+    let field_names = model.fields().iter().map(|f| &f.name).collect::<Vec<_>>();
+
+    let initial_field_expr = model
         .fields()
         .iter()
-        .map(|f| field_expr(f, &model))
-        .collect::<Result<Vec<_>, _>>()?;
+        .map(|f| {
+            if f.has_flag("embed") {
+                let field_ty = &f.ty;
+                Ok(quote!(<#field_ty as QueryableByName<__DB>>::build(
+                    row,
+                )?))
+            } else {
+                let name = f.column_name();
+                let field_ty = &f.ty;
+                let deserialize_ty = f.ty_for_deserialize()?;
+                Ok(quote!(
+                   {
+                       let field = diesel::row::NamedRow::get(row, stringify!(#name))?;
+                       <#deserialize_ty as Into<#field_ty>>::into(field)
+                   }
+                ))
+            }
+        })
+        .collect::<Result<Vec<_>, Diagnostic>>()?;
 
     let (_, ty_generics, ..) = item.generics.split_for_impl();
     let mut generics = item.generics.clone();
@@ -40,33 +60,34 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 
     Ok(wrap_in_dummy_mod(quote! {
         use diesel::deserialize::{self, QueryableByName};
-        use diesel::row::NamedRow;
+        use diesel::row::{NamedRow};
+        use diesel::sql_types::Untyped;
 
         impl #impl_generics QueryableByName<__DB>
             for #struct_name #ty_generics
         #where_clause
         {
-            fn build<__R: NamedRow<__DB>>(row: &__R) -> deserialize::Result<Self> {
-                std::result::Result::Ok(Self {
-                    #(#field_expr,)*
+            fn build<'__a>(row: &impl NamedRow<'__a, __DB>) -> deserialize::Result<Self>
+            {
+
+
+                #(
+                    let mut #fields = #initial_field_expr;
+                )*
+                deserialize::Result::Ok(Self {
+                    #(
+                        #field_names: #fields,
+                    )*
                 })
             }
         }
     }))
 }
 
-fn field_expr(field: &Field, model: &Model) -> Result<syn::FieldValue, Diagnostic> {
-    if field.has_flag("embed") {
-        Ok(field
-            .name
-            .assign(parse_quote!(QueryableByName::build(row)?)))
-    } else {
-        let column_name = field.column_name();
-        let ty = field.ty_for_deserialize()?;
-        let st = sql_type(field, model);
-        Ok(field
-            .name
-            .assign(parse_quote!(row.get::<#st, #ty>(stringify!(#column_name))?.into())))
+fn get_ident(field: &Field) -> Ident {
+    match &field.name {
+        FieldName::Named(n) => n.clone(),
+        FieldName::Unnamed(i) => Ident::new(&format!("field_{}", i.index), Span::call_site()),
     }
 }
 

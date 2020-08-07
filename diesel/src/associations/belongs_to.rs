@@ -4,6 +4,7 @@ use crate::expression::array_comparison::AsInExpression;
 use crate::expression::AsExpression;
 use crate::prelude::*;
 use crate::query_dsl::methods::FilterDsl;
+use crate::sql_types::SqlType;
 
 use std::borrow::Borrow;
 use std::hash::Hash;
@@ -139,6 +140,7 @@ where
     Id<&'a Parent>: AsExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
     Child::Table: FilterDsl<Eq<Child::ForeignKeyColumn, Id<&'a Parent>>>,
     Child::ForeignKeyColumn: ExpressionMethods,
+    <Child::ForeignKeyColumn as Expression>::SqlType: SqlType,
 {
     type Output = FindBy<Child::Table, Child::ForeignKeyColumn, Id<&'a Parent>>;
 
@@ -154,6 +156,7 @@ where
     Vec<Id<&'a Parent>>: AsInExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
     <Child as HasTable>::Table: FilterDsl<EqAny<Child::ForeignKeyColumn, Vec<Id<&'a Parent>>>>,
     Child::ForeignKeyColumn: ExpressionMethods,
+    <Child::ForeignKeyColumn as Expression>::SqlType: SqlType,
 {
     type Output = Filter<Child::Table, EqAny<Child::ForeignKeyColumn, Vec<Id<&'a Parent>>>>;
 

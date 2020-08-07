@@ -1,13 +1,13 @@
 use std::marker::PhantomData;
 
+use super::Query;
 use crate::backend::Backend;
 use crate::connection::Connection;
-use crate::deserialize::QueryableByName;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::query_dsl::{LoadQuery, RunQueryDsl};
+use crate::query_dsl::RunQueryDsl;
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
-use crate::sql_types::HasSqlType;
+use crate::sql_types::{HasSqlType, Untyped};
 
 #[derive(Debug, Clone)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -116,15 +116,8 @@ impl<Inner> QueryId for SqlQuery<Inner> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<Inner, Conn, T> LoadQuery<Conn, T> for SqlQuery<Inner>
-where
-    Conn: Connection,
-    T: QueryableByName<Conn::Backend>,
-    Self: QueryFragment<Conn::Backend>,
-{
-    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<T>> {
-        conn.query_by_name(&self)
-    }
+impl<Inner> Query for SqlQuery<Inner> {
+    type SqlType = Untyped;
 }
 
 impl<Inner, Conn> RunQueryDsl<Conn> for SqlQuery<Inner> {}
@@ -182,15 +175,8 @@ where
     }
 }
 
-impl<Conn, Query, Value, ST, T> LoadQuery<Conn, T> for UncheckedBind<Query, Value, ST>
-where
-    Conn: Connection,
-    T: QueryableByName<Conn::Backend>,
-    Self: QueryFragment<Conn::Backend> + QueryId,
-{
-    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<T>> {
-        conn.query_by_name(&self)
-    }
+impl<Q, Value, ST> Query for UncheckedBind<Q, Value, ST> {
+    type SqlType = Untyped;
 }
 
 impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, ST> {}
@@ -260,15 +246,11 @@ impl<DB: Backend, Query> QueryId for BoxedSqlQuery<'_, DB, Query> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<Conn, T, Query> LoadQuery<Conn, T> for BoxedSqlQuery<'_, Conn::Backend, Query>
+impl<DB, Q> Query for BoxedSqlQuery<'_, DB, Q>
 where
-    Conn: Connection,
-    T: QueryableByName<Conn::Backend>,
-    Self: QueryFragment<Conn::Backend> + QueryId,
+    DB: Backend,
 {
-    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<T>> {
-        conn.query_by_name(&self)
-    }
+    type SqlType = Untyped;
 }
 
 impl<Conn: Connection, Query> RunQueryDsl<Conn> for BoxedSqlQuery<'_, Conn::Backend, Query> {}

@@ -20,6 +20,12 @@ error: All fields of tuple structs must be annotated with `#[column_name]`
 10 | struct Bar(i32, String);
    |            ^^^
 
+error: All fields of tuple structs must be annotated with `#[column_name]`
+  --> $DIR/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:10:17
+   |
+10 | struct Bar(i32, String);
+   |                 ^^^^^^
+
 error: Cannot determine the SQL type of field
   --> $DIR/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:10:12
    |
@@ -27,12 +33,6 @@ error: Cannot determine the SQL type of field
    |            ^^^
    |
    = help: Your struct must either be annotated with `#[table_name = "foo"]` or have all of its fields annotated with `#[sql_type = "Integer"]`
-
-error: All fields of tuple structs must be annotated with `#[column_name]`
-  --> $DIR/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:10:17
-   |
-10 | struct Bar(i32, String);
-   |                 ^^^^^^
 
 error: Cannot determine the SQL type of field
   --> $DIR/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:10:17

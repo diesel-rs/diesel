@@ -1,5 +1,5 @@
 use diesel::backend::Backend;
-use diesel::deserialize::{FromSqlRow, Queryable};
+use diesel::deserialize::{FromStaticSqlRow, Queryable};
 use std::fmt;
 use std::str::FromStr;
 
@@ -55,8 +55,8 @@ impl TableName {
 
 impl<ST, DB> Queryable<ST, DB> for TableName
 where
+    (String, String): FromStaticSqlRow<ST, DB>,
     DB: Backend,
-    (String, String): FromSqlRow<ST, DB>,
 {
     type Row = (String, String);
 

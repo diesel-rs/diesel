@@ -1,4 +1,5 @@
 use crate::backend::Backend;
+use crate::expression::TypedExpressionType;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
@@ -17,9 +18,10 @@ impl<T> Nullable<T> {
 impl<T> Expression for Nullable<T>
 where
     T: Expression,
-    <T as Expression>::SqlType: IntoNullable,
+    T::SqlType: IntoNullable,
+    <T::SqlType as IntoNullable>::Nullable: TypedExpressionType,
 {
-    type SqlType = <<T as Expression>::SqlType as IntoNullable>::Nullable;
+    type SqlType = <T::SqlType as IntoNullable>::Nullable;
 }
 
 impl<T, DB> QueryFragment<DB> for Nullable<T>
