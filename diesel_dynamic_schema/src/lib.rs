@@ -1,6 +1,6 @@
 //! # Diesel dynamic schema
 //!
-//! Diesel is an ORM and query builder designed to reduce 
+//! Diesel is an ORM and query builder designed to reduce
 //! the boilerplate for database interactions.
 //!
 //! If this is your first time reading about Diesel, then
@@ -11,21 +11,21 @@
 //! [many other long form guides]: https://diesel.rs/guides
 //!
 //! Diesel is built to provide strong compile time guarantees that your
-//! queries are valid. To do this, it needs to represent your schema 
-//! at compile time. However, there are some times where you don't 
+//! queries are valid. To do this, it needs to represent your schema
+//! at compile time. However, there are some times where you don't
 //! actually know the schema you're interacting with until runtime.
-//! 
+//!
 //! This crate provides tools to work with those cases, while still being
-//! able to use Diesel's query builder. Keep in mind that many compile time 
-//! guarantees are lost. We cannot verify that the tables/columns you ask 
+//! able to use Diesel's query builder. Keep in mind that many compile time
+//! guarantees are lost. We cannot verify that the tables/columns you ask
 //! for actually exist, or that the types you state are correct.
-//! 
+//!
 //! # Getting Started
-//! 
+//!
 //! The `table` function is used to create a new Diesel table.
-//! Note that you must always provide an explicit select clause 
+//! Note that you must always provide an explicit select clause
 //! when using this crate.
-//! 
+//!
 //! ```rust
 //! # extern crate diesel;
 //! # extern crate diesel_dynamic_schema;
@@ -44,7 +44,7 @@
 //! let users = table("users");
 //! let id = users.column::<Integer, _>("id");
 //! let name = users.column::<Text, _>("name");
-//! 
+//!
 //! // Now you can use typical Diesel syntax; see the Diesel docs for more.
 //! let results = users
 //!     .select((id, name))
@@ -59,7 +59,7 @@
 //!        println!("id:{} name:{}", x, y);
 //! }
 //! ```
-//! 
+//!
 //! See the `/examples` directory for runnable code examples.
 //!
 //! ## Getting help
@@ -69,9 +69,7 @@
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
 // Built-in Lints
-#![deny(
-    missing_docs
-)]
+#![deny(missing_docs)]
 
 extern crate diesel;
 
