@@ -3,11 +3,8 @@ use crate::query_builder::upsert::into_conflict_clause::IntoConflictValueClause;
 use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
 use crate::query_builder::upsert::on_conflict_target::*;
-use crate::query_builder::upsert::on_conflict_target_decorations::{
-    FilteredConflictTarget, UndecoratedConflictTarget,
-};
+pub use crate::query_builder::upsert::on_conflict_target_decorations::DecoratableTarget;
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
-use crate::query_dsl::filter_dsl::FilterDsl;
 use crate::query_source::QuerySource;
 use crate::sql_types::Bool;
 
@@ -205,15 +202,16 @@ where
     }
 }
 
-impl<Stmt, Target, Predicate> FilterDsl<Predicate> for IncompleteOnConflict<Stmt, Target>
+impl<Stmt, T, U, P> DecoratableTarget<T, U, P> for IncompleteOnConflict<Stmt, T>
 where
-    Predicate: Expression<SqlType = Bool>,
+    P: Expression<SqlType = Bool>,
+    T: DecoratableTarget<T, U, P>,
 {
-    type Output = IncompleteOnConflict<Stmt, FilteredConflictTarget<Target, Predicate>>;
-    fn filter(self: Self, predicate: Predicate) -> Self::Output {
+    type FilterOutput = IncompleteOnConflict<Stmt, <T as DecoratableTarget<T, U, P>>::FilterOutput>;
+    fn filter_target(self, predicate: P) -> Self::FilterOutput {
         IncompleteOnConflict {
             stmt: self.stmt,
-            target: UndecoratedConflictTarget(self.target).filter(predicate),
+            target: self.target.filter_target(predicate),
         }
     }
 }

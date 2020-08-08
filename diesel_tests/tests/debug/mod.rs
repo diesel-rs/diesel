@@ -1,4 +1,5 @@
 use crate::schema::TestBackend;
+use diesel::upsert::DecoratableTarget;
 use diesel::*;
 
 #[test]
@@ -130,13 +131,12 @@ fn test_upsert() {
     let upsert_command = insert_into(users)
         .values(values)
         .on_conflict(hair_color)
-        .filter(hair_color.eq(Some("black")))
+        .filter_target(hair_color.eq(Some("black")))
         .do_nothing();
     let upsert_sql_display = debug_query::<TestBackend, _>(&upsert_command).to_string();
-    // let upsert_sql_debug = format!("{:?}", debug_query::<TestBackend, _>(&upsert_command));
 
     assert_eq!(
         upsert_sql_display,
-        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE hair_color="black" DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None]"#
+        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE "users"."hair_color" = $5 DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, Some("black")]"#
     );
 }
