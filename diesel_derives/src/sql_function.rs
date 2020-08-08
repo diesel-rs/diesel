@@ -51,7 +51,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .type_params()
         .map(|type_param| type_param.ident.clone())
         .collect::<Vec<_>>();
-    let type_args2 = &type_args.clone();
+
     for StrictFnArg { name, .. } in args {
         generics.params.push(parse_quote!(#name));
     }
@@ -77,15 +77,14 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         // FIXME: We can always derive once trivial bounds are stable
         numeric_derive = None;
     } else {
-        sql_type = Some(quote!((#(#arg_name),*)));
+        sql_type = Some(quote!((#(#arg_name),*): Expression,));
         numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
     }
-
 
     let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
-        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable};
+        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping};
         use diesel::query_builder::{QueryFragment, AstPass};
         use diesel::sql_types::*;
         use super::*;
@@ -104,7 +103,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
         impl #impl_generics Expression for #fn_name #ty_generics
         #where_clause
-            #(#sql_type: Expression,)*
+            #sql_type
         {
             type SqlType = #return_type;
         }
@@ -149,9 +148,6 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
             impl #impl_generics_internal ValidGrouping<__DieselInternal>
                 for #fn_name #ty_generics
-            #where_clause
-                #(#arg_name: diesel::expression::NonAggregate,)*
-                Self: Expression,
             {
                 type IsAggregate = diesel::expression::is_aggregate::Yes;
             }
@@ -236,7 +232,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
             }
         };
 
-        if cfg!(feature = "sqlite") && type_args.is_empty() {
+        if cfg!(feature = "sqlite") && type_args.is_empty() && !arg_name.is_empty() {
             tokens = quote! {
                 #tokens
 
