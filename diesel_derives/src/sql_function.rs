@@ -8,6 +8,10 @@ use util::*;
 
 // Extremely curious why this triggers on a nearly branchless function
 #[allow(clippy::cognitive_complexity)]
+// for loop comes from `quote!`
+#[allow(clippy::for_loop_over_option)]
+// https://github.com/rust-lang/rust-clippy/issues/3768
+#[allow(clippy::useless_let_if_seq)]
 pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> {
     let SqlFunctionDecl {
         mut attributes,
@@ -65,6 +69,18 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .push(parse_quote!(__DieselInternal));
     let (impl_generics_internal, _, _) = generics_with_internal.split_for_impl();
 
+    let sql_type;
+    let numeric_derive;
+
+    if arg_name.is_empty() {
+        sql_type = None;
+        // FIXME: We can always derive once trivial bounds are stable
+        numeric_derive = None;
+    } else {
+        sql_type = Some(quote!((#(#arg_name),*): Expression,));
+        numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
+    }
+
     let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
@@ -73,7 +89,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         use diesel::sql_types::*;
         use super::*;
 
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, diesel::sql_types::DieselNumericOps)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        #numeric_derive
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
             #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*
@@ -86,7 +103,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
         impl #impl_generics Expression for #fn_name #ty_generics
         #where_clause
-            (#(#arg_name),*): Expression,
+            #sql_type
         {
             type SqlType = #return_type;
         }
@@ -215,7 +232,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
             }
         };
 
-        if cfg!(feature = "sqlite") && type_args.is_empty() {
+        if cfg!(feature = "sqlite") && type_args.is_empty() && !arg_name.is_empty() {
             tokens = quote! {
                 #tokens
 
