@@ -142,6 +142,9 @@ pub mod macros;
 #[macro_use]
 extern crate cfg_if;
 
+#[cfg(feature = "chrono")]
+pub extern crate chrono;
+
 #[cfg(test)]
 pub mod test_helpers;
 
