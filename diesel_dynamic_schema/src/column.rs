@@ -18,7 +18,7 @@ impl<T, U, ST> Column<T, U, ST> {
     pub(crate) fn new(table: T, name: U) -> Self {
         Self {
             table,
-            name: name,
+            name,
             _sql_type: PhantomData,
         }
     }
