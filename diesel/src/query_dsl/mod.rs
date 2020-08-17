@@ -1200,6 +1200,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// it will implicitly add a `RETURNING *` to the query,
     /// unless a returning clause was already specified.
     ///
+    /// This method only returns the first row that was affected, even if more
+    /// rows are affected.
+    ///
     /// # Example
     ///
     /// ```rust
