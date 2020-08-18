@@ -192,7 +192,7 @@ pub fn connection_without_transaction() -> TestConnection {
 }
 
 #[cfg(feature = "sqlite")]
-embed_migrations!("../migrations/sqlite");
+diesel_migrations::embed_migrations!("../migrations/sqlite");
 
 #[cfg(feature = "sqlite")]
 pub fn connection_without_transaction() -> TestConnection {

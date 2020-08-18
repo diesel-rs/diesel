@@ -7,6 +7,7 @@ on:
       - '0.[0-9]+.x'
       - '1.[0-9]+.x'
 
+
 name: CI Tests
 
 jobs:
@@ -125,7 +126,7 @@ jobs:
           brew install mysql
           brew services start mysql
           brew services stop mysql;sleep 3;brew services start mysql
-          sleep 2
+          sleep 3
           macos_mysql_version="$(ls /usr/local/Cellar/mysql)"
           /usr/local/Cellar/mysql/${macos_mysql_version}/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
           echo '::set-env name=MYSQL_DATABASE_URL::mysql://root@localhost/diesel_test'
@@ -259,6 +260,12 @@ jobs:
         with:
           command: test
           args: --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }}"
+
+      - name: Run diesel_benches
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" --bench benchmarks
 
       - name: Run rustdoc (nightly)
         if: matrix.run == 'nightly'

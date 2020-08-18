@@ -5,6 +5,7 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 build = "build.rs"
 autotests = false
+autobenches = false
 edition = "2018"
 
 [build-dependencies]
@@ -37,7 +38,3 @@ name = "integration_tests"
 path = "tests/lib.rs"
 harness = true
 
-[[bench]]
-name = "benchmarks"
-path = "tests/bench.rs"
-bench = true

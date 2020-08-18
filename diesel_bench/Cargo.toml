@@ -1,0 +1,53 @@
+[package]
+name = "diesel_bench"
+version = "0.1.0"
+authors = []
+edition = "2018"
+build = "build.rs"
+autobenches = false
+
+[workspace]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+dotenv = "0.15"
+criterion = "=0.3.2" # critcmp only supports 0.3.2
+sqlx = {version = "0.4.0-beta.1", optional = true}
+async-std = { version = "1.5", optional = true}
+rusqlite = {version = "0.23", optional = true}
+rust_postgres = {version = "0.17", optional = true, package = "postgres"}
+rust_mysql = {version = "20.0.1", optional = true, package = "mysql"}
+rustorm = {version = "0.17", optional = true}
+rustorm_dao = {version = "0.5", optional = true}
+quaint = {version = "0.2.0-alpha.13", optional = true}
+tokio = {version = "0.2", optional = true}
+serde = {version = "1", optional = true, features = ["derive"]}
+
+[dependencies.diesel]
+path = "../diesel"
+default-features = false
+features = []
+
+[build-dependencies]
+diesel = { path = "../diesel", default-features = false }
+diesel_migrations = { path = "../diesel_migrations" }
+dotenv = "0.15"
+
+
+[[bench]]
+name = "benchmarks"
+path = "benches/lib.rs"
+bench = true
+harness = false
+
+[features]
+default = []
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
+mysql = ["diesel/mysql"]
+
+[patch.crates-io]
+rustorm = {git = "https://github.com/weiznich/rustorm"}
+rustorm_dao = {git = "https://github.com/weiznich/rustorm"}
+quaint = {git = "https://github.com/prisma/quaint", rev = "ec9384f"}
