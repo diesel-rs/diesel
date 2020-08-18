@@ -1,5 +1,8 @@
 use diesel::backend::Backend;
-use diesel::expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use diesel::expression::{
+    is_aggregate, AppearsOnTable, Expression, SelectableExpression, TypedExpressionType,
+    ValidGrouping,
+};
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use std::borrow::Borrow;
@@ -29,15 +32,20 @@ impl<T, U, ST> QueryId for Column<T, U, ST> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<T, U, ST, QS> SelectableExpression<QS> for Column<T, U, ST> {}
+impl<T, U, ST, QS> SelectableExpression<QS> for Column<T, U, ST> where Self: Expression {}
 
-impl<T, U, ST, QS> AppearsOnTable<QS> for Column<T, U, ST> {}
+impl<T, U, ST, QS> AppearsOnTable<QS> for Column<T, U, ST> where Self: Expression {}
 
-impl<T, U, ST> Expression for Column<T, U, ST> {
+impl<T, U, ST> Expression for Column<T, U, ST>
+where
+    ST: TypedExpressionType,
+{
     type SqlType = ST;
 }
 
-impl<T, U, ST> NonAggregate for Column<T, U, ST> {}
+impl<T, U, ST> ValidGrouping<()> for Column<T, U, ST> {
+    type IsAggregate = is_aggregate::No;
+}
 
 impl<T, U, ST, DB> QueryFragment<DB> for Column<T, U, ST>
 where

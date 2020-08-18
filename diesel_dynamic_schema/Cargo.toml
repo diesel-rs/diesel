@@ -3,6 +3,7 @@ name = "diesel-dynamic-schema"
 version = "1.0.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
+edition = "2018"
 
 [dependencies.diesel]
 version = "2.0.0"

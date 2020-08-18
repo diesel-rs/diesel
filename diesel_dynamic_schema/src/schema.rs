@@ -1,4 +1,4 @@
-use table::Table;
+use crate::table::Table;
 
 #[derive(Debug, Clone, Copy)]
 /// A database schema.

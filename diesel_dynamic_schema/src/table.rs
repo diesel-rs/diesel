@@ -1,12 +1,12 @@
-use diesel;
 use diesel::backend::Backend;
+use diesel::expression::expression_types;
 use diesel::prelude::*;
 use diesel::query_builder::*;
 use diesel::query_source::QuerySource;
 use std::borrow::Borrow;
 
-use column::Column;
-use dummy_expression::*;
+use crate::column::Column;
+use crate::dummy_expression::*;
 
 #[derive(Debug, Clone, Copy)]
 /// A database table.
@@ -55,9 +55,9 @@ where
 
 impl<T, U> AsQuery for Table<T, U>
 where
-    SelectStatement<Self>: Query<SqlType = ()>,
+    SelectStatement<Self>: Query<SqlType = expression_types::NotSelectable>,
 {
-    type SqlType = ();
+    type SqlType = expression_types::NotSelectable;
     type Query = SelectStatement<Self>;
 
     fn as_query(self) -> Self::Query {

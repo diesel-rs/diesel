@@ -27,18 +27,19 @@
 //! when using this crate.
 //!
 //! ```rust
-//! # extern crate diesel;
-//! # extern crate diesel_dynamic_schema;
-//! # use diesel::*;
+//! # use diesel::prelude::*;
 //! # use diesel::sql_types::{Integer, Text};
 //! # use diesel::sqlite::SqliteConnection;
 //! # use diesel_dynamic_schema::table;
+//! # use diesel::dsl::sql_query;
+//! #
+//! # fn result_main() -> QueryResult<()> {
 //! #
 //! # let conn = SqliteConnection::establish(":memory:").unwrap();
 //! #
 //! # // Create some example data by using typical SQL statements.
-//! # sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)").execute(&conn).unwrap();
-//! # sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").execute(&conn).unwrap();
+//! # sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)").execute(&conn)?;
+//! # sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").execute(&conn)?;
 //! #
 //! // Use diesel-dynamic-schema to create a table and columns.
 //! let users = table("users");
@@ -49,15 +50,17 @@
 //! let results = users
 //!     .select((id, name))
 //!     .filter(name.eq("Sean"))
-//!     .load::<(i32, String)>(&conn);
+//!     .load::<(i32, String)>(&conn)?;
 //!
-//! let results = results.unwrap();
 //! # assert_eq!(results.len(), 1);
 //! # assert_eq!(results[0].1, "Sean");
-//! for result in results {
-//!    let (x, y) = result;
-//!        println!("id:{} name:{}", x, y);
+//! #
+//! for (id, name) in results {
+//!     println!("id:{} name:{}", id, name);
 //! }
+//! # Ok(())
+//! # }
+//! # result_main().unwrap()
 //! ```
 //!
 //! See the `/examples` directory for runnable code examples.
@@ -70,6 +73,7 @@
 
 // Built-in Lints
 #![deny(missing_docs)]
+#![deny(warnings)]
 
 extern crate diesel;
 
@@ -92,8 +96,6 @@ pub use table::Table;
 /// # Example
 ///
 /// ```
-/// extern crate diesel;
-/// use diesel::*;
 /// use diesel_dynamic_schema::table;
 ///
 /// let users = table("users");
@@ -107,8 +109,6 @@ pub fn table<T>(name: T) -> Table<T> {
 /// # Example
 ///
 /// ```
-/// extern crate diesel;
-/// use diesel::*;
 /// use diesel_dynamic_schema::schema;
 ///
 /// let schema = schema("users");
