@@ -202,13 +202,13 @@ where
     }
 }
 
-impl<Stmt, T, U, P> DecoratableTarget<T, U, P> for IncompleteOnConflict<Stmt, T>
+impl<Stmt, T, U, P> DecoratableTarget<U, P> for IncompleteOnConflict<Stmt, T>
 where
     P: Expression,
     P::SqlType: BoolOrNullableBool,
-    T: DecoratableTarget<T, U, P>,
+    T: DecoratableTarget<U, P>,
 {
-    type FilterOutput = IncompleteOnConflict<Stmt, <T as DecoratableTarget<T, U, P>>::FilterOutput>;
+    type FilterOutput = IncompleteOnConflict<Stmt, <T as DecoratableTarget<U, P>>::FilterOutput>;
     fn filter_target(self, predicate: P) -> Self::FilterOutput {
         IncompleteOnConflict {
             stmt: self.stmt,
