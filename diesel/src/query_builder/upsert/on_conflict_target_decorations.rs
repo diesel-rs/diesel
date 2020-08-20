@@ -63,7 +63,6 @@ where
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         self.target.walk_ast(out.reborrow())?;
-        // out.push_sql(" ");
         self.where_clause.walk_ast(out.reborrow())?;
         Ok(())
     }
