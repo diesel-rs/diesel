@@ -6,7 +6,7 @@ use crate::query_builder::upsert::on_conflict_target::*;
 pub use crate::query_builder::upsert::on_conflict_target_decorations::DecoratableTarget;
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
 use crate::query_source::QuerySource;
-use crate::sql_types::Bool;
+use crate::sql_types::BoolOrNullableBool;
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
 where
@@ -204,7 +204,8 @@ where
 
 impl<Stmt, T, U, P> DecoratableTarget<T, U, P> for IncompleteOnConflict<Stmt, T>
 where
-    P: Expression<SqlType = Bool>,
+    P: Expression,
+    P::SqlType: BoolOrNullableBool,
     T: DecoratableTarget<T, U, P>,
 {
     type FilterOutput = IncompleteOnConflict<Stmt, <T as DecoratableTarget<T, U, P>>::FilterOutput>;

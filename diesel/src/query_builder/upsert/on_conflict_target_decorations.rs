@@ -3,7 +3,7 @@ use crate::expression::Expression;
 use crate::query_builder::upsert::on_conflict_target::{ConflictTarget, NoConflictTarget};
 use crate::query_builder::where_clause::{NoWhereClause, WhereAnd, WhereClause};
 use crate::query_builder::{AstPass, QueryFragment, QueryResult};
-use crate::sql_types::Bool;
+use crate::sql_types::BoolOrNullableBool;
 
 pub trait UndecoratedConflictTarget {}
 
@@ -27,7 +27,8 @@ pub struct DecoratedConflictTarget<T, U> {
 
 impl<T, P> DecoratableTarget<T, WhereClause<P>, P> for T
 where
-    P: Expression<SqlType = Bool>,
+    P: Expression,
+    P::SqlType: BoolOrNullableBool,
     T: UndecoratedConflictTarget,
 {
     type FilterOutput = DecoratedConflictTarget<T, WhereClause<P>>;
@@ -41,7 +42,8 @@ where
 
 impl<T, U, P> DecoratableTarget<T, <U as WhereAnd<P>>::Output, P> for DecoratedConflictTarget<T, U>
 where
-    P: Expression<SqlType = Bool>,
+    P: Expression,
+    P::SqlType: BoolOrNullableBool,
     U: WhereAnd<P>,
 {
     type FilterOutput = DecoratedConflictTarget<T, <U as WhereAnd<P>>::Output>;

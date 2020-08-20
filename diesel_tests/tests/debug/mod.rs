@@ -130,7 +130,7 @@ fn test_upsert() {
     let upsert_command = insert_into(users)
         .values(values)
         .on_conflict(hair_color)
-        .filter_target(hair_color.eq("black"))
+        .filter_target(hair_color.eq(Some("black")))
         .do_nothing();
     let upsert_sql_display = debug_query::<TestBackend, _>(&upsert_command).to_string();
 
