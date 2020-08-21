@@ -127,15 +127,31 @@ fn test_upsert() {
         (name.eq("Tess"), hair_color.eq(None::<&str>)),
     ];
 
-    let upsert_command = insert_into(users)
+    let upsert_command_single_where = insert_into(users)
         .values(values)
         .on_conflict(hair_color)
         .filter_target(hair_color.eq(Some("black")))
         .do_nothing();
-    let upsert_sql_display = debug_query::<TestBackend, _>(&upsert_command).to_string();
+    let upsert_single_where_sql_display =
+        debug_query::<TestBackend, _>(&upsert_command_single_where).to_string();
 
     assert_eq!(
-        upsert_sql_display,
+        upsert_single_where_sql_display,
         r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE "users"."hair_color" = $5 DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, Some("black")]"#
     );
+
+    // let upsert_command_second_where = insert_into(users)
+    //     .values(values)
+    //     .on_conflict(hair_color)
+    //     .filter_target(name.eq(Some("Sean")))
+    //     .filter_target(hair_color.eq(Some("black")))
+    //     .do_nothing();
+
+    // let upsert_second_where_sql_display =
+    //     debug_query::<TestBackend, _>(&upsert_command_second_where).to_string();
+
+    // assert_eq!(
+    //     upsert_second_where_sql_display,
+    //     r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE "users"."hair_color" = $5 and WHERE "users"."name" = $6 DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, Some("black"), Some("Sean")]"#
+    // );
 }
