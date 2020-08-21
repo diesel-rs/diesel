@@ -12,7 +12,7 @@ impl<T> UndecoratedConflictTarget for ConflictTarget<T> {}
 
 /// Interface to add information to conflict targets.
 /// Designed to be open for further additions to conflict targets like constraints
-pub trait DecoratableTarget<U, P> {
+pub trait DecoratableTarget<P> {
     /// Output type of filter_target operation
     type FilterOutput;
     /// equivalent to filter of FilterDsl but aimed at conflict targets
@@ -25,7 +25,7 @@ pub struct DecoratedConflictTarget<T, U> {
     where_clause: U,
 }
 
-impl<T, P> DecoratableTarget<WhereClause<P>, P> for T
+impl<T, P> DecoratableTarget<P> for T
 where
     P: Expression,
     P::SqlType: BoolOrNullableBool,
@@ -40,7 +40,7 @@ where
     }
 }
 
-impl<T, U, P> DecoratableTarget<<U as WhereAnd<P>>::Output, P> for DecoratedConflictTarget<T, U>
+impl<T, U, P> DecoratableTarget<P> for DecoratedConflictTarget<T, U>
 where
     P: Expression,
     P::SqlType: BoolOrNullableBool,
