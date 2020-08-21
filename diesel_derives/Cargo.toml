@@ -8,6 +8,7 @@ documentation = "https://diesel.rs/guides/"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
+include = ["src/**/*", "LICENSE-*"]
 
 [dependencies]
 syn = { version = "1.0.1", features = ["full", "fold"] }
