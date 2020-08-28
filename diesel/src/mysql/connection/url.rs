@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::ffi::{CStr, CString};
 
 use crate::result::{ConnectionError, ConnectionResult};
+use mysqlclient_sys::mysql_ssl_mode;
 
 bitflags::bitflags! {
     pub struct CapabilityFlags: u32 {
@@ -46,6 +47,7 @@ pub struct ConnectionOptions {
     port: Option<u16>,
     unix_socket: Option<CString>,
     client_flags: CapabilityFlags,
+    ssl_mode: Option<mysql_ssl_mode>,
 }
 
 impl ConnectionOptions {
@@ -70,6 +72,24 @@ impl ConnectionOptions {
 
         let unix_socket = match query_pairs.get("unix_socket") {
             Some(v) => Some(CString::new(v.as_bytes())?),
+            _ => None,
+        };
+
+        let ssl_mode = match query_pairs.get("ssl_mode") {
+            Some(v) => {
+                let ssl_mode = match v.to_lowercase().as_str() {
+                    "disabled" => mysql_ssl_mode::SSL_MODE_DISABLED,
+                    "preferred" => mysql_ssl_mode::SSL_MODE_PREFERRED,
+                    "required" => mysql_ssl_mode::SSL_MODE_REQUIRED,
+                    "verify_ca" => mysql_ssl_mode::SSL_MODE_VERIFY_CA,
+                    "verify_identity" => mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY,
+                    _ => {
+                        let msg = "unknown ssl_mode";
+                        return Err(ConnectionError::InvalidConnectionUrl(msg.into()));
+                    }
+                };
+                Some(ssl_mode)
+            }
             _ => None,
         };
 
@@ -101,6 +121,7 @@ impl ConnectionOptions {
             port: url.port(),
             unix_socket: unix_socket,
             client_flags: client_flags,
+            ssl_mode: ssl_mode,
         })
     }
 
@@ -130,6 +151,10 @@ impl ConnectionOptions {
 
     pub fn client_flags(&self) -> CapabilityFlags {
         self.client_flags
+    }
+
+    pub fn ssl_mode(&self) -> Option<mysql_ssl_mode> {
+        self.ssl_mode
     }
 }
 
@@ -264,5 +289,31 @@ fn unix_socket_tests() {
     assert_eq!(
         CString::new(unix_socket).unwrap(),
         conn_opts.unix_socket.unwrap()
+    );
+}
+
+#[test]
+fn ssl_mode() {
+    let ssl_mode = |url| ConnectionOptions::parse(url).unwrap().ssl_mode();
+    assert_eq!(ssl_mode("mysql://localhost"), None);
+    assert_eq!(
+        ssl_mode("mysql://localhost?ssl_mode=disabled"),
+        Some(mysql_ssl_mode::SSL_MODE_DISABLED)
+    );
+    assert_eq!(
+        ssl_mode("mysql://localhost?ssl_mode=PREFERRED"),
+        Some(mysql_ssl_mode::SSL_MODE_PREFERRED)
+    );
+    assert_eq!(
+        ssl_mode("mysql://localhost?ssl_mode=required"),
+        Some(mysql_ssl_mode::SSL_MODE_REQUIRED)
+    );
+    assert_eq!(
+        ssl_mode("mysql://localhost?ssl_mode=VERIFY_CA"),
+        Some(mysql_ssl_mode::SSL_MODE_VERIFY_CA)
+    );
+    assert_eq!(
+        ssl_mode("mysql://localhost?ssl_mode=verify_identity"),
+        Some(mysql_ssl_mode::SSL_MODE_VERIFY_IDENTITY)
     );
 }
