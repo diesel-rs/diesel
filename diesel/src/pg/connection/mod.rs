@@ -5,6 +5,7 @@ pub mod result;
 mod row;
 mod stmt;
 
+use std::cell::RefCell;
 use std::ffi::CString;
 use std::os::raw as libc;
 
@@ -27,7 +28,7 @@ use crate::result::*;
 /// <https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING>
 #[allow(missing_debug_implementations)]
 pub struct PgConnection {
-    pub(crate) raw_connection: RawConnection,
+    pub(crate) raw_connection: RefCell<RawConnection>,
     pub(crate) transaction_manager: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
@@ -38,7 +39,7 @@ unsafe impl Send for PgConnection {}
 impl SimpleConnection for PgConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         let query = CString::new(query)?;
-        let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
+        let inner_result = unsafe { self.raw_connection.borrow().exec(query.as_ptr()) };
         PgResult::new(inner_result?)?;
         Ok(())
     }
@@ -51,7 +52,7 @@ impl Connection for PgConnection {
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).and_then(|raw_conn| {
             let conn = PgConnection {
-                raw_connection: raw_conn,
+                raw_connection: RefCell::new(raw_conn),
                 transaction_manager: AnsiTransactionManager::new(),
                 statement_cache: StatementCache::new(),
                 metadata_cache: PgMetadataCache::new(),
@@ -76,7 +77,7 @@ impl Connection for PgConnection {
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         let (query, params) = self.prepare_query(&source.as_query())?;
-        let result = query.execute(self, &params)?;
+        let result = query.execute(&mut self.raw_connection.borrow_mut(), &params)?;
         let cursor = Cursor::new(&result);
 
         cursor
@@ -90,7 +91,7 @@ impl Connection for PgConnection {
         T: QueryFragment<Pg> + QueryId,
     {
         let (query, params) = self.prepare_query(source)?;
-        query.execute(self, &params).map(|r| r.rows_affected())
+        query.execute(&mut self.raw_connection.borrow_mut(), &params).map(|r| r.rows_affected())
     }
 
     #[doc(hidden)]
@@ -146,21 +147,26 @@ impl PgConnection {
                 } else {
                     None
                 };
-                Statement::prepare(self, sql, query_name.as_ref().map(|s| &**s), &metadata)
+                self.raw_connection.borrow_mut().block_on(|raw| {
+                    Statement::prepare(raw, sql, query_name.as_ref().map(|s| &**s), &metadata)
+                })
             });
 
         Ok((query?, binds))
     }
 
     fn execute_inner(&self, query: &str) -> QueryResult<PgResult> {
-        let query = Statement::prepare(self, query, None, &[])?;
-        query.execute(self, &Vec::new())
+        let query = self.raw_connection.borrow_mut().block_on(|raw| {
+            Statement::prepare(raw, query, None, &[])
+        })?;
+        query.execute(&mut self.raw_connection.borrow_mut(), &Vec::new())
     }
 
     fn set_config_options(&self) -> QueryResult<()> {
         self.execute("SET TIME ZONE 'UTC'")?;
         self.execute("SET CLIENT_ENCODING TO 'UTF8'")?;
         self.raw_connection
+            .borrow()
             .set_notice_processor(noop_notice_processor);
         Ok(())
     }

@@ -5,7 +5,7 @@ use std::os::raw as libc;
 use std::ptr;
 
 use super::result::PgResult;
-use crate::pg::{PgConnection, PgTypeMetadata};
+use crate::pg::PgTypeMetadata;
 use crate::result::QueryResult;
 
 pub use super::raw::RawConnection;
@@ -19,7 +19,7 @@ impl Statement {
     #[allow(clippy::ptr_arg)]
     pub fn execute(
         &self,
-        conn: &PgConnection,
+        conn: &mut RawConnection,
         param_data: &Vec<Option<Vec<u8>>>,
     ) -> QueryResult<PgResult> {
         let params_pointer = param_data
@@ -35,7 +35,7 @@ impl Statement {
             .map(|data| data.as_ref().map(|d| d.len() as libc::c_int).unwrap_or(0))
             .collect::<Vec<_>>();
         let internal_res = unsafe {
-            conn.raw_connection.exec_prepared(
+            conn.exec_prepared(
                 self.name.as_ptr(),
                 params_pointer.len() as libc::c_int,
                 params_pointer.as_ptr(),
@@ -49,8 +49,8 @@ impl Statement {
     }
 
     #[allow(clippy::ptr_arg)]
-    pub fn prepare(
-        conn: &PgConnection,
+    pub async fn prepare(
+        conn: &mut RawConnection,
         sql: &str,
         name: Option<&str>,
         param_types: &[PgTypeMetadata],
@@ -60,12 +60,12 @@ impl Statement {
         let param_types_vec = param_types.iter().map(|x| x.oid).collect();
 
         let internal_result = unsafe {
-            conn.raw_connection.prepare(
+            conn.prepare(
                 name.as_ptr(),
                 sql.as_ptr(),
                 param_types.len() as libc::c_int,
                 param_types_to_ptr(Some(&param_types_vec)),
-            )
+            ).await
         };
         PgResult::new(internal_result?)?;
 

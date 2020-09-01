@@ -7,6 +7,8 @@ use std::ffi::{CStr, CString};
 use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{ptr, str};
+use std::future::Future;
+use std::task::*;
 
 use crate::result::*;
 
@@ -60,7 +62,7 @@ impl RawConnection {
     }
 
     pub unsafe fn exec(&self, query: *const libc::c_char) -> QueryResult<RawResult> {
-        RawResult::new(PQexec(self.internal_connection.as_ptr(), query), self)
+        self.command_result(RawResult::new(PQexec(self.internal_connection.as_ptr(), query)))
     }
 
     pub unsafe fn exec_prepared(
@@ -81,25 +83,120 @@ impl RawConnection {
             param_formats,
             result_format,
         );
-        RawResult::new(ptr, self)
+        self.command_result(RawResult::new(ptr))
     }
 
-    pub unsafe fn prepare(
-        &self,
+    pub async unsafe fn prepare(
+        &mut self,
         stmt_name: *const libc::c_char,
         query: *const libc::c_char,
         param_count: libc::c_int,
         param_types: *const Oid,
     ) -> QueryResult<RawResult> {
-        let ptr = PQprepare(
+        let success = PQsendPrepare(
             self.internal_connection.as_ptr(),
             stmt_name,
             query,
             param_count,
             param_types,
         );
-        RawResult::new(ptr, self)
+
+        if success == 0 {
+            return Err(self.unable_to_send_command());
+        }
+
+        self.last_pending_result().await
     }
+
+    /// Run the given function and block on the result on this connection's
+    /// executor. If this connection is blocking, the given future must never
+    /// yield. Panics if the future yields with a blocking connection
+    pub fn block_on<'a, Func, Fut>(&'a mut self, f: Func) -> Fut::Output
+    where
+        Func: FnOnce(&'a mut Self) -> Fut,
+        Fut: Future,
+    {
+        // This is only for when we're compiled without async support, and we
+        // know statically that we the futures never yield. I'm not 100% sure
+        // what we want to do if this is called when tokio is enabled, I think
+        // we'll want to consider that a bug.
+        //
+        // This is used instead of `futures::block_on` to limit compile times,
+        // and also because we don't need the overhead of some of the checks it
+        // performs. We maybe want to do some proper park/unparking here but
+        // TBH if we're going that far we should use a better implemented
+        // version, and I think we can just straight up assume that user defined
+        // futures never make it here
+        use std::pin::Pin;
+
+        let waker = unsafe { Waker::from_raw(noop_waker()) };
+        let mut context = Context::from_waker(&waker);
+        let mut future = f(self);
+        let pinned = unsafe { Pin::new_unchecked(&mut future) };
+        match pinned.poll(&mut context) {
+            Poll::Ready(x) => x,
+            Poll::Pending => panic!("blocking connection yielded"),
+        }
+    }
+
+    async fn last_pending_result(&mut self) -> QueryResult<RawResult> {
+        let mut last_result = None;
+        loop {
+            self.wait_for_idle_if_non_blocking().await;
+            let result = self.get_result();
+            if result.is_none() {
+                break;
+            }
+            last_result = result;
+        }
+
+        self.command_result(last_result)
+    }
+
+    #[cfg(not(feature = "async"))]
+    /// Returns immediately, Diesel was compiled without async support
+    async fn wait_for_idle_if_non_blocking(&mut self) {
+        // For non blocking connections this struct is going to have a
+        // `tokio::io::Registration`, so if the lib is compiled with async
+        // support this function will check if that field is `Some` and do
+        // the appropriate read/write readiness checks
+    }
+
+    /// Get the next pending result. Blocks unless
+    /// `wait_for_idle_if_non_blocking` has resolved.
+    fn get_result(&self) -> Option<RawResult> {
+        RawResult::new(unsafe { PQgetResult(self.internal_connection.as_ptr()) })
+    }
+
+    fn command_result(&self, result: Option<RawResult>) -> QueryResult<RawResult> {
+        result.ok_or_else(|| self.unable_to_send_command())
+    }
+
+    fn unable_to_send_command(&self) -> Error {
+        Error::DatabaseError(
+            DatabaseErrorKind::UnableToSendCommand,
+            Box::new(self.last_error_message()),
+        )
+    }
+}
+
+fn noop_waker() -> RawWaker {
+    fn noop_clone(_: *const ()) -> RawWaker {
+        noop_waker()
+    }
+    fn noop_wake(_: *const ()) {}
+    fn noop_wake_by_ref(_: *const ()) {}
+    fn noop_drop(_: *const ()) {}
+
+    RawWaker::new(
+        ptr::null(),
+        &RawWakerVTable::new(
+            noop_clone,
+            noop_wake,
+            noop_wake_by_ref,
+            noop_drop,
+        ),
+    )
 }
 
 pub type NoticeProcessor = extern "C" fn(arg: *mut libc::c_void, message: *const libc::c_char);
@@ -131,13 +228,8 @@ unsafe impl Sync for RawResult {}
 
 impl RawResult {
     #[allow(clippy::new_ret_no_self)]
-    fn new(ptr: *mut PGresult, conn: &RawConnection) -> QueryResult<Self> {
-        NonNull::new(ptr).map(RawResult).ok_or_else(|| {
-            Error::DatabaseError(
-                DatabaseErrorKind::UnableToSendCommand,
-                Box::new(conn.last_error_message()),
-            )
-        })
+    fn new(ptr: *mut PGresult) -> Option<Self> {
+        NonNull::new(ptr).map(RawResult)
     }
 
     pub fn as_ptr(&self) -> *mut PGresult {
