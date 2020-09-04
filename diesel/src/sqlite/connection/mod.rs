@@ -250,6 +250,48 @@ impl SqliteConnection {
         functions::register_aggregate::<_, _, _, _, A>(&self.raw_connection, fn_name)
     }
 
+    /// Register a collation function.
+    ///
+    /// `collation` must always return the same answer given the same inputs.
+    /// If `collation` panics and unwinds the stack, the process is aborted, since it is used
+    /// across a C FFI boundary, which cannot be unwound across.
+    ///
+    /// If the name is already registered it will be overwritten.
+    ///
+    /// This method will return an error if registering the function fails, either due to an
+    /// out-of-memory situation or because a collation with that name already exists and is
+    /// currently being used in parallel by a query.
+    ///
+    /// The collation needs to be specified when creating a table:
+    /// `CREATE TABLE my_table ( str TEXT COLLATE MY_COLLATION )`,
+    /// where `MY_COLLATION` corresponds to `collation_name`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
+    /// // sqlite NOCASE only works for ASCII characters,
+    /// // this collation allows handling UTF-8 (barring locale differences)
+    /// conn.register_collation("RUSTNOCASE", |rhs, lhs| {
+    ///     rhs.to_lowercase().cmp(&lhs.to_lowercase())
+    /// })
+    /// # }
+    /// ```
+    pub fn register_collation<F>(&self, collation_name: &str, collation: F) -> QueryResult<()>
+    where
+        F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static,
+    {
+        self.raw_connection
+            .register_collation_function(collation_name, collation)
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -521,5 +563,76 @@ mod tests {
             .get_result::<Option<i32>>(&connection)
             .unwrap();
         assert_eq!(Some(3), result);
+    }
+
+    table! {
+        my_collation_example {
+            id -> Integer,
+            value -> Text,
+        }
+    }
+
+    #[test]
+    fn register_collation_function() {
+        use self::my_collation_example::dsl::*;
+
+        let connection = SqliteConnection::establish(":memory:").unwrap();
+
+        connection
+            .register_collation("RUSTNOCASE", |rhs, lhs| {
+                rhs.to_lowercase().cmp(&lhs.to_lowercase())
+            })
+            .unwrap();
+
+        connection
+            .execute(
+                "CREATE TABLE my_collation_example (id integer primary key autoincrement, value text collate RUSTNOCASE)",
+            )
+            .unwrap();
+        connection
+            .execute("INSERT INTO my_collation_example (value) VALUES ('foo'), ('FOo'), ('f00')")
+            .unwrap();
+
+        let result = my_collation_example
+            .filter(value.eq("foo"))
+            .select(value)
+            .load::<String>(&connection);
+        assert_eq!(
+            Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
+            result.as_ref().map(|vec| vec.as_ref())
+        );
+
+        let result = my_collation_example
+            .filter(value.eq("FOO"))
+            .select(value)
+            .load::<String>(&connection);
+        assert_eq!(
+            Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
+            result.as_ref().map(|vec| vec.as_ref())
+        );
+
+        let result = my_collation_example
+            .filter(value.eq("f00"))
+            .select(value)
+            .load::<String>(&connection);
+        assert_eq!(
+            Ok(&["f00".to_owned()][..]),
+            result.as_ref().map(|vec| vec.as_ref())
+        );
+
+        let result = my_collation_example
+            .filter(value.eq("F00"))
+            .select(value)
+            .load::<String>(&connection);
+        assert_eq!(
+            Ok(&["f00".to_owned()][..]),
+            result.as_ref().map(|vec| vec.as_ref())
+        );
+
+        let result = my_collation_example
+            .filter(value.eq("oof"))
+            .select(value)
+            .load::<String>(&connection);
+        assert_eq!(Ok(&[][..]), result.as_ref().map(|vec| vec.as_ref()));
     }
 }

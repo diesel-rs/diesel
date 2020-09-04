@@ -56,6 +56,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added the error position for PostgreSQL errors
 
+* Added ability to create custom collation functions in SQLite.
+
 ### Removed
 
 * All previously deprecated items have been removed.
