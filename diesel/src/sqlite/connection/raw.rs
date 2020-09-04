@@ -102,7 +102,7 @@ impl RawConnection {
                 Some(run_custom_function::<F>),
                 None,
                 None,
-                Some(destroy_boxed_fn::<F>),
+                Some(destroy_boxed::<F>),
             )
         };
 
@@ -138,6 +138,35 @@ impl RawConnection {
         };
 
         Self::process_sql_function_result(result)
+    }
+
+    pub fn register_collation_function<F>(
+        &self,
+        collation_name: &str,
+        collation: F,
+    ) -> QueryResult<()>
+    where
+        F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static,
+    {
+        let collation_name = Self::get_fn_name(collation_name)?;
+        let callback_fn = Box::into_raw(Box::new(collation));
+
+        let result = unsafe {
+            ffi::sqlite3_create_collation_v2(
+                self.internal_connection.as_ptr(),
+                collation_name.as_ptr(),
+                ffi::SQLITE_UTF8,
+                callback_fn as *mut _,
+                Some(run_collation_function::<F>),
+                Some(destroy_boxed::<F>),
+            )
+        };
+
+        let result = Self::process_sql_function_result(result);
+        if result.is_err() {
+            destroy_boxed::<F>(callback_fn as *mut _);
+        }
+        result
     }
 
     fn get_fn_name(fn_name: &str) -> Result<CString, NulError> {
@@ -379,12 +408,63 @@ unsafe fn null_aggregate_context_error(ctx: *mut ffi::sqlite3_context) {
     );
 }
 
-extern "C" fn destroy_boxed_fn<F>(data: *mut libc::c_void)
+#[allow(warnings)]
+extern "C" fn run_collation_function<F>(
+    user_ptr: *mut libc::c_void,
+    lhs_len: libc::c_int,
+    lhs_ptr: *const libc::c_void,
+    rhs_len: libc::c_int,
+    rhs_ptr: *const libc::c_void,
+) -> libc::c_int
 where
-    F: FnMut(&RawConnection, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
-        + Send
-        + 'static,
+    F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static,
 {
+    let user_ptr = user_ptr as *const F;
+    let f = unsafe { user_ptr.as_ref() }.unwrap_or_else(|| {
+        eprintln!(
+            "An unknown error occurred. user_ptr is a null pointer. This should never happen."
+        );
+        std::process::abort();
+    });
+
+    for (ptr, len, side) in &[(rhs_ptr, rhs_len, "rhs"), (lhs_ptr, lhs_len, "lhs")] {
+        if *len < 0 {
+            eprintln!(
+                "An unknown error occurred. {}_len is negative. This should never happen.",
+                side
+            );
+            std::process::abort();
+        }
+        if ptr.is_null() {
+            eprintln!(
+                "An unknown error occurred. {}_ptr is a null pointer. This should never happen.",
+                side
+            );
+            std::process::abort();
+        }
+    }
+
+    let (rhs, lhs) = unsafe {
+        // Depending on the eTextRep-parameter to sqlite3_create_collation_v2() the strings can
+        // have various encodings. register_collation_function() always selects SQLITE_UTF8, so the
+        // pointers point to valid UTF-8 strings (assuming correct behavior of libsqlite3).
+        (
+            str::from_utf8_unchecked(slice::from_raw_parts(rhs_ptr as *const u8, rhs_len as _)),
+            str::from_utf8_unchecked(slice::from_raw_parts(lhs_ptr as *const u8, lhs_len as _)),
+        )
+    };
+
+    // It doesn't matter if f is UnwindSafe, since we abort on panic.
+    let f = std::panic::AssertUnwindSafe(|| match f(rhs, lhs) {
+        std::cmp::Ordering::Greater => 1,
+        std::cmp::Ordering::Equal => 0,
+        std::cmp::Ordering::Less => -1,
+    });
+    let result = std::panic::catch_unwind(f);
+    result.unwrap_or_else(|_| std::process::abort())
+}
+
+extern "C" fn destroy_boxed<F>(data: *mut libc::c_void) {
     let ptr = data as *mut F;
     unsafe { Box::from_raw(ptr) };
 }

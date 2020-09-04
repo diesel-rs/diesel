@@ -42,6 +42,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * It is now possible to inspect the type of values returned from the database
   in such a way to support constructing a dynamic value depending on this type.
 
+* Added ability to create custom collation functions in SQLite.
 
 ### Removed
 
