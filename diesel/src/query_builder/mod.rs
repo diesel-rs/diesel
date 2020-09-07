@@ -31,9 +31,9 @@ mod select_statement;
 mod sql_query;
 mod update_statement;
 pub(crate) mod upsert;
-pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 mod where_clause;
 
+pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
