@@ -33,7 +33,6 @@ mod update_statement;
 pub(crate) mod upsert;
 mod where_clause;
 
-pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
@@ -54,6 +53,7 @@ pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 pub use self::update_statement::{
     AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
 };
+pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
 pub use self::limit_clause::{LimitClause, NoLimitClause};
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};

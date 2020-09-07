@@ -32,7 +32,7 @@ where
     T: UndecoratedConflictTarget,
 {
     type FilterOutput = DecoratedConflictTarget<T, WhereClause<P>>;
-    
+
     fn filter_target(self, predicate: P) -> Self::FilterOutput {
         DecoratedConflictTarget {
             target: self,
