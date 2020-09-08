@@ -467,6 +467,20 @@ fn selecting_parent_child_grandchild() {
         (sean.clone(), (posts[0].clone(), comments[2].clone())),
         (sean.clone(), (posts[2].clone(), comments[1].clone())),
     ];
+    assert_eq!(Ok(expected.clone()), data);
+
+    let data = users::table
+        .inner_join(
+            posts::table
+                .on(users::id.eq(posts::user_id).and(posts::id.eq(posts[0].id)))
+                .inner_join(comments::table),
+        )
+        .order((users::id, posts::id, comments::id))
+        .load(&connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), comments[0].clone())),
+        (sean.clone(), (posts[0].clone(), comments[2].clone())),
+    ];
     assert_eq!(Ok(expected), data);
 
     let data = users::table

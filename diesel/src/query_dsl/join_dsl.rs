@@ -5,7 +5,7 @@ use crate::query_source::{JoinTo, QuerySource, Table};
 #[doc(hidden)]
 /// `JoinDsl` support trait to emulate associated type constructors
 pub trait InternalJoinDsl<Rhs, Kind, On> {
-    type Output: AsQuery;
+    type Output;
 
     fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output;
 }
@@ -26,7 +26,7 @@ where
 /// `JoinDsl` support trait to emulate associated type constructors and grab
 /// the known on clause from the associations API
 pub trait JoinWithImplicitOnClause<Rhs, Kind> {
-    type Output: AsQuery;
+    type Output;
 
     fn join_with_implicit_on_clause(self, rhs: Rhs, kind: Kind) -> Self::Output;
 }
