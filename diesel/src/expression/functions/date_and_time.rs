@@ -74,7 +74,7 @@ impl AsExpression<Nullable<Timestamptz>> for now {
 
 /// Represents the SQL `CURRENT_DATE` constant.
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct today;
 
 impl Expression for today {

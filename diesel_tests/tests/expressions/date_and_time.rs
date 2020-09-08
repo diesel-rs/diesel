@@ -148,7 +148,7 @@ fn today_can_be_used_as_nullable() {
     let nullable_date = sql::<Nullable<Date>>("CURRENT_DATE");
     let result = select(nullable_date.eq(today)).get_result(&connection());
 
-    assert_eq!(Ok(true), result);
+    assert_eq!(Ok(Some(true)), result);
 }
 
 #[test]
