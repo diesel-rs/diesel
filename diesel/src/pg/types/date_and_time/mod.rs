@@ -9,8 +9,6 @@ use crate::sql_types::{self, Date, Interval, Time, Timestamp, Timestamptz};
 
 #[cfg(feature = "chrono")]
 mod chrono;
-#[cfg(feature = "deprecated-time")]
-mod deprecated_time;
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 mod std_time;

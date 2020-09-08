@@ -439,11 +439,12 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::prelude::*;
+    use bigdecimal::FromPrimitive;
 
     use super::MysqlValue;
+    use super::*;
     use crate::deserialize::FromSql;
+    use crate::prelude::*;
     use crate::sql_types::*;
 
     fn to_value<ST, T>(
@@ -638,7 +639,7 @@ mod tests {
         assert!(!numeric_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Numeric, bigdecimal::BigDecimal>(numeric_col).unwrap(),
-            bigdecimal::BigDecimal::from(-999.999)
+            bigdecimal::BigDecimal::from_f32(-999.999).unwrap()
         );
 
         let decimal_col = &results[8].0;
@@ -650,7 +651,7 @@ mod tests {
         assert!(!decimal_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Numeric, bigdecimal::BigDecimal>(decimal_col).unwrap(),
-            bigdecimal::BigDecimal::from(3.14)
+            bigdecimal::BigDecimal::from_f32(3.14).unwrap()
         );
 
         let float_col = &results[9].0;
