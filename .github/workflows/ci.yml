@@ -253,12 +253,11 @@ jobs:
           command: test
           args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
 
-      - name: Run diesel_dynamic_schema tests"
-        if: matrix.backend == 'sqlite'
+      - name: Run diesel_dynamic_schema tests
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }}"
+          args: --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
 
       - name: Run rustdoc (nightly)
         if: matrix.run == 'nightly'

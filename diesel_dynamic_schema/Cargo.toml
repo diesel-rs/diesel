@@ -4,12 +4,16 @@ version = "1.0.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 edition = "2018"
+autotests = false
 include = ["src/**/*", "LICENSE-*", "README.md"]
 
 [dependencies.diesel]
 version = "2.0.0"
 path = "../diesel/"
 default-features = false
+
+[dev-dependencies]
+dotenv = "0.14"
 
 [[example]]
 name = "querying_basic_schemas"
@@ -30,4 +34,9 @@ required-features = ["diesel/sqlite"]
 name = "integration_tests"
 path = "tests/lib.rs"
 harness = true
-required-features = ["diesel/sqlite"]
+
+[features]
+default = ["mysql"]
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
+mysql = ["diesel/mysql"]

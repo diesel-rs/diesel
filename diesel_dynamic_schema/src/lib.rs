@@ -27,18 +27,22 @@
 //! when using this crate.
 //!
 //! ```rust
+//! # mod connection_setup {
+//! #     include!("../tests/connection_setup.rs");
+//! # }
+//! # use connection_setup::establish_connection;
 //! # use diesel::prelude::*;
 //! # use diesel::sql_types::{Integer, Text};
-//! # use diesel::sqlite::SqliteConnection;
 //! # use diesel_dynamic_schema::table;
 //! # use diesel::dsl::sql_query;
 //! #
+//! #
 //! # fn result_main() -> QueryResult<()> {
 //! #
-//! # let conn = SqliteConnection::establish(":memory:").unwrap();
+//! # let conn = establish_connection();
 //! #
 //! # // Create some example data by using typical SQL statements.
-//! # sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)").execute(&conn)?;
+//! # connection_setup::create_user_table(&conn);
 //! # sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").execute(&conn)?;
 //! #
 //! // Use diesel-dynamic-schema to create a table and columns.
@@ -72,13 +76,13 @@
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
 // Built-in Lints
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 #![deny(warnings)]
-
-extern crate diesel;
 
 mod column;
 mod dummy_expression;
+mod dynamic_select;
+pub mod dynamic_value;
 mod schema;
 mod table;
 
@@ -90,6 +94,9 @@ pub use schema::Schema;
 
 /// A database table.
 pub use table::Table;
+
+#[doc(inline)]
+pub use self::dynamic_select::DynamicSelectClause;
 
 /// Create a new [`Table`](struct.Table.html) with the given name.
 ///
