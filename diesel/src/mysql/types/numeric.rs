@@ -2,7 +2,7 @@
 pub mod bigdecimal {
     extern crate bigdecimal;
 
-    use self::bigdecimal::BigDecimal;
+    use self::bigdecimal::{BigDecimal, FromPrimitive};
     use std::io::prelude::*;
 
     use crate::deserialize::{self, FromSql};
@@ -27,8 +27,10 @@ pub mod bigdecimal {
                 Small(x) => Ok(x.into()),
                 Medium(x) => Ok(x.into()),
                 Big(x) => Ok(x.into()),
-                Float(x) => Ok(x.into()),
-                Double(x) => Ok(x.into()),
+                Float(x) => BigDecimal::from_f32(x)
+                    .ok_or_else(|| format!("{} is not valid decimal number ", x).into()),
+                Double(x) => BigDecimal::from_f64(x)
+                    .ok_or_else(|| format!("{} is not valid decimal number ", x).into()),
                 Decimal(bytes) => BigDecimal::parse_bytes(bytes, 10)
                     .ok_or_else(|| format!("{:?} is not valid decimal number ", bytes).into()),
             }
