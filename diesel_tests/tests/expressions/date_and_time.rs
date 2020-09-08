@@ -203,7 +203,31 @@ fn today_executes_sql_function_current_date() {
     assert_eq!(Ok(vec![2]), after_today);
 }
 
-// FIXME: Figure out how to handle test case for MySQL
+#[test]
+#[cfg(feature = "mysql")]
+fn today_executes_sql_function_current_date() {
+    use self::has_date::dsl::*;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection
+        .execute(
+            "INSERT INTO has_date (date) VALUES
+                (current_date - interval 1 day), (current_date + interval 1 day);",
+        )
+        .unwrap();
+
+    let before_today = has_date
+        .select(id)
+        .filter(date.lt(today))
+        .load::<i32>(&connection);
+    let after_today = has_date
+        .select(id)
+        .filter(date.gt(today))
+        .load::<i32>(&connection);
+    assert_eq!(Ok(vec![1]), before_today);
+    assert_eq!(Ok(vec![2]), after_today);
+}
 
 #[test]
 #[cfg(feature = "sqlite")]
@@ -404,7 +428,7 @@ fn adding_interval_to_nullable_things() {
     assert_eq!(expected_data, actual_data);
 }
 
-#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+#[cfg(any(feature = "postgres", feature = "sqlite", feature = "mysql"))]
 fn setup_test_table(conn: &TestConnection) {
     use crate::schema_dsl::*;
 
