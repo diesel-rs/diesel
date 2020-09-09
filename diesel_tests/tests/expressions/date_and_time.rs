@@ -230,6 +230,32 @@ fn today_executes_sql_function_current_date() {
 }
 
 #[test]
+#[cfg(feature = "mysql")]
+fn now_executes_sql_function_now() {
+    use self::has_timestamps::dsl::*;
+
+    let connection = connection();
+    setup_test_table(&connection);
+    connection
+        .execute(
+            "INSERT INTO has_timestamps (created_at) VALUES
+                       (NOW() - interval 1 day), (NOW() + interval 1 day)",
+        )
+        .unwrap();
+
+    let before_today = has_timestamps
+        .select(id)
+        .filter(created_at.lt(now))
+        .load::<i32>(&connection);
+    let after_today = has_timestamps
+        .select(id)
+        .filter(created_at.gt(now))
+        .load::<i32>(&connection);
+    assert_eq!(Ok(vec![1]), before_today);
+    assert_eq!(Ok(vec![2]), after_today);
+}
+
+#[test]
 #[cfg(feature = "sqlite")]
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
@@ -254,7 +280,6 @@ fn now_executes_sql_function_now() {
     assert_eq!(Ok(vec![1]), before_today);
     assert_eq!(Ok(vec![2]), after_today);
 }
-
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn date_uses_sql_function_date() {
