@@ -25,6 +25,16 @@ impl<T, U, ST> Column<T, U, ST> {
             _sql_type: PhantomData,
         }
     }
+
+    /// Gets a reference to the table of the column.
+    pub fn table(&self) -> &T {
+        &self.table
+    }
+
+    /// Gets the name of the column, as provided on creation.
+    pub fn name(&self) -> &U {
+        &self.name
+    }
 }
 
 impl<T, U, ST> QueryId for Column<T, U, ST> {

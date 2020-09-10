@@ -35,6 +35,11 @@ impl<T, U> Table<T, U> {
     {
         Column::new(self.clone(), name)
     }
+
+    /// Gets the name of the table, as especified on creation.
+    pub fn name(&self) -> &T {
+        &self.name
+    }
 }
 
 impl<T, U> QuerySource for Table<T, U>
