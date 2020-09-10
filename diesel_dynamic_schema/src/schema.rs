@@ -19,4 +19,9 @@ impl<T> Schema<T> {
     {
         Table::with_schema(self.name.clone(), name)
     }
+
+    /// Gets the name of the schema, as specified on creation.
+    pub fn name(&self) -> &T {
+        &self.name
+    }
 }
