@@ -115,8 +115,12 @@ impl RawConnection {
         num_args: usize,
     ) -> QueryResult<()>
     where
-        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-        Args: FromSqlRow<ArgsSqlType, Sqlite>,
+        A: SqliteAggregateFunction<Args, Output = Ret>
+            + 'static
+            + Send
+            + std::panic::UnwindSafe
+            + std::panic::RefUnwindSafe,
+        Args: FromSqlRow<ArgsSqlType, Sqlite> + std::panic::UnwindSafe,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
@@ -294,8 +298,8 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     num_args: libc::c_int,
     value_ptr: *mut *mut ffi::sqlite3_value,
 ) where
-    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-    Args: FromSqlRow<ArgsSqlType, Sqlite>,
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::RefUnwindSafe,
+    Args: FromSqlRow<ArgsSqlType, Sqlite> + std::panic::UnwindSafe,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
@@ -321,21 +325,19 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
         //   the memory will have a correct alignment.
         //   (Note I(weiznich): would assume that it is aligned correctly, but we
         //    we cannot guarantee it, so better be safe than sorry)
-        let aggregate_context = ffi::sqlite3_aggregate_context(
-            ctx,
-            std::mem::size_of::<OptionalAggregator<A>>() as i32,
-        );
-        let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
-        let aggregator = match aggregate_context.map(|a| &mut *a.as_ptr()) {
+        ffi::sqlite3_aggregate_context(ctx, std::mem::size_of::<OptionalAggregator<A>>() as i32)
+    };
+    let mut aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
+    let aggregator = unsafe {
+        match aggregate_context.map(|a| &mut *a.as_ptr()) {
             Some(&mut OptionalAggregator::Some(ref mut agg)) => agg,
             Some(mut a_ptr @ &mut OptionalAggregator::None) => {
                 ptr::write_unaligned(a_ptr as *mut _, OptionalAggregator::Some(A::default()));
                 if let &mut OptionalAggregator::Some(ref mut agg) = a_ptr {
                     agg
                 } else {
-                    unreachable!(
-                        "We've written the aggregator above to that location, it must be there"
-                    )
+                    eprintln!("We've written the aggregator to the aggregate context, but it could not be retrieved");
+                    std::process::abort();
                 }
             }
             None => {
@@ -344,19 +346,22 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
             }
         };
 
-        let mut f = |args: &[*mut ffi::sqlite3_value]| -> Result<(), Error> {
-            let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
-
-            Ok(aggregator.step(args))
-        };
-
         let args = slice::from_raw_parts(value_ptr, num_args as _);
-        match f(args) {
-            Err(e) => {
+        let args = build_sql_function_args::<ArgsSqlType, Args>(args);
+        let mut aggregator = std::panic::AssertUnwindSafe(aggregator);
+        let result = args
+            .map(|args| std::panic::catch_unwind(move || Ok(aggregator.step(args))))
+            .unwrap_or_else(|e| Ok(Err(e)));
+        match result {
+            Ok(Ok(())) => (),
+            Ok(Err(e)) => {
                 let msg = e.to_string();
+                unsafe { ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _) };
+            }
+            Err(_) => {
+                let msg = format!("{}::step() panicked", std::any::type_name::<A>());
                 ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
             }
-            _ => (),
         };
     }
 }
@@ -364,8 +369,8 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
 extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
     ctx: *mut ffi::sqlite3_context,
 ) where
-    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-    Args: FromSqlRow<ArgsSqlType, Sqlite>,
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+    Args: FromSqlRow<ArgsSqlType, Sqlite> + std::panic::UnwindSafe,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
@@ -381,17 +386,25 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
         let aggregator = match aggregate_context {
             Some(ref mut a) => match std::mem::replace(a.as_mut(), OptionalAggregator::None) {
                 OptionalAggregator::Some(agg) => Some(agg),
-                OptionalAggregator::None => unreachable!("We've written to the aggregator in the xStep callback. If xStep was never called, then ffi::sqlite_aggregate_context() would have returned a NULL pointer")
+                OptionalAggregator::None => {
+                    eprintln!("We've written to the aggregator in the xStep callback. If xStep was never called, then ffi::sqlite_aggregate_context() would have returned a NULL pointer");
+                    std::process::abort();
+                }
             },
             None => None,
         };
 
-        let result = A::finalize(aggregator);
+        let result = std::panic::catch_unwind(|| A::finalize(aggregator))
+            .map(process_sql_function_result::<RetSqlType, Ret>);
 
-        match process_sql_function_result::<RetSqlType, Ret>(result) {
-            Ok(value) => value.result_of(ctx),
-            Err(e) => {
+        match result {
+            Ok(Ok(value)) => value.result_of(ctx),
+            Ok(Err(e)) => {
                 let msg = e.to_string();
+                ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
+            }
+            Err(_) => {
+                let msg = format!("{}::finalize() panicked", std::any::type_name::<A>());
                 ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
             }
         }
