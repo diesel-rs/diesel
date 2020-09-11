@@ -11,6 +11,7 @@ repository = "https://github.com/diesel-rs/diesel"
 keywords = ["diesel", "migrations", "cli"]
 autotests = false
 edition = "2018"
+include = ["src/**/*", "LICENSE-*", "README.md"]
 
 [[bin]]
 name = "diesel"
