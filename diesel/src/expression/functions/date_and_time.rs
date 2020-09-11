@@ -71,3 +71,32 @@ impl AsExpression<Nullable<Timestamptz>> for now {
         Coerce::new(self)
     }
 }
+
+/// Represents the SQL `CURRENT_DATE` constant.
+#[allow(non_camel_case_types)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+pub struct today;
+
+impl Expression for today {
+    type SqlType = Date;
+}
+
+impl<DB: Backend> QueryFragment<DB> for today {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.push_sql("CURRENT_DATE");
+        Ok(())
+    }
+}
+
+impl_selectable_expression!(today);
+
+operator_allowed!(today, Add, add);
+operator_allowed!(today, Sub, sub);
+
+impl AsExpression<Nullable<Date>> for today {
+    type Expression = Coerce<today, Nullable<Date>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}
