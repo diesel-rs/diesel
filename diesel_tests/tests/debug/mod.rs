@@ -115,3 +115,43 @@ COMMIT;
         );
     }
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn test_upsert() {
+    // this test ensures we get the right debug string for upserts
+    use crate::schema::users::dsl::*;
+
+    let values = vec![
+        (name.eq("Sean"), hair_color.eq(Some("black"))),
+        (name.eq("Tess"), hair_color.eq(None::<&str>)),
+    ];
+
+    let upsert_command_single_where = insert_into(users)
+        .values(&values)
+        .on_conflict(hair_color)
+        .filter_target(hair_color.eq("black"))
+        .do_nothing();
+    let upsert_single_where_sql_display =
+        debug_query::<TestBackend, _>(&upsert_command_single_where).to_string();
+
+    assert_eq!(
+        upsert_single_where_sql_display,
+        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE "users"."hair_color" = $5 DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, "black"]"#
+    );
+
+    let upsert_command_second_where = insert_into(users)
+        .values(&values)
+        .on_conflict(hair_color)
+        .filter_target(hair_color.eq("black"))
+        .filter_target(name.eq("Sean"))
+        .do_nothing();
+
+    let upsert_second_where_sql_display =
+        debug_query::<TestBackend, _>(&upsert_command_second_where).to_string();
+
+    assert_eq!(
+        upsert_second_where_sql_display,
+        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE "users"."hair_color" = $5 AND "users"."name" = $6 DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, "black", "Sean"]"#
+    );
+}

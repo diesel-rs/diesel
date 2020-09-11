@@ -330,6 +330,8 @@ pub mod prelude {
     pub use crate::macros::prelude::*;
     #[doc(inline)]
     pub use crate::query_builder::AsChangeset;
+    #[doc(inline)]
+    pub use crate::query_builder::DecoratableTarget;
     #[doc(hidden)]
     pub use crate::query_dsl::GroupByDsl;
     #[doc(inline)]

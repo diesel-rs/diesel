@@ -53,6 +53,7 @@ pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 pub use self::update_statement::{
     AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
 };
+pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
 pub use self::limit_clause::{LimitClause, NoLimitClause};
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
