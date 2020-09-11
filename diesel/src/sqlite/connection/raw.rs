@@ -248,11 +248,7 @@ extern "C" fn run_custom_function<F>(
         let f = match data_ptr.as_mut() {
             Some(f) => f,
             None => {
-                ffi::sqlite3_result_error(
-                    ctx,
-                    NULL_DATA_ERR.as_ptr() as *const _ as *const _,
-                    NULL_DATA_ERR.len() as _,
-                );
+                context_error_str(ctx, NULL_DATA_ERR);
                 return;
             }
         };
@@ -263,11 +259,7 @@ extern "C" fn run_custom_function<F>(
                 internal_connection: conn,
             },
             None => {
-                ffi::sqlite3_result_error(
-                    ctx,
-                    NULL_DATA_ERR.as_ptr() as *const _ as *const _,
-                    NULL_DATA_ERR.len() as _,
-                );
+                context_error_str(ctx, NULL_DATA_ERR);
                 return;
             }
         };
@@ -275,7 +267,7 @@ extern "C" fn run_custom_function<F>(
             Ok(value) => value.result_of(ctx),
             Err(e) => {
                 let msg = e.to_string();
-                ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
+                context_error_str(ctx, &msg);
             }
         }
 
@@ -356,11 +348,11 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
             Ok(Ok(())) => (),
             Ok(Err(e)) => {
                 let msg = e.to_string();
-                unsafe { ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _) };
+                context_error_str(ctx, &msg);
             }
             Err(_) => {
                 let msg = format!("{}::step() panicked", std::any::type_name::<A>());
-                ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
+                context_error_str(ctx, &msg);
             }
         };
     }
@@ -401,11 +393,11 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
             Ok(Ok(value)) => value.result_of(ctx),
             Ok(Err(e)) => {
                 let msg = e.to_string();
-                ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
+                context_error_str(ctx, &msg);
             }
             Err(_) => {
                 let msg = format!("{}::finalize() panicked", std::any::type_name::<A>());
-                ffi::sqlite3_result_error(ctx, msg.as_ptr() as *const _, msg.len() as _);
+                context_error_str(ctx, &msg);
             }
         }
     }
@@ -414,11 +406,11 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
 unsafe fn null_aggregate_context_error(ctx: *mut ffi::sqlite3_context) {
     static NULL_AG_CTX_ERR: &str = "An unknown error occurred. sqlite3_aggregate_context returned a null pointer. This should never happen.";
 
-    ffi::sqlite3_result_error(
-        ctx,
-        NULL_AG_CTX_ERR.as_ptr() as *const _ as *const _,
-        NULL_AG_CTX_ERR.len() as _,
-    );
+    context_error_str(ctx, NULL_AG_CTX_ERR)
+}
+
+unsafe fn context_error_str(ctx: *mut ffi::sqlite3_context, error: &str) {
+    ffi::sqlite3_result_error(ctx, error.as_ptr() as *const _, error.len() as _);
 }
 
 #[allow(warnings)]
