@@ -45,8 +45,14 @@ pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     fn_name: &str,
 ) -> QueryResult<()>
 where
-    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-    Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
+    A: SqliteAggregateFunction<Args, Output = Ret>
+        + 'static
+        + Send
+        + std::panic::UnwindSafe
+        + std::panic::RefUnwindSafe,
+    Args: FromSqlRow<ArgsSqlType, Sqlite>
+        + StaticallySizedRow<ArgsSqlType, Sqlite>
+        + std::panic::UnwindSafe,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
