@@ -263,9 +263,10 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                     f: F,
                 ) -> QueryResult<()>
                 where
-                    F: Fn(#(#arg_name,)*) -> Ret + Send + 'static,
+                    F: Fn(#(#arg_name,)*) -> Ret + Send + 'static + ::std::panic::RefUnwindSafe,
                     (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
-                        StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
+                        StaticallySizedRow<(#(#arg_type,)*), Sqlite> +
+                        ::std::panic::UnwindSafe,
                     Ret: ToSql<#return_type, Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
@@ -289,9 +290,10 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                     mut f: F,
                 ) -> QueryResult<()>
                 where
-                    F: FnMut(#(#arg_name,)*) -> Ret + Send + 'static,
+                    F: FnMut(#(#arg_name,)*) -> Ret + Send + 'static + ::std::panic::RefUnwindSafe,
                     (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
-                        StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
+                        StaticallySizedRow<(#(#arg_type,)*), Sqlite> +
+                        ::std::panic::UnwindSafe,
                     Ret: ToSql<#return_type, Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(

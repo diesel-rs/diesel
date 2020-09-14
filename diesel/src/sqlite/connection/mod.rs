@@ -215,8 +215,10 @@ impl SqliteConnection {
         mut f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut(Args) -> Ret + Send + 'static,
-        Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
+        F: FnMut(Args) -> Ret + Send + 'static + std::panic::RefUnwindSafe,
+        Args: FromSqlRow<ArgsSqlType, Sqlite>
+            + StaticallySizedRow<ArgsSqlType, Sqlite>
+            + std::panic::UnwindSafe,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {

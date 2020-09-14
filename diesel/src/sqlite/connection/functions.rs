@@ -17,7 +17,7 @@ pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut(&RawConnection, Args) -> Ret + Send + 'static,
+    F: FnMut(&RawConnection, Args) -> Ret + Send + 'static + std::panic::RefUnwindSafe,
     Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
