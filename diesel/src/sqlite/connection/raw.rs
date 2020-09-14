@@ -99,7 +99,8 @@ impl RawConnection {
     where
         F: FnMut(&Self, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
             + Send
-            + 'static,
+            + 'static
+            + std::panic::RefUnwindSafe,
     {
         let fn_name = Self::get_fn_name(fn_name)?;
         let flags = Self::get_flags(deterministic);
@@ -250,7 +251,8 @@ extern "C" fn run_custom_function<F>(
 ) where
     F: FnMut(&RawConnection, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
         + Send
-        + 'static,
+        + 'static
+        + std::panic::RefUnwindSafe,
 {
     static NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
     static NULL_CONN_ERR: &str = "An unknown error occurred. sqlite3_context_db_handle returned a null pointer. This should never happen.";
@@ -276,15 +278,26 @@ extern "C" fn run_custom_function<F>(
                 return;
             }
         };
-        match f(&conn, args) {
-            Ok(value) => value.result_of(ctx),
-            Err(e) => {
+
+        let mut f = std::panic::AssertUnwindSafe(f);
+        let result = std::panic::catch_unwind(move || {
+            use std::ops::DerefMut as _;
+            let result = f.deref_mut()(&conn, args);
+            mem::forget(conn);
+            result
+        });
+
+        match result {
+            Ok(Ok(value)) => value.result_of(ctx),
+            Ok(Err(e)) => {
                 let msg = e.to_string();
                 context_error_str(ctx, &msg);
             }
+            Err(_) => {
+                let msg = format!("{} panicked", std::any::type_name::<F>());
+                unsafe { context_error_str(ctx, &msg) };
+            }
         }
-
-        mem::forget(conn);
     }
 }
 
