@@ -15,6 +15,19 @@ use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
 
+/// For use in FFI function, which cannot unwind.
+/// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
+macro_rules! assert_fail {
+    ($fmt:expr $(,$args:tt)*) => {
+        eprint!(concat!(
+            $fmt,
+            "If you see this message, please open an issue at https://github.com/diesel-rs/diesel/issues/new.\n",
+            "Source location: {}:{}\n",
+        ), $($args,)* file!(), line!());
+        std::process::abort()
+    };
+}
+
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
     pub(crate) internal_connection: NonNull<ffi::sqlite3>,
@@ -328,8 +341,7 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
                 if let &mut OptionalAggregator::Some(ref mut agg) = a_ptr {
                     agg
                 } else {
-                    eprintln!("We've written the aggregator to the aggregate context, but it could not be retrieved");
-                    std::process::abort();
+                    assert_fail!("We've written the aggregator to the aggregate context, but it could not be retrieved.");
                 }
             }
             None => {
@@ -382,8 +394,7 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
         match std::mem::replace(a, OptionalAggregator::None) {
             OptionalAggregator::Some(agg) => agg,
             OptionalAggregator::None => {
-                eprintln!("We've written to the aggregator in the xStep callback. If xStep was never called, then ffi::sqlite_aggregate_context() would have returned a NULL pointer");
-                std::process::abort();
+                assert_fail!("We've written to the aggregator in the xStep callback. If xStep was never called, then ffi::sqlite_aggregate_context() would have returned a NULL pointer.");
             }
         }
     });
@@ -427,26 +438,23 @@ where
 {
     let user_ptr = user_ptr as *const F;
     let f = unsafe { user_ptr.as_ref() }.unwrap_or_else(|| {
-        eprintln!(
+        assert_fail!(
             "An unknown error occurred. user_ptr is a null pointer. This should never happen."
         );
-        std::process::abort();
     });
 
     for (ptr, len, side) in &[(rhs_ptr, rhs_len, "rhs"), (lhs_ptr, lhs_len, "lhs")] {
         if *len < 0 {
-            eprintln!(
+            assert_fail!(
                 "An unknown error occurred. {}_len is negative. This should never happen.",
                 side
             );
-            std::process::abort();
         }
         if ptr.is_null() {
-            eprintln!(
+            assert_fail!(
                 "An unknown error occurred. {}_ptr is a null pointer. This should never happen.",
                 side
             );
-            std::process::abort();
         }
     }
 
