@@ -23,7 +23,7 @@ fn generated_queryable_allows_lifetimes() {
         users.select((id, name)).first(&connection)
     );
     assert_eq!(
-        users.select((id, name)).first(&connection),
+        users.select((id, name)).first::<CowUser>(&connection),
         users.select_by::<CowUser>().first(&connection)
     );
 }

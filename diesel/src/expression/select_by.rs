@@ -5,8 +5,15 @@ use crate::expression::{
 use crate::query_builder::*;
 use crate::result::QueryResult;
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Default)]
 pub struct SelectBy<T>(std::marker::PhantomData<T>);
+
+impl<T> Clone for SelectBy<T> {
+    fn clone(&self) -> Self {
+        Self(self.0)
+    }
+}
+impl<T> Copy for SelectBy<T> {}
 
 impl<T, ST> QueryId for SelectBy<T>
 where
