@@ -122,6 +122,7 @@ where
 impl<F, S, D, W, O, LOf, LC, ST> SelectByQuery
     for SelectStatement<F, SelectClause<S>, D, W, O, LOf, NoGroupByClause, LC>
 where
+    ST: TypedExpressionType,
     S: Expression<SqlType = ST>,
     Self: SelectQuery<SqlType = ST>,
 {
