@@ -13,10 +13,11 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let pg_tokens = pg_tokens(&item);
 
     Ok(wrap_in_dummy_mod(quote! {
-        impl #impl_generics diesel::sql_types::NotNull
+        impl #impl_generics diesel::sql_types::SqlType
             for #struct_name #ty_generics
         #where_clause
         {
+            type IsNull = diesel::sql_types::is_nullable::NotNull;
         }
 
         impl #impl_generics diesel::sql_types::SingleValue

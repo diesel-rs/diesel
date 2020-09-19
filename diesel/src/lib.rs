@@ -94,6 +94,8 @@
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
 #![cfg_attr(feature = "unstable", feature(specialization, trait_alias))]
+// For the `specialization` feature.
+#![cfg_attr(feature = "unstable", allow(incomplete_features))]
 // Built-in Lints
 #![deny(warnings)]
 #![warn(
@@ -331,6 +333,8 @@ pub mod prelude {
     pub use crate::macros::prelude::*;
     #[doc(inline)]
     pub use crate::query_builder::AsChangeset;
+    #[doc(inline)]
+    pub use crate::query_builder::DecoratableTarget;
     #[doc(hidden)]
     pub use crate::query_dsl::GroupByDsl;
     #[doc(inline)]

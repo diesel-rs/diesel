@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::error::Error;
 
 use diesel::backend::Backend;
-use diesel::deserialize::FromSql;
+use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::dsl::*;
-use diesel::expression::{is_aggregate, ValidGrouping};
+use diesel::expression::{is_aggregate, QueryMetadata, ValidGrouping};
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
@@ -44,6 +44,9 @@ impl UsesInformationSchema for Pg {
 }
 
 #[cfg(feature = "mysql")]
+sql_function!(fn database() -> VarChar);
+
+#[cfg(feature = "mysql")]
 impl UsesInformationSchema for Mysql {
     type TypeColumn = self::information_schema::columns::column_type;
 
@@ -56,8 +59,7 @@ impl UsesInformationSchema for Mysql {
         C: Connection<Backend = Self>,
         String: FromSql<sql_types::Text, C::Backend>,
     {
-        no_arg_sql_function!(database, sql_types::VarChar);
-        select(database).get_result(conn)
+        select(database()).get_result(conn)
     }
 }
 
@@ -78,7 +80,8 @@ mod information_schema {
             table_schema -> VarChar,
             table_name -> VarChar,
             column_name -> VarChar,
-            is_nullable -> VarChar,
+            #[sql_name = "is_nullable"]
+            __is_nullable -> VarChar,
             ordinal_position -> BigInt,
             udt_name -> VarChar,
             column_type -> VarChar,
@@ -126,6 +129,14 @@ pub fn get_table_data<'a, Conn>(
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
+    ColumnInformation: FromSqlRow<
+        SqlTypeOf<(
+            columns::column_name,
+            <Conn::Backend as UsesInformationSchema>::TypeColumn,
+            columns::__is_nullable,
+        )>,
+        Conn::Backend,
+    >,
     String: FromSql<sql_types::Text, Conn::Backend>,
     Order<
         Filter<
@@ -135,7 +146,7 @@ where
                     (
                         columns::column_name,
                         <Conn::Backend as UsesInformationSchema>::TypeColumn,
-                        columns::is_nullable,
+                        columns::__is_nullable,
                     ),
                 >,
                 Eq<columns::table_name, &'a String>,
@@ -144,6 +155,7 @@ where
         >,
         columns::ordinal_position,
     >: QueryFragment<Conn::Backend>,
+    Conn::Backend: QueryMetadata<(sql_types::Text, sql_types::Text, sql_types::Text)>,
 {
     use self::information_schema::columns::dsl::*;
 
@@ -154,7 +166,7 @@ where
 
     let type_column = Conn::Backend::type_column();
     columns
-        .select((column_name, type_column, is_nullable))
+        .select((column_name, type_column, __is_nullable))
         .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name))
         .order(ordinal_position)
@@ -185,6 +197,7 @@ where
         >,
         key_column_usage::ordinal_position,
     >: QueryFragment<Conn::Backend>,
+    Conn::Backend: QueryMetadata<sql_types::Text>,
 {
     use self::information_schema::key_column_usage::dsl::*;
     use self::information_schema::table_constraints::constraint_type;
@@ -225,6 +238,7 @@ where
         >,
         Like<tables::table_type, &'static str>,
     >: QueryFragment<Conn::Backend>,
+    Conn::Backend: QueryMetadata<sql_types::Text>,
 {
     use self::information_schema::tables::dsl::*;
 

@@ -1,77 +1,48 @@
 use super::result::PgResult;
-use super::row::PgNamedRow;
-use crate::deserialize::{FromSqlRow, Queryable, QueryableByName};
-use crate::pg::Pg;
-use crate::result::Error::DeserializationError;
-use crate::result::QueryResult;
-
-use std::marker::PhantomData;
+use super::row::PgRow;
 
 /// The type returned by various [`Connection`](struct.Connection.html) methods.
 /// Acts as an iterator over `T`.
-pub struct Cursor<ST, T> {
+pub struct Cursor<'a> {
     current_row: usize,
-    db_result: PgResult,
-    _marker: PhantomData<(ST, T)>,
+    db_result: &'a PgResult,
 }
 
-impl<ST, T> Cursor<ST, T> {
-    #[doc(hidden)]
-    pub fn new(db_result: PgResult) -> Self {
+impl<'a> Cursor<'a> {
+    pub(super) fn new(db_result: &'a PgResult) -> Self {
         Cursor {
             current_row: 0,
             db_result,
-            _marker: PhantomData,
         }
     }
 }
 
-impl<ST, T> Iterator for Cursor<ST, T>
-where
-    T: Queryable<ST, Pg>,
-{
-    type Item = QueryResult<T>;
+impl<'a> ExactSizeIterator for Cursor<'a> {
+    fn len(&self) -> usize {
+        self.db_result.num_rows() - self.current_row
+    }
+}
+
+impl<'a> Iterator for Cursor<'a> {
+    type Item = PgRow<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_row >= self.db_result.num_rows() {
-            None
-        } else {
-            let mut row = self.db_result.get_row(self.current_row);
+        if self.current_row < self.db_result.num_rows() {
+            let row = self.db_result.get_row(self.current_row);
             self.current_row += 1;
-            let value = T::Row::build_from_row(&mut row)
-                .map(T::build)
-                .map_err(DeserializationError);
-            Some(value)
+            Some(row)
+        } else {
+            None
         }
     }
-}
 
-pub struct NamedCursor {
-    pub(crate) db_result: PgResult,
-}
-
-impl NamedCursor {
-    pub fn new(db_result: PgResult) -> Self {
-        NamedCursor { db_result }
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.current_row = (self.current_row + n).min(self.db_result.num_rows());
+        self.next()
     }
 
-    pub fn collect<T>(self) -> QueryResult<Vec<T>>
-    where
-        T: QueryableByName<Pg>,
-    {
-        (0..self.db_result.num_rows())
-            .map(|i| {
-                let row = PgNamedRow::new(&self, i);
-                T::build(&row).map_err(DeserializationError)
-            })
-            .collect()
-    }
-
-    pub fn index_of_column(&self, column_name: &str) -> Option<usize> {
-        self.db_result.field_number(column_name)
-    }
-
-    pub fn get_value(&self, row: usize, column: usize) -> Option<&[u8]> {
-        self.db_result.get(row, column)
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
     }
 }

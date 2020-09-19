@@ -13,13 +13,14 @@ use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::Statement;
 use crate::connection::*;
-use crate::deserialize::{Queryable, QueryableByName};
+use crate::deserialize::FromSqlRow;
+use crate::expression::QueryMetadata;
 use crate::pg::{metadata_lookup::PgMetadataCache, Pg, PgMetadataLookup, TransactionBuilder};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
+use crate::result::Error::DeserializationError;
 use crate::result::*;
-use crate::sql_types::HasSqlType;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -67,29 +68,20 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Pg> + QueryId,
-        Pg: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Pg>,
+        T::Query: QueryFragment<Self::Backend> + QueryId,
+        U: FromSqlRow<T::SqlType, Self::Backend>,
+        Self::Backend: QueryMetadata<T::SqlType>,
     {
         let (query, params) = self.prepare_query(&source.as_query())?;
-        query
-            .execute(self, &params)
-            .and_then(|r| Cursor::new(r).collect())
-    }
+        let result = query.execute(self, &params)?;
+        let cursor = Cursor::new(&result);
 
-    #[doc(hidden)]
-    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
-    where
-        T: QueryFragment<Pg> + QueryId,
-        U: QueryableByName<Pg>,
-    {
-        let (query, params) = self.prepare_query(source)?;
-        query
-            .execute(self, &params)
-            .and_then(|r| NamedCursor::new(r).collect())
+        cursor
+            .map(|row| U::build_from_row(&row).map_err(DeserializationError))
+            .collect::<QueryResult<Vec<_>>>()
     }
 
     #[doc(hidden)]

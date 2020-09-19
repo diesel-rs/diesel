@@ -5,8 +5,9 @@ use crate::expression::nullable::Nullable;
 use crate::expression::SelectableExpression;
 use crate::prelude::*;
 use crate::query_builder::*;
+use crate::query_dsl::InternalJoinDsl;
 use crate::result::QueryResult;
-use crate::sql_types::Bool;
+use crate::sql_types::BoolOrNullableBool;
 use crate::util::TupleAppend;
 
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -84,7 +85,8 @@ where
 impl<Join, On> QuerySource for JoinOn<Join, On>
 where
     Join: QuerySource,
-    On: AppearsOnTable<Join::FromClause, SqlType = Bool> + Clone,
+    On: AppearsOnTable<Join::FromClause> + Clone,
+    On::SqlType: BoolOrNullableBool,
     Join::DefaultSelection: SelectableExpression<Self>,
 {
     type FromClause = Grouped<nodes::InfixNode<'static, Join::FromClause, On>>;
@@ -271,6 +273,34 @@ where
         (rhs.source, rhs.on)
     }
 }
+
+impl<Lhs, Rhs, On> JoinTo<Rhs> for OnClauseWrapper<Lhs, On>
+where
+    Lhs: JoinTo<Rhs>,
+{
+    type FromClause = <Lhs as JoinTo<Rhs>>::FromClause;
+    type OnClause = <Lhs as JoinTo<Rhs>>::OnClause;
+
+    fn join_target(rhs: Rhs) -> (Self::FromClause, Self::OnClause) {
+        <Lhs as JoinTo<Rhs>>::join_target(rhs)
+    }
+}
+
+impl<Rhs, Kind, On1, On2, Lhs> InternalJoinDsl<Rhs, Kind, On1> for OnClauseWrapper<Lhs, On2>
+where
+    Lhs: InternalJoinDsl<Rhs, Kind, On1>,
+{
+    type Output = OnClauseWrapper<<Lhs as InternalJoinDsl<Rhs, Kind, On1>>::Output, On2>;
+
+    fn join(self, rhs: Rhs, kind: Kind, on: On1) -> Self::Output {
+        OnClauseWrapper {
+            source: self.source.join(rhs, kind, on),
+            on: self.on,
+        }
+    }
+}
+
+impl<Qs, On> QueryDsl for OnClauseWrapper<Qs, On> {}
 
 #[doc(hidden)]
 /// Convert any joins in a `FROM` clause into an inner join.

@@ -1,0 +1,49 @@
+error[E0277]: the trait bound `UserWithToFewFields: diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` is not satisfied
+  --> $DIR/queryable_type_missmatch.rs:59:26
+   |
+59 |     let _ = users::table.load::<UserWithToFewFields>(conn);
+   |                          ^^^^ the trait `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` is not implemented for `UserWithToFewFields`
+   |
+   = help: the following implementations were found:
+             <UserWithToFewFields as diesel::Queryable<(__ST0, __ST1), __DB>>
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` for `UserWithToFewFields`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, UserWithToFewFields>` for `users::table`
+
+error[E0277]: the trait bound `UserWithToManyFields: diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` is not satisfied
+  --> $DIR/queryable_type_missmatch.rs:61:26
+   |
+61 |     let _ = users::table.load::<UserWithToManyFields>(conn);
+   |                          ^^^^ the trait `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` is not implemented for `UserWithToManyFields`
+   |
+   = help: the following implementations were found:
+             <UserWithToManyFields as diesel::Queryable<(__ST0, __ST1, __ST2, __ST3), __DB>>
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` for `UserWithToManyFields`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, UserWithToManyFields>` for `users::table`
+
+error[E0277]: the trait bound `(std::string::String, i32, std::option::Option<std::string::String>): diesel::deserialize::FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` is not satisfied
+  --> $DIR/queryable_type_missmatch.rs:63:26
+   |
+63 |     let _ = users::table.load::<UserWrongOrder>(conn);
+   |                          ^^^^ the trait `diesel::deserialize::FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` is not implemented for `(std::string::String, i32, std::option::Option<std::string::String>)`
+   |
+   = help: the following implementations were found:
+             <(B, C, A) as diesel::deserialize::FromStaticSqlRow<(SB, SC, SA), __DB>>
+   = note: required because of the requirements on the impl of `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` for `UserWrongOrder`
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` for `UserWrongOrder`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, UserWrongOrder>` for `users::table`
+
+error[E0277]: the trait bound `(i32, i32, std::option::Option<std::string::String>): diesel::deserialize::FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` is not satisfied
+  --> $DIR/queryable_type_missmatch.rs:65:26
+   |
+65 |     let _ = users::table.load::<UserTypeMissmatch>(conn);
+   |                          ^^^^ the trait `diesel::deserialize::FromStaticSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` is not implemented for `(i32, i32, std::option::Option<std::string::String>)`
+   |
+   = help: the following implementations were found:
+             <(B, C, A) as diesel::deserialize::FromStaticSqlRow<(SB, SC, SA), __DB>>
+   = note: required because of the requirements on the impl of `diesel::Queryable<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` for `UserTypeMissmatch`
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSqlRow<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>), _>` for `UserTypeMissmatch`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, UserTypeMissmatch>` for `users::table`
+
+error: aborting due to 4 previous errors
+
+For more information about this error, try `rustc --explain E0277`.

@@ -1,5 +1,17 @@
 use crate::expression::functions::sql_function;
-use crate::sql_types::{IntoNullable, SqlOrd};
+use crate::sql_types::{IntoNullable, SingleValue, SqlOrd, SqlType};
+
+pub trait SqlOrdAggregate: SingleValue {
+    type Ret: SqlType + SingleValue;
+}
+
+impl<T> SqlOrdAggregate for T
+where
+    T: SqlOrd + IntoNullable + SingleValue,
+    T::Nullable: SqlType + SingleValue,
+{
+    type Ret = T::Nullable;
+}
 
 sql_function! {
     /// Represents a SQL `MAX` function. This function can only take types which are
@@ -17,7 +29,7 @@ sql_function! {
     /// assert_eq!(Ok(Some(8)), animals.select(max(legs)).first(&connection));
     /// # }
     #[aggregate]
-    fn max<ST: SqlOrd + IntoNullable>(expr: ST) -> ST::Nullable;
+    fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
 }
 
 sql_function! {
@@ -36,5 +48,5 @@ sql_function! {
     /// assert_eq!(Ok(Some(4)), animals.select(min(legs)).first(&connection));
     /// # }
     #[aggregate]
-    fn min<ST: SqlOrd + IntoNullable>(expr: ST) -> ST::Nullable;
+    fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
 }

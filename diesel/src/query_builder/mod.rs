@@ -26,7 +26,7 @@ pub mod nodes;
 pub(crate) mod offset_clause;
 mod order_clause;
 mod returning_clause;
-mod select_clause;
+pub(crate) mod select_clause;
 mod select_statement;
 mod sql_query;
 mod update_statement;
@@ -42,6 +42,10 @@ pub use self::insert_statement::{
     IncompleteInsertStatement, InsertStatement, UndecoratedInsertRecord, ValuesClause,
 };
 pub use self::query_id::QueryId;
+#[doc(inline)]
+pub use self::select_clause::{
+    IntoBoxedSelectClause, SelectClauseExpression, SelectClauseQueryFragment,
+};
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectByStatement, SelectStatement};
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
@@ -49,6 +53,7 @@ pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 pub use self::update_statement::{
     AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
 };
+pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
 pub use self::limit_clause::{LimitClause, NoLimitClause};
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};

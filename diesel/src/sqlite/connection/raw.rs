@@ -9,7 +9,7 @@ use std::{mem, ptr, slice, str};
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteAggregateFunction};
-use crate::deserialize::Queryable;
+use crate::deserialize::FromSqlRow;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
@@ -116,7 +116,7 @@ impl RawConnection {
     ) -> QueryResult<()>
     where
         A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-        Args: Queryable<ArgsSqlType, Sqlite>,
+        Args: FromSqlRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
@@ -266,7 +266,7 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     value_ptr: *mut *mut ffi::sqlite3_value,
 ) where
     A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-    Args: Queryable<ArgsSqlType, Sqlite>,
+    Args: FromSqlRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
@@ -336,7 +336,7 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     ctx: *mut ffi::sqlite3_context,
 ) where
     A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send,
-    Args: Queryable<ArgsSqlType, Sqlite>,
+    Args: FromSqlRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {

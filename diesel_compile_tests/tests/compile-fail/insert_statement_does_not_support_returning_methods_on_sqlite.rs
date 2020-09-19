@@ -1,10 +1,11 @@
 #[macro_use]
 extern crate diesel;
 
-use diesel::*;
-use diesel::sqlite::SqliteConnection;
 use diesel::backend::Backend;
 use diesel::sql_types::{Integer, VarChar};
+use diesel::sqlite::SqliteConnection;
+use diesel::deserialize::Queryable;
+use diesel::*;
 
 table! {
     users {
@@ -13,25 +14,12 @@ table! {
     }
 }
 
+#[derive(Queryable)]
 pub struct User {
     id: i32,
     name: String,
 }
 
-use diesel::deserialize::FromSqlRow;
-
-impl<DB: Backend> Queryable<(Integer, VarChar), DB> for User where
-    (i32, String): FromSqlRow<(Integer, VarChar), DB>,
-{
-    type Row = (i32, String);
-
-    fn build(row: Self::Row) -> Self {
-        User {
-            id: row.0,
-            name: row.1,
-        }
-    }
-}
 
 #[derive(Insertable)]
 #[table_name = "users"]

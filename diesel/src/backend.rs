@@ -74,6 +74,8 @@ pub type RawValue<'a, DB> = <DB as HasRawValue<'a>>::RawValue;
 pub trait SupportsReturningClause {}
 /// Does this backend support 'ON CONFLICT' clause?
 pub trait SupportsOnConflictClause {}
+/// Does this backend support 'WHERE' clauses on 'ON CONFLICT' clauses?
+pub trait SupportsOnConflictTargetDecorations {}
 /// Does this backend support the bare `DEFAULT` keyword?
 pub trait SupportsDefaultKeyword {}
 /// Does this backend use the standard `SAVEPOINT` syntax?

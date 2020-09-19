@@ -29,11 +29,10 @@ where
 }
 
 impl FromSql<SmallInt, Mysql> for i16 {
-    fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         use crate::mysql::NumericRepresentation::*;
 
-        let data = not_none!(value);
-        match data.numeric_value()? {
+        match value.numeric_value()? {
             Tiny(x) => Ok(x.into()),
             Small(x) => Ok(x),
             Medium(x) => Ok(x as Self),
@@ -46,11 +45,10 @@ impl FromSql<SmallInt, Mysql> for i16 {
 }
 
 impl FromSql<Integer, Mysql> for i32 {
-    fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         use crate::mysql::NumericRepresentation::*;
 
-        let data = not_none!(value);
-        match data.numeric_value()? {
+        match value.numeric_value()? {
             Tiny(x) => Ok(x.into()),
             Small(x) => Ok(x.into()),
             Medium(x) => Ok(x),
@@ -63,11 +61,10 @@ impl FromSql<Integer, Mysql> for i32 {
 }
 
 impl FromSql<BigInt, Mysql> for i64 {
-    fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         use crate::mysql::NumericRepresentation::*;
 
-        let data = not_none!(value);
-        match data.numeric_value()? {
+        match value.numeric_value()? {
             Tiny(x) => Ok(x.into()),
             Small(x) => Ok(x.into()),
             Medium(x) => Ok(x.into()),
@@ -80,11 +77,10 @@ impl FromSql<BigInt, Mysql> for i64 {
 }
 
 impl FromSql<Float, Mysql> for f32 {
-    fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         use crate::mysql::NumericRepresentation::*;
 
-        let data = not_none!(value);
-        match data.numeric_value()? {
+        match value.numeric_value()? {
             Tiny(x) => Ok(x.into()),
             Small(x) => Ok(x.into()),
             Medium(x) => Ok(x as Self),
@@ -97,11 +93,10 @@ impl FromSql<Float, Mysql> for f32 {
 }
 
 impl FromSql<Double, Mysql> for f64 {
-    fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         use crate::mysql::NumericRepresentation::*;
 
-        let data = not_none!(value);
-        match data.numeric_value()? {
+        match value.numeric_value()? {
             Tiny(x) => Ok(x.into()),
             Small(x) => Ok(x.into()),
             Medium(x) => Ok(x.into()),
@@ -114,15 +109,13 @@ impl FromSql<Double, Mysql> for f64 {
 }
 
 impl FromSql<Text, Mysql> for String {
-    fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         String::from_utf8(value.as_bytes().into()).map_err(Into::into)
     }
 }
 
 impl FromSql<Binary, Mysql> for Vec<u8> {
-    fn from_sql(value: Option<MysqlValue<'_>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
+    fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes().into())
     }
 }

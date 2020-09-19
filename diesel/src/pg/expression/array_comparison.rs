@@ -1,15 +1,14 @@
 use crate::expression::subselect::Subselect;
-use crate::expression::{AsExpression, Expression, ValidGrouping};
+use crate::expression::{AsExpression, Expression, TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::Array;
+use crate::sql_types::{Array, SqlType};
 
 /// Creates a PostgreSQL `ANY` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically from `diesel::expression::any`, or glob import
-/// `diesel::dsl::*`
+/// it specifically from `diesel::pg::expression::dsl::any`, or `diesel::dsl::any`.
 ///
 /// # Example
 ///
@@ -37,7 +36,7 @@ where
 /// Creates a PostgreSQL `ALL` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
-/// it specifically as `diesel::dsl::all`.
+/// it specifically as `diesel::pg::expression::dsl::all`, or `diesel::dsl::all`.
 ///
 /// # Example
 ///
@@ -76,6 +75,7 @@ impl<Expr> Any<Expr> {
 impl<Expr, ST> Expression for Any<Expr>
 where
     Expr: Expression<SqlType = Array<ST>>,
+    ST: SqlType + TypedExpressionType,
 {
     type SqlType = ST;
 }
@@ -109,6 +109,7 @@ impl<Expr> All<Expr> {
 impl<Expr, ST> Expression for All<Expr>
 where
     Expr: Expression<SqlType = Array<ST>>,
+    ST: SqlType + TypedExpressionType,
 {
     type SqlType = ST;
 }

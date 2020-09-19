@@ -1,11 +1,9 @@
 use super::*;
 use crate::backend::Backend;
-use crate::dsl::Or;
-use crate::expression::operators::And;
+use crate::expression::operators::{And, Or};
 use crate::expression::*;
-use crate::expression_methods::*;
 use crate::result::QueryResult;
-use crate::sql_types::Bool;
+use crate::sql_types::BoolOrNullableBool;
 
 /// Add `Predicate` to the current `WHERE` clause, joining with `AND` if
 /// applicable.
@@ -39,7 +37,8 @@ impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
 
 impl<Predicate> WhereAnd<Predicate> for NoWhereClause
 where
-    Predicate: Expression<SqlType = Bool>,
+    Predicate: Expression,
+    Predicate::SqlType: BoolOrNullableBool,
 {
     type Output = WhereClause<Predicate>;
 
@@ -50,7 +49,8 @@ where
 
 impl<Predicate> WhereOr<Predicate> for NoWhereClause
 where
-    Predicate: Expression<SqlType = Bool>,
+    Predicate: Expression,
+    Predicate::SqlType: BoolOrNullableBool,
 {
     type Output = WhereClause<Predicate>;
 
@@ -83,25 +83,29 @@ where
 
 impl<Expr, Predicate> WhereAnd<Predicate> for WhereClause<Expr>
 where
-    Expr: Expression<SqlType = Bool>,
-    Predicate: Expression<SqlType = Bool>,
+    Expr: Expression,
+    Expr::SqlType: BoolOrNullableBool,
+    Predicate: Expression,
+    Predicate::SqlType: BoolOrNullableBool,
 {
     type Output = WhereClause<And<Expr, Predicate>>;
 
     fn and(self, predicate: Predicate) -> Self::Output {
-        WhereClause(self.0.and(predicate))
+        WhereClause(And::new(self.0, predicate))
     }
 }
 
 impl<Expr, Predicate> WhereOr<Predicate> for WhereClause<Expr>
 where
-    Expr: Expression<SqlType = Bool>,
-    Predicate: Expression<SqlType = Bool>,
+    Expr: Expression,
+    Expr::SqlType: BoolOrNullableBool,
+    Predicate: Expression,
+    Predicate::SqlType: BoolOrNullableBool,
 {
     type Output = WhereClause<Or<Expr, Predicate>>;
 
     fn or(self, predicate: Predicate) -> Self::Output {
-        WhereClause(self.0.or(predicate))
+        WhereClause(Or::new(self.0, predicate))
     }
 }
 
@@ -177,7 +181,6 @@ where
     fn or(self, predicate: Predicate) -> Self::Output {
         use self::BoxedWhereClause::Where;
         use crate::expression::grouped::Grouped;
-        use crate::expression::operators::Or;
 
         match self {
             Where(where_clause) => Where(Box::new(Grouped(Or::new(where_clause, predicate)))),

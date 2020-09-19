@@ -84,7 +84,7 @@ where
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
-        out.push_sql("CREATE TABLE ");
+        out.push_sql("CREATE TABLE IF NOT EXISTS ");
         out.push_identifier(self.name)?;
         out.push_sql(" (");
         self.columns.walk_ast(out.reborrow())?;

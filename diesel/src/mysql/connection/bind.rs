@@ -1,8 +1,10 @@
 use mysqlclient_sys as ffi;
 use std::mem;
+use std::ops::Index;
 use std::os::raw as libc;
 
 use super::stmt::Statement;
+use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::MYSQL_TIME;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
@@ -12,42 +14,30 @@ pub struct Binds {
 }
 
 impl Binds {
-    pub fn from_input_data<Iter>(input: Iter) -> Self
+    pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
         let data = input
             .into_iter()
-            .map(|(metadata, bytes)| BindData::for_input(metadata, bytes))
-            .collect();
+            .map(BindData::for_input)
+            .collect::<Vec<_>>();
 
-        Binds { data }
+        Ok(Binds { data })
     }
 
-    pub fn from_output_types(types: Vec<MysqlType>) -> Self {
-        let data = types
-            .into_iter()
-            .map(|metadata| metadata.into())
-            .map(BindData::for_output)
-            .collect();
-
-        Binds { data }
-    }
-
-    pub fn from_result_metadata(fields: &[ffi::MYSQL_FIELD]) -> Self {
-        let data = fields
+    pub fn from_output_types(types: Vec<Option<MysqlType>>, metadata: &StatementMetadata) -> Self {
+        let data = metadata
+            .fields()
             .iter()
-            .map(|field| {
-                (
-                    field.type_,
-                    Flags::from_bits(field.flags).expect(
-                        "We encountered a unknown type flag while parsing \
-                         Mysql's type information. If you see this error message \
-                         please open an issue at diesels github page.",
-                    ),
-                )
+            .zip(types.into_iter().chain(std::iter::repeat(None)))
+            .map(|(field, tpe)| {
+                if let Some(tpe) = tpe {
+                    BindData::for_output(tpe.into())
+                } else {
+                    BindData::for_output((field.field_type(), field.flags()))
+                }
             })
-            .map(BindData::for_output)
             .collect();
 
         Binds { data }
@@ -88,17 +78,20 @@ impl Binds {
         }
     }
 
-    pub fn field_data(&self, idx: usize) -> Option<MysqlValue<'_>> {
-        let data = &self.data[idx];
-        self.data[idx].bytes().map(|bytes| {
-            let tpe = (data.tpe, data.flags).into();
-            MysqlValue::new(bytes, tpe)
-        })
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+}
+
+impl Index<usize> for Binds {
+    type Output = BindData;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.data[index]
     }
 }
 
 bitflags::bitflags! {
-    struct Flags: u32 {
+    pub(crate) struct Flags: u32 {
         const NOT_NULL_FLAG = 1;
         const PRI_KEY_FAG = 2;
         const UNIQUE_KEY_FLAG = 4;
@@ -123,7 +116,18 @@ bitflags::bitflags! {
     }
 }
 
-struct BindData {
+impl From<u32> for Flags {
+    fn from(flags: u32) -> Self {
+        Flags::from_bits(flags).expect(
+            "We encountered a unknown type flag while parsing \
+             Mysql's type information. If you see this error message \
+             please open an issue at diesels github page.",
+        )
+    }
+}
+
+#[derive(Debug)]
+pub struct BindData {
     tpe: ffi::enum_field_types,
     bytes: Vec<u8>,
     length: libc::c_ulong,
@@ -133,7 +137,7 @@ struct BindData {
 }
 
 impl BindData {
-    fn for_input(tpe: MysqlType, data: Option<Vec<u8>>) -> Self {
+    fn for_input((tpe, data): (MysqlType, Option<Vec<u8>>)) -> Self {
         let is_null = if data.is_none() { 1 } else { 0 };
         let bytes = data.unwrap_or_default();
         let length = bytes.len() as libc::c_ulong;
@@ -172,12 +176,17 @@ impl BindData {
         known_buffer_size_for_ffi_type(self.tpe).is_some()
     }
 
-    fn bytes(&self) -> Option<&[u8]> {
-        if self.is_null == 0 {
-            Some(&*self.bytes)
-        } else {
+    pub fn value(&'_ self) -> Option<MysqlValue<'_>> {
+        if self.is_null() {
             None
+        } else {
+            let tpe = (self.tpe, self.flags).into();
+            Some(MysqlValue::new(&self.bytes, tpe))
         }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.is_null != 0
     }
 
     fn update_buffer_length(&mut self) {
@@ -430,11 +439,12 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::prelude::*;
+    use bigdecimal::FromPrimitive;
 
     use super::MysqlValue;
+    use super::*;
     use crate::deserialize::FromSql;
+    use crate::prelude::*;
     use crate::sql_types::*;
 
     fn to_value<ST, T>(
@@ -446,7 +456,7 @@ mod tests {
         let meta = (bind.tpe, bind.flags).into();
         dbg!(meta);
         let value = MysqlValue::new(&bind.bytes, meta);
-        dbg!(T::from_sql(Some(value)))
+        dbg!(T::from_sql(value))
     }
 
     #[cfg(feature = "extras")]
@@ -552,11 +562,12 @@ mod tests {
             .unwrap();
 
         let metadata = stmt.metadata().unwrap();
-        let mut output_binds = Binds::from_result_metadata(metadata.fields());
+        let mut output_binds =
+            Binds::from_output_types(vec![None; metadata.fields().len()], &metadata);
         stmt.execute_statement(&mut output_binds).unwrap();
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 
-        let results: Vec<(BindData, &ffi::st_mysql_field)> = output_binds
+        let results: Vec<(BindData, &_)> = output_binds
             .data
             .into_iter()
             .zip(metadata.fields())
@@ -628,7 +639,7 @@ mod tests {
         assert!(!numeric_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Numeric, bigdecimal::BigDecimal>(numeric_col).unwrap(),
-            bigdecimal::BigDecimal::from(-999.999)
+            bigdecimal::BigDecimal::from_f32(-999.999).unwrap()
         );
 
         let decimal_col = &results[8].0;
@@ -640,7 +651,7 @@ mod tests {
         assert!(!decimal_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Numeric, bigdecimal::BigDecimal>(decimal_col).unwrap(),
-            bigdecimal::BigDecimal::from(3.14)
+            bigdecimal::BigDecimal::from_f32(3.14).unwrap()
         );
 
         let float_col = &results[9].0;

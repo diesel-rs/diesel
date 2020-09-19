@@ -36,33 +36,33 @@ use super::*;
 /// Represents SQL types which can be added.
 pub trait Add {
     /// The SQL type which can be added to this one
-    type Rhs;
+    type Rhs: SqlType;
     /// The SQL type of the result of adding `Rhs` to `Self`
-    type Output;
+    type Output: SqlType;
 }
 
 /// Represents SQL types which can be subtracted.
 pub trait Sub {
     /// The SQL type which can be subtracted from this one
-    type Rhs;
+    type Rhs: SqlType;
     /// The SQL type of the result of subtracting `Rhs` from `Self`
-    type Output;
+    type Output: SqlType;
 }
 
 /// Represents SQL types which can be multiplied.
 pub trait Mul {
     /// The SQL type which this can be multiplied by
-    type Rhs;
+    type Rhs: SqlType;
     /// The SQL type of the result of multiplying `Self` by `Rhs`
-    type Output;
+    type Output: SqlType;
 }
 
 /// Represents SQL types which can be divided.
 pub trait Div {
     /// The SQL type which this one can be divided by
-    type Rhs;
+    type Rhs: SqlType;
     /// The SQL type of the result of dividing `Self` by `Rhs`
-    type Output;
+    type Output: SqlType;
 }
 
 macro_rules! numeric_type {
@@ -145,9 +145,9 @@ impl Div for Interval {
 
 impl<T> Add for Nullable<T>
 where
-    T: Add + NotNull,
-    T::Rhs: NotNull,
-    T::Output: NotNull,
+    T: Add + SqlType<IsNull = is_nullable::NotNull>,
+    T::Rhs: SqlType<IsNull = is_nullable::NotNull>,
+    T::Output: SqlType<IsNull = is_nullable::NotNull>,
 {
     type Rhs = Nullable<T::Rhs>;
     type Output = Nullable<T::Output>;
@@ -155,9 +155,9 @@ where
 
 impl<T> Sub for Nullable<T>
 where
-    T: Sub + NotNull,
-    T::Rhs: NotNull,
-    T::Output: NotNull,
+    T: Sub + SqlType<IsNull = is_nullable::NotNull>,
+    T::Rhs: SqlType<IsNull = is_nullable::NotNull>,
+    T::Output: SqlType<IsNull = is_nullable::NotNull>,
 {
     type Rhs = Nullable<T::Rhs>;
     type Output = Nullable<T::Output>;
@@ -165,9 +165,9 @@ where
 
 impl<T> Mul for Nullable<T>
 where
-    T: Mul + NotNull,
-    T::Rhs: NotNull,
-    T::Output: NotNull,
+    T: Mul + SqlType<IsNull = is_nullable::NotNull>,
+    T::Rhs: SqlType<IsNull = is_nullable::NotNull>,
+    T::Output: SqlType<IsNull = is_nullable::NotNull>,
 {
     type Rhs = Nullable<T::Rhs>;
     type Output = Nullable<T::Output>;
@@ -175,9 +175,9 @@ where
 
 impl<T> Div for Nullable<T>
 where
-    T: Div + NotNull,
-    T::Rhs: NotNull,
-    T::Output: NotNull,
+    T: Div + SqlType<IsNull = is_nullable::NotNull>,
+    T::Rhs: SqlType<IsNull = is_nullable::NotNull>,
+    T::Output: SqlType<IsNull = is_nullable::NotNull>,
 {
     type Rhs = Nullable<T::Rhs>;
     type Output = Nullable<T::Output>;

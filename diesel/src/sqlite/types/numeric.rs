@@ -1,8 +1,6 @@
 #![cfg(feature = "bigdecimal")]
 
-extern crate bigdecimal;
-
-use self::bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, FromPrimitive};
 
 use crate::deserialize::{self, FromSql};
 use crate::sql_types::{Double, Numeric};
@@ -10,8 +8,8 @@ use crate::sqlite::connection::SqliteValue;
 use crate::sqlite::Sqlite;
 
 impl FromSql<Numeric, Sqlite> for BigDecimal {
-    fn from_sql(bytes: Option<&SqliteValue>) -> deserialize::Result<Self> {
-        let data = <f64 as FromSql<Double, Sqlite>>::from_sql(bytes)?;
-        Ok(data.into())
+    fn from_sql(bytes: SqliteValue<'_>) -> deserialize::Result<Self> {
+        let x = <f64 as FromSql<Double, Sqlite>>::from_sql(bytes)?;
+        BigDecimal::from_f64(x).ok_or_else(|| format!("{} is not valid decimal number ", x).into())
     }
 }

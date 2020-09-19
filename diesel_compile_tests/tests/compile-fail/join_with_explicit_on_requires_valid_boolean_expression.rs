@@ -32,5 +32,5 @@ fn main() {
     //~^ ERROR E0271
     // Invalid, type is not boolean
     let _ = users::table.inner_join(posts::table.on(users::id));
-    //~^ ERROR E0271
+    //~^ ERROR the trait bound `diesel::sql_types::Integer: diesel::sql_types::BoolOrNullableBool` is not satisfied [E0277]
 }

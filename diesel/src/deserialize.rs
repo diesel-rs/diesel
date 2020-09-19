@@ -5,6 +5,7 @@ use std::result;
 
 use crate::backend::{self, Backend};
 use crate::row::{NamedRow, Row};
+use crate::sql_types::{SingleValue, SqlType, Untyped};
 
 /// A specialized result type representing the result of deserializing
 /// a value from the database.
@@ -56,7 +57,8 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # use schema::users;
 /// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::Queryable;
+/// # use diesel::deserialize::{Queryable, FromSql};
+/// # use diesel::sql_types::Text;
 /// #
 /// struct LowercaseString(String);
 ///
@@ -66,15 +68,15 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///     }
 /// }
 ///
-/// impl<DB, ST> Queryable<ST, DB> for LowercaseString
+/// impl<DB> Queryable<Text, DB> for LowercaseString
 /// where
 ///     DB: Backend,
-///     String: Queryable<ST, DB>,
+///     String: FromSql<Text, DB>,
 /// {
-///     type Row = <String as Queryable<ST, DB>>::Row;
+///     type Row = String;
 ///
-///     fn build(row: Self::Row) -> Self {
-///         LowercaseString(String::build(row).to_lowercase())
+///     fn build(s: String) -> Self {
+///         LowercaseString(s.to_lowercase())
 ///     }
 /// }
 ///
@@ -148,7 +150,7 @@ where
     /// The Rust type you'd like to map from.
     ///
     /// This is typically a tuple of all of your struct's fields.
-    type Row: FromSqlRow<ST, DB>;
+    type Row: FromStaticSqlRow<ST, DB>;
 
     /// Construct an instance of this type
     fn build(row: Self::Row) -> Self;
@@ -216,7 +218,7 @@ pub use diesel_derives::Queryable;
 ///     DB: Backend,
 ///     String: FromSql<ST, DB>,
 /// {
-///     fn from_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
+///     fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
 ///         String::from_sql(bytes)
 ///             .map(|s| LowercaseString(s.to_lowercase()))
 ///     }
@@ -249,7 +251,7 @@ where
     DB: Backend,
 {
     /// Construct an instance of `Self` from the database row
-    fn build<R: NamedRow<DB>>(row: &R) -> Result<Self>;
+    fn build<'a>(row: &impl NamedRow<'a, DB>) -> Result<Self>;
 }
 
 #[doc(inline)]
@@ -260,7 +262,8 @@ pub use diesel_derives::QueryableByName;
 /// When possible, implementations of this trait should prefer to use an
 /// existing implementation, rather than reading from `bytes`. (For example, if
 /// you are implementing this for an enum which is represented as an integer in
-/// the database, prefer `i32::from_sql(bytes)` over reading from `bytes`
+/// the database, prefer `i32::from_sql(bytes)` (or the explicit form
+/// `<i32 as FromSql<Integer, DB>>::from_sql(bytes)`) over reading from `bytes`
 /// directly)
 ///
 /// Types which implement this trait should also have `#[derive(FromSqlRow)]`
@@ -285,10 +288,10 @@ pub use diesel_derives::QueryableByName;
 /// ```rust
 /// # use diesel::backend::{self, Backend};
 /// # use diesel::sql_types::*;
-/// # use diesel::deserialize::{self, FromSql};
+/// # use diesel::deserialize::{self, FromSql, FromSqlRow};
 /// #
 /// #[repr(i32)]
-/// #[derive(Debug, Clone, Copy)]
+/// #[derive(Debug, Clone, Copy, FromSqlRow)]
 /// pub enum MyEnum {
 ///     A = 1,
 ///     B = 2,
@@ -299,7 +302,7 @@ pub use diesel_derives::QueryableByName;
 ///     DB: Backend,
 ///     i32: FromSql<Integer, DB>,
 /// {
-///     fn from_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
+///     fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
 ///         match i32::from_sql(bytes)? {
 ///             1 => Ok(MyEnum::A),
 ///             2 => Ok(MyEnum::B),
@@ -310,64 +313,130 @@ pub use diesel_derives::QueryableByName;
 /// ```
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn from_sql(bytes: Option<backend::RawValue<DB>>) -> Result<Self>;
+    fn from_sql(bytes: backend::RawValue<DB>) -> Result<Self>;
+
+    /// A specialized variant of `from_sql` for handling null values.
+    ///
+    /// The default implementation returns an `UnexpectedNullError` for
+    /// an encountered null value and calls `Self::from_sql` otherwise
+    ///
+    /// If your custom type supports null values you need to provide a
+    /// custom implementation.
+    #[inline(always)]
+    fn from_nullable_sql(bytes: Option<backend::RawValue<DB>>) -> Result<Self> {
+        match bytes {
+            Some(bytes) => Self::from_sql(bytes),
+            None => Err(Box::new(crate::result::UnexpectedNullError)),
+        }
+    }
 }
 
-/// Deserialize one or more fields.
+/// Deserialize a database row into a rust data structure
 ///
-/// All types which implement `FromSql` should also implement this trait. This
-/// trait differs from `FromSql` in that it is also implemented by tuples.
-/// Implementations of this trait are usually derived.
-///
-/// In the future, we hope to be able to provide a blanket impl of this trait
-/// for all types which implement `FromSql`. However, as of Diesel 1.0, such an
-/// impl would conflict with our impl for tuples.
-///
-/// This trait can be [derived](derive.FromSqlRow.html)
-pub trait FromSqlRow<A, DB: Backend>: Sized {
-    /// The number of fields that this type will consume. Must be equal to
-    /// the number of times you would call `row.take()` in `build_from_row`
-    const FIELDS_NEEDED: usize = 1;
-
+/// Diesel provides wild card implementations of this trait for all types
+/// that implement one of the following traits:
+///    * [`Queryable`](trait.Queryable.html)
+///    * [`QueryableByName`](trait.QueryableByName.html)
+pub trait FromSqlRow<ST, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self>;
+    fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self>;
 }
 
 #[doc(inline)]
 pub use diesel_derives::FromSqlRow;
 
-// Reasons we can't write this:
-//
-// impl<T, ST, DB> FromSqlRow<ST, DB> for T
-// where
-//     DB: Backend + HasSqlType<ST>,
-//     T: FromSql<ST, DB>,
-// {
-//     fn build_from_row<T: Row<DB>>(row: &mut T) -> Result<Self> {
-//         Self::from_sql(row.take())
-//     }
-// }
-//
-// (this is mostly here so @sgrif has a better reference every time they think
-// they've somehow had a breakthrough on solving this problem):
-//
-// - It conflicts with our impl for tuples, because `DB` is a bare type
-//   parameter, it could in theory be a local type for some other impl.
-//   - This is fixed by replacing our impl with 3 impls, where `DB` is changed
-//     concrete backends. This would mean that any third party crates adding new
-//     backends would need to add the tuple impls, which sucks but is fine.
-// - It conflicts with our impl for `Option`
-//   - So we could in theory fix this by both splitting the generic impl into
-//     backend specific impls, and removing the `FromSql` impls. In theory there
-//     is no reason that it needs to implement `FromSql`, since everything
-//     requires `FromSqlRow`, but it really feels like it should.
-//   - Specialization might also fix this one. The impl isn't quite a strict
-//     subset (the `FromSql` impl has `T: FromSql`, and the `FromSqlRow` impl
-//     has `T: FromSqlRow`), but if `FromSql` implies `FromSqlRow`,
-//     specialization might consider that a subset?
-// - I don't know that we really need it. `#[derive(FromSqlRow)]` is probably
-//   good enough. That won't improve our own codebase, since 99% of our
-//   `FromSqlRow` impls are for types from another crate, but it's almost
-//   certainly good enough for user types.
-//   - Still, it really feels like `FromSql` *should* be able to imply both
-//   `FromSqlRow` and `Queryable`
+/// A marker trait indicating that the corresponding type consumes a static at
+/// compile time known number of field
+///
+/// There is normally no need to implement this trait. Diesel provides
+/// wild card impls for all types that implement `FromSql<ST, DB>` or `Queryable<ST, DB>`
+/// where the size of `ST` is known
+pub trait StaticallySizedRow<ST, DB: Backend>: FromSqlRow<ST, DB> {
+    /// The number of fields that this type will consume.
+    const FIELD_COUNT: usize;
+}
+
+impl<DB, T> FromSqlRow<Untyped, DB> for T
+where
+    DB: Backend,
+    T: QueryableByName<DB>,
+{
+    fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
+        T::build(row)
+    }
+}
+
+/// A helper trait to deserialize a statically sized row into an tuple
+///
+/// **If you see an error message mentioning this trait you likly
+///   trying to map the result of an query to an struct with missmatching
+///   field types. Recheck your field order and the concrete field types**
+///
+/// You should not need to implement this trait directly.
+/// Diesel provides wild card implementations for any supported tuple size
+/// and for any type that implements `FromSql<ST, DB>`.
+///
+// This is a distinct trait from `FromSqlRow` because otherwise we
+// are getting conflicting implementation errors for our `FromSqlRow`
+// implementation for tuples and our wild card impl for all types
+// implementing `Queryable`
+pub trait FromStaticSqlRow<ST, DB: Backend>: Sized {
+    /// See the trait documentation
+    fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self>;
+}
+
+impl<T, ST, DB> FromSqlRow<ST, DB> for T
+where
+    T: Queryable<ST, DB>,
+    ST: SqlType,
+    DB: Backend,
+    T::Row: FromStaticSqlRow<ST, DB>,
+{
+    fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
+        let row = <T::Row as FromStaticSqlRow<ST, DB>>::build_from_row(row)?;
+        Ok(T::build(row))
+    }
+}
+
+impl<T, ST, DB> FromStaticSqlRow<ST, DB> for T
+where
+    DB: Backend,
+    T: FromSql<ST, DB>,
+    ST: SingleValue,
+{
+    fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
+        use crate::row::Field;
+
+        let field = row.get(0).ok_or(crate::result::UnexpectedEndOfRow)?;
+        T::from_nullable_sql(field.value())
+    }
+}
+
+// We cannot have this impl because rustc
+// then complains in third party crates that
+// diesel may implement `SingleValue` for tuples
+// in the future. While that is theoretically true,
+// that will likly not happen in practice.
+// If we get negative trait impls at some point in time
+// it should be possible to make this work.
+/*impl<T, ST, DB> Queryable<ST, DB> for T
+where
+    DB: Backend,
+    T: FromStaticSqlRow<ST, DB>,
+    ST: SingleValue,
+{
+    type Row = Self;
+
+    fn build(row: Self::Row) -> Self {
+        row
+    }
+}*/
+
+impl<T, ST, DB> StaticallySizedRow<ST, DB> for T
+where
+    ST: SqlType + crate::type_impls::tuples::TupleSize,
+    T: Queryable<ST, DB>,
+    DB: Backend,
+{
+    const FIELD_COUNT: usize = <ST as crate::type_impls::tuples::TupleSize>::SIZE;
+}

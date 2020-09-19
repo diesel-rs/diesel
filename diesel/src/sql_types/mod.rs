@@ -20,6 +20,7 @@ mod ord;
 pub use self::fold::Foldable;
 pub use self::ord::SqlOrd;
 
+use crate::expression::TypedExpressionType;
 use crate::query_builder::QueryId;
 
 /// The boolean SQL type.
@@ -377,7 +378,14 @@ pub struct Json;
 ///
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
 #[derive(Debug, Clone, Copy, Default)]
-pub struct Nullable<ST: NotNull>(ST);
+pub struct Nullable<ST>(ST);
+
+impl<ST> SqlType for Nullable<ST>
+where
+    ST: SqlType,
+{
+    type IsNull = is_nullable::IsNullable;
+}
 
 #[cfg(feature = "postgres")]
 pub use crate::pg::types::sql_types::*;
@@ -404,12 +412,6 @@ pub trait HasSqlType<ST>: TypeMetadata {
     /// This method may use `lookup` to do dynamic runtime lookup. Implementors
     /// of this method should not do dynamic lookup unless absolutely necessary
     fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
-
-    #[doc(hidden)]
-    #[cfg(feature = "mysql")]
-    fn mysql_row_metadata(out: &mut Vec<Self::TypeMetadata>, lookup: &Self::MetadataLookup) {
-        out.push(Self::metadata(lookup))
-    }
 }
 
 /// Information about how a backend stores metadata about given SQL types
@@ -427,15 +429,6 @@ pub trait TypeMetadata {
     type MetadataLookup;
 }
 
-/// A marker trait indicating that a SQL type is not null.
-///
-/// All SQL types must implement this trait.
-///
-/// # Deriving
-///
-/// This trait is automatically implemented by `#[derive(SqlType)]`
-pub trait NotNull {}
-
 /// Converts a type which may or may not be nullable into its nullable
 /// representation.
 pub trait IntoNullable {
@@ -445,12 +438,41 @@ pub trait IntoNullable {
     type Nullable;
 }
 
-impl<T: NotNull> IntoNullable for T {
+impl<T> IntoNullable for T
+where
+    T: SqlType<IsNull = is_nullable::NotNull> + SingleValue,
+{
     type Nullable = Nullable<T>;
 }
 
-impl<T: NotNull> IntoNullable for Nullable<T> {
-    type Nullable = Nullable<T>;
+impl<T> IntoNullable for Nullable<T>
+where
+    T: SqlType,
+{
+    type Nullable = Self;
+}
+
+/// Converts a type which may or may not be nullable into its not nullable
+/// representation.
+pub trait IntoNotNullable {
+    /// The not nullable representation of this type.
+    ///
+    /// For `Nullable<T>`, this will be `T` otherwise the type itself
+    type NotNullable;
+}
+
+impl<T> IntoNotNullable for T
+where
+    T: SqlType<IsNull = is_nullable::NotNull>,
+{
+    type NotNullable = T;
+}
+
+impl<T> IntoNotNullable for Nullable<T>
+where
+    T: SqlType,
+{
+    type NotNullable = T;
 }
 
 /// A marker trait indicating that a SQL type represents a single value, as
@@ -462,12 +484,149 @@ impl<T: NotNull> IntoNullable for Nullable<T> {
 ///
 /// # Deriving
 ///
-/// This trait is automatically implemented by `#[derive(SqlType)]`
-pub trait SingleValue {}
+/// This trait is automatically implemented by [`#[derive(SqlType)]`]
+///
+/// [`#[derive(SqlType)]`]: derive.SqlType.html
+pub trait SingleValue: SqlType {}
 
-impl<T: NotNull + SingleValue> SingleValue for Nullable<T> {}
+impl<T: SqlType + SingleValue> SingleValue for Nullable<T> {}
 
 #[doc(inline)]
 pub use diesel_derives::DieselNumericOps;
 #[doc(inline)]
 pub use diesel_derives::SqlType;
+
+/// A marker trait for SQL types
+///
+/// # Deriving
+///
+/// This trait is automatically implemented by [`#[derive(SqlType)]`]
+/// which sets `IsNull` to [`is_nullable::NotNull`]
+///
+/// [`#[derive(SqlType)]`]: derive.SqlType.html
+/// [`is_nullable::NotNull`]: is_nullable/struct.NotNull.html
+pub trait SqlType {
+    /// Is this type nullable?
+    ///
+    /// This type should always be one of the structs in the ['is_nullable`]
+    /// module. See the documentation of those structs for more details.
+    ///
+    /// ['is_nullable`]: is_nullable/index.html
+    type IsNull: OneIsNullable<is_nullable::IsNullable> + OneIsNullable<is_nullable::NotNull>;
+}
+
+/// Is one value of `IsNull` nullable?
+///
+/// You should never implement this trait.
+pub trait OneIsNullable<Other> {
+    /// See the trait documentation
+    type Out: OneIsNullable<is_nullable::IsNullable> + OneIsNullable<is_nullable::NotNull>;
+}
+
+/// Are both values of `IsNull` are nullable?
+pub trait AllAreNullable<Other> {
+    /// See the trait documentation
+    type Out: AllAreNullable<is_nullable::NotNull> + AllAreNullable<is_nullable::IsNullable>;
+}
+
+/// A type level constructor for maybe nullable types
+///
+/// Constructs either `Nullable<O>` (for `Self` == `is_nullable::IsNullable`)
+/// or `O` (for `Self` == `is_nullable::NotNull`)
+pub trait MaybeNullableType<O> {
+    /// See the trait documentation
+    type Out: SqlType + TypedExpressionType;
+}
+
+/// Possible values for `SqlType::IsNullable`
+pub mod is_nullable {
+    use super::*;
+
+    /// No, this type cannot be null as it is marked as `NOT NULL` at database level
+    ///
+    /// This should be choosen for basically all manual impls of `SqlType`
+    /// beside implementing your own `Nullable<>` wrapper type
+    #[derive(Debug, Clone, Copy)]
+    pub struct NotNull;
+
+    /// Yes, this type can be null
+    ///
+    /// The only diesel provided `SqlType` that uses this value is [`Nullable<T>`]
+    ///
+    /// [`Nullable<T>`]: ../struct.Nullable.html
+    #[derive(Debug, Clone, Copy)]
+    pub struct IsNullable;
+
+    impl OneIsNullable<NotNull> for NotNull {
+        type Out = NotNull;
+    }
+
+    impl OneIsNullable<IsNullable> for NotNull {
+        type Out = IsNullable;
+    }
+
+    impl OneIsNullable<NotNull> for IsNullable {
+        type Out = IsNullable;
+    }
+
+    impl OneIsNullable<IsNullable> for IsNullable {
+        type Out = IsNullable;
+    }
+
+    impl AllAreNullable<NotNull> for NotNull {
+        type Out = NotNull;
+    }
+
+    impl AllAreNullable<IsNullable> for NotNull {
+        type Out = NotNull;
+    }
+
+    impl AllAreNullable<NotNull> for IsNullable {
+        type Out = NotNull;
+    }
+
+    impl AllAreNullable<IsNullable> for IsNullable {
+        type Out = IsNullable;
+    }
+
+    impl<O> MaybeNullableType<O> for NotNull
+    where
+        O: SqlType + TypedExpressionType,
+    {
+        type Out = O;
+    }
+
+    impl<O> MaybeNullableType<O> for IsNullable
+    where
+        O: SqlType,
+        Nullable<O>: TypedExpressionType,
+    {
+        type Out = Nullable<O>;
+    }
+
+    /// Represents the output type of [`MaybeNullableType`](../trait.MaybeNullableType.html)
+    pub type MaybeNullable<N, T> = <N as MaybeNullableType<T>>::Out;
+
+    /// Represents the output type of [`OneIsNullable`](../trait.OneIsNullable.html)
+    /// for two given SQL types
+    pub type IsOneNullable<S1, S2> =
+        <IsSqlTypeNullable<S1> as OneIsNullable<IsSqlTypeNullable<S2>>>::Out;
+
+    /// Represents the output type of [`AllAreNullable`](../trait.AllAreNullable.html)
+    /// for two given SQL types
+    pub type AreAllNullable<S1, S2> =
+        <IsSqlTypeNullable<S1> as AllAreNullable<IsSqlTypeNullable<S2>>>::Out;
+
+    /// Represents if the SQL type is nullable or not
+    pub type IsSqlTypeNullable<T> = <T as SqlType>::IsNull;
+}
+
+/// A marker trait for accepting expressions of the type `Bool` and
+/// `Nullable<Bool>` in the same place
+pub trait BoolOrNullableBool {}
+
+impl BoolOrNullableBool for Bool {}
+impl BoolOrNullableBool for Nullable<Bool> {}
+
+#[doc(inline)]
+pub use crate::expression::expression_types::Untyped;

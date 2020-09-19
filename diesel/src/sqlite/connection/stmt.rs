@@ -54,26 +54,13 @@ impl Statement {
         ensure_sqlite_ok(result, self.raw_connection())
     }
 
-    fn num_fields(&self) -> usize {
-        unsafe { ffi::sqlite3_column_count(self.inner_statement.as_ptr()) as usize }
-    }
-
-    /// The lifetime of the returned CStr is shorter than self. This function
-    /// should be tied to a lifetime that ends before the next call to `reset`
-    unsafe fn field_name<'a>(&self, idx: usize) -> Option<&'a CStr> {
-        let ptr = ffi::sqlite3_column_name(self.inner_statement.as_ptr(), idx as libc::c_int);
-        if ptr.is_null() {
-            None
-        } else {
-            Some(CStr::from_ptr(ptr))
-        }
-    }
-
     fn step(&mut self) -> QueryResult<Option<SqliteRow>> {
-        match unsafe { ffi::sqlite3_step(self.inner_statement.as_ptr()) } {
-            ffi::SQLITE_DONE => Ok(None),
-            ffi::SQLITE_ROW => Ok(Some(SqliteRow::new(self.inner_statement))),
-            _ => Err(last_error(self.raw_connection())),
+        unsafe {
+            match ffi::sqlite3_step(self.inner_statement.as_ptr()) {
+                ffi::SQLITE_DONE => Ok(None),
+                ffi::SQLITE_ROW => Ok(Some(SqliteRow::new(self.inner_statement))),
+                _ => Err(last_error(self.raw_connection())),
+            }
         }
     }
 
@@ -157,14 +144,6 @@ impl<'a> StatementUse<'a> {
 
     pub fn step(&mut self) -> QueryResult<Option<SqliteRow>> {
         self.statement.step()
-    }
-
-    pub fn num_fields(&self) -> usize {
-        self.statement.num_fields()
-    }
-
-    pub fn field_name(&self, idx: usize) -> Option<&'a CStr> {
-        unsafe { self.statement.field_name(idx) }
     }
 }
 

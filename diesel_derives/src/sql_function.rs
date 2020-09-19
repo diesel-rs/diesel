@@ -8,6 +8,10 @@ use util::*;
 
 // Extremely curious why this triggers on a nearly branchless function
 #[allow(clippy::cognitive_complexity)]
+// for loop comes from `quote!`
+#[allow(clippy::for_loop_over_option)]
+// https://github.com/rust-lang/rust-clippy/issues/3768
+#[allow(clippy::useless_let_if_seq)]
 pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> {
     let SqlFunctionDecl {
         mut attributes,
@@ -65,6 +69,18 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .push(parse_quote!(__DieselInternal));
     let (impl_generics_internal, _, _) = generics_with_internal.split_for_impl();
 
+    let sql_type;
+    let numeric_derive;
+
+    if arg_name.is_empty() {
+        sql_type = None;
+        // FIXME: We can always derive once trivial bounds are stable
+        numeric_derive = None;
+    } else {
+        sql_type = Some(quote!((#(#arg_name),*): Expression,));
+        numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
+    }
+
     let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
@@ -73,7 +89,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         use diesel::sql_types::*;
         use super::*;
 
-        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId, diesel::sql_types::DieselNumericOps)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        #numeric_derive
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
             #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*
@@ -86,7 +103,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
         impl #impl_generics Expression for #fn_name #ty_generics
         #where_clause
-            (#(#arg_name),*): Expression,
+            #sql_type
         {
             type SqlType = #return_type;
         }
@@ -141,7 +158,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
                 use diesel::sqlite::{Sqlite, SqliteConnection};
                 use diesel::serialize::ToSql;
-                use diesel::deserialize::Queryable;
+                use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
                 use diesel::sqlite::SqliteAggregateFunction;
                 use diesel::sql_types::IntoNullable;
             };
@@ -163,7 +180,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                             where
                             A: SqliteAggregateFunction<(#(#arg_name,)*)> + Send + 'static,
                             A::Output: ToSql<#return_type, Sqlite>,
-                            (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                            (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
+                                StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                         {
                             conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
                         }
@@ -188,7 +206,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                             where
                             A: SqliteAggregateFunction<#arg_name> + Send + 'static,
                             A::Output: ToSql<#return_type, Sqlite>,
-                            #arg_name: Queryable<#arg_type, Sqlite>,
+                            #arg_name: FromSqlRow<#arg_type, Sqlite> +
+                                StaticallySizedRow<#arg_type, Sqlite>,
                             {
                                 conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
                             }
@@ -213,13 +232,13 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
             }
         };
 
-        if cfg!(feature = "sqlite") && type_args.is_empty() {
+        if cfg!(feature = "sqlite") && type_args.is_empty() && !arg_name.is_empty() {
             tokens = quote! {
                 #tokens
 
                 use diesel::sqlite::{Sqlite, SqliteConnection};
                 use diesel::serialize::ToSql;
-                use diesel::deserialize::Queryable;
+                use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
 
                 #[allow(dead_code)]
                 /// Registers an implementation for this function on the given connection
@@ -235,7 +254,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 ) -> QueryResult<()>
                 where
                     F: Fn(#(#arg_name,)*) -> Ret + Send + 'static,
-                    (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                    (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
+                        StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                     Ret: ToSql<#return_type, Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
@@ -260,7 +280,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 ) -> QueryResult<()>
                 where
                     F: FnMut(#(#arg_name,)*) -> Ret + Send + 'static,
-                    (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                    (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
+                        StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                     Ret: ToSql<#return_type, Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
@@ -319,7 +340,7 @@ impl Parse for SqlFunctionDecl {
         let return_type = if Option::<Token![->]>::parse(input)?.is_some() {
             syn::Type::parse(input)?
         } else {
-            parse_quote!(())
+            parse_quote!(diesel::expression::expression_types::NotSelectable)
         };
         let _semi = Option::<Token![;]>::parse(input)?;
 

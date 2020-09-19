@@ -21,7 +21,7 @@ pub trait Migration {
     }
 }
 
-impl Migration for Box<dyn Migration> {
+impl<'a> Migration for Box<dyn Migration + 'a> {
     fn version(&self) -> &str {
         (&**self).version()
     }

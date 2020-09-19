@@ -5,7 +5,7 @@ use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::result::QueryResult;
-use crate::sql_types::DieselNumericOps;
+use crate::sql_types::{DieselNumericOps, SqlType};
 
 #[derive(Debug, Clone, DieselNumericOps)]
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
@@ -18,7 +18,10 @@ pub struct SqlLiteral<ST, T = ()> {
     _marker: PhantomData<ST>,
 }
 
-impl<ST, T> SqlLiteral<ST, T> {
+impl<ST, T> SqlLiteral<ST, T>
+where
+    ST: TypedExpressionType,
+{
     #[doc(hidden)]
     pub fn new(sql: String, inner: T) -> Self {
         SqlLiteral {
@@ -51,11 +54,11 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::{Integer, Text};
+    /// #     use diesel::sql_types::{Integer, Text, Bool};
     /// #     let connection = establish_connection();
     /// let seans_id = users
     ///     .select(id)
-    ///     .filter(sql("name = ").bind::<Text, _>("Sean"))
+    ///     .filter(sql::<Bool>("name = ").bind::<Text, _>("Sean"))
     ///     .get_result(&connection);
     /// assert_eq!(Ok(1), seans_id);
     ///
@@ -81,14 +84,14 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::{Integer, Text};
+    /// #     use diesel::sql_types::{Integer, Text, Bool};
     /// #     let connection = establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
     /// #           .execute(&connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
-    ///         sql("id > ")
+    ///         sql::<Bool>("id > ")
     ///         .bind::<Integer,_>(1)
     ///         .sql(" AND name <> ")
     ///         .bind::<Text, _>("Ryan")
@@ -100,6 +103,7 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// ```
     pub fn bind<BindST, U>(self, bind_value: U) -> UncheckedBind<Self, U::Expression>
     where
+        BindST: SqlType + TypedExpressionType,
         U: AsExpression<BindST>,
     {
         UncheckedBind::new(self, bind_value.as_expression())
@@ -132,14 +136,14 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::{Integer, Text};
+    /// #     use diesel::sql_types::Bool;
     /// #     let connection = establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
     /// #           .execute(&connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
-    ///         sql("id > 1")
+    ///         sql::<Bool>("id > 1")
     ///         .sql(" AND name <> 'Ryan'")
     ///     )
     ///     .get_results(&connection);
@@ -152,7 +156,10 @@ impl<ST, T> SqlLiteral<ST, T> {
     }
 }
 
-impl<ST, T> Expression for SqlLiteral<ST, T> {
+impl<ST, T> Expression for SqlLiteral<ST, T>
+where
+    ST: TypedExpressionType,
+{
     type SqlType = ST;
 }
 
@@ -175,15 +182,18 @@ impl<ST, T> QueryId for SqlLiteral<ST, T> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<ST, T> Query for SqlLiteral<ST, T> {
+impl<ST, T> Query for SqlLiteral<ST, T>
+where
+    Self: Expression,
+{
     type SqlType = ST;
 }
 
 impl<ST, T, Conn> RunQueryDsl<Conn> for SqlLiteral<ST, T> {}
 
-impl<QS, ST, T> SelectableExpression<QS> for SqlLiteral<ST, T> {}
+impl<QS, ST, T> SelectableExpression<QS> for SqlLiteral<ST, T> where Self: Expression {}
 
-impl<QS, ST, T> AppearsOnTable<QS> for SqlLiteral<ST, T> {}
+impl<QS, ST, T> AppearsOnTable<QS> for SqlLiteral<ST, T> where Self: Expression {}
 
 impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
     type IsAggregate = is_aggregate::Never;
@@ -215,15 +225,19 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
+/// #     use diesel::sql_types::Bool;
 /// use diesel::dsl::sql;
 /// #     let connection = establish_connection();
-/// let user = users.filter(sql("name = 'Sean'")).first(&connection)?;
+/// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(&connection)?;
 /// let expected = (1, String::from("Sean"));
 /// assert_eq!(expected, user);
 /// #     Ok(())
 /// # }
 /// ```
-pub fn sql<ST>(sql: &str) -> SqlLiteral<ST> {
+pub fn sql<ST>(sql: &str) -> SqlLiteral<ST>
+where
+    ST: TypedExpressionType,
+{
     SqlLiteral::new(sql.into(), ())
 }
 
@@ -272,14 +286,14 @@ where
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::{Integer, Text};
+    /// #     use diesel::sql_types::{Integer, Bool};
     /// #     let connection = establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
     /// #           .execute(&connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
-    ///         sql("id > ")
+    ///         sql::<Bool>("id > ")
     ///         .bind::<Integer,_>(1)
     ///         .sql(" AND name <> 'Ryan'")
     ///     )

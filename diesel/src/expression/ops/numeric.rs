@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::expression::{Expression, ValidGrouping};
+use crate::expression::{Expression, TypedExpressionType, ValidGrouping};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types;
@@ -26,6 +26,7 @@ macro_rules! numeric_operation {
             Lhs: Expression,
             Lhs::SqlType: sql_types::ops::$name,
             Rhs: Expression,
+            <Lhs::SqlType as sql_types::ops::$name>::Output: TypedExpressionType,
         {
             type SqlType = <Lhs::SqlType as sql_types::ops::$name>::Output;
         }

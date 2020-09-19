@@ -6,7 +6,7 @@ use crate::sql_types::Json;
 #[cfg(feature = "postgres")]
 use crate::sql_types::Jsonb;
 
-#[derive(FromSqlRow, AsExpression)]
+#[derive(AsExpression, FromSqlRow)]
 #[diesel(foreign_derive)]
 #[sql_type = "Json"]
 #[cfg_attr(feature = "postgres", sql_type = "Jsonb")]

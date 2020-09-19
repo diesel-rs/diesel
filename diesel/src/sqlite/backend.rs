@@ -20,7 +20,7 @@ pub struct Sqlite;
 /// The variants of this struct determine what bytes are expected from
 /// `ToSql` impls.
 #[allow(missing_debug_implementations)]
-#[derive(Hash, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum SqliteType {
     /// Bind using `sqlite3_bind_blob`
     Binary,
@@ -45,7 +45,7 @@ impl Backend for Sqlite {
 }
 
 impl<'a> HasRawValue<'a> for Sqlite {
-    type RawValue = &'a SqliteValue;
+    type RawValue = SqliteValue<'a>;
 }
 
 impl TypeMetadata for Sqlite {

@@ -11,8 +11,7 @@ impl<DB> FromSql<sql_types::SmallInt, DB> for i16
 where
     DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(value: Option<crate::backend::RawValue<DB>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
+    fn from_sql(value: crate::backend::RawValue<DB>) -> deserialize::Result<Self> {
         let mut bytes = DB::as_bytes(value);
         debug_assert!(
             bytes.len() <= 2,
@@ -43,8 +42,7 @@ impl<DB> FromSql<sql_types::Integer, DB> for i32
 where
     DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(value: Option<crate::backend::RawValue<DB>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
+    fn from_sql(value: crate::backend::RawValue<DB>) -> deserialize::Result<Self> {
         let mut bytes = DB::as_bytes(value);
         debug_assert!(
             bytes.len() <= 4,
@@ -74,8 +72,7 @@ impl<DB> FromSql<sql_types::BigInt, DB> for i64
 where
     DB: Backend + for<'a> BinaryRawValue<'a>,
 {
-    fn from_sql(value: Option<crate::backend::RawValue<DB>>) -> deserialize::Result<Self> {
-        let value = not_none!(value);
+    fn from_sql(value: crate::backend::RawValue<DB>) -> deserialize::Result<Self> {
         let mut bytes = DB::as_bytes(value);
         debug_assert!(
             bytes.len() <= 8,

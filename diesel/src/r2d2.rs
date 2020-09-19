@@ -16,12 +16,11 @@ use std::convert::Into;
 use std::fmt;
 use std::marker::PhantomData;
 
-use crate::backend::UsesAnsiSavepointSyntax;
-use crate::connection::{AnsiTransactionManager, SimpleConnection};
-use crate::deserialize::{Queryable, QueryableByName};
+use crate::connection::{SimpleConnection, TransactionManager};
+use crate::deserialize::FromSqlRow;
+use crate::expression::QueryMetadata;
 use crate::prelude::*;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
-use crate::sql_types::HasSqlType;
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -128,12 +127,10 @@ where
 impl<M> Connection for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection:
-        Connection<TransactionManager = AnsiTransactionManager> + R2D2Connection + Send + 'static,
-    <M::Connection as Connection>::Backend: UsesAnsiSavepointSyntax,
+    M::Connection: Connection + R2D2Connection + Send + 'static,
 {
     type Backend = <M::Connection as Connection>::Backend;
-    type TransactionManager = <M::Connection as Connection>::TransactionManager;
+    type TransactionManager = PooledConnectionTransactionManager<M>;
 
     fn establish(_: &str) -> ConnectionResult<Self> {
         Err(ConnectionError::BadConnection(String::from(
@@ -145,22 +142,14 @@ where
         (&**self).execute(query)
     }
 
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>,
+        U: FromSqlRow<T::SqlType, Self::Backend>,
+        Self::Backend: QueryMetadata<T::SqlType>,
     {
-        (&**self).query_by_index(source)
-    }
-
-    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
-    where
-        T: QueryFragment<Self::Backend> + QueryId,
-        U: QueryableByName<Self::Backend>,
-    {
-        (&**self).query_by_name(source)
+        (&**self).load(source)
     }
 
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
@@ -171,7 +160,70 @@ where
     }
 
     fn transaction_manager(&self) -> &Self::TransactionManager {
-        (&**self).transaction_manager()
+        // This is actually fine because we have an #[repr(transparent)]
+        // on LoggingTransactionManager, which means the layout is the same
+        // as the inner type
+        // See the ref-cast crate for a longer version: https://github.com/dtolnay/ref-cast
+        unsafe {
+            &*((&**self).transaction_manager() as *const _ as *const Self::TransactionManager)
+        }
+    }
+}
+
+#[doc(hidden)]
+#[repr(transparent)]
+#[allow(missing_debug_implementations)]
+pub struct PooledConnectionTransactionManager<M>
+where
+    M: ManageConnection,
+    M::Connection: Connection,
+{
+    inner: <M::Connection as Connection>::TransactionManager,
+}
+
+impl<M> TransactionManager<PooledConnection<M>> for PooledConnectionTransactionManager<M>
+where
+    M: ManageConnection,
+    PooledConnection<M>: Connection,
+    M::Connection: Connection,
+{
+    fn begin_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
+        self.inner.begin_transaction(&**conn)
+    }
+
+    fn rollback_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
+        self.inner.rollback_transaction(&**conn)
+    }
+
+    fn commit_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
+        self.inner.commit_transaction(&**conn)
+    }
+
+    fn get_transaction_depth(&self) -> u32 {
+        self.inner.get_transaction_depth()
+    }
+}
+
+impl<M> crate::migration::MigrationConnection for PooledConnection<M>
+where
+    M: ManageConnection,
+    M::Connection: crate::migration::MigrationConnection,
+    Self: Connection,
+{
+    fn setup(&self) -> QueryResult<usize> {
+        (&**self).setup()
+    }
+}
+
+impl<Changes, Output, M> crate::query_dsl::UpdateAndFetchResults<Changes, Output>
+    for PooledConnection<M>
+where
+    M: ManageConnection,
+    M::Connection: crate::query_dsl::UpdateAndFetchResults<Changes, Output>,
+    Self: Connection,
+{
+    fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
+        (&**self).update_and_fetch(changeset)
     }
 }
 

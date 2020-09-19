@@ -6,4 +6,4 @@ mod integers;
 mod json;
 pub mod option;
 mod primitives;
-mod tuples;
+pub(crate) mod tuples;

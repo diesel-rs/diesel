@@ -39,6 +39,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   functionality of `NonAggregate`. See [the upgrade
   notes](#2-0-0-upgrade-non-aggregate) for details.
 
+* It is now possible to inspect the type of values returned from the database
+  in such a way to support constructing a dynamic value depending on this type.
+
 
 ### Removed
 
@@ -47,6 +50,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Support for `bigdecimal` < 0.0.13 has been removed.
 * Support for `pq-sys` < 0.4.0 has been removed.
 * Support for `mysqlclient-sys` < 0.2.0 has been removed.
+* Support for `time` types has been removed.
+* The `NonNull` for sql types has been removed in favour of the new `SqlType` trait.
+
+* `no_arg_sql_function!` has been deprecated without replacement.
+  [`sql_function!`][sql-function-2-0-0] can now be used for functions with zero
+  arguments. See [the migration guide][2-0-migration] for more details.
 
 ### Changed
 
@@ -68,8 +77,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
   from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
   somewhere you need to change it to `mysql::MysqlValue` or `pg::PgValue`.
-  For the postgres backend additionally type information where added to the `RawValue`
-  type. This allows to dynamically deserialize `RawValues` in container types.
 
 * The uuidv07 feature was renamed to uuid, due to the removal of support for older uuid versions
 
@@ -92,6 +99,26 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Various `__NonExhaustive` variants in different (error-) enums are replaced with
   `#[non_exhaustive]`. If you matched on one of those variants explicitly you need to
   introduce a wild card match instead.
+
+* `FromSql::from_sql` is changed to construct value from non nullable database values.
+   To construct a rust value for nullable values use the new `FromSql::from_nullable_sql`
+   method instead.
+
+* Custom sql types are now required to implement the new `SqlType` trait. Diesel will
+  automatically create implementations of that trait for all types having a `#[derive(SqlType)]`
+
+* The workflow for manually implementing support custom types has changed. Implementing
+  `FromSqlRow<ST, DB>` is not required anymore, as this is now implied by implementing
+  `FromSql<ST, DB>`. The requirement of implementing `Queryable<ST, DB>` remains
+  unchanged. For types using `#[derive(FromSqlRow)]` no changes are required as the
+  derive automatically generates the correct code
+
+* The structure of our deserialization trait has changed. Loading values from the database
+  requires now that the result type implements `FromSqlRow<ST, DB>`. Diesel provides wild
+  card implementations for types implementing `Queryable<ST, DB>` or `QueryableByName<DB>`
+  so non generic code does not require any change. For generic code you likely need to
+  replace a trait bound on `Queryable<ST, DB>` with a trait bound on `FromSqlRow<ST, DB>`
+  and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`.
 
 
 ### Fixed
@@ -129,6 +156,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * We've refactored our type translation layer for Mysql to handle more types now.
 
+* We've refactored our type level representation of nullable values. This allowed us to
+  fix multiple long standing bugs regarding the correct handling of nullable values in some
+  corner cases (#104, #2274)
+
 ### Deprecated
 
 * `diesel_(prefix|postfix|infix)_operator!` have been deprecated. These macros
@@ -137,7 +168,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `diesel::pg::upsert` has been deprecated to support upsert queries on more than one backend.
   Please use `diesel::upsert` instead.
-
 
 ### Upgrade Notes
 

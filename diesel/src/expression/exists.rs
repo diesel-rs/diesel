@@ -32,21 +32,21 @@ pub fn exists<T>(query: T) -> Exists<T> {
     Exists(Subselect::new(query))
 }
 
-#[derive(Debug, Clone, Copy, QueryId)]
-pub struct Exists<T>(pub Subselect<T, ()>);
+#[derive(Clone, Copy, QueryId, Debug)]
+pub struct Exists<T>(pub Subselect<T, Bool>);
 
 impl<T> Expression for Exists<T>
 where
-    Subselect<T, ()>: Expression,
+    Subselect<T, Bool>: Expression,
 {
     type SqlType = Bool;
 }
 
 impl<T, GB> ValidGrouping<GB> for Exists<T>
 where
-    Subselect<T, ()>: ValidGrouping<GB>,
+    Subselect<T, Bool>: ValidGrouping<GB>,
 {
-    type IsAggregate = <Subselect<T, ()> as ValidGrouping<GB>>::IsAggregate;
+    type IsAggregate = <Subselect<T, Bool> as ValidGrouping<GB>>::IsAggregate;
 }
 
 #[cfg(not(feature = "unstable"))]
@@ -80,13 +80,13 @@ where
 impl<T, QS> SelectableExpression<QS> for Exists<T>
 where
     Self: AppearsOnTable<QS>,
-    Subselect<T, ()>: SelectableExpression<QS>,
+    Subselect<T, Bool>: SelectableExpression<QS>,
 {
 }
 
 impl<T, QS> AppearsOnTable<QS> for Exists<T>
 where
     Self: Expression,
-    Subselect<T, ()>: AppearsOnTable<QS>,
+    Subselect<T, Bool>: AppearsOnTable<QS>,
 {
 }
