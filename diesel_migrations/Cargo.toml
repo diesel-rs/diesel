@@ -17,7 +17,7 @@ path = "migrations_macros"
 
 [dev-dependencies]
 dotenv = "0.15"
-cfg-if = "0.1.0"
+cfg-if = "0.1.10"
 
 [dev-dependencies.diesel]
 version = "~2.0.0"
