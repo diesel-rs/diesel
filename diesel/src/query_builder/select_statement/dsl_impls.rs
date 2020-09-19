@@ -3,6 +3,7 @@ use crate::associations::HasTable;
 use crate::backend::Backend;
 use crate::dsl::AsExprOf;
 use crate::expression::nullable::Nullable;
+use crate::expression::select_by::SelectBy;
 use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::distinct_clause::*;
@@ -17,8 +18,7 @@ use crate::query_builder::select_clause::*;
 use crate::query_builder::update_statement::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::{
-    AsQuery, IntoBoxedClause, Query, QueryFragment, SelectByQuery, SelectByStatement, SelectQuery,
-    SelectStatement,
+    AsQuery, IntoBoxedClause, Query, QueryFragment, SelectByQuery, SelectQuery, SelectStatement,
 };
 use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
@@ -72,19 +72,27 @@ where
 }
 
 // FIXME: Should we disable select_by when `.group_by` has been called?
-impl<SE, F, S, D, W, O, LOf, LC, Selection> SelectByDsl<Selection>
-    for SelectStatement<F, S, D, W, O, LOf, NoGroupByClause, LC>
+impl<SE, F, S, D, W, O, LOf, G, LC, Selection> SelectByDsl<Selection>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC>
 where
     SE: Expression,
     Selection: Selectable<Expression = SE>,
     Self: SelectDsl<SE>,
     <Self as SelectDsl<SE>>::Output: SelectByQuery<Expression = SE>,
 {
-    type Output = SelectByStatement<Selection, <Self as SelectDsl<SE>>::Output>;
+    type Output = SelectStatement<F, SelectClause<SelectBy<Selection>>, D, W, O, LOf, G, LC>;
 
     fn select_by(self) -> Self::Output {
-        let inner = QueryDsl::select(self, Selection::new_expression());
-        SelectByStatement::new(inner)
+        SelectStatement::new(
+            SelectClause(SelectBy::new()),
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit_offset,
+            self.group_by,
+            self.locking,
+        )
     }
 }
 

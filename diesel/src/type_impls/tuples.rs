@@ -2,8 +2,8 @@ use crate::associations::BelongsTo;
 use crate::backend::Backend;
 use crate::deserialize::{self, FromSqlRow, FromStaticSqlRow, Queryable, StaticallySizedRow};
 use crate::expression::{
-    AppearsOnTable, AsExpression, AsExpressionList, Expression, QueryMetadata,
-    Selectable, SelectableExpression, TypedExpressionType, ValidGrouping,
+    AppearsOnTable, AsExpression, AsExpressionList, Expression, QueryMetadata, Selectable,
+    SelectableExpression, TypedExpressionType, ValidGrouping,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use crate::query_builder::*;

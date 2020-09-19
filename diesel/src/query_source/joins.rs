@@ -336,13 +336,6 @@ where
     type InnerJoin = SelectStatement<From::InnerJoin>;
 }
 
-impl<S, Stmt> ToInnerJoin for SelectByStatement<S, Stmt>
-where
-    Stmt: ToInnerJoin,
-{
-    type InnerJoin = SelectByStatement<S, Stmt::InnerJoin>;
-}
-
 impl<T: Table> ToInnerJoin for T {
     type InnerJoin = T;
 }

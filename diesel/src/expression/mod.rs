@@ -40,6 +40,8 @@ pub mod nullable;
 #[macro_use]
 pub mod operators;
 #[doc(hidden)]
+pub mod select_by;
+#[doc(hidden)]
 pub mod sql_literal;
 #[doc(hidden)]
 pub mod subselect;
