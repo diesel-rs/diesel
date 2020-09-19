@@ -41,7 +41,7 @@ path = "../diesel_migrations/migrations_internals"
 
 [dev-dependencies]
 difference = "2.0"
-tempfile = "3.0.0"
+tempfile = "3.1.0"
 regex = "0.2"
 url = { version = "2.1.0" }
 
