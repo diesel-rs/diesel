@@ -131,7 +131,7 @@ Diesel can generate a bash completion script for itself:
 #### linux
 
 ```sh
-$ diesel bash-completion > /etc/bash_completion.d/diesel
+$ diesel completions bash | sudo tee /etc/bash_completion.d/diesel'
 ```
 
 
