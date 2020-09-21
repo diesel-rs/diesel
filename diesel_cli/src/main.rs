@@ -203,7 +203,22 @@ fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
         });
 
     match migrations_dir {
-        Some(dir) => Ok(dir),
+        Some(dir) => {
+            if let Some(dir_entry) = fs::read_dir(&dir)
+                .unwrap()
+                .filter(|x| x.is_ok())
+                .map(|x| x.unwrap())
+                .find(|x| x.file_type().unwrap().is_file() && &x.file_name() == ".gitkeep")
+            {
+                fs::remove_file(dir_entry.path()).unwrap_or_else(|e| {
+                    eprintln!(
+                        "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}",
+                        e
+                    )
+                });
+            };
+            Ok(dir)
+        }
         None => migrations::find_migrations_directory(),
     }
 }
@@ -276,12 +291,12 @@ fn generate_completions_command(matches: &ArgMatches) {
 
 /// Looks for a migrations directory in the current path and all parent paths,
 /// and creates one in the same directory as the Cargo.toml if it can't find
-/// one. It also sticks a .gitkeep in the directory so git will pick it up.
+/// one. It also sticks a .keep in the directory so git will pick it up.
 /// Returns a `DatabaseError::ProjectRootNotFound` if no Cargo.toml is found.
 fn create_migrations_directory(path: &Path) -> DatabaseResult<PathBuf> {
     println!("Creating migrations directory at: {}", path.display());
     fs::create_dir(path)?;
-    fs::File::create(path.join(".gitkeep"))?;
+    fs::File::create(path.join(".keep"))?;
     Ok(path.to_owned())
 }
 
