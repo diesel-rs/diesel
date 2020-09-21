@@ -10,7 +10,7 @@ chrono = "0.4.0"
 diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres", "chrono"] }
 dotenv = "0.15"
 structopt = "0.3"
-tempfile = "3.0.0"
+tempfile = "3.1.0"
 
 [dev-dependencies]
 assert_matches = "1.1"

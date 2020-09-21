@@ -16,9 +16,9 @@ version = "~1.4.0"
 path = "../migrations_internals"
 
 [dev-dependencies]
-tempfile = "3.0.0"
+tempfile = "3.1.0"
 dotenv = "0.15"
-cfg-if = "0.1.0"
+cfg-if = "0.1.10"
 
 [dev-dependencies.diesel]
 version = "~2.0.0"

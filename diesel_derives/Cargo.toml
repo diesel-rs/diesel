@@ -16,7 +16,7 @@ quote = "1"
 proc-macro2 = "1"
 
 [dev-dependencies]
-cfg-if = "0.1.0"
+cfg-if = "0.1.10"
 dotenv = "0.15"
 
 [dev-dependencies.diesel]
