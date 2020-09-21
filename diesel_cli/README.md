@@ -131,7 +131,7 @@ Diesel can generate a bash completion script for itself:
 #### linux
 
 ```sh
-$ diesel bash-completion > /etc/bash_completion.d/diesel
+$ diesel completions bash > /etc/bash_completion.d/diesel
 ```
 
 
@@ -139,5 +139,5 @@ $ diesel bash-completion > /etc/bash_completion.d/diesel
 
 ```sh
 $ brew install bash-completion  # you may already have this installed
-$ diesel bash-completion > $(brew --prefix)/etc/bash_completion.d/diesel
+$ diesel completions bash > $(brew --prefix)/etc/bash_completion.d/diesel
 ```
