@@ -238,10 +238,10 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
                         Err(_) => false,
                     })
             {
-                fs::remove_file(dir_entry.path()).unwrap_or_else(|e| {
+                fs::remove_file(dir_entry.path()).unwrap_or_else(|err| {
                     eprintln!(
                         "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}",
-                        e
+                        err
                     )
                 });
             }
