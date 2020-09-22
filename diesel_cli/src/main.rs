@@ -230,12 +230,13 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
         // older version of diesel_cli that set a `.gitkeep` instead of a `.keep` file.
         // TODO: remove this after a few releases
         if let Ok(read_dir) = fs::read_dir(&dir) {
-            if let Some(dir_entry) = read_dir
-                .filter_map(|x| x.ok())
-                .find(|x| match x.file_type() {
-                    Ok(file_type) => file_type.is_file() && x.file_name() == ".gitkeep",
-                    Err(_) => false,
-                })
+            if let Some(dir_entry) =
+                read_dir
+                    .filter_map(|entry| entry.ok())
+                    .find(|entry| match entry.file_type() {
+                        Ok(file_type) => file_type.is_file() && entry.file_name() == ".gitkeep",
+                        Err(_) => false,
+                    })
             {
                 fs::remove_file(dir_entry.path()).unwrap_or_else(|e| {
                     eprintln!(
