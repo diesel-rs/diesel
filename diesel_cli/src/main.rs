@@ -203,26 +203,7 @@ fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
         });
 
     match migrations_dir {
-        Some(dir) => {
-            // This is a cleanup code for migrating from an
-            // older version of diesel_cli that set a `.gitkeep` instead of a `.keep` file.
-            // TODO: remove this after a few releases
-            if let Ok(read_dir) = fs::read_dir(&dir) {
-                if let Some(dir_entry) = read_dir
-                    .filter(|x| x.is_ok())
-                    .map(|x| x.unwrap())
-                    .find(|x| x.file_type().unwrap().is_file() && &x.file_name() == ".gitkeep")
-                {
-                    fs::remove_file(dir_entry.path()).unwrap_or_else(|e| {
-                        eprintln!(
-                            "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}",
-                            e
-                        )
-                    });
-                }
-            };
-            Ok(dir)
-        }
+        Some(dir) => Ok(dir),
         None => migrations::find_migrations_directory(),
     }
 }
@@ -244,7 +225,24 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
             .join("migrations"),
     };
 
-    if !dir.exists() {
+    if dir.exists() {
+        // This is a cleanup code for migrating from an
+        // older version of diesel_cli that set a `.gitkeep` instead of a `.keep` file.
+        // TODO: remove this after a few releases
+        if let Some(dir_entry) = fs::read_dir(&dir)
+            .unwrap()
+            .filter(|x| x.is_ok())
+            .map(|x| x.unwrap())
+            .find(|x| x.file_type().unwrap().is_file() && &x.file_name() == ".gitkeep")
+        {
+            fs::remove_file(dir_entry.path()).unwrap_or_else(|e| {
+                eprintln!(
+                    "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}",
+                    e
+                )
+            });
+        }
+    } else {
         create_migrations_directory(&dir)?;
     }
 
