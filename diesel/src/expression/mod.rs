@@ -408,7 +408,7 @@ where
 pub trait Selectable {
     /// The expression you'd like to select.
     ///
-    /// This is typically a tuple of all of your struct's fields.
+    /// This is typically a tuple of corresponding to the table columns of your struct's fields.
     type Expression: Expression;
 
     /// Construct an instance of the expression

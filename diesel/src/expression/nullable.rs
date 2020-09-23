@@ -55,6 +55,7 @@ where
     Nullable<T::Expression>: Expression,
 {
     type Expression = Nullable<T::Expression>;
+
     fn new_expression() -> Self::Expression {
         Nullable::new(T::new_expression())
     }
