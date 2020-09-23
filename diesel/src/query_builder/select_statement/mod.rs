@@ -26,6 +26,7 @@ use super::select_clause::*;
 use super::where_clause::*;
 use super::{AstPass, Query, QueryFragment};
 use crate::backend::Backend;
+use crate::expression::select_by::SelectBy;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;
@@ -117,14 +118,14 @@ where
     type SqlType = S::SelectClauseSqlType;
 }
 
-impl<F, S, D, W, O, LOf, LC, ST> SelectByQuery
-    for SelectStatement<F, SelectClause<S>, D, W, O, LOf, NoGroupByClause, LC>
+impl<F, T, D, W, O, LOf, G, LC, ST> SelectByQuery
+    for SelectStatement<F, SelectClause<SelectBy<T>>, D, W, O, LOf, G, LC>
 where
     ST: TypedExpressionType,
-    S: Expression<SqlType = ST>,
+    SelectBy<T>: Expression<SqlType = ST>,
     Self: SelectQuery<SqlType = ST>,
 {
-    type Expression = S;
+    type Expression = SelectBy<T>;
 }
 
 impl<F, S, D, W, O, LOf, G, LC, DB> QueryFragment<DB> for SelectStatement<F, S, D, W, O, LOf, G, LC>

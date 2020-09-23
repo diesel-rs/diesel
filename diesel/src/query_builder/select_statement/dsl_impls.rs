@@ -71,14 +71,13 @@ where
     }
 }
 
-// FIXME: Should we disable select_by when `.group_by` has been called?
 impl<SE, F, S, D, W, O, LOf, G, LC, Selection> SelectByDsl<Selection>
     for SelectStatement<F, S, D, W, O, LOf, G, LC>
 where
     SE: Expression,
     Selection: Selectable<Expression = SE>,
     Self: SelectDsl<SE>,
-    <Self as SelectDsl<SE>>::Output: SelectByQuery<Expression = SE>,
+    SelectStatement<F, SelectClause<SelectBy<Selection>>, D, W, O, LOf, G, LC>: SelectByQuery,
 {
     type Output = SelectStatement<F, SelectClause<SelectBy<Selection>>, D, W, O, LOf, G, LC>;
 

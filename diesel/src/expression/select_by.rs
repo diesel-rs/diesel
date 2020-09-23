@@ -15,14 +15,14 @@ impl<T> Clone for SelectBy<T> {
 }
 impl<T> Copy for SelectBy<T> {}
 
-impl<T, ST> QueryId for SelectBy<T>
+impl<T, E> QueryId for SelectBy<T>
 where
-    T: Selectable<Expression = ST>,
-    ST: QueryId + Expression,
+    T: Selectable<Expression = E>,
+    E: QueryId + Expression,
 {
-    type QueryId = ST::QueryId;
+    type QueryId = E::QueryId;
 
-    const HAS_STATIC_QUERY_ID: bool = ST::HAS_STATIC_QUERY_ID;
+    const HAS_STATIC_QUERY_ID: bool = E::HAS_STATIC_QUERY_ID;
 }
 
 impl<T> SelectBy<T> {
@@ -31,23 +31,23 @@ impl<T> SelectBy<T> {
     }
 }
 
-impl<T, ST> Expression for SelectBy<T>
+impl<T, E> Expression for SelectBy<T>
 where
-    T: Selectable<Expression = ST>,
-    ST: QueryId + Expression,
+    T: Selectable<Expression = E>,
+    E: QueryId + Expression,
 {
-    type SqlType = ST::SqlType;
+    type SqlType = E::SqlType;
 }
 
-impl<T, GB, ST> ValidGrouping<GB> for SelectBy<T>
+impl<T, GB, E> ValidGrouping<GB> for SelectBy<T>
 where
-    T: Selectable<Expression = ST>,
-    ST: Expression + ValidGrouping<GB>,
+    T: Selectable<Expression = E>,
+    E: Expression + ValidGrouping<GB>,
 {
-    type IsAggregate = ST::IsAggregate;
+    type IsAggregate = E::IsAggregate;
 }
 
-impl<ST, DB> QueryMetadata<SelectBy<ST>> for DB
+impl<T, DB> QueryMetadata<SelectBy<T>> for DB
 where
     DB: Backend,
 {

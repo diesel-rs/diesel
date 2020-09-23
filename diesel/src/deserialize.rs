@@ -400,15 +400,15 @@ where
     }
 }
 
-impl<Q, DB, ST> FromSqlRow<SelectBy<Q>, DB> for Q
+impl<Q, DB, E> FromSqlRow<SelectBy<Q>, DB> for Q
 where
-    ST: Expression,
+    E: Expression,
     DB: Backend,
-    Q: Selectable<Expression = ST>,
-    Q: FromSqlRow<SqlTypeOf<ST>, DB>,
+    Q: Selectable<Expression = E>,
+    Q: FromSqlRow<SqlTypeOf<E>, DB>,
 {
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
-        <Self as FromSqlRow<SqlTypeOf<ST>, DB>>::build_from_row(row)
+        <Self as FromSqlRow<SqlTypeOf<E>, DB>>::build_from_row(row)
     }
 }
 
