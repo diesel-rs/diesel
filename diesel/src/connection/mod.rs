@@ -169,11 +169,12 @@ pub trait Connection: SimpleConnection + Sized + Send {
     fn execute(&self, query: &str) -> QueryResult<usize>;
 
     #[doc(hidden)]
-    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U, ST>(&self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        U: FromSqlRow<T::SqlType, Self::Backend>,
+        T::SqlType: crate::query_dsl::load_dsl::CompatibleType<U, Self::Backend, SqlType = ST>,
+        U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>;
 
     #[doc(hidden)]

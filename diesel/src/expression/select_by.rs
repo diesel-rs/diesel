@@ -1,6 +1,7 @@
 use crate::backend::Backend;
 use crate::expression::{
-    AppearsOnTable, Expression, QueryMetadata, Selectable, SelectableExpression, ValidGrouping,
+    AppearsOnTable, Expression, QueryMetadata, Selectable, SelectableExpression,
+    TypedExpressionType, ValidGrouping,
 };
 use crate::query_builder::*;
 use crate::result::QueryResult;
@@ -36,8 +37,10 @@ where
     T: Selectable<Expression = E>,
     E: QueryId + Expression,
 {
-    type SqlType = E::SqlType;
+    type SqlType = SelectBy<T>;
 }
+
+impl<T> TypedExpressionType for SelectBy<T> {}
 
 impl<T, GB, E> ValidGrouping<GB> for SelectBy<T>
 where

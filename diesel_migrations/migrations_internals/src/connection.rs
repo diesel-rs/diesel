@@ -36,7 +36,8 @@ where
     >: ExecuteDsl<T>,
     __diesel_schema_migrations: methods::SelectDsl<version>,
     Select<__diesel_schema_migrations, version>: LoadQuery<T, String>,
-    Limit<Select<__diesel_schema_migrations, max<version>>>: QueryFragment<T::Backend>,
+    Limit<Select<__diesel_schema_migrations, max<version>>>:
+        QueryFragment<T::Backend> + LoadQuery<T, Option<String>>,
     T::Backend: QueryMetadata<Nullable<VarChar>>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
