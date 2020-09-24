@@ -348,24 +348,16 @@ impl<'de> Deserialize<'de> for Filtering {
                         _ => {
                             return Err(de::Error::unknown_field(
                                 key,
-                                &[
-                                    "only_tables",
-                                    "except_tables",
-                                ],
+                                &["only_tables", "except_tables"],
                             ))
                         }
                     }
                 }
-                match (
-                    only_tables,
-                    except_tables,
-                ) {
+                match (only_tables, except_tables) {
                     (Some(t), None) => Ok(Filtering::OnlyTableRegexes(t)),
                     (None, Some(t)) => Ok(Filtering::ExceptTableRegexes(t)),
-                    (None, None => Ok(Filtering::None),
-                    _ => Err(de::Error::duplicate_field(
-                        "only_tables except_tables",
-                    )),
+                    (None, None) => Ok(Filtering::None),
+                    _ => Err(de::Error::duplicate_field("only_tables except_tables")),
                 }
             }
         }
