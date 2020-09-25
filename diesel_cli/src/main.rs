@@ -393,7 +393,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         config.schema = Some(String::from(schema_name))
     }
 
-    let filter_regex = matches
+    let filter = matches
         .values_of("table-name")
         .unwrap_or_default()
         .map(|table_name_regex| Regex::new(table_name_regex).map(Into::into))
@@ -409,9 +409,9 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
 
     if matches.is_present("whitelist") || matches.is_present("only-tables") {
-        config.filter = Filtering::OnlyTables(filter_regex?)
+        config.filter = Filtering::OnlyTables(filter?)
     } else if matches.is_present("blacklist") || matches.is_present("except-tables") {
-        config.filter = Filtering::ExceptTables(filter_regex?)
+        config.filter = Filtering::ExceptTables(filter?)
     }
 
     if matches.is_present("with-docs") {
