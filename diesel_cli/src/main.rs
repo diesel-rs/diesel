@@ -409,9 +409,9 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     }
 
     if matches.is_present("whitelist") || matches.is_present("only-tables") {
-        config.filter = Filtering::OnlyTableRegexes(filter_regex?)
+        config.filter = Filtering::OnlyTables(filter_regex?)
     } else if matches.is_present("blacklist") || matches.is_present("except-tables") {
-        config.filter = Filtering::ExceptTableRegexes(filter_regex?)
+        config.filter = Filtering::ExceptTables(filter_regex?)
     }
 
     if matches.is_present("with-docs") {

@@ -13,8 +13,8 @@ const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 type Regex = RegexWrapper<::regex::Regex>;
 
 pub enum Filtering {
-    OnlyTableRegexes(Vec<Regex>),
-    ExceptTableRegexes(Vec<Regex>),
+    OnlyTables(Vec<Regex>),
+    ExceptTables(Vec<Regex>),
     None,
 }
 
@@ -29,12 +29,8 @@ impl Filtering {
         use self::Filtering::*;
 
         match *self {
-            OnlyTableRegexes(ref regexes) => {
-                !regexes.iter().any(|regex| regex.is_match(&name.sql_name))
-            }
-            ExceptTableRegexes(ref regexes) => {
-                regexes.iter().any(|regex| regex.is_match(&name.sql_name))
-            }
+            OnlyTables(ref regexes) => !regexes.iter().any(|regex| regex.is_match(&name.sql_name)),
+            ExceptTables(ref regexes) => regexes.iter().any(|regex| regex.is_match(&name.sql_name)),
             None => false,
         }
     }
@@ -350,8 +346,8 @@ impl<'de> Deserialize<'de> for Filtering {
                     }
                 }
                 match (only_tables, except_tables) {
-                    (Some(t), None) => Ok(Filtering::OnlyTableRegexes(t)),
-                    (None, Some(t)) => Ok(Filtering::ExceptTableRegexes(t)),
+                    (Some(t), None) => Ok(Filtering::OnlyTables(t)),
+                    (None, Some(t)) => Ok(Filtering::ExceptTables(t)),
                     (None, None) => Ok(Filtering::None),
                     _ => Err(de::Error::duplicate_field("only_tables except_tables")),
                 }
