@@ -13,9 +13,7 @@ const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 type Regex = RegexWrapper<::regex::Regex>;
 
 pub enum Filtering {
-    OnlyTables(Vec<TableName>),
     OnlyTableRegexes(Vec<Regex>),
-    ExceptTables(Vec<TableName>),
     ExceptTableRegexes(Vec<Regex>),
     None,
 }
@@ -31,11 +29,9 @@ impl Filtering {
         use self::Filtering::*;
 
         match *self {
-            OnlyTables(ref names) => !names.contains(name),
             OnlyTableRegexes(ref regexes) => {
                 !regexes.iter().any(|regex| regex.is_match(&name.sql_name))
             }
-            ExceptTables(ref names) => names.contains(name),
             ExceptTableRegexes(ref regexes) => {
                 regexes.iter().any(|regex| regex.is_match(&name.sql_name))
             }
