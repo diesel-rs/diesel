@@ -128,27 +128,17 @@ pub fn build_cli() -> App<'static, 'static> {
                 .conflicts_with("blacklist"),
         )
         .arg(
-            Arg::with_name("whitelist")
-                .short("w")
-                .long("whitelist")
-                .hidden(true)
-                .conflicts_with("blacklist")
-                .conflicts_with("except-tables"),
-        )
-        .arg(
             Arg::with_name("except-tables")
                 .short("e")
                 .long("except-tables")
                 .help("Exclude tables from table-name that matches regex")
-                .conflicts_with("only-tables")
-                .conflicts_with("whitelist"),
+                .conflicts_with("only-tables"),
         )
         .arg(
             Arg::with_name("blacklist")
                 .short("b")
                 .long("blacklist")
                 .hidden(true)
-                .conflicts_with("whitelist")
                 .conflicts_with("only-tables"),
         )
         .arg(

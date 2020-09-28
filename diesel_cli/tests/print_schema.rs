@@ -18,7 +18,7 @@ fn run_infer_schema() {
 fn run_infer_schema_include() {
     test_print_schema(
         "print_schema_only_tables",
-        vec!["--with-docs", "-w", "users1"],
+        vec!["--with-docs", "-o", "users1"],
     );
 }
 
@@ -26,7 +26,7 @@ fn run_infer_schema_include() {
 fn run_infer_schema_include_regex() {
     test_print_schema(
         "print_schema_only_table_regexes",
-        vec!["--with-docs", "-w", "users1"],
+        vec!["--with-docs", "-o", "users1"],
     );
 }
 
