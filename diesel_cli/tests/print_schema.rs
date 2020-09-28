@@ -34,7 +34,7 @@ fn run_infer_schema_include_regex() {
 fn run_infer_schema_exclude() {
     test_print_schema(
         "print_schema_except_tables",
-        vec!["--with-docs", "-b", "users1"],
+        vec!["--with-docs", "-e", "users1"],
     );
 }
 
@@ -42,7 +42,7 @@ fn run_infer_schema_exclude() {
 fn run_infer_schema_exclude_regex() {
     test_print_schema(
         "print_schema_except_table_regexes",
-        vec!["--with-docs", "-b", "users1"],
+        vec!["--with-docs", "-e", "users1"],
     );
 }
 
