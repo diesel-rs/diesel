@@ -101,12 +101,16 @@ macro_rules! __diesel_column {
 
         impl<T> $crate::EqAll<T> for $column_name where
             T: $crate::expression::AsExpression<$($Type)*>,
-            $crate::dsl::Eq<$column_name, T::Expression>: $crate::Expression<SqlType=$crate::sql_types::Bool>,
+            $crate::dsl::Nullable<$crate::dsl::Eq<$column_name, T::Expression>>:
+            $crate::Expression<SqlType = $crate::sql_types::Nullable<$crate::sql_types::Bool>>,
         {
-            type Output = $crate::dsl::Eq<Self, T::Expression>;
+            type Output = $crate::dsl::Nullable<$crate::dsl::Eq<Self, T::Expression>>;
 
             fn eq_all(self, rhs: T) -> Self::Output {
-                $crate::expression::operators::Eq::new(self, rhs.as_expression())
+                use $crate::expression_methods::ExpressionMethods;
+                use $crate::expression_methods::NullableExpressionMethods;
+
+                self.eq(rhs).nullable()
             }
         }
 
@@ -1157,7 +1161,7 @@ mod tests {
     fn table_with_column_renaming_postgres() {
         use crate::pg::Pg;
         let expected_sql =
-            r#"SELECT "foo"."id", "foo"."type", "foo"."bleh" FROM "foo" WHERE "foo"."type" = $1 -- binds: [1]"#;
+            r#"SELECT "foo"."id", "foo"."type", "foo"."bleh" FROM "foo" WHERE ("foo"."type" = $1) -- binds: [1]"#;
         assert_eq!(
             expected_sql,
             crate::debug_query::<Pg, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
@@ -1169,7 +1173,7 @@ mod tests {
     fn table_with_column_renaming_mysql() {
         use crate::mysql::Mysql;
         let expected_sql =
-            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
+            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE (`foo`.`type` = ?) -- binds: [1]"#;
         assert_eq!(
             expected_sql,
             crate::debug_query::<Mysql, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
@@ -1181,7 +1185,7 @@ mod tests {
     fn table_with_column_renaming_sqlite() {
         use crate::sqlite::Sqlite;
         let expected_sql =
-            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
+            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE (`foo`.`type` = ?) -- binds: [1]"#;
         assert_eq!(
             expected_sql,
             crate::debug_query::<Sqlite, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()

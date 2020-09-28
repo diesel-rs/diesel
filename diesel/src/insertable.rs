@@ -1,6 +1,7 @@
 use std::marker::PhantomData;
 
 use crate::backend::{Backend, SupportsDefaultKeyword};
+use crate::expression::grouped::Grouped;
 use crate::expression::{AppearsOnTable, Expression};
 use crate::query_builder::{
     AstPass, InsertStatement, QueryFragment, UndecoratedInsertRecord, ValuesClause,
@@ -254,6 +255,28 @@ where
 
     fn values(self) -> Self::Values {
         self.as_ref().values()
+    }
+}
+
+impl<L, R, Tab> Insertable<Tab> for Grouped<crate::expression::operators::Eq<L, R>>
+where
+    crate::expression::operators::Eq<L, R>: Insertable<Tab>,
+{
+    type Values = <crate::expression::operators::Eq<L, R> as Insertable<Tab>>::Values;
+
+    fn values(self) -> Self::Values {
+        self.0.values()
+    }
+}
+
+impl<'a, L, R, Tab> Insertable<Tab> for &'a Grouped<crate::expression::operators::Eq<L, R>>
+where
+    &'a crate::expression::operators::Eq<L, R>: Insertable<Tab>,
+{
+    type Values = <&'a crate::expression::operators::Eq<L, R> as Insertable<Tab>>::Values;
+
+    fn values(self) -> Self::Values {
+        self.0.values()
     }
 }
 

@@ -310,17 +310,17 @@ impl<T: Query> AsQuery for T {
 /// let debug = debug_query::<DB, _>(&query);
 /// # if cfg!(feature = "postgres") {
 /// #     assert_eq!(debug.to_string(), "SELECT \"users\".\"id\", \"users\".\"name\" \
-/// #         FROM \"users\" WHERE \"users\".\"id\" = $1 -- binds: [1]");
+/// #         FROM \"users\" WHERE (\"users\".\"id\" = $1) -- binds: [1]");
 /// # } else {
 /// assert_eq!(debug.to_string(), "SELECT `users`.`id`, `users`.`name` FROM `users` \
-///     WHERE `users`.`id` = ? -- binds: [1]");
+///     WHERE (`users`.`id` = ?) -- binds: [1]");
 /// # }
 ///
 /// let debug = format!("{:?}", debug);
 /// # if !cfg!(feature = "postgres") { // Escaping that string is a pain
 /// let expected = "Query { \
 ///     sql: \"SELECT `users`.`id`, `users`.`name` FROM `users` WHERE \
-///         `users`.`id` = ?\", \
+///         (`users`.`id` = ?)\", \
 ///     binds: [1] \
 /// }";
 /// assert_eq!(debug, expected);

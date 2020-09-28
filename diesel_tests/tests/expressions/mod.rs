@@ -460,3 +460,16 @@ fn test_arrays_b() {
 
     assert_eq!(value, vec![7, 14]);
 }
+
+#[test]
+fn test_operator_precedence() {
+    use self::numbers;
+
+    let connection = connection();
+    connection
+        .execute("INSERT INTO numbers (n) VALUES (2)")
+        .unwrap();
+    let source = numbers::table.select(numbers::n.gt(0).eq(true));
+
+    assert_eq!(Ok(true), source.first(&connection));
+}

@@ -119,6 +119,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   so non generic code does not require any change. For generic code you likely need to
   replace a trait bound on `Queryable<ST, DB>` with a trait bound on `FromSqlRow<ST, DB>`
   and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`.
+  
+* Diesel's dsl now accept not nullable expressions in positions where nullable expressions 
+  are expected, without needing to call `.nullable()` explicitly
 
 
 ### Fixed
@@ -159,6 +162,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * We've refactored our type level representation of nullable values. This allowed us to
   fix multiple long standing bugs regarding the correct handling of nullable values in some
   corner cases (#104, #2274)
+  
+* Parenthesis are now inserted around all infix operations provided by diesel's `ExpressionMethods` traits
 
 ### Deprecated
 
