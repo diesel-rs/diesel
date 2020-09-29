@@ -31,7 +31,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
         {
             type QueryId = #struct_name<#(#lifetimes,)* #(#query_id_ty_params,)*>;
 
-            const HAS_STATIC_QUERY_ID: bool = #(#has_static_query_id &&)* true;
+            const HAS_STATIC_QUERY_ID: diesel::RealBool = #(#has_static_query_id &&)* true;
         }
     }))
 }
