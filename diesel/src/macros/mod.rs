@@ -1086,6 +1086,14 @@ mod tests {
     }
 
     table! {
+        table_with_primitive_type_names {
+            id -> Integer,
+            bool -> Bool,
+            str -> Text,
+        }
+    }
+
+    table! {
         use crate::sql_types::*;
         use crate::macros::tests::my_types::*;
 
