@@ -183,6 +183,9 @@ mod util;
 #[deprecated(since = "2.0.0", note = "Use explicit macro imports instead")]
 pub use diesel_derives::*;
 
+#[doc(hidden)]
+pub type RealBool = bool;
+
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
     //! generically to be included in prelude, but are often used when using Diesel.
