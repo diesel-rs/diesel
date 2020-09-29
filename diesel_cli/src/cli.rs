@@ -123,32 +123,14 @@ pub fn build_cli() -> App<'static, 'static> {
             Arg::with_name("only-tables")
                 .short("o")
                 .long("only-tables")
-                .help("Only include tables from table-name")
-                .conflicts_with("except-tables")
-                .conflicts_with("blacklist"),
-        )
-        .arg(
-            Arg::with_name("whitelist")
-                .short("w")
-                .long("whitelist")
-                .hidden(true)
-                .conflicts_with("blacklist")
+                .help("Only include tables from table-name that matches regexp")
                 .conflicts_with("except-tables"),
         )
         .arg(
             Arg::with_name("except-tables")
                 .short("e")
                 .long("except-tables")
-                .help("Exclude tables from table-name")
-                .conflicts_with("only-tables")
-                .conflicts_with("whitelist"),
-        )
-        .arg(
-            Arg::with_name("blacklist")
-                .short("b")
-                .long("blacklist")
-                .hidden(true)
-                .conflicts_with("whitelist")
+                .help("Exclude tables from table-name that matches regex")
                 .conflicts_with("only-tables"),
         )
         .arg(

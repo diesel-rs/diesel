@@ -121,6 +121,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`.
 
 
+* CLI flags of `only-tables` and `except-tables` are now interpreted as regular expressions.
+  Similary, `only_tabels` and `except_tables` in `diesel.toml` are treated as regular expressions.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not

@@ -3,15 +3,18 @@ use crate::config;
 use crate::infer_schema_internals::*;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
+use serde_regex::Serde as RegexWrapper;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::Write as IoWrite;
 
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
+type Regex = RegexWrapper<::regex::Regex>;
+
 pub enum Filtering {
-    OnlyTables(Vec<TableName>),
-    ExceptTables(Vec<TableName>),
+    OnlyTables(Vec<Regex>),
+    ExceptTables(Vec<Regex>),
     None,
 }
 
@@ -26,8 +29,8 @@ impl Filtering {
         use self::Filtering::*;
 
         match *self {
-            OnlyTables(ref names) => !names.contains(name),
-            ExceptTables(ref names) => names.contains(name),
+            OnlyTables(ref regexes) => !regexes.iter().any(|regex| regex.is_match(&name.sql_name)),
+            ExceptTables(ref regexes) => regexes.iter().any(|regex| regex.is_match(&name.sql_name)),
             None => false,
         }
     }
@@ -318,21 +321,21 @@ impl<'de> Deserialize<'de> for Filtering {
             where
                 V: MapAccess<'de>,
             {
-                let mut only_tables = None;
-                let mut except_tables = None;
-                while let Some((key, value)) = map.next_entry()? {
+                let mut only_tables = None::<Vec<Regex>>;
+                let mut except_tables = None::<Vec<Regex>>;
+                while let Some(key) = map.next_key()? {
                     match key {
                         "only_tables" => {
                             if only_tables.is_some() {
                                 return Err(de::Error::duplicate_field("only_tables"));
                             }
-                            only_tables = Some(value);
+                            only_tables = Some(map.next_value()?);
                         }
                         "except_tables" => {
                             if except_tables.is_some() {
                                 return Err(de::Error::duplicate_field("except_tables"));
                             }
-                            except_tables = Some(value);
+                            except_tables = Some(map.next_value()?);
                         }
                         _ => {
                             return Err(de::Error::unknown_field(
@@ -343,10 +346,10 @@ impl<'de> Deserialize<'de> for Filtering {
                     }
                 }
                 match (only_tables, except_tables) {
-                    (Some(_), Some(_)) => Err(de::Error::duplicate_field("except_tables")),
-                    (Some(w), None) => Ok(Filtering::OnlyTables(w)),
-                    (None, Some(b)) => Ok(Filtering::ExceptTables(b)),
+                    (Some(t), None) => Ok(Filtering::OnlyTables(t)),
+                    (None, Some(t)) => Ok(Filtering::ExceptTables(t)),
                     (None, None) => Ok(Filtering::None),
+                    _ => Err(de::Error::duplicate_field("only_tables except_tables")),
                 }
             }
         }

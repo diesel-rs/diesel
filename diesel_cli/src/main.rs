@@ -28,6 +28,7 @@ mod query_helper;
 use chrono::*;
 use clap::{ArgMatches, Shell};
 use migrations_internals::{self as migrations, MigrationConnection};
+use regex::Regex;
 use std::any::Any;
 use std::error::Error;
 use std::fmt::Display;
@@ -383,7 +384,6 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 }
 
 fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
-    use crate::infer_schema_internals::TableName;
     use crate::print_schema::*;
 
     let database_url = database::database_url(matches);
@@ -396,27 +396,14 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let filter = matches
         .values_of("table-name")
         .unwrap_or_default()
-        .map(|table_name| {
-            if let Some(schema) = config.schema_name() {
-                TableName::new(table_name, schema)
-            } else {
-                table_name.parse().unwrap()
-            }
-        })
-        .collect();
+        .map(|table_name_regex| Regex::new(table_name_regex).map(Into::into))
+        .collect::<Result<_, _>>()
+        .map_err(|e| format!("invalid argument for table filtering regex: {}", e));
 
-    if matches.is_present("whitelist") {
-        eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");
-    }
-
-    if matches.is_present("blacklist") {
-        eprintln!("The `blacklist` option has been deprecated and renamed to `except-tables`.");
-    }
-
-    if matches.is_present("only-tables") || matches.is_present("whitelist") {
-        config.filter = Filtering::OnlyTables(filter)
-    } else if matches.is_present("except-tables") || matches.is_present("blacklist") {
-        config.filter = Filtering::ExceptTables(filter)
+    if matches.is_present("only-tables") {
+        config.filter = Filtering::OnlyTables(filter?)
+    } else if matches.is_present("except-tables") {
+        config.filter = Filtering::ExceptTables(filter?)
     }
 
     if matches.is_present("with-docs") {
