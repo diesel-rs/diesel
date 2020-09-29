@@ -186,6 +186,9 @@ pub use diesel_derives::*;
 #[doc(hidden)]
 pub type RealBool = bool;
 
+#[doc(hidden)]
+pub type RealStr = &'static str;
+
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
     //! generically to be included in prelude, but are often used when using Diesel.
