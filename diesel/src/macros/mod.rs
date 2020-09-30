@@ -96,7 +96,7 @@ macro_rules! __diesel_column {
         impl $crate::query_source::Column for $column_name {
             type Table = $table;
 
-            const NAME: $crate::RealStr = $sql_name;
+            const NAME: &'static str = $sql_name;
         }
 
         impl<T> $crate::EqAll<T> for $column_name where
@@ -1083,14 +1083,6 @@ mod tests {
     mod my_types {
         #[derive(Debug, Clone, Copy, crate::sql_types::SqlType)]
         pub struct MyCustomType;
-    }
-
-    table! {
-        table_with_primitive_type_names {
-            id -> Integer,
-            bool -> Bool,
-            str -> Text,
-        }
     }
 
     table! {
