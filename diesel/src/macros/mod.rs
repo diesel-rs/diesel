@@ -31,7 +31,7 @@ macro_rules! __diesel_column {
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
             DB: $crate::backend::Backend,
-            <$table as QuerySource>::FromClause: QueryFragment<DB>,
+            <$table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
         {
             #[allow(non_snake_case)]
             fn walk_ast(&self, mut __out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
@@ -41,47 +41,47 @@ macro_rules! __diesel_column {
             }
         }
 
-        impl SelectableExpression<$table> for $column_name {
+        impl $crate::SelectableExpression<$table> for $column_name {
         }
 
-        impl<QS> AppearsOnTable<QS> for $column_name where
-            QS: AppearsInFromClause<$table, Count=Once>,
+        impl<QS> $crate::AppearsOnTable<QS> for $column_name where
+            QS: $crate::query_source::AppearsInFromClause<$table, Count=$crate::query_source::Once>,
         {
         }
 
-        impl<Left, Right> SelectableExpression<
-            Join<Left, Right, LeftOuter>,
+        impl<Left, Right> $crate::SelectableExpression<
+            $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>,
         > for $column_name where
-            $column_name: AppearsOnTable<Join<Left, Right, LeftOuter>>,
-            Self: SelectableExpression<Left>,
+            $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>>,
+            Self: $crate::SelectableExpression<Left>,
             // If our table is on the right side of this join, only
             // `Nullable<Self>` can be selected
-            Right: AppearsInFromClause<$table, Count=Never>,
+            Right: $crate::query_source::AppearsInFromClause<$table, Count=$crate::query_source::Never>,
         {
         }
 
-        impl<Left, Right> SelectableExpression<
-            Join<Left, Right, Inner>,
+        impl<Left, Right> $crate::SelectableExpression<
+            $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>,
         > for $column_name where
-            $column_name: AppearsOnTable<Join<Left, Right, Inner>>,
-            Left: AppearsInFromClause<$table>,
-            Right: AppearsInFromClause<$table>,
-            (Left::Count, Right::Count): Pick<Left, Right>,
-            Self: SelectableExpression<
-                <(Left::Count, Right::Count) as Pick<Left, Right>>::Selection,
+            $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>>,
+            Left: $crate::query_source::AppearsInFromClause<$table>,
+            Right: $crate::query_source::AppearsInFromClause<$table>,
+            (Left::Count, Right::Count): $crate::query_source::Pick<Left, Right>,
+            Self: $crate::SelectableExpression<
+                <(Left::Count, Right::Count) as $crate::query_source::Pick<Left, Right>>::Selection,
             >,
         {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<Join, On> SelectableExpression<JoinOn<Join, On>> for $column_name where
-            $column_name: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>,
+        impl<Join, On> $crate::SelectableExpression<$crate::query_source::joins::JoinOn<Join, On>> for $column_name where
+            $column_name: $crate::SelectableExpression<Join> + $crate::AppearsOnTable<$crate::query_source::joins::JoinOn<Join, On>>,
         {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<From> SelectableExpression<SelectStatement<From>> for $column_name where
-            $column_name: SelectableExpression<From> + AppearsOnTable<SelectStatement<From>>,
+        impl<From> $crate::SelectableExpression<$crate::query_builder::SelectStatement<From>> for $column_name where
+            $column_name: $crate::SelectableExpression<From> + $crate::AppearsOnTable<$crate::query_builder::SelectStatement<From>>,
         {
         }
 
@@ -791,12 +791,7 @@ macro_rules! __diesel_table_impl {
             /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
-                use $crate::{Expression, SelectableExpression, AppearsOnTable, QuerySource};
-                use $crate::backend::Backend;
-                use $crate::query_builder::{QueryFragment, AstPass, SelectStatement};
-                use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
-                use $crate::query_source::{AppearsInFromClause, Once, Never, Pick};
-                use $crate::result::QueryResult;
+                use $crate::QuerySource;
                 $($imports)*
 
                 #[allow(non_camel_case_types, dead_code)]
@@ -814,25 +809,25 @@ macro_rules! __diesel_table_impl {
                     type IsAggregate = <($($column_name,)+) as $crate::expression::ValidGrouping<__GB>>::IsAggregate;
                 }
 
-                impl Expression for star {
+                impl $crate::Expression for star {
                     type SqlType = $crate::expression::expression_types::NotSelectable;
                 }
 
-                impl<DB: Backend> QueryFragment<DB> for star where
-                    <table as QuerySource>::FromClause: QueryFragment<DB>,
+                impl<DB: $crate::backend::Backend> $crate::query_builder::QueryFragment<DB> for star where
+                    <table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
                 {
                     #[allow(non_snake_case)]
-                    fn walk_ast(&self, mut __out: AstPass<DB>) -> QueryResult<()> {
+                    fn walk_ast(&self, mut __out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
                         table.from_clause().walk_ast(__out.reborrow())?;
                         __out.push_sql(".*");
                         Ok(())
                     }
                 }
 
-                impl SelectableExpression<table> for star {
+                impl $crate::SelectableExpression<table> for star {
                 }
 
-                impl AppearsOnTable<table> for star {
+                impl $crate::AppearsOnTable<table> for star {
                 }
 
                 $($crate::__diesel_column! {
