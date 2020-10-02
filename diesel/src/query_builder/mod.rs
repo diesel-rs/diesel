@@ -11,7 +11,7 @@ mod clause_macro;
 
 mod ast_pass;
 pub mod bind_collector;
-pub mod combination_clause;
+pub(crate) mod combination_clause;
 mod debug_query;
 mod delete_statement;
 mod distinct_clause;
