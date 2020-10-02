@@ -35,6 +35,7 @@ macro_rules! __diesel_column {
         {
             #[allow(non_snake_case)]
             fn walk_ast(&self, mut __out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                use $crate::QuerySource;
                 $table.from_clause().walk_ast(__out.reborrow())?;
                 __out.push_sql(".");
                 __out.push_identifier($sql_name)
@@ -613,7 +614,6 @@ macro_rules! __diesel_table_impl {
                 Table,
                 JoinTo,
             };
-            use $crate::query_builder::AsQuery;
             $($imports)*
             pub use self::columns::*;
 
@@ -705,6 +705,7 @@ macro_rules! __diesel_table_impl {
                 type WhereClause = <<Self as $crate::query_builder::AsQuery>::Query as $crate::query_builder::IntoUpdateTarget>::WhereClause;
 
                 fn into_update_target(self) -> $crate::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
+                    use $crate::query_builder::AsQuery;
                     self.as_query().into_update_target()
                 }
             }
@@ -773,6 +774,7 @@ macro_rules! __diesel_table_impl {
                 type Values = <<table as $crate::query_builder::AsQuery>::Query as $crate::insertable::Insertable<T>>::Values;
 
                 fn values(self) -> Self::Values {
+                    use $crate::query_builder::AsQuery;
                     self.as_query().values()
                 }
             }
@@ -791,7 +793,6 @@ macro_rules! __diesel_table_impl {
             /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
-                use $crate::QuerySource;
                 $($imports)*
 
                 #[allow(non_camel_case_types, dead_code)]
@@ -818,6 +819,7 @@ macro_rules! __diesel_table_impl {
                 {
                     #[allow(non_snake_case)]
                     fn walk_ast(&self, mut __out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                        use $crate::QuerySource;
                         table.from_clause().walk_ast(__out.reborrow())?;
                         __out.push_sql(".*");
                         Ok(())
