@@ -25,6 +25,7 @@ use crate::result::{first_or_not_found, QueryResult};
 mod belonging_to_dsl;
 #[doc(hidden)]
 pub mod boxed_dsl;
+mod combine_dsl;
 mod distinct_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
@@ -44,6 +45,7 @@ pub mod select_dsl;
 mod single_value_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
+pub use self::combine_dsl::CombineDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
