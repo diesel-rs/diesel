@@ -89,7 +89,17 @@ mod bigdecimal {
         #[allow(clippy::assign_op_pattern, clippy::redundant_closure)]
         fn from(decimal: &'a BigDecimal) -> Self {
             let (mut integer, scale) = decimal.as_bigint_and_exponent();
-            let scale = scale as u16;
+
+            // Handling of negative scale
+            let scale = if scale < 0 {
+                for _ in 0..(-scale) {
+                    integer = integer * 10;
+                }
+                0
+            } else {
+                scale as u16
+            };
+
             integer = integer.abs();
 
             // Ensure that the decimal will always lie on a digit boundary
@@ -100,7 +110,7 @@ mod bigdecimal {
 
             let mut digits = ToBase10000(Some(integer)).collect::<Vec<_>>();
             digits.reverse();
-            let digits_after_decimal = scale as u16 / 4 + 1;
+            let digits_after_decimal = scale / 4 + 1;
             let weight = digits.len() as i16 - digits_after_decimal as i16 - 1;
 
             let unnecessary_zeroes = if weight >= 0 {
@@ -272,6 +282,25 @@ mod bigdecimal {
                 weight: 0,
                 scale: 3,
                 digits: vec![123, 4560],
+            };
+            assert_eq!(expected, decimal.into());
+        }
+
+        #[test]
+        fn bigdecimal_with_negative_scale_to_pg_numeric_works() {
+            let decimal = BigDecimal::new(50.into(), -2);
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 0,
+                digits: vec![5000],
+            };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::new(1.into(), -4);
+            let expected = PgNumeric::Positive {
+                weight: 1,
+                scale: 0,
+                digits: vec![1, 0],
             };
             assert_eq!(expected, decimal.into());
         }
