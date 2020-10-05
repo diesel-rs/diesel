@@ -1,4 +1,6 @@
+use crate::dsl;
 use crate::expression::array_comparison::{AsInExpression, In, NotIn};
+use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
 use crate::expression::{nullable, AsExpression, Expression};
 use crate::sql_types::{SingleValue, SqlType};
@@ -19,12 +21,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), data.first(&connection));
     /// # }
     /// ```
-    fn eq<T>(self, other: T) -> Eq<Self, T::Expression>
+    fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        Eq::new(self, other.as_expression())
+        Grouped(Eq::new(self, other.as_expression()))
     }
 
     /// Creates a SQL `!=` expression.
@@ -41,12 +43,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(2), data.first(&connection));
     /// # }
     /// ```
-    fn ne<T>(self, other: T) -> NotEq<Self, T::Expression>
+    fn ne<T>(self, other: T) -> dsl::NotEq<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        NotEq::new(self, other.as_expression())
+        Grouped(NotEq::new(self, other.as_expression()))
     }
 
     /// Creates a SQL `IN` statement.
@@ -74,12 +76,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(vec![]), data.load::<i32>(&connection));
     /// # }
     /// ```
-    fn eq_any<T>(self, values: T) -> In<Self, T::InExpression>
+    fn eq_any<T>(self, values: T) -> dsl::EqAny<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsInExpression<Self::SqlType>,
     {
-        In::new(self, values.as_in_expression())
+        Grouped(In::new(self, values.as_in_expression()))
     }
 
     /// Creates a SQL `NOT IN` statement.
@@ -110,12 +112,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(vec![1, 2, 3]), data.load(&connection));
     /// # }
     /// ```
-    fn ne_all<T>(self, values: T) -> NotIn<Self, T::InExpression>
+    fn ne_all<T>(self, values: T) -> dsl::NeAny<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsInExpression<Self::SqlType>,
     {
-        NotIn::new(self, values.as_in_expression())
+        Grouped(NotIn::new(self, values.as_in_expression()))
     }
 
     /// Creates a SQL `IS NULL` expression.
@@ -140,8 +142,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
-    fn is_null(self) -> IsNull<Self> {
-        IsNull::new(self)
+    fn is_null(self) -> dsl::IsNull<Self> {
+        Grouped(IsNull::new(self))
     }
 
     /// Creates a SQL `IS NOT NULL` expression.
@@ -166,8 +168,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("dog", data);
     /// #     Ok(())
     /// # }
-    fn is_not_null(self) -> IsNotNull<Self> {
-        IsNotNull::new(self)
+    fn is_not_null(self) -> dsl::IsNotNull<Self> {
+        Grouped(IsNotNull::new(self))
     }
 
     /// Creates a SQL `>` expression.
@@ -192,12 +194,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn gt<T>(self, other: T) -> Gt<Self, T::Expression>
+    fn gt<T>(self, other: T) -> dsl::Gt<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        Gt::new(self, other.as_expression())
+        Grouped(Gt::new(self, other.as_expression()))
     }
 
     /// Creates a SQL `>=` expression.
@@ -222,12 +224,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn ge<T>(self, other: T) -> GtEq<Self, T::Expression>
+    fn ge<T>(self, other: T) -> dsl::GtEq<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        GtEq::new(self, other.as_expression())
+        Grouped(GtEq::new(self, other.as_expression()))
     }
 
     /// Creates a SQL `<` expression.
@@ -252,12 +254,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn lt<T>(self, other: T) -> Lt<Self, T::Expression>
+    fn lt<T>(self, other: T) -> dsl::Lt<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        Lt::new(self, other.as_expression())
+        Grouped(Lt::new(self, other.as_expression()))
     }
 
     /// Creates a SQL `<=` expression.
@@ -281,12 +283,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("Sean", data);
     /// #     Ok(())
     /// # }
-    fn le<T>(self, other: T) -> LtEq<Self, T::Expression>
+    fn le<T>(self, other: T) -> dsl::LtEq<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        LtEq::new(self, other.as_expression())
+        Grouped(LtEq::new(self, other.as_expression()))
     }
 
     /// Creates a SQL `BETWEEN` expression using the given lower and upper
@@ -309,13 +311,16 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok("dog".to_string()), data);
     /// # }
     /// ```
-    fn between<T, U>(self, lower: T, upper: U) -> Between<Self, And<T::Expression, U::Expression>>
+    fn between<T, U>(self, lower: T, upper: U) -> dsl::Between<Self, T, U>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
         U: AsExpression<Self::SqlType>,
     {
-        Between::new(self, And::new(lower.as_expression(), upper.as_expression()))
+        Grouped(Between::new(
+            self,
+            And::new(lower.as_expression(), upper.as_expression()),
+        ))
     }
 
     /// Creates a SQL `NOT BETWEEN` expression using the given lower and upper
@@ -341,17 +346,16 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
-    fn not_between<T, U>(
-        self,
-        lower: T,
-        upper: U,
-    ) -> NotBetween<Self, And<T::Expression, U::Expression>>
+    fn not_between<T, U>(self, lower: T, upper: U) -> dsl::NotBetween<Self, T, U>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
         U: AsExpression<Self::SqlType>,
     {
-        NotBetween::new(self, And::new(lower.as_expression(), upper.as_expression()))
+        Grouped(NotBetween::new(
+            self,
+            And::new(lower.as_expression(), upper.as_expression()),
+        ))
     }
 
     /// Creates a SQL `DESC` expression, representing this expression in
@@ -378,7 +382,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn desc(self) -> Desc<Self> {
+    fn desc(self) -> dsl::Desc<Self> {
         Desc::new(self)
     }
 
@@ -406,7 +410,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     };
     /// # }
     /// ```
-    fn asc(self) -> Asc<Self> {
+    fn asc(self) -> dsl::Asc<Self> {
         Asc::new(self)
     }
 }
@@ -454,7 +458,7 @@ pub trait NullableExpressionMethods: Expression + Sized {
     ///     println!("{:?}", data);
     /// }
     /// ```
-    fn nullable(self) -> nullable::Nullable<Self> {
+    fn nullable(self) -> dsl::Nullable<Self> {
         nullable::Nullable::new(self)
     }
 }

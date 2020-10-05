@@ -63,7 +63,7 @@ fn examine_sql_from_publish_pending_posts() {
         .set(draft.eq(false));
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 \
-         WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP \
+         WHERE (\"posts\".\"publish_at\" < CURRENT_TIMESTAMP) \
          -- binds: [false]",
         debug_query(&query).to_string()
     );
@@ -86,7 +86,7 @@ fn examine_sql_from_publish_post() {
         visit_count: 0,
     };
     assert_eq!(
-        "UPDATE \"posts\" SET \"draft\" = $1 WHERE \"posts\".\"id\" = $2 \
+        "UPDATE \"posts\" SET \"draft\" = $1 WHERE (\"posts\".\"id\" = $2) \
          -- binds: [false, 1]",
         debug_query(&diesel::update(&post).set(posts::draft.eq(false))).to_string()
     );

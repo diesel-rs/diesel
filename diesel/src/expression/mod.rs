@@ -82,7 +82,7 @@ pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
 use crate::backend::Backend;
 use crate::dsl::AsExprOf;
-use crate::sql_types::{HasSqlType, SingleValue, SqlType};
+use crate::sql_types::{HasSqlType, IntoNotNullable, SingleValue, SqlType};
 
 /// Represents a typed fragment of SQL.
 ///
@@ -208,14 +208,101 @@ pub use diesel_derives::AsExpression;
 
 impl<T, ST> AsExpression<ST> for T
 where
-    T: Expression<SqlType = ST>,
-    ST: SqlType + TypedExpressionType,
+    ST: SqlType + IntoNotNullable + TypedExpressionType,
+    ST::NotNullable: SingleValue,
+    self::as_expression_impl::ExpressionImplHelper<T, ST::IsNull, <T::SqlType as SqlType>::IsNull>:
+        self::as_expression_impl::AsExpressionHelper<ST>,
+    T: Expression,
+    T::SqlType: SqlType,
 {
-    type Expression = Self;
+    type Expression = <self::as_expression_impl::ExpressionImplHelper<
+        T,
+        ST::IsNull,
+        <T::SqlType as SqlType>::IsNull,
+    > as self::as_expression_impl::AsExpressionHelper<ST>>::Expression;
 
-    fn as_expression(self) -> Self {
-        self
+    fn as_expression(self) -> Self::Expression {
+        use self::as_expression_impl::AsExpressionHelper;
+
+        let t = self::as_expression_impl::ExpressionImplHelper::<
+            _,
+            ST::IsNull,
+            <T::SqlType as SqlType>::IsNull,
+        >(self, std::marker::PhantomData);
+        t.as_expression()
     }
+}
+
+mod as_expression_impl {
+    use super::*;
+    use crate::sql_types::is_nullable;
+
+    #[allow(missing_debug_implementations)]
+    pub struct ExpressionImplHelper<T, IsNullExpr, IsNullAsExpr>(
+        pub T,
+        pub std::marker::PhantomData<(IsNullExpr, IsNullAsExpr)>,
+    );
+
+    // We could use `AsExpression` here instead of defining a new trait in theory
+    // in practice we hit https://github.com/rust-lang/rust/issues/77446 then
+    // when defining a custom type in a third party crate
+    pub trait AsExpressionHelper<ST: TypedExpressionType> {
+        type Expression: Expression<SqlType = ST>;
+
+        fn as_expression(self) -> Self::Expression;
+    }
+
+    // This impl is for accepting a not nullable expression in a position where
+    // a not nullable expression is expected
+    impl<T, ST> AsExpressionHelper<ST>
+        for ExpressionImplHelper<T, is_nullable::NotNull, is_nullable::NotNull>
+    where
+        ST: SqlType<IsNull = is_nullable::NotNull> + TypedExpressionType,
+        T: Expression<SqlType = ST>,
+    {
+        type Expression = T;
+
+        fn as_expression(self) -> Self::Expression {
+            self.0
+        }
+    }
+
+    // This impl is for accepting a not nullable expression in a position where
+    // a nullable expression is expected
+    impl<T, ST> AsExpressionHelper<ST>
+        for ExpressionImplHelper<T, is_nullable::IsNullable, is_nullable::NotNull>
+    where
+        ST: SqlType<IsNull = is_nullable::IsNullable> + IntoNotNullable + TypedExpressionType,
+        ST::NotNullable: TypedExpressionType + SqlType,
+        T: Expression<SqlType = ST::NotNullable>,
+        super::nullable::Nullable<T>: Expression<SqlType = ST>,
+    {
+        type Expression = super::nullable::Nullable<T>;
+
+        fn as_expression(self) -> Self::Expression {
+            super::nullable::Nullable::new(self.0)
+        }
+    }
+
+    // This impl is for accepting a nullable expression in a position where
+    // a nullable expression is expected
+    impl<T, ST> AsExpressionHelper<ST>
+        for ExpressionImplHelper<T, is_nullable::IsNullable, is_nullable::IsNullable>
+    where
+        ST: SqlType<IsNull = is_nullable::IsNullable> + TypedExpressionType,
+        T: Expression<SqlType = ST>,
+    {
+        type Expression = T;
+
+        fn as_expression(self) -> Self::Expression {
+            self.0
+        }
+    }
+
+    // impl<T, ST> AsExpressionHelper<ST> for
+    //     ExpressionImplHelper<T, is_nullable::NotNull, is_nullable::IsNullable>
+    // is missing because we don't want to accept a nullable expression in possition where
+    // where a not nullable expression is expected
 }
 
 /// Converts a type to its representation for use in Diesel's query builder.
@@ -266,7 +353,7 @@ pub trait IntoSql {
         &'a Self: AsExpression<T>,
         T: SqlType + TypedExpressionType,
     {
-        self.as_expression()
+        <&'a Self as AsExpression<T>>::as_expression(self)
     }
 }
 

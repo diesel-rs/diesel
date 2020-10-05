@@ -11,6 +11,7 @@ use std::marker::PhantomData;
 
 use super::returning_clause::*;
 use crate::backend::Backend;
+use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
 use crate::insertable::*;
@@ -508,6 +509,13 @@ impl<T, Table> UndecoratedInsertRecord<Table> for Vec<T> where [T]: UndecoratedI
 impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Eq<Lhs, Rhs> where Lhs: Column {}
 
 impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Eq<Lhs, Rhs>> where
+    Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>
+{
+}
+
+impl<Lhs, Rhs> UndecoratedInsertRecord<Lhs::Table> for Grouped<Eq<Lhs, Rhs>> where Lhs: Column {}
+
+impl<Lhs, Rhs, Tab> UndecoratedInsertRecord<Tab> for Option<Grouped<Eq<Lhs, Rhs>>> where
     Eq<Lhs, Rhs>: UndecoratedInsertRecord<Tab>
 {
 }

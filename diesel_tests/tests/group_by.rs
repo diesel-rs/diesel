@@ -11,7 +11,7 @@ fn group_by_generates_group_by_sql() {
         .select(users::name)
         .filter(users::hair_color.is_null());
     let mut expected_sql = "SELECT `users`.`name` FROM `users` \
-                            WHERE `users`.`hair_color` IS NULL \
+                            WHERE (`users`.`hair_color` IS NULL) \
                             GROUP BY `users`.`name` \
                             -- binds: []"
         .to_string();
@@ -33,7 +33,7 @@ fn group_by_mixed_aggregate_column_and_aggregate_function() {
         .select((max(users::id), users::name))
         .filter(users::hair_color.is_null());
     let mut expected_sql = "SELECT max(`users`.`id`), `users`.`name` FROM `users` \
-                            WHERE `users`.`hair_color` IS NULL \
+                            WHERE (`users`.`hair_color` IS NULL) \
                             GROUP BY `users`.`name` \
                             -- binds: []"
         .to_string();
@@ -58,7 +58,7 @@ fn boxed_queries_have_group_by_method() {
         .select(users::name)
         .filter(users::hair_color.is_null());
     let mut expected_sql = "SELECT `users`.`name` FROM `users` \
-                            WHERE `users`.`hair_color` IS NULL \
+                            WHERE (`users`.`hair_color` IS NULL) \
                             GROUP BY `users`.`name` \
                             -- binds: []"
         .to_string();

@@ -1,5 +1,6 @@
 use super::*;
 use crate::backend::Backend;
+use crate::expression::grouped::Grouped;
 use crate::expression::operators::{And, Or};
 use crate::expression::*;
 use crate::result::QueryResult;
@@ -88,10 +89,10 @@ where
     Predicate: Expression,
     Predicate::SqlType: BoolOrNullableBool,
 {
-    type Output = WhereClause<And<Expr, Predicate>>;
+    type Output = WhereClause<Grouped<And<Expr, Predicate>>>;
 
     fn and(self, predicate: Predicate) -> Self::Output {
-        WhereClause(And::new(self.0, predicate))
+        WhereClause(Grouped(And::new(self.0, predicate)))
     }
 }
 
@@ -102,10 +103,10 @@ where
     Predicate: Expression,
     Predicate::SqlType: BoolOrNullableBool,
 {
-    type Output = WhereClause<Or<Expr, Predicate>>;
+    type Output = WhereClause<Grouped<Or<Expr, Predicate>>>;
 
     fn or(self, predicate: Predicate) -> Self::Output {
-        WhereClause(Or::new(self.0, predicate))
+        WhereClause(Grouped(Or::new(self.0, predicate)))
     }
 }
 
@@ -165,7 +166,7 @@ where
         use self::BoxedWhereClause::Where;
 
         match self {
-            Where(where_clause) => Where(Box::new(And::new(where_clause, predicate))),
+            Where(where_clause) => Where(Box::new(Grouped(And::new(where_clause, predicate)))),
             BoxedWhereClause::None => Where(Box::new(predicate)),
         }
     }
@@ -180,7 +181,6 @@ where
 
     fn or(self, predicate: Predicate) -> Self::Output {
         use self::BoxedWhereClause::Where;
-        use crate::expression::grouped::Grouped;
 
         match self {
             Where(where_clause) => Where(Box::new(Grouped(Or::new(where_clause, predicate)))),

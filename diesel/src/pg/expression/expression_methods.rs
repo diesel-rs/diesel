@@ -1,7 +1,9 @@
 //! PostgreSQL specific expression methods
 
 use super::operators::*;
-use crate::expression::{AsExpression, Expression, TypedExpressionType};
+use crate::dsl;
+use crate::expression::grouped::Grouped;
+use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
 use crate::sql_types::{Array, Nullable, Range, SqlType, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
@@ -25,12 +27,12 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), not_distinct.first(&connection));
     /// # }
     /// ```
-    fn is_not_distinct_from<T>(self, other: T) -> IsNotDistinctFrom<Self, T::Expression>
+    fn is_not_distinct_from<T>(self, other: T) -> dsl::IsNotDistinctFrom<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        IsNotDistinctFrom::new(self, other.as_expression())
+        Grouped(IsNotDistinctFrom::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL `IS DISTINCT FROM` expression.
@@ -52,12 +54,12 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), not_distinct.first(&connection));
     /// # }
     /// ```
-    fn is_distinct_from<T>(self, other: T) -> IsDistinctFrom<Self, T::Expression>
+    fn is_distinct_from<T>(self, other: T) -> dsl::IsDistinctFrom<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        IsDistinctFrom::new(self, other.as_expression())
+        Grouped(IsDistinctFrom::new(self, other.as_expression()))
     }
 }
 
@@ -124,11 +126,11 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn at_time_zone<T>(self, timezone: T) -> AtTimeZone<Self, T::Expression>
+    fn at_time_zone<T>(self, timezone: T) -> dsl::AtTimeZone<Self, T>
     where
         T: AsExpression<VarChar>,
     {
-        AtTimeZone::new(self, timezone.as_expression())
+        Grouped(AtTimeZone::new(self, timezone.as_expression()))
     }
 }
 
@@ -187,12 +189,12 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn overlaps_with<T>(self, other: T) -> OverlapsWith<Self, T::Expression>
+    fn overlaps_with<T>(self, other: T) -> dsl::OverlapsWith<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        OverlapsWith::new(self, other.as_expression())
+        Grouped(OverlapsWith::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL `@>` expression.
@@ -237,12 +239,12 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn contains<T>(self, other: T) -> Contains<Self, T::Expression>
+    fn contains<T>(self, other: T) -> dsl::ArrayContains<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        Contains::new(self, other.as_expression())
+        Grouped(Contains::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL `<@` expression.
@@ -288,12 +290,12 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn is_contained_by<T>(self, other: T) -> IsContainedBy<Self, T::Expression>
+    fn is_contained_by<T>(self, other: T) -> dsl::IsContainedBy<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        IsContainedBy::new(self, other.as_expression())
+        Grouped(IsContainedBy::new(self, other.as_expression()))
     }
 }
 
@@ -366,7 +368,7 @@ pub trait PgSortExpressionMethods: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn nulls_first(self) -> NullsFirst<Self> {
+    fn nulls_first(self) -> dsl::NullsFirst<Self> {
         NullsFirst::new(self)
     }
 
@@ -414,7 +416,7 @@ pub trait PgSortExpressionMethods: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn nulls_last(self) -> NullsLast<Self> {
+    fn nulls_last(self) -> dsl::NullsLast<Self> {
         NullsLast::new(self)
     }
 }
@@ -446,11 +448,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn ilike<T>(self, other: T) -> ILike<Self, T::Expression>
+    fn ilike<T>(self, other: T) -> dsl::ILike<Self, T>
     where
         T: AsExpression<Text>,
     {
-        ILike::new(self, other.as_expression())
+        Grouped(ILike::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL `NOT ILIKE` expression
@@ -475,11 +477,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn not_ilike<T>(self, other: T) -> NotILike<Self, T::Expression>
+    fn not_ilike<T>(self, other: T) -> dsl::NotILike<Self, T>
     where
         T: AsExpression<Text>,
     {
-        NotILike::new(self, other.as_expression())
+        Grouped(NotILike::new(self, other.as_expression()))
     }
 }
 
@@ -499,8 +501,27 @@ where
 {
 }
 
-impl<T, U> EscapeExpressionMethods for ILike<T, U> {}
-impl<T, U> EscapeExpressionMethods for NotILike<T, U> {}
+impl<T, U> EscapeExpressionMethods for Grouped<ILike<T, U>> {
+    type TextExpression = ILike<T, U>;
+
+    fn escape(self, character: char) -> dsl::Escape<Self> {
+        Grouped(crate::expression::operators::Escape::new(
+            self.0,
+            character.to_string().into_sql::<VarChar>(),
+        ))
+    }
+}
+
+impl<T, U> EscapeExpressionMethods for Grouped<NotILike<T, U>> {
+    type TextExpression = NotILike<T, U>;
+
+    fn escape(self, character: char) -> dsl::Escape<Self> {
+        Grouped(crate::expression::operators::Escape::new(
+            self.0,
+            character.to_string().into_sql::<VarChar>(),
+        ))
+    }
+}
 
 #[doc(hidden)]
 /// Marker trait used to extract the inner type
@@ -559,13 +580,13 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn contains<T>(self, other: T) -> Contains<Self, T::Expression>
+    fn contains<T>(self, other: T) -> dsl::RangeContains<Self, T>
     where
         Self::SqlType: RangeHelper,
         <Self::SqlType as RangeHelper>::Inner: SqlType + TypedExpressionType,
         T: AsExpression<<Self::SqlType as RangeHelper>::Inner>,
     {
-        Contains::new(self, other.as_expression())
+        Grouped(Contains::new(self, other.as_expression()))
     }
 }
 
