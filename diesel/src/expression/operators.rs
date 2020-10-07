@@ -302,7 +302,7 @@ macro_rules! infix_operator {
 
 #[macro_export(local_inner_macros)]
 #[deprecated(since = "2.0.0", note = "use `diesel::infix_operator!` instead")]
-#[cfg(feature = "with-deprecated")]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 macro_rules! diesel_infix_operator {
     ($($args:tt)*) => {
@@ -357,7 +357,7 @@ macro_rules! postfix_operator {
 
 #[macro_export(local_inner_macros)]
 #[deprecated(since = "2.0.0", note = "use `diesel::postfix_operator!` instead")]
-#[cfg(feature = "with-deprecated")]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 macro_rules! diesel_postfix_operator {
     ($($args:tt)*) => {
@@ -412,7 +412,7 @@ macro_rules! prefix_operator {
 
 #[macro_export(local_inner_macros)]
 #[deprecated(since = "2.0.0", note = "use `diesel::prefix_operator!` instead")]
-#[cfg(feature = "with-deprecated")]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 macro_rules! diesel_prefix_operator {
     ($($args:tt)*) => {

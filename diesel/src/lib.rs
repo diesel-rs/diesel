@@ -179,7 +179,7 @@ mod type_impls;
 mod util;
 
 #[doc(hidden)]
-#[cfg(feature = "with-deprecated")]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[deprecated(since = "2.0.0", note = "Use explicit macro imports instead")]
 pub use diesel_derives::*;
 
