@@ -120,7 +120,7 @@ Runs the `down.sql` and then the `up.sql` for the most recent migration.
 Prints table definitions for database schema.
 
 [pending-migrations]: https://docs.rs/diesel_migrations/*/diesel_migrations/fn.run_pending_migrations.html
-[rust-dotenv]: https://github.com/slapresta/rust-dotenv#examples
+[rust-dotenv]: https://github.com/dotenv-rs/dotenv#examples
 
 
 Bash completion
