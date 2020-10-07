@@ -439,6 +439,7 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "bigdecimal")]
     use bigdecimal::FromPrimitive;
 
     use super::MysqlValue;
