@@ -20,12 +20,12 @@ fn test_debug_output() {
     if cfg!(feature = "postgres") {
         assert_eq!(
             sql,
-            r#"UPDATE "users" SET "name" = $1 WHERE "users"."id" = $2 -- binds: ["new_name", 1]"#
+            r#"UPDATE "users" SET "name" = $1 WHERE ("users"."id" = $2) -- binds: ["new_name", 1]"#
         )
     } else {
         assert_eq!(
             sql,
-            r#"UPDATE `users` SET `name` = ? WHERE `users`.`id` = ? -- binds: ["new_name", 1]"#
+            r#"UPDATE `users` SET `name` = ? WHERE (`users`.`id` = ?) -- binds: ["new_name", 1]"#
         )
     }
 }
@@ -137,7 +137,7 @@ fn test_upsert() {
 
     assert_eq!(
         upsert_single_where_sql_display,
-        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE "users"."hair_color" = $5 DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, "black"]"#
+        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE ("users"."hair_color" = $5) DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, "black"]"#
     );
 
     let upsert_command_second_where = insert_into(users)
@@ -152,6 +152,6 @@ fn test_upsert() {
 
     assert_eq!(
         upsert_second_where_sql_display,
-        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE "users"."hair_color" = $5 AND "users"."name" = $6 DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, "black", "Sean"]"#
+        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE (("users"."hair_color" = $5) AND ("users"."name" = $6)) DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, "black", "Sean"]"#
     );
 }

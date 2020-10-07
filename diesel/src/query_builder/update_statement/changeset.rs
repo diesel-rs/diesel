@@ -1,4 +1,5 @@
 use crate::backend::Backend;
+use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::AppearsOnTable;
 use crate::query_builder::*;
@@ -45,6 +46,19 @@ where
             _column: self.left,
             expr: self.right,
         }
+    }
+}
+
+impl<Left, Right> AsChangeset for Grouped<Eq<Left, Right>>
+where
+    Eq<Left, Right>: AsChangeset,
+{
+    type Target = <Eq<Left, Right> as AsChangeset>::Target;
+
+    type Changeset = <Eq<Left, Right> as AsChangeset>::Changeset;
+
+    fn as_changeset(self) -> Self::Changeset {
+        self.0.as_changeset()
     }
 }
 

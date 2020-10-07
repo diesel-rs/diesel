@@ -421,7 +421,6 @@ macro_rules! diesel_prefix_operator {
 }
 
 infix_operator!(And, " AND ");
-infix_operator!(Between, " BETWEEN ");
 infix_operator!(Escape, " ESCAPE ");
 infix_operator!(Eq, " = ");
 infix_operator!(Gt, " > ");
@@ -429,9 +428,10 @@ infix_operator!(GtEq, " >= ");
 infix_operator!(Like, " LIKE ");
 infix_operator!(Lt, " < ");
 infix_operator!(LtEq, " <= ");
-infix_operator!(NotBetween, " NOT BETWEEN ");
 infix_operator!(NotEq, " != ");
 infix_operator!(NotLike, " NOT LIKE ");
+infix_operator!(Between, " BETWEEN ");
+infix_operator!(NotBetween, " NOT BETWEEN ");
 
 postfix_operator!(IsNull, " IS NULL");
 postfix_operator!(IsNotNull, " IS NOT NULL");
@@ -446,11 +446,16 @@ postfix_operator!(
     crate::expression::expression_types::NotSelectable
 );
 
-prefix_operator!(Not, "NOT ");
+prefix_operator!(
+    Not,
+    " NOT ",
+    crate::sql_types::Nullable<crate::sql_types::Bool>
+);
 
+use crate::backend::Backend;
 use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::insertable::{ColumnInsertValue, Insertable};
-use crate::query_builder::{QueryId, ValuesClause};
+use crate::query_builder::{QueryFragment, QueryId, ValuesClause};
 use crate::query_source::Column;
 use crate::sql_types::{
     is_nullable, AllAreNullable, Bool, DieselNumericOps, MaybeNullableType, SqlType,
@@ -504,11 +509,11 @@ where
 
 impl_selectable_expression!(Concat<L, R>);
 
-impl<L, R, DB> crate::query_builder::QueryFragment<DB> for Concat<L, R>
+impl<L, R, DB> QueryFragment<DB> for Concat<L, R>
 where
-    L: crate::query_builder::QueryFragment<DB>,
-    R: crate::query_builder::QueryFragment<DB>,
-    DB: crate::backend::Backend,
+    L: QueryFragment<DB>,
+    R: QueryFragment<DB>,
+    DB: Backend,
 {
     fn walk_ast(
         &self,

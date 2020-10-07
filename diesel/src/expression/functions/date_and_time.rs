@@ -1,7 +1,8 @@
 use crate::backend::Backend;
-use crate::expression::coerce::Coerce;
 use crate::expression::functions::sql_function;
-use crate::expression::{AsExpression, Expression, ValidGrouping};
+#[cfg(feature = "postgres")]
+use crate::expression::{coerce::Coerce, AsExpression};
+use crate::expression::{Expression, ValidGrouping};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::*;
@@ -46,14 +47,6 @@ sql_function! {
     fn date(expr: Timestamp) -> Date;
 }
 
-impl AsExpression<Nullable<Timestamp>> for now {
-    type Expression = Coerce<now, Nullable<Timestamp>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(self)
-    }
-}
-
 #[cfg(feature = "postgres")]
 impl AsExpression<Timestamptz> for now {
     type Expression = Coerce<now, Timestamptz>;
@@ -92,11 +85,3 @@ impl_selectable_expression!(today);
 
 operator_allowed!(today, Add, add);
 operator_allowed!(today, Sub, sub);
-
-impl AsExpression<Nullable<Date>> for today {
-    type Expression = Coerce<today, Nullable<Date>>;
-
-    fn as_expression(self) -> Self::Expression {
-        Coerce::new(self)
-    }
-}

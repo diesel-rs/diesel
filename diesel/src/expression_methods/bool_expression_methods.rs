@@ -1,7 +1,8 @@
+use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{And, Or};
-use crate::expression::{AsExpression, Expression, TypedExpressionType};
-use crate::sql_types::{BoolOrNullableBool, SqlType};
+use crate::expression::{AsExpression, Expression};
+use crate::sql_types::{BoolOrNullableBool, IntoNullable, SingleValue, SqlType};
 
 /// Methods present on boolean expressions
 pub trait BoolExpressionMethods: Expression + Sized {
@@ -36,14 +37,17 @@ pub trait BoolExpressionMethods: Expression + Sized {
     /// assert_eq!(expected, data);
     /// #     Ok(())
     /// # }
-    fn and<T, ST>(self, other: T) -> And<Self, T::Expression>
+    fn and<T>(self, other: T) -> dsl::And<Self, T>
     where
-        Self::SqlType: SqlType,
-        ST: SqlType + TypedExpressionType,
-        T: AsExpression<ST>,
+        Self::SqlType: SqlType + IntoNullable,
+        <Self::SqlType as IntoNullable>::Nullable: SingleValue,
+        T: AsExpression<<Self::SqlType as IntoNullable>::Nullable>,
         And<Self, T::Expression>: Expression,
     {
-        And::new(self, other.as_expression())
+        Grouped(And::new(
+            crate::expression::nullable::Nullable::new(self),
+            other.as_expression(),
+        ))
     }
 
     /// Creates a SQL `OR` expression
@@ -83,11 +87,11 @@ pub trait BoolExpressionMethods: Expression + Sized {
     /// assert_eq!(expected, data);
     /// #     Ok(())
     /// # }
-    fn or<T, ST>(self, other: T) -> Grouped<Or<Self, T::Expression>>
+    fn or<T>(self, other: T) -> dsl::Or<Self, T>
     where
-        Self::SqlType: SqlType,
-        ST: SqlType + TypedExpressionType,
-        T: AsExpression<ST>,
+        Self::SqlType: SqlType + IntoNullable,
+        <Self::SqlType as IntoNullable>::Nullable: SingleValue,
+        T: AsExpression<<Self::SqlType as IntoNullable>::Nullable>,
         Or<Self, T::Expression>: Expression,
     {
         Grouped(Or::new(self, other.as_expression()))

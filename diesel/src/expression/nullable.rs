@@ -56,3 +56,5 @@ where
     T: SelectableExpression<QS::InnerJoin>,
 {
 }
+
+impl<T> SelectableExpression<()> for Nullable<T> where Self: AppearsOnTable<()> {}

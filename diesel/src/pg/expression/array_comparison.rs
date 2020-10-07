@@ -141,7 +141,7 @@ where
     type Expression = <T as AsExpression<Array<ST>>>::Expression;
 
     fn as_expression(self) -> Self::Expression {
-        AsExpression::as_expression(self)
+        <T as AsExpression<Array<ST>>>::as_expression(self)
     }
 }
 

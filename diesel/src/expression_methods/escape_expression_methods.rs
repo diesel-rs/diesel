@@ -1,4 +1,5 @@
-use crate::dsl::AsExprOf;
+use crate::dsl;
+use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Escape, Like, NotLike};
 use crate::expression::IntoSql;
 use crate::sql_types::VarChar;
@@ -31,12 +32,31 @@ use crate::sql_types::VarChar;
 /// # }
 /// ```
 pub trait EscapeExpressionMethods: Sized {
+    #[doc(hidden)]
+    type TextExpression;
+
     /// See the trait documentation.
-    fn escape(self, character: char) -> Escape<Self, AsExprOf<String, VarChar>> {
-        Escape::new(self, character.to_string().into_sql::<VarChar>())
+    fn escape(self, _character: char) -> dsl::Escape<Self>;
+}
+
+impl<T, U> EscapeExpressionMethods for Grouped<Like<T, U>> {
+    type TextExpression = Like<T, U>;
+
+    fn escape(self, character: char) -> dsl::Escape<Self> {
+        Grouped(Escape::new(
+            self.0,
+            character.to_string().into_sql::<VarChar>(),
+        ))
     }
 }
 
-impl<T, U> EscapeExpressionMethods for Like<T, U> {}
+impl<T, U> EscapeExpressionMethods for Grouped<NotLike<T, U>> {
+    type TextExpression = NotLike<T, U>;
 
-impl<T, U> EscapeExpressionMethods for NotLike<T, U> {}
+    fn escape(self, character: char) -> dsl::Escape<Self> {
+        Grouped(Escape::new(
+            self.0,
+            character.to_string().into_sql::<VarChar>(),
+        ))
+    }
+}

@@ -108,7 +108,10 @@ where
     type InExpression = Many<T::Expression>;
 
     fn as_in_expression(self) -> Self::InExpression {
-        let expressions = self.into_iter().map(AsExpression::as_expression).collect();
+        let expressions = self
+            .into_iter()
+            .map(<T as AsExpression<ST>>::as_expression)
+            .collect();
         Many(expressions)
     }
 }
