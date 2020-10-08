@@ -311,6 +311,8 @@ impl<'a, ST, QS, DB, T> Insertable<T> for BoxedSelectStatement<'a, ST, QS, DB>
 where
     T: Table,
     Self: Query,
+    <T::AllColumns as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     type Values = InsertFromSelect<Self, T::AllColumns>;
 
@@ -323,6 +325,8 @@ impl<'a, 'b, ST, QS, DB, T> Insertable<T> for &'b BoxedSelectStatement<'a, ST, Q
 where
     T: Table,
     Self: Query,
+    <T::AllColumns as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     type Values = InsertFromSelect<Self, T::AllColumns>;
 
