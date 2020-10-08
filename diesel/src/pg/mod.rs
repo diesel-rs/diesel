@@ -23,7 +23,7 @@ pub use self::query_builder::PgQueryBuilder;
 pub use self::transaction::TransactionBuilder;
 pub use self::value::PgValue;
 #[doc(hidden)]
-#[cfg(feature = "with-deprecated")]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[deprecated(since = "2.0.0", note = "Use `diesel::upsert` instead")]
 pub use crate::upsert;
 
