@@ -1,5 +1,9 @@
 use crate::schema::*;
 use diesel::*;
+use diesel::{
+    expression::{bound::Bound, grouped::Grouped, operators},
+    sql_types::{Nullable, Text},
+};
 
 #[test]
 fn test_updating_single_column() {
@@ -300,4 +304,94 @@ fn upsert_with_sql_literal_for_target() {
         ("Tess".to_string(), Some("Blue".to_string())),
     ];
     assert_eq!(Ok(expected_data), data);
+}
+
+#[derive(AsChangeset)]
+#[table_name = "users"]
+struct UpdateUser {
+    name: Option<String>,
+    #[diesel(embed)]
+    hair_color: HairColor,
+}
+
+#[allow(dead_code)]
+enum HairColor {
+    Bald,
+    Black,
+    White,
+    Other(String),
+}
+
+impl AsChangeset for HairColor {
+    type Target = users::table;
+    type Changeset =
+        Option<Grouped<operators::Eq<users::hair_color, Bound<Nullable<Text>, String>>>>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        match self {
+            HairColor::Black => Some(users::hair_color.eq("Black".to_string())),
+            HairColor::White => Some(users::hair_color.eq("White".to_string())),
+            HairColor::Other(x) => Some(users::hair_color.eq(x)),
+            HairColor::Bald => None,
+        }
+    }
+}
+
+impl AsChangeset for &HairColor {
+    type Target = users::table;
+    type Changeset =
+        Option<Grouped<operators::Eq<users::hair_color, Bound<Nullable<Text>, String>>>>;
+
+    fn as_changeset(self) -> Self::Changeset {
+        match self {
+            HairColor::Black => Some(users::hair_color.eq("Black".to_string())),
+            HairColor::White => Some(users::hair_color.eq("White".to_string())),
+            HairColor::Other(x) => Some(users::hair_color.eq(x.clone())),
+            HairColor::Bald => None,
+        }
+    }
+}
+
+#[test]
+fn update_user_with_embed() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let expected_user = User {
+        id: 1,
+        name: "Sean".to_string(),
+        hair_color: Some("Black".to_string()),
+    };
+
+    let updated_user: User = diesel::update(users::table)
+        .filter(users::id.eq(1))
+        .set(UpdateUser {
+            name: None,
+            hair_color: HairColor::Black,
+        })
+        .get_result(&connection)
+        .unwrap();
+
+    assert_eq!(expected_user, updated_user);
+}
+
+#[test]
+fn update_user_with_embed_that_sets_null() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let expected_user = User {
+        id: 1,
+        name: "Sean".to_string(),
+        hair_color: None,
+    };
+
+    let updated_user: User = diesel::update(users::table)
+        .filter(users::id.eq(1))
+        .set(UpdateUser {
+            name: None,
+            hair_color: HairColor::Bald,
+        })
+        .get_result(&connection)
+        .unwrap();
+
+    assert_eq!(expected_user, updated_user);
 }
