@@ -1,9 +1,7 @@
 use crate::schema::*;
 use diesel::*;
-use diesel::{
-    expression::{bound::Bound, grouped::Grouped, operators},
-    sql_types::{Nullable, Text},
-};
+use diesel::expression::{bound::Bound, grouped::Grouped, operators};
+use diesel::sql_types::{Nullable, Text};
 
 #[test]
 fn test_updating_single_column() {
