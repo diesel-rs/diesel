@@ -42,6 +42,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * It is now possible to inspect the type of values returned from the database
   in such a way to support constructing a dynamic value depending on this type.
 
+* Added a `without-deprecated` feature that unconditionally disables deprecated items.
+  Use this feature flag to verify that none of your dependencies is setting 
+  the `with-deprecated` flag internally.
+
 
 ### Removed
 

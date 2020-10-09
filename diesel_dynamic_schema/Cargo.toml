@@ -13,7 +13,7 @@ path = "../diesel/"
 default-features = false
 
 [dev-dependencies]
-dotenv = "0.14"
+dotenv = "0.15"
 
 [[example]]
 name = "querying_basic_schemas"

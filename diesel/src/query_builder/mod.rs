@@ -91,6 +91,10 @@ pub trait QueryBuilder<DB: Backend> {
     /// constructed.
     fn push_bind_param(&mut self);
 
+    /// Increases the internal counter for bind parameters without adding the
+    /// bind parameter itself to the query
+    fn push_bind_param_value_only(&mut self) {}
+
     /// Returns the constructed SQL query.
     fn finish(self) -> String;
 }

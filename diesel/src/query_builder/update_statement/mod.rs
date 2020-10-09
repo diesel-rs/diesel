@@ -6,7 +6,9 @@ pub use self::target::{IntoUpdateTarget, UpdateTarget};
 
 use crate::backend::Backend;
 use crate::dsl::{Filter, IntoBoxed};
-use crate::expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
+use crate::expression::{
+    is_aggregate, AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping,
+};
 use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
@@ -222,6 +224,9 @@ impl<T, U, V> AsQuery for UpdateStatement<T, U, V, NoReturningClause>
 where
     T: Table,
     UpdateStatement<T, U, V, ReturningClause<T::AllColumns>>: Query,
+    T::AllColumns: ValidGrouping<()>,
+    <T::AllColumns as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     type SqlType = <Self::Query as Query>::SqlType;
     type Query = UpdateStatement<T, U, V, ReturningClause<T::AllColumns>>;
@@ -234,7 +239,8 @@ where
 impl<T, U, V, Ret> Query for UpdateStatement<T, U, V, ReturningClause<Ret>>
 where
     T: Table,
-    Ret: Expression + SelectableExpression<T> + NonAggregate,
+    Ret: Expression + SelectableExpression<T> + ValidGrouping<()>,
+    Ret::IsAggregate: MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     type SqlType = Ret::SqlType;
 }

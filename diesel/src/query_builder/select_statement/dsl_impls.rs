@@ -420,6 +420,8 @@ impl<F, S, D, W, O, LOf, G, LC, Tab> Insertable<Tab> for SelectStatement<F, S, D
 where
     Tab: Table,
     Self: Query,
+    <Tab::AllColumns as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     type Values = InsertFromSelect<Self, Tab::AllColumns>;
 
@@ -433,6 +435,8 @@ impl<'a, F, S, D, W, O, LOf, G, LC, Tab> Insertable<Tab>
 where
     Tab: Table,
     Self: Query,
+    <Tab::AllColumns as ValidGrouping<()>>::IsAggregate:
+        MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
     type Values = InsertFromSelect<Self, Tab::AllColumns>;
 
