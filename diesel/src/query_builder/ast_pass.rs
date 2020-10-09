@@ -219,6 +219,9 @@ where
         use self::AstPassInternals::*;
         match self.internals {
             CollectBinds { .. } | DebugBinds(..) => self.push_bind_param(bind)?,
+            ToSql(ref mut out) => {
+                out.push_bind_param_value_only();
+            }
             _ => {}
         }
         Ok(())
