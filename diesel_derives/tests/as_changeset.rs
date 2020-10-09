@@ -1,6 +1,6 @@
-use diesel::*;
 use diesel::expression::{bound::Bound, grouped::Grouped, operators};
 use diesel::sql_types::{Nullable, Text};
+use diesel::*;
 use helpers::*;
 use schema::*;
 
