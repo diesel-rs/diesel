@@ -24,6 +24,7 @@ mod infer_schema_internals;
 mod print_schema;
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 mod query_helper;
+mod validators;
 
 use chrono::*;
 use clap::{ArgMatches, Shell};
@@ -75,24 +76,30 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
 
-            // We can unwrap since the argument is validated from the cli module.
-            // The value is required and is a number greater than 0 or "all".
-            let number = args.value_of("REVERT_NUMBER").unwrap();
+            if args.is_present("REVERT_ALL") {
+                call_with_conn!(
+                    database_url,
+                    migrations::revert_all_migrations_in_directory(&dir)
+                )?;
+            } else {
+                // TODO : remove this logic when upgrading to clap 3.0.
+                // We handle the default_value here instead of doing it
+                // in the cli. This is because arguments with default
+                // values conflict even if not used.
+                // See https://github.com/clap-rs/clap/issues/1605
+                let number = match args.value_of("REVERT_NUMBER") {
+                    None => "1",
+                    Some(number) => number,
+                };
 
-            // Test if we have an integer or "all"
-            match number.parse::<i64>() {
-                Ok(number) => {
-                    call_with_conn!(
-                        database_url,
-                        migrations::revert_latest_migrations_in_directory(&dir, number)
-                    )?;
-                }
-                _ => {
-                    call_with_conn!(
-                        database_url,
-                        migrations::revert_all_migrations_in_directory(&dir)
-                    )?;
-                }
+                call_with_conn!(
+                    database_url,
+                    migrations::revert_latest_migrations_in_directory(
+                        &dir,
+                        // We can unwrap since the argument is validated from the cli module.
+                        number.parse::<u64>().unwrap()
+                    )
+                )?;
             }
 
             regenerate_schema_if_file_specified(matches)?;

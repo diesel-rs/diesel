@@ -207,31 +207,24 @@ pub fn revert_all_migrations_in_directory<Conn>(
 where
     Conn: MigrationConnection,
 {
-    let number = migrations_in_directory(path)?.len() as i64;
+    let number = migrations_in_directory(path)?.len() as u64;
 
     revert_latest_migrations_in_directory(conn, path, number)
 }
 
-// TODO : see if we need a function named revert_latest_migrations
-// to call this one.
 pub fn revert_latest_migrations_in_directory<Conn>(
     conn: &Conn,
     path: &Path,
-    number: i64,
+    number: u64,
 ) -> Result<Vec<String>, RunMigrationsError>
 where
     Conn: MigrationConnection,
 {
     setup_database(conn)?;
 
-    let latest_migration_versions = match conn.latest_run_migration_versions(number) {
-        Ok(migration_versions) => migration_versions,
-        Err(_) => {
-            return Err(RunMigrationsError::MigrationError(
-                MigrationError::NoMigrationRun,
-            ))
-        }
-    };
+    let latest_migration_versions = conn
+        .latest_run_migration_versions(number)
+        .map_err(|_| RunMigrationsError::MigrationError(MigrationError::NoMigrationRun))?;
 
     if latest_migration_versions.is_empty() {
         return Err(RunMigrationsError::MigrationError(
@@ -240,10 +233,7 @@ where
     }
 
     for migration_version in &latest_migration_versions {
-        // TODO see how to handle the errors... even if these errors
-        // are displayed on stdout.
-        revert_migration_with_version(conn, path, &migration_version, &mut stdout())
-            .unwrap_or_else(|_| ());
+        revert_migration_with_version(conn, path, &migration_version, &mut stdout())?;
     }
 
     Ok(latest_migration_versions)

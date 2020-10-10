@@ -1,3 +1,4 @@
+use crate::validators::num::*;
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
 
 pub fn build_cli() -> App<'static, 'static> {
@@ -20,20 +21,30 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(SubCommand::with_name("run").about("Runs all pending migrations"))
         .subcommand(
             SubCommand::with_name("revert")
-                .about("Reverts the latest run migration")
+                .about("Reverts the specified migrations")
+                .arg(
+                    Arg::with_name("REVERT_ALL")
+                        .long("all")
+                        .short("a")
+                        .help("Reverts previously run migration files.")
+                        .takes_value(false)
+                        .conflicts_with("REVERT_NUMBER"),
+                )
                 .arg(
                     Arg::with_name("REVERT_NUMBER")
                         .long("number")
                         .short("n")
-                        .help("Reverts the last migration files")
+                        .help("Reverts the last `n` migration files")
                         .long_help(
                             "When this option is specified the last `n` migration files \
                              will be reverted. By default revert the last one.",
                         )
+                        // TODO : when upgrading to clap 3.0 add default_value("1").
+                        // Then update code in main.rs for the revert subcommand.
+                        // See https://github.com/clap-rs/clap/issues/1605
                         .takes_value(true)
-                        .required(true)
-                        .default_value("1")
-                        .validator(migration_revert_number_validator),
+                        .validator(is_positive_int)
+                        .conflicts_with("REVERT_ALL"),
                 ),
         )
         .subcommand(
@@ -233,20 +244,4 @@ fn migration_dir_arg<'a, 'b>() -> Arg<'a, 'b> {
         )
         .takes_value(true)
         .global(true)
-}
-
-fn migration_revert_number_validator(val: String) -> Result<(), String> {
-    if val == "all" {
-        return Ok(());
-    }
-
-    let number = val.parse::<i64>().map_err(|_| {
-        "Cannot parse <REVERT_NUMBER>. The input must be an integer or 'all'.".to_string()
-    })?;
-
-    if number < 1 {
-        return Err("<REVERT_NUMBER> must be at least equal to 1.".to_string());
-    }
-
-    Ok(())
 }

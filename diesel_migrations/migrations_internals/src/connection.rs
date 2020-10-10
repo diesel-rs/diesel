@@ -19,7 +19,7 @@ use super::schema::__diesel_schema_migrations::dsl::*;
 pub trait MigrationConnection: diesel::migration::MigrationConnection {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>>;
     fn latest_run_migration_version(&self) -> QueryResult<Option<String>>;
-    fn latest_run_migration_versions(&self, number: i64) -> QueryResult<Vec<String>>;
+    fn latest_run_migration_versions(&self, number: u64) -> QueryResult<Vec<String>>;
     fn insert_new_migration(&self, version: &str) -> QueryResult<()>;
 }
 
@@ -54,11 +54,11 @@ where
         __diesel_schema_migrations.select(max(version)).first(self)
     }
 
-    fn latest_run_migration_versions(&self, number: i64) -> QueryResult<Vec<String>> {
+    fn latest_run_migration_versions(&self, number: u64) -> QueryResult<Vec<String>> {
         __diesel_schema_migrations
             .select(version)
             .order(version.desc())
-            .limit(number)
+            .limit(number as i64)
             .load(self)
     }
 
