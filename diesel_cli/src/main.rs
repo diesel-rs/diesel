@@ -352,9 +352,11 @@ fn search_for_directory_containing_file(path: &Path, file: &str) -> DatabaseResu
     }
 }
 
-/// If g
-/// Reverts the most recent migrations, and then runs it again, all in a
-/// transaction. If either part fails, the transaction is not committed.
+/// Reverts all the migrations, and then runs them again, if the `--all`
+/// argument is used. Otherwise it only redoes a specific number of migrations
+/// if the `--number` argument is used.
+/// Migrations are performed in a transaction. If either part fails,
+/// the transaction is not committed.
 fn redo_migrations<Conn>(conn: &Conn, migrations_dir: &Path, args: &ArgMatches)
 where
     Conn: MigrationConnection + Any,
