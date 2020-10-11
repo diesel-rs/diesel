@@ -236,7 +236,7 @@ fn migration_revert_all_runs_the_migrations_down() {
 
 #[test]
 fn migration_revert_with_zero_should_not_revert_any_migration() {
-    let p = project("migration_revert_with_zero_should_not_revert_any_migration")
+    let p = project("migration_revert_with_zero_should_not_revert")
         .folder("migrations")
         .build();
     let db = database(&p.database_url());
