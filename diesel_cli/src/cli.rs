@@ -56,12 +56,31 @@ pub fn build_cli() -> App<'static, 'static> {
                 .arg(
                     Arg::with_name("REDO_ALL")
                         .long("all")
+                        .short("a")
                         .help("Reverts and re-runs all migrations.")
                         .long_help(
                             "When this option is specified all migrations \
                              will be reverted and re-runs. Useful for testing \
                              that your migrations can be reverted and applied.",
-                        ),
+                        )
+                        .takes_value(false)
+                        .conflicts_with("REDO_NUMBER"),
+                )
+                .arg(
+                    Arg::with_name("REDO_NUMBER")
+                        .long("number")
+                        .short("n")
+                        .help("Redo the last `n` migration files")
+                        .long_help(
+                            "When this option is specified the last `n` migration files \
+                             will be reverted and re-runs. By default redo the last migration.",
+                        )
+                        // TODO : when upgrading to clap 3.0 add default_value("1").
+                        // Then update code in main.rs for the revert subcommand.
+                        // See https://github.com/clap-rs/clap/issues/1605
+                        .takes_value(true)
+                        .validator(is_positive_int)
+                        .conflicts_with("REDO_ALL"),
                 ),
         )
         .subcommand(

@@ -392,7 +392,10 @@ fn revert_migration<Conn: Connection>(
     output: &mut dyn Write,
 ) -> Result<(), RunMigrationsError> {
     conn.transaction(|| {
-        writeln!(output, "Rolling back migration {}", name(&migration))?;
+        if migration.version() != "00000000000000" {
+            writeln!(output, "Rolling back migration {}", name(&migration))?;
+        }
+
         if let Err(e) = migration.revert(conn) {
             writeln!(
                 output,

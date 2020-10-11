@@ -104,10 +104,11 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
 
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("redo", Some(_)) => {
+        ("redo", Some(args)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            call_with_conn!(database_url, redo_latest_migration(&dir));
+
+            call_with_conn!(database_url, redo_migrations(&dir, args));
             regenerate_schema_if_file_specified(matches)?;
         }
         ("list", Some(_)) => {
@@ -351,27 +352,52 @@ fn search_for_directory_containing_file(path: &Path, file: &str) -> DatabaseResu
     }
 }
 
-/// Reverts the most recent migration, and then runs it again, all in a
+/// If g
+/// Reverts the most recent migrations, and then runs it again, all in a
 /// transaction. If either part fails, the transaction is not committed.
-fn redo_latest_migration<Conn>(conn: &Conn, migrations_dir: &Path)
+fn redo_migrations<Conn>(conn: &Conn, migrations_dir: &Path, args: &ArgMatches)
 where
     Conn: MigrationConnection + Any,
 {
-    let migration_inner = || {
-        let reverted_version =
-            migrations::revert_latest_migration_in_directory(conn, migrations_dir)?;
-        migrations::run_migration_with_version(
-            conn,
-            migrations_dir,
-            &reverted_version,
-            &mut stdout(),
-        )
+    let migrations_inner = || -> Result<(), diesel::migration::RunMigrationsError> {
+        let reverted_versions = if args.is_present("REDO_ALL") {
+            migrations::revert_all_migrations_in_directory(conn, migrations_dir)?
+        } else {
+            // TODO : remove this logic when upgrading to clap 3.0.
+            // We handle the default_value here instead of doing it
+            // in the cli. This is because arguments with default
+            // values conflict even if not used.
+            // See https://github.com/clap-rs/clap/issues/1605
+            let number = match args.value_of("REDO_NUMBER") {
+                None => "1",
+                Some(number) => number,
+            };
+
+            migrations::revert_latest_migrations_in_directory(
+                conn,
+                migrations_dir,
+                // We can unwrap since the argument is validated from the cli module.
+                number.parse::<u64>().unwrap(),
+            )?
+        };
+
+        for reverted_version in reverted_versions {
+            migrations::run_migration_with_version(
+                conn,
+                migrations_dir,
+                &reverted_version,
+                &mut stdout(),
+            )?;
+        }
+
+        Ok(())
     };
+
     if should_redo_migration_in_transaction(conn) {
-        conn.transaction(migration_inner)
+        conn.transaction(migrations_inner)
             .unwrap_or_else(handle_error);
     } else {
-        migration_inner().unwrap_or_else(handle_error);
+        migrations_inner().unwrap_or_else(handle_error);
     }
 }
 

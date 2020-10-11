@@ -220,19 +220,6 @@ fn migration_revert_all_runs_the_migrations_down() {
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
-    #[cfg(feature = "postgres")]
-    assert!(
-        result.stdout()
-            == "Rolling back migration 2017-09-12-210424_create_bills\n\
-                Rolling back migration 2017-09-03-210424_create_contracts\n\
-                Rolling back migration 2017-08-31-210424_create_customers\n\
-                Rolling back migration 00000000000000_diesel_initial_setup\n",
-        "Unexpected stdout : {}",
-        result.stdout()
-    );
-
-    // MySQL and SQLite databases don't call the default migration 00000000000000_diesel_initial_setup.
-    #[cfg(feature = "mysql,sqlite")]
     assert!(
         result.stdout()
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
@@ -335,8 +322,6 @@ fn migration_revert_with_more_than_max_should_revert_all() {
     assert!(db.table_exists("contracts"));
     assert!(db.table_exists("bills"));
 
-    // Reverts all migrations. The migrations `contracts`, `bills`, `customers` and
-    // `00000000000000_diesel_initial_setup` should be reverted.
     let result = p
         .command("migration")
         .arg("revert")
@@ -346,19 +331,6 @@ fn migration_revert_with_more_than_max_should_revert_all() {
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
-    #[cfg(feature = "postgres")]
-    assert!(
-        result.stdout()
-            == "Rolling back migration 2017-09-12-210424_create_bills\n\
-                Rolling back migration 2017-09-03-210424_create_contracts\n\
-                Rolling back migration 2017-08-31-210424_create_customers\n\
-                Rolling back migration 00000000000000_diesel_initial_setup\n",
-        "Unexpected stdout : {}",
-        result.stdout()
-    );
-
-    // MySQL and SQLite databases don't call the default migration 00000000000000_diesel_initial_setup.
-    #[cfg(feature = "mysql,sqlite")]
     assert!(
         result.stdout()
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
