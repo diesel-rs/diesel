@@ -61,12 +61,7 @@ fn migration_redo_runs_the_last_two_migrations_down_and_up() {
 
     // Redo the last two migration files. The `contracts` and `bills` tables should be re-runs.
     // The `customers` table shouldn't be redo.
-    let result = p
-        .command("migration")
-        .arg("redo")
-        .arg("-n")
-        .arg("2")
-        .run();
+    let result = p.command("migration").arg("redo").arg("-n").arg("2").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
@@ -389,12 +384,7 @@ fn migration_redo_with_zero_should_not_revert_any_migration() {
     assert!(db.table_exists("customers"));
 
     // Should not revert any migration.
-    let result = p
-        .command("migration")
-        .arg("redo")
-        .arg("-n")
-        .arg("0")
-        .run();
+    let result = p.command("migration").arg("redo").arg("-n").arg("0").run();
 
     assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout() == "");
