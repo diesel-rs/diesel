@@ -533,7 +533,7 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn not_similar_to<T>(self, other: T) -> dsl::SimilarTo<Self, T>
+    fn not_similar_to<T>(self, other: T) -> dsl::NotSimilarTo<Self, T>
     where
         T: AsExpression<Text>,
     {
