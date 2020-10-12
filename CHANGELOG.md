@@ -28,7 +28,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added support for SQLite's `UPSERT`.
   You can use this feature above SQLite version 3.24.0.
 
-
 * Added ability to create custom aggregate functions in SQLite.
 
 * Multiple aggregate expressions can now appear together in the same select
@@ -46,6 +45,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   Use this feature flag to verify that none of your dependencies is setting 
   the `with-deprecated` flag internally.
 
+* Added support for PostgreSQL's `SIMILAR TO` and `NOT SIMILAR TO`.
 
 ### Removed
 

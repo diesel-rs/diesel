@@ -483,6 +483,62 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     {
         Grouped(NotILike::new(self, other.as_expression()))
     }
+
+    /// Creates a PostgreSQL `SIMILAR TO` expression
+    ///
+    /// # Example
+    /// ```
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let starts_with_s = animals
+    ///     .select(species)
+    ///     .filter(name.similar_to("s%").or(species.similar_to("s%")))
+    ///     .get_results::<String>(&connection)?;
+    /// assert_eq!(vec!["spider"], starts_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn similar_to<T>(self, other: T) -> dsl::SimilarTo<Self, T>
+    where
+        T: AsExpression<Text>,
+    {
+        Grouped(SimilarTo::new(self, other.as_expression()))
+    }
+
+    /// Creates a PostgreSQL `NOT SIMILAR TO` expression
+    ///
+    /// # Example
+    /// ```
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let doesnt_start_with_s = animals
+    ///     .select(species)
+    ///     .filter(name.not_similar_to("s%").and(species.not_similar_to("s%")))
+    ///     .get_results::<String>(&connection)?;
+    /// assert_eq!(vec!["dog"], doesnt_start_with_s);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn not_similar_to<T>(self, other: T) -> dsl::NotSimilarTo<Self, T>
+    where
+        T: AsExpression<Text>,
+    {
+        Grouped(NotSimilarTo::new(self, other.as_expression()))
+    }
 }
 
 #[doc(hidden)]
@@ -514,6 +570,28 @@ impl<T, U> EscapeExpressionMethods for Grouped<ILike<T, U>> {
 
 impl<T, U> EscapeExpressionMethods for Grouped<NotILike<T, U>> {
     type TextExpression = NotILike<T, U>;
+
+    fn escape(self, character: char) -> dsl::Escape<Self> {
+        Grouped(crate::expression::operators::Escape::new(
+            self.0,
+            character.to_string().into_sql::<VarChar>(),
+        ))
+    }
+}
+
+impl<T, U> EscapeExpressionMethods for Grouped<SimilarTo<T, U>> {
+    type TextExpression = SimilarTo<T, U>;
+
+    fn escape(self, character: char) -> dsl::Escape<Self> {
+        Grouped(crate::expression::operators::Escape::new(
+            self.0,
+            character.to_string().into_sql::<VarChar>(),
+        ))
+    }
+}
+
+impl<T, U> EscapeExpressionMethods for Grouped<NotSimilarTo<T, U>> {
+    type TextExpression = NotSimilarTo<T, U>;
 
     fn escape(self, character: char) -> dsl::Escape<Self> {
         Grouped(crate::expression::operators::Escape::new(
