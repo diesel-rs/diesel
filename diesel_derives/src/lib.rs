@@ -863,6 +863,25 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # }
 /// ```
 ///
+/// # SQL Functions without Arguments
+///
+/// A common example is ordering a query using the `RANDOM()` sql function,
+/// which can be implemented using `sql_function!` like this:
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::*;
+/// #
+/// # table! { crates { id -> Integer, name -> VarChar, } }
+/// #
+/// sql_function!(fn random() -> Text);
+///
+/// # fn main() {
+/// # use self::crates::dsl::*;
+/// crates.order(random());
+/// # }
+/// ```
+///
 /// # Use with SQLite
 ///
 /// On most backends, the implementation of the function is defined in a
