@@ -505,7 +505,7 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn similar_to<T>(selfm other: T) -> dsl::SimilarTo<Self, T>
+    fn similar_to<T>(self, other: T) -> dsl::SimilarTo<Self, T>
     where
         T: AsExpression<Text>,
     {
@@ -533,7 +533,7 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn similar_to<T>(selfm other: T) -> dsl::SimilarTo<Self, T>
+    fn similar_to<T>(self, other: T) -> dsl::SimilarTo<Self, T>
     where
         T: AsExpression<Text>,
     {
