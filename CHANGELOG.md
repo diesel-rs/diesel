@@ -47,9 +47,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for PostgreSQL's `SIMILAR TO` and `NOT SIMILAR TO`.
 
-* Added support for the `ESCAPE` clause to PostgreSQL's `ILIKE`, `NOT ILIKE`,
-  `SIMILAR TO` and `NOT SIMILAR TO`.
-
 ### Removed
 
 * All previously deprecated items have been removed.
