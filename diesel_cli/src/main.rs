@@ -96,8 +96,7 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
                     database_url,
                     migrations::revert_latest_migrations_in_directory(
                         &dir,
-                        // We can unwrap since the argument is validated from the cli module.
-                        number.parse::<u64>().unwrap()
+                        number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected.")
                     )
                 )?;
             }
@@ -378,8 +377,7 @@ where
             migrations::revert_latest_migrations_in_directory(
                 conn,
                 migrations_dir,
-                // We can unwrap since the argument is validated from the cli module.
-                number.parse::<u64>().unwrap(),
+                number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected."),
             )?
         };
 
