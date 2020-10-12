@@ -8,11 +8,12 @@ pub type ILike<Lhs, Rhs> = Grouped<super::operators::ILike<Lhs, AsExprOf<Rhs, Va
 /// The return type of `lhs.not_ilike(rhs)`
 pub type NotILike<Lhs, Rhs> = Grouped<super::operators::NotILike<Lhs, AsExprOf<Rhs, VarChar>>>;
 
-/// The return type of `lhs.ilike(rhs)`
+/// The return type of `lhs.similar_to(rhs)`
 pub type SimilarTo<Lhs, Rhs> = Grouped<super::operators::SimilarTo<Lhs, AsExprOf<Rhs, VarChar>>>;
 
-/// The return type of `lhs.not_ilike(rhs)`
-pub type NotSimilarTo<Lhs, Rhs> = Grouped<super::operators::NotSimilarTo<Lhs, AsExprOf<Rhs, VarChar>>>;
+/// The return type of `lhs.not_similar_to(rhs)`
+pub type NotSimilarTo<Lhs, Rhs> =
+    Grouped<super::operators::NotSimilarTo<Lhs, AsExprOf<Rhs, VarChar>>>;
 
 /// The return type of `lhs.is_not_distinct_from(rhs)`
 pub type IsNotDistinctFrom<Lhs, Rhs> =
