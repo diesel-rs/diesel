@@ -533,7 +533,7 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn similar_to<T>(self, other: T) -> dsl::SimilarTo<Self, T>
+    fn not_similar_to<T>(self, other: T) -> dsl::SimilarTo<Self, T>
     where
         T: AsExpression<Text>,
     {
@@ -570,6 +570,28 @@ impl<T, U> EscapeExpressionMethods for Grouped<ILike<T, U>> {
 
 impl<T, U> EscapeExpressionMethods for Grouped<NotILike<T, U>> {
     type TextExpression = NotILike<T, U>;
+
+    fn escape(self, character: char) -> dsl::Escape<Self> {
+        Grouped(crate::expression::operators::Escape::new(
+            self.0,
+            character.to_string().into_sql::<VarChar>(),
+        ))
+    }
+}
+
+impl<T, U> EscapeExpressionMethods for Grouped<SimilarTo<T, U>> {
+    type TextExpression = SimilarTo<T, U>;
+
+    fn escape(self, character: char) -> dsl::Escape<Self> {
+        Grouped(crate::expression::operators::Escape::new(
+            self.0,
+            character.to_string().into_sql::<VarChar>(),
+        ))
+    }
+}
+
+impl<T, U> EscapeExpressionMethods for Grouped<NotSimilarTo<T, U>> {
+    type TextExpression = NotSimilarTo<T, U>;
 
     fn escape(self, character: char) -> dsl::Escape<Self> {
         Grouped(crate::expression::operators::Escape::new(
