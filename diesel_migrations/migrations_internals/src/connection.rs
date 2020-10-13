@@ -1,7 +1,7 @@
 use diesel::deserialize::FromSql;
 use diesel::expression::bound::Bound;
 use diesel::expression::QueryMetadata;
-use diesel::helper_types::{max, Limit, Select};
+use diesel::helper_types::{max, Desc, Limit, Order, Select};
 use diesel::insertable::ColumnInsertValue;
 use diesel::prelude::*;
 use diesel::query_builder::{InsertStatement, QueryFragment, ValuesClause};
@@ -19,6 +19,7 @@ use super::schema::__diesel_schema_migrations::dsl::*;
 pub trait MigrationConnection: diesel::migration::MigrationConnection {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>>;
     fn latest_run_migration_version(&self) -> QueryResult<Option<String>>;
+    fn latest_run_migration_versions(&self, number: u64) -> QueryResult<Vec<String>>;
     fn insert_new_migration(&self, version: &str) -> QueryResult<()>;
 }
 
@@ -38,6 +39,8 @@ where
     Select<__diesel_schema_migrations, version>: LoadQuery<T, String>,
     Limit<Select<__diesel_schema_migrations, max<version>>>: QueryFragment<T::Backend>,
     T::Backend: QueryMetadata<Nullable<VarChar>>,
+    Order<Limit<Select<__diesel_schema_migrations, version>>, Desc<version>>:
+        QueryFragment<T::Backend>,
 {
     fn previously_run_migration_versions(&self) -> QueryResult<HashSet<String>> {
         __diesel_schema_migrations
@@ -49,6 +52,14 @@ where
     fn latest_run_migration_version(&self) -> QueryResult<Option<String>> {
         use diesel::dsl::max;
         __diesel_schema_migrations.select(max(version)).first(self)
+    }
+
+    fn latest_run_migration_versions(&self, number: u64) -> QueryResult<Vec<String>> {
+        __diesel_schema_migrations
+            .select(version)
+            .order(version.desc())
+            .limit(number as i64)
+            .load(self)
     }
 
     fn insert_new_migration(&self, ver: &str) -> QueryResult<()> {

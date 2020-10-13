@@ -200,6 +200,45 @@ where
     Ok(pending)
 }
 
+pub fn revert_all_migrations_in_directory<Conn>(
+    conn: &Conn,
+    path: &Path,
+) -> Result<Vec<String>, RunMigrationsError>
+where
+    Conn: MigrationConnection,
+{
+    let number = migrations_in_directory(path)?.len() as u64;
+
+    revert_latest_migrations_in_directory(conn, path, number)
+}
+
+pub fn revert_latest_migrations_in_directory<Conn>(
+    conn: &Conn,
+    path: &Path,
+    number: u64,
+) -> Result<Vec<String>, RunMigrationsError>
+where
+    Conn: MigrationConnection,
+{
+    setup_database(conn)?;
+
+    let latest_migration_versions = conn
+        .latest_run_migration_versions(number)
+        .map_err(|_| RunMigrationsError::MigrationError(MigrationError::NoMigrationRun))?;
+
+    if latest_migration_versions.is_empty() {
+        return Err(RunMigrationsError::MigrationError(
+            MigrationError::NoMigrationRun,
+        ));
+    }
+
+    for migration_version in &latest_migration_versions {
+        revert_migration_with_version(conn, path, &migration_version, &mut stdout())?;
+    }
+
+    Ok(latest_migration_versions)
+}
+
 /// Reverts the last migration that was run. Returns the version that was reverted. Returns an
 /// `Err` if no migrations have ever been run.
 ///
@@ -353,7 +392,10 @@ fn revert_migration<Conn: Connection>(
     output: &mut dyn Write,
 ) -> Result<(), RunMigrationsError> {
     conn.transaction(|| {
-        writeln!(output, "Rolling back migration {}", name(&migration))?;
+        if migration.version() != "00000000000000" {
+            writeln!(output, "Rolling back migration {}", name(&migration))?;
+        }
+
         if let Err(e) = migration.revert(conn) {
             writeln!(
                 output,
