@@ -141,6 +141,11 @@ jobs:
           cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
+
+      - name: Set variables for sqlite (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        shell: bash
+        run: |
           echo "C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_PATH
           echo "SQLITE3_LIB_DIR=C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_ENV
           echo "SQLITE_DATABASE_URL=C:\test.db" >> $GITHUB_ENV
@@ -162,10 +167,15 @@ jobs:
         run: |
             choco install mysql
             "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
-            echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
-            echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
-            echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
-            echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
+
+      - name: Set variables for mysql (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'mysql'
+        shell: bash
+        run: |
+          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
