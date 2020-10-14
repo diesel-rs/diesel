@@ -35,13 +35,13 @@ jobs:
         shell: bash
         if: matrix.backend == 'mysql'
         run: |
-          echo '::set-env name=RUST_TEST_THREADS::1'
+          echo "RUST_TEST_THREADS=1" >> $GITHUB_ENV
 
       - name: Set environment variables
         shell: bash
         if: matrix.rust == 'nightly'
         run: |
-          echo '::set-env name=RUSTFLAGS::--cap-lints=warn'
+          echo "RUSTFLAGS=--cap-lints=warn" >> $GITHUB_ENV
 
       - name: Install postgres (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'postgres'
@@ -52,8 +52,8 @@ jobs:
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart && sleep 3
-          echo '::set-env name=PG_DATABASE_URL::postgres://postgres:postgres@localhost/'
-          echo '::set-env name=PG_EXAMPLE_DATABASE_URL::postgres://postgres:postgres@localhost/diesel_example'
+          echo "PG_DATABASE_URL=postgres://postgres:postgres@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:postgres@localhost/diesel_example" >> $GITHUB_ENV
 
       - name: Install sqlite (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'sqlite'
@@ -89,7 +89,7 @@ jobs:
               --libexecdir=/usr/lib/x86_64-linux-gnu/sqlite3
           sudo make
           sudo make install
-          echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+          echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'mysql'
@@ -98,9 +98,9 @@ jobs:
           sudo apt-get -y install mysql-server libmysqlclient-dev
           sudo /etc/init.d/mysql start
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
-          echo '::set-env name=MYSQL_DATABASE_URL::mysql://root:root@localhost/diesel_test'
-          echo '::set-env name=MYSQL_EXAMPLE_DATABASE_URL::mysql://root:root@localhost/diesel_example'
-          echo '::set-env name=MYSQL_UNIT_TEST_DATABASE_URL::mysql://root:root@localhost/diesel_unit_test'
+          echo "MYSQL_DATABASE_URL=mysql://root:root@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@localhost/diesel_unit_test" >> $GITHUB_ENV
 
       - name: Install postgres (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'postgres'
@@ -108,15 +108,15 @@ jobs:
           /usr/local/opt/postgres/bin/pg_ctl -D /usr/local/var/postgres start
           sleep 3
           /usr/local/opt/postgres/bin/createuser -s postgres
-          echo '::set-env name=PG_DATABASE_URL::postgres://postgres@localhost/'
-          echo '::set-env name=PG_EXAMPLE_DATABASE_URL::postgres://postgres@localhost/diesel_example'
+          echo "PG_DATABASE_URL=postgres://postgres@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example" >> $GITHUB_ENV
 
       - name: Install sqlite (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'sqlite'
         run: |
           brew update
           brew install sqlite
-          echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+          echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mysql'
@@ -128,10 +128,10 @@ jobs:
           sleep 2
           macos_mysql_version="$(ls /usr/local/Cellar/mysql)"
           /usr/local/Cellar/mysql/${macos_mysql_version}/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
-          echo '::set-env name=MYSQL_DATABASE_URL::mysql://root@localhost/diesel_test'
-          echo '::set-env name=MYSQL_EXAMPLE_DATABASE_URL::mysql://root@localhost/diesel_example'
-          echo '::set-env name=MYSQL_UNIT_TEST_DATABASE_URL::mysql://root@localhost/diesel_unit_test'
-          echo '::set-env name=MYSQLCLIENT_LIB_DIR::/usr/local/Cellar/mysql/${macos_mysql_version}/lib'
+          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mysql/${macos_mysql_version}/lib" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -141,20 +141,25 @@ jobs:
           cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
           call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
-          echo ::add-path::C:\ProgramData\chocolatey\lib\SQLite\tools
-          echo ::set-env name=SQLITE3_LIB_DIR::C:\ProgramData\chocolatey\lib\SQLite\tools
-          echo ::set-env name=SQLITE_DATABASE_URL::C:\test.db
+
+      - name: Set variables for sqlite (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        shell: bash
+        run: |
+          echo "C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_PATH
+          echo "SQLITE3_LIB_DIR=C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_ENV
+          echo "SQLITE_DATABASE_URL=C:\test.db" >> $GITHUB_ENV
 
       - name: Install postgres (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'postgres'
         shell: bash
         run: |
           choco install postgresql12 --force --params '/Password:root'
-          echo '::add-path::C:\Program Files\PostgreSQL\12\bin'
-          echo '::add-path::C:\Program Files\PostgreSQL\12\lib'
-          echo '::set-env name=PQ_LIB_DIR::C:\Program Files\PostgreSQL\12\lib'
-          echo '::set-env name=PG_DATABASE_URL::postgres://postgres:root@localhost/'
-          echo '::set-env name=PG_EXAMPLE_DATABASE_URL::postgres://postgres:root@localhost/diesel_example'
+          echo "C:\Program Files\PostgreSQL\12\bin" >> $GITHUB_PATH
+          echo "C:\Program Files\PostgreSQL\12\lib" >> $GITHUB_PATH
+          echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\12\lib" >> $GITHUB_ENV
+          echo "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $GITHUB_ENV
 
       - name: Install mysql (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
@@ -162,10 +167,15 @@ jobs:
         run: |
             choco install mysql
             "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
-            echo ::set-env name=MYSQL_DATABASE_URL::mysql://root@localhost/diesel_test
-            echo ::set-env name=MYSQL_EXAMPLE_DATABASE_URL::mysql://root@localhost/diesel_example
-            echo ::set-env name=MYSQL_UNIT_TEST_DATABASE_URL::mysql://root@localhost/diesel_unit_test
-            echo ::set-env name=MYSQLCLIENT_LIB_DIR::C:\tools\mysql\current\lib
+
+      - name: Set variables for mysql (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'mysql'
+        shell: bash
+        run: |
+          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
@@ -357,7 +367,7 @@ jobs:
 
       - name: Setup environment
         run: |
-          echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+          echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Test diesel-cli
         uses: actions-rs/cargo@v1
