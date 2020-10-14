@@ -213,6 +213,10 @@ Key points:
   NonAggregate` no longer implies `(OtherType, T): NonAggregate`.
   - With `feature = "unstable"`, `(T, OtherType): NonAggregate` is still implied.
 
+- In diesel v1.4 sql functions without arguments used the `no_arg_sql_function!` macro,
+  which has since been deprecated. The new `sql_function!` macro supports functions without
+  arguments.
+
 [2-0-migration]: FIXME write a migration guide
 
 ## [1.4.5] - 2020-06-09
