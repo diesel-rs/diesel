@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use super::*;
 use crate::backend::Backend;
 use crate::expression::grouped::Grouped;

@@ -13,7 +13,8 @@ mod ast_pass;
 pub mod bind_collector;
 mod debug_query;
 mod delete_statement;
-mod distinct_clause;
+#[doc(hidden)]
+pub mod distinct_clause;
 #[doc(hidden)]
 pub mod functions;
 mod group_by_clause;
@@ -31,7 +32,8 @@ mod select_statement;
 mod sql_query;
 mod update_statement;
 pub(crate) mod upsert;
-mod where_clause;
+#[doc(hidden)]
+pub mod where_clause;
 
 pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;

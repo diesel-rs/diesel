@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;
