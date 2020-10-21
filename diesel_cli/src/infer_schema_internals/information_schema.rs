@@ -512,7 +512,7 @@ mod tests {
         );
         assert_eq!(
             Ok(vec![array_col]),
-            get_table_data(&connection, &table_2, ColumnSorting::OrdinalPosition)
+            get_table_data(&connection, &table_2, &ColumnSorting::OrdinalPosition)
         );
     }
 
