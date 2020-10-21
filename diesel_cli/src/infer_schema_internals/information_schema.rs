@@ -170,11 +170,9 @@ where
     let query = columns
         .select((column_name, type_column, __is_nullable))
         .filter(table_name.eq(&table.sql_name))
-        .filter(table_schema.eq(schema_name))
-        .order(ordinal_position)
-        .load(conn);
+        .filter(table_schema.eq(schema_name));
     match column_sorting {
-        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn)
+        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
     }
 }
 
@@ -507,7 +505,10 @@ mod tests {
             Ok(vec![id, text_col, not_null]),
             get_table_data(&connection, &table_1, ColumnSorting::OrdinalPosition)
         );
-        assert_eq!(Ok(vec![array_col]), get_table_data(&connection, &table_2, ColumnSorting::OrdinalPosition));
+        assert_eq!(
+            Ok(vec![array_col]),
+            get_table_data(&connection, &table_2, ColumnSorting::OrdinalPosition)
+        );
     }
 
     #[test]
