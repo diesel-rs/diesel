@@ -51,8 +51,12 @@ pub trait ExpressionMethods: Expression + Sized {
 
     /// Creates a SQL `IN` statement.
     ///
-    /// Queries using this method will not be
-    /// placed in the prepared statement cache. On PostgreSQL, you should use
+    /// Queries using this method will not typically be
+    /// placed in the prepared statement cache. However,
+    /// in cases when a subquery is passed to the method, that
+    /// query will use the cache (assuming the subquery
+    /// itself is safe to cache).
+    /// On PostgreSQL, you should use
     /// `eq(any())` instead. This method may change in the future to
     /// automatically perform `= ANY` on PostgreSQL.
     ///
@@ -62,16 +66,25 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
-    /// #     use schema::users::dsl::*;
+    /// #     use schema::users;
+    /// #     use schema::posts;
     /// #     let connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
-    /// let data = users.select(id).filter(name.eq_any(vec!["Sean", "Jim"]));
+    /// let data = users::table.select(users::id).filter(users::name.eq_any(vec!["Sean", "Jim"]));
     /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
     ///
     /// // Calling `eq_any` with an empty array is the same as doing `WHERE 1=0`
-    /// let data = users.select(id).filter(name.eq_any(Vec::<String>::new()));
+    /// let data = users::table.select(users::id).filter(users::name.eq_any(Vec::<String>::new()));
     /// assert_eq!(Ok(vec![]), data.load::<i32>(&connection));
+    ///
+    /// // Calling `eq_any` with a subquery is the same as using
+    /// // `WHERE {column} IN {subquery}`.
+    ///
+    /// let subquery = users::table.filter(users::name.eq("Sean")).select(users::id).into_boxed();
+    /// let data = posts::table.select(posts::id).filter(posts::user_id.eq_any(subquery));
+    /// assert_eq!(Ok(vec![1, 2]), data.load::<i32>(&connection));
+    ///
     /// # }
     /// ```
     fn eq_any<T>(self, values: T) -> In<Self, T::InExpression>
