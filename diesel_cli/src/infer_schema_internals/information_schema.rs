@@ -527,10 +527,6 @@ mod tests {
             Ok(vec![array_col]),
             get_table_data(&connection, &table_2, &ColumnSorting::OrdinalPosition)
         );
-        assert_eq!(
-            Ok(vec![array_col]),
-            get_table_data(&connection, &table_2, &ColumnSorting::OrdinalPosition)
-        );
     }
 
     #[test]
