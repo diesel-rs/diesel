@@ -157,6 +157,23 @@ where
         >,
         columns::ordinal_position,
     >: QueryFragment<Conn::Backend>,
+    Order<
+        Filter<
+            Filter<
+                Select<
+                    columns::table,
+                    (
+                        columns::column_name,
+                        <Conn::Backend as UsesInformationSchema>::TypeColumn,
+                        columns::__is_nullable,
+                    ),
+                >,
+                Eq<columns::table_name, &'a String>,
+            >,
+            Eq<columns::table_schema, Cow<'a, String>>,
+        >,
+        columns::column_name,
+    >: QueryFragment<Conn::Backend>,
     Conn::Backend: QueryMetadata<(sql_types::Text, sql_types::Text, sql_types::Text)>,
 {
     use self::information_schema::columns::dsl::*;
