@@ -464,7 +464,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         match sorting {
             "ordinal_position" => config.column_sorting = ColumnSorting::OrdinalPosition,
             "name" => config.column_sorting = ColumnSorting::Name,
-            _ => unreachable!("Invalid column sorting mode: {}", sorting),
+            _ => return Err(format!("Invalid column sorting mode: {}", sorting).into()),
         }
     }
 
