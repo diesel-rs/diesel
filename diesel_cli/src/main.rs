@@ -460,6 +460,14 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         config.with_docs = true;
     }
 
+    if let Some(sorting) = matches.value_of("column-sorting") {
+        match sorting {
+            "ordinal_position" => config.column_sorting = ColumnSorting::OrdinalPosition,
+            "name" => config.column_sorting = ColumnSorting::Name,
+            _ => return Err(format!("Invalid column sorting mode: {}", sorting).into()),
+        }
+    }
+
     if let Some(path) = matches.value_of("patch-file") {
         config.patch_file = Some(PathBuf::from(path));
     }

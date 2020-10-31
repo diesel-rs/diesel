@@ -1,0 +1,5 @@
+CREATE TABLE abc (
+    a INTEGER PRIMARY KEY,
+    c BOOLEAN,
+    b VARCHAR NOT NULL
+);

@@ -127,9 +127,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Diesel's dsl now accept not nullable expressions in positions where nullable expressions 
   are expected, without needing to call `.nullable()` explicitly
 
-
 * CLI flags of `only-tables` and `except-tables` are now interpreted as regular expressions.
   Similary, `only_tabels` and `except_tables` in `diesel.toml` are treated as regular expressions.
+
+* Now you can sort column fields by name with the `column-sorting` option. 
+It can be set to either `ordinal_position` (default) or `name`.
+This ensures stable sorting even if columns are removed and re-added.
 
 ### Fixed
 

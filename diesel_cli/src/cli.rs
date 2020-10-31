@@ -199,6 +199,13 @@ pub fn build_cli() -> App<'static, 'static> {
                 .help("Render documentation comments for tables and columns"),
         )
         .arg(
+            Arg::with_name("column-sorting")
+                .long("column-sorting")
+                .help("Sort order for table columns")
+                .takes_value(true)
+                .possible_values(&["ordinal_position", "name"]),
+        )
+        .arg(
             Arg::with_name("patch-file")
                 .long("patch-file")
                 .takes_value(true)

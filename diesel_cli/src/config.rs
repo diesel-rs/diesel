@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 
 use super::find_project_root;
 use crate::print_schema;
+use crate::print_schema::ColumnSorting;
 
 #[derive(Deserialize, Default)]
 #[serde(deny_unknown_fields)]
@@ -58,6 +59,8 @@ pub struct PrintSchema {
     pub with_docs: bool,
     #[serde(default)]
     pub filter: print_schema::Filtering,
+    #[serde(default)]
+    pub column_sorting: ColumnSorting,
     #[serde(default)]
     pub schema: Option<String>,
     #[serde(default)]

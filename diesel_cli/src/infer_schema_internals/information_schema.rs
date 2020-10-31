@@ -16,6 +16,7 @@ use self::information_schema::{columns, key_column_usage, table_constraints, tab
 use super::data_structures::*;
 use super::inference;
 use super::table_data::TableName;
+use crate::print_schema::ColumnSorting;
 
 pub trait UsesInformationSchema: Backend {
     type TypeColumn: SelectableExpression<self::information_schema::columns::table, SqlType = sql_types::Text>
@@ -125,6 +126,7 @@ mod information_schema {
 pub fn get_table_data<'a, Conn>(
     conn: &Conn,
     table: &'a TableName,
+    column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>>
 where
     Conn: Connection,
@@ -155,6 +157,23 @@ where
         >,
         columns::ordinal_position,
     >: QueryFragment<Conn::Backend>,
+    Order<
+        Filter<
+            Filter<
+                Select<
+                    columns::table,
+                    (
+                        columns::column_name,
+                        <Conn::Backend as UsesInformationSchema>::TypeColumn,
+                        columns::__is_nullable,
+                    ),
+                >,
+                Eq<columns::table_name, &'a String>,
+            >,
+            Eq<columns::table_schema, Cow<'a, String>>,
+        >,
+        columns::column_name,
+    >: QueryFragment<Conn::Backend>,
     Conn::Backend: QueryMetadata<(sql_types::Text, sql_types::Text, sql_types::Text)>,
 {
     use self::information_schema::columns::dsl::*;
@@ -165,12 +184,14 @@ where
     };
 
     let type_column = Conn::Backend::type_column();
-    columns
+    let query = columns
         .select((column_name, type_column, __is_nullable))
         .filter(table_name.eq(&table.sql_name))
-        .filter(table_schema.eq(schema_name))
-        .order(ordinal_position)
-        .load(conn)
+        .filter(table_schema.eq(schema_name));
+    match column_sorting {
+        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
+        ColumnSorting::Name => query.order(column_name).load(conn),
+    }
 }
 
 pub fn get_primary_keys<'a, Conn>(conn: &Conn, table: &'a TableName) -> QueryResult<Vec<String>>
@@ -500,9 +521,12 @@ mod tests {
         let array_col = ColumnInformation::new("array_col", "_varchar", false);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
-            get_table_data(&connection, &table_1)
+            get_table_data(&connection, &table_1, &ColumnSorting::OrdinalPosition)
         );
-        assert_eq!(Ok(vec![array_col]), get_table_data(&connection, &table_2));
+        assert_eq!(
+            Ok(vec![array_col]),
+            get_table_data(&connection, &table_2, &ColumnSorting::OrdinalPosition)
+        );
     }
 
     #[test]

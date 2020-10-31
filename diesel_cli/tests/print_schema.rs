@@ -47,8 +47,16 @@ fn run_infer_schema_exclude_regex() {
 }
 
 #[test]
-fn run_infer_schema_order() {
-    test_print_schema("print_schema_order", vec!["--with-docs"]);
+fn run_infer_schema_table_order() {
+    test_print_schema("print_schema_table_order", vec!["--with-docs"]);
+}
+
+#[test]
+fn run_infer_schema_column_order() {
+    test_print_schema(
+        "print_schema_column_order",
+        vec!["--column-sorting", "name"],
+    );
 }
 
 #[test]
