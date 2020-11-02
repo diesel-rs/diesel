@@ -5,3 +5,7 @@ pub trait TupleAppend<T> {
 
     fn tuple_append(self, right: T) -> Self::Output;
 }
+
+pub trait TupleSize {
+    const SIZE: usize;
+}

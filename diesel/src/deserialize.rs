@@ -434,9 +434,9 @@ where
 
 impl<T, ST, DB> StaticallySizedRow<ST, DB> for T
 where
-    ST: SqlType + crate::type_impls::tuples::TupleSize,
+    ST: SqlType + crate::util::TupleSize,
     T: Queryable<ST, DB>,
     DB: Backend,
 {
-    const FIELD_COUNT: usize = <ST as crate::type_impls::tuples::TupleSize>::SIZE;
+    const FIELD_COUNT: usize = <ST as crate::util::TupleSize>::SIZE;
 }

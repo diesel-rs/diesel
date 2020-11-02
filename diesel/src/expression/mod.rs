@@ -444,6 +444,34 @@ impl<'a, T: ValidGrouping<GB> + ?Sized, GB> ValidGrouping<GB> for &'a T {
 #[doc(inline)]
 pub use diesel_derives::ValidGrouping;
 
+#[doc(hidden)]
+pub trait IsContainedInGroupBy<T> {
+    type Output;
+}
+
+#[doc(hidden)]
+#[allow(missing_debug_implementations, missing_copy_implementations)]
+pub mod is_contained_in_group_by {
+    pub struct Yes;
+    pub struct No;
+
+    pub trait IsAny<O> {
+        type Output;
+    }
+
+    impl<T> IsAny<T> for Yes {
+        type Output = Yes;
+    }
+
+    impl IsAny<Yes> for No {
+        type Output = Yes;
+    }
+
+    impl IsAny<No> for No {
+        type Output = No;
+    }
+}
+
 /// Can two `IsAggregate` types appear in the same expression?
 ///
 /// You should never implement this trait. It will eventually become a trait
