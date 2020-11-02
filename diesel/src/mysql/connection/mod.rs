@@ -12,6 +12,7 @@ use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
+use crate::query_dsl::load_dsl::CompatibleType;
 use crate::result::*;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -60,11 +61,12 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U, ST>(&self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        U: FromSqlRow<T::SqlType, Self::Backend>,
+        T::SqlType: CompatibleType<U, Self::Backend, SqlType = ST>,
+        U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         use crate::result::Error::DeserializationError;

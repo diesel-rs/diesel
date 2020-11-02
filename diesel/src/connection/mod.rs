@@ -9,6 +9,7 @@ use crate::backend::Backend;
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
+use crate::query_dsl::load_dsl::CompatibleType;
 use crate::result::*;
 
 #[doc(hidden)]
@@ -173,7 +174,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        T::SqlType: crate::query_dsl::load_dsl::CompatibleType<U, Self::Backend, SqlType = ST>,
+        T::SqlType: CompatibleType<U, Self::Backend, SqlType = ST>,
         U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>;
 

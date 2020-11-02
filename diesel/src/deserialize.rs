@@ -4,8 +4,6 @@ use std::error::Error;
 use std::result;
 
 use crate::backend::{self, Backend};
-//use crate::expression::select_by::SelectBy;
-//use crate::expression::{helper_types::SqlTypeOf, Expression, Selectable};
 use crate::row::{NamedRow, Row};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
 
@@ -399,18 +397,6 @@ where
         Ok(T::build(row))
     }
 }
-
-// impl<Q, DB, E> FromSqlRow<SelectBy<Q>, DB> for Q
-// where
-//     E: Expression,
-//     DB: Backend,
-//     Q: Selectable<Expression = E>,
-//     Q: FromSqlRow<SqlTypeOf<E>, DB>,
-// {
-//     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
-//         <Self as FromSqlRow<SqlTypeOf<E>, DB>>::build_from_row(row)
-//     }
-// }
 
 impl<T, ST, DB> FromStaticSqlRow<ST, DB> for T
 where

@@ -2,7 +2,7 @@ use super::RunQueryDsl;
 use crate::backend::Backend;
 use crate::connection::Connection;
 use crate::deserialize::FromSqlRow;
-use crate::expression::QueryMetadata;
+use crate::expression::{Expression, QueryMetadata, Selectable, select_by::SelectBy};
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 use crate::result::QueryResult;
 
@@ -66,25 +66,6 @@ where
         conn.load(self)
     }
 }
-
-use crate::expression::select_by::SelectBy;
-use crate::Expression;
-use crate::Selectable;
-
-// impl<Conn, T, U, E, ST> LoadQuery<Conn, U> for T
-// where
-//     Conn: Connection,
-//     T: AsQuery<SqlType = SelectBy<U>> + RunQueryDsl<Conn>,
-//     T::Query: QueryFragment<Conn::Backend> + QueryId,
-//     U: Selectable<Expression = E>,
-//     E: Expression<SqlType = ST>,
-//     U: FromSqlRow<ST, Conn::Backend>,
-//     Conn::Backend: QueryMetadata<ST>,
-// {
-//     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>> {
-//         conn.load(self)
-//     }
-// }
 
 /// The `execute` method
 ///
