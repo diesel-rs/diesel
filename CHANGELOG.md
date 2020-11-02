@@ -47,6 +47,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for PostgreSQL's `SIMILAR TO` and `NOT SIMILAR TO`.
 
+* Added `#[diesel(serialize_as)]` analogous to `#[diesel(deserialize_as)]`. This allows
+  customization of the serialization behaviour of `Insertable` structs.
+
 ### Removed
 
 * All previously deprecated items have been removed.

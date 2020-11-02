@@ -12,8 +12,8 @@ pub struct Field {
     pub name: FieldName,
     pub span: Span,
     pub sql_type: Option<syn::Type>,
+    pub flags: MetaItem,
     column_name_from_attribute: Option<syn::Ident>,
-    flags: MetaItem,
 }
 
 impl Field {
@@ -67,6 +67,15 @@ impl Field {
 
     pub fn has_flag(&self, flag: &str) -> bool {
         self.flags.has_flag(flag)
+    }
+
+    pub fn ty_for_serialize(&self) -> Result<Option<syn::Type>, Diagnostic> {
+        if let Some(meta) = self.flags.nested_item("serialize_as")? {
+            let ty = meta.ty_value()?;
+            Ok(Some(ty))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn ty_for_deserialize(&self) -> Result<Cow<syn::Type>, Diagnostic> {
