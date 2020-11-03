@@ -1,7 +1,8 @@
 use super::*;
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName)]
 #[belongs_to(User)]
+#[table_name = "posts"]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,

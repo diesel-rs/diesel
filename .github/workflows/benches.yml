@@ -1,0 +1,53 @@
+on:
+  pull_request:
+    types:
+      - labeled
+
+name: Benchmarks
+
+jobs:
+  benchmarks:
+    if: github.event.label.name == 'run-benchmarks'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        backend: ["postgres", "sqlite", "mysql"]
+    steps:
+      - name: Checkout sources
+        if: steps.bench.outputs.triggered == 'true'
+        uses: actions/checkout@v2
+
+      - name: Install postgres (Linux)
+        if: matrix.backend == 'postgres'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql
+          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
+          sudo service postgresql restart && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart && sleep 3
+          echo '::set-env name=PG_DATABASE_URL::postgres://postgres:postgres@localhost/'
+
+      - name: Install sqlite (Linux)
+        if: matrix.backend == 'sqlite'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+          echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+
+        
+      - name: Install mysql (Linux)
+        if: matrix.backend == 'mysql'
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install mysql-server libmysqlclient-dev
+          sudo /etc/init.d/mysql start
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+          echo '::set-env name=MYSQL_DATABASE_URL::mysql://root:root@localhost/diesel_test'
+
+      - name: Run benches
+        uses: jasonwilliams/criterion-compare-action@move_to_actions
+        with:
+          cwd: "diesel_bench"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
