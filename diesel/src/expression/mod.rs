@@ -596,6 +596,10 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// This type has all of the additional traits you would want when using
 /// `Box<Expression>` as a single trait object.
 ///
+/// By default `BoxableExpression` is not usable in queries that have a custom
+/// group by clause. Setting the generic parameters `GB` and `IsAggregate` allows
+/// to configure the expression to be used with a specific group by clause.
+///
 /// This is typically used as the return type of a function.
 /// For cases where you want to dynamically construct a query,
 /// [boxing the query] is usually more ergonomic.
@@ -603,6 +607,8 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// [boxing the query]: ../query_dsl/trait.QueryDsl.html#method.into_boxed
 ///
 /// # Examples
+///
+/// ## Usage without group by clause
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
@@ -643,30 +649,103 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// #     Ok(())
 /// # }
 /// ```
-pub trait BoxableExpression<QS, DB>
+///
+/// ## Allow usage with group by clause
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+///
+/// # use schema::users;
+/// use diesel::sql_types::Text;
+/// use diesel::dsl;
+/// use diesel::expression::ValidGrouping;
+///
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let conn = establish_connection();
+/// enum NameOrConst {
+///     Name,
+///     Const(String),
+/// }
+///
+/// # /*
+/// type DB = diesel::sqlite::Sqlite;
+/// # */
+///
+/// fn selection<GB>(
+///     selection: NameOrConst
+/// ) -> Box<
+///     dyn BoxableExpression<
+///         users::table,
+///         DB,
+///         GB,
+///         <users::name as ValidGrouping<GB>>::IsAggregate,
+///         SqlType = Text
+///     >
+/// >
+/// where
+///     users::name: BoxableExpression<
+///             users::table,
+///             DB,
+///             GB,
+///             <users::name as ValidGrouping<GB>>::IsAggregate,
+///             SqlType = Text
+///         > + ValidGrouping<GB>,
+/// {
+///     match selection {
+///         NameOrConst::Name => Box::new(users::name),
+///         NameOrConst::Const(name) => Box::new(name.into_sql::<Text>()),
+///     }
+/// }
+///
+/// let user_one = users::table
+///     .select(selection(NameOrConst::Name))
+///     .first::<String>(&conn)?;
+/// assert_eq!(String::from("Sean"), user_one);
+///
+/// let with_name = users::table
+///     .group_by(users::name)
+///     .select(selection(NameOrConst::Const("Jane Doe".into())))
+///     .first::<String>(&conn)?;
+/// assert_eq!(String::from("Jane Doe"), with_name);
+/// #     Ok(())
+/// # }
+/// ```
+pub trait BoxableExpression<QS, DB, GB = (), IsAggregate = is_aggregate::No>
 where
     DB: Backend,
     Self: Expression,
     Self: SelectableExpression<QS>,
-    Self: ValidGrouping<(), IsAggregate = is_aggregate::No>,
     Self: QueryFragment<DB>,
 {
 }
 
-impl<QS, T, DB> BoxableExpression<QS, DB> for T
+impl<QS, T, DB, GB, IsAggregate> BoxableExpression<QS, DB, GB, IsAggregate> for T
 where
     DB: Backend,
     T: Expression,
     T: SelectableExpression<QS>,
-    T: ValidGrouping<(), IsAggregate = is_aggregate::No>,
+    T: ValidGrouping<GB>,
     T: QueryFragment<DB>,
+    T::IsAggregate: MixedAggregates<IsAggregate, Output = IsAggregate>,
 {
 }
 
-impl<'a, QS, ST, DB> QueryId for dyn BoxableExpression<QS, DB, SqlType = ST> + 'a {
+impl<'a, QS, ST, DB, GB, IsAggregate> QueryId
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a
+{
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<'a, QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
+    for dyn BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a
+{
+    type IsAggregate = IsAggregate;
 }
 
 /// Converts a tuple of values into a tuple of Diesel expressions.
