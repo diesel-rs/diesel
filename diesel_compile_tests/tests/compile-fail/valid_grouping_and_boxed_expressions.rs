@@ -88,7 +88,7 @@ fn main() {
     users::table
         .group_by(users::name)
         .select(maybe_grouped(true))
-        //~^ ERROR ValidGrouping
+        //~^ ERROR IsContainedInGroupBy
         .load::<i32>(&conn);
 
     // aggregated expressions work to
