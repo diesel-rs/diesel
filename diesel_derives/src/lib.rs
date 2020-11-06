@@ -237,6 +237,18 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// example, an enum that maps to a label and a value column). Add
 /// `#[diesel(embed)]` to any such fields.
 ///
+/// To provide custom serialization behavior for a field, you can use
+/// `#[diesel(serialize_as = "SomeType")]`. If this attribute is present, Diesel
+/// will call `.into` on the corresponding field and serialize the instance of `SomeType`,
+/// rather than the actual field on your struct. This can be used to add custom behavior for a
+/// single field, or use types that are otherwise unsupported by Diesel.
+/// Using `#[diesel(serialize_as)]` is **incompatible** with `#[diesel(embed)]`.
+/// Normally, Diesel produces two implementations of the `Insertable` trait for your
+/// struct using this derive: one for an owned version and one for a borrowed version.
+/// Using `#[diesel(serialize_as)]` implies a conversion using `.into` which consumes the underlying value.
+/// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer insert borrowed
+/// versions of your struct.
+///
 /// # Attributes
 ///
 /// ## Optional type attributes
@@ -253,6 +265,77 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// as column name
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 /// to single database field, but is a struct that implements `Insertable`
+/// * `#[diesel(serialize_as = "SomeType")]`, instead of serializing the actual
+/// field type, Diesel will convert the field into `SomeType` using `.into` and
+/// serialize that instead. By default this derive will serialize directly using
+/// the actual field type.
+///
+/// # Examples
+///
+/// If we want to customize the serialization during insert, we can use `#[diesel(serialize_as)]`.
+///
+/// ```rust
+/// # extern crate diesel;
+/// # extern crate dotenv;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// # use diesel::{prelude::*, serialize::{ToSql, Output, self}, deserialize::{FromSqlRow}, expression::AsExpression, sql_types, backend::Backend};
+/// # use schema::users;
+/// # use std::io::Write;
+/// #
+/// #[derive(Debug, FromSqlRow, AsExpression)]
+/// #[sql_type = "sql_types::Text"]
+/// struct UppercaseString(pub String);
+///
+/// impl Into<UppercaseString> for String {
+///     fn into(self) -> UppercaseString {
+///         UppercaseString(self.to_uppercase())
+///     }
+/// }
+///
+/// impl<DB> ToSql<sql_types::Text, DB> for UppercaseString
+///     where
+///         DB: Backend,
+///         String: ToSql<sql_types::Text, DB>,
+/// {
+///     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+///         self.0.to_sql(out)
+///     }
+/// }
+///
+/// #[derive(Insertable, PartialEq, Debug)]
+/// #[table_name = "users"]
+/// struct InsertableUser {
+///     id: i32,
+///     #[diesel(serialize_as = "UppercaseString")]
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = connection_no_data();
+/// #     connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)").unwrap();
+/// let user = InsertableUser {
+///     id: 1,
+///     name: "thomas".to_string(),
+/// };
+///
+/// diesel::insert_into(users)
+///     .values(user)
+///     .execute(&connection)
+///     .unwrap();
+///
+/// assert_eq!(
+///     Ok("THOMAS".to_string()),
+///     users.select(name).first(&connection)
+/// );
+/// # Ok(())
+/// # }
+/// ```
+
 #[proc_macro_derive(Insertable, attributes(table_name, column_name, diesel))]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, insertable::derive)
