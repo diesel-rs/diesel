@@ -346,24 +346,25 @@ impl<'a, F, S, D, W, O, LOf, G, DB> BoxedDsl<'a, DB> for SelectStatement<F, S, D
 where
     Self: AsQuery,
     DB: Backend,
-    S: IntoBoxedSelectClause<'a, DB, F>,
+    S: IntoBoxedSelectClause<'a, DB, F> + SelectClauseExpression<F>,
+    S::Selection: ValidGrouping<G::Expressions>,
     D: QueryFragment<DB> + Send + 'a,
     W: Into<BoxedWhereClause<'a, DB>>,
     O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
     LOf: IntoBoxedClause<'a, DB, BoxedClause = BoxedLimitOffsetClause<'a, DB>>,
-    G: QueryFragment<DB> + Send + 'a,
+    G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
 {
-    type Output = BoxedSelectStatement<'a, S::SqlType, F, DB>;
+    type Output = BoxedSelectStatement<'a, S::SqlType, F, DB, G::Expressions>;
 
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(
-            self.select.into_boxed(&self.from),
+            self.select,
             self.from,
             Box::new(self.distinct),
             self.where_clause.into(),
             self.order.into(),
             self.limit_offset.into_boxed(),
-            Box::new(self.group_by),
+            self.group_by,
         )
     }
 }
