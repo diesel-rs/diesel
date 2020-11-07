@@ -1,0 +1,19 @@
+error: Expected `bar` found `bar = "baz"`
+  --> $DIR/as_changeset_bad_primary_key_syntax.rs:12:19
+   |
+12 | #[primary_key(id, bar = "baz", qux(id))]
+   |                   ^^^^^^^^^^^
+
+error: Expected `qux` found `qux(id)`
+  --> $DIR/as_changeset_bad_primary_key_syntax.rs:12:32
+   |
+12 | #[primary_key(id, bar = "baz", qux(id))]
+   |                                ^^^^^^^
+
+error[E0433]: failed to resolve: use of undeclared type or module `user_forms`
+  --> $DIR/as_changeset_bad_primary_key_syntax.rs:13:8
+   |
+13 | struct UserForm {
+   |        ^^^^^^^^ use of undeclared type or module `user_forms`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

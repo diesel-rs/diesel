@@ -1,0 +1,25 @@
+error[E0277]: the trait bound `diesel::query_builder::locking_clause::ForUpdate: diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` is not satisfied
+  --> $DIR/select_for_update_cannot_be_used_on_sqlite.rs:16:10
+   |
+16 |         .load(&conn)
+   |          ^^^^ the trait `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
+   |
+   = help: the following implementations were found:
+             <diesel::query_builder::locking_clause::ForUpdate as diesel::query_builder::QueryFragment<diesel::mysql::Mysql>>
+             <diesel::query_builder::locking_clause::ForUpdate as diesel::query_builder::QueryFragment<diesel::pg::Pg>>
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::locking_clause::LockingClause`
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, _>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`
+
+error[E0277]: the trait bound `diesel::query_builder::locking_clause::NoModifier: diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` is not satisfied
+  --> $DIR/select_for_update_cannot_be_used_on_sqlite.rs:16:10
+   |
+16 |         .load(&conn)
+   |          ^^^^ the trait `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` is not implemented for `diesel::query_builder::locking_clause::NoModifier`
+   |
+   = help: the following implementations were found:
+             <diesel::query_builder::locking_clause::NoModifier as diesel::query_builder::QueryFragment<diesel::mysql::Mysql>>
+             <diesel::query_builder::locking_clause::NoModifier as diesel::query_builder::QueryFragment<diesel::pg::Pg>>
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::locking_clause::LockingClause`
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, _>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`

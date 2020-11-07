@@ -1,0 +1,36 @@
+error[E0277]: the trait bound `diesel::expression::is_aggregate::No: diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+  --> $DIR/cannot_mix_aggregate_and_non_aggregate_selects.rs:20:24
+   |
+20 |     let source = users.select((id, count_star()));
+   |                        ^^^^^^ the trait `diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
+   |
+   = help: the following implementations were found:
+             <diesel::expression::is_aggregate::No as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Never>>
+             <diesel::expression::is_aggregate::No as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::No>>
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `(users::columns::id, diesel::dsl::CountStar)`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<(users::columns::id, diesel::dsl::CountStar)>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `diesel::expression::is_aggregate::No: diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+  --> $DIR/cannot_mix_aggregate_and_non_aggregate_selects.rs:22:24
+   |
+22 |     let source = users.select(nullable_int_col + max(nullable_int_col));
+   |                        ^^^^^^ the trait `diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
+   |
+   = help: the following implementations were found:
+             <diesel::expression::is_aggregate::No as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Never>>
+             <diesel::expression::is_aggregate::No as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::No>>
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `diesel::expression::ops::Add<users::columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, users::columns::nullable_int_col>>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::ops::Add<users::columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, users::columns::nullable_int_col>>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `diesel::expression::is_aggregate::No: diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+  --> $DIR/cannot_mix_aggregate_and_non_aggregate_selects.rs:24:24
+   |
+24 |     let source = users.select(f(nullable_int_col, max(nullable_int_col)));
+   |                        ^^^^^^ the trait `diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
+   |
+   = help: the following implementations were found:
+             <diesel::expression::is_aggregate::No as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Never>>
+             <diesel::expression::is_aggregate::No as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::No>>
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `f::__Derived<users::columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, users::columns::nullable_int_col>>`
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `f::f<users::columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, users::columns::nullable_int_col>>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<f::f<users::columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, users::columns::nullable_int_col>>>` for `diesel::query_builder::SelectStatement<users::table>`

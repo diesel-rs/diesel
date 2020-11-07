@@ -1,0 +1,23 @@
+error[E0271]: type mismatch resolving `<foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+  --> $DIR/user_defined_functions_follow_same_selection_rules.rs:35:38
+   |
+35 |     let _ = users::table.filter(name.eq(foo(1)));
+   |                                      ^^ expected struct `diesel::sql_types::Integer`, found struct `diesel::sql_types::Text`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` for `diesel::expression::as_expression_impl::ExpressionImplHelper<foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull>`
+
+error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+  --> $DIR/user_defined_functions_follow_same_selection_rules.rs:38:10
+   |
+38 |         .load::<User>(&conn);
+   |          ^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |
+   = help: the following implementations were found:
+             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::title`
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `bar::bar<posts::columns::title>`
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>`
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>`
+   = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<users::table>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>`
+   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, User>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`

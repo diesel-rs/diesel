@@ -1,0 +1,43 @@
+error[E0412]: cannot find type `name` in module `users`
+  --> $DIR/as_changeset_bad_column_name.rs:13:5
+   |
+13 |     name: String,
+   |     ^^^^ not found in `users`
+
+error[E0412]: cannot find type `hair_color` in module `users`
+  --> $DIR/as_changeset_bad_column_name.rs:14:21
+   |
+14 |     #[column_name = "hair_color"]
+   |                     ^^^^^^^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0425]: cannot find value `name` in module `users`
+  --> $DIR/as_changeset_bad_column_name.rs:13:5
+   |
+13 |     name: String,
+   |     ^^^^ not found in `users`
+
+error[E0425]: cannot find value `hair_color` in module `users`
+  --> $DIR/as_changeset_bad_column_name.rs:14:21
+   |
+14 |     #[column_name = "hair_color"]
+   |                     ^^^^^^^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0412]: cannot find type `name` in module `users`
+  --> $DIR/as_changeset_bad_column_name.rs:20:34
+   |
+20 | struct UserTuple(#[column_name = "name"] String);
+   |                                  ^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0425]: cannot find value `name` in module `users`
+  --> $DIR/as_changeset_bad_column_name.rs:20:34
+   |
+20 | struct UserTuple(#[column_name = "name"] String);
+   |                                  ^^^^^^ not found in `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

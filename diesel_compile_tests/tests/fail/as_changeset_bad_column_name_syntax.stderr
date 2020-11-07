@@ -1,0 +1,17 @@
+error: `column_name` must be in the form `column_name = "value"`
+  --> $DIR/as_changeset_bad_column_name_syntax.rs:14:7
+   |
+14 |     #[column_name]
+   |       ^^^^^^^^^^^
+
+error[E0412]: cannot find type `column_name` in module `users`
+  --> $DIR/as_changeset_bad_column_name_syntax.rs:14:7
+   |
+14 |     #[column_name]
+   |       ^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `column_name` in module `users`
+  --> $DIR/as_changeset_bad_column_name_syntax.rs:14:7
+   |
+14 |     #[column_name]
+   |       ^^^^^^^^^^^ not found in `users`

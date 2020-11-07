@@ -1,0 +1,22 @@
+error[E0277]: the trait bound `bool: diesel::query_builder::SelectQuery` is not satisfied
+  --> $DIR/exists_can_only_take_subselects.rs:23:25
+   |
+23 |     users::table.filter(exists(true));
+   |                         ^^^^^^^^^^^^ the trait `diesel::query_builder::SelectQuery` is not implemented for `bool`
+   |
+   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::subselect::Subselect<bool, diesel::sql_types::Bool>`
+   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::exists::Exists<bool>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::filter_dsl::FilterDsl<diesel::expression::exists::Exists<bool>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `users::columns::id: diesel::Expression` is not satisfied
+  --> $DIR/exists_can_only_take_subselects.rs:24:25
+   |
+24 |     users::table.filter(exists(users::id));
+   |                         ^^^^^^^^^^^^^^^^^
+   |                         |
+   |                         expected an implementor of trait `diesel::Expression`
+   |                         help: consider borrowing here: `&exists(users::id)`
+   |
+   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::subselect::Subselect<users::columns::id, diesel::sql_types::Bool>`
+   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::exists::Exists<users::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::filter_dsl::FilterDsl<diesel::expression::exists::Exists<users::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`

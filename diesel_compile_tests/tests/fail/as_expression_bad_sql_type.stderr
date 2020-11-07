@@ -1,0 +1,23 @@
+error: `sql_type` must be in the form `sql_type = "value"`
+ --> $DIR/as_expression_bad_sql_type.rs:5:3
+  |
+5 | #[sql_type(Foo)]
+  |   ^^^^^^^^^^^^^
+
+error: `sql_type` must be in the form `sql_type = "value"`
+ --> $DIR/as_expression_bad_sql_type.rs:6:3
+  |
+6 | #[sql_type]
+  |   ^^^^^^^^
+
+error: Invalid Rust type
+ --> $DIR/as_expression_bad_sql_type.rs:7:14
+  |
+7 | #[sql_type = "@%&&*"]
+  |              ^^^^^^^
+
+error: Invalid Rust type
+ --> $DIR/as_expression_bad_sql_type.rs:8:14
+  |
+8 | #[sql_type = "1omg"]
+  |              ^^^^^^

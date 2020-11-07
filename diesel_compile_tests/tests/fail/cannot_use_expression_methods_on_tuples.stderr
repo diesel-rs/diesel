@@ -1,0 +1,27 @@
+error[E0599]: no method named `is_not_null` found for tuple `(users::columns::id, users::columns::name)` in the current scope
+  --> $DIR/cannot_use_expression_methods_on_tuples.rs:18:29
+   |
+18 |     users.filter((id, name).is_not_null());
+   |                             ^^^^^^^^^^^ method not found in `(users::columns::id, users::columns::name)`
+   |
+   = note: the method `is_not_null` exists but the following trait bounds were not satisfied:
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
+           which is required by `(users::columns::id, users::columns::name): diesel::ExpressionMethods`
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
+           which is required by `&(users::columns::id, users::columns::name): diesel::ExpressionMethods`
+           `&mut (users::columns::id, users::columns::name): diesel::Expression`
+           which is required by `&mut (users::columns::id, users::columns::name): diesel::ExpressionMethods`
+
+error[E0599]: no method named `eq_any` found for tuple `(users::columns::id, users::columns::name)` in the current scope
+  --> $DIR/cannot_use_expression_methods_on_tuples.rs:19:29
+   |
+19 |     users.filter((id, name).eq_any(users.find(1)));
+   |                             ^^^^^^ method not found in `(users::columns::id, users::columns::name)`
+   |
+   = note: the method `eq_any` exists but the following trait bounds were not satisfied:
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
+           which is required by `(users::columns::id, users::columns::name): diesel::ExpressionMethods`
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
+           which is required by `&(users::columns::id, users::columns::name): diesel::ExpressionMethods`
+           `&mut (users::columns::id, users::columns::name): diesel::Expression`
+           which is required by `&mut (users::columns::id, users::columns::name): diesel::ExpressionMethods`
