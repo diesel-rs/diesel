@@ -1,6 +1,6 @@
 use crate::associations::BelongsTo;
 use crate::backend::Backend;
-use crate::deserialize::{self, FromSqlRow, FromStaticSqlRow, Queryable, StaticallySizedRow};
+use crate::deserialize::{self, FromSqlRow, FromStaticSqlRow, StaticallySizedRow};
 use crate::expression::{
     is_contained_in_group_by, AppearsOnTable, AsExpression, AsExpressionList, Expression,
     IsContainedInGroupBy, QueryMetadata, SelectableExpression, TypedExpressionType, ValidGrouping,
@@ -229,14 +229,13 @@ macro_rules! tuple_impls {
 
             impl_sql_type!($($T,)*);
 
-            impl<$($T,)* __DB, $($ST,)*> Queryable<($($ST,)*), __DB> for ($($T,)*)
+            impl<$($T,)* __DB, $($ST,)*> FromSqlRow<($($ST,)*), __DB> for ($($T,)*)
             where __DB: Backend,
                   Self: FromStaticSqlRow<($($ST,)*), __DB>,
+                  ($($ST,)+): SqlType,
             {
-                type Row = Self;
-
-                fn build(row: Self::Row) -> Self {
-                    row
+                fn build_from_row<'a>(row: &impl Row<'a, __DB>) -> deserialize::Result<Self> {
+                    <Self as FromStaticSqlRow<($($ST,)*), __DB>>::build_from_row(row)
                 }
             }
 
@@ -258,15 +257,13 @@ macro_rules! tuple_impls {
                 }
             }
 
-            impl<__T,  __DB, $($ST,)*> Queryable<Nullable<($($ST,)*)>, __DB> for Option<__T>
+            impl<__T,  __DB, $($ST,)*> FromSqlRow<Nullable<($($ST,)*)>, __DB> for Option<__T>
             where __DB: Backend,
                   Self: FromStaticSqlRow<Nullable<($($ST,)*)>, __DB>,
                   ($($ST,)*): SqlType,
             {
-                type Row = Self;
-
-                fn build(row: Self::Row) -> Self {
-                    row
+                fn build_from_row<'a>(row: &impl Row<'a, __DB>) -> deserialize::Result<Self> {
+                    <Self as FromStaticSqlRow<Nullable<($($ST,)*)>, __DB>>::build_from_row(row)
                 }
             }
 

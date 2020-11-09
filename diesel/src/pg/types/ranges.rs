@@ -2,10 +2,11 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
 
-use crate::deserialize::{self, FromSql, Queryable};
+use crate::deserialize::{self, FromSql, FromSqlRow, FromStaticSqlRow};
 use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
 use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+use crate::row::Row;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
 
@@ -93,14 +94,12 @@ where
     }
 }
 
-impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
+impl<T, ST> FromSqlRow<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: FromSql<ST, Pg>,
 {
-    type Row = Self;
-
-    fn build(row: Self) -> Self {
-        row
+    fn build_from_row<'a>(row: &impl Row<'a, Pg>) -> deserialize::Result<Self> {
+        <Self as FromStaticSqlRow<Range<ST>, Pg>>::build_from_row(row)
     }
 }
 

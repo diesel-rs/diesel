@@ -68,10 +68,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///     }
 /// }
 ///
-/// impl<DB> Queryable<Text, DB> for LowercaseString
-/// where
-///     DB: Backend,
-///     String: FromSql<Text, DB>,
+/// impl Queryable for LowercaseString
 /// {
 ///     type Row = String;
 ///
@@ -109,17 +106,13 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// use schema::users;
 /// use diesel::deserialize::Queryable;
 ///
-/// # /*
-/// type DB = diesel::sqlite::Sqlite;
-/// # */
-///
 /// #[derive(PartialEq, Debug)]
 /// struct User {
 ///     id: i32,
 ///     name: String,
 /// }
 ///
-/// impl Queryable<users::SqlType, DB> for User {
+/// impl Queryable for User {
 ///     type Row = (i32, String);
 ///
 ///     fn build(row: Self::Row) -> Self {
@@ -143,17 +136,14 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #     Ok(())
 /// # }
 /// ```
-pub trait Queryable<ST, DB>
-where
-    DB: Backend,
-{
+pub trait Queryable: Sized {
     /// The Rust type you'd like to map from.
     ///
     /// This is typically a tuple of all of your struct's fields.
-    type Row: FromStaticSqlRow<ST, DB>;
+    type Row;
 
     /// Construct an instance of this type
-    fn build(row: Self::Row) -> Self;
+    fn build(row: Self::Row) -> Result<Self>;
 }
 
 #[doc(inline)]
@@ -387,14 +377,14 @@ pub trait FromStaticSqlRow<ST, DB: Backend>: Sized {
 
 impl<T, ST, DB> FromSqlRow<ST, DB> for T
 where
-    T: Queryable<ST, DB>,
+    T: Queryable,
     ST: SqlType,
     DB: Backend,
     T::Row: FromStaticSqlRow<ST, DB>,
 {
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
         let row = <T::Row as FromStaticSqlRow<ST, DB>>::build_from_row(row)?;
-        Ok(T::build(row))
+        T::build(row)
     }
 }
 
@@ -435,7 +425,7 @@ where
 impl<T, ST, DB> StaticallySizedRow<ST, DB> for T
 where
     ST: SqlType + crate::util::TupleSize,
-    T: Queryable<ST, DB>,
+    T: FromSqlRow<ST, DB>,
     DB: Backend,
 {
     const FIELD_COUNT: usize = <ST as crate::util::TupleSize>::SIZE;

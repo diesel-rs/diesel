@@ -1,10 +1,11 @@
 use std::io::Write;
 
 use crate::backend::{self, Backend};
-use crate::deserialize::{self, FromSql, Queryable, QueryableByName};
+use crate::deserialize::{self, FromSql, FromSqlRow, FromStaticSqlRow, QueryableByName};
 use crate::expression::bound::Bound;
 use crate::expression::*;
 use crate::query_builder::QueryId;
+use crate::row::Row;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{is_nullable, HasSqlType, Nullable, SingleValue, SqlType};
 
@@ -97,16 +98,14 @@ where
     }
 }
 
-impl<ST, T, DB> Queryable<ST, DB> for Option<T>
+impl<ST, T, DB> FromSqlRow<ST, DB> for Option<T>
 where
     ST: SingleValue<IsNull = is_nullable::IsNullable>,
     DB: Backend,
     Self: FromSql<ST, DB>,
 {
-    type Row = Self;
-
-    fn build(row: Self::Row) -> Self {
-        row
+    fn build_from_row<'a>(row: &impl Row<'a, DB>) -> deserialize::Result<Self> {
+        <Self as FromStaticSqlRow<ST, DB>>::build_from_row(row)
     }
 }
 

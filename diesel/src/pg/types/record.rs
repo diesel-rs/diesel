@@ -2,7 +2,7 @@ use byteorder::*;
 use std::io::Write;
 use std::num::NonZeroU32;
 
-use crate::deserialize::{self, FromSql, Queryable};
+use crate::deserialize::{self, FromSql, FromSqlRow, FromStaticSqlRow};
 use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
     ValidGrouping,
@@ -10,6 +10,7 @@ use crate::expression::{
 use crate::pg::{Pg, PgValue};
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::result::QueryResult;
+use crate::row::Row;
 use crate::serialize::{self, IsNull, Output, ToSql, WriteTuple};
 use crate::sql_types::{HasSqlType, Record, SqlType};
 
@@ -68,13 +69,13 @@ macro_rules! tuple_impls {
             }
         }
 
-        impl<$($T,)+ $($ST,)+> Queryable<Record<($($ST,)+)>, Pg> for ($($T,)+)
-        where Self: FromSql<Record<($($ST,)+)>, Pg>
+        impl<$($T,)+ $($ST,)+> FromSqlRow<Record<($($ST,)+)>, Pg> for ($($T,)+)
+        where
+            Self: FromSql<Record<($($ST,)+)>, Pg>,
+            ($($ST,)+): SqlType,
         {
-            type Row = Self;
-
-            fn build(row: Self::Row) -> Self {
-                row
+            fn build_from_row<'a>(row: &impl Row<'a, Pg>) -> deserialize::Result<Self> {
+                <Self as FromStaticSqlRow<Record<($($ST,)+)>, Pg>>::build_from_row(row)
             }
         }
 
