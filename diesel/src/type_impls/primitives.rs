@@ -2,12 +2,9 @@ use std::error::Error;
 use std::io::Write;
 
 use crate::backend::{self, Backend, BinaryRawValue};
-use crate::deserialize::{self, FromSql, FromSqlRow, FromStaticSqlRow};
-use crate::row::Row;
+use crate::deserialize::{self, FromSql, Queryable};
 use crate::serialize::{self, IsNull, Output, ToSql};
-use crate::sql_types::{
-    self, BigInt, Binary, Bool, Double, Float, Integer, SingleValue, SmallInt, Text,
-};
+use crate::sql_types::{self, BigInt, Binary, Bool, Double, Float, Integer, SmallInt, Text};
 
 #[allow(dead_code)]
 mod foreign_impls {
@@ -233,15 +230,13 @@ where
     }
 }
 
-impl<'a, T: ?Sized, ST, DB> FromSqlRow<ST, DB> for Cow<'a, T>
+impl<'a, T: ?Sized> Queryable for Cow<'a, T>
 where
     T: 'a + ToOwned,
-    ST: SingleValue,
-    DB: Backend,
-    Self: FromSql<ST, DB>,
 {
-    fn build_from_row<'r>(row: &impl Row<'r, DB>) -> deserialize::Result<Self> {
-        <Self as FromStaticSqlRow<ST, DB>>::build_from_row(row)
+    type Row = Self;
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
     }
 }
 
