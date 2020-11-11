@@ -15,7 +15,7 @@ dotenv = "0.15"
 
 [dependencies]
 assert_matches = "1.0.1"
-chrono = "0.4.1"
+chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
 diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "network-address", "numeric", "with-deprecated"] }
 diesel_migrations = { path = "../diesel_migrations" }
 dotenv = "0.15"
