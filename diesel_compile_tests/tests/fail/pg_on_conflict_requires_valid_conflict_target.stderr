@@ -1,21 +1,21 @@
 error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
-  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:34:10
+  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:38:10
    |
-34 |         .on_conflict(posts::id);
+38 |         .on_conflict(posts::id);
    |          ^^^^^^^^^^^ expected struct `posts::table`, found struct `users::table`
 
 error[E0277]: the trait bound `lower::lower<posts::columns::title>: Column` is not satisfied
-  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:38:22
+  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:42:22
    |
-38 |         .on_conflict(lower(posts::title));
+42 |         .on_conflict(lower(posts::title));
    |                      ^^^^^^^^^^^^^^^^^^^ the trait `Column` is not implemented for `lower::lower<posts::columns::title>`
    |
    = note: required because of the requirements on the impl of `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<lower::lower<posts::columns::title>>`
 
 error[E0277]: the trait bound `&str: Column` is not satisfied
-  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:42:22
+  --> $DIR/pg_on_conflict_requires_valid_conflict_target.rs:46:22
    |
-42 |         .on_conflict("id");
+46 |         .on_conflict("id");
    |                      ^^^^ the trait `Column` is not implemented for `&str`
    |
    = note: required because of the requirements on the impl of `diesel::query_builder::upsert::on_conflict_target::OnConflictTarget<users::table>` for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<&str>`

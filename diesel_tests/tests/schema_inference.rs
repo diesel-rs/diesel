@@ -7,7 +7,7 @@ mod sqlite {
     use diesel::*;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name = "infer_all_the_ints"]
+    #[diesel(table_name = infer_all_the_ints)]
     struct InferredInts {
         col1: i32,
         col2: i32,
@@ -54,7 +54,7 @@ mod sqlite {
     }
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name = "infer_all_the_bools"]
+    #[diesel(table_name = infer_all_the_bools)]
     struct InferredBools {
         col1: bool,
         col2: bool,
@@ -83,7 +83,7 @@ mod sqlite {
     }
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name = "infer_all_the_strings"]
+    #[diesel(table_name = infer_all_the_strings)]
     struct InferredStrings {
         col1: String,
         col2: String,
@@ -124,7 +124,7 @@ mod sqlite {
     }
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name = "infer_all_the_floats"]
+    #[diesel(table_name = infer_all_the_floats)]
     struct InferredFloats {
         col1: f32,
         col2: f32,
@@ -157,7 +157,7 @@ mod sqlite {
     }
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name = "infer_all_the_datetime_types"]
+    #[diesel(table_name = infer_all_the_datetime_types)]
     struct InferredDatetimeTypes {
         dt: NaiveDateTime,
         date: NaiveDate,
@@ -198,7 +198,7 @@ mod postgres {
     use std::collections::Bound;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
-    #[table_name = "all_the_ranges"]
+    #[diesel(table_name = all_the_ranges)]
     struct InferredRanges {
         int4: (Bound<i32>, Bound<i32>),
         int8: (Bound<i64>, Bound<i64>),
@@ -245,7 +245,7 @@ mod mysql {
     use diesel::*;
 
     #[derive(Insertable)]
-    #[table_name = "all_the_blobs"]
+    #[diesel(table_name = all_the_blobs)]
     struct InferredBlobs<'a> {
         id: i32,
         tiny: &'a [u8],
@@ -296,7 +296,7 @@ fn columns_named_as_reserved_keywords_are_renamed() {
     use diesel::*;
 
     #[derive(Queryable, Insertable, Debug, PartialEq)]
-    #[table_name = "with_keywords"]
+    #[diesel(table_name = with_keywords)]
     struct WithKeywords {
         fn_: i32,
         let_: i32,

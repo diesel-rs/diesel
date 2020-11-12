@@ -143,7 +143,7 @@ where
     /// # }
     /// #
     /// # #[derive(Clone, Copy, Insertable)]
-    /// # #[table_name="users"]
+    /// # #[diesel(table_name = users)]
     /// # struct User<'a> {
     /// #     id: i32,
     /// #     name: &'a str,

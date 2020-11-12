@@ -99,7 +99,7 @@ fn test_chrono_types_sqlite() {
     use self::has_time_types;
 
     #[derive(Queryable, Insertable)]
-    #[table_name = "has_time_types"]
+    #[diesel(table_name = has_time_types)]
     struct NewTimeTypes {
         datetime: NaiveDateTime,
         date: NaiveDate,

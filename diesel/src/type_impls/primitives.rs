@@ -15,86 +15,85 @@ mod foreign_impls {
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Bool"]
+    #[diesel(sql_type = Bool)]
     struct BoolProxy(bool);
 
-    #[derive(AsExpression, FromSqlRow)]
+    #[derive(FromSqlRow)]
+    #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql_backend", sql_type = "crate::sql_types::TinyInt")]
+    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::TinyInt))]
     struct I8Proxy(i8);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "SmallInt"]
+    #[diesel(sql_type = SmallInt)]
     struct I16Proxy(i16);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Integer"]
+    #[diesel(sql_type = Integer)]
     struct I32Proxy(i32);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "BigInt"]
+    #[diesel(sql_type = BigInt)]
     struct I64Proxy(i64);
 
-    #[derive(AsExpression, FromSqlRow)]
+    #[derive(FromSqlRow)]
+    #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
     #[diesel(foreign_derive)]
     #[cfg_attr(
         feature = "mysql_backend",
-        sql_type = "crate::sql_types::Unsigned<crate::sql_types::TinyInt>"
+        diesel(sql_type = crate::sql_types::Unsigned<crate::sql_types::TinyInt>)
     )]
     struct U8Proxy(u8);
 
-    #[derive(AsExpression, FromSqlRow)]
+    #[derive(FromSqlRow)]
+    #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
     #[diesel(foreign_derive)]
-    #[cfg_attr(
-        feature = "mysql_backend",
-        sql_type = "crate::sql_types::Unsigned<SmallInt>"
-    )]
+    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Unsigned<SmallInt>))]
     struct U16Proxy(u16);
 
-    #[derive(AsExpression, FromSqlRow)]
-    #[diesel(foreign_derive)]
+    #[derive(FromSqlRow)]
     #[cfg_attr(
-        feature = "mysql_backend",
-        sql_type = "crate::sql_types::Unsigned<Integer>"
+        any(feature = "mysql_backend", feature = "postgres_backend"),
+        derive(AsExpression)
     )]
-    #[cfg_attr(feature = "postgres_backend", sql_type = "crate::sql_types::Oid")]
+    #[diesel(foreign_derive)]
+    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Unsigned<Integer>))]
+    #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::Oid))]
     struct U32Proxy(u32);
 
-    #[derive(AsExpression, FromSqlRow)]
+    #[derive(FromSqlRow)]
+    #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
     #[diesel(foreign_derive)]
-    #[cfg_attr(
-        feature = "mysql_backend",
-        sql_type = "crate::sql_types::Unsigned<BigInt>"
-    )]
+    #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Unsigned<BigInt>))]
     struct U64Proxy(u64);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Float"]
+    #[diesel(sql_type = Float)]
     struct F32Proxy(f32);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Double"]
+    #[diesel(sql_type = Double)]
     struct F64Proxy(f64);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Text"]
-    #[cfg_attr(feature = "sqlite", sql_type = "crate::sql_types::Date")]
-    #[cfg_attr(feature = "sqlite", sql_type = "crate::sql_types::Time")]
-    #[cfg_attr(feature = "sqlite", sql_type = "crate::sql_types::Timestamp")]
+    #[diesel(sql_type = Text)]
+    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Date))]
+    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Time))]
+    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Timestamp))]
     struct StringProxy(String);
 
     #[derive(AsExpression)]
     #[diesel(foreign_derive, not_sized)]
-    #[sql_type = "Text"]
-    #[cfg_attr(feature = "sqlite", sql_type = "crate::sql_types::Date")]
-    #[cfg_attr(feature = "sqlite", sql_type = "crate::sql_types::Time")]
-    #[cfg_attr(feature = "sqlite", sql_type = "crate::sql_types::Timestamp")]
+    #[diesel(sql_type = Text)]
+    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Date))]
+    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Time))]
+    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::Timestamp))]
     struct StrProxy(str);
 
     #[derive(FromSqlRow)]
@@ -103,12 +102,12 @@ mod foreign_impls {
 
     #[derive(AsExpression)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Binary"]
+    #[diesel(sql_type = Binary)]
     struct BinaryVecProxy(Vec<u8>);
 
     #[derive(AsExpression)]
     #[diesel(foreign_derive, not_sized)]
-    #[sql_type = "Binary"]
+    #[diesel(sql_type = Binary)]
     struct BinarySliceProxy([u8]);
 }
 

@@ -7,4 +7,5 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
    = help: the following implementations were found:
              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
-   = note: required because of the requirements on the impl of `FilterDsl<Grouped<Gt<count::count::count<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<BigInt, i64>>>>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `NonAggregate` for `Grouped<diesel::expression::operators::Gt<diesel::expression::count::count::count<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<BigInt, i64>>>`
+   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Gt<diesel::expression::count::count::count<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<BigInt, i64>>>>` for `SelectStatement<users::table>`

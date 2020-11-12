@@ -12,7 +12,7 @@ use crate::sql_types;
 mod quickcheck_impls;
 
 #[derive(Debug, Clone, PartialEq, Eq, AsExpression, FromSqlRow)]
-#[sql_type = "sql_types::Numeric"]
+#[diesel(sql_type = sql_types::Numeric)]
 /// Represents a NUMERIC value, closely mirroring the PG wire protocol
 /// representation
 pub enum PgNumeric {

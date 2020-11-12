@@ -1,0 +1,23 @@
+error: unexpected end of input, expected `=`
+ --> $DIR/bad_sql_type.rs:5:9
+  |
+5 | #[diesel(sql_type)]
+  |         ^^^^^^^^^^
+
+error: expected `=`
+ --> $DIR/bad_sql_type.rs:9:18
+  |
+9 | #[diesel(sql_type(Foo))]
+  |                  ^^^^^
+
+error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+  --> $DIR/bad_sql_type.rs:13:21
+   |
+13 | #[diesel(sql_type = "foo")]
+   |                     ^^^^^
+
+error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+  --> $DIR/bad_sql_type.rs:17:21
+   |
+17 | #[diesel(sql_type = 1omg)]
+   |                     ^^^^

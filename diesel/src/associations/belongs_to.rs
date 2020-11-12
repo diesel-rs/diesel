@@ -58,7 +58,7 @@ pub trait BelongsTo<Parent> {
 /// #
 /// # #[derive(Debug, PartialEq)]
 /// # #[derive(Identifiable, Queryable, Associations)]
-/// # #[belongs_to(User)]
+/// # #[diesel(belongs_to(User))]
 /// # pub struct Post {
 /// #     id: i32,
 /// #     user_id: i32,

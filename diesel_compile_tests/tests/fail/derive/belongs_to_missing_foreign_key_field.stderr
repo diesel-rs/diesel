@@ -1,0 +1,23 @@
+error: No field with column name bar_id
+ --> $DIR/belongs_to_missing_foreign_key_field.rs:7:21
+  |
+7 | #[diesel(belongs_to(Bar))]
+  |                     ^^^
+
+error: No field with column name bar_id
+  --> $DIR/belongs_to_missing_foreign_key_field.rs:11:40
+   |
+11 | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
+   |                                        ^^^^^^
+
+error: No field with column name bar_id
+  --> $DIR/belongs_to_missing_foreign_key_field.rs:15:21
+   |
+15 | #[diesel(belongs_to(Bar))]
+   |                     ^^^
+
+error: No field with column name bar_id
+  --> $DIR/belongs_to_missing_foreign_key_field.rs:22:40
+   |
+22 | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
+   |                                        ^^^^^^

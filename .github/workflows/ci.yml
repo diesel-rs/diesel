@@ -193,6 +193,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: version
+
       - name: Test diesel (nightly)
         if: matrix.rust == 'nightly'
         uses: actions-rs/cargo@v1
@@ -302,7 +303,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2021-04-01
+          toolchain: 1.51.0
           profile: minimal
           override: true
       - name: Cache cargo registry

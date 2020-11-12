@@ -1,7 +1,0 @@
-error[E0261]: use of undeclared lifetime name `'a`
-  --> $DIR/belongs_to_incorrect_lifetime_syntax.rs:25:23
-   |
-24 | #[derive(Associations)]
-   |          - lifetime `'a` is missing in item created through this procedural macro
-25 | #[belongs_to(parent = "Foo<'a>")]
-   |                       ^^^^^^^^^ undeclared lifetime

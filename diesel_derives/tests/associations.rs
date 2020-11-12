@@ -28,7 +28,7 @@ fn simple_belongs_to() {
     }
 
     #[derive(Associations, Identifiable)]
-    #[belongs_to(User)]
+    #[diesel(belongs_to(User))]
     pub struct Post {
         id: i32,
         user_id: i32,
@@ -86,14 +86,14 @@ fn table_in_different_module() {
     }
 
     #[derive(Identifiable)]
-    #[table_name = "schema::users"]
+    #[diesel(table_name = schema::users)]
     pub struct User {
         id: i32,
     }
 
     #[derive(Associations, Identifiable)]
-    #[table_name = "schema::posts"]
-    #[belongs_to(User)]
+    #[diesel(table_name = schema::posts)]
+    #[diesel(belongs_to(User))]
     pub struct Post {
         id: i32,
         user_id: i32,
@@ -154,7 +154,7 @@ fn custom_foreign_key() {
     }
 
     #[derive(Associations, Identifiable)]
-    #[belongs_to(User, foreign_key = "belongs_to_user")]
+    #[diesel(belongs_to(User, foreign_key = belongs_to_user))]
     pub struct Post {
         id: i32,
         belongs_to_user: i32,
@@ -198,7 +198,7 @@ fn self_referential() {
     }
 
     #[derive(Associations, Identifiable)]
-    #[belongs_to(Tree, foreign_key = "parent_id")]
+    #[diesel(belongs_to(Tree, foreign_key = parent_id))]
     pub struct Tree {
         id: i32,
         parent_id: Option<i32>,
@@ -249,8 +249,8 @@ fn multiple_associations() {
     }
 
     #[derive(Identifiable, Associations)]
-    #[belongs_to(User)]
-    #[belongs_to(Post)]
+    #[diesel(belongs_to(User))]
+    #[diesel(belongs_to(Post))]
     struct Comment {
         id: i32,
         user_id: i32,
@@ -295,10 +295,10 @@ fn foreign_key_field_with_column_rename() {
     }
 
     #[derive(Associations, Identifiable, Clone, Copy, PartialEq, Debug)]
-    #[belongs_to(User)]
+    #[diesel(belongs_to(User))]
     pub struct Post {
         id: i32,
-        #[column_name = "user_id"]
+        #[diesel(column_name = user_id)]
         author_id: i32,
     }
 
@@ -346,8 +346,11 @@ fn tuple_struct() {
     }
 
     #[derive(Associations, Identifiable)]
-    #[belongs_to(User)]
-    pub struct Post(#[column_name = "id"] i32, #[column_name = "user_id"] i32);
+    #[diesel(belongs_to(User))]
+    pub struct Post(
+        #[diesel(column_name = id)] i32,
+        #[diesel(column_name = user_id)] i32,
+    );
 
     let user = User { id: 1 };
 

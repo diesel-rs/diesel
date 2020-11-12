@@ -1,8 +1,28 @@
-pub use diagnostic_shim::{Diagnostic, DiagnosticShim, EmitErrorExt};
+use proc_macro2::TokenStream;
+use syn::parse::{Parse, ParseStream, Result};
+use syn::token::Eq;
+use syn::{parenthesized, Data, DeriveInput, GenericArgument, Ident, Type};
 
-use meta::MetaItem;
-use proc_macro2::{Span, TokenStream};
-use syn::{Data, DeriveInput, GenericArgument, Type};
+use model::Model;
+
+pub fn unknown_attribute(name: &Ident) -> ! {
+    abort!(name, "unknown attribute")
+}
+
+pub fn parse_eq<T: Parse>(input: ParseStream) -> Result<T> {
+    if input.is_empty() {
+        abort!(input.span(), "unexpected end of input, expected `=`");
+    }
+
+    input.parse::<Eq>()?;
+    input.parse()
+}
+
+pub fn parse_paren<T: Parse>(input: ParseStream) -> Result<T> {
+    let content;
+    parenthesized!(content in input);
+    content.parse()
+}
 
 pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {
     quote! {
@@ -49,37 +69,34 @@ fn option_ty_arg(ty: &Type) -> Option<&Type> {
     }
 }
 
-pub fn ty_for_foreign_derive(item: &DeriveInput, flags: &MetaItem) -> Result<Type, Diagnostic> {
-    if flags.has_flag("foreign_derive") {
+pub fn ty_for_foreign_derive(item: &DeriveInput, model: &Model) -> Type {
+    if model.foreign_derive {
         match item.data {
             Data::Struct(ref body) => match body.fields.iter().next() {
-                Some(field) => Ok(field.ty.clone()),
-                None => Err(flags
-                    .span()
-                    .error("foreign_derive requires at least one field")),
+                Some(field) => field.ty.clone(),
+                None => abort_call_site!("foreign_derive requires at least one field"),
             },
-            _ => Err(flags
-                .span()
-                .error("foreign_derive can only be used with structs")),
+            _ => abort_call_site!("foreign_derive can only be used with structs"),
         }
     } else {
         let ident = &item.ident;
         let (_, ty_generics, ..) = item.generics.split_for_impl();
-        Ok(parse_quote!(#ident #ty_generics))
+        parse_quote!(#ident #ty_generics)
     }
 }
 
-pub fn fix_span(maybe_bad_span: Span, mut fallback: Span) -> Span {
-    let bad_span_debug = "#0 bytes(0..0)";
-
-    if format!("{:?}", fallback) == bad_span_debug {
-        // On recent rust nightlies, even our fallback span is bad.
-        fallback = Span::call_site();
+pub fn camel_to_snake(name: &str) -> String {
+    let mut result = String::with_capacity(name.len());
+    result.push_str(&name[..1].to_lowercase());
+    for character in name[1..].chars() {
+        if character.is_uppercase() {
+            result.push('_');
+            for lowercase in character.to_lowercase() {
+                result.push(lowercase);
+            }
+        } else {
+            result.push(character);
+        }
     }
-
-    if format!("{:?}", maybe_bad_span) == bad_span_debug {
-        fallback
-    } else {
-        maybe_bad_span
-    }
+    result
 }

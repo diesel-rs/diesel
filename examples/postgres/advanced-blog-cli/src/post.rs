@@ -6,7 +6,7 @@ use crate::comment::Comment;
 use crate::schema::posts;
 
 #[derive(Queryable, Associations, Identifiable)]
-#[belongs_to(User)]
+#[diesel(belongs_to(User))]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -14,7 +14,7 @@ pub struct Post {
     pub body: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-    #[diesel(deserialize_as = "Option<NaiveDateTime>")]
+    #[diesel(deserialize_as = Option<NaiveDateTime>)]
     pub status: Status,
 }
 

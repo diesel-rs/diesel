@@ -1,0 +1,11 @@
+error: unknown attribute
+ --> $DIR/unknown_attribute.rs:5:10
+  |
+5 | #[diesel(what = true)]
+  |          ^^^^
+
+error: unknown attribute
+  --> $DIR/unknown_attribute.rs:12:14
+   |
+12 |     #[diesel(what = true)]
+   |              ^^^^

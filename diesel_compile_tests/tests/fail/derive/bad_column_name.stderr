@@ -1,0 +1,23 @@
+error: unexpected end of input, expected `=`
+  --> $DIR/bad_column_name.rs:14:13
+   |
+14 |     #[diesel(column_name)]
+   |             ^^^^^^^^^^^^^
+
+error: expected `=`
+  --> $DIR/bad_column_name.rs:21:25
+   |
+21 |     #[diesel(column_name(another))]
+   |                         ^^^^^^^^^
+
+error: expected identifier
+  --> $DIR/bad_column_name.rs:28:28
+   |
+28 |     #[diesel(column_name = true)]
+   |                            ^^^^
+
+error: expected identifier
+  --> $DIR/bad_column_name.rs:35:28
+   |
+35 |     #[diesel(column_name = "name")]
+   |                            ^^^^^^

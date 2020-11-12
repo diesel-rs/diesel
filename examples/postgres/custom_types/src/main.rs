@@ -5,7 +5,7 @@ mod model;
 mod schema;
 
 #[derive(Debug, Queryable, Insertable)]
-#[table_name = "translations"]
+#[diesel(table_name = translations)]
 pub struct Translation {
     word_id: i32,
     translation_id: i32,

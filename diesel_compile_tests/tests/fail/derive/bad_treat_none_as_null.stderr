@@ -1,0 +1,17 @@
+error: expected `=`
+  --> $DIR/bad_treat_none_as_null.rs:13:28
+   |
+13 | #[diesel(treat_none_as_null("true"))]
+   |                            ^^^^^^^^
+
+error: unexpected end of input, expected `=`
+  --> $DIR/bad_treat_none_as_null.rs:21:9
+   |
+21 | #[diesel(treat_none_as_null)]
+   |         ^^^^^^^^^^^^^^^^^^^^
+
+error: expected boolean literal
+  --> $DIR/bad_treat_none_as_null.rs:29:31
+   |
+29 | #[diesel(treat_none_as_null = "foo")]
+   |                               ^^^^^

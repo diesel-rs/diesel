@@ -208,7 +208,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # use schema::users;
 /// #
 /// #[derive(Insertable)]
-/// #[table_name = "users"]
+/// #[diesel(table_name = users)]
 /// struct NewUser<'a> {
 ///     name: &'a str,
 /// }
@@ -255,7 +255,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #
 /// # #[cfg(not(feature = "sqlite"))]
 /// #[derive(Insertable)]
-/// #[table_name = "brands"]
+/// #[diesel(table_name = brands)]
 /// struct NewBrand {
 ///     color: Option<String>,
 /// }
@@ -301,7 +301,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #
 /// # #[cfg(not(feature = "sqlite"))]
 /// #[derive(Insertable)]
-/// #[table_name = "brands"]
+/// #[diesel(table_name = brands)]
 /// struct NewBrand {
 ///     accent: Option<Option<String>>,
 /// }
@@ -533,7 +533,7 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// # use schema::users;
 /// #
 /// # #[derive(QueryableByName, Debug, PartialEq)]
-/// # #[table_name="users"]
+/// # #[diesel(table_name = users)]
 /// # struct User {
 /// #     id: i32,
 /// #     name: String,

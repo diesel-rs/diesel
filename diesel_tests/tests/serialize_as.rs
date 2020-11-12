@@ -5,7 +5,7 @@ use diesel::*;
 use std::io::Write;
 
 #[derive(Debug, FromSqlRow, AsExpression)]
-#[sql_type = "sql_types::Text"]
+#[diesel(sql_type = sql_types::Text)]
 struct UppercaseString(pub String);
 
 impl From<String> for UppercaseString {
@@ -25,9 +25,9 @@ where
 }
 
 #[derive(Insertable, PartialEq, Debug)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct InsertableUser {
-    #[diesel(serialize_as = "UppercaseString")]
+    #[diesel(serialize_as = UppercaseString)]
     name: String,
 }
 

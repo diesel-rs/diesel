@@ -1,7 +1,7 @@
 //! Traits related to relationships between multiple tables.
 //!
 //! Associations in Diesel are always child-to-parent.
-//! You can declare an association between two records with `#[belongs_to]`.
+//! You can declare an association between two records with `#[diesel(belongs_to)]`.
 //! Unlike other ORMs, Diesel has no concept of `has many`
 //!
 //! ```rust
@@ -9,15 +9,15 @@
 //! use schema::{posts, users};
 //!
 //! #[derive(Identifiable, Queryable, PartialEq, Debug)]
-//! #[table_name = "users"]
+//! #[diesel(table_name = users)]
 //! pub struct User {
 //!     id: i32,
 //!     name: String,
 //! }
 //!
 //! #[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
-//! #[belongs_to(User)]
-//! #[table_name = "posts"]
+//! #[diesel(belongs_to(User))]
+//! #[diesel(table_name = posts)]
 //! pub struct Post {
 //!     id: i32,
 //!     user_id: i32,
@@ -40,12 +40,12 @@
 //! # }
 //! ```
 //!
-//! Note that in addition to the `#[belongs_to]` annotation, we also need to
+//! Note that in addition to the `#[diesel(belongs_to)]` annotation, we also need to
 //! `#[derive(Associations)]`
 //!
-//! `#[belongs_to]` is given the name of the struct that represents the parent.
+//! `#[diesel(belongs_to)]` is given the name of the struct that represents the parent.
 //! Both the parent and child must implement [`Identifiable`].
-//! The struct given to `#[belongs_to]` must be in scope,
+//! The struct given to `#[diesel(belongs_to)]` must be in scope,
 //! so you will need `use some_module::User` if `User` is defined in another module.
 //!
 //! If the parent record is generic over lifetimes, they can be written as `'_`.
@@ -58,15 +58,15 @@
 //! # use std::borrow::Cow;
 //! #
 //! #[derive(Identifiable)]
-//! #[table_name = "users"]
+//! #[diesel(table_name = users)]
 //! pub struct User<'a> {
 //!     id: i32,
 //!     name: Cow<'a, str>,
 //! }
 //!
 //! #[derive(Associations)]
-//! #[belongs_to(parent = "User<'_>")]
-//! #[table_name = "posts"]
+//! #[diesel(belongs_to(User<'_>))]
+//! #[diesel(table_name = posts)]
 //! pub struct Post {
 //!     id: i32,
 //!     user_id: i32,
@@ -79,8 +79,8 @@
 //!
 //! By default, Diesel assumes that your foreign keys will follow the convention `table_name_id`.
 //! If your foreign key has a different name,
-//! you can provide the `foreign_key` argument to `#[belongs_to]`.
-//! For example, `#[belongs_to(Foo, foreign_key = "mykey")]`.
+//! you can provide the `foreign_key` argument to `#[diesel(belongs_to)]`.
+//! For example, `#[diesel(belongs_to(Foo, foreign_key = mykey))]`.
 //!
 //! Associated data is typically loaded in multiple queries (one query per table).
 //! This is usually more efficient than using a join,
@@ -106,7 +106,7 @@
 //! # }
 //! #
 //! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
-//! # #[belongs_to(User)]
+//! # #[diesel(belongs_to(User))]
 //! # pub struct Post {
 //! #     id: i32,
 //! #     user_id: i32,
@@ -160,7 +160,7 @@
 //! #
 //! # #[derive(Debug, PartialEq)]
 //! # #[derive(Identifiable, Queryable, Associations)]
-//! # #[belongs_to(User)]
+//! # #[diesel(belongs_to(User))]
 //! # pub struct Post {
 //! #     id: i32,
 //! #     user_id: i32,
@@ -214,7 +214,7 @@
 //! #
 //! # #[derive(Debug, PartialEq)]
 //! # #[derive(Identifiable, Queryable, Associations)]
-//! # #[belongs_to(User)]
+//! # #[diesel(belongs_to(User))]
 //! # pub struct Post {
 //! #     id: i32,
 //! #     user_id: i32,
@@ -274,7 +274,7 @@
 //! # }
 //! #
 //! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
-//! # #[belongs_to(User)]
+//! # #[diesel(belongs_to(User))]
 //! # pub struct Post {
 //! #     id: i32,
 //! #     user_id: i32,
@@ -282,7 +282,7 @@
 //! # }
 //! #
 //! # #[derive(Debug, PartialEq, Identifiable, Queryable, Associations)]
-//! # #[belongs_to(Post)]
+//! # #[diesel(belongs_to(Post))]
 //! # pub struct Comment {
 //! #     id: i32,
 //! #     post_id: i32,

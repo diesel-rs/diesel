@@ -8,6 +8,6 @@ use crate::sql_types::Jsonb;
 
 #[derive(AsExpression, FromSqlRow)]
 #[diesel(foreign_derive)]
-#[sql_type = "Json"]
-#[cfg_attr(feature = "postgres", sql_type = "Jsonb")]
+#[diesel(sql_type = Json)]
+#[cfg_attr(feature = "postgres", diesel(sql_type = Jsonb))]
 struct SerdeJsonValueProxy(serde_json::Value);

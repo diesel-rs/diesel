@@ -31,9 +31,9 @@ fn derive_identifiable_on_simple_struct() {
 fn derive_identifiable_on_tuple_struct() {
     #[derive(Identifiable)]
     struct Foo(
-        #[column_name = "id"] i32,
+        #[diesel(column_name = id)] i32,
         #[allow(dead_code)]
-        #[column_name = "lol"]
+        #[diesel(column_name = lol)]
         i32,
     );
 
@@ -61,7 +61,7 @@ fn derive_identifiable_when_id_is_not_first_field() {
 #[test]
 fn derive_identifiable_on_struct_with_non_integer_pk() {
     #[derive(Identifiable)]
-    #[table_name = "bars"]
+    #[diesel(table_name = bars)]
     struct Foo {
         id: &'static str,
         #[allow(dead_code)]
@@ -80,7 +80,7 @@ fn derive_identifiable_on_struct_with_non_integer_pk() {
 #[test]
 fn derive_identifiable_on_struct_with_lifetime() {
     #[derive(Identifiable)]
-    #[table_name = "bars"]
+    #[diesel(table_name = bars)]
     struct Foo<'a> {
         id: &'a str,
         #[allow(dead_code)]
@@ -100,8 +100,8 @@ fn derive_identifiable_on_struct_with_lifetime() {
 fn derive_identifiable_with_non_standard_pk() {
     #[allow(dead_code)]
     #[derive(Identifiable)]
-    #[table_name = "bars"]
-    #[primary_key(foo_id)]
+    #[diesel(table_name = bars)]
+    #[diesel(primary_key(foo_id))]
     struct Foo<'a> {
         id: i32,
         foo_id: &'a str,
@@ -126,8 +126,8 @@ fn derive_identifiable_with_non_standard_pk() {
 fn derive_identifiable_with_composite_pk() {
     #[allow(dead_code)]
     #[derive(Identifiable)]
-    #[table_name = "bars"]
-    #[primary_key(foo_id, bar_id)]
+    #[diesel(table_name = bars)]
+    #[diesel(primary_key(foo_id, bar_id))]
     struct Foo {
         id: i32,
         foo_id: i32,

@@ -18,6 +18,7 @@ error[E0277]: the trait bound `str: ValidGrouping<()>` is not satisfied
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `&str`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::operators::Eq<int_primary_key::columns::id, &str>`
+   = note: required because of the requirements on the impl of `NonAggregate` for `Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, &str>>`
    = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, &str>>>` for `SelectStatement<int_primary_key::table>`
 
 error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
@@ -48,4 +49,5 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
              <(A, B, C, D) as ValidGrouping<__GroupByClause>>
            and 131 others
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>`
+   = note: required because of the requirements on the impl of `NonAggregate` for `Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>`
    = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>>` for `SelectStatement<string_primary_key::table>`

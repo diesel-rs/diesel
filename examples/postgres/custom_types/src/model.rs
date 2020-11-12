@@ -5,7 +5,7 @@ use diesel::serialize::{self, IsNull, Output, ToSql};
 use std::io::Write;
 
 #[derive(Debug, AsExpression, FromSqlRow)]
-#[sql_type = "crate::schema::sql_types::Language"]
+#[diesel(sql_type = crate::schema::sql_types::Language)]
 pub enum Language {
     En,
     Ru,

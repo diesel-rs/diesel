@@ -10,8 +10,8 @@ table! {
 }
 
 #[derive(Insertable)]
-#[table_name = "users"]
-pub struct NewUser(#[column_name = "name"] String);
+#[diesel(table_name = users)]
+pub struct NewUser(#[diesel(column_name = name)] String);
 
 table! {
     non_users {

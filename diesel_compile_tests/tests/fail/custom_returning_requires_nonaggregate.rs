@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::dsl::count;
+use diesel::*;
 
 table! {
     users {
@@ -11,7 +11,7 @@ table! {
 }
 
 #[derive(Insertable)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct NewUser {
     name: String,
 }

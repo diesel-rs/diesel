@@ -1,0 +1,47 @@
+error: unexpected end of input, expected parentheses
+  --> $DIR/bad_belongs_to.rs:29:9
+   |
+29 | #[diesel(belongs_to)]
+   |         ^^^^^^^^^^^^
+
+error: expected parentheses
+  --> $DIR/bad_belongs_to.rs:36:21
+   |
+36 | #[diesel(belongs_to = "Bar")]
+   |                     ^
+
+error: unexpected end of input, expected identifier
+  --> $DIR/bad_belongs_to.rs:43:20
+   |
+43 | #[diesel(belongs_to())]
+   |                    ^^
+
+error: expected `,`
+  --> $DIR/bad_belongs_to.rs:50:33
+   |
+50 | #[diesel(belongs_to(foreign_key = bar_id))]
+   |                                 ^
+
+error: expected `,`
+  --> $DIR/bad_belongs_to.rs:57:25
+   |
+57 | #[diesel(belongs_to(Bar = "bar_id"))]
+   |                         ^
+
+error: unexpected end of input, expected `=`
+  --> $DIR/bad_belongs_to.rs:64:20
+   |
+64 | #[diesel(belongs_to(Bar, foreign_key))]
+   |                    ^^^^^^^^^^^^^^^^^^
+
+error: expected `=`
+  --> $DIR/bad_belongs_to.rs:71:37
+   |
+71 | #[diesel(belongs_to(Bar, foreign_key(bar_id)))]
+   |                                     ^^^^^^^^
+
+error: unknown attribute
+  --> $DIR/bad_belongs_to.rs:78:26
+   |
+78 | #[diesel(belongs_to(Bar, what))]
+   |                          ^^^^

@@ -1,0 +1,80 @@
+error: unexpected end of input, expected parentheses
+ --> $DIR/bad_postgres_type.rs:6:9
+  |
+6 | #[diesel(postgres_type)]
+  |         ^^^^^^^^^^^^^^^
+
+error: expected `oid` and `array_oid` attribute or `name` attribute
+  --> $DIR/bad_postgres_type.rs:10:23
+   |
+10 | #[diesel(postgres_type())]
+   |                       ^^
+
+error: expected parentheses
+  --> $DIR/bad_postgres_type.rs:14:24
+   |
+14 | #[diesel(postgres_type = "foo")]
+   |                        ^
+
+error: unexpected end of input, expected `=`
+  --> $DIR/bad_postgres_type.rs:18:23
+   |
+18 | #[diesel(postgres_type(name))]
+   |                       ^^^^^^
+
+error: expected `=`
+  --> $DIR/bad_postgres_type.rs:22:28
+   |
+22 | #[diesel(postgres_type(name()))]
+   |                            ^^
+
+error: expected string literal
+  --> $DIR/bad_postgres_type.rs:26:31
+   |
+26 | #[diesel(postgres_type(name = Foo))]
+   |                               ^^^
+
+error: unexpected `oid` when `name` is present
+  --> $DIR/bad_postgres_type.rs:30:44
+   |
+30 | #[diesel(postgres_type(name = "foo", oid = 2, array_oid = 3))]
+   |                                            ^
+
+error: unexpected `array_oid` when `name` is present
+  --> $DIR/bad_postgres_type.rs:34:50
+   |
+34 | #[diesel(postgres_type(name = "foo", array_oid = 3))]
+   |                                                  ^
+
+error: expected `oid` and `array_oid` attribute or `name` attribute
+  --> $DIR/bad_postgres_type.rs:38:23
+   |
+38 | #[diesel(postgres_type(oid = 2))]
+   |                       ^^^^^^^^^
+
+error: expected integer literal
+  --> $DIR/bad_postgres_type.rs:42:45
+   |
+42 | #[diesel(postgres_type(oid = 1, array_oid = "1"))]
+   |                                             ^^^
+
+error: expected integer literal
+  --> $DIR/bad_postgres_type.rs:46:30
+   |
+46 | #[diesel(postgres_type(oid = "1", array_oid = 1))]
+   |                              ^^^
+
+error: expected `name` to be also present
+
+  = help: make sure `name` is present, `#[diesel(postgres_type(name = "...", schema = "foo"))]`
+
+  --> $DIR/bad_postgres_type.rs:50:33
+   |
+50 | #[diesel(postgres_type(schema = "foo"))]
+   |                                 ^^^^^
+
+error: unknown attribute
+  --> $DIR/bad_postgres_type.rs:54:24
+   |
+54 | #[diesel(postgres_type(what))]
+   |                        ^^^^

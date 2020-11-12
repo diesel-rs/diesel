@@ -1,0 +1,5 @@
+error: expected `,`
+ --> $DIR/bad_not_sized.rs:6:20
+  |
+6 | #[diesel(not_sized = true)]
+  |                    ^

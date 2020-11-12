@@ -21,7 +21,7 @@ joinable!(posts -> users(user_id));
 allow_tables_to_appear_in_same_query!(users, posts);
 
 #[derive(Selectable, Queryable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct UserWithEmbeddedPost {
     id: i32,
     name: String,
@@ -30,7 +30,7 @@ struct UserWithEmbeddedPost {
 }
 
 #[derive(Selectable, Queryable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct UserWithOptionalPost {
     id: i32,
     name: String,
@@ -39,14 +39,14 @@ struct UserWithOptionalPost {
 }
 
 #[derive(Selectable, Queryable)]
-#[table_name = "posts"]
+#[diesel(table_name = posts)]
 struct Post {
     id: i32,
     title: String,
 }
 
 #[derive(Selectable)]
-#[table_name = "posts"]
+#[diesel(table_name = posts)]
 struct PostWithWrongField {
     id: i32,
     // There is a typo here:
@@ -55,7 +55,7 @@ struct PostWithWrongField {
 
 #[derive(Selectable)]
 // wrong table name here
-#[table_name = "post"]
+#[diesel(table_name = post)]
 struct PostWithWrongTableName {
     id: i32,
     title: String,

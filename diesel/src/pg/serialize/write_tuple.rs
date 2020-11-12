@@ -24,7 +24,7 @@ use crate::serialize::{self, Output};
 /// #     use std::io::Write;
 /// #
 ///     #[derive(SqlType)]
-///     #[postgres(type_name = "my_type")]
+///     #[diesel(postgres_type(name = "my_type"))]
 ///     struct MyType;
 ///
 ///     #[derive(Debug)]

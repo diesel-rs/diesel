@@ -276,11 +276,11 @@ impl Display for CustomTypeList {
                     if let Some(ref schema) = t.schema {
                         writeln!(
                             out,
-                            "#[postgres(type_name = \"{}\", type_schema = \"{}\")]",
+                            "#[diesel(postgres_type(name = \"{}\", schema = \"{}\"))]",
                             t.sql_name, schema
                         )?;
                     } else {
-                        writeln!(out, "#[postgres(type_name = \"{}\")]", t.sql_name)?;
+                        writeln!(out, "#[diesel(postgres_type(name = \"{}\"))]", t.sql_name)?;
                     }
                     writeln!(out, "pub struct {};", t.rust_name)?;
                 }

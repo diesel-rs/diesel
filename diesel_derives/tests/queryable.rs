@@ -20,7 +20,10 @@ fn named_struct_definition() {
 #[test]
 fn tuple_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable)]
-    struct MyStruct(#[column_name = "foo"] i32, #[column_name = "bar"] i32);
+    struct MyStruct(
+        #[diesel(column_name = foo)] i32,
+        #[diesel(column_name = bar)] i32,
+    );
 
     let conn = &mut connection();
     let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(conn);

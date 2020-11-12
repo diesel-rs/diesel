@@ -41,7 +41,7 @@ pub mod sql_types {
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "26", array_oid = "1018")]
+    #[diesel(postgres_type(oid = 26, array_oid = 1018))]
     pub struct Oid;
 
     /// The "timestamp with time zone" SQL type, which PostgreSQL abbreviates
@@ -76,7 +76,7 @@ pub mod sql_types {
         doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
     )]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "1184", array_oid = "1185")]
+    #[diesel(postgres_type(oid = 1184, array_oid = 1185))]
     pub struct Timestamptz;
 
     /// The `Array` SQL type.
@@ -170,7 +170,7 @@ pub mod sql_types {
     ///
     /// [`WriteTuple`]: super::super::super::serialize::WriteTuple
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "2249", array_oid = "2287")]
+    #[diesel(postgres_type(oid = 2249, array_oid = 2287))]
     pub struct Record<ST: 'static>(ST);
 
     /// Alias for `SmallInt`
@@ -196,7 +196,7 @@ pub mod sql_types {
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "2950", array_oid = "2951")]
+    #[diesel(postgres_type(oid = 2950, array_oid = 2951))]
     pub struct Uuid;
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
@@ -287,7 +287,7 @@ pub mod sql_types {
     /// # fn main() {}
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "3802", array_oid = "3807")]
+    #[diesel(postgres_type(oid = 3802, array_oid = 3807))]
     pub struct Jsonb;
 
     /// The PostgreSQL [Money](https://www.postgresql.org/docs/9.1/static/datatype-money.html) type.
@@ -335,7 +335,7 @@ pub mod sql_types {
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "790", array_oid = "791")]
+    #[diesel(postgres_type(oid = 790, array_oid = 791))]
     pub struct Money;
 
     /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type.
@@ -379,7 +379,7 @@ pub mod sql_types {
     /// # }
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "829", array_oid = "1040")]
+    #[diesel(postgres_type(oid = 829, array_oid = 1040))]
     pub struct MacAddr;
 
     #[doc(hidden)]
@@ -440,7 +440,7 @@ pub mod sql_types {
     /// # fn main() {}
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "869", array_oid = "1041")]
+    #[diesel(postgres_type(oid = 869, array_oid = 1041))]
     pub struct Inet;
 
     /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
@@ -496,7 +496,7 @@ pub mod sql_types {
     /// # fn main() {}
     /// ```
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    #[postgres(oid = "650", array_oid = "651")]
+    #[diesel(postgres_type(oid = 650, array_oid = 651))]
     pub struct Cidr;
 }
 

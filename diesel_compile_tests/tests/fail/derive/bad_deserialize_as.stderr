@@ -1,0 +1,23 @@
+error: unexpected end of input, expected `=`
+ --> $DIR/bad_deserialize_as.rs:7:13
+  |
+7 |     #[diesel(deserialize_as)]
+  |             ^^^^^^^^^^^^^^^^
+
+error: expected `=`
+  --> $DIR/bad_deserialize_as.rs:14:28
+   |
+14 |     #[diesel(deserialize_as(Foo))]
+   |                            ^^^^^
+
+error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+  --> $DIR/bad_deserialize_as.rs:21:31
+   |
+21 |     #[diesel(deserialize_as = "foo")]
+   |                               ^^^^^
+
+error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+  --> $DIR/bad_deserialize_as.rs:28:31
+   |
+28 |     #[diesel(deserialize_as = 1omg)]
+   |                               ^^^^

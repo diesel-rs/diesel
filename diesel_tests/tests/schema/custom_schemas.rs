@@ -5,7 +5,7 @@ include!("pg_custom_schema.rs");
 use self::custom_schema::users;
 
 #[derive(Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct NewUser {
     id: i32,
 }

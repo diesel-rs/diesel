@@ -1,18 +1,12 @@
-use proc_macro2::*;
+use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::parse::{self, Parse, ParseStream};
+use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
+use syn::{
+    Attribute, GenericArgument, Generics, Ident, Lit, Meta, MetaNameValue, PathArguments, Type,
+};
 
-use meta::*;
-use util::*;
-
-// Extremely curious why this triggers on a nearly branchless function
-#[allow(clippy::cognitive_complexity)]
-// for loop comes from `quote!`
-#[allow(clippy::for_loops_over_fallibles)]
-// https://github.com/rust-lang/rust-clippy/issues/3768
-#[allow(clippy::useless_let_if_seq)]
-pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> {
+pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
     let SqlFunctionDecl {
         mut attributes,
         fn_token,
@@ -22,10 +16,30 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         return_type,
     } = input;
 
-    let sql_name = MetaItem::with_name(&attributes, "sql_name")
-        .map(|m| m.str_value())
-        .unwrap_or_else(|| Ok(fn_name.to_string()))?;
-    let is_aggregate = MetaItem::with_name(&attributes, "aggregate").is_some();
+    let sql_name = attributes
+        .iter()
+        .find(|attr| {
+            attr.parse_meta()
+                .map(|m| m.path().is_ident("sql_name"))
+                .unwrap_or(false)
+        })
+        .and_then(|attr| {
+            if let Ok(Meta::NameValue(MetaNameValue {
+                lit: Lit::Str(lit), ..
+            })) = attr.parse_meta()
+            {
+                Some(lit.value())
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| fn_name.to_string());
+
+    let is_aggregate = attributes.iter().any(|attr| {
+        attr.parse_meta()
+            .map(|m| m.path().is_ident("aggregate"))
+            .unwrap_or(false)
+    });
 
     attributes.retain(|attr| {
         attr.parse_meta()
@@ -366,7 +380,8 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
     }
 
     let args_iter = args.iter();
-    tokens = quote! {
+
+    quote! {
         #(#attributes)*
         #[allow(non_camel_case_types)]
         pub #fn_token #fn_name #impl_generics (#(#args_iter,)*)
@@ -385,31 +400,29 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         pub(crate) mod #fn_name {
             #tokens
         }
-    };
-
-    Ok(tokens)
+    }
 }
 
 pub(crate) struct SqlFunctionDecl {
-    attributes: Vec<syn::Attribute>,
+    attributes: Vec<Attribute>,
     fn_token: Token![fn],
-    fn_name: syn::Ident,
-    generics: syn::Generics,
+    fn_name: Ident,
+    generics: Generics,
     args: Punctuated<StrictFnArg, Token![,]>,
-    return_type: syn::Type,
+    return_type: Type,
 }
 
 impl Parse for SqlFunctionDecl {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
-        let attributes = syn::Attribute::parse_outer(input)?;
+    fn parse(input: ParseStream) -> Result<Self> {
+        let attributes = Attribute::parse_outer(input)?;
         let fn_token: Token![fn] = input.parse()?;
-        let fn_name = syn::Ident::parse(input)?;
-        let generics = syn::Generics::parse(input)?;
+        let fn_name = Ident::parse(input)?;
+        let generics = Generics::parse(input)?;
         let args;
         let _paren = parenthesized!(args in input);
         let args = args.parse_terminated::<_, Token![,]>(StrictFnArg::parse)?;
         let return_type = if Option::<Token![->]>::parse(input)?.is_some() {
-            syn::Type::parse(input)?
+            Type::parse(input)?
         } else {
             parse_quote!(diesel::expression::expression_types::NotSelectable)
         };
@@ -426,15 +439,15 @@ impl Parse for SqlFunctionDecl {
     }
 }
 
-/// Essentially the same as syn::ArgCaptured, but only allowing ident patterns
+/// Essentially the same as ArgCaptured, but only allowing ident patterns
 struct StrictFnArg {
-    name: syn::Ident,
+    name: Ident,
     colon_token: Token![:],
-    ty: syn::Type,
+    ty: Type,
 }
 
 impl Parse for StrictFnArg {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream) -> Result<Self> {
         let name = input.parse()?;
         let colon_token = input.parse()?;
         let ty = input.parse()?;
@@ -454,8 +467,8 @@ impl ToTokens for StrictFnArg {
     }
 }
 
-fn is_sqlite_type(ty: &syn::Type) -> bool {
-    let last_segment = if let syn::Type::Path(tp) = ty {
+fn is_sqlite_type(ty: &Type) -> bool {
+    let last_segment = if let Type::Path(tp) = ty {
         if let Some(segment) = tp.path.segments.last() {
             segment
         } else {
@@ -467,8 +480,8 @@ fn is_sqlite_type(ty: &syn::Type) -> bool {
 
     let ident = last_segment.ident.to_string();
     if ident == "Nullable" {
-        if let syn::PathArguments::AngleBracketed(ref ab) = last_segment.arguments {
-            if let Some(syn::GenericArgument::Type(ty)) = ab.args.first() {
+        if let PathArguments::AngleBracketed(ref ab) = last_segment.arguments {
+            if let Some(GenericArgument::Type(ty)) = ab.args.first() {
                 return is_sqlite_type(&ty);
             }
         }

@@ -164,7 +164,7 @@ where
 /// #
 /// #[repr(i32)]
 /// #[derive(Debug, Clone, Copy, AsExpression)]
-/// #[sql_type = "Integer"]
+/// #[diesel(sql_type = Integer)]
 /// pub enum MyEnum {
 ///     A = 1,
 ///     B = 2,

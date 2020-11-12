@@ -1,104 +1,158 @@
-use proc_macro2::{Ident, Span};
-use syn;
+use proc_macro2::Span;
+use syn::punctuated::Punctuated;
+use syn::token::Comma;
+use syn::{
+    Data, DataStruct, DeriveInput, Field as SynField, Fields, FieldsNamed, FieldsUnnamed, Ident,
+    LitBool, Path, Type,
+};
 
-use diagnostic_shim::*;
-use field::*;
-use meta::*;
-use resolved_at_shim::*;
+use attrs::{parse_attributes, StructAttr};
+use field::Field;
+use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
+use util::camel_to_snake;
 
 pub struct Model {
-    pub name: syn::Ident,
-    pub primary_key_names: Vec<syn::Ident>,
-    table_name_from_attribute: Option<syn::Path>,
+    name: Path,
+    table_name: Option<Path>,
+    pub primary_key_names: Vec<Ident>,
+    treat_none_as_default_value: Option<LitBool>,
+    treat_none_as_null: Option<LitBool>,
+    pub belongs_to: Vec<BelongsTo>,
+    pub sql_types: Vec<Type>,
+    pub aggregate: bool,
+    pub not_sized: bool,
+    pub foreign_derive: bool,
+    pub mysql_type: Option<MysqlType>,
+    pub sqlite_type: Option<SqliteType>,
+    pub postgres_type: Option<PostgresType>,
     fields: Vec<Field>,
 }
 
 impl Model {
-    pub fn from_item(item: &syn::DeriveInput) -> Result<Self, Diagnostic> {
-        let table_name_from_attribute = MetaItem::with_name(&item.attrs, "table_name")
-            .map(|m| m.path_value())
-            .transpose()?;
-        let primary_key_names = MetaItem::with_name(&item.attrs, "primary_key")
-            .map(|m| {
-                Ok(m.nested()?
-                    .map(|m| m.expect_path().segments.first().unwrap().ident.clone())
-                    .collect())
-            })
-            .unwrap_or_else(|| Ok(vec![Ident::new("id", Span::call_site())]))?;
-        let fields = fields_from_item_data(&item.data)?;
-        Ok(Self {
-            name: item.ident.clone(),
-            table_name_from_attribute,
+    pub fn from_item(item: &DeriveInput, allow_unit_structs: bool) -> Self {
+        let DeriveInput {
+            data, ident, attrs, ..
+        } = item;
+
+        let fields = match *data {
+            Data::Struct(DataStruct {
+                fields: Fields::Named(FieldsNamed { ref named, .. }),
+                ..
+            }) => Some(named),
+            Data::Struct(DataStruct {
+                fields: Fields::Unnamed(FieldsUnnamed { ref unnamed, .. }),
+                ..
+            }) => Some(unnamed),
+            _ if !allow_unit_structs => {
+                abort_call_site!("This derive can only be used on non-unit structs")
+            }
+            _ => None,
+        };
+
+        let mut table_name = None;
+        let mut primary_key_names = vec![Ident::new("id", Span::call_site())];
+        let mut treat_none_as_default_value = None;
+        let mut treat_none_as_null = None;
+        let mut belongs_to = vec![];
+        let mut sql_types = vec![];
+        let mut aggregate = false;
+        let mut not_sized = false;
+        let mut foreign_derive = false;
+        let mut mysql_type = None;
+        let mut sqlite_type = None;
+        let mut postgres_type = None;
+
+        for attr in parse_attributes(attrs) {
+            match attr {
+                StructAttr::SqlType(_, value) => sql_types.push(value),
+                StructAttr::TableName(_, value) => table_name = Some(value),
+                StructAttr::PrimaryKey(_, keys) => {
+                    primary_key_names = keys.into_iter().collect();
+                }
+                StructAttr::TreatNoneAsDefaultValue(_, val) => {
+                    treat_none_as_default_value = Some(val)
+                }
+                StructAttr::TreatNoneAsNull(_, val) => treat_none_as_null = Some(val),
+                StructAttr::BelongsTo(_, val) => belongs_to.push(val),
+                StructAttr::Aggregate(_) => aggregate = true,
+                StructAttr::NotSized(_) => not_sized = true,
+                StructAttr::ForeignDerive(_) => foreign_derive = true,
+                StructAttr::MysqlType(_, val) => mysql_type = Some(val),
+                StructAttr::SqliteType(_, val) => sqlite_type = Some(val),
+                StructAttr::PostgresType(_, val) => postgres_type = Some(val),
+            }
+        }
+
+        let name = Ident::new(&infer_table_name(&ident.to_string()), ident.span()).into();
+
+        Self {
+            name,
+            table_name,
             primary_key_names,
-            fields,
-        })
+            treat_none_as_default_value,
+            treat_none_as_null,
+            belongs_to,
+            sql_types,
+            aggregate,
+            not_sized,
+            foreign_derive,
+            mysql_type,
+            sqlite_type,
+            postgres_type,
+            fields: fields_from_item_data(fields),
+        }
     }
 
-    pub fn table_name(&self) -> syn::Path {
-        self.table_name_from_attribute.clone().unwrap_or_else(|| {
-            syn::Ident::new(
-                &infer_table_name(&self.name.to_string()),
-                self.name.span().resolved_at(Span::call_site()),
-            )
-            .into()
-        })
+    pub fn table_name(&self) -> &Path {
+        self.table_name.as_ref().unwrap_or(&self.name)
     }
 
     pub fn fields(&self) -> &[Field] {
         &self.fields
     }
 
-    pub fn find_column(&self, column_name: &syn::Ident) -> Result<&Field, Diagnostic> {
+    pub fn find_column(&self, column_name: &Ident) -> &Field {
         self.fields()
             .iter()
-            .find(|f| &f.column_name_ident() == column_name)
-            .ok_or_else(|| {
-                column_name
-                    .span()
-                    .error(format!("No field with column name {}", column_name))
-            })
+            .find(|f| f.column_name() == column_name)
+            .unwrap_or_else(|| abort!(column_name, "No field with column name {}", column_name))
     }
 
     pub fn has_table_name_attribute(&self) -> bool {
-        self.table_name_from_attribute.is_some()
+        self.table_name.is_some()
+    }
+
+    pub fn treat_none_as_default_value(&self) -> bool {
+        self.treat_none_as_default_value
+            .as_ref()
+            .map(|v| v.value())
+            .unwrap_or(true)
+    }
+
+    pub fn treat_none_as_null(&self) -> bool {
+        self.treat_none_as_null
+            .as_ref()
+            .map(|v| v.value())
+            .unwrap_or(false)
     }
 }
 
-pub fn camel_to_snake(name: &str) -> String {
-    let mut result = String::with_capacity(name.len());
-    result.push_str(&name[..1].to_lowercase());
-    for character in name[1..].chars() {
-        if character.is_uppercase() {
-            result.push('_');
-            for lowercase in character.to_lowercase() {
-                result.push(lowercase);
-            }
-        } else {
-            result.push(character);
-        }
-    }
-    result
+fn fields_from_item_data(fields: Option<&Punctuated<SynField, Comma>>) -> Vec<Field> {
+    fields
+        .map(|fields| {
+            fields
+                .iter()
+                .enumerate()
+                .map(|(i, f)| Field::from_struct_field(f, i))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
 }
 
-fn infer_table_name(name: &str) -> String {
+pub fn infer_table_name(name: &str) -> String {
     let mut result = camel_to_snake(name);
     result.push('s');
     result
-}
-
-fn fields_from_item_data(data: &syn::Data) -> Result<Vec<Field>, Diagnostic> {
-    use syn::Data::*;
-
-    let struct_data = match *data {
-        Struct(ref d) => d,
-        _ => return Err(Span::call_site().error("This derive can only be used on structs")),
-    };
-    Ok(struct_data
-        .fields
-        .iter()
-        .enumerate()
-        .map(|(i, f)| Field::from_struct_field(f, i))
-        .collect())
 }
 
 #[test]

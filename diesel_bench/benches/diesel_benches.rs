@@ -42,7 +42,7 @@ allow_tables_to_appear_in_same_query!(users, posts, comments);
 #[derive(
     PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
 )]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -50,8 +50,8 @@ pub struct User {
 }
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
-#[table_name = "users"]
-#[diesel(treat_none_as_default_value = "false")]
+#[diesel(table_name = users)]
+#[diesel(treat_none_as_default_value = false)]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
@@ -67,8 +67,8 @@ impl NewUser {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName)]
-#[belongs_to(User)]
-#[table_name = "posts"]
+#[diesel(belongs_to(User))]
+#[diesel(table_name = posts)]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -77,7 +77,7 @@ pub struct Post {
 }
 
 #[derive(Insertable)]
-#[table_name = "posts"]
+#[diesel(table_name = posts)]
 pub struct NewPost {
     user_id: i32,
     title: String,
@@ -95,7 +95,7 @@ impl NewPost {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[belongs_to(Post)]
+#[diesel(belongs_to(Post))]
 pub struct Comment {
     id: i32,
     post_id: i32,
@@ -103,10 +103,10 @@ pub struct Comment {
 }
 
 #[derive(Debug, Clone, Copy, Insertable)]
-#[table_name = "comments"]
+#[diesel(table_name = comments)]
 pub struct NewComment<'a>(
-    #[column_name = "post_id"] pub i32,
-    #[column_name = "text"] pub &'a str,
+    #[diesel(column_name = post_id)] pub i32,
+    #[diesel(column_name = text)] pub &'a str,
 );
 
 #[cfg(feature = "mysql")]

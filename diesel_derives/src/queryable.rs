@@ -1,31 +1,30 @@
-use proc_macro2;
-use syn;
+use proc_macro2::{Span, TokenStream};
+use syn::{DeriveInput, Ident, Index};
 
 use field::Field;
-use model::*;
-use util::*;
+use model::Model;
+use util::wrap_in_dummy_mod;
 
-pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
-    let model = Model::from_item(&item)?;
+pub fn derive(item: DeriveInput) -> TokenStream {
+    let model = Model::from_item(&item, false);
 
     let struct_name = &item.ident;
-    let field_ty = model
+    let field_ty = &model
         .fields()
         .iter()
         .map(Field::ty_for_deserialize)
-        .collect::<Result<Vec<_>, _>>()?;
-    let field_ty = &field_ty;
+        .collect::<Vec<_>>();
     let build_expr = model.fields().iter().enumerate().map(|(i, f)| {
-        let i = syn::Index::from(i);
-        f.name.assign(parse_quote!(row.#i.try_into()?))
+        let field_name = &f.name;
+        let i = Index::from(i);
+        quote!(#field_name: row.#i.try_into()?)
     });
-    let sql_type = (0..model.fields().len())
+    let sql_type = &(0..model.fields().len())
         .map(|i| {
-            let i = syn::Ident::new(&format!("__ST{}", i), proc_macro2::Span::call_site());
+            let i = Ident::new(&format!("__ST{}", i), Span::call_site());
             quote!(#i)
         })
         .collect::<Vec<_>>();
-    let sql_type = &sql_type;
 
     let (_, ty_generics, _) = item.generics.split_for_impl();
     let mut generics = item.generics.clone();
@@ -33,7 +32,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         .params
         .push(parse_quote!(__DB: diesel::backend::Backend));
     for id in 0..model.fields().len() {
-        let ident = syn::Ident::new(&format!("__ST{}", id), proc_macro2::Span::call_site());
+        let ident = Ident::new(&format!("__ST{}", id), Span::call_site());
         generics.params.push(parse_quote!(#ident));
     }
     {
@@ -44,7 +43,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     }
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    Ok(wrap_in_dummy_mod(quote! {
+    wrap_in_dummy_mod(quote! {
         use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
         use diesel::row::{Row, Field};
         use std::convert::TryInto;
@@ -60,5 +59,5 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 })
             }
         }
-    }))
+    })
 }

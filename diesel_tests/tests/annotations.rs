@@ -5,8 +5,8 @@ use diesel::*;
 #[test]
 fn association_where_struct_name_doesnt_match_table_name() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-    #[belongs_to(Post)]
-    #[table_name = "comments"]
+    #[diesel(belongs_to(Post))]
+    #[diesel(table_name = comments)]
     struct OtherComment {
         id: i32,
         post_id: i32,
@@ -35,7 +35,7 @@ fn association_where_struct_name_doesnt_match_table_name() {
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-    #[belongs_to(User)]
+    #[diesel(belongs_to(User))]
     pub struct SpecialPost {
         id: i32,
         user_id: i32,
@@ -43,7 +43,7 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     #[derive(Insertable)]
-    #[table_name = "special_posts"]
+    #[diesel(table_name = special_posts)]
     struct NewSpecialPost {
         user_id: i32,
         title: String,
@@ -59,7 +59,7 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-    #[belongs_to(SpecialPost)]
+    #[diesel(belongs_to(SpecialPost))]
     struct SpecialComment {
         id: i32,
         special_post_id: i32,
@@ -74,7 +74,7 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     #[derive(Insertable)]
-    #[table_name = "special_comments"]
+    #[diesel(table_name = special_comments)]
     struct NewSpecialComment {
         special_post_id: i32,
     }
@@ -123,7 +123,7 @@ mod associations_can_have_nullable_foreign_keys {
     }
 
     #[derive(Identifiable, Associations)]
-    #[belongs_to(Foo)]
+    #[diesel(belongs_to(Foo))]
     pub struct Bar {
         id: i32,
         foo_id: Option<i32>,
@@ -136,7 +136,7 @@ mod multiple_lifetimes_in_insertable_struct_definition {
     use crate::schema::posts;
 
     #[derive(Insertable)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     pub struct MyPost<'a> {
         title: &'a str,
         body: &'a str,
@@ -148,7 +148,7 @@ mod lifetimes_with_names_other_than_a {
     use crate::schema::posts;
 
     #[derive(Insertable)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     pub struct MyPost<'a, 'b> {
         id: i32,
         title: &'b str,
@@ -162,7 +162,7 @@ mod insertable_with_cow {
     use std::borrow::Cow;
 
     #[derive(Insertable)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     pub struct MyPost<'a> {
         id: i32,
         title: Cow<'a, str>,
@@ -178,7 +178,7 @@ mod custom_foreign_keys_are_respected_on_belongs_to {
     table! { special_posts { id -> Integer, author_id -> Integer, } }
 
     #[derive(Identifiable, Associations)]
-    #[belongs_to(User, foreign_key = "author_id")]
+    #[diesel(belongs_to(User, foreign_key = author_id))]
     pub struct SpecialPost {
         id: i32,
         author_id: i32,
@@ -200,8 +200,8 @@ fn derive_identifiable_with_non_standard_pk() {
     use diesel::associations::*;
 
     #[derive(Identifiable)]
-    #[table_name = "posts"]
-    #[primary_key(foo_id)]
+    #[diesel(table_name = posts)]
+    #[diesel(primary_key(foo_id))]
     #[allow(dead_code)]
     struct Foo<'a> {
         id: i32,
@@ -230,8 +230,8 @@ fn derive_identifiable_with_composite_pk() {
     use diesel::associations::Identifiable;
 
     #[derive(Identifiable)]
-    #[primary_key(foo_id, bar_id)]
-    #[table_name = "posts"]
+    #[diesel(primary_key(foo_id, bar_id))]
+    #[diesel(table_name = posts)]
     #[allow(dead_code)]
     struct Foo {
         id: i32,
@@ -259,7 +259,7 @@ fn derive_identifiable_with_composite_pk() {
 #[test]
 fn derive_insertable_with_option_for_not_null_field_with_default() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser {
         id: Option<i32>,
         name: &'static str,
@@ -292,7 +292,7 @@ sql_function!(fn nextval(a: Text) -> Integer);
 #[cfg(feature = "postgres")]
 fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser {
         id: nextval::HelperType<&'static str>,
         name: &'static str,

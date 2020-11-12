@@ -1,13 +1,12 @@
-use proc_macro2::*;
-use syn;
+use proc_macro2::TokenStream;
+use syn::DeriveInput;
 
-use meta::*;
-use util::*;
+use model::Model;
+use util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
-pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
-    let flags =
-        MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
-    let struct_ty = ty_for_foreign_derive(&item, &flags)?;
+pub fn derive(mut item: DeriveInput) -> TokenStream {
+    let model = Model::from_item(&item, true);
+    let struct_ty = ty_for_foreign_derive(&item, &model);
 
     {
         let where_clause = item
@@ -30,7 +29,7 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
     let ty_params = item.generics.type_params().collect::<Vec<_>>();
     let const_params = item.generics.const_params().collect::<Vec<_>>();
 
-    Ok(wrap_in_dummy_mod(quote! {
+    wrap_in_dummy_mod(quote! {
         use diesel::deserialize::{self, FromSql, Queryable};
 
         // Need to put __ST and __DB after lifetimes but before const params
@@ -43,5 +42,5 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
                 Ok(row)
             }
         }
-    }))
+    })
 }

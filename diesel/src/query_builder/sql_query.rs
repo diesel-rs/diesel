@@ -48,7 +48,7 @@ impl<Inner> SqlQuery<Inner> {
     /// # use schema::users;
     /// #
     /// # #[derive(QueryableByName, Debug, PartialEq)]
-    /// # #[table_name="users"]
+    /// # #[diesel(table_name = users)]
     /// # struct User {
     /// #     id: i32,
     /// #     name: String,
@@ -178,7 +178,7 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// # use schema::users;
     /// #
     /// # #[derive(QueryableByName, Debug, PartialEq)]
-    /// # #[table_name="users"]
+    /// # #[diesel(table_name = users)]
     /// # struct User {
     /// #     id: i32,
     /// #     name: String,

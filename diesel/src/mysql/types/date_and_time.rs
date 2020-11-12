@@ -20,10 +20,10 @@ use crate::sql_types::{Date, Datetime, Time, Timestamp};
 #[repr(C)]
 #[derive(Debug, Clone, Copy, AsExpression, FromSqlRow)]
 #[non_exhaustive]
-#[sql_type = "Timestamp"]
-#[sql_type = "Time"]
-#[sql_type = "Date"]
-#[sql_type = "Datetime"]
+#[diesel(sql_type = Timestamp)]
+#[diesel(sql_type = Time)]
+#[diesel(sql_type = Date)]
+#[diesel(sql_type = Datetime)]
 pub struct MysqlTime {
     /// [Year field](https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__TIME.html#af585231d3ed0bc2fa389856e61e15d4e)
     pub year: libc::c_uint,

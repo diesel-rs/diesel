@@ -17,7 +17,7 @@ table! {
 }
 
 #[derive(Debug, AsExpression, FromSqlRow, Clone, Copy, PartialEq)]
-#[sql_type = "Text"]
+#[diesel(sql_type = Text)]
 struct StringArray<const N: usize>(pub [u8; N]);
 
 impl<DB, const N: usize> FromSql<Text, DB> for StringArray<N>
@@ -47,7 +47,7 @@ where
 #[test]
 fn struct_with_sql_type() {
     #[derive(Debug, Clone, PartialEq, Queryable, Selectable)]
-    #[table_name = "my_structs"]
+    #[diesel(table_name = my_structs)]
     struct MyStruct {
         foo: i32,
         bar: StringArray<4>,
