@@ -4,7 +4,7 @@ use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Nullable, Range, SqlType, Text};
+use crate::sql_types::{Array, Bigint, Cidr, Inet, Nullable, Range, SqlType, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -683,3 +683,592 @@ where
     T::SqlType: RangeOrNullableRange,
 {
 }
+
+/// PostgreSQL specific methods present between CIDR/INET expressions
+pub trait PgNetExpressionMethods: Expression + Sized {
+    /**
+     * Creates a PostgreSQL `>>` expression.
+     *
+     * This operator returns wether a subnet strictly contains another subnet or address.
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
+     *                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.contains(IpNetwork::from_str("10.0.2.5").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1, 2], my_hosts);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.contains(IpNetwork::from_str("10.0.2.5/24").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![2], my_hosts);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.contains(IpNetwork::from_str("10.0.3.31").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![2], my_hosts);
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn contains<T>(self, other: T) -> dsl::ContainsNet<Self, T>
+    where
+        T: AsExpression<Inet>,
+    {
+        Grouped(ContainsNet::new(self, other.as_expression()))
+    }
+
+    /**
+     * Creates a PostgreSQL `>>=` expression.
+     *
+     * This operator returns wether a subnet contains or is equal to another subnet.
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
+     *                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.contains_or_eq(IpNetwork::from_str("10.0.2.5").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1, 2], my_hosts);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.contains_or_eq(IpNetwork::from_str("10.0.2.5/24").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1, 2], my_hosts);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.contains_or_eq(IpNetwork::from_str("10.0.3.31").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![2], my_hosts);
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn contains_or_eq<T>(self, other: T) -> dsl::ContainsNetLoose<Self, T>
+    where
+        T: AsExpression<Inet>,
+    {
+        Grouped(ContainsNetLoose::new(self, other.as_expression()))
+    }
+
+    /**
+     * Creates a PostgreSQL `<<` expression.
+     *
+     * This operator returns wether a subnet or address is strictly contained by another subnet.
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
+     *                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.is_contained_by(IpNetwork::from_str("10.0.2.5/24").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(my_hosts.len(), 0);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.is_contained_by(IpNetwork::from_str("10.0.3.31/23").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1], my_hosts);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.is_contained_by(IpNetwork::from_str("10.0.3.31/22").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1, 2], my_hosts);
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn is_contained_by<T>(self, other: T) -> dsl::IsContainedByNet<Self, T>
+    where
+        T: AsExpression<Inet>,
+    {
+        Grouped(IsContainedByNet::new(self, other.as_expression()))
+    }
+
+    /**
+     * Creates a PostgreSQL `>>=` expression.
+     *
+     * This operator returns wether a subnet is contained by or equal to another subnet.
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
+     *                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.is_contained_by_or_eq(IpNetwork::from_str("10.0.2.5/24").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1], my_hosts);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.is_contained_by_or_eq(IpNetwork::from_str("10.0.3.31/23").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1, 2], my_hosts);
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn is_contained_by_or_eq<T>(self, other: T) -> dsl::IsContainedByNetLoose<Self, T>
+    where
+        T: AsExpression<Inet>,
+    {
+        Grouped(IsContainedByNetLoose::new(self, other.as_expression()))
+    }
+
+    /**
+     * Creates a PostgreSQL `&&` expression.
+     *
+     * This operator returns wether a subnet contains or is contained by another subnet.
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
+     *                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.overlaps_with(IpNetwork::from_str("10.0.2.5/24").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1, 2], my_hosts);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.overlaps_with(IpNetwork::from_str("10.0.3.31/24").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![2], my_hosts);
+     *
+     * let my_hosts = hosts.select(id)
+     *     .filter(address.overlaps_with(IpNetwork::from_str("10.0.3.31/23").unwrap()))
+     *     .load::<i32>(&conn)?;
+     * assert_eq!(vec![1, 2], my_hosts);
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn overlaps_with<T>(self, other: T) -> dsl::OverlapsWithNet<Self, T>
+    where
+        T: AsExpression<Inet>,
+    {
+        Grouped(OverlapsWith::new(self, other.as_expression()))
+    }
+
+    /**
+     * Creates a PostgreSQL `&` expression.
+     *
+     * This operator computes the bitwise AND between two network addresses.
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let addr = hosts
+     *     .select(address.and(IpNetwork::from_str("0.0.0.255").unwrap()))
+     *     .first::<IpNetwork>(&conn)?;
+     * assert_eq!(addr, IpNetwork::from_str("0.0.0.3").unwrap());
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn and<T>(self, other: T) -> dsl::AndNet<Self, T>
+    where
+        T: AsExpression<Inet>,
+    {
+        Grouped(AndNet::new(self, other.as_expression()))
+    }
+
+    /**
+     * Creates a PostgreSQL `|` expression.
+     *
+     * This operator computes the bitwise OR between two network addresses.
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let addr = hosts
+     *     .select(address.or(IpNetwork::from_str("0.0.0.255").unwrap()))
+     *     .first::<IpNetwork>(&conn)?;
+     * assert_eq!(addr, IpNetwork::from_str("10.0.2.255").unwrap());
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn or<T>(self, other: T) -> dsl::OrNet<Self, T>
+    where
+        T: AsExpression<Inet>,
+    {
+        Grouped(OrNet::new(self, other.as_expression()))
+    }
+}
+
+impl<T> PgNetExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: InetOrCidr,
+{
+}
+
+/// PostgreSQL specific methods present between CIDR/INET expressions and Bigint expressions
+pub trait PgNetAddExpressionMethods: Expression + Sized {
+    /**
+     * Creates a PostgreSQL `+` expression.
+     *
+     * This operator adds an offset to an address
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let addr = hosts
+     *     .select(address.add(10))
+     *     .first::<IpNetwork>(&conn)?;
+     * assert_eq!(addr, IpNetwork::from_str("10.0.2.13").unwrap());
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn add<T>(self, other: T) -> dsl::AddNet<Self, T>
+    where
+        T: AsExpression<Bigint>,
+    {
+        Grouped(AddNet::new(self, other.as_expression()))
+    }
+}
+
+impl<T> PgNetAddExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: InetOrCidr,
+{
+}
+
+/// PostgreSQL specific methods present between CIDR/INET expressions and Bigint expression
+pub trait PgNetSubExpressionMethods: Expression + Sized {
+    /**
+     * Creates a PostgreSQL `-` expression.
+     *
+     * This operator substracts an offset from an address
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.53").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let addr = hosts
+     *     .select(address.sub(10))
+     *     .first::<IpNetwork>(&conn)?;
+     * assert_eq!(addr, IpNetwork::from_str("10.0.2.43").unwrap());
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn sub<T>(self, other: T) -> dsl::SubstractNet<Self, T>
+    where
+        T: AsExpression<Bigint>,
+    {
+        Grouped(SubstractNet::new(self, other.as_expression()))
+    }
+}
+
+impl<T> PgNetSubExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: InetOrCidr,
+{
+}
+
+/// PostgreSQL specific methods present between CIDR/INET expressions
+pub trait PgNetDiffExpressionMethods: Expression + Sized {
+    /**
+     * Creates a PostgreSQL `-` expression.
+     *
+     * This operator substracts an address from an address to compute the distance between the two
+     *
+     * # Example
+     *
+     * ```rust
+     * # #[macro_use] extern crate diesel;
+     * # extern crate ipnetwork;
+     * # include!("../../doctest_setup.rs");
+     * #
+     * # table! {
+     * #     hosts {
+     * #         id -> Integer,
+     * #         address -> Inet,
+     * #     }
+     * # }
+     * #
+     * # fn main() {
+     * #     run_test().unwrap();
+     * # }
+     * #
+     * # fn run_test() -> QueryResult<()> {
+     * #     use self::hosts::dsl::*;
+     * #     use ipnetwork::IpNetwork;
+     * #     use std::str::FromStr;
+     * #     let conn = establish_connection();
+     * #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
+     * #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+     * diesel::insert_into(hosts)
+     *     .values(vec![address.eq(IpNetwork::from_str("10.0.2.53").unwrap())])
+     *     .execute(&conn)?;
+     *
+     * let offset = hosts
+     *     .select(address.diff(IpNetwork::from_str("10.0.2.42").unwrap()))
+     *     .first::<i64>(&conn)?;
+     * assert_eq!(offset, 11);
+     * #     Ok(())
+     * # }
+     * ```
+     */
+    fn diff<T>(self, other: T) -> dsl::DifferenceNet<Self, T>
+    where
+        T: AsExpression<Inet>,
+    {
+        Grouped(DifferenceNet::new(self, other.as_expression()))
+    }
+}
+
+impl<T> PgNetDiffExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: InetOrCidr,
+{
+}
+
+#[doc(hidden)]
+/// Marker trait used to implement `PgNet*ExpressionMethods` on the appropriate types.
+pub trait InetOrCidr {}
+
+impl InetOrCidr for Inet {}
+impl InetOrCidr for Cidr {}
+impl InetOrCidr for Nullable<Inet> {}
+impl InetOrCidr for Nullable<Cidr> {}
