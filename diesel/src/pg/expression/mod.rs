@@ -31,4 +31,7 @@ pub mod dsl {
     pub use super::array::array;
 
     pub use super::extensions::*;
+
+    #[cfg(not(feature = "sqlite"))]
+    pub use super::functions::*;
 }
