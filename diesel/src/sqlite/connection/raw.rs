@@ -295,7 +295,7 @@ extern "C" fn run_custom_function<F>(
             }
             Err(_) => {
                 let msg = format!("{} panicked", std::any::type_name::<F>());
-                unsafe { context_error_str(ctx, &msg) };
+                context_error_str(ctx, &msg);
             }
         }
     }
