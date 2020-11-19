@@ -621,7 +621,6 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # table! {
@@ -694,8 +693,6 @@ pub trait PgNetExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -754,8 +751,6 @@ pub trait PgNetExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -814,8 +809,6 @@ pub trait PgNetExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -874,8 +867,6 @@ pub trait PgNetExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -929,8 +920,6 @@ pub trait PgNetExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -989,8 +978,6 @@ pub trait PgNetExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -1038,8 +1025,6 @@ pub trait PgNetExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -1097,8 +1082,6 @@ pub trait PgNetAddExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -1156,8 +1139,6 @@ pub trait PgNetSubExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
@@ -1215,8 +1196,6 @@ pub trait PgNetDiffExpressionMethods: Expression + Sized {
      * # Example
      *
      * ```rust
-     * # #[macro_use] extern crate diesel;
-     * # extern crate ipnetwork;
      * # include!("../../doctest_setup.rs");
      * #
      * # table! {
