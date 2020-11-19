@@ -1,6 +1,6 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
-use crate::sql_types::{Bigint, Inet, VarChar};
+use crate::sql_types::{Inet, VarChar};
 
 /// The return type of `lhs.ilike(rhs)`
 pub type ILike<Lhs, Rhs> = Grouped<super::operators::ILike<Lhs, AsExprOf<Rhs, VarChar>>>;
@@ -74,13 +74,6 @@ pub type AndNet<Lhs, Rhs> = Grouped<super::operators::AndNet<Lhs, AsExprOf<Rhs, 
 
 /// The return type of `lsh.or(rhs)`
 pub type OrNet<Lhs, Rhs> = Grouped<super::operators::OrNet<Lhs, AsExprOf<Rhs, Inet>>>;
-
-/// The return type of `lsh.add(rhs)`
-pub type AddNet<Lhs, Rhs> = Grouped<super::operators::AddNet<Lhs, AsExprOf<Rhs, Bigint>>>;
-
-/// The return type of `lsh.sub(rhs)`
-pub type SubstractNet<Lhs, Rhs> =
-    Grouped<super::operators::SubstractNet<Lhs, AsExprOf<Rhs, Bigint>>>;
 
 /// The return type of `lsh.diff(rhs)`
 pub type DifferenceNet<Lhs, Rhs> =

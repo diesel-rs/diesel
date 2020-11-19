@@ -19,6 +19,4 @@ infix_operator!(IsContainedByNet, " << ", backend: Pg);
 infix_operator!(IsContainedByNetLoose, " <<= ", backend: Pg);
 infix_operator!(AndNet, " & ", Inet, backend: Pg);
 infix_operator!(OrNet, " | ", Inet, backend: Pg);
-infix_operator!(AddNet, " + ", Inet, backend: Pg);
-infix_operator!(SubstractNet, " - ", Inet, backend: Pg);
 infix_operator!(DifferenceNet, " - ", Bigint, backend: Pg);

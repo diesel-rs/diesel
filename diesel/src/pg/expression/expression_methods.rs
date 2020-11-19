@@ -4,7 +4,7 @@ use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Bigint, Cidr, Inet, Nullable, Range, SqlType, Text};
+use crate::sql_types::{Array, Cidr, Inet, Nullable, Range, SqlType, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -1049,127 +1049,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     {
         Grouped(OrNet::new(self, other.as_expression()))
     }
-}
 
-impl<T> PgNetExpressionMethods for T
-where
-    T: Expression,
-    T::SqlType: InetOrCidr,
-{
-}
-
-/// PostgreSQL specific methods present between CIDR/INET expressions and Bigint expressions
-pub trait PgNetAddExpressionMethods: Expression + Sized {
-    /// Creates a PostgreSQL `+` expression.
-    ///
-    /// This operator adds an offset to an address
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     hosts {
-    /// #         id -> Integer,
-    /// #         address -> Inet,
-    /// #     }
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::hosts::dsl::*;
-    /// #     use ipnetwork::IpNetwork;
-    /// #     use std::str::FromStr;
-    /// #     let conn = establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
-    /// diesel::insert_into(hosts)
-    ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
-    ///     .execute(&conn)?;
-    ///
-    /// let addr = hosts
-    ///     .select(address.add(10))
-    ///     .first::<IpNetwork>(&conn)?;
-    /// assert_eq!(addr, IpNetwork::from_str("10.0.2.13").unwrap());
-    /// #     Ok(())
-    /// # }
-    /// ```
-    fn add<T>(self, other: T) -> dsl::AddNet<Self, T>
-    where
-        T: AsExpression<Bigint>,
-    {
-        Grouped(AddNet::new(self, other.as_expression()))
-    }
-}
-
-impl<T> PgNetAddExpressionMethods for T
-where
-    T: Expression,
-    T::SqlType: InetOrCidr,
-{
-}
-
-/// PostgreSQL specific methods present between CIDR/INET expressions and Bigint expression
-pub trait PgNetSubExpressionMethods: Expression + Sized {
-    /// Creates a PostgreSQL `-` expression.
-    ///
-    /// This operator substracts an offset from an address
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # include!("../../doctest_setup.rs");
-    /// #
-    /// # table! {
-    /// #     hosts {
-    /// #         id -> Integer,
-    /// #         address -> Inet,
-    /// #     }
-    /// # }
-    /// #
-    /// # fn main() {
-    /// #     run_test().unwrap();
-    /// # }
-    /// #
-    /// # fn run_test() -> QueryResult<()> {
-    /// #     use self::hosts::dsl::*;
-    /// #     use ipnetwork::IpNetwork;
-    /// #     use std::str::FromStr;
-    /// #     let conn = establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
-    /// diesel::insert_into(hosts)
-    ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.53").unwrap())])
-    ///     .execute(&conn)?;
-    ///
-    /// let addr = hosts
-    ///     .select(address.sub(10))
-    ///     .first::<IpNetwork>(&conn)?;
-    /// assert_eq!(addr, IpNetwork::from_str("10.0.2.43").unwrap());
-    /// #     Ok(())
-    /// # }
-    /// ```
-    fn sub<T>(self, other: T) -> dsl::SubstractNet<Self, T>
-    where
-        T: AsExpression<Bigint>,
-    {
-        Grouped(SubstractNet::new(self, other.as_expression()))
-    }
-}
-
-impl<T> PgNetSubExpressionMethods for T
-where
-    T: Expression,
-    T::SqlType: InetOrCidr,
-{
-}
-
-/// PostgreSQL specific methods present between CIDR/INET expressions
-pub trait PgNetDiffExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `-` expression.
     ///
     /// This operator substracts an address from an address to compute the distance between the two
@@ -1216,7 +1096,7 @@ pub trait PgNetDiffExpressionMethods: Expression + Sized {
     }
 }
 
-impl<T> PgNetDiffExpressionMethods for T
+impl<T> PgNetExpressionMethods for T
 where
     T: Expression,
     T::SqlType: InetOrCidr,
@@ -1224,7 +1104,7 @@ where
 }
 
 #[doc(hidden)]
-/// Marker trait used to implement `PgNet*ExpressionMethods` on the appropriate types.
+/// Marker trait used to implement `PgNetExpressionMethods` on the appropriate types.
 pub trait InetOrCidr {}
 
 impl InetOrCidr for Inet {}
