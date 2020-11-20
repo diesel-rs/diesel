@@ -10,6 +10,7 @@ mod stmt;
 
 pub use self::sqlite_value::SqliteValue;
 
+use std::fmt;
 use std::os::raw as libc;
 
 use self::raw::RawConnection;
@@ -29,7 +30,6 @@ use crate::sqlite::Sqlite;
 /// Connections for the SQLite backend. Unlike other backends, "connection URLs"
 /// for SQLite are file paths, [URIs](https://sqlite.org/uri.html), or special
 /// identifiers like `:memory:`.
-#[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: RawConnection,
@@ -44,6 +44,12 @@ unsafe impl Send for SqliteConnection {}
 impl SimpleConnection for SqliteConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         self.raw_connection.exec(query)
+    }
+}
+
+impl fmt::Debug for SqliteConnection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "SqliteConnection")
     }
 }
 

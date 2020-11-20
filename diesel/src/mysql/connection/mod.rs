@@ -3,6 +3,8 @@ mod raw;
 mod stmt;
 mod url;
 
+use std::fmt;
+
 use self::raw::RawConnection;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
@@ -14,7 +16,7 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
 
-#[allow(missing_debug_implementations, missing_copy_implementations)]
+#[allow(missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
 /// `mysql://[user[:password]@]host/database_name`
 pub struct MysqlConnection {
@@ -29,6 +31,12 @@ impl SimpleConnection for MysqlConnection {
     fn batch_execute(&self, query: &str) -> QueryResult<()> {
         self.raw_connection
             .enable_multi_statements(|| self.raw_connection.execute(query))
+    }
+}
+
+impl fmt::Debug for MysqlConnection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "MysqlConnection")
     }
 }
 

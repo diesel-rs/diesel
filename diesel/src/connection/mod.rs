@@ -27,7 +27,7 @@ pub trait SimpleConnection {
 }
 
 /// A connection to a database
-pub trait Connection: SimpleConnection + Sized + Send {
+pub trait Connection: SimpleConnection + Sized + Send + Debug {
     /// The backend this type connects to
     type Backend: Backend;
     #[doc(hidden)]

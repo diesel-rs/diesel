@@ -6,6 +6,7 @@ mod row;
 mod stmt;
 
 use std::ffi::CString;
+use std::fmt;
 use std::os::raw as libc;
 
 use self::cursor::*;
@@ -25,7 +26,6 @@ use crate::result::*;
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
 /// <https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING>
-#[allow(missing_debug_implementations)]
 pub struct PgConnection {
     pub(crate) raw_connection: RawConnection,
     pub(crate) transaction_manager: AnsiTransactionManager,
@@ -41,6 +41,12 @@ impl SimpleConnection for PgConnection {
         let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
         PgResult::new(inner_result?)?;
         Ok(())
+    }
+}
+
+impl fmt::Debug for PgConnection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "PgConnection")
     }
 }
 
