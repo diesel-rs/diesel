@@ -30,10 +30,8 @@ use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 #[derive(Debug, Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,
-    _marker: PhantomData<T>,
+    _marker: PhantomData<fn() -> T>,
 }
-
-unsafe impl<T: Send + 'static> Sync for ConnectionManager<T> {}
 
 impl<T> ConnectionManager<T> {
     /// Returns a new connection manager,
