@@ -58,6 +58,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Support for `pq-sys` < 0.4.0 has been removed.
 * Support for `mysqlclient-sys` < 0.2.0 has been removed.
 * Support for `time` types has been removed.
+* Support for `chrono` < 0.4.19 has been removed.
 * The `NonNull` for sql types has been removed in favour of the new `SqlType` trait.
 
 * `no_arg_sql_function!` has been deprecated without replacement.
