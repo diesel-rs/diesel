@@ -284,10 +284,10 @@ macro_rules! __diesel_column {
 /// ```ignore
 /// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 /// ```
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! table {
     ($($tokens:tt)*) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($tokens)*],
             imports = [],
             meta = [],
@@ -1005,19 +1005,19 @@ macro_rules! __diesel_table_query_source_impl {
 /// ```sql
 /// post JOIN users ON posts.user_id = users.id
 /// ```
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! joinable {
     ($($child:ident)::* -> $($parent:ident)::* ($source:ident)) => {
-        joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
-        joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
+        $crate::joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
+        $crate::joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
     }
 }
 
-#[macro_export(local_inner_macros)]
+#[macro_export]
 #[doc(hidden)]
 macro_rules! joinable_inner {
     ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path)) => {
-        joinable_inner!(
+        $crate::joinable_inner!(
             left_table_ty = $left_table,
             right_table_ty = $right_table,
             right_table_expr = $right_table,
@@ -1082,7 +1082,7 @@ macro_rules! joinable_inner {
 /// allow_tables_to_appear_in_same_query!(comments, users);
 /// allow_tables_to_appear_in_same_query!(posts, users);
 /// ```
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! allow_tables_to_appear_in_same_query {
     ($left_mod:ident, $($right_mod:ident),+ $(,)*) => {
         $(
@@ -1098,7 +1098,7 @@ macro_rules! allow_tables_to_appear_in_same_query {
                 type Count = $crate::query_source::Never;
             }
         )+
-        allow_tables_to_appear_in_same_query!($($right_mod,)+);
+        $crate::allow_tables_to_appear_in_same_query!($($right_mod,)+);
     };
 
     ($last_table:ident,) => {};
@@ -1107,7 +1107,7 @@ macro_rules! allow_tables_to_appear_in_same_query {
 }
 
 #[doc(hidden)]
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! __diesel_impl_allow_in_same_group_by_clause {
     (
         left = [$($left_path:tt)::+],
@@ -1116,7 +1116,7 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
         left = [$($left_path:tt)::+],
         $($right_path:tt)::+
     ) => {
-        __diesel_impl_allow_in_same_group_by_clause! {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
             left = [$($left_path)+],
             right = [$($right_path)+],
             left_tbl = [],
@@ -1128,13 +1128,13 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
         $($right_path:tt)::+,
         $($other:tt)*
     ) => {
-        __diesel_impl_allow_in_same_group_by_clause! {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
             left = [$($left_path)+],
             right = [$($right_path)+],
             left_tbl = [],
             left_path = [],
         }
-        __diesel_impl_allow_in_same_group_by_clause! {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
             left = [$($left_path)::+],
             $($other)*
         }
@@ -1145,7 +1145,7 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
         left_tbl = [$($left_tbl:tt)?],
         left_path = [$($left_out_path:tt)*],
     ) => {
-        __diesel_impl_allow_in_same_group_by_clause! {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
             left = [$($left_path)+],
             right = [$($right_path)*],
             left_tbl = [$left_path_p1],
@@ -1158,7 +1158,7 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
         left_tbl = [$($left_tbl:tt)?],
         left_path = [$($left_out_path:tt)*],
     ) => {
-        __diesel_impl_allow_in_same_group_by_clause! {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
             left = [$left_col],
             right = [$($right_path)*],
             left_tbl = [$($left_tbl)?],
@@ -1175,7 +1175,7 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
         right_tbl = [$($right_tbl:tt)?],
         right_path = [$($right_out_path:tt)*],
     ) => {
-        __diesel_impl_allow_in_same_group_by_clause! {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
             left = [$left_col],
             right = [$($right_path)+],
             left_tbl = [$($left_tbl)?],
@@ -1248,21 +1248,21 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
 /// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::id);
 /// allow_columns_to_appear_in_same_group_by_clause!(users::hair_color, posts::id);
 /// ```
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! allow_columns_to_appear_in_same_group_by_clause {
     ($($left_path:tt)::+, $($right_path:tt)::+ $(,)?) => {
-        __diesel_impl_allow_in_same_group_by_clause! {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
             left = [$($left_path)::+],
             $($right_path)::+,
         }
     };
     ($($left_path:tt)::+, $($right_path:tt)::+, $($other: tt)*) => {
-        __diesel_impl_allow_in_same_group_by_clause! {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
             left = [$($left_path)::+],
             $($right_path)::+,
             $($other)*
         }
-        allow_columns_to_appear_in_same_group_by_clause! {
+        $crate::allow_columns_to_appear_in_same_group_by_clause! {
             $($right_path)::+,
             $($other)*
         }
