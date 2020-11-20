@@ -1,4 +1,4 @@
-#[macro_export(local_inner_macros)]
+#[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_operator_body {
     (
@@ -11,7 +11,7 @@ macro_rules! __diesel_operator_body {
         backend_ty_params = $backend_ty_params:tt,
         backend_ty = $backend_ty:ty,
     ) => {
-        __diesel_operator_body! {
+        $crate::__diesel_operator_body! {
             notation = $notation,
             struct_name = $name,
             operator = $operator,
@@ -35,7 +35,7 @@ macro_rules! __diesel_operator_body {
         backend_ty_params = $backend_ty_params:tt,
         backend_ty = $backend_ty:ty,
     ) => {
-        __diesel_operator_body! {
+        $crate::__diesel_operator_body! {
             notation = $notation,
             struct_name = $name,
             operator = $operator,
@@ -80,7 +80,7 @@ macro_rules! __diesel_operator_body {
             }
         }
 
-        impl_selectable_expression!($name<$($ty_param),+>);
+        $crate::impl_selectable_expression!($name<$($ty_param),+>);
 
         impl<$($ty_param,)+ $($expression_ty_params,)*> $crate::expression::Expression for $name<$($ty_param,)+> where
             $($expression_bounds)*
@@ -94,7 +94,7 @@ macro_rules! __diesel_operator_body {
                 $($backend_ty_param: $crate::backend::Backend,)*
         {
             fn walk_ast(&self, mut out: $crate::query_builder::AstPass<$backend_ty>) -> $crate::result::QueryResult<()> {
-                __diesel_operator_to_sql!(
+                $crate::__diesel_operator_to_sql!(
                     notation = $notation,
                     operator_expr = out.push_sql($operator),
                     field_exprs = ($(self.$field_name.walk_ast(out.reborrow())?),+),
@@ -211,18 +211,18 @@ macro_rules! __diesel_operator_to_sql {
 /// assert_eq!(Ok(1), users_with_name.first(&connection));
 /// # }
 /// ```
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! infix_operator {
     ($name:ident, $operator:expr) => {
-        infix_operator!($name, $operator, $crate::sql_types::Bool);
+        $crate::infix_operator!($name, $operator, $crate::sql_types::Bool);
     };
 
     ($name:ident, $operator:expr, backend: $backend:ty) => {
-        infix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
+        $crate::infix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
     ($name:ident, $operator:expr, $($return_ty:tt)::*) => {
-        __diesel_operator_body!(
+        $crate::__diesel_operator_body!(
             notation = infix,
             struct_name = $name,
             operator = $operator,
@@ -261,7 +261,7 @@ macro_rules! infix_operator {
     };
 
     ($name:ident, $operator:expr, $return_ty:ty, backend: $backend:ty) => {
-        __diesel_operator_body!(
+        $crate::__diesel_operator_body!(
             notation = infix,
             struct_name = $name,
             operator = $operator,
@@ -300,13 +300,13 @@ macro_rules! infix_operator {
     };
 }
 
-#[macro_export(local_inner_macros)]
+#[macro_export]
 #[deprecated(since = "2.0.0", note = "use `diesel::infix_operator!` instead")]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 macro_rules! diesel_infix_operator {
     ($($args:tt)*) => {
-        infix_operator!($($args)*);
+        $crate::infix_operator!($($args)*);
     }
 }
 
@@ -318,18 +318,18 @@ macro_rules! diesel_infix_operator {
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
 /// [`infix_operator!`]: macro.infix_operator.html
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! postfix_operator {
     ($name:ident, $operator:expr) => {
-        postfix_operator!($name, $operator, $crate::sql_types::Bool);
+        $crate::postfix_operator!($name, $operator, $crate::sql_types::Bool);
     };
 
     ($name:ident, $operator:expr, backend: $backend:ty) => {
-        postfix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
+        $crate::postfix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
     ($name:ident, $operator:expr, $return_ty:ty) => {
-        __diesel_operator_body!(
+        $crate::__diesel_operator_body!(
             notation = postfix,
             struct_name = $name,
             operator = $operator,
@@ -342,7 +342,7 @@ macro_rules! postfix_operator {
     };
 
     ($name:ident, $operator:expr, $return_ty:ty, backend: $backend:ty) => {
-        __diesel_operator_body!(
+        $crate::__diesel_operator_body!(
             notation = postfix,
             struct_name = $name,
             operator = $operator,
@@ -355,13 +355,13 @@ macro_rules! postfix_operator {
     };
 }
 
-#[macro_export(local_inner_macros)]
+#[macro_export]
 #[deprecated(since = "2.0.0", note = "use `diesel::postfix_operator!` instead")]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 macro_rules! diesel_postfix_operator {
     ($($args:tt)*) => {
-        postfix_operator!($($args)*);
+        $crate::postfix_operator!($($args)*);
     }
 }
 
@@ -373,18 +373,18 @@ macro_rules! diesel_postfix_operator {
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
 /// [`infix_operator!`]: macro.infix_operator.html
-#[macro_export(local_inner_macros)]
+#[macro_export]
 macro_rules! prefix_operator {
     ($name:ident, $operator:expr) => {
-        prefix_operator!($name, $operator, $crate::sql_types::Bool);
+        $crate::prefix_operator!($name, $operator, $crate::sql_types::Bool);
     };
 
     ($name:ident, $operator:expr, backend: $backend:ty) => {
-        prefix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
+        $crate::prefix_operator!($name, $operator, $crate::sql_types::Bool, backend: $backend);
     };
 
     ($name:ident, $operator:expr, $return_ty:ty) => {
-        __diesel_operator_body!(
+        $crate::__diesel_operator_body!(
             notation = prefix,
             struct_name = $name,
             operator = $operator,
@@ -397,7 +397,7 @@ macro_rules! prefix_operator {
     };
 
     ($name:ident, $operator:expr, $return_ty:ty, backend: $backend:ty) => {
-        __diesel_operator_body!(
+        $crate::__diesel_operator_body!(
             notation = prefix,
             struct_name = $name,
             operator = $operator,
@@ -410,13 +410,13 @@ macro_rules! prefix_operator {
     };
 }
 
-#[macro_export(local_inner_macros)]
+#[macro_export]
 #[deprecated(since = "2.0.0", note = "use `diesel::prefix_operator!` instead")]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[doc(hidden)]
 macro_rules! diesel_prefix_operator {
     ($($args:tt)*) => {
-        prefix_operator!($($args)*);
+        $crate::prefix_operator!($($args)*);
     }
 }
 
