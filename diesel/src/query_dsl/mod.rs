@@ -416,7 +416,7 @@ pub trait QueryDsl: Sized {
     /// assert_eq!(Ok(expected_data), data);
     /// # }
     /// ```
-    fn inner_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     {
@@ -429,7 +429,7 @@ pub trait QueryDsl: Sized {
     /// instead. See [`inner_join`] for usage examples.
     ///
     /// [`inner_join`]: #method.inner_join
-    fn left_outer_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    fn left_outer_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     {
@@ -439,7 +439,7 @@ pub trait QueryDsl: Sized {
     /// Alias for [`left_outer_join`].
     ///
     /// [`left_outer_join`]: #method.left_outer_join
-    fn left_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     {
