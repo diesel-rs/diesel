@@ -43,7 +43,7 @@ sql_function! {
 sql_function! {
     /// Returns the network part of the address, zeroing out whatever is to the right of the
     /// netmask. (This is equivalent to casting the value to cidr.)
-    fn network(addr: Inet) -> Cidr;
+    fn network<T: InetOrCidr + SingleValue>(addr: T) -> Cidr;
 }
 sql_function! {
     /// Sets the netmask length for an inet or cidr value.
