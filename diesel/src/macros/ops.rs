@@ -86,3 +86,21 @@ macro_rules! __diesel_generate_ops_impls_if_date_time {
     ($column_name:ident, Timestamptz) => { $crate::date_time_expr!($column_name); };
     ($column_name:ident, $non_date_time_type:ty) => {};
 }
+
+#[macro_export(local_inner_macros)]
+#[doc(hidden)]
+macro_rules! network_expr {
+    ($tpe:ty) => {
+        operator_allowed!($tpe, Add, add);
+        operator_allowed!($tpe, Sub, sub);
+    };
+}
+
+#[macro_export(local_inner_macros)]
+#[doc(hidden)]
+macro_rules! __diesel_generate_ops_impls_if_network {
+    ($column_name:ident, Nullable<$($inner:tt)::*>) => { __diesel_generate_ops_impls_if_network!($column_name, $($inner)::*); };
+    ($column_name:ident, Cidr) => { network_expr!($column_name); };
+    ($column_name:ident, Inet) => { network_expr!($column_name); };
+    ($column_name:ident, $non_network_type:ty) => {};
+}

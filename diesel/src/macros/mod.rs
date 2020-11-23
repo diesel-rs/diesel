@@ -124,6 +124,7 @@ macro_rules! __diesel_column {
 
         $crate::__diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
         $crate::__diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
+        $crate::__diesel_generate_ops_impls_if_network!($column_name, $($Type)*);
     }
 }
 
