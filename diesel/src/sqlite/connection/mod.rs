@@ -272,7 +272,7 @@ impl SqliteConnection {
     ///
     /// The collation needs to be specified when creating a table:
     /// `CREATE TABLE my_table ( str TEXT COLLATE MY_COLLATION )`,
-    /// where `MY_COLLATION` corresponds to `collation_name`.
+    /// where `MY_COLLATION` corresponds to name passed as `collation_name`.
     ///
     /// # Example
     ///
