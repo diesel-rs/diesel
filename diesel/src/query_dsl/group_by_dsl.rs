@@ -1,5 +1,8 @@
+use crate::dsl;
 use crate::expression::Expression;
-use crate::query_builder::AsQuery;
+use crate::expression::TypedExpressionType;
+use crate::expression::ValidGrouping;
+use crate::query_builder::{AsQuery, SelectStatement};
 use crate::query_source::Table;
 
 /// The `group_by` method
@@ -14,18 +17,19 @@ pub trait GroupByDsl<Expr: Expression> {
     type Output;
 
     /// See the trait documentation.
-    fn group_by(self, expr: Expr) -> Self::Output;
+    fn group_by(self, expr: Expr) -> dsl::GroupBy<Self, Expr>;
 }
 
 impl<T, Expr> GroupByDsl<Expr> for T
 where
     Expr: Expression,
-    T: Table + AsQuery,
-    T::Query: GroupByDsl<Expr>,
+    T: Table + AsQuery<Query = SelectStatement<T>>,
+    T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
+    T::SqlType: TypedExpressionType,
 {
-    type Output = <T::Query as GroupByDsl<Expr>>::Output;
+    type Output = dsl::GroupBy<SelectStatement<T>, Expr>;
 
-    fn group_by(self, expr: Expr) -> Self::Output {
+    fn group_by(self, expr: Expr) -> dsl::GroupBy<Self, Expr> {
         self.as_query().group_by(expr)
     }
 }

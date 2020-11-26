@@ -803,6 +803,7 @@ pub trait QueryDsl: Sized {
     /// let data = users::table.inner_join(posts::table)
     ///     .group_by(users::id)
     ///     .select((users::name, count(posts::id)))
+    /// #   .order_by(users::id.asc())
     ///     .load::<(String, i64)>(&connection)?;
     ///
     /// assert_eq!(vec![(String::from("Sean"), 2), (String::from("Tess"), 1)], data);
