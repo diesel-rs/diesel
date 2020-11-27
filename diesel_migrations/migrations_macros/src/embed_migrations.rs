@@ -22,11 +22,8 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
     quote! {
         #[allow(dead_code)]
         mod embedded_migrations {
-            extern crate diesel;
-            extern crate diesel_migrations;
-
-            use self::diesel_migrations::*;
-            use self::diesel::connection::SimpleConnection;
+            use ::diesel_migrations::*;
+            use ::diesel::connection::SimpleConnection;
             use std::io;
 
             const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
