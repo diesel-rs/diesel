@@ -23,8 +23,14 @@ macro_rules! __diesel_column {
     ) => {
         $($meta)*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId, Default)]
+        #[derive(Debug, Clone, Copy, Default)]
         pub struct $column_name;
+
+        #[allow(non_camel_case_types)]
+        impl $crate::query_builder::QueryId for $column_name {
+            type QueryId = $column_name;
+            const HAS_STATIC_QUERY_ID: bool = true;
+        }
 
         impl $crate::expression::Expression for $column_name {
             type SqlType = $($Type)*;
@@ -653,12 +659,18 @@ macro_rules! __diesel_table_impl {
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
             #[allow(non_camel_case_types)]
-            #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]
+            #[derive(Debug, Clone, Copy)]
             /// The actual table struct
             ///
             /// This is the type which provides the base methods of the query
             /// builder, such as `.select` and `.filter`.
             pub struct table;
+
+            #[allow(non_camel_case_types)]
+            impl $crate::query_builder::QueryId for table {
+                type QueryId = table;
+                const HAS_STATIC_QUERY_ID: bool = true;
+            }
 
             impl table {
                 #[allow(dead_code)]
@@ -803,12 +815,18 @@ macro_rules! __diesel_table_impl {
                 $($imports)*
 
                 #[allow(non_camel_case_types, dead_code)]
-                #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]
+                #[derive(Debug, Clone, Copy)]
                 /// Represents `table_name.*`, which is sometimes needed for
                 /// efficient count queries. It cannot be used in place of
                 /// `all_columns`, and has a `SqlType` of `()` to prevent it
                 /// being used that way
                 pub struct star;
+
+                #[allow(non_camel_case_types)]
+                impl $crate::query_builder::QueryId for star {
+                    type QueryId = star;
+                    const HAS_STATIC_QUERY_ID: bool = true;
+                }
 
                 impl<__GB> $crate::expression::ValidGrouping<__GB> for star
                 where
