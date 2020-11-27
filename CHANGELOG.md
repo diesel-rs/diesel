@@ -50,6 +50,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Added `#[diesel(serialize_as)]` analogous to `#[diesel(deserialize_as)]`. This allows
   customization of the serialization behaviour of `Insertable` structs.
 
+* Added support for `GROUP BY` clauses
+
 ### Removed
 
 * All previously deprecated items have been removed.
