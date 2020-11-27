@@ -65,14 +65,6 @@ fn main() {
         .into_boxed();
     //~^ ERROR BoxedDsl
 
-    // you cannot call group by after boxing
-    users::table
-        .into_boxed()
-        .group_by(users::id)
-        //~^ ERROR no method named `group_by` found
-        .select(users::name)
-        .load::<String>(&conn);
-
     users::table
         .group_by(users::name)
         .select(users::name)
@@ -95,4 +87,14 @@ fn main() {
     // this is a different type now
     a = users::table.group_by(users::id).into_boxed();
     //~^ ERROR mismatched types
+
+    // you cannot call group by after boxing
+    users::table
+        .into_boxed()
+        .group_by(users::id)
+        //~^ ERROR type mismatch
+        //~| ERROR Table
+        //~| ERROR GroupByDsl
+        .select(users::name)
+        .load::<String>(&conn);
 }

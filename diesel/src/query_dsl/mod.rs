@@ -44,8 +44,6 @@ pub mod select_dsl;
 mod single_value_dsl;
 
 pub use self::belonging_to_dsl::BelongingToDsl;
-#[doc(hidden)]
-pub use self::group_by_dsl::GroupByDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
@@ -62,6 +60,7 @@ pub mod methods {
     pub use super::distinct_dsl::*;
     #[doc(inline)]
     pub use super::filter_dsl::*;
+    pub use super::group_by_dsl::GroupByDsl;
     pub use super::limit_dsl::LimitDsl;
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
@@ -417,7 +416,7 @@ pub trait QueryDsl: Sized {
     /// assert_eq!(Ok(expected_data), data);
     /// # }
     /// ```
-    fn inner_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
     {
@@ -430,7 +429,7 @@ pub trait QueryDsl: Sized {
     /// instead. See [`inner_join`] for usage examples.
     ///
     /// [`inner_join`]: #method.inner_join
-    fn left_outer_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    fn left_outer_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     {
@@ -440,7 +439,7 @@ pub trait QueryDsl: Sized {
     /// Alias for [`left_outer_join`].
     ///
     /// [`left_outer_join`]: #method.left_outer_join
-    fn left_join<Rhs>(self, rhs: Rhs) -> Self::Output
+    fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
     {
@@ -549,7 +548,7 @@ pub trait QueryDsl: Sized {
 
     /// Sets the order clause of a query.
     ///
-    /// If there was already a order clause, it will be overridden. See
+    /// If there was already an order clause, it will be overridden. See
     /// also:
     /// [`.desc()`](../expression_methods/trait.ExpressionMethods.html#method.desc)
     /// and
@@ -768,6 +767,55 @@ pub trait QueryDsl: Sized {
         Self: methods::OffsetDsl,
     {
         methods::OffsetDsl::offset(self, offset)
+    }
+
+    /// Sets the `group by` clause of a query.
+    ///
+    /// **Note:** Queries having a `group by` clause require a custom select clause.
+    /// Use `QueryDsl::select()` to specify one
+    ///
+    /// If there was already a group by clause, it will be overridden.
+    /// Ordering by multiple columns can be achieved by passing a tuple of those
+    /// columns.
+    ///
+    /// Diesel follows postgresql's group by semantic, this means any column
+    /// appearing in a group by clause is considered to be aggregated. If a
+    /// primary key is part of the group by clause every column from the
+    /// corresponding table is considerd to be aggregated. Select clauses
+    /// cannot mix aggregated and non aggregated expressions.
+    ///
+    /// For group by clauses containing columns from more than one table it
+    /// is required to call [`allow_columns_to_appear_in_same_group_by_clause!`]
+    ///
+    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: ../macro.allow_columns_to_appear_in_same_group_by_clause.html
+    ///
+    /// # Examples
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::{users, posts};
+    /// #     use diesel::dsl::count;
+    /// #     let connection = establish_connection();
+    /// let data = users::table.inner_join(posts::table)
+    ///     .group_by(users::id)
+    ///     .select((users::name, count(posts::id)))
+    /// #   .order_by(users::id.asc())
+    ///     .load::<(String, i64)>(&connection)?;
+    ///
+    /// assert_eq!(vec![(String::from("Sean"), 2), (String::from("Tess"), 1)], data);
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn group_by<GB>(self, group_by: GB) -> GroupBy<Self, GB>
+    where
+        GB: Expression,
+        Self: methods::GroupByDsl<GB>,
+    {
+        methods::GroupByDsl::group_by(self, group_by)
     }
 
     /// Adds `FOR UPDATE` to the end of the select statement.

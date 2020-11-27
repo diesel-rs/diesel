@@ -303,6 +303,9 @@ pub mod helper_types {
 
     /// Represents the return type of `.nullable()`
     pub type NullableSelect<Source> = <Source as SelectNullableDsl>::Output;
+
+    /// Represents the return type of `.group_by(expr)`
+    pub type GroupBy<Source, Expr> = <Source as GroupByDsl<Expr>>::Output;
 }
 
 pub mod prelude {
@@ -332,8 +335,6 @@ pub mod prelude {
     pub use crate::query_builder::AsChangeset;
     #[doc(inline)]
     pub use crate::query_builder::DecoratableTarget;
-    #[doc(hidden)]
-    pub use crate::query_dsl::GroupByDsl;
     #[doc(inline)]
     pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
     #[doc(inline)]
