@@ -2,7 +2,7 @@
 //!
 //! Associations in Diesel are always child-to-parent.
 //! You can declare an association between two records with `#[belongs_to]`.
-//! Unlike other ORMs, Diesel has no concept of `has_many`
+//! Unlike other ORMs, Diesel has no concept of `has many`
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
