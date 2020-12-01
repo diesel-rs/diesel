@@ -130,13 +130,30 @@ where
                 result => self.change_transaction_depth(-1, result),
             }
         } else {
-            self.change_transaction_depth(
-                -1,
-                conn.batch_execute(&format!(
-                    "RELEASE SAVEPOINT diesel_savepoint_{}",
-                    transaction_depth - 1
-                )),
-            )
+            match conn.batch_execute(&format!(
+                "RELEASE SAVEPOINT diesel_savepoint_{}",
+                transaction_depth - 1,
+            )) {
+                Ok(_) => self.change_transaction_depth(-1, Ok(())),
+                // Postgres treats error (like syntax errors, missing tables, …)
+                // as fatal errors and does not accept any new commands till the
+                // transaction is aborted or we've done a rollback
+                // To mirror the behaviour above we attempt to rollback
+                // to the last savepoint if we hit such a case
+                Err(Error::DatabaseError(DatabaseErrorKind::__Unknown, msg))
+                    if msg.message().starts_with("current transaction is aborted") =>
+                {
+                    self.change_transaction_depth(
+                        -1,
+                        conn.batch_execute(&format!(
+                            "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                            transaction_depth - 1
+                        )),
+                    )?;
+                    Err(Error::DatabaseError(DatabaseErrorKind::__Unknown, msg))
+                }
+                Err(e) => panic!("{}", e),
+            }
         }
     }
 
