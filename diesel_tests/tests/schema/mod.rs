@@ -94,6 +94,22 @@ impl NewUser {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Insertable)]
+#[table_name = "users"]
+pub struct DefaultColorUser {
+    pub name: String,
+    pub hair_color: Option<Option<String>>,
+}
+
+impl DefaultColorUser {
+    pub fn new(name: &str, hair_color: Option<Option<&str>>) -> Self {
+        Self {
+            name: name.to_string(),
+            hair_color: hair_color.map(|o| o.map(|s| s.to_string())),
+        }
+    }
+}
+
 #[derive(Insertable)]
 #[table_name = "posts"]
 pub struct NewPost {

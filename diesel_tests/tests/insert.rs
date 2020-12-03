@@ -195,6 +195,52 @@ fn insert_with_defaults() {
 
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
+fn insert_in_nullable_with_non_null_default() {
+    use crate::schema::users::table as users;
+    use crate::schema_dsl::*;
+
+    let connection = connection();
+    drop_table_cascade(&connection, "users");
+    create_table(
+        "users",
+        (
+            integer("id").primary_key().auto_increment(),
+            string("name").not_null(),
+            string("hair_color").default("'Green'"),
+        ),
+    )
+    .execute(&connection)
+    .unwrap();
+
+    insert_into(users)
+        .values(&DefaultColorUser::new("Wylla", None))
+        .execute(&connection)
+        .unwrap();
+
+    insert_into(users)
+        .values(&DefaultColorUser::new("Tess", Some(None)))
+        .execute(&connection)
+        .unwrap();
+
+    let expected_users = vec![
+        User {
+            id: 1,
+            name: "Wylla".to_string(),
+            hair_color: Some("Green".to_string()),
+        },
+        User {
+            id: 2,
+            name: "Tess".to_string(),
+            hair_color: None,
+        },
+    ];
+    let actual_users = users.load(&connection).unwrap();
+
+    assert_eq!(expected_users, actual_users);
+}
+
+#[test]
+#[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn insert_returning_count_returns_number_of_rows_inserted() {
     use crate::schema::users::table as users;
     let connection = connection();

@@ -36,6 +36,13 @@ impl<'a, T> Column<'a, T> {
         PrimaryKey(self)
     }
 
+    pub fn default(self, expr: &str) -> Default<Self> {
+        Default {
+            column: self,
+            value: expr,
+        }
+    }
+
     pub fn not_null(self) -> NotNull<Self> {
         NotNull(self)
     }

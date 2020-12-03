@@ -241,6 +241,105 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # }
 /// ```
 ///
+/// ### Inserting default value for a column
+///
+/// You can use `Option<T>` to allow a column to be set to the default value when needed.
+///
+/// When the field is set to `None`, diesel inserts the default value on supported databases.
+/// When the field is set to `Some(..)`, diesel inserts the given value.
+///
+/// The column `color` in `brands` table is `NOT NULL DEFAULT 'Green'`.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// # #[cfg(not(feature = "sqlite"))]
+/// # use schema::brands;
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// #[derive(Insertable)]
+/// #[table_name = "brands"]
+/// struct NewBrand {
+///     color: Option<String>,
+/// }
+///
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// #     use schema::brands::dsl::*;
+/// #     let connection = establish_connection();
+/// // Insert `Red`
+/// let new_brand = NewBrand { color: Some("Red".into()) };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(&connection)
+///     .unwrap();
+///
+/// // Insert the default color
+/// let new_brand = NewBrand { color: None };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(&connection)
+///     .unwrap();
+/// # }
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {}
+/// ```
+///
+/// ### Inserting default value for a nullable column
+///
+/// The column `accent` in `brands` table is `DEFAULT 'Green'`. It is a nullable column.
+///
+/// You can use `Option<Option<T>>` in this case.
+///
+/// When the field is set to `None`, diesel inserts the default value on supported databases.
+/// When the field is set to `Some(None)`, diesel inserts `NULL`.
+/// When the field is set to `Some(Some(..))` diesel inserts the given value.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// # #[cfg(not(feature = "sqlite"))]
+/// # use schema::brands;
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// #[derive(Insertable)]
+/// #[table_name = "brands"]
+/// struct NewBrand {
+///     accent: Option<Option<String>>,
+/// }
+///
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// #     use schema::brands::dsl::*;
+/// #     let connection = establish_connection();
+/// // Insert `Red`
+/// let new_brand = NewBrand { accent: Some(Some("Red".into())) };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(&connection)
+///     .unwrap();
+///
+/// // Insert the default accent
+/// let new_brand = NewBrand { accent: None };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(&connection)
+///     .unwrap();
+///
+/// // Insert `NULL`
+/// let new_brand = NewBrand { accent: Some(None) };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(&connection)
+///     .unwrap();
+/// # }
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {}
+/// ```
+///
 /// ### Insert from select
 ///
 /// When inserting from a select statement,
