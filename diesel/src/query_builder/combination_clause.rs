@@ -74,6 +74,7 @@ where
 #[derive(Debug, Copy, Clone, QueryId)]
 /// Computes the set union of the rows returned by the involved `SELECT` statements using SQL `UNION`
 pub struct Union;
+
 impl<DB: Backend> QueryFragment<DB> for Union {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" UNION ");
