@@ -15,6 +15,7 @@ extern crate quickcheck;
 mod annotations;
 mod associations;
 mod boxed_queries;
+mod combination;
 mod connection;
 #[cfg(feature = "postgres")]
 mod custom_types;

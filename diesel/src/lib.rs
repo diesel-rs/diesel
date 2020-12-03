@@ -281,6 +281,7 @@ pub mod helper_types {
 
     use super::associations::HasTable;
     use super::query_builder::{AsChangeset, IntoUpdateTarget, UpdateStatement};
+
     /// Represents the return type of `update(lhs).set(rhs)`
     pub type Update<Target, Changes> = UpdateStatement<
         <Target as HasTable>::Table,
@@ -306,6 +307,57 @@ pub mod helper_types {
 
     /// Represents the return type of `.group_by(expr)`
     pub type GroupBy<Source, Expr> = <Source as GroupByDsl<Expr>>::Output;
+
+    use crate::query_builder::combination_clause::{self, CombinationClause};
+    use crate::query_builder::AsQuery;
+
+    /// Represents the return type of `.union(rhs)`
+    pub type Union<Source, Rhs> = CombinationClause<
+        combination_clause::Union,
+        combination_clause::Distinct,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.union_all(rhs)`
+    pub type UnionAll<Source, Rhs> = CombinationClause<
+        combination_clause::Union,
+        combination_clause::All,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.intersect(rhs)`
+    pub type Intersect<Source, Rhs> = CombinationClause<
+        combination_clause::Intersect,
+        combination_clause::Distinct,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.intersect_all(rhs)`
+    pub type IntersectAll<Source, Rhs> = CombinationClause<
+        combination_clause::Intersect,
+        combination_clause::All,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.except(rhs)`
+    pub type Except<Source, Rhs> = CombinationClause<
+        combination_clause::Except,
+        combination_clause::Distinct,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.except_all(rhs)`
+    pub type ExceptAll<Source, Rhs> = CombinationClause<
+        combination_clause::Except,
+        combination_clause::All,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
 }
 
 pub mod prelude {

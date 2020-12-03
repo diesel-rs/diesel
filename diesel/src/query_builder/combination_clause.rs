@@ -7,18 +7,27 @@ use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
 use crate::{Insertable, QueryResult, RunQueryDsl, Table};
 
+#[derive(Debug, Clone, Copy, QueryId)]
+pub struct NoCombinationClause;
+
+impl<DB: Backend> QueryFragment<DB> for NoCombinationClause {
+    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+        Ok(())
+    }
+}
+
 #[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`
 /// with or without `ALL` rule for duplicates
-pub struct Combination<Combinator, Rule, Source, Rhs> {
+pub struct CombinationClause<Combinator, Rule, Source, Rhs> {
     combinator: Combinator,
     duplicate_rule: Rule,
     source: Source,
     rhs: Rhs,
 }
 
-impl<Combinator, Rule, Source, Rhs> Combination<Combinator, Rule, Source, Rhs> {
+impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, Rhs> {
     /// Create a new combination
     pub(crate) fn new(
         combinator: Combinator,
@@ -26,7 +35,7 @@ impl<Combinator, Rule, Source, Rhs> Combination<Combinator, Rule, Source, Rhs> {
         source: Source,
         rhs: Rhs,
     ) -> Self {
-        Combination {
+        CombinationClause {
             combinator,
             duplicate_rule,
             source,
@@ -35,7 +44,7 @@ impl<Combinator, Rule, Source, Rhs> Combination<Combinator, Rule, Source, Rhs> {
     }
 }
 
-impl<Combinator, Rule, Source, Rhs> Query for Combination<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs> Query for CombinationClause<Combinator, Rule, Source, Rhs>
 where
     Source: Query,
     Rhs: Query<SqlType = Source::SqlType>,
@@ -43,30 +52,13 @@ where
     type SqlType = Source::SqlType;
 }
 
-impl<Combinator, Rule, Source, Rhs, DB> QueryFragment<DB>
-    for Combination<Combinator, Rule, Source, Rhs>
-where
-    Combinator: QueryFragment<DB>,
-    Rule: QueryFragment<DB>,
-    Source: QueryFragment<DB>,
-    Rhs: QueryFragment<DB>,
-    DB: Backend,
-{
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        self.source.walk_ast(out.reborrow())?;
-        self.combinator.walk_ast(out.reborrow())?;
-        self.duplicate_rule.walk_ast(out.reborrow())?;
-        self.rhs.walk_ast(out.reborrow())?;
-        Ok(())
-    }
-}
-
 impl<Combinator, Rule, Source, Rhs, Conn> RunQueryDsl<Conn>
-    for Combination<Combinator, Rule, Source, Rhs>
+    for CombinationClause<Combinator, Rule, Source, Rhs>
 {
 }
 
-impl<Combinator, Rule, Source, Rhs, T> Insertable<T> for Combination<Combinator, Rule, Source, Rhs>
+impl<Combinator, Rule, Source, Rhs, T> Insertable<T>
+    for CombinationClause<Combinator, Rule, Source, Rhs>
 where
     T: Table,
     T::AllColumns: NonAggregate,
@@ -125,5 +117,113 @@ impl<DB: Backend> QueryFragment<DB> for All {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("ALL ");
         Ok(())
+    }
+}
+
+/// Marker trait used to indicate whenever the combination is supported by given backend
+pub trait CombinationSupportedBy<DB> {}
+
+impl<Source, Rhs, DB> CombinationSupportedBy<DB>
+    for CombinationClause<Union, Distinct, Source, Rhs>
+{
+}
+impl<Source, Rhs, DB> CombinationSupportedBy<DB> for CombinationClause<Union, All, Source, Rhs> {}
+
+#[cfg(feature = "postgres")]
+mod postgres {
+    use super::*;
+    use crate::pg::Pg;
+    use crate::query_builder::{AstPass, QueryFragment};
+    use crate::QueryResult;
+
+    impl<Source, Rhs> CombinationSupportedBy<Pg>
+        for CombinationClause<Intersect, Distinct, Source, Rhs>
+    {
+    }
+    impl<Source, Rhs> CombinationSupportedBy<Pg> for CombinationClause<Intersect, All, Source, Rhs> {}
+    impl<Source, Rhs> CombinationSupportedBy<Pg> for CombinationClause<Except, Distinct, Source, Rhs> {}
+    impl<Source, Rhs> CombinationSupportedBy<Pg> for CombinationClause<Except, All, Source, Rhs> {}
+
+    impl<Combinator, Rule, Source, Rhs> QueryFragment<Pg>
+        for CombinationClause<Combinator, Rule, Source, Rhs>
+    where
+        Combinator: QueryFragment<Pg>,
+        Rule: QueryFragment<Pg>,
+        Source: QueryFragment<Pg>,
+        Rhs: QueryFragment<Pg>,
+        Self: CombinationSupportedBy<Pg>,
+    {
+        fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+            self.source.walk_ast(out.reborrow())?;
+            self.combinator.walk_ast(out.reborrow())?;
+            self.duplicate_rule.walk_ast(out.reborrow())?;
+            out.push_sql("(");
+            self.rhs.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+}
+
+#[cfg(feature = "mysql")]
+mod mysql {
+    use super::*;
+    use crate::mysql::Mysql;
+    use crate::query_builder::{AstPass, QueryFragment};
+    use crate::QueryResult;
+
+    impl<Combinator, Rule, Source, Rhs> QueryFragment<Mysql>
+        for CombinationClause<Combinator, Rule, Source, Rhs>
+    where
+        Combinator: QueryFragment<Mysql>,
+        Rule: QueryFragment<Mysql>,
+        Source: QueryFragment<Mysql>,
+        Rhs: QueryFragment<Mysql>,
+        Self: CombinationSupportedBy<Mysql>,
+    {
+        fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
+            self.source.walk_ast(out.reborrow())?;
+            self.combinator.walk_ast(out.reborrow())?;
+            self.duplicate_rule.walk_ast(out.reborrow())?;
+            out.push_sql("(");
+            self.rhs.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
+        }
+    }
+}
+
+#[cfg(feature = "sqlite")]
+mod sqlite {
+    use super::*;
+    use crate::query_builder::{AstPass, QueryFragment};
+    use crate::sqlite::Sqlite;
+    use crate::QueryResult;
+
+    impl<Source, Rhs> CombinationSupportedBy<Sqlite>
+        for CombinationClause<Intersect, Distinct, Source, Rhs>
+    {
+    }
+    impl<Source, Rhs> CombinationSupportedBy<Sqlite>
+        for CombinationClause<Except, Distinct, Source, Rhs>
+    {
+    }
+
+    impl<Combinator, Rule, Source, Rhs> QueryFragment<Sqlite>
+        for CombinationClause<Combinator, Rule, Source, Rhs>
+    where
+        Combinator: QueryFragment<Sqlite>,
+        Rule: QueryFragment<Sqlite>,
+        Source: QueryFragment<Sqlite>,
+        Rhs: QueryFragment<Sqlite>,
+        Self: CombinationSupportedBy<Sqlite>,
+    {
+        fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+            self.source.walk_ast(out.reborrow())?;
+            self.combinator.walk_ast(out.reborrow())?;
+            self.duplicate_rule.walk_ast(out.reborrow())?;
+            self.rhs.walk_ast(out.reborrow())?;
+            Ok(())
+        }
     }
 }

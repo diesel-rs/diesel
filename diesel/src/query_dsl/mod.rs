@@ -39,6 +39,8 @@ mod locking_dsl;
 mod nullable_select_dsl;
 mod offset_dsl;
 mod order_dsl;
+#[doc(hidden)]
+pub mod positional_order_dsl;
 mod save_changes_dsl;
 #[doc(hidden)]
 pub mod select_dsl;
