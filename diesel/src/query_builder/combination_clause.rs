@@ -85,6 +85,7 @@ impl<DB: Backend> QueryFragment<DB> for Union {
 #[derive(Debug, Copy, Clone, QueryId)]
 /// Computes the set intersection of the rows returned by the involved `SELECT` statements using SQL `INTERSECT`
 pub struct Intersect;
+
 impl<DB: Backend> QueryFragment<DB> for Intersect {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" INTERSECT ");
@@ -95,6 +96,7 @@ impl<DB: Backend> QueryFragment<DB> for Intersect {
 #[derive(Debug, Copy, Clone, QueryId)]
 /// Computes the set difference of the rows returned by the involved `SELECT` statements using SQL `EXCEPT`
 pub struct Except;
+
 impl<DB: Backend> QueryFragment<DB> for Except {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" EXCEPT ");
@@ -105,6 +107,7 @@ impl<DB: Backend> QueryFragment<DB> for Except {
 #[derive(Debug, Copy, Clone, QueryId)]
 /// Remove duplicate rows in the result, this is the default behavior of `UNION`, `INTERSECT` and `EXCEPT`
 pub struct Distinct;
+
 impl<DB: Backend> QueryFragment<DB> for Distinct {
     fn walk_ast(&self, _out: AstPass<DB>) -> QueryResult<()> {
         Ok(())
@@ -114,6 +117,7 @@ impl<DB: Backend> QueryFragment<DB> for Distinct {
 #[derive(Debug, Copy, Clone, QueryId)]
 /// Keep duplicate rows in the result
 pub struct All;
+
 impl<DB: Backend> QueryFragment<DB> for All {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("ALL ");
