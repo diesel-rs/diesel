@@ -134,3 +134,37 @@ fn count_test_table(connection: &TestConnection, table_name: &str) -> i64 {
     .first(connection)
     .unwrap()
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn regression_test_for_2123() {
+    let conn = connection_without_transaction();
+    // fail once
+    let ret = conn.transaction(|| {
+        let _ = conn.transaction(|| {
+            // handling error
+            match conn.execute("SELECT foo") {
+                // do nothing
+                Ok(_) => unreachable!("This query should fail"),
+                // ignore the error
+                Err(e) => eprintln!("error occurred: {}", e),
+            };
+            Ok::<_, Error>(())
+        });
+
+        conn.transaction(|| {
+            let ret = conn.execute("SELECT 1");
+            assert_eq!(Ok(1), ret);
+            Ok::<_, Error>(())
+        })
+    });
+    println!("{:?}", ret);
+    // other transaction
+    let ret = conn
+        .build_transaction()
+        .serializable()
+        .run(|| conn.execute("SELECT 1"));
+    // must be Ok(1), but get Err(AlreadyInTransaction)
+    println!("{:?}", ret);
+    assert_eq!(Ok(1), ret);
+}
