@@ -293,7 +293,7 @@ mod bigdecimal {
             let expected = PgNumeric::Positive {
                 weight: 1,
                 scale: 0,
-                digits: vec![1, 0],
+                digits: vec![1],
             };
             assert_eq!(expected, decimal.into());
         }
