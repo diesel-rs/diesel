@@ -7,6 +7,7 @@ use crate::expression::{
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
 use crate::query_builder::*;
+use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::*;
 use crate::result::QueryResult;
 use crate::row::*;
@@ -372,6 +373,17 @@ macro_rules! impl_from_sql_row {
 
                 Ok(($($T,)* $T1::build_from_row(&row)?,))
             }
+        }
+
+        impl<$T1, $($T,)* $($ST,)* __DB> CompatibleType<($($T,)* $T1), __DB> for ($($ST,)* crate::sql_types::Untyped)
+        where __DB: Backend,
+              $($ST: CompatibleType<$T, __DB>,)*
+              crate::sql_types::Untyped: CompatibleType<$T1, __DB>
+        {
+            type SqlType = (
+                $(<$ST as CompatibleType<$T, __DB>>::SqlType,)*
+                <crate::sql_types::Untyped as CompatibleType<$T1, __DB>>::SqlType
+            );
         }
 
         impl<$T1, $ST1, $($T,)* $($ST,)* __DB> FromStaticSqlRow<($($ST,)* $ST1,), __DB> for ($($T,)* $T1,) where
