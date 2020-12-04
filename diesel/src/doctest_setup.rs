@@ -18,6 +18,7 @@ cfg_if::cfg_if! {
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS comments CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS brands CASCADE").unwrap();
 
             connection
         }
@@ -61,6 +62,12 @@ cfg_if::cfg_if! {
                 (1, 'Great post'),
                 (2, 'Yay! I am learning Rust'),
                 (3, 'I enjoyed your post')").unwrap();
+
+            connection.execute("CREATE TABLE brands (
+                id SERIAL PRIMARY KEY,
+                color VARCHAR NOT NULL DEFAULT 'Green',
+                accent VARCHAR DEFAULT 'Blue'
+            )").unwrap();
 
             connection
         }
@@ -125,6 +132,7 @@ cfg_if::cfg_if! {
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS comments CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS brands CASCADE").unwrap();
 
             connection
         }
@@ -168,6 +176,12 @@ cfg_if::cfg_if! {
                 (1, 'Great post'),
                 (2, 'Yay! I am learning Rust'),
                 (3, 'I enjoyed your post')").unwrap();
+
+            connection.execute("CREATE TABLE brands (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                color VARCHAR(255) NOT NULL DEFAULT 'Green',
+                accent VARCHAR(255) DEFAULT 'Blue'
+            )").unwrap();
 
             connection.begin_test_transaction().unwrap();
             connection
@@ -224,6 +238,15 @@ mod schema {
         users {
             id -> Integer,
             name -> VarChar,
+        }
+    }
+
+    #[cfg(not(feature = "sqlite"))]
+    table! {
+        brands {
+            id -> Integer,
+            color -> VarChar,
+            accent -> Nullable<VarChar>,
         }
     }
 
