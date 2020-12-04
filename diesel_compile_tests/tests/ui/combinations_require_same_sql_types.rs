@@ -29,11 +29,9 @@ allow_tables_to_appear_in_same_query!(comments, posts, users);
 
 fn main() {
     let _ = users::table.union(comments::table);
-    //~^ ERROR 0271
 
     // Sanity check to make sure the error is when comments
     // become involved
     let union = users::table.union(posts::table);
     let _ = union.union(comments::table);
-    //~^ ERROR 0271
 }

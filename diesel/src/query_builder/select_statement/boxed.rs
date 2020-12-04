@@ -5,6 +5,7 @@ use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::insertable::Insertable;
+use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::DistinctClause;
 use crate::query_builder::group_by_clause::ValidGroupByClause;
 use crate::query_builder::insert_statement::InsertFromSelect;
@@ -348,6 +349,55 @@ where
             group_by: self.group_by,
             _marker: PhantomData,
         }
+    }
+}
+
+impl<'a, ST, QS, DB> CombineDsl for BoxedSelectStatement<'a, ST, QS, DB>
+where
+    Self: Query,
+{
+    type Query = Self;
+
+    fn union<Rhs>(self, rhs: Rhs) -> crate::dsl::Union<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Union, Distinct, self, rhs.as_query())
+    }
+
+    fn union_all<Rhs>(self, rhs: Rhs) -> crate::dsl::UnionAll<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Union, All, self, rhs.as_query())
+    }
+
+    fn intersect<Rhs>(self, rhs: Rhs) -> crate::dsl::Intersect<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Intersect, Distinct, self, rhs.as_query())
+    }
+
+    fn intersect_all<Rhs>(self, rhs: Rhs) -> crate::dsl::IntersectAll<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Intersect, All, self, rhs.as_query())
+    }
+
+    fn except<Rhs>(self, rhs: Rhs) -> crate::dsl::Except<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Except, Distinct, self, rhs.as_query())
+    }
+
+    fn except_all<Rhs>(self, rhs: Rhs) -> crate::dsl::ExceptAll<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Except, All, self, rhs.as_query())
     }
 }
 

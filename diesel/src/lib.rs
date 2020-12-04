@@ -210,7 +210,9 @@ pub mod helper_types {
     //! DslName<OtherTypes>>::Output`. So the return type of
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
+    use super::query_builder::combination_clause::{self, CombinationClause};
     use super::query_builder::locking_clause as lock;
+    use super::query_builder::AsQuery;
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::joins;
@@ -307,9 +309,6 @@ pub mod helper_types {
 
     /// Represents the return type of `.group_by(expr)`
     pub type GroupBy<Source, Expr> = <Source as GroupByDsl<Expr>>::Output;
-
-    use crate::query_builder::combination_clause::{self, CombinationClause};
-    use crate::query_builder::AsQuery;
 
     /// Represents the return type of `.union(rhs)`
     pub type Union<Source, Rhs> = CombinationClause<

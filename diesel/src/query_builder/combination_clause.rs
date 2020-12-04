@@ -4,8 +4,8 @@
 use crate::backend::Backend;
 use crate::expression::NonAggregate;
 use crate::query_builder::insert_statement::InsertFromSelect;
-use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
-use crate::{Insertable, QueryResult, RunQueryDsl, Table};
+use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId};
+use crate::{CombineDsl, Insertable, QueryResult, RunQueryDsl, Table};
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoCombinationClause;
@@ -24,7 +24,7 @@ pub struct CombinationClause<Combinator, Rule, Source, Rhs> {
     combinator: Combinator,
     duplicate_rule: Rule,
     source: Source,
-    rhs: Rhs,
+    rhs: RhsParenthesisWrapper<Rhs>,
 }
 
 impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, Rhs> {
@@ -39,7 +39,7 @@ impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, 
             combinator,
             duplicate_rule,
             source,
-            rhs,
+            rhs: RhsParenthesisWrapper(rhs),
         }
     }
 }
@@ -68,6 +68,73 @@ where
 
     fn values(self) -> Self::Values {
         InsertFromSelect::new(self)
+    }
+}
+
+impl<Combinator, Rule, Source, OriginRhs> CombineDsl
+    for CombinationClause<Combinator, Rule, Source, OriginRhs>
+where
+    Self: Query,
+{
+    type Query = Self;
+
+    fn union<Rhs>(self, rhs: Rhs) -> crate::dsl::Union<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Union, Distinct, self, rhs.as_query())
+    }
+
+    fn union_all<Rhs>(self, rhs: Rhs) -> crate::dsl::UnionAll<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Union, All, self, rhs.as_query())
+    }
+
+    fn intersect<Rhs>(self, rhs: Rhs) -> crate::dsl::Intersect<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Intersect, Distinct, self, rhs.as_query())
+    }
+
+    fn intersect_all<Rhs>(self, rhs: Rhs) -> crate::dsl::IntersectAll<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Intersect, All, self, rhs.as_query())
+    }
+
+    fn except<Rhs>(self, rhs: Rhs) -> crate::dsl::Except<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Except, Distinct, self, rhs.as_query())
+    }
+
+    fn except_all<Rhs>(self, rhs: Rhs) -> crate::dsl::ExceptAll<Self, Rhs>
+    where
+        Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
+    {
+        CombinationClause::new(Except, All, self, rhs.as_query())
+    }
+}
+
+impl<Combinator, Rule, Source, Rhs, DB: Backend> QueryFragment<DB>
+    for CombinationClause<Combinator, Rule, Source, Rhs>
+where
+    Combinator: QueryFragment<DB>,
+    Rule: QueryFragment<DB>,
+    Source: QueryFragment<DB>,
+    RhsParenthesisWrapper<Rhs>: QueryFragment<DB>,
+    DB: Backend + SupportsCombinationClause<Combinator, Rule>,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        self.source.walk_ast(out.reborrow())?;
+        self.combinator.walk_ast(out.reborrow())?;
+        self.duplicate_rule.walk_ast(out.reborrow())?;
+        self.rhs.walk_ast(out)
     }
 }
 
@@ -125,14 +192,12 @@ impl<DB: Backend> QueryFragment<DB> for All {
     }
 }
 
-/// Marker trait used to indicate whenever the combination is supported by given backend
-pub trait CombinationSupportedBy<DB> {}
+/// Marker trait used to indicate whenever a backend supports given combination
+pub trait SupportsCombinationClause<Combinator, Rule> {}
 
-impl<Source, Rhs, DB> CombinationSupportedBy<DB>
-    for CombinationClause<Union, Distinct, Source, Rhs>
-{
-}
-impl<Source, Rhs, DB> CombinationSupportedBy<DB> for CombinationClause<Union, All, Source, Rhs> {}
+#[derive(Debug, Copy, Clone, QueryId)]
+/// Wrapper used to wrap rhs sql in parenthesis when supported by backend
+pub struct RhsParenthesisWrapper<T>(T);
 
 #[cfg(feature = "postgres")]
 mod postgres {
@@ -141,33 +206,21 @@ mod postgres {
     use crate::query_builder::{AstPass, QueryFragment};
     use crate::QueryResult;
 
-    impl<Source, Rhs> CombinationSupportedBy<Pg>
-        for CombinationClause<Intersect, Distinct, Source, Rhs>
-    {
-    }
-    impl<Source, Rhs> CombinationSupportedBy<Pg> for CombinationClause<Intersect, All, Source, Rhs> {}
-    impl<Source, Rhs> CombinationSupportedBy<Pg> for CombinationClause<Except, Distinct, Source, Rhs> {}
-    impl<Source, Rhs> CombinationSupportedBy<Pg> for CombinationClause<Except, All, Source, Rhs> {}
-
-    impl<Combinator, Rule, Source, Rhs> QueryFragment<Pg>
-        for CombinationClause<Combinator, Rule, Source, Rhs>
-    where
-        Combinator: QueryFragment<Pg>,
-        Rule: QueryFragment<Pg>,
-        Source: QueryFragment<Pg>,
-        Rhs: QueryFragment<Pg>,
-        Self: CombinationSupportedBy<Pg>,
-    {
+    impl<T: QueryFragment<Pg>> QueryFragment<Pg> for RhsParenthesisWrapper<T> {
         fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
-            self.source.walk_ast(out.reborrow())?;
-            self.combinator.walk_ast(out.reborrow())?;
-            self.duplicate_rule.walk_ast(out.reborrow())?;
             out.push_sql("(");
-            self.rhs.walk_ast(out.reborrow())?;
+            self.0.walk_ast(out.reborrow())?;
             out.push_sql(")");
             Ok(())
         }
     }
+
+    impl SupportsCombinationClause<Union, Distinct> for Pg {}
+    impl SupportsCombinationClause<Union, All> for Pg {}
+    impl SupportsCombinationClause<Intersect, Distinct> for Pg {}
+    impl SupportsCombinationClause<Intersect, All> for Pg {}
+    impl SupportsCombinationClause<Except, Distinct> for Pg {}
+    impl SupportsCombinationClause<Except, All> for Pg {}
 }
 
 #[cfg(feature = "mysql")]
@@ -177,25 +230,17 @@ mod mysql {
     use crate::query_builder::{AstPass, QueryFragment};
     use crate::QueryResult;
 
-    impl<Combinator, Rule, Source, Rhs> QueryFragment<Mysql>
-        for CombinationClause<Combinator, Rule, Source, Rhs>
-    where
-        Combinator: QueryFragment<Mysql>,
-        Rule: QueryFragment<Mysql>,
-        Source: QueryFragment<Mysql>,
-        Rhs: QueryFragment<Mysql>,
-        Self: CombinationSupportedBy<Mysql>,
-    {
+    impl<T: QueryFragment<Mysql>> QueryFragment<Mysql> for RhsParenthesisWrapper<T> {
         fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
-            self.source.walk_ast(out.reborrow())?;
-            self.combinator.walk_ast(out.reborrow())?;
-            self.duplicate_rule.walk_ast(out.reborrow())?;
             out.push_sql("(");
-            self.rhs.walk_ast(out.reborrow())?;
+            self.0.walk_ast(out.reborrow())?;
             out.push_sql(")");
             Ok(())
         }
     }
+
+    impl SupportsCombinationClause<Union, Distinct> for Mysql {}
+    impl SupportsCombinationClause<Union, All> for Mysql {}
 }
 
 #[cfg(feature = "sqlite")]
@@ -205,30 +250,14 @@ mod sqlite {
     use crate::sqlite::Sqlite;
     use crate::QueryResult;
 
-    impl<Source, Rhs> CombinationSupportedBy<Sqlite>
-        for CombinationClause<Intersect, Distinct, Source, Rhs>
-    {
-    }
-    impl<Source, Rhs> CombinationSupportedBy<Sqlite>
-        for CombinationClause<Except, Distinct, Source, Rhs>
-    {
-    }
-
-    impl<Combinator, Rule, Source, Rhs> QueryFragment<Sqlite>
-        for CombinationClause<Combinator, Rule, Source, Rhs>
-    where
-        Combinator: QueryFragment<Sqlite>,
-        Rule: QueryFragment<Sqlite>,
-        Source: QueryFragment<Sqlite>,
-        Rhs: QueryFragment<Sqlite>,
-        Self: CombinationSupportedBy<Sqlite>,
-    {
-        fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
-            self.source.walk_ast(out.reborrow())?;
-            self.combinator.walk_ast(out.reborrow())?;
-            self.duplicate_rule.walk_ast(out.reborrow())?;
-            self.rhs.walk_ast(out.reborrow())?;
-            Ok(())
+    impl<T: QueryFragment<Sqlite>> QueryFragment<Sqlite> for RhsParenthesisWrapper<T> {
+        fn walk_ast(&self, out: AstPass<Sqlite>) -> QueryResult<()> {
+            self.0.walk_ast(out) // SQLite does not support parenthesis around Ths
         }
     }
+
+    impl SupportsCombinationClause<Union, Distinct> for Sqlite {}
+    impl SupportsCombinationClause<Union, All> for Sqlite {}
+    impl SupportsCombinationClause<Intersect, Distinct> for Sqlite {}
+    impl SupportsCombinationClause<Except, Distinct> for Sqlite {}
 }
