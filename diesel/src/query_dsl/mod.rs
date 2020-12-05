@@ -30,6 +30,7 @@ mod distinct_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
 mod group_by_dsl;
+mod having_dsl;
 mod join_dsl;
 #[doc(hidden)]
 pub mod limit_dsl;
@@ -65,6 +66,7 @@ pub mod methods {
     #[doc(inline)]
     pub use super::filter_dsl::*;
     pub use super::group_by_dsl::GroupByDsl;
+    pub use super::having_dsl::HavingDsl;
     pub use super::limit_dsl::LimitDsl;
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
