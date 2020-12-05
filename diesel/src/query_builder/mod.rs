@@ -18,6 +18,7 @@ mod distinct_clause;
 #[doc(hidden)]
 pub mod functions;
 mod group_by_clause;
+mod having_clause;
 mod insert_statement;
 pub(crate) mod limit_clause;
 pub(crate) mod limit_offset_clause;

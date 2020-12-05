@@ -18,6 +18,7 @@ pub use self::boxed::BoxedSelectStatement;
 
 use super::distinct_clause::NoDistinctClause;
 use super::group_by_clause::*;
+use super::having_clause::*;
 use super::limit_clause::NoLimitClause;
 use super::locking_clause::NoLockingClause;
 use super::offset_clause::NoOffsetClause;
