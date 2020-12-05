@@ -8,6 +8,7 @@ use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::*;
 use crate::query_builder::group_by_clause::*;
+use crate::query_builder::having_clause::*;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::*;
 use crate::query_builder::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
@@ -27,12 +28,12 @@ use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::QuerySource;
 use crate::sql_types::{BigInt, BoolOrNullableBool};
 
-impl<F, S, D, W, O, LOf, G, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
-    for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
-    SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, LOf, G, LC>: AsQuery,
+    SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, LOf, G, LC, H>: AsQuery,
 {
-    type Output = SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, LOf, G, LC>;
+    type Output = SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, LOf, G, LC, H>;
 
     fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
         SelectStatement::new(
@@ -44,18 +45,19 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC, Selection> SelectDsl<Selection>
-    for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Selection> SelectDsl<Selection>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     G: ValidGroupByClause,
     Selection: SelectableExpression<F> + ValidGrouping<G::Expressions>,
-    SelectStatement<F, SelectClause<Selection>, D, W, O, LOf, G, LC>: SelectQuery,
+    SelectStatement<F, SelectClause<Selection>, D, W, O, LOf, G, LC, H>: SelectQuery,
 {
-    type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, LOf, G, LC>;
+    type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, LOf, G, LC, H>;
 
     fn select(self, selection: Selection) -> Self::Output {
         SelectStatement::new(
@@ -67,16 +69,19 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<ST, F, S, D, W, O, LOf, G> DistinctDsl for SelectStatement<F, S, D, W, O, LOf, G>
+impl<ST, F, S, D, W, O, LOf, G, H> DistinctDsl
+    for SelectStatement<F, S, D, W, O, LOf, G, NoLockingClause, H>
 where
     Self: SelectQuery<SqlType = ST>,
-    SelectStatement<F, S, DistinctClause, W, O, LOf, G>: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, DistinctClause, W, O, LOf, G, NoLockingClause, H>:
+        SelectQuery<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, DistinctClause, W, O, LOf, G>;
+    type Output = SelectStatement<F, S, DistinctClause, W, O, LOf, G, NoLockingClause, H>;
 
     fn distinct(self) -> Self::Output {
         SelectStatement::new(
@@ -88,18 +93,19 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC, Predicate> FilterDsl<Predicate>
-    for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Predicate> FilterDsl<Predicate>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     Predicate: Expression + NonAggregate,
     Predicate::SqlType: BoolOrNullableBool,
     W: WhereAnd<Predicate>,
 {
-    type Output = SelectStatement<F, S, D, W::Output, O, LOf, G, LC>;
+    type Output = SelectStatement<F, S, D, W::Output, O, LOf, G, LC, H>;
 
     fn filter(self, predicate: Predicate) -> Self::Output {
         SelectStatement::new(
@@ -111,18 +117,19 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC, Predicate> OrFilterDsl<Predicate>
-    for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Predicate> OrFilterDsl<Predicate>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     Predicate: Expression + NonAggregate,
     Predicate::SqlType: BoolOrNullableBool,
     W: WhereOr<Predicate>,
 {
-    type Output = SelectStatement<F, S, D, W::Output, O, LOf, G, LC>;
+    type Output = SelectStatement<F, S, D, W::Output, O, LOf, G, LC, H>;
 
     fn or_filter(self, predicate: Predicate) -> Self::Output {
         SelectStatement::new(
@@ -134,6 +141,7 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
@@ -142,7 +150,7 @@ use crate::dsl::Filter;
 use crate::expression_methods::EqAll;
 use crate::query_source::Table;
 
-impl<F, S, D, W, O, LOf, G, LC, PK> FindDsl<PK> for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, PK> FindDsl<PK> for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     F: Table,
     F::PrimaryKey: EqAll<PK>,
@@ -156,14 +164,14 @@ where
     }
 }
 
-impl<ST, F, S, D, W, O, LOf, G, LC, Expr> OrderDsl<Expr>
-    for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<ST, F, S, D, W, O, LOf, G, LC, H, Expr> OrderDsl<Expr>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     Expr: AppearsOnTable<F>,
     Self: SelectQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, LC>: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, LC, H>: SelectQuery<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, LC>;
+    type Output = SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, LC, H>;
 
     fn order(self, expr: Expr) -> Self::Output {
         let order = OrderClause(expr);
@@ -176,16 +184,17 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC, Expr> ThenOrderDsl<Expr>
-    for SelectStatement<F, S, D, W, OrderClause<O>, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<F, S, D, W, OrderClause<O>, LOf, G, LC, H>
 where
     Expr: AppearsOnTable<F>,
 {
-    type Output = SelectStatement<F, S, D, W, OrderClause<(O, Expr)>, LOf, G, LC>;
+    type Output = SelectStatement<F, S, D, W, OrderClause<(O, Expr)>, LOf, G, LC, H>;
 
     fn then_order_by(self, expr: Expr) -> Self::Output {
         SelectStatement::new(
@@ -197,12 +206,13 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<F, S, D, W, LOf, G, LC, Expr> ThenOrderDsl<Expr>
-    for SelectStatement<F, S, D, W, NoOrderClause, LOf, G, LC>
+impl<F, S, D, W, LOf, G, LC, H, Expr> ThenOrderDsl<Expr>
+    for SelectStatement<F, S, D, W, NoOrderClause, LOf, G, LC, H>
 where
     Expr: Expression,
     Self: OrderDsl<Expr>,
@@ -217,14 +227,15 @@ where
 #[doc(hidden)]
 pub type Limit = AsExprOf<i64, BigInt>;
 
-impl<ST, F, S, D, W, O, L, Of, G, LC> LimitDsl
-    for SelectStatement<F, S, D, W, O, LimitOffsetClause<L, Of>, G, LC>
+impl<ST, F, S, D, W, O, L, Of, G, LC, H> LimitDsl
+    for SelectStatement<F, S, D, W, O, LimitOffsetClause<L, Of>, G, LC, H>
 where
     Self: SelectQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, O, LimitOffsetClause<LimitClause<Limit>, Of>, G, LC>:
+    SelectStatement<F, S, D, W, O, LimitOffsetClause<LimitClause<Limit>, Of>, G, LC, H>:
         SelectQuery<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, D, W, O, LimitOffsetClause<LimitClause<Limit>, Of>, G, LC>;
+    type Output =
+        SelectStatement<F, S, D, W, O, LimitOffsetClause<LimitClause<Limit>, Of>, G, LC, H>;
 
     fn limit(self, limit: i64) -> Self::Output {
         let limit_clause = LimitClause(limit.into_sql::<BigInt>());
@@ -240,6 +251,7 @@ where
             },
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
@@ -247,14 +259,15 @@ where
 #[doc(hidden)]
 pub type Offset = Limit;
 
-impl<ST, F, S, D, W, O, L, Of, G, LC> OffsetDsl
-    for SelectStatement<F, S, D, W, O, LimitOffsetClause<L, Of>, G, LC>
+impl<ST, F, S, D, W, O, L, Of, G, LC, H> OffsetDsl
+    for SelectStatement<F, S, D, W, O, LimitOffsetClause<L, Of>, G, LC, H>
 where
     Self: SelectQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, O, LimitOffsetClause<L, OffsetClause<Offset>>, G, LC>:
+    SelectStatement<F, S, D, W, O, LimitOffsetClause<L, OffsetClause<Offset>>, G, LC, H>:
         SelectQuery<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, D, W, O, LimitOffsetClause<L, OffsetClause<Offset>>, G, LC>;
+    type Output =
+        SelectStatement<F, S, D, W, O, LimitOffsetClause<L, OffsetClause<Offset>>, G, LC, H>;
 
     fn offset(self, offset: i64) -> Self::Output {
         let offset_clause = OffsetClause(offset.into_sql::<BigInt>());
@@ -270,16 +283,18 @@ where
             },
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<F, S, D, W, O, LOf, G, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, LOf, G>
+impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr>
+    for SelectStatement<F, S, D, W, O, LOf, G, NoLockingClause, H>
 where
-    SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>>: SelectQuery,
+    SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>, NoLockingClause, H>: SelectQuery,
     Expr: Expression,
 {
-    type Output = SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>>;
+    type Output = SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>, NoLockingClause, H>;
 
     fn group_by(self, expr: Expr) -> Self::Output {
         let group_by = GroupByClause(expr);
@@ -292,12 +307,13 @@ where
             self.limit_offset,
             group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
-    for SelectStatement<F, S, NoDistinctClause, W, O, LOf>
+impl<F, S, W, O, LOf, Lock, H> LockingDsl<Lock>
+    for SelectStatement<F, S, NoDistinctClause, W, O, LOf, NoGroupByClause, NoLockingClause, H>
 {
     type Output = SelectStatement<
         F,
@@ -308,6 +324,7 @@ impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
         LOf,
         NoGroupByClause,
         LockingClause<Lock, NoModifier>,
+        H,
     >;
 
     fn with_lock(self, lock: Lock) -> Self::Output {
@@ -320,14 +337,15 @@ impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
             self.limit_offset,
             self.group_by,
             LockingClause::new(lock, NoModifier),
+            self.having,
         )
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC, LM, Modifier> ModifyLockDsl<Modifier>
-    for SelectStatement<F, S, D, W, O, LOf, G, LockingClause<LC, LM>>
+impl<F, S, D, W, O, LOf, G, LC, LM, H, Modifier> ModifyLockDsl<Modifier>
+    for SelectStatement<F, S, D, W, O, LOf, G, LockingClause<LC, LM>, H>
 {
-    type Output = SelectStatement<F, S, D, W, O, LOf, G, LockingClause<LC, Modifier>>;
+    type Output = SelectStatement<F, S, D, W, O, LOf, G, LockingClause<LC, Modifier>, H>;
 
     fn modify_lock(self, modifier: Modifier) -> Self::Output {
         SelectStatement::new(
@@ -339,11 +357,13 @@ impl<F, S, D, W, O, LOf, G, LC, LM, Modifier> ModifyLockDsl<Modifier>
             self.limit_offset,
             self.group_by,
             LockingClause::new(self.locking.lock_mode, modifier),
+            self.having,
         )
     }
 }
 
-impl<'a, F, S, D, W, O, LOf, G, DB> BoxedDsl<'a, DB> for SelectStatement<F, S, D, W, O, LOf, G>
+impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
+    for SelectStatement<F, S, D, W, O, LOf, G, NoLockingClause, H>
 where
     Self: AsQuery,
     DB: Backend,
@@ -370,7 +390,7 @@ where
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC> HasTable for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H> HasTable for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     F: HasTable,
 {
@@ -399,7 +419,8 @@ where
 // FIXME: Should we disable joining when `.group_by` has been called? Are there
 // any other query methods where a join no longer has the same semantics as
 // joining on just the table?
-impl<F, S, D, W, O, LOf, G, LC, Rhs> JoinTo<Rhs> for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Rhs> JoinTo<Rhs>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     F: JoinTo<Rhs>,
 {
@@ -411,14 +432,15 @@ where
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC> QueryDsl for SelectStatement<F, S, D, W, O, LOf, G, LC> {}
+impl<F, S, D, W, O, LOf, G, LC, H> QueryDsl for SelectStatement<F, S, D, W, O, LOf, G, LC, H> {}
 
-impl<F, S, D, W, O, LOf, G, LC, Conn> RunQueryDsl<Conn>
-    for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Conn> RunQueryDsl<Conn>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 {
 }
 
-impl<F, S, D, W, O, LOf, G, LC, Tab> Insertable<Tab> for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Tab> Insertable<Tab>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     Tab: Table,
     Self: Query,
@@ -432,8 +454,8 @@ where
     }
 }
 
-impl<'a, F, S, D, W, O, LOf, G, LC, Tab> Insertable<Tab>
-    for &'a SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<'a, F, S, D, W, O, LOf, G, LC, H, Tab> Insertable<Tab>
+    for &'a SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     Tab: Table,
     Self: Query,
@@ -447,10 +469,11 @@ where
     }
 }
 
-impl<'a, F, S, D, W, O, LOf, G> SelectNullableDsl
-    for SelectStatement<F, SelectClause<S>, D, W, O, LOf, G>
+impl<'a, F, S, D, W, O, LOf, G, H> SelectNullableDsl
+    for SelectStatement<F, SelectClause<S>, D, W, O, LOf, G, NoLockingClause, H>
 {
-    type Output = SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, LOf, G>;
+    type Output =
+        SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, LOf, G, NoLockingClause, H>;
 
     fn nullable(self) -> Self::Output {
         SelectStatement::new(
@@ -462,16 +485,27 @@ impl<'a, F, S, D, W, O, LOf, G> SelectNullableDsl
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
 
-impl<'a, F, D, W, O, LOf, G> SelectNullableDsl
-    for SelectStatement<F, DefaultSelectClause, D, W, O, LOf, G>
+impl<'a, F, D, W, O, LOf, G, H> SelectNullableDsl
+    for SelectStatement<F, DefaultSelectClause, D, W, O, LOf, G, NoLockingClause, H>
 where
     F: QuerySource,
 {
-    type Output = SelectStatement<F, SelectClause<Nullable<F::DefaultSelection>>, D, W, O, LOf, G>;
+    type Output = SelectStatement<
+        F,
+        SelectClause<Nullable<F::DefaultSelection>>,
+        D,
+        W,
+        O,
+        LOf,
+        G,
+        NoLockingClause,
+        H,
+    >;
 
     fn nullable(self) -> Self::Output {
         SelectStatement::new(
@@ -483,6 +517,7 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
