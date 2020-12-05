@@ -9,6 +9,7 @@
 //! Of: Offset Clause
 //! G: Group By Clause
 //! LC: For Update Clause
+//! H: Having clause
 #![allow(missing_docs)] // The missing_docs lint triggers even though this is hidden
 
 mod boxed;
@@ -47,6 +48,7 @@ pub struct SelectStatement<
     LimitOffset = LimitOffsetClause<NoLimitClause, NoOffsetClause>,
     GroupBy = NoGroupByClause,
     Locking = NoLockingClause,
+    Having = NoHavingClause,
 > {
     pub(crate) select: Select,
     pub(crate) from: From,
@@ -56,9 +58,10 @@ pub struct SelectStatement<
     pub(crate) limit_offset: LimitOffset,
     pub(crate) group_by: GroupBy,
     pub(crate) locking: Locking,
+    pub(crate) having: Having,
 }
 
-impl<F, S, D, W, O, LOf, G, LC> SelectStatement<F, S, D, W, O, LOf, G, LC> {
+impl<F, S, D, W, O, LOf, G, LC, H> SelectStatement<F, S, D, W, O, LOf, G, LC, H> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         select: S,
@@ -69,6 +72,7 @@ impl<F, S, D, W, O, LOf, G, LC> SelectStatement<F, S, D, W, O, LOf, G, LC> {
         limit_offset: LOf,
         group_by: G,
         locking: LC,
+        having: H,
     ) -> Self {
         SelectStatement {
             select,
@@ -79,6 +83,7 @@ impl<F, S, D, W, O, LOf, G, LC> SelectStatement<F, S, D, W, O, LOf, G, LC> {
             limit_offset,
             group_by,
             locking,
+            having,
         }
     }
 }
@@ -97,11 +102,12 @@ impl<F> SelectStatement<F> {
             },
             NoGroupByClause,
             NoLockingClause,
+            NoHavingClause,
         )
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC> Query for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H> Query for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     G: ValidGroupByClause,
     S: SelectClauseExpression<F>,
@@ -111,14 +117,15 @@ where
     type SqlType = S::SelectClauseSqlType;
 }
 
-impl<F, S, D, W, O, LOf, G, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     S: SelectClauseExpression<F>,
 {
     type SqlType = S::SelectClauseSqlType;
 }
 
-impl<F, S, D, W, O, LOf, G, LC, DB> QueryFragment<DB> for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, DB, H> QueryFragment<DB>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     DB: Backend,
     S: SelectClauseQueryFragment<F, DB>,
@@ -130,6 +137,7 @@ where
     LOf: QueryFragment<DB>,
     G: QueryFragment<DB>,
     LC: QueryFragment<DB>,
+    H: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
@@ -139,6 +147,7 @@ where
         self.from.from_clause().walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
+        self.having.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
         self.limit_offset.walk_ast(out.reborrow())?;
         self.locking.walk_ast(out.reborrow())?;
@@ -146,7 +155,8 @@ where
     }
 }
 
-impl<S, D, W, O, LOf, G, LC, DB> QueryFragment<DB> for SelectStatement<(), S, D, W, O, LOf, G, LC>
+impl<S, D, W, O, LOf, G, LC, H, DB> QueryFragment<DB>
+    for SelectStatement<(), S, D, W, O, LOf, G, LC, H>
 where
     DB: Backend,
     S: SelectClauseQueryFragment<(), DB>,
@@ -156,6 +166,7 @@ where
     LOf: QueryFragment<DB>,
     G: QueryFragment<DB>,
     LC: QueryFragment<DB>,
+    H: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
@@ -163,6 +174,7 @@ where
         self.select.walk_ast(&(), out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
+        self.having.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
         self.limit_offset.walk_ast(out.reborrow())?;
         self.locking.walk_ast(out.reborrow())?;
@@ -170,8 +182,8 @@ where
     }
 }
 
-impl<S, F, D, W, O, LOf, G, LC, QS> ValidSubselect<QS>
-    for SelectStatement<F, S, D, W, O, LOf, LC, G>
+impl<S, F, D, W, O, LOf, G, LC, H, QS> ValidSubselect<QS>
+    for SelectStatement<F, S, D, W, O, LOf, LC, G, H>
 where
     Self: SelectQuery,
     W: ValidWhereClause<Join<F, QS, Inner>>,
