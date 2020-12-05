@@ -11,3 +11,19 @@ impl<DB: Backend> QueryFragment<DB> for NoHavingClause {
         Ok(())
     }
 }
+
+/// The `HAVING` clause of a query.
+#[derive(Debug, Clone, Copy, QueryId)]
+pub struct HavingClause<Expr>(pub Expr);
+
+impl<DB, Expr> QueryFragment<DB> for HavingClause<Expr>
+where
+    DB: Backend,
+    Expr: QueryFragment<DB>,
+{
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.push_sql(" HAVING ");
+        self.0.walk_ast(out.reborrow())?;
+        Ok(())
+    }
+}
