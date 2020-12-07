@@ -210,7 +210,9 @@ pub mod helper_types {
     //! DslName<OtherTypes>>::Output`. So the return type of
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
+    use super::query_builder::combination_clause::{self, CombinationClause};
     use super::query_builder::locking_clause as lock;
+    use super::query_builder::AsQuery;
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::joins;
@@ -281,6 +283,7 @@ pub mod helper_types {
 
     use super::associations::HasTable;
     use super::query_builder::{AsChangeset, IntoUpdateTarget, UpdateStatement};
+
     /// Represents the return type of `update(lhs).set(rhs)`
     pub type Update<Target, Changes> = UpdateStatement<
         <Target as HasTable>::Table,
@@ -306,6 +309,54 @@ pub mod helper_types {
 
     /// Represents the return type of `.group_by(expr)`
     pub type GroupBy<Source, Expr> = <Source as GroupByDsl<Expr>>::Output;
+
+    /// Represents the return type of `.union(rhs)`
+    pub type Union<Source, Rhs> = CombinationClause<
+        combination_clause::Union,
+        combination_clause::Distinct,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.union_all(rhs)`
+    pub type UnionAll<Source, Rhs> = CombinationClause<
+        combination_clause::Union,
+        combination_clause::All,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.intersect(rhs)`
+    pub type Intersect<Source, Rhs> = CombinationClause<
+        combination_clause::Intersect,
+        combination_clause::Distinct,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.intersect_all(rhs)`
+    pub type IntersectAll<Source, Rhs> = CombinationClause<
+        combination_clause::Intersect,
+        combination_clause::All,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.except(rhs)`
+    pub type Except<Source, Rhs> = CombinationClause<
+        combination_clause::Except,
+        combination_clause::Distinct,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
+
+    /// Represents the return type of `.except_all(rhs)`
+    pub type ExceptAll<Source, Rhs> = CombinationClause<
+        combination_clause::Except,
+        combination_clause::All,
+        <Source as CombineDsl>::Query,
+        <Rhs as AsQuery>::Query,
+    >;
 }
 
 pub mod prelude {
@@ -336,7 +387,9 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::query_builder::DecoratableTarget;
     #[doc(inline)]
-    pub use crate::query_dsl::{BelongingToDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl};
+    pub use crate::query_dsl::{
+        BelongingToDsl, CombineDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl,
+    };
     #[doc(inline)]
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
