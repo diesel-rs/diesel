@@ -528,6 +528,7 @@ impl<F, S, D, W, O, LOf, G, LC, H, Predicate> HavingDsl<Predicate>
 where
     Predicate: Expression,
     Predicate::SqlType: BoolOrNullableBool,
+    G: ValidGroupByClause,
 {
     type Output = SelectStatement<F, S, D, W, O, LOf, G, LC, HavingClause<Predicate>>;
 
