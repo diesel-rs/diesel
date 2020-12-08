@@ -312,8 +312,8 @@ where
     }
 }
 
-impl<F, S, W, O, LOf, Lock, H> LockingDsl<Lock>
-    for SelectStatement<F, S, NoDistinctClause, W, O, LOf, NoGroupByClause, NoLockingClause, H>
+impl<F, S, W, O, LOf, Lock> LockingDsl<Lock>
+    for SelectStatement<F, S, NoDistinctClause, W, O, LOf, NoGroupByClause, NoLockingClause>
 {
     type Output = SelectStatement<
         F,
@@ -324,7 +324,6 @@ impl<F, S, W, O, LOf, Lock, H> LockingDsl<Lock>
         LOf,
         NoGroupByClause,
         LockingClause<Lock, NoModifier>,
-        H,
     >;
 
     fn with_lock(self, lock: Lock) -> Self::Output {
