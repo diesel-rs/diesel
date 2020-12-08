@@ -824,6 +824,36 @@ pub trait QueryDsl: Sized {
         methods::GroupByDsl::group_by(self, group_by)
     }
 
+    /// Adds to the `HAVING` clause of a query.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::{users, posts};
+    /// #     use diesel::dsl::count;
+    /// #     let connection = establish_connection();
+    /// let data = users::table.inner_join(posts::table)
+    ///     .group_by(users::id)
+    ///     .having(count(posts::id).gt(1))
+    ///     .select((users::name, count(posts::id)))
+    ///     .load::<(String, i64)>(&connection)?;
+    ///
+    /// assert_eq!(vec![(String::from("Sean"), 2)], data);
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn having<Predicate>(self, predicate: Predicate) -> Having<Self, Predicate>
+    where
+        Self: methods::HavingDsl<Predicate>,
+    {
+        methods::HavingDsl::having(self, predicate)
+    }
+
     /// Adds `FOR UPDATE` to the end of the select statement.
     ///
     /// This method is only available for MySQL and PostgreSQL. SQLite does not
