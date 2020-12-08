@@ -294,7 +294,7 @@ impl SqliteConnection {
     /// ```
     pub fn register_collation<F>(&self, collation_name: &str, collation: F) -> QueryResult<()>
     where
-        F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static,
+        F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static + std::panic::UnwindSafe,
     {
         self.raw_connection
             .register_collation_function(collation_name, collation)
