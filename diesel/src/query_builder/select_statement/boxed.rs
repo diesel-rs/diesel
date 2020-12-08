@@ -8,6 +8,7 @@ use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::DistinctClause;
 use crate::query_builder::group_by_clause::ValidGroupByClause;
+use crate::query_builder::having_clause::HavingClause;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::LimitClause;
 use crate::query_builder::limit_offset_clause::BoxedLimitOffsetClause;
@@ -357,6 +358,22 @@ where
             having: self.having,
             _marker: PhantomData,
         }
+    }
+}
+
+impl<'a, ST, QS, DB, Predicate, GB> HavingDsl<Predicate>
+    for BoxedSelectStatement<'a, ST, QS, DB, GB>
+where
+    DB: Backend,
+    HavingClause<Predicate>: QueryFragment<DB> + Send + 'a,
+    Predicate: AppearsOnTable<QS>,
+    Predicate::SqlType: BoolOrNullableBool,
+{
+    type Output = Self;
+
+    fn having(mut self, predicate: Predicate) -> Self::Output {
+        self.having = Box::new(HavingClause(predicate));
+        self
     }
 }
 
