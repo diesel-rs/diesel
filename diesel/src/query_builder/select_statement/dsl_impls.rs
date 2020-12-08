@@ -522,7 +522,30 @@ where
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC> CombineDsl for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, LC, H, Predicate> HavingDsl<Predicate>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
+where
+    Predicate: Expression,
+    Predicate::SqlType: BoolOrNullableBool,
+{
+    type Output = SelectStatement<F, S, D, W, O, LOf, G, LC, HavingClause<Predicate>>;
+
+    fn having(self, predicate: Predicate) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit_offset,
+            self.group_by,
+            self.locking,
+            HavingClause(predicate),
+        )
+    }
+}
+
+impl<F, S, D, W, O, LOf, G, LC, H> CombineDsl for SelectStatement<F, S, D, W, O, LOf, G, LC, H>
 where
     Self: Query,
 {
