@@ -357,6 +357,22 @@ pub mod helper_types {
         <Source as CombineDsl>::Query,
         <Rhs as AsQuery>::Query,
     >;
+
+    type JoinQuerySource<Left, Right, Kind, On> = joins::JoinOn<joins::Join<Left, Right, Kind>, On>;
+
+    /// A query source representing the inner join between two tables.
+    /// For example, for the inner join between three tables that implement `JoinTo`:
+    /// `InnerJoinQuerySource<InnerJoinQuerySource<table1, table2>, table3>`
+    /// Which conveniently lets you omit the exact join condition.
+    pub type InnerJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
+        JoinQuerySource<Left, Right, joins::Inner, On>;
+
+    /// A query source representing the left outer join between two tables.
+    /// For example, for the left join between three tables that implement `JoinTo`:
+    /// `LeftJoinQuerySource<LeftJoinQuerySource<table1, table2>, table3>`
+    /// Which conveniently lets you omit the exact join condition.
+    pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
+        JoinQuerySource<Left, Right, joins::LeftOuter, On>;
 }
 
 pub mod prelude {
