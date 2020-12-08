@@ -374,6 +374,7 @@ where
     O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
     LOf: IntoBoxedClause<'a, DB, BoxedClause = BoxedLimitOffsetClause<'a, DB>>,
     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
+    H: QueryFragment<DB> + Send + 'a,
 {
     type Output = BoxedSelectStatement<'a, S::SqlType, F, DB, G::Expressions>;
 
@@ -386,6 +387,7 @@ where
             self.order.into(),
             self.limit_offset.into_boxed(),
             self.group_by,
+            Box::new(self.having),
         )
     }
 }
