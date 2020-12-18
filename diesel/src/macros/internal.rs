@@ -4,15 +4,15 @@
 ///
 /// This macro is exported because we want to be able to call it from other
 /// macros that are exported, but it is not part of our public API.
-#[macro_export(local_inner_macros)]
+#[macro_export]
 #[doc(hidden)]
 macro_rules! impl_selectable_expression {
     ($struct_name:ident) => {
-        impl_selectable_expression!(ty_params = (), struct_ty = $struct_name,);
+        $crate::impl_selectable_expression!(ty_params = (), struct_ty = $struct_name,);
     };
 
     ($struct_name:ident<$($ty_params:ident),+>) => {
-        impl_selectable_expression!(
+        $crate::impl_selectable_expression!(
             ty_params = ($($ty_params),+),
             struct_ty = $struct_name<$($ty_params),+>,
         );

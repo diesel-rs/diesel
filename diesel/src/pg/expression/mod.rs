@@ -9,6 +9,7 @@ pub(crate) mod array;
 pub mod array_comparison;
 pub(crate) mod expression_methods;
 pub mod extensions;
+pub mod functions;
 #[doc(hidden)]
 pub mod helper_types;
 #[doc(hidden)]
@@ -29,4 +30,7 @@ pub mod dsl {
     pub use super::array::array;
 
     pub use super::extensions::*;
+
+    #[cfg(not(feature = "sqlite"))]
+    pub use super::functions::*;
 }

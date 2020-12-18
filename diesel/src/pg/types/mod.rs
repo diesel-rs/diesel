@@ -478,7 +478,7 @@ pub mod sql_types {
 mod ops {
     use super::sql_types::*;
     use crate::sql_types::ops::*;
-    use crate::sql_types::Interval;
+    use crate::sql_types::{Bigint, Cidr, Inet, Interval};
 
     impl Add for Timestamptz {
         type Rhs = Interval;
@@ -488,5 +488,25 @@ mod ops {
     impl Sub for Timestamptz {
         type Rhs = Interval;
         type Output = Timestamptz;
+    }
+
+    impl Add for Cidr {
+        type Rhs = Bigint;
+        type Output = Inet;
+    }
+
+    impl Add for Inet {
+        type Rhs = Bigint;
+        type Output = Inet;
+    }
+
+    impl Sub for Cidr {
+        type Rhs = Bigint;
+        type Output = Inet;
+    }
+
+    impl Sub for Inet {
+        type Rhs = Bigint;
+        type Output = Inet;
     }
 }

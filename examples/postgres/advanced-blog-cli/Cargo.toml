@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 bcrypt = "0.8.1"
-chrono = "0.4.0"
+chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
 diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres", "chrono"] }
 dotenv = "0.15"
 structopt = "0.3"

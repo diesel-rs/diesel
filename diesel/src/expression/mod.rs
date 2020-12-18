@@ -714,6 +714,55 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// #     Ok(())
 /// # }
 /// ```
+///
+/// ## More advanced query source
+/// This example is a bit contrived, but in general, if you want to for example filter based on
+/// different criteria on a joined table, you can use `InnerJoinQuerySource` and
+/// `LeftJoinQuerySource` in the QS parameter of `BoxableExpression`.
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// # use schema::{users, posts};
+/// use diesel::sql_types::Bool;
+/// use diesel::dsl::InnerJoinQuerySource;
+///
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let conn = establish_connection();
+/// enum UserPostFilter {
+///     User(i32),
+///     Post(i32),
+/// }
+///
+/// # /*
+/// type DB = diesel::sqlite::Sqlite;
+/// # */
+///
+/// fn filter_user_posts(
+///     filter: UserPostFilter,
+/// ) -> Box<dyn BoxableExpression<InnerJoinQuerySource<users::table, posts::table>, DB, SqlType = Bool>>
+/// {
+///     match filter {
+///         UserPostFilter::User(user_id) => Box::new(users::id.eq(user_id)),
+///         UserPostFilter::Post(post_id) => Box::new(posts::id.eq(post_id)),
+///     }
+/// }
+///
+/// let post_by_user_one = users::table
+///     .inner_join(posts::table)
+///     .filter(filter_user_posts(UserPostFilter::User(2)))
+///     .select((posts::title, users::name))
+///     .first::<(String, String)>(&conn)?;
+///
+/// assert_eq!(
+///     ("My first post too".to_string(), "Tess".to_string()),
+///     post_by_user_one
+/// );
+/// #     Ok(())
+/// # }
+/// ```
 pub trait BoxableExpression<QS, DB, GB = (), IsAggregate = is_aggregate::No>
 where
     DB: Backend,

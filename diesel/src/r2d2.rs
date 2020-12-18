@@ -27,10 +27,16 @@ use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 /// See the [r2d2 documentation] for usage examples.
 ///
 /// [r2d2 documentation]: ../../r2d2
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,
     _marker: PhantomData<T>,
+}
+
+impl<T> fmt::Debug for ConnectionManager<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ConnectionManager<{}>", std::any::type_name::<T>())
+    }
 }
 
 unsafe impl<T: Send + 'static> Sync for ConnectionManager<T> {}

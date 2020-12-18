@@ -19,7 +19,7 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-chrono = "0.4.1"
+chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
 clap = "2.27"
 dotenv = "0.15"
 heck = "0.3.1"
