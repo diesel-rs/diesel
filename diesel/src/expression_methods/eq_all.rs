@@ -35,7 +35,7 @@ macro_rules! impl_eq_all {
             fn eq_all(self, rhs: ($Right1, $($Right,)+)) -> Self::Output {
                 let ($Left1, $($Left,)+) = self;
                 let ($Right1, $($Right,)+) = rhs;
-                $Left1.eq_all($Right1).and::<_, Bool>(($($Left,)+).eq_all(($($Right,)+)))
+                $Left1.eq_all($Right1).and(($($Left,)+).eq_all(($($Right,)+)))
             }
         }
     };
