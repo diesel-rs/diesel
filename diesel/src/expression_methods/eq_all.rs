@@ -1,16 +1,15 @@
 use crate::expression::grouped::Grouped;
-use crate::expression::nullable::Nullable;
 use crate::expression::operators::And;
 use crate::expression::Expression;
 use crate::expression_methods::*;
-use crate::sql_types::{self, Bool};
+use crate::sql_types::Bool;
 
 /// This method is used by `FindDsl` to work with tuples. Because we cannot
 /// express this without specialization or overlapping impls, it is brute force
 /// implemented on columns in the `column!` macro.
 #[doc(hidden)]
 pub trait EqAll<Rhs> {
-    type Output: Expression<SqlType = sql_types::Nullable<Bool>>;
+    type Output: Expression<SqlType = Bool>;
 
     fn eq_all(self, rhs: Rhs) -> Self::Output;
 }
@@ -29,14 +28,14 @@ macro_rules! impl_eq_all {
             ($($Left,)+): EqAll<($($Right,)+)>,
         {
             type Output = Grouped<And<
-                Nullable<<$Left1 as EqAll<$Right1>>::Output>,
+                <$Left1 as EqAll<$Right1>>::Output,
                 <($($Left,)+) as EqAll<($($Right,)+)>>::Output,
             >>;
 
             fn eq_all(self, rhs: ($Right1, $($Right,)+)) -> Self::Output {
                 let ($Left1, $($Left,)+) = self;
                 let ($Right1, $($Right,)+) = rhs;
-                $Left1.eq_all($Right1).and(($($Left,)+).eq_all(($($Right,)+)))
+                $Left1.eq_all($Right1).and::<_, Bool>(($($Left,)+).eq_all(($($Right,)+)))
             }
         }
     };

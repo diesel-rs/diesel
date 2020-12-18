@@ -88,12 +88,38 @@ pub type Asc<Expr> = super::operators::Asc<Expr>;
 pub type Nullable<Expr> = super::nullable::Nullable<Expr>;
 
 /// The return type of
+/// [`lhs.and(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.and)  
+/// when resulting expression is a non-nullable `Bool`
+pub type And<Lhs, Rhs> = MaybeNullableAnd<Lhs, Rhs, sql_types::Bool>;
+
+/// The return type of
+/// [`lhs.and(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.and)  
+/// when resulting expression is a `Nullable<Bool>`
+pub type NullableAnd<Lhs, Rhs> = MaybeNullableAnd<Lhs, Rhs, Nullable<sql_types::Bool>>;
+
+/// The return type of
 /// [`lhs.and(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.and)
-pub type And<Lhs, Rhs> = Grouped<super::operators::And<Nullable<Lhs>, AsExpr<Rhs, Nullable<Lhs>>>>;
+///
+/// If you are attempting to express a query return type explicitly, you may want to use
+/// [And] or [NullableAnd] instead.
+pub type MaybeNullableAnd<Lhs, Rhs, ST> = Grouped<super::operators::And<Lhs, AsExprOf<Rhs, ST>>>;
+
+/// The return type of
+/// [`lhs.or(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.or)  
+/// when resulting expression is a non-nullable `Bool`
+pub type Or<Lhs, Rhs> = MaybeNullableOr<Lhs, Rhs, sql_types::Bool>;
+
+/// The return type of
+/// [`lhs.or(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.or)  
+/// when resulting expression is a `Nullable<Bool>`
+pub type NullableOr<Lhs, Rhs> = MaybeNullableOr<Lhs, Rhs, Nullable<sql_types::Bool>>;
 
 /// The return type of
 /// [`lhs.or(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.or)
-pub type Or<Lhs, Rhs> = Grouped<super::operators::Or<Lhs, AsExpr<Rhs, Nullable<Lhs>>>>;
+///
+/// If you are attempting to express a query return type explicitly, you may want to use
+/// [And] or [NullableAnd] instead.
+pub type MaybeNullableOr<Lhs, Rhs, ST> = Grouped<super::operators::Or<Lhs, AsExprOf<Rhs, ST>>>;
 
 /// The return type of
 /// [`lhs.escape('x')`](../expression_methods/trait.EscapeExpressionMethods.html#method.escape)

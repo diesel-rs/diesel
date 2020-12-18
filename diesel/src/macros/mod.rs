@@ -109,16 +109,13 @@ macro_rules! __diesel_column {
 
         impl<T> $crate::EqAll<T> for $column_name where
             T: $crate::expression::AsExpression<$($Type)*>,
-            $crate::dsl::Nullable<$crate::dsl::Eq<$column_name, T::Expression>>:
-            $crate::Expression<SqlType = $crate::sql_types::Nullable<$crate::sql_types::Bool>>,
+            $crate::dsl::Eq<$column_name, T::Expression>: $crate::Expression<SqlType=$crate::sql_types::Bool>,
         {
-            type Output = $crate::dsl::Nullable<$crate::dsl::Eq<Self, T::Expression>>;
+            type Output = $crate::dsl::Eq<Self, T::Expression>;
 
             fn eq_all(self, rhs: T) -> Self::Output {
                 use $crate::expression_methods::ExpressionMethods;
-                use $crate::expression_methods::NullableExpressionMethods;
-
-                self.eq(rhs).nullable()
+                self.eq(rhs)
             }
         }
 
