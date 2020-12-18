@@ -53,11 +53,7 @@ impl TableName {
     }
 }
 
-impl<ST, DB> Queryable<ST, DB> for TableName
-where
-    (String, String): FromStaticSqlRow<ST, DB>,
-    DB: Backend,
-{
+impl Queryable for TableName {
     type Row = (String, String);
 
     fn build((name, schema): Self::Row) -> Self {

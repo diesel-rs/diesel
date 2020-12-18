@@ -466,10 +466,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///     }
 /// }
 ///
-/// impl<DB> Queryable<Text, DB> for LowercaseString
-/// where
-///     DB: Backend,
-///     String: FromSql<Text, DB>
+/// impl Queryable for LowercaseString
 /// {
 ///
 ///     type Row = String;
@@ -521,9 +518,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///     name: String,
 /// }
 ///
-/// impl Queryable<users::SqlType, DB> for User
-/// where
-///    (i32, String): FromSqlRow<users::SqlType, DB>,
+/// impl Queryable for User
 /// {
 ///     type Row = (i32, String);
 ///
