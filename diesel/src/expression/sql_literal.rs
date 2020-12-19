@@ -73,7 +73,7 @@ where
     ///
     /// ```rust
     /// # include!("../doctest_setup.rs");
-    ///
+    /// #
     /// # table! {
     /// #    users {
     /// #        id -> Integer,
@@ -125,7 +125,7 @@ where
     ///
     /// ```rust
     /// # include!("../doctest_setup.rs");
-    ///
+    /// #
     /// # table! {
     /// #    users {
     /// #        id -> Integer,
@@ -199,7 +199,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
     type IsAggregate = is_aggregate::Never;
 }
 
-/// Use literal SQL in the query builder
+/// Use literal SQL in the query builder.
 ///
 /// Available for when you truly cannot represent something using the expression
 /// DSL. You will need to provide the SQL type of the expression, in addition to
@@ -208,6 +208,8 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// This function is intended for use when you need a small bit of raw SQL in
 /// your query. If you want to write the entire query using raw SQL, use
 /// [`sql_query`](../fn.sql_query.html) instead.
+///
+/// Query parameters can be bound into the literal SQL using [`SqlLiteral::bind()`].
 ///
 /// # Safety
 ///
@@ -220,20 +222,28 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// # fn main() {
-/// #     run_test().unwrap();
-/// # }
-/// #
-/// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     use diesel::sql_types::Bool;
+/// #     use diesel::sql_types::{Bool, Integer, Text};
 /// use diesel::dsl::sql;
 /// #     let connection = establish_connection();
 /// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(&connection)?;
 /// let expected = (1, String::from("Sean"));
 /// assert_eq!(expected, user);
-/// #     Ok(())
+///
+/// let query = users
+///     .select(name)
+///     .filter(
+///         sql::<Bool>("id > ")
+///         .bind::<Integer,_>(1)
+///         .sql(" AND name <> ")
+///         .bind::<Text, _>("Ryan")
+///     )
+///     .get_results(&connection);
+/// let expected = vec!["Tess".to_string()];
+/// assert_eq!(Ok(expected), query);
 /// # }
 /// ```
+/// [`SqlLiteral::bind()`]: ../expression/struct.SqlLiteral.html#method.bind
 pub fn sql<ST>(sql: &str) -> SqlLiteral<ST>
 where
     ST: TypedExpressionType,
@@ -245,7 +255,7 @@ where
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`SqlLiteral::bind()`] method when binding a value to a fragment of SQL.
 ///
-/// [`bind()`]: ./struct.SqlLiteral.html#method.bind
+/// [`SqlLiteral::bind()`]: ./struct.SqlLiteral.html#method.bind
 pub struct UncheckedBind<Query, Value> {
     query: Query,
     value: Value,
@@ -259,7 +269,7 @@ where
         UncheckedBind { query, value }
     }
 
-    /// Use literal SQL in the query builder
+    /// Use literal SQL in the query builder.
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
@@ -275,7 +285,7 @@ where
     ///
     /// ```rust
     /// # include!("../doctest_setup.rs");
-    ///
+    /// #
     /// # table! {
     /// #    users {
     /// #        id -> Integer,
