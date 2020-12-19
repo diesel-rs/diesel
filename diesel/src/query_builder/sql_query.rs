@@ -190,6 +190,9 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// #     use diesel::sql_types::{Integer, Text};
     /// #
     /// #     let connection = establish_connection();
+    /// #     diesel::insert_into(users::table)
+    /// #         .values(users::name.eq("Jim"))
+    /// #         .execute(&connection).unwrap();
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
     /// # #[cfg(not(feature = "postgres"))]
