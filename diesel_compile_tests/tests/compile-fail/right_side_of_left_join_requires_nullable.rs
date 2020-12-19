@@ -51,7 +51,7 @@ fn direct_joins() {
     //~| ERROR E0277
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR E0277
+    //~^ ERROR E0271
 }
 
 fn nested_outer_joins_left_associative() {
@@ -72,7 +72,7 @@ fn nested_outer_joins_left_associative() {
     //~| ERROR E0277
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR E0277
+    //~^ ERROR E0271
 }
 
 fn nested_mixed_joins_left_associative() {
@@ -92,7 +92,7 @@ fn nested_mixed_joins_left_associative() {
     //~| ERROR E0277
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR E0277
+    //~^ ERROR E0271
 }
 
 fn nested_outer_joins_right_associative() {
@@ -112,7 +112,7 @@ fn nested_outer_joins_right_associative() {
     //~| ERROR E0277
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR E0277
+    //~^ ERROR E0271
 }
 
 fn nested_mixed_joins_right_associative() {
@@ -132,5 +132,5 @@ fn nested_mixed_joins_right_associative() {
     //~| ERROR E0277
     // Invalid, Nullable<title> is selectable, but lower expects not-null
     let _ = join.select(lower(posts::title.nullable()));
-    //~^ ERROR E0277
+    //~^ ERROR E0271
 }
