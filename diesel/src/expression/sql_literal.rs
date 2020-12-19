@@ -222,17 +222,28 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// # fn main() {
+/// #     run_test_1().unwrap();
+/// #     run_test_2().unwrap();
+/// # }
+/// #
+/// # fn run_test_1() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     use diesel::sql_types::{Bool, Integer, Text};
+/// #     use diesel::sql_types::Bool;
 /// use diesel::dsl::sql;
 /// #     let connection = establish_connection();
-/// let sean = (1, String::from("Sean"));
-/// assert_eq!(Ok(sean), users.filter(sql::<Bool>("name = 'Sean'")).first(&connection));
-///
-/// # let connection = establish_connection();
-/// # diesel::insert_into(users::table)
-/// #     .values(users::name.eq("Jim"))
-/// #     .execute(&connection).unwrap();
+/// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(&connection)?;
+/// let expected = (1, String::from("Sean"));
+/// assert_eq!(expected, user);
+/// #     Ok(())
+/// # }
+/// #
+/// # fn run_test_2() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     use diesel::sql_types::{Bool, Integer, Text};
+/// #     let connection = establish_connection();
+/// #     diesel::insert_into(users::table)
+/// #         .values(users::name.eq("Jim"))
+/// #         .execute(&connection).unwrap();
 /// let query = users
 ///     .select(name)
 ///     .filter(
@@ -244,6 +255,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 ///     .get_results(&connection);
 /// let expected = vec!["Tess".to_string()];
 /// assert_eq!(Ok(expected), query);
+/// #     Ok(())
 /// # }
 /// ```
 /// [`SqlLiteral::bind()`]: ../expression/struct.SqlLiteral.html#method.bind
