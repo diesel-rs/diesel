@@ -446,11 +446,7 @@ postfix_operator!(
     crate::expression::expression_types::NotSelectable
 );
 
-prefix_operator!(
-    Not,
-    " NOT ",
-    crate::sql_types::Nullable<crate::sql_types::Bool>
-);
+prefix_operator!(Not, " NOT ");
 
 use crate::backend::Backend;
 use crate::expression::{TypedExpressionType, ValidGrouping};
