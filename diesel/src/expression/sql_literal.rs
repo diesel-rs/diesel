@@ -238,11 +238,12 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// # }
 /// #
 /// # fn run_test_2() -> QueryResult<()> {
-/// #     use schema::users;
+/// #     use self::users::dsl::*;
+/// #     use diesel::dsl::sql;
 /// #     use diesel::sql_types::{Bool, Integer, Text};
 /// #     let connection = establish_connection();
-/// #     diesel::insert_into(users::table)
-/// #         .values(users::name.eq("Jim"))
+/// #     diesel::insert_into(users)
+/// #         .values(name.eq("Jim"))
 /// #         .execute(&connection).unwrap();
 /// let query = users
 ///     .select(name)
