@@ -238,7 +238,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// # }
 /// #
 /// # fn run_test_2() -> QueryResult<()> {
-/// #     use self::users::dsl::*;
+/// #     use crate::schema::users::dsl::*;
 /// #     use diesel::dsl::sql;
 /// #     use diesel::sql_types::{Bool, Integer, Text};
 /// #     let connection = establish_connection();
