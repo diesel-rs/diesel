@@ -243,7 +243,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #     use diesel::sql_types::{Bool, Integer, Text};
 /// #     let connection = establish_connection();
 /// #     diesel::insert_into(users)
-/// #         .values(name.eq("Jim"))
+/// #         .values(name.eq("Ryan"))
 /// #         .execute(&connection).unwrap();
 /// let query = users
 ///     .select(name)
