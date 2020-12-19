@@ -124,6 +124,9 @@ impl<Inner, Conn> RunQueryDsl<Conn> for SqlQuery<Inner> {}
 
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
+/// Returned by the [`SqlQuery::bind()`] method when binding a value to a fragment of SQL.
+///
+/// [`SqlQuery::bind()`]: ./struct.SqlQuery.html#method.bind
 pub struct UncheckedBind<Query, Value, ST> {
     query: Query,
     value: Value,
@@ -147,6 +150,62 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
         BoxedSqlQuery::new(self)
     }
 
+    /// Construct a full SQL query using raw SQL.
+    ///
+    /// This function exists for cases where a query needs to be written that is not
+    /// supported by the query builder. Unlike most queries in Diesel, `sql_query`
+    /// will deserialize its data by name, not by index. That means that you cannot
+    /// deserialize into a tuple, and structs which you deserialize from this
+    /// function will need to have `#[derive(QueryableByName)]`.
+    ///
+    /// This function is intended for use when you want to write the entire query
+    /// using raw SQL. If you only need a small bit of raw SQL in your query, use
+    /// [`sql`](./dsl/fn.sql.html) instead.
+    ///
+    /// Query parameters can be bound into the raw query using [`SqlQuery::bind()`].
+    ///
+    /// # Safety
+    ///
+    /// The implementation of `QueryableByName` will assume that columns with a
+    /// given name will have a certain type. The compiler will be unable to verify
+    /// that the given type is correct. If your query returns a column of an
+    /// unexpected type, the result may have the wrong value, or return an error.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # use schema::users;
+    /// #
+    /// # #[derive(QueryableByName, Debug, PartialEq)]
+    /// # #[table_name="users"]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use diesel::sql_query;
+    /// #     use diesel::sql_types::{Integer, Text};
+    /// #
+    /// #     let connection = establish_connection();
+    /// # #[cfg(feature = "postgres")]
+    /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
+    /// # #[cfg(not(feature = "postgres"))]
+    /// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
+    /// # ;
+    /// # let users = users
+    ///     .bind::<Integer, _>(1)
+    ///     .bind::<Text, _>("Tess")
+    ///     .get_results(&connection);
+    /// let expected_users = vec![
+    ///     User { id: 3, name: "Jim".into() },
+    /// ];
+    /// assert_eq!(Ok(expected_users), users);
+    /// # }
+    /// ```
+    /// [`SqlQuery::bind()`]: query_builder/struct.SqlQuery.html#method.bind
     pub fn sql<T: Into<String>>(self, sql: T) -> SqlQuery<Self> {
         SqlQuery::new(self, sql.into())
     }
