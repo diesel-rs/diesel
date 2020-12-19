@@ -229,6 +229,10 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// let sean = (1, String::from("Sean"));
 /// assert_eq!(Ok(sean), users.filter(sql::<Bool>("name = 'Sean'")).first(&connection));
 ///
+/// # let connection = establish_connection();
+/// # diesel::insert_into(users::table)
+/// #     .values(users::name.eq("Jim"))
+/// #     .execute(&connection).unwrap();
 /// let query = users
 ///     .select(name)
 ///     .filter(
