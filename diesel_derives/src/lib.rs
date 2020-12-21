@@ -459,7 +459,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #
 /// # use schema::users;
 /// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::{Queryable, FromSql};
+/// # use diesel::deserialize::{self, Queryable, FromSql};
 /// # use diesel::sql_types::Text;
 /// #
 /// struct LowercaseString(String);
@@ -478,7 +478,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 ///     type Row = String;
 ///
-///     fn build(s: String) -> Self {
+///     fn build(s: String) -> deserialize::Result<Self> {
 ///         LowercaseString(s.to_lowercase())
 ///     }
 /// }
