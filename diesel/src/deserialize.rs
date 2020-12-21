@@ -57,7 +57,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # use schema::users;
 /// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::{Queryable, FromSql};
+/// # use diesel::deserialize::{self, Queryable, FromSql};
 /// # use diesel::sql_types::Text;
 /// #
 /// struct LowercaseString(String);
@@ -75,8 +75,8 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// {
 ///     type Row = String;
 ///
-///     fn build(s: String) -> Self {
-///         LowercaseString(s.to_lowercase())
+///     fn build(s: String) -> deserialize::Result<Self> {
+///         Ok(LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
@@ -107,7 +107,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// # include!("doctest_setup.rs");
 /// #
 /// use schema::users;
-/// use diesel::deserialize::Queryable;
+/// use diesel::deserialize::{self, Queryable};
 ///
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
@@ -122,11 +122,11 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// impl Queryable<users::SqlType, DB> for User {
 ///     type Row = (i32, String);
 ///
-///     fn build(row: Self::Row) -> Self {
-///         User {
+///     fn build(row: Self::Row) -> deserialize::Result<Self> {
+///         Ok(User {
 ///             id: row.0,
 ///             name: row.1.to_lowercase(),
-///         }
+///         })
 ///     }
 /// }
 ///
@@ -143,7 +143,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #     Ok(())
 /// # }
 /// ```
-pub trait Queryable<ST, DB>
+pub trait Queryable<ST, DB>: Sized
 where
     DB: Backend,
 {
@@ -153,7 +153,7 @@ where
     type Row: FromStaticSqlRow<ST, DB>;
 
     /// Construct an instance of this type
-    fn build(row: Self::Row) -> Self;
+    fn build(row: Self::Row) -> Result<Self>;
 }
 
 #[doc(inline)]
@@ -394,7 +394,7 @@ where
 {
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
         let row = <T::Row as FromStaticSqlRow<ST, DB>>::build_from_row(row)?;
-        Ok(T::build(row))
+        T::build(row)
     }
 }
 

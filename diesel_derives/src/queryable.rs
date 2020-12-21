@@ -17,7 +17,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let field_ty = &field_ty;
     let build_expr = model.fields().iter().enumerate().map(|(i, f)| {
         let i = syn::Index::from(i);
-        f.name.assign(parse_quote!(row.#i.into()))
+        f.name.assign(parse_quote!(row.#i.try_into()?))
     });
     let sql_type = (0..model.fields().len())
         .map(|i| {
@@ -45,18 +45,19 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
     Ok(wrap_in_dummy_mod(quote! {
-        use diesel::deserialize::{FromStaticSqlRow, Queryable};
+        use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
         use diesel::row::{Row, Field};
+        use std::convert::TryInto;
 
         impl #impl_generics Queryable<(#(#sql_type,)*), __DB> for #struct_name #ty_generics
             #where_clause
         {
             type Row = (#(#field_ty,)*);
 
-            fn build(row: Self::Row) -> Self {
-                Self {
+            fn build(row: Self::Row) -> deserialize::Result<Self> {
+                Ok(Self {
                     #(#build_expr,)*
-                }
+                })
             }
         }
     }))

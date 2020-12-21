@@ -99,8 +99,8 @@ where
 {
     type Row = Self;
 
-    fn build(row: Self) -> Self {
-        row
+    fn build(row: Self) -> deserialize::Result<Self> {
+        Ok(row)
     }
 }
 
