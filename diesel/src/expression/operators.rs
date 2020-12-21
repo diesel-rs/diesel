@@ -181,6 +181,15 @@ macro_rules! __diesel_operator_to_sql {
 ///
 /// // Specifying both the return types and the backend
 /// infix_operator!(And, " && ", TsQuery, backend: Pg);
+///
+/// // When nullability does not depend on whether one of the arguments
+/// // is nullable:
+/// infix_operator!(
+///     IsDistinctFrom,
+///     " IS DISTINCT FROM ",
+///     ConstantNullability diesel::sql_types::Bool,
+///     backend: Pg
+/// );
 /// ```
 ///
 /// ## Example usage
@@ -222,48 +231,54 @@ macro_rules! infix_operator {
     };
 
     ($name:ident, $operator:expr, $($return_ty:tt)::*) => {
-        $crate::__diesel_operator_body!(
-            notation = infix,
-            struct_name = $name,
+        $crate::infix_operator!(
+            name = $name,
             operator = $operator,
-            return_ty = (
-                $crate::sql_types::is_nullable::MaybeNullable<
-                    $crate::sql_types::is_nullable::IsOneNullable<
-                        <T as $crate::expression::Expression>::SqlType,
-                        <U as $crate::expression::Expression>::SqlType
-                    >,
-                    $($return_ty)::*
-                >
-            ),
-            ty_params = (T, U,),
-            field_names = (left, right,),
+            return_ty = NullableBasedOnArgs ($($return_ty)::*),
             backend_ty_params = (DB,),
             backend_ty = DB,
-            expression_ty_params = (),
-            expression_bounds = (
-                T: $crate::expression::Expression,
-                U: $crate::expression::Expression,
-                <T as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
-                <U as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
-                $crate::sql_types::is_nullable::IsSqlTypeNullable<
-                    <T as $crate::expression::Expression>::SqlType
-                >: $crate::sql_types::OneIsNullable<
-                    $crate::sql_types::is_nullable::IsSqlTypeNullable<
-                        <U as $crate::expression::Expression>::SqlType
-                    >
-                >,
-                $crate::sql_types::is_nullable::IsOneNullable<
-                    <T as $crate::expression::Expression>::SqlType,
-                    <U as $crate::expression::Expression>::SqlType
-                >: $crate::sql_types::MaybeNullableType<$($return_ty)::*>,
-            ),
         );
     };
 
-    ($name:ident, $operator:expr, $return_ty:ty, backend: $backend:ty) => {
-        $crate::__diesel_operator_body!(
-            notation = infix,
-            struct_name = $name,
+    ($name:ident, $operator:expr, $($return_ty:tt)::*, backend: $backend:ty) => {
+        $crate::infix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = NullableBasedOnArgs ($($return_ty)::*),
+            backend_ty_params = (),
+            backend_ty = $backend,
+        );
+    };
+
+    ($name:ident, $operator:expr, ConstantNullability $($return_ty:tt)::*) => {
+        $crate::infix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = ($($return_ty)::*),
+            backend_ty_params = (DB,),
+            backend_ty = DB,
+        );
+    };
+
+    ($name:ident, $operator:expr, ConstantNullability $($return_ty:tt)::*, backend: $backend:ty) => {
+        $crate::infix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = ($($return_ty)::*),
+            backend_ty_params = (),
+            backend_ty = $backend,
+        );
+    };
+
+    (
+        name = $name:ident,
+        operator = $operator:expr,
+        return_ty = NullableBasedOnArgs ($($return_ty:tt)+),
+        backend_ty_params = $backend_ty_params:tt,
+        backend_ty = $backend_ty:ty,
+    ) => {
+        $crate::infix_operator!(
+            name = $name,
             operator = $operator,
             return_ty = (
                 $crate::sql_types::is_nullable::MaybeNullable<
@@ -271,19 +286,10 @@ macro_rules! infix_operator {
                         <T as $crate::expression::Expression>::SqlType,
                         <U as $crate::expression::Expression>::SqlType
                     >,
-                    $return_ty,
+                    $($return_ty)+
                 >
             ),
-            ty_params = (T, U,),
-            field_names = (left, right,),
-            backend_ty_params = (),
-            backend_ty = $backend,
-            expression_ty_params = (),
             expression_bounds = (
-                T: $crate::expression::Expression,
-                U: $crate::expression::Expression,
-                <T as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
-                <U as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
                 $crate::sql_types::is_nullable::IsSqlTypeNullable<
                     <T as $crate::expression::Expression>::SqlType
                 >: $crate::sql_types::OneIsNullable<
@@ -294,7 +300,54 @@ macro_rules! infix_operator {
                 $crate::sql_types::is_nullable::IsOneNullable<
                     <T as $crate::expression::Expression>::SqlType,
                     <U as $crate::expression::Expression>::SqlType
-                >: $crate::sql_types::MaybeNullableType<$return_ty>,
+                >: $crate::sql_types::MaybeNullableType<$($return_ty)+>,
+            ),
+            backend_ty_params = $backend_ty_params,
+            backend_ty = $backend_ty,
+        );
+    };
+
+    (
+        name = $name:ident,
+        operator = $operator:expr,
+        return_ty = ($($return_ty:tt)+),
+        backend_ty_params = $backend_ty_params:tt,
+        backend_ty = $backend_ty:ty,
+    ) => {
+        $crate::infix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = ($($return_ty)+),
+            expression_bounds = (),
+            backend_ty_params = $backend_ty_params,
+            backend_ty = $backend_ty,
+        );
+    };
+
+    (
+        name = $name:ident,
+        operator = $operator:expr,
+        return_ty = ($($return_ty:tt)+),
+        expression_bounds = ($($expression_bounds:tt)*),
+        backend_ty_params = $backend_ty_params:tt,
+        backend_ty = $backend_ty:ty,
+    ) => {
+        $crate::__diesel_operator_body!(
+            notation = infix,
+            struct_name = $name,
+            operator = $operator,
+            return_ty = ($($return_ty)+),
+            ty_params = (T, U,),
+            field_names = (left, right,),
+            backend_ty_params = $backend_ty_params,
+            backend_ty = $backend_ty,
+            expression_ty_params = (),
+            expression_bounds = (
+                T: $crate::expression::Expression,
+                U: $crate::expression::Expression,
+                <T as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
+                <U as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
+                $($expression_bounds)*
             ),
         );
     };

@@ -1,9 +1,9 @@
 use crate::expression::expression_types::NotSelectable;
 use crate::pg::Pg;
-use crate::sql_types::{Bigint, Inet};
+use crate::sql_types::{Bigint, Bool, Inet};
 
-infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", backend: Pg);
-infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", backend: Pg);
+infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
+infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
 infix_operator!(OverlapsWith, " && ", backend: Pg);
 infix_operator!(Contains, " @> ", backend: Pg);
 infix_operator!(IsContainedBy, " <@ ", backend: Pg);
