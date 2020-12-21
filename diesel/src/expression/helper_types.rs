@@ -89,7 +89,8 @@ pub type Nullable<Expr> = super::nullable::Nullable<Expr>;
 
 /// The return type of
 /// [`lhs.and(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.and)
-pub type And<Lhs, Rhs, ST = sql_types::Bool> = Grouped<super::operators::And<Lhs, AsExprOf<Rhs, ST>>>;
+pub type And<Lhs, Rhs, ST = sql_types::Bool> =
+    Grouped<super::operators::And<Lhs, AsExprOf<Rhs, ST>>>;
 
 /// The return type of
 /// [`lhs.or(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.or)
