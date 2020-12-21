@@ -37,6 +37,7 @@ pub trait BoolExpressionMethods: Expression + Sized {
     /// assert_eq!(expected, data);
     /// #     Ok(())
     /// # }
+    /// ```
     fn and<T, ST>(self, other: T) -> dsl::And<Self, T, ST>
     where
         Self::SqlType: SqlType,
@@ -84,6 +85,7 @@ pub trait BoolExpressionMethods: Expression + Sized {
     /// assert_eq!(expected, data);
     /// #     Ok(())
     /// # }
+    /// ```
     fn or<T, ST>(self, other: T) -> dsl::Or<Self, T, ST>
     where
         Self::SqlType: SqlType,
