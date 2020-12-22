@@ -469,6 +469,7 @@ macro_rules! diesel_prefix_operator {
 }
 
 infix_operator!(And, " AND ");
+infix_operator!(Or, " OR ");
 infix_operator!(Escape, " ESCAPE ");
 infix_operator!(Eq, " = ");
 infix_operator!(Gt, " > ");
@@ -505,10 +506,7 @@ use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::insertable::{ColumnInsertValue, Insertable};
 use crate::query_builder::{QueryFragment, QueryId, ValuesClause};
 use crate::query_source::Column;
-use crate::sql_types::{
-    is_nullable, AllAreNullable, Bool, DieselNumericOps, MaybeNullableType, SqlType,
-};
-use crate::Expression;
+use crate::sql_types::{DieselNumericOps, SqlType};
 
 impl<T, U> Insertable<T::Table> for Eq<T, U>
 where
@@ -574,61 +572,6 @@ where
         out.push_sql(" || ");
         self.right.walk_ast(out.reborrow())?;
         out.push_sql(")");
-        Ok(())
-    }
-}
-
-// or is different
-// it only evaluates to null if both sides are null
-#[derive(
-    Debug,
-    Clone,
-    Copy,
-    crate::query_builder::QueryId,
-    crate::sql_types::DieselNumericOps,
-    crate::expression::ValidGrouping,
-)]
-#[doc(hidden)]
-pub struct Or<T, U> {
-    pub(crate) left: T,
-    pub(crate) right: U,
-}
-
-impl<T, U> Or<T, U> {
-    pub fn new(left: T, right: U) -> Self {
-        Or { left, right }
-    }
-}
-
-impl_selectable_expression!(Or<T, U>);
-
-impl<T, U> Expression for Or<T, U>
-where
-    T: Expression,
-    U: Expression,
-    T::SqlType: SqlType,
-    U::SqlType: SqlType,
-    is_nullable::IsSqlTypeNullable<T::SqlType>:
-        AllAreNullable<is_nullable::IsSqlTypeNullable<U::SqlType>>,
-    is_nullable::AreAllNullable<T::SqlType, U::SqlType>: MaybeNullableType<Bool>,
-{
-    type SqlType =
-        is_nullable::MaybeNullable<is_nullable::AreAllNullable<T::SqlType, U::SqlType>, Bool>;
-}
-
-impl<T, U, DB> crate::query_builder::QueryFragment<DB> for Or<T, U>
-where
-    DB: crate::backend::Backend,
-    T: crate::query_builder::QueryFragment<DB>,
-    U: crate::query_builder::QueryFragment<DB>,
-{
-    fn walk_ast(
-        &self,
-        mut out: crate::query_builder::AstPass<DB>,
-    ) -> crate::result::QueryResult<()> {
-        self.left.walk_ast(out.reborrow())?;
-        out.push_sql(" OR ");
-        self.right.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
