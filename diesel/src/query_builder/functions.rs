@@ -512,7 +512,13 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// supported by the query builder. Unlike most queries in Diesel, `sql_query`
 /// will deserialize its data by name, not by index. That means that you cannot
 /// deserialize into a tuple, and structs which you deserialize from this
-/// function will need to have `#[derive(QueryableByName)]`
+/// function will need to have `#[derive(QueryableByName)]`.
+///
+/// This function is intended for use when you want to write the entire query
+/// using raw SQL. If you only need a small bit of raw SQL in your query, use
+/// [`sql`](./dsl/fn.sql.html) instead.
+///
+/// Query parameters can be bound into the raw query using [`SqlQuery::bind()`].
 ///
 /// # Safety
 ///
@@ -521,7 +527,7 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// that the given type is correct. If your query returns a column of an
 /// unexpected type, the result may have the wrong value, or return an error.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
@@ -536,7 +542,13 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// # }
 /// #
 /// # fn main() {
+/// #     run_test_1().unwrap();
+/// #     run_test_2().unwrap();
+/// # }
+/// #
+/// # fn run_test_1() -> QueryResult<()> {
 /// #     use diesel::sql_query;
+/// #     use diesel::sql_types::{Integer, Text};
 /// #
 /// #     let connection = establish_connection();
 /// let users = sql_query("SELECT * FROM users ORDER BY id")
@@ -546,8 +558,34 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 ///     User { id: 2, name: "Tess".into() },
 /// ];
 /// assert_eq!(Ok(expected_users), users);
+/// #     Ok(())
+/// # }
+///
+/// # fn run_test_2() -> QueryResult<()> {
+/// #     use diesel::sql_query;
+/// #     use diesel::sql_types::{Integer, Text};
+/// #
+/// #     let connection = establish_connection();
+/// #     diesel::insert_into(users::table)
+/// #         .values(users::name.eq("Jim"))
+/// #         .execute(&connection).unwrap();
+/// #     #[cfg(feature = "postgres")]
+/// #     let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
+/// #     #[cfg(not(feature = "postgres"))]
+/// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
+/// # ;
+/// let users = users
+///     .bind::<Integer, _>(1)
+///     .bind::<Text, _>("Tess")
+///     .get_results(&connection);
+/// let expected_users = vec![
+///     User { id: 3, name: "Jim".into() },
+/// ];
+/// assert_eq!(Ok(expected_users), users);
+/// #     Ok(())
 /// # }
 /// ```
+/// [`SqlQuery::bind()`]: query_builder/struct.SqlQuery.html#method.bind
 pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery<()> {
     SqlQuery::new((), query.into())
 }
