@@ -542,6 +542,11 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// # }
 /// #
 /// # fn main() {
+/// #     run_test_1().unwrap();
+/// #     run_test_2().unwrap();
+/// # }
+/// #
+/// # fn run_test_1() -> QueryResult<()> {
 /// #     use diesel::sql_query;
 /// #     use diesel::sql_types::{Integer, Text};
 /// #
@@ -553,17 +558,23 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 ///     User { id: 2, name: "Tess".into() },
 /// ];
 /// assert_eq!(Ok(expected_users), users);
+/// #     Ok(())
+/// # }
 ///
-/// # let connection = establish_connection();
-/// # diesel::insert_into(users::table)
-/// #     .values(users::name.eq("Jim"))
-/// #     .execute(&connection).unwrap();
-/// # #[cfg(feature = "postgres")]
-/// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
-/// # #[cfg(not(feature = "postgres"))]
+/// # fn run_test_2() -> QueryResult<()> {
+/// #     use diesel::sql_query;
+/// #     use diesel::sql_types::{Integer, Text};
+/// #
+/// #     let connection = establish_connection();
+/// #     diesel::insert_into(users::table)
+/// #         .values(users::name.eq("Jim"))
+/// #         .execute(&connection).unwrap();
+/// #     #[cfg(feature = "postgres")]
+/// #     let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
+/// #     #[cfg(not(feature = "postgres"))]
 /// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
 /// # ;
-/// # let users = users
+/// let users = users
 ///     .bind::<Integer, _>(1)
 ///     .bind::<Text, _>("Tess")
 ///     .get_results(&connection);
@@ -571,6 +582,7 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 ///     User { id: 3, name: "Jim".into() },
 /// ];
 /// assert_eq!(Ok(expected_users), users);
+/// #     Ok(())
 /// # }
 /// ```
 /// [`SqlQuery::bind()`]: query_builder/struct.SqlQuery.html#method.bind
