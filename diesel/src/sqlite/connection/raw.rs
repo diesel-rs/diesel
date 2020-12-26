@@ -257,46 +257,44 @@ extern "C" fn run_custom_function<F>(
     static NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
     static NULL_CONN_ERR: &str = "An unknown error occurred. sqlite3_context_db_handle returned a null pointer. This should never happen.";
 
-    unsafe {
-        let data_ptr = ffi::sqlite3_user_data(ctx);
-        let data_ptr = data_ptr as *mut F;
-        let f = match data_ptr.as_mut() {
-            Some(f) => f,
-            None => {
-                context_error_str(ctx, NULL_DATA_ERR);
-                return;
-            }
-        };
+    let data_ptr = unsafe { ffi::sqlite3_user_data(ctx) };
+    let data_ptr = data_ptr as *mut F;
+    let f = match unsafe { data_ptr.as_mut() } {
+        Some(f) => f,
+        None => {
+            unsafe { context_error_str(ctx, NULL_DATA_ERR) };
+            return;
+        }
+    };
 
-        let args = slice::from_raw_parts(value_ptr, num_args as _);
-        let conn = match NonNull::new(ffi::sqlite3_context_db_handle(ctx)) {
-            Some(conn) => RawConnection {
-                internal_connection: conn,
-            },
-            None => {
-                context_error_str(ctx, NULL_DATA_ERR);
-                return;
-            }
-        };
+    let args = unsafe { slice::from_raw_parts(value_ptr, num_args as _) };
+    let conn = match unsafe { NonNull::new(ffi::sqlite3_context_db_handle(ctx)) } {
+        Some(conn) => RawConnection {
+            internal_connection: conn,
+        },
+        None => {
+            unsafe { context_error_str(ctx, NULL_DATA_ERR) };
+            return;
+        }
+    };
 
-        let mut f = std::panic::AssertUnwindSafe(f);
-        let result = std::panic::catch_unwind(move || {
-            use std::ops::DerefMut as _;
-            let result = f.deref_mut()(&conn, args);
-            mem::forget(conn);
-            result
-        });
+    let mut f = std::panic::AssertUnwindSafe(f);
+    let result = std::panic::catch_unwind(move || {
+        use std::ops::DerefMut as _;
+        let result = f.deref_mut()(&conn, args);
+        mem::forget(conn);
+        result
+    });
 
-        match result {
-            Ok(Ok(value)) => value.result_of(ctx),
-            Ok(Err(e)) => {
-                let msg = e.to_string();
-                context_error_str(ctx, &msg);
-            }
-            Err(_) => {
-                let msg = format!("{} panicked", std::any::type_name::<F>());
-                context_error_str(ctx, &msg);
-            }
+    match result {
+        Ok(Ok(value)) => value.result_of(ctx),
+        Ok(Err(e)) => {
+            let msg = e.to_string();
+            unsafe { context_error_str(ctx, &msg) };
+        }
+        Err(_) => {
+            let msg = format!("{} panicked", std::any::type_name::<F>());
+            unsafe { context_error_str(ctx, &msg) };
         }
     }
 }
