@@ -370,12 +370,12 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     .unwrap_or_else(|e| Ok(Err(e)));
     match result {
         Ok(Ok(())) => (),
-        Ok(Err(e)) => {
-            let msg = e.to_string();
+        Ok(Err(_)) => {
+            let msg = format!("{}::step() panicked", std::any::type_name::<A>());
             unsafe { context_error_str(ctx, &msg) };
         }
-        Err(_) => {
-            let msg = format!("{}::step() panicked", std::any::type_name::<A>());
+        Err(e) => {
+            let msg = e.to_string();
             unsafe { context_error_str(ctx, &msg) };
         }
     };
