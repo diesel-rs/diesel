@@ -1,5 +1,4 @@
-use diesel::backend::Backend;
-use diesel::deserialize::{FromStaticSqlRow, Queryable};
+use diesel::deserialize::{self, Queryable};
 use std::fmt;
 use std::str::FromStr;
 
@@ -56,8 +55,8 @@ impl TableName {
 impl Queryable for TableName {
     type Row = (String, String);
 
-    fn build((name, schema): Self::Row) -> Self {
-        TableName::new(name, schema)
+    fn build((name, schema): Self::Row) -> deserialize::Result<Self> {
+        Ok(TableName::new(name, schema))
     }
 }
 

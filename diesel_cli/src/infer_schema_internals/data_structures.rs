@@ -1,6 +1,7 @@
 #[cfg(feature = "uses_information_schema")]
 use diesel::backend::Backend;
-use diesel::deserialize::{FromStaticSqlRow, Queryable};
+use diesel::deserialize::{self, FromSqlRow, FromStaticSqlRow};
+use diesel::sql_types;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
@@ -73,27 +74,32 @@ impl ColumnInformation {
 }
 
 #[cfg(feature = "uses_information_schema")]
-impl<ST, DB> Queryable<ST, DB> for ColumnInformation
+impl<DB> FromSqlRow<(sql_types::Text, sql_types::Text, sql_types::Text), DB> for ColumnInformation
 where
     DB: Backend + UsesInformationSchema,
-    (String, String, String): FromStaticSqlRow<ST, DB>,
+    (String, String, String):
+        FromStaticSqlRow<(sql_types::Text, sql_types::Text, sql_types::Text), DB>,
 {
-    type Row = (String, String, String);
-
-    fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.0, row.1, row.2 == "YES")
+    fn build_from_row<'a>(row: &impl diesel::row::Row<'a, DB>) -> deserialize::Result<Self> {
+        let row = <(String, String, String) as FromStaticSqlRow<
+            (sql_types::Text, sql_types::Text, sql_types::Text),
+            DB,
+        >>::build_from_row(row)?;
+        Ok(ColumnInformation::new(row.0, row.1, row.2 == "YES"))
     }
 }
 
 #[cfg(feature = "sqlite")]
-impl<ST> Queryable<ST, Sqlite> for ColumnInformation
+impl<ST> FromSqlRow<ST, Sqlite> for ColumnInformation
 where
     (i32, String, String, bool, Option<String>, bool): FromStaticSqlRow<ST, Sqlite>,
 {
-    type Row = (i32, String, String, bool, Option<String>, bool);
-
-    fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.1, row.2, !row.3)
+    fn build_from_row<'a>(row: &impl diesel::row::Row<'a, Sqlite>) -> deserialize::Result<Self> {
+        let row = <(i32, String, String, bool, Option<String>, bool) as FromStaticSqlRow<
+            ST,
+            Sqlite,
+        >>::build_from_row(row)?;
+        Ok(ColumnInformation::new(row.1, row.2, !row.3))
     }
 }
 
