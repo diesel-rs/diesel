@@ -479,7 +479,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///     type Row = String;
 ///
 ///     fn build(s: String) -> deserialize::Result<Self> {
-///         LowercaseString(s.to_lowercase())
+///         Ok(LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
