@@ -1,6 +1,6 @@
 #[cfg(feature = "uses_information_schema")]
 use diesel::backend::Backend;
-use diesel::deserialize::{FromStaticSqlRow, Queryable};
+use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
@@ -80,8 +80,8 @@ where
 {
     type Row = (String, String, String);
 
-    fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.0, row.1, row.2 == "YES")
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(ColumnInformation::new(row.0, row.1, row.2 == "YES"))
     }
 }
 
@@ -92,8 +92,8 @@ where
 {
     type Row = (i32, String, String, bool, Option<String>, bool);
 
-    fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.1, row.2, !row.3)
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(ColumnInformation::new(row.1, row.2, !row.3))
     }
 }
 
