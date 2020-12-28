@@ -455,7 +455,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #
 /// # use schema::users;
 /// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::{Queryable, FromSql};
+/// # use diesel::deserialize::{self, Queryable, FromSql};
 /// # use diesel::sql_types::Text;
 /// #
 /// struct LowercaseString(String);
@@ -471,8 +471,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 ///     type Row = String;
 ///
-///     fn build(s: String) -> Self {
-///         LowercaseString(s.to_lowercase())
+///     fn build(s: String) -> deserialize::Result<Self> {
+///         Ok(LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
@@ -505,7 +505,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// #
 /// use schema::users;
-/// use diesel::deserialize::{Queryable, FromSqlRow};
+/// use diesel::deserialize::{self, Queryable, FromSqlRow};
 /// use diesel::row::Row;
 ///
 /// # /*
@@ -522,8 +522,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// {
 ///     type Row = (i32, String);
 ///
-///     fn build((id, name): Self::Row) -> Self {
-///         User { id, name: name.to_lowercase() }
+///     fn build((id, name): Self::Row) -> deserialize::Result<Self> {
+///         Ok(User { id, name: name.to_lowercase() })
 ///     }
 /// }
 ///
