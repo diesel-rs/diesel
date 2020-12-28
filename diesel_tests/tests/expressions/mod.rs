@@ -20,12 +20,12 @@ fn test_count_counts_the_rows() {
     let connection = connection();
     let source = users.select(count(id));
 
-    assert_eq!(Ok(0), source.first(&connection));
+    assert_eq!(Ok(0), source.first::<i64>(&connection));
     insert_into(users)
         .values(&NewUser::new("Sean", None))
         .execute(&connection)
         .unwrap();
-    assert_eq!(Ok(1), source.first(&connection));
+    assert_eq!(Ok(1), source.first::<i64>(&connection));
 }
 
 #[test]
@@ -33,12 +33,12 @@ fn test_count_star() {
     let connection = connection();
     let source = users.count();
 
-    assert_eq!(Ok(0), source.first(&connection));
+    assert_eq!(Ok(0), source.first::<i64>(&connection));
     insert_into(users)
         .values(&NewUser::new("Sean", None))
         .execute(&connection)
         .unwrap();
-    assert_eq!(Ok(1), source.first(&connection));
+    assert_eq!(Ok(1), source.first::<i64>(&connection));
 
     // Ensure we're doing COUNT(*) instead of COUNT(table.*) which is going to be more efficient
     assert!(debug_query::<TestBackend, _>(&source)

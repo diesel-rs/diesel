@@ -330,14 +330,14 @@ fn or_doesnt_mess_with_precedence_of_previous_statements() {
         .filter(f)
         .filter(f.or(true.into_sql::<sql_types::Bool>()))
         .count()
-        .first(&connection);
+        .first::<i64>(&connection);
 
     assert_eq!(Ok(0), count);
 
     let count = users
         .filter(f.or(f).and(f.or(true.into_sql::<sql_types::Bool>())))
         .count()
-        .first(&connection);
+        .first::<i64>(&connection);
 
     assert_eq!(Ok(0), count);
 }
@@ -352,7 +352,7 @@ fn not_does_not_affect_expressions_other_than_those_passed_to_it() {
         .filter(not(name.eq("Tess")))
         .filter(id.eq(1))
         .count()
-        .get_result(&connection);
+        .get_result::<i64>(&connection);
 
     assert_eq!(Ok(1), count);
 }
@@ -366,7 +366,7 @@ fn not_affects_arguments_passed_when_they_contain_higher_operator_precedence() {
     let count = users
         .filter(not(name.eq("Tess").and(id.eq(1))))
         .count()
-        .get_result(&connection);
+        .get_result::<i64>(&connection);
 
     assert_eq!(Ok(2), count);
 }

@@ -609,5 +609,5 @@ fn batch_insert_is_atomic_on_sqlite() {
     let result = insert_into(users).values(&new_users).execute(&connection);
     assert!(result.is_err());
 
-    assert_eq!(Ok(0), users.count().get_result(&connection));
+    assert_eq!(Ok(0), users.count().get_result::<i64>(&connection));
 }

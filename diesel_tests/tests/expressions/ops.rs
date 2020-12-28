@@ -210,11 +210,13 @@ fn test_adding_unsigned() {
         .unwrap();
 
     let expected_data = vec![2, 3];
-    let data = unsigned_table.select(value + 1).load(&connection);
+    let data = unsigned_table.select(value + 1).load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 
     let expected_data = vec![2, 4];
-    let data = unsigned_table.select(value + value).load(&connection);
+    let data = unsigned_table
+        .select(value + value)
+        .load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 }
 
@@ -228,11 +230,13 @@ fn test_subtracting_unsigned() {
         .unwrap();
 
     let expected_data = vec![0, 1];
-    let data = unsigned_table.select(value - 1).load(&connection);
+    let data = unsigned_table.select(value - 1).load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 
     let expected_data = vec![0, 0];
-    let data = unsigned_table.select(value - value).load(&connection);
+    let data = unsigned_table
+        .select(value - value)
+        .load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 }
 
@@ -246,11 +250,13 @@ fn test_multiplying_unsigned() {
         .unwrap();
 
     let expected_data = vec![1, 2];
-    let data = unsigned_table.select(value * 1).load(&connection);
+    let data = unsigned_table.select(value * 1).load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 
     let expected_data = vec![1, 4];
-    let data = unsigned_table.select(value * value).load(&connection);
+    let data = unsigned_table
+        .select(value * value)
+        .load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 }
 
@@ -264,11 +270,13 @@ fn test_dividing_unsigned() {
         .unwrap();
 
     let expected_data = vec![1, 2];
-    let data = unsigned_table.select(value / 1).load(&connection);
+    let data = unsigned_table.select(value / 1).load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 
     let expected_data = vec![1, 1];
-    let data = unsigned_table.select(value / value).load(&connection);
+    let data = unsigned_table
+        .select(value / value)
+        .load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 }
 
@@ -282,6 +290,6 @@ fn test_multiple_unsigned() {
         .unwrap();
 
     let expected_data = vec![1, 1];
-    let data = unsigned_table.select(value / id).load(&connection);
+    let data = unsigned_table.select(value / id).load::<u32>(&connection);
     assert_eq!(Ok(expected_data), data);
 }

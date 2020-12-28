@@ -10,7 +10,7 @@ fn delete_records() {
 
     assert_eq!(Ok(1), deleted_rows);
 
-    let num_users = users.count().first(&connection);
+    let num_users = users.count().first::<i64>(&connection);
 
     assert_eq!(Ok(1), num_users);
 }
@@ -39,6 +39,6 @@ fn return_deleted_records() {
         .get_result(&connection);
     assert_eq!(Ok("Sean".to_string()), deleted_name);
 
-    let num_users = users.count().first(&connection);
+    let num_users = users.count().first::<i64>(&connection);
     assert_eq!(Ok(1), num_users);
 }
