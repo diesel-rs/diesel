@@ -300,7 +300,7 @@ pub trait QueryDsl: Sized {
     /// # fn main() {
     /// #     use schema::users::dsl::*;
     /// #     let connection = establish_connection();
-    /// let count = users.count().get_result(&connection);
+    /// let count = users.count().get_result::<i64>(&connection);
     /// assert_eq!(Ok(2), count);
     /// # }
     /// ```
