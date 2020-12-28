@@ -1,6 +1,7 @@
 #[cfg(feature = "uses_information_schema")]
 use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSqlRow, FromStaticSqlRow};
+#[cfg(feature = "uses_information_schema")]
 use diesel::sql_types;
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
