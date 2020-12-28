@@ -363,11 +363,11 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     };
 
     let args = unsafe { slice::from_raw_parts(value_ptr, num_args as _) };
-    let args = build_sql_function_args::<ArgsSqlType, Args>(args);
     let mut aggregator = std::panic::AssertUnwindSafe(aggregator);
-    let result = args
-        .map(|args| std::panic::catch_unwind(move || Ok(aggregator.step(args))))
-        .unwrap_or_else(|e| Ok(Err(e)));
+    let result = std::panic::catch_unwind(move || {
+        build_sql_function_args::<ArgsSqlType, Args>(args).map(|args| Ok(aggregator.step(args)))
+    })
+    .unwrap_or_else(|e| Ok(Err(e)));
     match result {
         Ok(Ok(())) => (),
         Ok(Err(e)) => {
