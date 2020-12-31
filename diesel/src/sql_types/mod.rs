@@ -277,7 +277,7 @@ pub type Bit = Binary;
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
-/// [NaiveDate]: /chrono/naive/date/struct.NaiveDate.html
+/// [NaiveDate]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "1082", array_oid = "1182")]
 #[sqlite_type = "Text"]
