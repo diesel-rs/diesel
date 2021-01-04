@@ -769,6 +769,7 @@ where
     Self: Expression,
     Self: SelectableExpression<QS>,
     Self: QueryFragment<DB>,
+    Self: Send,
 {
 }
 
@@ -779,6 +780,7 @@ where
     T: SelectableExpression<QS>,
     T: ValidGrouping<GB>,
     T: QueryFragment<DB>,
+    T: Send,
     T::IsAggregate: MixedAggregates<IsAggregate, Output = IsAggregate>,
 {
 }
