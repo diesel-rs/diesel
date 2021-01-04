@@ -70,7 +70,13 @@ pub trait BinaryRawValue<'a>: HasRawValue<'a> {
 /// `FromSql`. Equivalent to `<DB as Backend>::RawValue<'a>`.
 pub type RawValue<'a, DB> = <DB as HasRawValue<'a>>::RawValue;
 
-/// Does this backend support `RETURNING` clauses?
+/// A trait indicating that implementing backend provides support for
+/// `RETURNING` clauses.
+///
+/// This trait has to be implemented in order to be able to use methods such as
+/// `get_results` and `returning`. Namely, any method which leads to usage of
+/// `RETURNING` clauses in SQL sent to backend will require that this trait
+/// be implemented for used backend.
 pub trait SupportsReturningClause {}
 /// Does this backend support 'ON CONFLICT' clause?
 pub trait SupportsOnConflictClause {}
