@@ -46,7 +46,7 @@ pub struct Bool;
 /// The tiny integer SQL type.
 ///
 /// This is only available on MySQL.
-/// Keep in mind that `infer_schema!` will see `TINYINT(1)` as `Bool`,
+/// Keep in mind that `diesel print-schema` will see `TINYINT(1)` as `Bool`,
 /// not `TinyInt`.
 ///
 /// ### [`ToSql`](../serialize/trait.ToSql.html) impls
