@@ -356,7 +356,7 @@ jobs:
       - name: Run clippy
         uses: actions-rs/cargo@v1
         with:
-          command: clippy
+          command: clippy --all --exclude=diesel_compile_tests
 
       - name: Check formating
         uses: actions-rs/cargo@v1
@@ -423,4 +423,4 @@ jobs:
           command: check
           # This example pulls generic-array v0.14.1 that cannot compile with rustc 1.40.0.
           # We could exclude it as it won't affect our MSRV.
-          args: --all --exclude=advanced-blog-cli
+          args: --all --exclude=advanced-blog-cli --exclude=diesel_compile_tests
