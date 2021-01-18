@@ -356,7 +356,8 @@ jobs:
       - name: Run clippy
         uses: actions-rs/cargo@v1
         with:
-          command: clippy --all --exclude=diesel_compile_tests
+          command: clippy 
+          args: --all --exclude=diesel_compile_tests
 
       - name: Check formating
         uses: actions-rs/cargo@v1
