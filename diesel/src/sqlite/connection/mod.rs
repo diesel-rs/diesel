@@ -26,9 +26,12 @@ use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
 use crate::sqlite::Sqlite;
 
-/// Connections for the SQLite backend. Unlike other backends, "connection URLs"
-/// for SQLite are file paths, [URIs](https://sqlite.org/uri.html), or special
-/// identifiers like `:memory:`.
+/// Connections for the SQLite backend. Unlike other backends, SQLite supported
+/// connection URLs are:
+///
+/// - File paths (`test.db`)
+/// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
+/// - Special identifiers (`:memory:`)
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
