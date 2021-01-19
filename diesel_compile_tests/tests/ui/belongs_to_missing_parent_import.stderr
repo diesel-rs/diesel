@@ -1,9 +1,0 @@
-error[E0412]: cannot find type `Bar` in this scope
-  --> $DIR/belongs_to_missing_parent_import.rs:12:14
-   |
-12 | #[belongs_to(Bar)]
-   |              ^^^ not found in this scope
-
-error: aborting due to previous error
-
-For more information about this error, try `rustc --explain E0412`.

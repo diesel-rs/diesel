@@ -1,0 +1,15 @@
+error[E0433]: failed to resolve: use of undeclared type or module `users`
+ --> $DIR/as_changeset_missing_table_import.rs:5:8
+  |
+5 | struct User {
+  |        ^^^^ use of undeclared type or module `users`
+  |
+  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0433]: failed to resolve: use of undeclared type or module `users`
+  --> $DIR/as_changeset_missing_table_import.rs:11:16
+   |
+11 | #[table_name = "users"]
+   |                ^^^^^^^ use of undeclared type or module `users`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

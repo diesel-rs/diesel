@@ -1,0 +1,27 @@
+error: No field with column name bar_id
+ --> $DIR/belongs_to_missing_foreign_key_field.rs:7:14
+  |
+7 | #[belongs_to(Bar)]
+  |              ^^^
+
+error: No field with column name bar_id
+ --> $DIR/belongs_to_missing_foreign_key_field.rs:8:33
+  |
+8 | #[belongs_to(Bar, foreign_key = "bar_id")]
+  |                                 ^^^^^^^^
+  |
+  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: No field with column name bar_id
+  --> $DIR/belongs_to_missing_foreign_key_field.rs:12:14
+   |
+12 | #[belongs_to(Bar)]
+   |              ^^^
+
+error: No field with column name bar_id
+  --> $DIR/belongs_to_missing_foreign_key_field.rs:13:33
+   |
+13 | #[belongs_to(Bar, foreign_key = "bar_id")]
+   |                                 ^^^^^^^^
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

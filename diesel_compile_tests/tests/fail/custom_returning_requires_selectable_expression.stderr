@@ -1,0 +1,41 @@
+error[E0277]: the trait bound `bad::columns::age: diesel::SelectableExpression<users::table>` is not satisfied
+  --> $DIR/custom_returning_requires_selectable_expression.rs:28:78
+   |
+28 |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(bad::age);
+   |                                                                              ^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+   |
+   = help: the following implementations were found:
+             <bad::columns::age as diesel::SelectableExpression<bad::table>>
+             <bad::columns::age as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
+             <bad::columns::age as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
+             <bad::columns::age as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
+             <bad::columns::age as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
+   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<bad::columns::age>>`
+
+error[E0277]: the trait bound `bad::columns::age: diesel::SelectableExpression<users::table>` is not satisfied
+  --> $DIR/custom_returning_requires_selectable_expression.rs:33:63
+   |
+33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+   |                                                               ^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+   |
+   = help: the following implementations were found:
+             <bad::columns::age as diesel::SelectableExpression<bad::table>>
+             <bad::columns::age as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
+             <bad::columns::age as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
+             <bad::columns::age as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
+             <bad::columns::age as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
+   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+
+error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<bad::table>` is not satisfied
+  --> $DIR/custom_returning_requires_selectable_expression.rs:33:53
+   |
+33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+   |                                                     ^^^^^^^^^ the trait `diesel::query_source::AppearsInFromClause<bad::table>` is not implemented for `users::table`
+   |
+   = help: the following implementations were found:
+             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `bad::columns::age`
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
+   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`

@@ -1,0 +1,15 @@
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+  --> $DIR/distinct_on_clause_only_supported_for_pg.rs:16:29
+   |
+16 |     users.distinct_on(name).get_results(&sqlite_connection);
+   |                             ^^^^^^^^^^^ expected struct `diesel::sqlite::Sqlite`, found struct `diesel::pg::Pg`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, _>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::pg::DistinctOnClause<users::columns::name>>`
+
+error[E0271]: type mismatch resolving `<diesel::MysqlConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+  --> $DIR/distinct_on_clause_only_supported_for_pg.rs:20:29
+   |
+20 |     users.distinct_on(name).get_results(&mysql_connection);
+   |                             ^^^^^^^^^^^ expected struct `diesel::mysql::Mysql`, found struct `diesel::pg::Pg`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::MysqlConnection, _>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::pg::DistinctOnClause<users::columns::name>>`

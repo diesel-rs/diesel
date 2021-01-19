@@ -1,0 +1,35 @@
+error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
+  --> $DIR/as_changeset_bad_options.rs:13:21
+   |
+13 | #[changeset_options(treat_none_as_null("true"))]
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
+  --> $DIR/as_changeset_bad_options.rs:21:21
+   |
+21 | #[changeset_options(treat_none_as_null)]
+   |                     ^^^^^^^^^^^^^^^^^^
+
+error: `treat_none_as_null` must be in the form `treat_none_as_null = "true"`
+  --> $DIR/as_changeset_bad_options.rs:29:21
+   |
+29 | #[changeset_options(treat_none_as_null = "foo")]
+   |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Missing required option `treat_none_as_null`
+  --> $DIR/as_changeset_bad_options.rs:37:3
+   |
+37 | #[changeset_options()]
+   |   ^^^^^^^^^^^^^^^^^^^
+
+error: `changeset_options` must be in the form `changeset_options(...)`
+  --> $DIR/as_changeset_bad_options.rs:45:3
+   |
+45 | #[changeset_options = "treat_none_as_null"]
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: `changeset_options` must be in the form `changeset_options(...)`
+  --> $DIR/as_changeset_bad_options.rs:53:3
+   |
+53 | #[changeset_options]
+   |   ^^^^^^^^^^^^^^^^^
