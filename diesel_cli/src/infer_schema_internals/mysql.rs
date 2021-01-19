@@ -53,6 +53,7 @@ pub fn load_foreign_key_constraints(
     let constraints = tc::table
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
         .filter(tc::table_schema.eq(schema_name))
+        .filter(kcu::referenced_column_name.is_not_null())
         .inner_join(
             kcu::table.on(tc::constraint_schema
                 .eq(kcu::constraint_schema)
