@@ -39,7 +39,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: doc
-        args: --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras" --workspace
+        args: --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras" --workspace --exclude=diesel_compile_tests
 
     - name: Publish documentation
       if: success()
