@@ -12,7 +12,7 @@ use super::bind::{BindData, Binds};
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, QueryResult};
 
-pub use self::metadata::StatementMetadata;
+pub use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,

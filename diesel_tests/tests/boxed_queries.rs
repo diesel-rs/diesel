@@ -33,7 +33,8 @@ fn boxed_queries_can_differ_conditionally() {
         All,
         Ordered,
         One,
-    };
+    }
+
     let source = |query| match query {
         Query::All => users::table.into_boxed(),
         Query::Ordered => users::table.order(users::name.desc()).into_boxed(),

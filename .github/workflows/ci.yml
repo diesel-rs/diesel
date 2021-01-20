@@ -115,11 +115,6 @@ jobs:
       - name: Install sqlite (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'sqlite'
         run: |
-          brew uninstall openssl@1.0.2t
-          brew uninstall python@2.7.17
-          brew untap local/openssl
-          brew untap local/python2
-          brew cask install xquartz
           brew update
           brew install sqlite
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
@@ -127,22 +122,17 @@ jobs:
       - name: Install mysql (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mysql'
         run: |
-          brew uninstall openssl@1.0.2t
-          brew uninstall python@2.7.17
-          brew untap local/openssl
-          brew untap local/python2
-          brew cask install xquartz
           brew update
-          brew install mysql
-          brew services start mysql
-          brew services stop mysql;sleep 3;brew services start mysql
+          brew install mariadb
+          mysql_install_db
+          mysql.server start
           sleep 3
-          macos_mysql_version="$(ls /usr/local/Cellar/mysql)"
-          /usr/local/Cellar/mysql/${macos_mysql_version}/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
-          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mysql/${macos_mysql_version}/lib" >> $GITHUB_ENV
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
+          macos_mysql_version="$(ls /usr/local/Cellar/mariadb)"
+          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mariadb/${macos_mysql_version}/lib" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'

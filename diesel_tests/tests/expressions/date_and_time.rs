@@ -212,8 +212,8 @@ fn today_executes_sql_function_current_date() {
     setup_test_table(&connection);
     connection
         .execute(
-            "INSERT INTO has_date (date) VALUES
-                (current_date - interval 1 day), (current_date + interval 1 day);",
+            "INSERT INTO has_date (id, date) VALUES
+                (42, current_date - interval 1 day), (43, current_date + interval 1 day);",
         )
         .unwrap();
 
@@ -225,8 +225,8 @@ fn today_executes_sql_function_current_date() {
         .select(id)
         .filter(date.gt(today))
         .load::<i32>(&connection);
-    assert_eq!(Ok(vec![1]), before_today);
-    assert_eq!(Ok(vec![2]), after_today);
+    assert_eq!(Ok(vec![42]), before_today);
+    assert_eq!(Ok(vec![43]), after_today);
 }
 
 #[test]
@@ -238,21 +238,23 @@ fn now_executes_sql_function_now() {
     setup_test_table(&connection);
     connection
         .execute(
-            "INSERT INTO has_timestamps (created_at) VALUES
-                       (NOW() - interval 1 day), (NOW() + interval 1 day)",
+            "INSERT INTO has_timestamps (id, created_at) VALUES
+                       (42, NOW() - interval 1 day), (43, NOW() + interval 1 day)",
         )
         .unwrap();
 
-    let before_today = has_timestamps
-        .select(id)
-        .filter(created_at.lt(now))
-        .load::<i32>(&connection);
-    let after_today = has_timestamps
-        .select(id)
-        .filter(created_at.gt(now))
-        .load::<i32>(&connection);
-    assert_eq!(Ok(vec![1]), before_today);
-    assert_eq!(Ok(vec![2]), after_today);
+    let before_today = has_timestamps.select(id).filter(created_at.lt(now));
+
+    dbg!(diesel::debug_query(&before_today));
+    let before_today = before_today.load::<i32>(&connection);
+
+    let after_today = has_timestamps.select(id).filter(created_at.gt(now));
+
+    dbg!(diesel::debug_query(&after_today));
+    let after_today = after_today.load::<i32>(&connection);
+
+    assert_eq!(Ok(vec![42]), before_today);
+    assert_eq!(Ok(vec![43]), after_today);
 }
 
 #[test]
@@ -517,4 +519,17 @@ fn setup_test_table(conn: &TestConnection) {
     )
     .execute(conn)
     .unwrap();
+
+    sql_query("DELETE FROM has_timestamps")
+        .execute(conn)
+        .unwrap();
+    #[cfg(feature = "postgres")]
+    sql_query("DELETE FROM has_timestamptzs")
+        .execute(conn)
+        .unwrap();
+    sql_query("DELETE FROM has_date").execute(conn).unwrap();
+    sql_query("DELETE FROM nullable_date_and_time")
+        .execute(conn)
+        .unwrap();
+    sql_query("DELETE FROM has_time").execute(conn).unwrap();
 }
