@@ -355,6 +355,9 @@ pub trait QueryDsl: Sized {
     ///     INNER JOIN comments ON comments.user_id = users.id
     /// ```
     ///
+    /// **Note**: extracting structs directly like `(User, Post)` is not supported,
+    /// using `select` to extract the fields are still required.
+    ///
     /// [associations]: ../associations/index.html
     /// [`allow_tables_to_appear_in_same_query!`]: ../macro.allow_tables_to_appear_in_same_query.html
     ///
