@@ -1251,7 +1251,6 @@ where
     select(sql::<T>(sql_str)).first(&connection).unwrap()
 }
 
-use diesel::dsl::{And, AsExprOf, Eq, IsNull};
 use diesel::expression::{is_aggregate, AsExpression, SqlLiteral, ValidGrouping};
 use diesel::query_builder::{QueryFragment, QueryId};
 use std::fmt::Debug;
@@ -1263,15 +1262,13 @@ where
         + ValidGrouping<(), IsAggregate = is_aggregate::Never>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
     T: QueryId + SingleValue + SqlType,
-    T::IsNull: OneIsNullable<T::IsNull, Out = T::IsNull>,
-    T::IsNull: MaybeNullableType<Bool>,
-    <T::IsNull as MaybeNullableType<Bool>>::Out: SqlType,
-    diesel::sql_types::is_nullable::NotNull: diesel::sql_types::AllAreNullable<
-        <<T::IsNull as MaybeNullableType<Bool>>::Out as SqlType>::IsNull,
-        Out = diesel::sql_types::is_nullable::NotNull,
-    >,
-    Eq<SqlLiteral<T>, U>: Expression<SqlType = <T::IsNull as MaybeNullableType<Bool>>::Out>,
-    And<IsNull<SqlLiteral<T>>, IsNull<AsExprOf<U, T>>>: Expression<SqlType = Bool>,
+    <T as diesel::sql_types::SqlType>::IsNull:
+        diesel::sql_types::OneIsNullable<<T as diesel::sql_types::SqlType>::IsNull>,
+    <<T as diesel::sql_types::SqlType>::IsNull as diesel::sql_types::OneIsNullable<
+        <T as diesel::sql_types::SqlType>::IsNull,
+    >>::Out: diesel::sql_types::MaybeNullableType<diesel::sql_types::Bool>,
+    diesel::dsl::Nullable<diesel::dsl::Eq<SqlLiteral<T>, U>>:
+        Expression<SqlType = diesel::sql_types::Nullable<diesel::sql_types::Bool>>,
 {
     use diesel::dsl::sql;
     let connection = connection();
@@ -1279,11 +1276,12 @@ where
         sql::<T>(sql_str)
             .is_null()
             .and(value.clone().as_expression().is_null())
-            .or(sql::<T>(sql_str).eq(value.clone())),
+            .or(sql::<T>(sql_str).eq(value.clone()).nullable()),
     );
     query
-        .get_result::<bool>(&connection)
+        .get_result::<Option<bool>>(&connection)
         .expect(&format!("Error comparing {}, {:?}", sql_str, value))
+        .unwrap_or(false)
 }
 
 #[cfg(feature = "postgres")]
