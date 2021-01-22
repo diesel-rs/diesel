@@ -3,6 +3,7 @@ use std::mem;
 use std::ops::Index;
 use std::os::raw as libc;
 
+use super::stmt::MysqlFieldMetadata;
 use super::stmt::Statement;
 use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::MYSQL_TIME;
@@ -31,13 +32,7 @@ impl Binds {
             .fields()
             .iter()
             .zip(types.into_iter().chain(std::iter::repeat(None)))
-            .map(|(field, tpe)| {
-                if let Some(tpe) = tpe {
-                    BindData::for_output(tpe.into())
-                } else {
-                    BindData::for_output((field.field_type(), field.flags()))
-                }
-            })
+            .map(|(field, tpe)| BindData::for_output(tpe, field))
             .collect();
 
         Binds { data }
@@ -152,7 +147,156 @@ impl BindData {
         }
     }
 
-    fn for_output((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
+    fn for_output(tpe: Option<MysqlType>, metadata: &MysqlFieldMetadata) -> Self {
+        let (tpe, flags) = if let Some(tpe) = tpe {
+            match (tpe, metadata.field_type()) {
+                // Those are types where we handle the conversion in diesel itself
+                // and do not relay on libmysqlclient
+                (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::Tiny, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::UnsignedTiny, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::Short, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::UnsignedShort, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::Long, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::UnsignedLong, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::LongLong, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::UnsignedLongLong, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::Float, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_DECIMAL)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_TINY)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_SHORT)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_LONG)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_FLOAT)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_DOUBLE)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_INT24)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL)
+                | (MysqlType::Numeric, ffi::enum_field_types::MYSQL_TYPE_LONGLONG)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_JSON)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_ENUM)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_SET)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_TINY_BLOB)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_MEDIUM_BLOB)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_BLOB)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_VAR_STRING)
+                | (MysqlType::String, ffi::enum_field_types::MYSQL_TYPE_STRING)
+                | (MysqlType::Blob, ffi::enum_field_types::MYSQL_TYPE_TINY_BLOB)
+                | (MysqlType::Blob, ffi::enum_field_types::MYSQL_TYPE_MEDIUM_BLOB)
+                | (MysqlType::Blob, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB)
+                | (MysqlType::Blob, ffi::enum_field_types::MYSQL_TYPE_BLOB)
+                | (MysqlType::Set, ffi::enum_field_types::MYSQL_TYPE_ENUM)
+                | (MysqlType::Set, ffi::enum_field_types::MYSQL_TYPE_SET)
+                | (MysqlType::Set, ffi::enum_field_types::MYSQL_TYPE_TINY_BLOB)
+                | (MysqlType::Set, ffi::enum_field_types::MYSQL_TYPE_MEDIUM_BLOB)
+                | (MysqlType::Set, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB)
+                | (MysqlType::Set, ffi::enum_field_types::MYSQL_TYPE_BLOB)
+                | (MysqlType::Set, ffi::enum_field_types::MYSQL_TYPE_VAR_STRING)
+                | (MysqlType::Set, ffi::enum_field_types::MYSQL_TYPE_STRING)
+                | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_ENUM)
+                | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_SET)
+                | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_TINY_BLOB)
+                | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_MEDIUM_BLOB)
+                | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB)
+                | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_BLOB)
+                | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_VAR_STRING)
+                | (MysqlType::Enum, ffi::enum_field_types::MYSQL_TYPE_STRING) => {
+                    (metadata.field_type(), metadata.flags())
+                }
+
+                (tpe, _) => tpe.into(),
+            }
+        } else {
+            (metadata.field_type(), metadata.flags())
+        };
+
+        let bytes = known_buffer_size_for_ffi_type(tpe)
+            .map(|len| vec![0; len])
+            .unwrap_or_default();
+        let length = bytes.len() as libc::c_ulong;
+
+        BindData {
+            tpe,
+            bytes,
+            length,
+            is_null: 0,
+            is_truncated: Some(0),
+            flags,
+        }
+    }
+
+    #[cfg(test)]
+    fn for_test_output((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
         let bytes = known_buffer_size_for_ffi_type(tpe)
             .map(|len| vec![0; len])
             .unwrap_or_default();
@@ -937,7 +1081,7 @@ mod tests {
     ) -> BindData {
         let mut stmt: Statement = conn.raw_connection.prepare(query).unwrap();
 
-        let bind = BindData::for_output(bind_tpe.into());
+        let bind = BindData::for_test_output(bind_tpe.into());
 
         let mut binds = Binds { data: vec![bind] };
 

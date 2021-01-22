@@ -319,6 +319,13 @@ pub fn migration_paths_in_directory(path: &Path) -> Result<Vec<DirEntry>, Migrat
                 Ok(e) => e,
                 Err(e) => return Some(Err(e.into())),
             };
+            let metadata = match entry.metadata() {
+                Ok(m) => m,
+                Err(e) => return Some(Err(e.into())),
+            };
+            if metadata.is_file() {
+                return None;
+            }
             if entry.file_name().to_string_lossy().starts_with('.') {
                 None
             } else {
@@ -480,6 +487,42 @@ mod tests {
         assert_eq!(
             Ok(migrations_path),
             search_for_migrations_directory(&child_path)
+        );
+    }
+
+    #[test]
+    fn migration_paths_in_directory_ignores_files() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let migrations_path = temp_path.join("migrations");
+        let file_path = migrations_path.join("README.md");
+
+        fs::create_dir(&migrations_path).unwrap();
+        fs::File::create(&file_path).unwrap();
+
+        assert_eq!(
+            0,
+            migration_paths_in_directory(&migrations_path)
+                .unwrap()
+                .len()
+        );
+    }
+
+    #[test]
+    fn migration_paths_in_directory_ignores_dot_directories() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let migrations_path = temp_path.join("migrations");
+        let dot_path = migrations_path.join(".hidden_dir");
+
+        fs::create_dir(&migrations_path).unwrap();
+        fs::create_dir(&dot_path).unwrap();
+
+        assert_eq!(
+            0,
+            migration_paths_in_directory(&migrations_path)
+                .unwrap()
+                .len()
         );
     }
 }

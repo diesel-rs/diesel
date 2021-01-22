@@ -1,0 +1,47 @@
+error: `postgres` must be in the form `postgres(...)`
+ --> $DIR/sql_type_bad_options.rs:6:3
+  |
+6 | #[postgres]
+  |   ^^^^^^^^
+
+warning: Option oid has no effect
+  --> $DIR/sql_type_bad_options.rs:10:31
+   |
+10 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
+   |                               ^^^^^^^^^
+
+warning: Option array_oid has no effect
+  --> $DIR/sql_type_bad_options.rs:10:42
+   |
+10 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
+   |                                          ^^^^^^^^^^^^^^^
+
+error: Missing required option `array_oid`
+  --> $DIR/sql_type_bad_options.rs:14:3
+   |
+14 | #[postgres(oid = "2")]
+   |   ^^^^^^^^^^^^^^^^^^^
+
+error: Expected a number
+  --> $DIR/sql_type_bad_options.rs:18:18
+   |
+18 | #[postgres(oid = "NaN", array_oid = "1")]
+   |                  ^^^^^
+
+warning: Option ary_oid has no effect
+  --> $DIR/sql_type_bad_options.rs:22:25
+   |
+22 | #[postgres(oid = "NaN", ary_oid = "1")]
+   |                         ^^^^^^^^^^^^^
+
+error: Missing required option `array_oid`
+  --> $DIR/sql_type_bad_options.rs:22:3
+   |
+22 | #[postgres(oid = "NaN", ary_oid = "1")]
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: `postgres` must be in the form `postgres(...)`
+  --> $DIR/sql_type_bad_options.rs:26:3
+   |
+26 | #[postgres = "foo"]
+   |   ^^^^^^^^^^^^^^^^

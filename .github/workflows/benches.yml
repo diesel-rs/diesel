@@ -26,14 +26,14 @@ jobs:
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart && sleep 3
-          echo '::set-env name=PG_DATABASE_URL::postgres://postgres:postgres@localhost/'
+          echo 'name=PG_DATABASE_URL::postgres://postgres:postgres@localhost/' >> $GITHUB_ENV
 
       - name: Install sqlite (Linux)
         if: matrix.backend == 'sqlite'
         run: |
           sudo apt-get update
           sudo apt-get install -y libsqlite3-dev
-          echo '::set-env name=SQLITE_DATABASE_URL::/tmp/test.db'
+          echo 'name=SQLITE_DATABASE_URL::/tmp/test.db' >> $GITHUB_ENV
 
         
       - name: Install mysql (Linux)
@@ -43,7 +43,7 @@ jobs:
           sudo apt-get -y install mysql-server libmysqlclient-dev
           sudo /etc/init.d/mysql start
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
-          echo '::set-env name=MYSQL_DATABASE_URL::mysql://root:root@localhost/diesel_test'
+          echo 'name=MYSQL_DATABASE_URL::mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
 
       - name: Run benches
         uses: jasonwilliams/criterion-compare-action@move_to_actions

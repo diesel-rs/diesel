@@ -3,8 +3,6 @@ name = "diesel_compile_tests"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
-[workspace]
-
 [dependencies]
 diesel = { version = "2.0.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"], path = "../diesel" }
-compiletest_rs = "=0.4"
+trybuild = "1.0.35"

@@ -1,0 +1,80 @@
+error[E0271]: type mismatch resolving `<users::columns::name as diesel::expression::IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+  --> $DIR/select_requires_valid_grouping.rs:85:53
+   |
+85 |     let source = users::table.group_by(users::name).select(users::id);
+   |                                                     ^^^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<users::columns::name>` for `users::columns::id`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<users::columns::id>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
+
+error[E0271]: type mismatch resolving `<(users::columns::name, users::columns::hair_color) as diesel::expression::IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+  --> $DIR/select_requires_valid_grouping.rs:88:10
+   |
+88 |         .select(users::id);
+   |          ^^^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<(users::columns::name, users::columns::hair_color)>` for `users::columns::id`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<users::columns::id>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::name, users::columns::hair_color)>>`
+
+error[E0271]: type mismatch resolving `<users::columns::name as diesel::expression::IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+  --> $DIR/select_requires_valid_grouping.rs:91:10
+   |
+91 |         .select((users::name, users::id));
+   |          ^^^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<users::columns::name>` for `users::columns::id`
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<users::columns::name>` for `(users::columns::name, users::columns::id)`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<(users::columns::name, users::columns::id)>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
+
+error[E0271]: type mismatch resolving `<(users::columns::name, users::columns::hair_color) as diesel::expression::IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+  --> $DIR/select_requires_valid_grouping.rs:94:10
+   |
+94 |         .select(users::id);
+   |          ^^^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<(users::columns::name, users::columns::hair_color)>` for `users::columns::id`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<users::columns::id>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::name, users::columns::hair_color)>>`
+
+error[E0271]: type mismatch resolving `<(users::columns::id, posts::columns::title) as diesel::expression::IsContainedInGroupBy<posts::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+  --> $DIR/select_requires_valid_grouping.rs:98:10
+   |
+98 |         .select((users::all_columns, posts::id));
+   |          ^^^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<(users::columns::id, posts::columns::title)>` for `posts::columns::id`
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<(users::columns::id, posts::columns::title)>` for `((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), posts::columns::id)>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::title)>>`
+
+error[E0277]: the trait bound `users::columns::id: diesel::expression::IsContainedInGroupBy<comments::columns::id>` is not satisfied
+   --> $DIR/select_requires_valid_grouping.rs:102:17
+    |
+102 |         .select((users::all_columns, posts::all_columns, comments::id));
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::expression::IsContainedInGroupBy<comments::columns::id>` is not implemented for `users::columns::id`
+    |
+    = help: the following implementations were found:
+              <users::columns::id as diesel::expression::IsContainedInGroupBy<posts::columns::id>>
+              <users::columns::id as diesel::expression::IsContainedInGroupBy<posts::columns::title>>
+              <users::columns::id as diesel::expression::IsContainedInGroupBy<posts::columns::user_id>>
+              <users::columns::id as diesel::expression::IsContainedInGroupBy<users::columns::hair_color>>
+            and 2 others
+    = note: required because of the requirements on the impl of `diesel::expression::IsContainedInGroupBy<comments::columns::id>` for `(users::columns::id, posts::columns::id)`
+    = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<(users::columns::id, posts::columns::id)>` for `comments::columns::id`
+    = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<(users::columns::id, posts::columns::id)>` for `((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)`
+    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<posts::table, comments::table, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<comments::columns::post_id>, diesel::expression::nullable::Nullable<posts::columns::id>>>>>, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::id)>>`
+
+error[E0277]: the trait bound `posts::columns::id: diesel::expression::IsContainedInGroupBy<comments::columns::id>` is not satisfied
+   --> $DIR/select_requires_valid_grouping.rs:102:17
+    |
+102 |         .select((users::all_columns, posts::all_columns, comments::id));
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::expression::IsContainedInGroupBy<comments::columns::id>` is not implemented for `posts::columns::id`
+    |
+    = help: the following implementations were found:
+              <posts::columns::id as diesel::expression::IsContainedInGroupBy<posts::columns::id>>
+              <posts::columns::id as diesel::expression::IsContainedInGroupBy<posts::columns::title>>
+              <posts::columns::id as diesel::expression::IsContainedInGroupBy<posts::columns::user_id>>
+              <posts::columns::id as diesel::expression::IsContainedInGroupBy<users::columns::hair_color>>
+            and 2 others
+    = note: required because of the requirements on the impl of `diesel::expression::IsContainedInGroupBy<comments::columns::id>` for `(users::columns::id, posts::columns::id)`
+    = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<(users::columns::id, posts::columns::id)>` for `comments::columns::id`
+    = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<(users::columns::id, posts::columns::id)>` for `((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)`
+    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<((users::columns::id, users::columns::name, users::columns::hair_color), (posts::columns::id, posts::columns::title, posts::columns::user_id), comments::columns::id)>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<posts::table, comments::table, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<comments::columns::post_id>, diesel::expression::nullable::Nullable<posts::columns::id>>>>>, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<(users::columns::id, posts::columns::id)>>`

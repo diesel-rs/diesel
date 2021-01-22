@@ -33,7 +33,8 @@ fn boxed_queries_can_differ_conditionally() {
         All,
         Ordered,
         One,
-    };
+    }
+
     let source = |query| match query {
         Query::All => users::table.into_boxed(),
         Query::Ordered => users::table.order(users::name.desc()).into_boxed(),
@@ -157,5 +158,22 @@ fn boxed_queries_implement_or_filter() {
         find_user_by_name("Sean", &connection),
         find_user_by_name("Tess", &connection),
     ];
+    assert_eq!(Ok(expected), data);
+}
+
+#[test]
+fn can_box_query_with_boxable_expression() {
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let expr: Box<dyn BoxableExpression<_, _, SqlType = _>> = Box::new(users::name.eq("Sean")) as _;
+
+    let data = users::table.into_boxed().filter(expr).load(&connection);
+    let expected = vec![find_user_by_name("Sean", &connection)];
+    assert_eq!(Ok(expected), data);
+
+    let expr: Box<dyn BoxableExpression<_, _, SqlType = _>> = Box::new(users::name.eq("Sean")) as _;
+
+    let data = users::table.filter(expr).into_boxed().load(&connection);
+    let expected = vec![find_user_by_name("Sean", &connection)];
     assert_eq!(Ok(expected), data);
 }

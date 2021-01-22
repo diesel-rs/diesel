@@ -109,7 +109,7 @@ impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
 
 impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let signed: i16 = FromSql::<SmallInt, Mysql>::from_sql(bytes)?;
+        let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
         Ok(signed as u16)
     }
 }
@@ -122,7 +122,7 @@ impl ToSql<Unsigned<Integer>, Mysql> for u32 {
 
 impl FromSql<Unsigned<Integer>, Mysql> for u32 {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
+        let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u32)
     }
 }

@@ -1,0 +1,8 @@
+error: Cannot derive Insertable for unit structs
+  --> $DIR/insertable_empty_struct.rs:10:10
+   |
+10 | #[derive(Insertable)]
+   |          ^^^^^^^^^^
+   |
+   = help: Use `insert_into(users::table).default_values()` if you want `DEFAULT VALUES`
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

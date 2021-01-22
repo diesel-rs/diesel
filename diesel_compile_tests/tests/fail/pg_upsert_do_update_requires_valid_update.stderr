@@ -1,0 +1,54 @@
+error[E0599]: no method named `execute` found for struct `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>` in the current scope
+   --> $DIR/pg_upsert_do_update_requires_valid_update.rs:37:10
+    |
+37  |         .execute(&connection);
+    |          ^^^^^^^ method not found in `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>`
+    |
+   ::: $WORKSPACE/diesel/src/upsert/on_conflict_extension.rs
+    |
+    | pub struct IncompleteDoUpdate<Stmt, Target> {
+    | -------------------------------------------
+    | |
+    | doesn't satisfy `_: diesel::RunQueryDsl<_>`
+    | doesn't satisfy `_: diesel::Table`
+    |
+    = note: the method `execute` exists but the following trait bounds were not satisfied:
+            `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::Table`
+            which is required by `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+            `&diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::Table`
+            which is required by `&diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+            `&mut diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::Table`
+            which is required by `&mut diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
+
+error[E0271]: type mismatch resolving `<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as diesel::AsChangeset>::Target == users::table`
+  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:44:10
+   |
+44 |         .set(posts::title.eq("Sean"));
+   |          ^^^ expected struct `posts::table`, found struct `users::table`
+
+error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:52:10
+   |
+52 |         .set(name.eq(posts::title));
+   |          ^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |
+   = help: the following implementations were found:
+             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::title`
+   = note: required because of the requirements on the impl of `diesel::AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
+
+error[E0271]: type mismatch resolving `<posts::columns::title as diesel::Column>::Table == users::table`
+  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:59:10
+   |
+59 |         .set(name.eq(excluded(posts::title)));
+   |          ^^^ expected struct `posts::table`, found struct `users::table`
+   |
+   = note: required because of the requirements on the impl of `diesel::AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, diesel::query_builder::upsert::on_conflict_actions::Excluded<posts::columns::title>>`
+
+error[E0271]: type mismatch resolving `<diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:66:19
+   |
+66 |         .set(name.eq(excluded(id)));
+   |                   ^^ expected struct `diesel::sql_types::Integer`, found struct `diesel::sql_types::Text`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` for `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull>`

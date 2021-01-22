@@ -1,0 +1,100 @@
+error[E0277]: the trait bound `f64: diesel::SelectableExpression<()>` is not satisfied
+   --> $DIR/array_expressions_must_be_correct_type.rs:9:5
+    |
+9   |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&connection);
+    |     ^^^^^^ the trait `diesel::SelectableExpression<()>` is not implemented for `f64`
+    |
+   ::: $WORKSPACE/diesel/src/query_builder/functions.rs:465:26
+    |
+465 |     SelectStatement<()>: SelectDsl<T>,
+    |                          ------------ required by this bound in `diesel::select`
+    |
+    = note: required because of the requirements on the impl of `diesel::SelectableExpression<()>` for `(f64, f64)`
+    = note: required because of the requirements on the impl of `diesel::SelectableExpression<()>` for `diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>`
+    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>` for `diesel::query_builder::SelectStatement<()>`
+
+error[E0277]: the trait bound `f64: diesel::expression::ValidGrouping<()>` is not satisfied
+   --> $DIR/array_expressions_must_be_correct_type.rs:9:5
+    |
+9   |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&connection);
+    |     ^^^^^^ the trait `diesel::expression::ValidGrouping<()>` is not implemented for `f64`
+    |
+   ::: $WORKSPACE/diesel/src/query_builder/functions.rs:465:26
+    |
+465 |     SelectStatement<()>: SelectDsl<T>,
+    |                          ------------ required by this bound in `diesel::select`
+    |
+    = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `(f64, f64)`
+    = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>`
+    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>` for `diesel::query_builder::SelectStatement<()>`
+
+error[E0277]: the trait bound `f64: diesel::SelectableExpression<()>` is not satisfied
+ --> $DIR/array_expressions_must_be_correct_type.rs:9:33
+  |
+9 |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&connection);
+  |                                 ^^^^^^^^^^ the trait `diesel::SelectableExpression<()>` is not implemented for `f64`
+  |
+  = note: required because of the requirements on the impl of `diesel::SelectableExpression<()>` for `(f64, f64)`
+  = note: required because of the requirements on the impl of `diesel::SelectableExpression<()>` for `diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>`
+  = note: required because of the requirements on the impl of `diesel::query_builder::SelectClauseExpression<()>` for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>`
+  = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+  = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, std::vec::Vec<i32>>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+
+error[E0277]: the trait bound `f64: diesel::expression::ValidGrouping<()>` is not satisfied
+ --> $DIR/array_expressions_must_be_correct_type.rs:9:33
+  |
+9 |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&connection);
+  |                                 ^^^^^^^^^^ the trait `diesel::expression::ValidGrouping<()>` is not implemented for `f64`
+  |
+  = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `(f64, f64)`
+  = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>`
+  = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+  = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, std::vec::Vec<i32>>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+
+error[E0277]: the trait bound `f64: diesel::query_builder::QueryId` is not satisfied
+ --> $DIR/array_expressions_must_be_correct_type.rs:9:33
+  |
+9 |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&connection);
+  |                                 ^^^^^^^^^^ the trait `diesel::query_builder::QueryId` is not implemented for `f64`
+  |
+  = note: required because of the requirements on the impl of `diesel::query_builder::QueryId` for `(f64, f64)`
+  = note: required because of the requirements on the impl of `diesel::query_builder::QueryId` for `diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>`
+  = note: required because of the requirements on the impl of `diesel::query_builder::QueryId` for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>`
+  = note: required because of the requirements on the impl of `diesel::query_builder::QueryId` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+  = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, std::vec::Vec<i32>>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+
+error[E0277]: the trait bound `f64: diesel::query_builder::QueryFragment<_>` is not satisfied
+ --> $DIR/array_expressions_must_be_correct_type.rs:9:33
+  |
+9 |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&connection);
+  |                                 ^^^^^^^^^^ the trait `diesel::query_builder::QueryFragment<_>` is not implemented for `f64`
+  |
+  = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<_>` for `(f64, f64)`
+  = note: required because of the requirements on the impl of `for<'a> diesel::query_builder::QueryFragment<_>` for `&'a (f64, f64)`
+  = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<_>` for `diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>`
+  = note: required because of the requirements on the impl of `diesel::query_builder::SelectClauseQueryFragment<(), _>` for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>`
+  = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<_>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+  = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, std::vec::Vec<i32>>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+
+error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
+  --> $DIR/array_expressions_must_be_correct_type.rs:9:12
+   |
+9  |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&connection);
+   |            ^^^^^ the trait `diesel::Expression` is not implemented for `f64`
+   |
+  ::: $WORKSPACE/diesel/src/pg/expression/array.rs:51:8
+   |
+51 |     T: AsExpressionList<ST>,
+   |        -------------------- required by this bound in `diesel::dsl::array`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Integer>` for `f64`
+   = note: required because of the requirements on the impl of `diesel::expression::AsExpressionList<diesel::sql_types::Integer>` for `(f64, f64)`
+
+error[E0277]: the trait bound `diesel::query_builder::SelectStatement<()>: diesel::query_dsl::select_dsl::SelectDsl<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>` is not satisfied
+ --> $DIR/array_expressions_must_be_correct_type.rs:9:5
+  |
+9 |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&connection);
+  |     ^^^^^^ the trait `diesel::query_dsl::select_dsl::SelectDsl<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>` is not implemented for `diesel::query_builder::SelectStatement<()>`
+  |
+  = help: the following implementations were found:
+            <diesel::query_builder::SelectStatement<F, S, D, W, O, LOf, G, LC> as diesel::query_dsl::select_dsl::SelectDsl<Selection>>

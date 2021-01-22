@@ -1,0 +1,5 @@
+error: `#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`
+  --> $DIR/embed_and_serialize_as_cannot_be_mixed.rs:22:7
+   |
+22 |     #[diesel(embed, serialize_as = "SomeType")]
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
