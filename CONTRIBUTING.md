@@ -36,17 +36,19 @@ Thank you! We'll try to respond as quickly as possible.
 
 ## Submitting feature requests
 
-If you can't find an issue (open or closed) describing your idea on our [issue
-tracker], open an issue. Adding answers to the following
-questions in your description is +1:
+Diesel's issue tracker is meant to represent our current roadmap. An open issue represents either a bug, or a new feature that a member of the Diesel team is actively working on.
 
-- What do you want to do, and how do you expect Diesel to support you with that?
-- How might this be added to Diesel?
-- What are possible alternatives?
-- Are there any disadvantages?
+This means that you should not submit a feature request to our issue tracker, unless you were asked to do so by a member of the Diesel team. Feature requests should instead be posted in
+our [discussion forum](https://github.com/diesel-rs/diesel/discussions/categories/ideas).
+
+If you can't find thread describing your idea on our forum, create a new one. Adding answers to the following questions in your description is +1:
+
+-   What do you want to do, and how do you expect Diesel to support you with that?
+-   How might this be added to Diesel?
+-   What are possible alternatives?
+-   Are there any disadvantages?
 
 Thank you! We'll try to respond as quickly as possible.
-
 
 ## Contribute code to Diesel
 
