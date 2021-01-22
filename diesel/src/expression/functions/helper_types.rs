@@ -1,12 +1,11 @@
 #![allow(non_camel_case_types)]
 
-use crate::dsl::{AsExprOf, SqlTypeOf};
+use crate::dsl::SqlTypeOf;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators;
-use crate::sql_types::Bool;
 
 /// The return type of [`not(expr)`](../dsl/fn.not.html)
-pub type not<Expr> = operators::Not<Grouped<AsExprOf<Expr, Bool>>>;
+pub type not<Expr> = operators::Not<Grouped<Expr>>;
 
 /// The return type of [`max(expr)`](../dsl/fn.max.html)
 pub type max<Expr> = super::aggregate_ordering::max::HelperType<SqlTypeOf<Expr>, Expr>;

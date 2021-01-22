@@ -1,7 +1,7 @@
 use crate::expression::grouped::Grouped;
-use crate::expression::AsExpression;
+use crate::expression::Expression;
 use crate::helper_types::not;
-use crate::sql_types::Bool;
+use crate::sql_types::BoolOrNullableBool;
 
 /// Creates a SQL `NOT` expression
 ///
@@ -25,7 +25,8 @@ use crate::sql_types::Bool;
 /// ```
 pub fn not<T>(expr: T) -> not<T>
 where
-    T: AsExpression<Bool>,
+    T: Expression,
+    <T as Expression>::SqlType: BoolOrNullableBool,
 {
-    super::operators::Not::new(Grouped(expr.as_expression()))
+    super::operators::Not::new(Grouped(expr))
 }
