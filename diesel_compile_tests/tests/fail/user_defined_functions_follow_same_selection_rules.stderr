@@ -4,7 +4,7 @@ error[E0271]: type mismatch resolving `<foo::foo<diesel::expression::bound::Boun
 35 |     let _ = users::table.filter(name.eq(foo(1)));
    |                                      ^^ expected struct `diesel::sql_types::Integer`, found struct `diesel::sql_types::Text`
    |
-   = note: required because of the requirements on the impl of `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` for `diesel::expression::as_expression_impl::ExpressionImplHelper<foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull>`
+   = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Text>` for `foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`
 
 error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
   --> $DIR/user_defined_functions_follow_same_selection_rules.rs:38:10
