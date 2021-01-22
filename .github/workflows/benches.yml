@@ -14,7 +14,6 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        if: steps.bench.outputs.triggered == 'true'
         uses: actions/checkout@v2
 
       - name: Install postgres (Linux)
@@ -35,7 +34,6 @@ jobs:
           sudo apt-get install -y libsqlite3-dev
           echo 'name=SQLITE_DATABASE_URL::/tmp/test.db' >> $GITHUB_ENV
 
-        
       - name: Install mysql (Linux)
         if: matrix.backend == 'mysql'
         run: |
@@ -50,4 +48,3 @@ jobs:
         with:
           cwd: "diesel_bench"
           token: ${{ secrets.GITHUB_TOKEN }}
-          
