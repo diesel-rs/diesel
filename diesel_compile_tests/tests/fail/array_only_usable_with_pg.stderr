@@ -1,0 +1,45 @@
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+ --> $DIR/array_only_usable_with_pg.rs:8:25
+  |
+8 |     select(array((1,))).get_result::<Vec<i32>>(&connection);
+  |                         ^^^^^^^^^^ expected struct `diesel::sqlite::Sqlite`, found struct `diesel::pg::Pg`
+  |
+  = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, std::vec::Vec<i32>>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`
+
+error[E0277]: the trait bound `diesel::sqlite::Sqlite: diesel::sql_types::HasSqlType<diesel::sql_types::Array<diesel::sql_types::Integer>>` is not satisfied
+ --> $DIR/array_only_usable_with_pg.rs:8:25
+  |
+8 |     select(array((1,))).get_result::<Vec<i32>>(&connection);
+  |                         ^^^^^^^^^^ the trait `diesel::sql_types::HasSqlType<diesel::sql_types::Array<diesel::sql_types::Integer>>` is not implemented for `diesel::sqlite::Sqlite`
+  |
+  = help: the following implementations were found:
+            <diesel::sqlite::Sqlite as diesel::sql_types::HasSqlType<diesel::sql_types::BigInt>>
+            <diesel::sqlite::Sqlite as diesel::sql_types::HasSqlType<diesel::sql_types::Binary>>
+            <diesel::sqlite::Sqlite as diesel::sql_types::HasSqlType<diesel::sql_types::Bool>>
+            <diesel::sqlite::Sqlite as diesel::sql_types::HasSqlType<diesel::sql_types::Date>>
+          and 8 others
+  = note: required because of the requirements on the impl of `diesel::expression::QueryMetadata<diesel::sql_types::Array<diesel::sql_types::Integer>>` for `diesel::sqlite::Sqlite`
+  = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, std::vec::Vec<i32>>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`
+
+error[E0271]: type mismatch resolving `<diesel::MysqlConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+  --> $DIR/array_only_usable_with_pg.rs:11:25
+   |
+11 |     select(array((1,))).get_result::<Vec<i32>>(&connection);
+   |                         ^^^^^^^^^^ expected struct `diesel::mysql::Mysql`, found struct `diesel::pg::Pg`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::MysqlConnection, std::vec::Vec<i32>>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`
+
+error[E0277]: the trait bound `diesel::mysql::Mysql: diesel::sql_types::HasSqlType<diesel::sql_types::Array<diesel::sql_types::Integer>>` is not satisfied
+  --> $DIR/array_only_usable_with_pg.rs:11:25
+   |
+11 |     select(array((1,))).get_result::<Vec<i32>>(&connection);
+   |                         ^^^^^^^^^^ the trait `diesel::sql_types::HasSqlType<diesel::sql_types::Array<diesel::sql_types::Integer>>` is not implemented for `diesel::mysql::Mysql`
+   |
+   = help: the following implementations were found:
+             <diesel::mysql::Mysql as diesel::sql_types::HasSqlType<diesel::sql_types::BigInt>>
+             <diesel::mysql::Mysql as diesel::sql_types::HasSqlType<diesel::sql_types::Binary>>
+             <diesel::mysql::Mysql as diesel::sql_types::HasSqlType<diesel::sql_types::Bool>>
+             <diesel::mysql::Mysql as diesel::sql_types::HasSqlType<diesel::sql_types::Date>>
+           and 15 others
+   = note: required because of the requirements on the impl of `diesel::expression::QueryMetadata<diesel::sql_types::Array<diesel::sql_types::Integer>>` for `diesel::mysql::Mysql`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::MysqlConnection, std::vec::Vec<i32>>` for `diesel::query_builder::SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`

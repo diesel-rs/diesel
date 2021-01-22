@@ -1,0 +1,15 @@
+warning: belongs_to takes a single parent. Change
+    belongs_to(Bar, Baz)
+to
+    belongs_to(Bar)
+    belongs_to(Baz)
+  --> $DIR/belongs_to_second_parent.rs:29:3
+   |
+29 | #[belongs_to(Bar, Baz)]
+   |   ^^^^^^^^^^^^^^^^^^^^
+
+error: warnings
+  --> $DIR/belongs_to_second_parent.rs:37:5
+   |
+37 |     compile_error!("warnings");
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^

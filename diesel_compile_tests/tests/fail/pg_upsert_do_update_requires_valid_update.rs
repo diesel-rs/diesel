@@ -1,0 +1,71 @@
+extern crate diesel;
+
+use diesel::*;
+use diesel::upsert::*;
+
+table! {
+    users {
+        id -> Integer,
+        name -> VarChar,
+    }
+}
+
+table! {
+    posts {
+        id -> Integer,
+        title -> VarChar,
+    }
+}
+
+#[derive(Insertable)]
+#[table_name = "users"]
+pub struct NewUser(#[column_name = "name"] &'static str);
+
+#[allow(deprecated)]
+fn main() {
+    use self::users::dsl::*;
+    let connection = PgConnection::establish("postgres://localhost").unwrap();
+
+    // Valid update as sanity check
+    insert_into(users).values(&NewUser("Sean")).on_conflict(id).do_update().set(name.eq("Sean")).execute(&connection);
+
+    // No set clause
+    insert_into(users)
+        .values(&NewUser("Sean"))
+        .on_conflict(id)
+        .do_update()
+        .execute(&connection);
+
+    // Update column from other table
+    insert_into(users)
+        .values(&NewUser("Sean"))
+        .on_conflict(id)
+        .do_update()
+        .set(posts::title.eq("Sean"));
+
+
+    // Update column with value that is not selectable
+    insert_into(users)
+        .values(&NewUser("Sean"))
+        .on_conflict(id)
+        .do_update()
+        .set(name.eq(posts::title));
+
+    // Update column with excluded value that is not selectable
+    insert_into(users)
+        .values(&NewUser("Sean"))
+        .on_conflict(id)
+        .do_update()
+        .set(name.eq(excluded(posts::title)));
+
+    // Update column with excluded value of wrong type
+    insert_into(users)
+        .values(&NewUser("Sean"))
+        .on_conflict(id)
+        .do_update()
+        .set(name.eq(excluded(id)));
+
+    // Excluded is only valid in upsert
+    // FIXME: This should not compile
+    update(users).set(name.eq(excluded(name))).execute(&connection);
+}

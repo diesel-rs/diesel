@@ -1,0 +1,39 @@
+error: No field with column name id
+  --> $DIR/identifiable_missing_pk_field.rs:10:10
+   |
+10 | #[derive(Identifiable)]
+   |          ^^^^^^^^^^^^
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: No field with column name id
+  --> $DIR/identifiable_missing_pk_field.rs:14:10
+   |
+14 | #[derive(Identifiable)]
+   |          ^^^^^^^^^^^^
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: No field with column name bar
+  --> $DIR/identifiable_missing_pk_field.rs:22:15
+   |
+22 | #[primary_key(bar)]
+   |               ^^^
+
+error: No field with column name baz
+  --> $DIR/identifiable_missing_pk_field.rs:27:15
+   |
+27 | #[primary_key(baz)]
+   |               ^^^
+
+error: No field with column name bar
+  --> $DIR/identifiable_missing_pk_field.rs:35:20
+   |
+35 | #[primary_key(foo, bar)]
+   |                    ^^^
+
+error: No field with column name bar
+  --> $DIR/identifiable_missing_pk_field.rs:42:20
+   |
+42 | #[primary_key(foo, bar)]
+   |                    ^^^

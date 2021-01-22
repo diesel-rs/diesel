@@ -3,8 +3,7 @@ members = [
     "diesel",
     "diesel_cli",
     "diesel_derives",
-    # FIXME: getting "multiple matching crates for `diesel`" because of the shared build directory
-    # "diesel_compile_tests",
+    "diesel_compile_tests",
     "diesel_tests",
     "diesel_migrations",
     "diesel_migrations/migrations_internals",

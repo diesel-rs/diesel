@@ -1,0 +1,30 @@
+error[E0277]: the trait bound `i32: diesel::deserialize::FromSql<diesel::sql_types::Text, _>` is not satisfied
+  --> $DIR/select_carries_correct_result_type_info.rs:19:27
+   |
+19 |     let ids = select_name.load::<i32>(&connection);
+   |                           ^^^^ the trait `diesel::deserialize::FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`
+   |
+   = help: the following implementations were found:
+             <i32 as diesel::deserialize::FromSql<diesel::sql_types::Integer, DB>>
+             <i32 as diesel::deserialize::FromSql<diesel::sql_types::Integer, diesel::mysql::Mysql>>
+             <i32 as diesel::deserialize::FromSql<diesel::sql_types::Integer, diesel::sqlite::Sqlite>>
+   = note: required because of the requirements on the impl of `diesel::Queryable<diesel::sql_types::Text, _>` for `i32`
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSqlRow<diesel::sql_types::Text, _>` for `i32`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, i32>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::name>>`
+
+error[E0277]: the trait bound `*const str: diesel::deserialize::FromSql<diesel::sql_types::Integer, _>` is not satisfied
+  --> $DIR/select_carries_correct_result_type_info.rs:20:27
+   |
+20 |     let names = select_id.load::<String>(&connection);
+   |                           ^^^^ the trait `diesel::deserialize::FromSql<diesel::sql_types::Integer, _>` is not implemented for `*const str`
+   |
+   = help: the following implementations were found:
+             <*const [u8] as diesel::deserialize::FromSql<diesel::sql_types::Binary, DB>>
+             <*const [u8] as diesel::deserialize::FromSql<diesel::sql_types::Binary, diesel::sqlite::Sqlite>>
+             <*const str as diesel::deserialize::FromSql<diesel::sql_types::Date, diesel::sqlite::Sqlite>>
+             <*const str as diesel::deserialize::FromSql<diesel::sql_types::Text, DB>>
+           and 3 others
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSql<diesel::sql_types::Integer, _>` for `std::string::String`
+   = note: required because of the requirements on the impl of `diesel::Queryable<diesel::sql_types::Integer, _>` for `std::string::String`
+   = note: required because of the requirements on the impl of `diesel::deserialize::FromSqlRow<diesel::sql_types::Integer, _>` for `std::string::String`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, std::string::String>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`

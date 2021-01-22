@@ -1,0 +1,49 @@
+error: `belongs_to` must be in the form `belongs_to(...)`
+  --> $DIR/belongs_to_invalid_option_syntax.rs:29:3
+   |
+29 | #[belongs_to]
+   |   ^^^^^^^^^^
+
+error: `belongs_to` must be in the form `belongs_to(...)`
+  --> $DIR/belongs_to_invalid_option_syntax.rs:30:3
+   |
+30 | #[belongs_to = "Bar"]
+   |   ^^^^^^^^^^^^^^^^^^
+
+error: Expected a struct name
+  --> $DIR/belongs_to_invalid_option_syntax.rs:31:3
+   |
+31 | #[belongs_to()]
+   |   ^^^^^^^^^^^^
+   |
+   = help: e.g. `#[belongs_to(User)]` or `#[belongs_to(parent = "User<'_>")]
+
+error: Expected a struct name
+  --> $DIR/belongs_to_invalid_option_syntax.rs:32:3
+   |
+32 | #[belongs_to(foreign_key = "bar_id")]
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: e.g. `#[belongs_to(User)]` or `#[belongs_to(parent = "User<'_>")]
+
+error: `foreign_key` must be in the form `foreign_key = "value"`
+  --> $DIR/belongs_to_invalid_option_syntax.rs:33:19
+   |
+33 | #[belongs_to(Bar, foreign_key)]
+   |                   ^^^^^^^^^^^
+
+warning: The form `foreign_key(value)` is deprecated. Use `foreign_key = "value"` instead
+  --> $DIR/belongs_to_invalid_option_syntax.rs:34:19
+   |
+34 | #[belongs_to(Bar, foreign_key(bar_id))]
+   |                   ^^^^^^^^^^^^^^^^^^^
+
+warning: belongs_to takes a single parent. Change
+    belongs_to(Baz, random_option)
+to
+    belongs_to(Baz)
+    belongs_to(random_option)
+  --> $DIR/belongs_to_invalid_option_syntax.rs:35:3
+   |
+35 | #[belongs_to(Baz, foreign_key = "bar_id", random_option)]
+   |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

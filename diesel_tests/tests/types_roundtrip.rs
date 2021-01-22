@@ -283,7 +283,7 @@ mod mysql_types {
         naive_datetime_roundtrips,
         Timestamp,
         (i64, u32),
-        mk_naive_datetime
+        mk_naive_timestamp
     );
     test_round_trip!(
         naive_datetime_roundtrips_to_datetime,
@@ -298,6 +298,27 @@ mod mysql_types {
     test_round_trip!(u32_roundtrips, Unsigned<Integer>, u32);
     test_round_trip!(u64_roundtrips, Unsigned<BigInt>, u64);
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
+}
+
+#[cfg(feature = "mysql")]
+pub fn mk_naive_timestamp(data: (i64, u32)) -> NaiveDateTime {
+    let earliest_mysql_date = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 1);
+    let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(03, 14, 7);
+    let mut r = mk_naive_datetime(data);
+
+    loop {
+        if r < earliest_mysql_date {
+            let diff = earliest_mysql_date - r;
+            r = earliest_mysql_date + diff;
+        } else if r > latest_mysql_date {
+            let diff = r - latest_mysql_date;
+            r = earliest_mysql_date + diff;
+        } else {
+            break;
+        }
+    }
+
+    r
 }
 
 pub fn mk_naive_datetime(data: (i64, u32)) -> NaiveDateTime {

@@ -1,0 +1,7 @@
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+  --> $DIR/boxed_queries_must_be_used_with_proper_connection.rs:14:37
+   |
+14 |     users::table.into_boxed::<Pg>().load::<(i32,)>(&connection);
+   |                                     ^^^^ expected struct `diesel::sqlite::Sqlite`, found struct `diesel::pg::Pg`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, (i32,)>` for `diesel::query_builder::BoxedSelectStatement<'_, (diesel::sql_types::Integer,), users::table, diesel::pg::Pg>`
