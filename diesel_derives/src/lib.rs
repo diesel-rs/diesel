@@ -397,7 +397,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// **When this trait is derived, it will assume that the order of fields on your
 /// struct match the order of the fields in the query. This means that field
 /// order is significant if you are using `#[derive(Queryable)]`. Field name has
-/// no effect.**
+/// no effect. In some cases, all the fields in the struct (including the order)
+/// must be exactly the same (like `Eq`) as the fields in the query.**
 ///
 /// To provide custom deserialization behavior for a field, you can use
 /// `#[diesel(deserialize_as = "SomeType")]`. If this attribute is present, Diesel
