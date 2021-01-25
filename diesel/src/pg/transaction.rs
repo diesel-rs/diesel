@@ -13,7 +13,7 @@ use crate::result::Error;
 /// See [the PostgreSQL documentation for `SET TRANSACTION`][pg-docs]
 /// for details on the behavior of each option.
 ///
-/// [`.build_transaction`]: struct.PgConnection.html#method.build_transaction
+/// [`.build_transaction`]: PgConnection::build_transaction()
 /// [pg-docs]: https://www.postgresql.org/docs/current/static/sql-set-transaction.html
 #[allow(missing_debug_implementations)] // False positive. Connection isn't Debug.
 #[derive(Clone, Copy)]

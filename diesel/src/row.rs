@@ -16,7 +16,6 @@ use std::ops::Range;
 /// * Crates implementing custom backends need to provide `RowIndex<usize>` and
 ///   `RowIndex<&str>` impls for their [`Row`] type.
 ///
-/// [`Row`]: trait.Row.html
 pub trait RowIndex<I> {
     /// Get the numeric index inside the current row for the provided index value
     fn idx(&self, idx: I) -> Option<usize>;
@@ -26,7 +25,7 @@ pub trait RowIndex<I> {
 ///
 /// This trait is used as an argument to [`FromSqlRow`].
 ///
-/// [`FromSqlRow`]: ../deserialize/trait.FromSqlRow.html
+/// [`FromSqlRow`]: super::deserialize::FromSqlRow
 pub trait Row<'a, DB: Backend>: RowIndex<usize> + for<'b> RowIndex<&'b str> + Sized {
     /// Field type returned by a `Row` implementation
     ///
@@ -172,7 +171,7 @@ where
 /// rather than by index.
 ///
 /// This trait is used by implementations of
-/// [`QueryableByName`](../deserialize/trait.QueryableByName.html)
+/// [`QueryableByName`](super::deserialize::QueryableByName)
 pub trait NamedRow<'a, DB: Backend>: Row<'a, DB> {
     /// Retrieve and deserialize a single value from the query
     ///

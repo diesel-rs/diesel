@@ -187,8 +187,8 @@ impl HasSqlType<Unsigned<BigInt>> for Mysql {
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 ///
-/// [`ToSql`]: ../../serialize/trait.ToSql.html
-/// [`FromSql`]: ../../deserialize/trait.FromSql.html
+/// [`ToSql`]: super::super::serialize::ToSql
+/// [`FromSql`]: super::super::deserialize::FromSql
 /// [`chrono::NaiveDateTime`]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDateTime.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[mysql_type = "DateTime"]

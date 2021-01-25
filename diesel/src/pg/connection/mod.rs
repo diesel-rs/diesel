@@ -110,7 +110,7 @@ impl PgConnection {
     ///
     /// See [`TransactionBuilder`] for more examples.
     ///
-    /// [`TransactionBuilder`]: ../pg/struct.TransactionBuilder.html
+    /// [`TransactionBuilder`]: super::pg::TransactionBuilder
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");

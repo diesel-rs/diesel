@@ -12,7 +12,7 @@ use crate::result::QueryResult;
 /// provided by [`RunQueryDsl`]. However, you may need a where clause on this trait
 /// to call `load` from generic code.
 ///
-/// [`RunQueryDsl`]: ../trait.RunQueryDsl.html
+/// [`RunQueryDsl`]: super::RunQueryDsl
 pub trait LoadQuery<Conn, U>: RunQueryDsl<Conn> {
     /// Load this query
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>>;
@@ -37,7 +37,7 @@ where
 /// provided by [`RunQueryDsl`]. However, you may need a where clause on this trait
 /// to call `execute` from generic code.
 ///
-/// [`RunQueryDsl`]: ../trait.RunQueryDsl.html
+/// [`RunQueryDsl`]: super::RunQueryDsl
 pub trait ExecuteDsl<Conn: Connection<Backend = DB>, DB: Backend = <Conn as Connection>::Backend>:
     Sized
 {

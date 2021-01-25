@@ -12,7 +12,7 @@ pub struct LimitOffsetClause<Limit, Offset> {
     pub offset_clause: Offset,
 }
 
-/// A boxed variant of [`LimitOffsetClause`](../struct.LimitOffsetClause.html)
+/// A boxed variant of [`LimitOffsetClause`](super::LimitOffsetClause)
 ///
 /// This type is only relevant for implementing custom backends
 #[allow(missing_debug_implementations)]

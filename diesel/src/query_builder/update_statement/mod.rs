@@ -30,7 +30,7 @@ impl<T, U> UpdateStatement<T, U, SetNotCalled> {
 
     /// Provides the `SET` clause of the `UPDATE` statement.
     ///
-    /// See [`update`](../fn.update.html) for usage examples, or [the update
+    /// See [`update`](super::update()) for usage examples, or [the update
     /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
     /// set of examples.
     pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
@@ -52,7 +52,7 @@ impl<T, U> UpdateStatement<T, U, SetNotCalled> {
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Represents a complete `UPDATE` statement.
 ///
-/// See [`update`](../fn.update.html) for usage examples, or [the update
+/// See [`update`](super::update()) for usage examples, or [the update
 /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
 /// set of examples.
 pub struct UpdateStatement<T, U, V = SetNotCalled, Ret = NoReturningClause> {

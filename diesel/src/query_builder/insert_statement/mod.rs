@@ -33,9 +33,9 @@ use crate::Connection;
 /// The provided methods [`values`] and [`default_values`] will insert
 /// data into the targeted table.
 ///
-/// [`insert_into`]: ../fn.insert_into.html
-/// [`values`]: #method.values
-/// [`default_values`]: #method.default_values
+/// [`insert_into`]: super::insert_into()
+/// [`values`]: IncompleteInsertStatement::values()
+/// [`default_values`]: IncompleteInsertStatement::default_values()
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct IncompleteInsertStatement<T, Op> {
@@ -99,7 +99,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// "overflow evaluating requirement" as a result of calling this method,
     /// you may need an `&` in front of the argument to this method.
     ///
-    /// [`insert_into`]: ../fn.insert_into.html
+    /// [`insert_into`]: super::insert_into()
     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     where
         U: Insertable<T>,
@@ -157,7 +157,7 @@ impl<T, U, C, Op, Ret> InsertStatement<T, InsertFromSelect<U, C>, Op, Ret> {
     ///
     /// See the documentation for [`insert_into`] for usage examples.
     ///
-    /// [`insert_into`]: ../fn.insert_into.html
+    /// [`insert_into`]: super::insert_into()
     pub fn into_columns<C2>(
         self,
         columns: C2,

@@ -15,7 +15,7 @@ use crate::sqlite::Sqlite;
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
 /// inserting more than one record.
 ///
-/// This trait can be [derived](derive.Insertable.html)
+/// This trait can be [derived](Insertable)
 pub trait Insertable<T> {
     /// The `VALUES` clause to insert these records
     ///

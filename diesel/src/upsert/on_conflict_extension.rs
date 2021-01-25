@@ -186,8 +186,8 @@ where
     /// See the documentation for [`on_constraint`] and [`do_update`] for
     /// more examples.
     ///
-    /// [`on_constraint`]: ../upsert/fn.on_constraint.html
-    /// [`do_update`]: ../upsert/struct.IncompleteOnConflict.html#method.do_update
+    /// [`on_constraint`]: super::upsert::on_constraint()
+    /// [`do_update`]: super::upsert::IncompleteOnConflict::do_update()
     pub fn on_conflict<Target>(
         self,
         target: Target,
@@ -231,8 +231,8 @@ impl<T, U, Op, Ret, Target> IncompleteOnConflict<InsertStatement<T, U, Op, Ret>,
     /// [`on_conflict_do_nothing`] instead. See [`on_conflict`] for usage
     /// examples.
     ///
-    /// [`on_conflict_do_nothing`]: ../../query_builder/struct.InsertStatement.html#method.on_conflict_do_nothing
-    /// [`on_conflict`]: ../../query_builder/struct.InsertStatement.html#method.on_conflict
+    /// [`on_conflict_do_nothing`]: super::super::query_builder::InsertStatement::on_conflict_do_nothing()
+    /// [`on_conflict`]: super::super::query_builder::InsertStatement::on_conflict()
     pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
         let target = self.target;
         self.stmt
@@ -374,7 +374,7 @@ pub struct IncompleteDoUpdate<Stmt, Target> {
 impl<T, U, Op, Ret, Target> IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, Target> {
     /// See [`do_update`] for usage examples.
     ///
-    /// [`do_update`]: struct.IncompleteOnConflict.html#method.do_update
+    /// [`do_update`]: IncompleteOnConflict::do_update()
     pub fn set<Changes>(
         self,
         changes: Changes,

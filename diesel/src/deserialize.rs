@@ -20,7 +20,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// trait is to convert from a tuple of Rust values that have been deserialized
 /// into your struct.
 ///
-/// This trait can be [derived](derive.Queryable.html)
+/// This trait can be [derived](Queryable)
 ///
 /// # Examples
 ///
@@ -161,9 +161,9 @@ pub use diesel_derives::Queryable;
 
 /// Deserializes the result of a query constructed with [`sql_query`].
 ///
-/// This trait can be [derived](derive.QueryableByName.html)
+/// This trait can be [derived](QueryableByName)
 ///
-/// [`sql_query`]: ../fn.sql_query.html
+/// [`sql_query`]: super::sql_query()
 ///
 /// # Examples
 ///
@@ -278,7 +278,7 @@ pub use diesel_derives::QueryableByName;
 ///   `type_metadata` for the given SQL type. See [`MysqlType`] for details.
 /// - For third party backends, consult that backend's documentation.
 ///
-/// [`MysqlType`]: ../mysql/enum.MysqlType.html
+/// [`MysqlType`]: super::mysql::MysqlType
 ///
 /// ### Examples
 ///
@@ -335,8 +335,8 @@ pub trait FromSql<A, DB: Backend>: Sized {
 ///
 /// Diesel provides wild card implementations of this trait for all types
 /// that implement one of the following traits:
-///    * [`Queryable`](trait.Queryable.html)
-///    * [`QueryableByName`](trait.QueryableByName.html)
+///    * [`Queryable`]
+///    * [`QueryableByName`]
 pub trait FromSqlRow<ST, DB: Backend>: Sized {
     /// See the trait documentation.
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self>;

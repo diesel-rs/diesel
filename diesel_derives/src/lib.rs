@@ -837,7 +837,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 /// The syntax for this macro is very similar to that of a normal Rust function,
 /// except the argument and return types will be the SQL types being used.
-/// Typically these types will come from [`diesel::sql_types`](../diesel/sql_types/index.html)
+/// Typically these types will come from [`diesel::sql_types`](super::diesel::sql_types)
 ///
 /// This macro will generate two items. A function with the name that you've
 /// given, and a module with a helper type representing the return type of your
@@ -1017,7 +1017,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// Custom aggregate functions can be created in SQLite by adding an `#[aggregate]`
 /// attribute inside of `sql_function`. `register_impl` needs to be called on
 /// the generated function with a type implementing the
-/// [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html)
+/// [SqliteAggregateFunction](super::diesel::sqlite::SqliteAggregateFunction)
 /// trait as a type parameter as shown in the examples below.
 ///
 /// ```rust

@@ -68,7 +68,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     ///
     /// This method is case insensitive for SQLite and MySQL.
     /// On PostgreSQL, `LIKE` is case sensitive. You may use
-    /// [`ilike()`](../expression_methods/trait.PgTextExpressionMethods.html#method.ilike)
+    /// [`ilike()`](super::expression_methods::PgTextExpressionMethods::ilike())
     /// for case insensitive comparison on PostgreSQL.
     ///
     /// # Examples
@@ -104,7 +104,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     ///
     /// This method is case insensitive for SQLite and MySQL.
     /// On PostgreSQL `NOT LIKE` is case sensitive. You may use
-    /// [`not_ilike()`](../expression_methods/trait.PgTextExpressionMethods.html#method.not_ilike)
+    /// [`not_ilike()`](super::expression_methods::PgTextExpressionMethods::not_ilike())
     /// for case insensitive comparison on PostgreSQL.
     ///
     /// # Examples

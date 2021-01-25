@@ -10,12 +10,12 @@ use std::any::{Any, TypeId};
 /// See the documentation of [the `QueryId` type] and [`HAS_STATIC_QUERY_ID`]
 /// for more details.
 ///
-/// [the `QueryId` type]: #associatedtype.QueryId
-/// [`HAS_STATIC_QUERY_ID`]: #associatedconstant.HAS_STATIC_QUERY_ID
+/// [the `QueryId` type]: QueryId::QueryId
+/// [`HAS_STATIC_QUERY_ID`]: QueryId::HAS_STATIC_QUERY_ID
 ///
 /// ### Deriving
 ///
-/// This trait can [be automatically derived](derive.QueryId.html)
+/// This trait can [be automatically derived](QueryId)
 /// by Diesel.
 /// For example, given this struct:
 ///

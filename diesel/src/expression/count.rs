@@ -31,7 +31,7 @@ sql_function! {
 /// Creates a SQL `COUNT(*)` expression
 ///
 /// For selecting the count of a query, and nothing else, you can just call
-/// [`count`](../query_dsl/trait.QueryDsl.html#method.count)
+/// [`count`](super::query_dsl::QueryDsl::count())
 /// on the query instead.
 ///
 /// As with most bare functions, this is not exported by default. You can import

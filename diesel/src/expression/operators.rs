@@ -365,7 +365,6 @@ macro_rules! diesel_infix_operator {
 /// a single argument rather than two. The operator SQL will be placed after
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
-/// [`infix_operator!`]: macro.infix_operator.html
 #[macro_export]
 macro_rules! postfix_operator {
     ($name:ident, $operator:expr) => {
@@ -420,7 +419,6 @@ macro_rules! diesel_postfix_operator {
 /// a single argument rather than two. The operator SQL will be placed before
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
-/// [`infix_operator!`]: macro.infix_operator.html
 #[macro_export]
 macro_rules! prefix_operator {
     ($name:ident, $operator:expr) => {

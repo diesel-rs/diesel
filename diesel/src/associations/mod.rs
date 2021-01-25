@@ -76,7 +76,6 @@
 //! # fn main() {}
 //! ```
 //!
-//! [`Identifiable`]: trait.Identifiable.html
 //!
 //! By default, Diesel assumes that your foreign keys will follow the convention `table_name_id`.
 //! If your foreign key has a different name,
@@ -93,7 +92,7 @@
 //! You can load the children for one or more parents using
 //! [`belonging_to`]
 //!
-//! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [`belonging_to`]: super::query_dsl::BelongingToDsl::belonging_to
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
@@ -146,8 +145,8 @@
 //! [`belonging_to`] can be used to load the data, but we'll also need to group it
 //! with its parents. For this we use an additional method [`grouped_by`].
 //!
-//! [`grouped_by`]: trait.GroupedBy.html#tymethod.grouped_by
-//! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [`grouped_by`]: GroupedBy::grouped_by
+//! [`belonging_to`]: super::query_dsl::BelongingToDsl::belonging_to
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
@@ -386,7 +385,7 @@ impl<'a, T: HasTable> HasTable for &'a T {
 /// `update(YourStruct::table().find(&your_struct.primary_key())`).
 ///
 /// This trait is usually implemented on a reference to a struct,
-/// not on the struct itself. It can be [derived](derive.Identifiable.html).
+/// not on the struct itself. It can be [derived](Identifiable).
 ///
 pub trait Identifiable: HasTable {
     /// The type of this struct's identifier.

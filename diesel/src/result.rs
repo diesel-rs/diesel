@@ -35,10 +35,10 @@ pub enum Error {
     /// does not treat 0 rows as an error. If you would like to allow either 0
     /// or 1 rows, call [`optional`] on the result.
     ///
-    /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
-    /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
-    /// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
-    /// [`optional`]: trait.OptionalExtension.html#tymethod.optional
+    /// [`get_result`]: super::query_dsl::RunQueryDsl::get_result()
+    /// [`first`]: super::query_dsl::RunQueryDsl::first()
+    /// [`load`]: super::query_dsl::RunQueryDsl::load()
+    /// [`optional`]: OptionalExtension::optional
     NotFound,
 
     /// The query could not be constructed
@@ -194,7 +194,7 @@ impl DatabaseErrorInformation for String {
 
 /// Errors which can occur during [`Connection::establish`]
 ///
-/// [`Connection::establish`]: ../connection/trait.Connection.html#tymethod.establish
+/// [`Connection::establish`]: super::connection::Connection::establish
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum ConnectionError {
@@ -226,7 +226,7 @@ pub type QueryResult<T> = Result<T, Error>;
 /// is otherwise a direct mapping to `Result`.
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
 
-/// See the [method documentation](#tymethod.optional).
+/// See the [method documentation](OptionalExtension::optional).
 pub trait OptionalExtension<T> {
     /// Converts a `QueryResult<T>` into a `QueryResult<Option<T>>`.
     ///
@@ -234,8 +234,8 @@ pub trait OptionalExtension<T> {
     /// row as an error (e.g. the return value of [`get_result`] or [`first`]). This method will
     /// handle that error, and give you back an `Option<T>` instead.
     ///
-    /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
-    /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
+    /// [`get_result`]: super::query_dsl::RunQueryDsl::get_result()
+    /// [`first`]: super::query_dsl::RunQueryDsl::first()
     ///
     /// # Example
     ///

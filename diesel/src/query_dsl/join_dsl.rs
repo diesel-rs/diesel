@@ -47,7 +47,7 @@ where
 /// Specify the `ON` clause for a join statement. This will override
 /// any implicit `ON` clause that would come from [`joinable!`]
 ///
-/// [`joinable!`]: ../macro.joinable.html
+/// [`joinable!`]: super::joinable!
 ///
 /// # Example
 ///
