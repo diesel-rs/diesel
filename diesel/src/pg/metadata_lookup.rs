@@ -91,13 +91,11 @@ struct PgMetadataCacheKey<'a> {
 }
 
 impl<'a> PgMetadataCacheKey<'a> {
-    fn as_owned(&self) -> PgMetadataCacheKey<'static> {
+    fn into_owned(self) -> PgMetadataCacheKey<'static> {
+        let PgMetadataCacheKey { schema, type_name } = self;
         PgMetadataCacheKey {
-            schema: self
-                .schema
-                .as_ref()
-                .map(|schema| Cow::Owned(schema.as_ref().to_owned())),
-            type_name: Cow::Owned(self.type_name.as_ref().to_owned()),
+            schema: schema.map(|s| Cow::Owned(s.into_owned())),
+            type_name: Cow::Owned(type_name.into_owned()),
         }
     }
 }
@@ -122,7 +120,7 @@ impl PgMetadataCache {
     fn store_type(&self, type_name: PgMetadataCacheKey, type_metadata: PgTypeMetadata) {
         self.cache
             .borrow_mut()
-            .insert(type_name.as_owned(), type_metadata);
+            .insert(type_name.into_owned(), type_metadata);
     }
 }
 
