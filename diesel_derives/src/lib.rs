@@ -932,12 +932,12 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
-/// use diesel::sql_types::{Foldable, Nullable};
+/// use diesel::sql_types::Foldable;
 ///
 /// sql_function! {
 ///     #[aggregate]
 ///     #[sql_name = "SUM"]
-///     fn sum<ST: Foldable>(expr: Nullable<ST>) -> ST::Sum;
+///     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
 /// }
 ///
 /// # fn main() {

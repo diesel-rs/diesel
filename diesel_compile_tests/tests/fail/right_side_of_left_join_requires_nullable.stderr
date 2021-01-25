@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:41:18
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:40:18
    |
-41 |     let _ = join.select(posts::title);
+40 |     let _ = join.select(posts::title);
    |                  ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
    |
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>>` for `posts::columns::title`
@@ -9,9 +9,9 @@ error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::Ap
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::title>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:41:25
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:40:25
    |
-41 |     let _ = join.select(posts::title);
+40 |     let _ = join.select(posts::title);
    |                         ^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
    = help: the following implementations were found:
@@ -25,9 +25,9 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::title>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:47:18
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:46:18
    |
-47 |     let _ = join.select(lower(posts::title));
+46 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
    |
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>>` for `posts::columns::title`
@@ -36,9 +36,9 @@ error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::Ap
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:47:25
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:46:25
    |
-47 |     let _ = join.select(lower(posts::title));
+46 |     let _ = join.select(lower(posts::title));
    |                         ^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
    = help: the following implementations were found:
@@ -52,19 +52,17 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>` for `lower::lower<posts::columns::title>`
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
-error[E0277]: the trait bound `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>: diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:49:25
+error[E0271]: type mismatch resolving `<diesel::expression::nullable::Nullable<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:48:25
    |
 32 | sql_function!(fn lower(x: Text) -> Text);
    | ----------------------------------------- required by this bound in `lower`
 ...
-49 |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ^^^^^ the trait `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not implemented for `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>`
+48 |     let _ = join.select(lower(posts::title.nullable()));
+   |                         ^^^^^ expected struct `diesel::sql_types::Nullable`, found struct `diesel::sql_types::Text`
    |
-   = help: the following implementations were found:
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::IsNullable> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
+   = note: expected struct `diesel::sql_types::Nullable<diesel::sql_types::Text>`
+              found struct `diesel::sql_types::Text`
    = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Text>` for `diesel::expression::nullable::Nullable<posts::columns::title>`
 
 error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
@@ -129,25 +127,23 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, pets::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>` for `lower::lower<posts::columns::title>`
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, pets::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
-error[E0277]: the trait bound `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>: diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not satisfied
+error[E0271]: type mismatch resolving `<diesel::expression::nullable::Nullable<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
   --> $DIR/right_side_of_left_join_requires_nullable.rs:65:25
    |
 32 | sql_function!(fn lower(x: Text) -> Text);
    | ----------------------------------------- required by this bound in `lower`
 ...
 65 |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ^^^^^ the trait `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not implemented for `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>`
+   |                         ^^^^^ expected struct `diesel::sql_types::Nullable`, found struct `diesel::sql_types::Text`
    |
-   = help: the following implementations were found:
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::IsNullable> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
+   = note: expected struct `diesel::sql_types::Nullable<diesel::sql_types::Text>`
+              found struct `diesel::sql_types::Text`
    = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Text>` for `diesel::expression::nullable::Nullable<posts::columns::title>`
 
 error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:72:18
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:74:18
    |
-72 |     let _ = join.select(posts::title);
+74 |     let _ = join.select(posts::title);
    |                  ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
    |
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>>` for `posts::columns::title`
@@ -157,9 +153,9 @@ error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::Ap
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::title>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, pets::table, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:72:25
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:74:25
    |
-72 |     let _ = join.select(posts::title);
+74 |     let _ = join.select(posts::title);
    |                         ^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
    = help: the following implementations were found:
@@ -175,9 +171,9 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::title>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, pets::table, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:78:18
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:80:18
    |
-78 |     let _ = join.select(lower(posts::title));
+80 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
    |
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>>` for `posts::columns::title`
@@ -188,9 +184,9 @@ error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::Ap
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, pets::table, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpression<users::table>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:78:25
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:80:25
    |
-78 |     let _ = join.select(lower(posts::title));
+80 |     let _ = join.select(lower(posts::title));
    |                         ^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
    = help: the following implementations were found:
@@ -206,25 +202,23 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, pets::table, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>` for `lower::lower<posts::columns::title>`
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, pets::table, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
-error[E0277]: the trait bound `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>: diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:80:25
+error[E0271]: type mismatch resolving `<diesel::expression::nullable::Nullable<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:82:25
    |
 32 | sql_function!(fn lower(x: Text) -> Text);
    | ----------------------------------------- required by this bound in `lower`
 ...
-80 |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ^^^^^ the trait `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not implemented for `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>`
+82 |     let _ = join.select(lower(posts::title.nullable()));
+   |                         ^^^^^ expected struct `diesel::sql_types::Nullable`, found struct `diesel::sql_types::Text`
    |
-   = help: the following implementations were found:
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::IsNullable> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
+   = note: expected struct `diesel::sql_types::Nullable<diesel::sql_types::Text>`
+              found struct `diesel::sql_types::Text`
    = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Text>` for `diesel::expression::nullable::Nullable<posts::columns::title>`
 
 error[E0271]: type mismatch resolving `<diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>> as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:87:18
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:89:18
    |
-87 |     let _ = join.select(posts::title);
+89 |     let _ = join.select(posts::title);
    |                  ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
    |
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::LeftOuter>>` for `posts::columns::title`
@@ -232,9 +226,9 @@ error[E0271]: type mismatch resolving `<diesel::query_builder::SelectStatement<d
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::title>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpression<pets::table>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:87:25
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:89:25
    |
-87 |     let _ = join.select(posts::title);
+89 |     let _ = join.select(posts::title);
    |                         ^^^^^^^^^^^^ the trait `diesel::SelectableExpression<pets::table>` is not implemented for `posts::columns::title`
    |
    = help: the following implementations were found:
@@ -248,9 +242,9 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::title>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0271]: type mismatch resolving `<diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>> as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:93:18
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:95:18
    |
-93 |     let _ = join.select(lower(posts::title));
+95 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
    |
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::LeftOuter>>` for `posts::columns::title`
@@ -259,9 +253,9 @@ error[E0271]: type mismatch resolving `<diesel::query_builder::SelectStatement<d
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpression<pets::table>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:93:25
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:95:25
    |
-93 |     let _ = join.select(lower(posts::title));
+95 |     let _ = join.select(lower(posts::title));
    |                         ^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<pets::table>` is not implemented for `posts::columns::title`
    |
    = help: the following implementations were found:
@@ -275,25 +269,23 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
    = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>` for `lower::lower<posts::columns::title>`
    = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
-error[E0277]: the trait bound `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>: diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not satisfied
-  --> $DIR/right_side_of_left_join_requires_nullable.rs:95:25
+error[E0271]: type mismatch resolving `<diesel::expression::nullable::Nullable<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+  --> $DIR/right_side_of_left_join_requires_nullable.rs:97:25
    |
 32 | sql_function!(fn lower(x: Text) -> Text);
    | ----------------------------------------- required by this bound in `lower`
 ...
-95 |     let _ = join.select(lower(posts::title.nullable()));
-   |                         ^^^^^ the trait `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not implemented for `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>`
+97 |     let _ = join.select(lower(posts::title.nullable()));
+   |                         ^^^^^ expected struct `diesel::sql_types::Nullable`, found struct `diesel::sql_types::Text`
    |
-   = help: the following implementations were found:
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::IsNullable> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-             <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
+   = note: expected struct `diesel::sql_types::Nullable<diesel::sql_types::Text>`
+              found struct `diesel::sql_types::Text`
    = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Text>` for `diesel::expression::nullable::Nullable<posts::columns::title>`
 
 error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
-   --> $DIR/right_side_of_left_join_requires_nullable.rs:102:18
+   --> $DIR/right_side_of_left_join_requires_nullable.rs:104:18
     |
-102 |     let _ = join.select(posts::title);
+104 |     let _ = join.select(posts::title);
     |                  ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
     |
     = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>>` for `posts::columns::title`
@@ -304,9 +296,9 @@ error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::Ap
     = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::title>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpression<users::table>` is not satisfied
-   --> $DIR/right_side_of_left_join_requires_nullable.rs:102:25
+   --> $DIR/right_side_of_left_join_requires_nullable.rs:104:25
     |
-102 |     let _ = join.select(posts::title);
+104 |     let _ = join.select(posts::title);
     |                         ^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |
     = help: the following implementations were found:
@@ -323,9 +315,9 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
     = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<posts::columns::title>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
-   --> $DIR/right_side_of_left_join_requires_nullable.rs:108:18
+   --> $DIR/right_side_of_left_join_requires_nullable.rs:110:18
     |
-108 |     let _ = join.select(lower(posts::title));
+110 |     let _ = join.select(lower(posts::title));
     |                  ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
     |
     = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>>` for `posts::columns::title`
@@ -337,9 +329,9 @@ error[E0271]: type mismatch resolving `<posts::table as diesel::query_source::Ap
     = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpression<users::table>` is not satisfied
-   --> $DIR/right_side_of_left_join_requires_nullable.rs:108:25
+   --> $DIR/right_side_of_left_join_requires_nullable.rs:110:25
     |
-108 |     let _ = join.select(lower(posts::title));
+110 |     let _ = join.select(lower(posts::title));
     |                         ^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |
     = help: the following implementations were found:
@@ -356,17 +348,15 @@ error[E0277]: the trait bound `posts::columns::title: diesel::SelectableExpressi
     = note: required because of the requirements on the impl of `diesel::SelectableExpression<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>` for `lower::lower<posts::columns::title>`
     = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<lower::lower<posts::columns::title>>` for `diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<pets::table, diesel::query_builder::SelectStatement<diesel::query_source::joins::JoinOn<diesel::query_source::joins::Join<users::table, posts::table, diesel::query_source::joins::LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_source::joins::Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<pets::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
 
-error[E0277]: the trait bound `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>: diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not satisfied
-   --> $DIR/right_side_of_left_join_requires_nullable.rs:110:25
+error[E0271]: type mismatch resolving `<diesel::expression::nullable::Nullable<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+   --> $DIR/right_side_of_left_join_requires_nullable.rs:112:25
     |
 32  | sql_function!(fn lower(x: Text) -> Text);
     | ----------------------------------------- required by this bound in `lower`
 ...
-110 |     let _ = join.select(lower(posts::title.nullable()));
-    |                         ^^^^^ the trait `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Text>` is not implemented for `diesel::expression::as_expression_impl::ExpressionImplHelper<diesel::expression::nullable::Nullable<posts::columns::title>, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::IsNullable>`
+112 |     let _ = join.select(lower(posts::title.nullable()));
+    |                         ^^^^^ expected struct `diesel::sql_types::Nullable`, found struct `diesel::sql_types::Text`
     |
-    = help: the following implementations were found:
-              <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::IsNullable> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-              <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::IsNullable, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
-              <diesel::expression::as_expression_impl::ExpressionImplHelper<T, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull> as diesel::expression::as_expression_impl::AsExpressionHelper<ST>>
+    = note: expected struct `diesel::sql_types::Nullable<diesel::sql_types::Text>`
+               found struct `diesel::sql_types::Text`
     = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Text>` for `diesel::expression::nullable::Nullable<posts::columns::title>`

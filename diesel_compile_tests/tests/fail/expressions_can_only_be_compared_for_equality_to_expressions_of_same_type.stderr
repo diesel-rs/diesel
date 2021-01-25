@@ -13,4 +13,4 @@ error[E0271]: type mismatch resolving `<users::columns::name as diesel::Expressi
 16 |     let pred = id.eq(name);
    |                   ^^ expected struct `diesel::sql_types::Text`, found struct `diesel::sql_types::Integer`
    |
-   = note: required because of the requirements on the impl of `diesel::expression::as_expression_impl::AsExpressionHelper<diesel::sql_types::Integer>` for `diesel::expression::as_expression_impl::ExpressionImplHelper<users::columns::name, diesel::sql_types::is_nullable::NotNull, diesel::sql_types::is_nullable::NotNull>`
+   = note: required because of the requirements on the impl of `diesel::expression::AsExpression<diesel::sql_types::Integer>` for `users::columns::name`
