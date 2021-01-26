@@ -1,5 +1,6 @@
 #![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
 
+use super::backend::{FailedToLookupTypeError, InnerPgTypeMetadata};
 use super::{PgConnection, PgTypeMetadata};
 use crate::prelude::*;
 
@@ -38,17 +39,10 @@ impl PgMetadataLookup {
             match r {
                 Ok(type_metadata) => {
                     metadata_cache.store_type(cache_key, type_metadata);
-                    type_metadata
+                    PgTypeMetadata(Ok(type_metadata))
                 }
                 Err(_e) => {
-                    eprintln!("Failed to find oid for type `{}`", type_name);
-                    // We return 0 as type oid here
-                    // because most of the time postgres
-                    // can figure out the type on its own
-                    PgTypeMetadata {
-                        oid: 0,
-                        array_oid: 0,
-                    }
+                    PgTypeMetadata(Err(FailedToLookupTypeError::new(cache_key.into_owned())))
                 }
             }
         })
@@ -58,7 +52,7 @@ impl PgMetadataLookup {
 fn lookup_type(
     cache_key: &PgMetadataCacheKey<'_>,
     conn: &PgConnection,
-) -> QueryResult<PgTypeMetadata> {
+) -> QueryResult<InnerPgTypeMetadata> {
     let search_path: String;
 
     let search_schema = if let Some(schema) = cache_key.schema.as_ref() {
@@ -84,10 +78,10 @@ fn lookup_type(
     Ok(metadata)
 }
 
-#[derive(Hash, PartialEq, Eq)]
-struct PgMetadataCacheKey<'a> {
-    schema: Option<Cow<'a, str>>,
-    type_name: Cow<'a, str>,
+#[derive(Hash, PartialEq, Eq, Debug, Clone)]
+pub(in crate::pg) struct PgMetadataCacheKey<'a> {
+    pub(crate) schema: Option<Cow<'a, str>>,
+    pub(crate) type_name: Cow<'a, str>,
 }
 
 impl<'a> PgMetadataCacheKey<'a> {
@@ -103,7 +97,7 @@ impl<'a> PgMetadataCacheKey<'a> {
 /// Stores a cache for the OID of custom types
 #[allow(missing_debug_implementations)]
 pub struct PgMetadataCache {
-    cache: RefCell<HashMap<PgMetadataCacheKey<'static>, PgTypeMetadata>>,
+    cache: RefCell<HashMap<PgMetadataCacheKey<'static>, InnerPgTypeMetadata>>,
 }
 
 impl PgMetadataCache {
@@ -114,10 +108,10 @@ impl PgMetadataCache {
     }
 
     fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
-        Some(*self.cache.borrow().get(type_name)?)
+        Some(PgTypeMetadata(Ok(*self.cache.borrow().get(type_name)?)))
     }
 
-    fn store_type(&self, type_name: PgMetadataCacheKey, type_metadata: PgTypeMetadata) {
+    fn store_type(&self, type_name: PgMetadataCacheKey, type_metadata: InnerPgTypeMetadata) {
         self.cache
             .borrow_mut()
             .insert(type_name.into_owned(), type_metadata);

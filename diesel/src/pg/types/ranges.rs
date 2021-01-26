@@ -160,54 +160,36 @@ where
 
 impl HasSqlType<Int4range> for Pg {
     fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3904,
-            array_oid: 3905,
-        }
+        PgTypeMetadata::new(3904, 3905)
     }
 }
 
 impl HasSqlType<Numrange> for Pg {
     fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3906,
-            array_oid: 3907,
-        }
+        PgTypeMetadata::new(3906, 3907)
     }
 }
 
 impl HasSqlType<Tsrange> for Pg {
     fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3908,
-            array_oid: 3909,
-        }
+        PgTypeMetadata::new(3908, 3909)
     }
 }
 
 impl HasSqlType<Tstzrange> for Pg {
     fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3910,
-            array_oid: 3911,
-        }
+        PgTypeMetadata::new(3910, 3911)
     }
 }
 
 impl HasSqlType<Daterange> for Pg {
     fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3912,
-            array_oid: 3913,
-        }
+        PgTypeMetadata::new(3912, 3913)
     }
 }
 
 impl HasSqlType<Int8range> for Pg {
     fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3926,
-            array_oid: 3927,
-        }
+        PgTypeMetadata::new(3926, 3927)
     }
 }

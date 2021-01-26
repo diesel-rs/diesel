@@ -106,10 +106,7 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
             let metadata_fn = match ty {
                 PgType::Fixed { oid, array_oid } => quote!(
                     fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-                        PgTypeMetadata {
-                            oid: #oid,
-                            array_oid: #array_oid,
-                        }
+                        PgTypeMetadata::new(#oid, #array_oid)
                     }
                 ),
                 PgType::Lookup(type_name, Some(type_schema)) => quote!(
