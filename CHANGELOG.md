@@ -131,9 +131,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   so non generic code does not require any change. For generic code you likely need to
   replace a trait bound on `Queryable<ST, DB>` with a trait bound on `FromSqlRow<ST, DB>`
   and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`.
-  
-* Diesel's dsl now accept not nullable expressions in positions where nullable expressions 
-  are expected, without needing to call `.nullable()` explicitly
 
 * CLI flags of `only-tables` and `except-tables` are now interpreted as regular expressions.
   Similary, `only_tabels` and `except_tables` in `diesel.toml` are treated as regular expressions.
