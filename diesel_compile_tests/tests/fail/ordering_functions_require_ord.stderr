@@ -6,7 +6,7 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOr
    |
   ::: $WORKSPACE/diesel/src/expression/functions/aggregate_ordering.rs
    |
-   |     fn max<ST: SqlOrdAggregate>(expr: Nullable<ST>) -> ST::Ret;
+   |     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
    |                --------------- required by this bound in `diesel::dsl::max`
    |
    = note: required because of the requirements on the impl of `diesel::dsl::SqlOrdAggregate` for `diesel::sql_types::Bool`
@@ -18,8 +18,8 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOr
    |                                      ^^^^^^^^^^^^^ the trait `diesel::sql_types::SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = note: required because of the requirements on the impl of `diesel::dsl::SqlOrdAggregate` for `diesel::sql_types::Bool`
-   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, diesel::expression::nullable::Nullable<stuff::columns::b>>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, diesel::expression::nullable::Nullable<stuff::columns::b>>>` for `stuff::table`
+   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, stuff::columns::b>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, stuff::columns::b>>` for `stuff::table`
 
 error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOrd` is not satisfied
   --> $DIR/ordering_functions_require_ord.rs:14:38
@@ -29,7 +29,7 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOr
    |
   ::: $WORKSPACE/diesel/src/expression/functions/aggregate_ordering.rs
    |
-   |     fn min<ST: SqlOrdAggregate>(expr: Nullable<ST>) -> ST::Ret;
+   |     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
    |                --------------- required by this bound in `diesel::dsl::min`
    |
    = note: required because of the requirements on the impl of `diesel::dsl::SqlOrdAggregate` for `diesel::sql_types::Bool`
@@ -41,5 +41,5 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOr
    |                                      ^^^^^^^^^^^^^ the trait `diesel::sql_types::SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = note: required because of the requirements on the impl of `diesel::dsl::SqlOrdAggregate` for `diesel::sql_types::Bool`
-   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, diesel::expression::nullable::Nullable<stuff::columns::b>>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, diesel::expression::nullable::Nullable<stuff::columns::b>>>` for `stuff::table`
+   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, stuff::columns::b>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, stuff::columns::b>>` for `stuff::table`

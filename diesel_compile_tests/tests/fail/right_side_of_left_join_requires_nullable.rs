@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::sql_types::Text;
+use diesel::*;
 
 table! {
     users {
@@ -31,8 +31,7 @@ joinable!(pets -> users (user_id));
 allow_tables_to_appear_in_same_query!(posts, users, pets);
 sql_function!(fn lower(x: Text) -> Text);
 
-fn main() {
-}
+fn main() {}
 
 fn direct_joins() {
     let join = users::table.left_outer_join(posts::table);
@@ -50,8 +49,9 @@ fn direct_joins() {
 }
 
 fn nested_outer_joins_left_associative() {
-
-    let join = users::table.left_outer_join(posts::table).left_outer_join(pets::table);
+    let join = users::table
+        .left_outer_join(posts::table)
+        .left_outer_join(pets::table);
 
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(posts::title);
@@ -66,7 +66,9 @@ fn nested_outer_joins_left_associative() {
 }
 
 fn nested_mixed_joins_left_associative() {
-    let join = users::table.left_outer_join(posts::table).inner_join(pets::table);
+    let join = users::table
+        .left_outer_join(posts::table)
+        .inner_join(pets::table);
 
     // Invalid, only Nullable<title> is selectable
     let _ = join.select(posts::title);
