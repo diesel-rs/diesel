@@ -139,8 +139,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   Similary, `only_tabels` and `except_tables` in `diesel.toml` are treated as regular expressions.
 
 * Now you can sort column fields by name with the `column-sorting` option. 
-It can be set to either `ordinal_position` (default) or `name`.
-This ensures stable sorting even if columns are removed and re-added.
+  It can be set to either `ordinal_position` (default) or `name`.
+  This ensures stable sorting even if columns are removed and re-added.
+
+* The `Queryable<ST,DB>` trait was updated to be made faillible, in order to properly handle
+  cases where you detect a data inconsistency between fields on deserialization
+  (that e.g. was supposed to be made impossible by DB `CHECK`s). The `build` function now
+  returns a
+  [`diesel::deserialize::Result<Self>`](https://docs.diesel.rs/master/diesel/deserialize/type.Result.html)
+  instead of a `Self`.
 
 ### Fixed
 
