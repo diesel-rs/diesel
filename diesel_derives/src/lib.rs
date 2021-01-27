@@ -402,9 +402,12 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// To provide custom deserialization behavior for a field, you can use
 /// `#[diesel(deserialize_as = "SomeType")]`. If this attribute is present, Diesel
 /// will deserialize the corresponding field into `SomeType`, rather than the
-/// actual field type on your struct and then call `.into` to convert it to the
-/// actual field type. This can be used to add custom behavior for a
+/// actual field type on your struct and then call
+/// [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
+/// to convert it to the actual field type. This can be used to add custom behavior for a
 /// single field, or use types that are otherwise unsupported by Diesel.
+/// (Note: all types that have `Into<T>` automatically implement `TryInto<T>`,
+/// for cases where your conversion is not faillible.)
 ///
 /// # Attributes
 ///
@@ -412,8 +415,9 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// * `#[diesel(deserialize_as = "Type")]`, instead of deserializing directly
 ///   into the field type, the implementation will deserialize into `Type`.
-///   Then `Type` is converted via `.into()` into the field type. By default
-///   this derive will deserialize directly into the field type
+///   Then `Type` is converted via
+///   [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
+///   into the field type. By default this derive will deserialize directly into the field type
 ///
 ///
 /// # Examples
@@ -455,7 +459,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #
 /// # use schema::users;
 /// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::{Queryable, FromSql};
+/// # use diesel::deserialize::{self, Queryable, FromSql};
 /// # use diesel::sql_types::Text;
 /// #
 /// struct LowercaseString(String);
@@ -474,8 +478,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 ///     type Row = String;
 ///
-///     fn build(s: String) -> Self {
-///         LowercaseString(s.to_lowercase())
+///     fn build(s: String) -> deserialize::Result<Self> {
+///         Ok(LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
@@ -508,7 +512,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// #
 /// use schema::users;
-/// use diesel::deserialize::{Queryable, FromSqlRow};
+/// use diesel::deserialize::{self, Queryable, FromSqlRow};
 /// use diesel::row::Row;
 ///
 /// # /*
@@ -527,8 +531,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// {
 ///     type Row = (i32, String);
 ///
-///     fn build((id, name): Self::Row) -> Self {
-///         User { id, name: name.to_lowercase() }
+///     fn build((id, name): Self::Row) -> deserialize::Result<Self> {
+///         Ok(User { id, name: name.to_lowercase() })
 ///     }
 /// }
 ///
