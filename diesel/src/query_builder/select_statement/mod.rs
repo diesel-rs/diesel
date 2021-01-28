@@ -30,6 +30,7 @@ use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;
 use crate::query_builder::{QueryId, SelectQuery};
+use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
 use crate::result::QueryResult;
@@ -113,6 +114,7 @@ where
 impl<F, S, D, W, O, LOf, G, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G, LC>
 where
     S: SelectClauseExpression<F>,
+    O: ValidOrderingForDistinct<D>,
 {
     type SqlType = S::SelectClauseSqlType;
 }

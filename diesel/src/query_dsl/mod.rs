@@ -38,7 +38,7 @@ pub mod load_dsl;
 mod locking_dsl;
 mod nullable_select_dsl;
 mod offset_dsl;
-mod order_dsl;
+pub(crate) mod order_dsl;
 #[doc(hidden)]
 pub mod positional_order_dsl;
 mod save_changes_dsl;
@@ -152,7 +152,10 @@ pub trait QueryDsl: Sized {
     ///     .execute(&connection)
     ///     .unwrap();
     /// let all_animals = animals.select((species, name, legs)).load(&connection);
-    /// let distinct_animals = animals.select((species, name, legs)).distinct_on(species).load(&connection);
+    /// let distinct_animals = animals
+    ///     .select((species, name, legs))
+    ///     .order_by((species, legs))
+    ///     .distinct_on(species).load(&connection);
     ///
     /// assert_eq!(Ok(vec![Animal::new("dog", Some("Jack"), 4),
     ///                    Animal::new("dog", None, 4),
