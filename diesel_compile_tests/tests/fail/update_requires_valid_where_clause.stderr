@@ -4,9 +4,9 @@ error[E0277]: the trait bound `diesel::query_builder::SelectStatement<users::tab
 21 |     update(users::table.filter(posts::id.eq(1)));
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::query_builder::IntoUpdateTarget` is not implemented for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
    |
-  ::: $WORKSPACE/diesel/src/query_builder/functions.rs
+  ::: $DIESEL/src/query_builder/functions.rs:78:18
    |
-   | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
+78 | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
    |                  ---------------- required by this bound in `diesel::update`
    |
    = help: the following implementations were found:

@@ -3,7 +3,6 @@ members = [
     "diesel",
     "diesel_cli",
     "diesel_derives",
-    "diesel_compile_tests",
     "diesel_tests",
     "diesel_migrations",
     "diesel_migrations/migrations_internals",
