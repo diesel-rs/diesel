@@ -394,11 +394,31 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// This trait can only be derived for structs, not enums.
 ///
-/// **When this trait is derived, it will assume that __all fields on your struct__
-/// matches __all fields in the query__, including the order. This means that field
-/// order is significant if you are using `#[derive(Queryable)]`. Field name has
-/// no effect. Think `Eq`, if you have `a, b, c` in your schema, you need to have
-/// `a, b, c` in the struct derived, not `a, b` or `a, c, b`.**
+/// **When this trait is derived, it will assume that __all fields on your
+/// struct__ is the same as __all fields in the query__, including the order.
+/// This means that field order is significant if you are using
+/// `#[derive(Queryable)]`. Field name has no effect. For example,
+///
+/// ```rust
+/// # extern crate diesel;
+/// # use diesel::prelude::*;
+/// table! {
+///     posts {
+///         id -> Integer,
+///         user_id -> Integer,
+///         title -> VarChar,
+///     }
+/// }
+///
+/// #[derive(Queryable, Debug)]
+/// pub struct Post {
+///     id: i32,
+///     user_id: i32,
+///     title: String,
+///     // this cannot be id, user_id (missing title)
+///     // this cannot be id, title, user_id (incorrect order)
+/// }
+/// ```
 ///
 /// To provide custom deserialization behavior for a field, you can use
 /// `#[diesel(deserialize_as = "SomeType")]`. If this attribute is present, Diesel
