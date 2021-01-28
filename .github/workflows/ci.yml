@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - master
-      - '0.[0-9]+.x'
-      - '1.[0-9]+.x'
-
+      - "0.[0-9]+.x"
+      - "1.[0-9]+.x"
 
 name: CI Tests
 
@@ -166,8 +165,8 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
         shell: cmd
         run: |
-            choco install mysql
-            "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
+          choco install mysql
+          "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
 
       - name: Set variables for mysql (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
@@ -297,9 +296,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly-2020-05-01
-            profile: minimal
-            override: true
+          toolchain: nightly-2020-05-01
+          profile: minimal
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -326,10 +325,10 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: 1.40.0
-            profile: minimal
-            components: clippy, rustfmt
-            override: true
+          toolchain: 1.40.0
+          profile: minimal
+          components: clippy, rustfmt
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -346,8 +345,8 @@ jobs:
       - name: Run clippy
         uses: actions-rs/cargo@v1
         with:
-          command: clippy 
-          args: --all --exclude=diesel_compile_tests
+          command: clippy
+          args: --all
 
       - name: Check formating
         uses: actions-rs/cargo@v1
@@ -362,9 +361,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
-            profile: minimal
-            override: true
+          toolchain: stable
+          profile: minimal
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -390,9 +389,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: 1.40.0
-            profile: minimal
-            override: true
+          toolchain: 1.40.0
+          profile: minimal
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -414,4 +413,4 @@ jobs:
           command: check
           # This example pulls generic-array v0.14.1 that cannot compile with rustc 1.40.0.
           # We could exclude it as it won't affect our MSRV.
-          args: --all --exclude=advanced-blog-cli --exclude=diesel_compile_tests
+          args: --all --exclude=advanced-blog-cli
