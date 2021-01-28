@@ -22,6 +22,7 @@ use crate::query_builder::{
 };
 use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
+use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_dsl::*;
 use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::QuerySource;
@@ -159,7 +160,7 @@ where
 impl<ST, F, S, D, W, O, LOf, G, LC, Expr> OrderDsl<Expr>
     for SelectStatement<F, S, D, W, O, LOf, G, LC>
 where
-    Expr: AppearsOnTable<F>,
+    Expr: AppearsOnTable<F> + ValidOrderingForDistinct<D>,
     Self: SelectQuery<SqlType = ST>,
     SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, LC>: SelectQuery<SqlType = ST>,
 {

@@ -3,8 +3,7 @@ use crate::dsl;
 use crate::expression::SelectableExpression;
 use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
-use crate::query_builder::AsQuery;
-use crate::query_builder::SelectStatement;
+use crate::query_builder::{AsQuery, SelectStatement};
 use crate::query_source::Table;
 use crate::Expression;
 
@@ -57,6 +56,7 @@ impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,
     T: Table + AsQuery<Query = SelectStatement<T>>,
+    SelectStatement<T>: DistinctOnDsl<Selection>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {

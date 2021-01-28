@@ -316,6 +316,10 @@ macro_rules! tuple_impls {
                 }
             }
 
+            #[cfg(feature = "postgres")]
+            impl<__D, $($T,)*> crate::query_dsl::order_dsl::ValidOrderingForDistinct<crate::pg::DistinctOnClause<__D>>
+                for crate::query_builder::order_clause::OrderClause<(__D, $($T,)*)> {}
+
         )+
     }
 }

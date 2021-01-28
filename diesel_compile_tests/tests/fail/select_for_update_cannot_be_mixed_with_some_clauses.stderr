@@ -69,6 +69,7 @@ error[E0277]: the trait bound `diesel::query_builder::SelectStatement<diesel::qu
    |
    = help: the following implementations were found:
              <diesel::query_builder::SelectStatement<F, S, D, W, O, LOf, G> as diesel::query_dsl::methods::DistinctOnDsl<Selection>>
+   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<_>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>`
 
 error[E0277]: the trait bound `users::columns::id: diesel::SelectableExpression<diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::locking_clause::LockingClause>>` is not satisfied
   --> $DIR/select_for_update_cannot_be_mixed_with_some_clauses.rs:16:36

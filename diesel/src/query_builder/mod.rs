@@ -25,7 +25,7 @@ pub(crate) mod locking_clause;
 #[doc(hidden)]
 pub mod nodes;
 pub(crate) mod offset_clause;
-mod order_clause;
+pub(crate) mod order_clause;
 mod returning_clause;
 pub(crate) mod select_clause;
 mod select_statement;
