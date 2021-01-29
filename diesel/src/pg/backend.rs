@@ -40,7 +40,7 @@ impl std::fmt::Display for FailedToLookupTypeError {
                 schema, self.0.type_name
             )
         } else {
-            write!(f, "Failed to find a type oid for {}`", self.0.type_name)
+            write!(f, "Failed to find a type oid for `{}`", self.0.type_name)
         }
     }
 }
