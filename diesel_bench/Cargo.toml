@@ -12,7 +12,7 @@ autobenches = false
 
 [dependencies]
 dotenv = "0.15"
-criterion = "=0.3.2" # critcmp only supports 0.3.2
+criterion = "0.3.2"
 sqlx = {version = "0.4.0-beta.1", optional = true}
 async-std = { version = "1.5", optional = true}
 rusqlite = {version = "0.23", optional = true}
