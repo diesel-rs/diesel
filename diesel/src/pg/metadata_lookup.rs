@@ -54,26 +54,44 @@ fn lookup_type(
     conn: &PgConnection,
 ) -> QueryResult<InnerPgTypeMetadata> {
     let search_path: String;
+    let mut search_path_has_temp_schema = false;
 
-    let search_schema = if let Some(schema) = cache_key.schema.as_ref() {
-        vec![schema.as_ref()]
-    } else {
-        search_path = crate::dsl::sql("SHOW search_path").get_result::<String>(conn)?;
+    let search_schema = match cache_key.schema.as_deref() {
+        Some("pg_temp") => {
+            search_path_has_temp_schema = true;
+            Vec::new()
+        }
+        Some(schema) => vec![schema],
+        None => {
+            search_path = crate::dsl::sql("SHOW search_path").get_result::<String>(conn)?;
 
-        search_path
-            .split(',')
-            // skip the `$user` entry for now
-            .filter(|f| !f.starts_with("\"$"))
-            .map(|s| s.trim())
-            .collect()
+            search_path
+                .split(',')
+                // skip the `$user` entry for now
+                .filter(|f| !f.starts_with("\"$"))
+                .map(|s| s.trim())
+                .filter(|&f| {
+                    let is_temp = f == "pg_temp";
+                    search_path_has_temp_schema |= is_temp;
+                    !is_temp
+                })
+                .collect()
+        }
     };
 
-    let metadata = pg_type::table
+    let metadata_query = pg_type::table
         .inner_join(pg_namespace::table)
-        .filter(pg_namespace::nspname.eq(crate::dsl::any(search_schema)))
         .filter(pg_type::typname.eq(&cache_key.type_name))
-        .select((pg_type::oid, pg_type::typarray))
-        .first(conn)?;
+        .select((pg_type::oid, pg_type::typarray));
+    let nspname_filter = pg_namespace::nspname.eq(crate::dsl::any(search_schema));
+
+    let metadata = if search_path_has_temp_schema {
+        metadata_query
+            .filter(nspname_filter.or(pg_namespace::oid.eq(pg_my_temp_schema())))
+            .first(conn)?
+    } else {
+        metadata_query.filter(nspname_filter).first(conn)?
+    };
 
     Ok(metadata)
 }
@@ -136,3 +154,5 @@ table! {
 
 joinable!(pg_type -> pg_namespace(typnamespace));
 allow_tables_to_appear_in_same_query!(pg_type, pg_namespace);
+
+sql_function! { fn pg_my_temp_schema() -> Oid; }
