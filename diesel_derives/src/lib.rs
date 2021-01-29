@@ -756,7 +756,7 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// You don't need to specify every backend,
 /// only the ones supported by your type.
 ///
-/// For PostgreSQL, add  `#[postgres(type_name = "pg_type_name")]`
+/// For PostgreSQL, add  `#[postgres(type_name = "pg_type_name", type_schema = "pg_schema_name")]`
 /// or `#[postgres(oid = "some_oid", array_oid = "some_oid")]` for
 /// builtin types.
 /// For MySQL, specify which variant of `MysqlType` should be used
@@ -768,9 +768,10 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///
 /// ## Type attributes
 ///
-/// * `#[postgres(type_name = "TypeName")]` specifies support for
-/// a postgresql type with the name `TypeName`. Prefer this variant
-/// for types with no stable OID (== everything but the builtin types)
+/// * `#[postgres(type_name = "TypeName", type_schema = "public")]` specifies support for
+/// a postgresql type with the name `TypeName` in the schema `public`. Prefer this variant
+/// for types with no stable OID (== everything but the builtin types). It's possible to leaf
+/// of the `type_schema` part. In that case diesel defaults to the default postgres search path.
 /// * `#[postgres(oid = 42, array_oid = 142)]`, specifies support for a
 /// postgresql type with the given `oid` and `array_oid`. This variant
 /// should only be used with types that have a stable OID.

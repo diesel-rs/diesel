@@ -106,15 +106,17 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
             let metadata_fn = match ty {
                 PgType::Fixed { oid, array_oid } => quote!(
                     fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-                        PgTypeMetadata {
-                            oid: #oid,
-                            array_oid: #array_oid,
-                        }
+                        PgTypeMetadata::new(#oid, #array_oid)
                     }
                 ),
-                PgType::Lookup(type_name) => quote!(
+                PgType::Lookup(type_name, Some(type_schema)) => quote!(
                     fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
-                        lookup.lookup_type(#type_name)
+                        lookup.lookup_type(#type_name, Some(#type_schema))
+                    }
+                ),
+                PgType::Lookup(type_name, None) => quote!(
+                    fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
+                        lookup.lookup_type(#type_name, None)
                     }
                 ),
             };
@@ -133,9 +135,13 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
 }
 
 fn get_type_name(attr: &MetaItem) -> Result<Option<PgType>, Diagnostic> {
+    let schema = attr.nested_item("type_schema")?;
     Ok(attr.nested_item("type_name")?.map(|ty| {
-        attr.warn_if_other_options(&["type_name"]);
-        PgType::Lookup(ty.expect_str_value())
+        attr.warn_if_other_options(&["type_name", "type_schema"]);
+        PgType::Lookup(
+            ty.expect_str_value(),
+            schema.map(|schema| schema.expect_str_value()),
+        )
     }))
 }
 
@@ -155,5 +161,5 @@ fn get_oids(attr: &MetaItem) -> Result<Option<PgType>, Diagnostic> {
 
 enum PgType {
     Fixed { oid: u32, array_oid: u32 },
-    Lookup(String),
+    Lookup(String, Option<String>),
 }

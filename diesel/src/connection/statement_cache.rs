@@ -215,7 +215,7 @@ where
             None => {
                 let sql = Self::construct_sql(source)?;
                 Ok(StatementCacheKey::Sql {
-                    sql: sql,
+                    sql,
                     bind_types: bind_types.into(),
                 })
             }
