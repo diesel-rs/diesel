@@ -116,6 +116,7 @@ jobs:
         run: |
           brew update
           brew install sqlite
+          brew link sqlite
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS)
