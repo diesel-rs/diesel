@@ -1,5 +1,5 @@
-use diesel::{sql_query, Connection, RunQueryDsl, SqliteConnection};
-use schema::connection_without_transaction;
+use crate::schema::connection_without_transaction;
+use diesel::{sql_query, RunQueryDsl};
 
 #[test]
 fn test_load_extension() {
