@@ -20,7 +20,7 @@ mod date_and_time;
 /// PostgreSQL specific expression DSL methods.
 ///
 /// This module will be glob imported by
-/// [`diesel::dsl`](super::super::super::dsl) when compiled with the `feature =
+/// [`diesel::dsl`](crate::dsl) when compiled with the `feature =
 /// "postgres"` flag.
 pub mod dsl {
     #[doc(inline)]

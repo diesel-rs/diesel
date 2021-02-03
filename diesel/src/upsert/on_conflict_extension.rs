@@ -186,8 +186,8 @@ where
     /// See the documentation for [`on_constraint`] and [`do_update`] for
     /// more examples.
     ///
-    /// [`on_constraint`]: super::upsert::on_constraint()
-    /// [`do_update`]: super::upsert::IncompleteOnConflict::do_update()
+    /// [`on_constraint`]: crate::upsert::on_constraint()
+    /// [`do_update`]: crate::upsert::IncompleteOnConflict::do_update()
     pub fn on_conflict<Target>(
         self,
         target: Target,

@@ -2,7 +2,7 @@ use crate::table::Table;
 
 #[derive(Debug, Clone, Copy)]
 /// A database schema.
-/// This type is created by the [`schema`](schema()) function.
+/// This type is created by the [`schema`](crate::schema()) function.
 pub struct Schema<T> {
     name: T,
 }

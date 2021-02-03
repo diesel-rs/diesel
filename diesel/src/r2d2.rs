@@ -8,8 +8,8 @@ pub use self::r2d2::*;
 
 /// A re-export of [`r2d2::Error`], which is only used by methods on [`r2d2::Pool`].
 ///
-/// [`r2d2::Error`]: super::super::r2d2::Error
-/// [`r2d2::Pool`]: super::super::r2d2::Pool
+/// [`r2d2::Error`]: crate::r2d2::Error
+/// [`r2d2::Pool`]: crate::r2d2::Pool
 pub type PoolError = self::r2d2::Error;
 
 use std::convert::Into;
@@ -26,7 +26,7 @@ use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 ///
 /// See the [r2d2 documentation] for usage examples.
 ///
-/// [r2d2 documentation]: super::super::r2d2
+/// [r2d2 documentation]: crate::r2d2
 #[derive(Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,

@@ -1165,7 +1165,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// [`update`](super::update()) and [`delete`](super::delete()) where the number of
     /// affected rows is often enough information.
     ///
-    /// When asking the database to return data from a query, [`load`](T::load()) should
+    /// When asking the database to return data from a query, [`load`](crate::query_dsl::RunQueryDsl::load()) should
     /// probably be used instead.
     ///
     /// # Example
@@ -1216,7 +1216,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     ///
     /// [`Queryable`]: super::deserialize::Queryable
     /// [`QueryableByName`]: super::deserialize::QueryableByName
-    /// [`execute`]: execute()
+    /// [`execute`]: crate::query_dsl::RunQueryDsl::execute()
     /// [`sql_query`]: super::sql_query()
     ///
     /// # Examples
@@ -1358,7 +1358,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// This method is an alias for [`load`], but with a name that makes more
     /// sense for insert, update, and delete statements.
     ///
-    /// [`load`]: T::load()
+    /// [`load`]: crate::query_dsl::RunQueryDsl::load()
     fn get_results<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
     where
         Self: LoadQuery<Conn, U>,

@@ -17,7 +17,7 @@ use crate::sql_types::{HasSqlType, Untyped};
 /// rather than by index. This means that you cannot deserialize this query into
 /// a tuple, and any structs used must implement `QueryableByName`.
 ///
-/// See [`sql_query`](super::sql_query()) for examples.
+/// See [`sql_query`](crate::sql_query()) for examples.
 pub struct SqlQuery<Inner = ()> {
     inner: Inner,
     query: String,

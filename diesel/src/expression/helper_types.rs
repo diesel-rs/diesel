@@ -16,54 +16,54 @@ pub type AsExpr<Item, TargetExpr> = AsExprOf<Item, SqlTypeOf<TargetExpr>>;
 pub type AsExprOf<Item, Type> = <Item as AsExpression<Type>>::Expression;
 
 /// The return type of
-/// [`lhs.eq(rhs)`](super::expression_methods::ExpressionMethods::eq())
+/// [`lhs.eq(rhs)`](crate::expression_methods::ExpressionMethods::eq())
 pub type Eq<Lhs, Rhs> = Grouped<super::operators::Eq<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.ne(rhs)`](super::expression_methods::ExpressionMethods::ne())
+/// [`lhs.ne(rhs)`](crate::expression_methods::ExpressionMethods::ne())
 pub type NotEq<Lhs, Rhs> = Grouped<super::operators::NotEq<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.eq_any(rhs)`](super::expression_methods::ExpressionMethods::eq_any())
+/// [`lhs.eq_any(rhs)`](crate::expression_methods::ExpressionMethods::eq_any())
 pub type EqAny<Lhs, Rhs> = Grouped<In<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>>;
 
 /// The return type of
-/// [`lhs.ne_any(rhs)`](super::expression_methods::ExpressionMethods::ne_any())
+/// [`lhs.ne_all(rhs)`](crate::expression_methods::ExpressionMethods::ne_all())
 pub type NeAny<Lhs, Rhs> =
     Grouped<NotIn<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>>;
 
 /// The return type of
-/// [`expr.is_null()`](super::expression_methods::ExpressionMethods::is_null())
+/// [`expr.is_null()`](crate::expression_methods::ExpressionMethods::is_null())
 pub type IsNull<Expr> = Grouped<super::operators::IsNull<Expr>>;
 
 /// The return type of
-/// [`expr.is_not_null()`](super::expression_methods::ExpressionMethods::is_not_null())
+/// [`expr.is_not_null()`](crate::expression_methods::ExpressionMethods::is_not_null())
 pub type IsNotNull<Expr> = Grouped<super::operators::IsNotNull<Expr>>;
 
 /// The return type of
-/// [`lhs.gt(rhs)`](super::expression_methods::ExpressionMethods::gt())
+/// [`lhs.gt(rhs)`](crate::expression_methods::ExpressionMethods::gt())
 pub type Gt<Lhs, Rhs> = Grouped<super::operators::Gt<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.ge(rhs)`](super::expression_methods::ExpressionMethods::ge())
+/// [`lhs.ge(rhs)`](crate::expression_methods::ExpressionMethods::ge())
 pub type GtEq<Lhs, Rhs> = Grouped<super::operators::GtEq<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.lt(rhs)`](super::expression_methods::ExpressionMethods::lt())
+/// [`lhs.lt(rhs)`](crate::expression_methods::ExpressionMethods::lt())
 pub type Lt<Lhs, Rhs> = Grouped<super::operators::Lt<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.le(rhs)`](super::expression_methods::ExpressionMethods::le())
+/// [`lhs.le(rhs)`](crate::expression_methods::ExpressionMethods::le())
 pub type LtEq<Lhs, Rhs> = Grouped<super::operators::LtEq<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.between(lower, upper)`](super::expression_methods::ExpressionMethods::between())
+/// [`lhs.between(lower, upper)`](crate::expression_methods::ExpressionMethods::between())
 pub type Between<Lhs, Lower, Upper> = Grouped<
     super::operators::Between<Lhs, super::operators::And<AsExpr<Lower, Lhs>, AsExpr<Upper, Lhs>>>,
 >;
 
 /// The return type of
-/// [`lhs.not_between(lower, upper)`](super::expression_methods::ExpressionMethods::not_between())
+/// [`lhs.not_between(lower, upper)`](crate::expression_methods::ExpressionMethods::not_between())
 pub type NotBetween<Lhs, Lower, Upper> = Grouped<
     super::operators::NotBetween<
         Lhs,
@@ -72,32 +72,32 @@ pub type NotBetween<Lhs, Lower, Upper> = Grouped<
 >;
 
 /// The return type of
-/// [`lhs.concat(rhs)`](super::expression_methods::TextExpressionMethods::concat())
+/// [`lhs.concat(rhs)`](crate::expression_methods::TextExpressionMethods::concat())
 pub type Concat<Lhs, Rhs> = Grouped<super::operators::Concat<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`expr.desc()`](super::expression_methods::ExpressionMethods::desc())
+/// [`expr.desc()`](crate::expression_methods::ExpressionMethods::desc())
 pub type Desc<Expr> = super::operators::Desc<Expr>;
 
 /// The return type of
-/// [`expr.asc()`](super::expression_methods::ExpressionMethods::asc())
+/// [`expr.asc()`](crate::expression_methods::ExpressionMethods::asc())
 pub type Asc<Expr> = super::operators::Asc<Expr>;
 
 /// The return type of
-/// [`expr.nullable()`](super::expression_methods::NullableExpressionMethods::nullable())
+/// [`expr.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable())
 pub type Nullable<Expr> = super::nullable::Nullable<Expr>;
 
 /// The return type of
-/// [`lhs.and(rhs)`](super::expression_methods::BoolExpressionMethods::and())
+/// [`lhs.and(rhs)`](crate::expression_methods::BoolExpressionMethods::and())
 pub type And<Lhs, Rhs, ST = sql_types::Bool> =
     Grouped<super::operators::And<Lhs, AsExprOf<Rhs, ST>>>;
 
 /// The return type of
-/// [`lhs.or(rhs)`](super::expression_methods::BoolExpressionMethods::or())
+/// [`lhs.or(rhs)`](crate::expression_methods::BoolExpressionMethods::or())
 pub type Or<Lhs, Rhs, ST = sql_types::Bool> = Grouped<super::operators::Or<Lhs, AsExprOf<Rhs, ST>>>;
 
 /// The return type of
-/// [`lhs.escape('x')`](super::expression_methods::EscapeExpressionMethods::escape())
+/// [`lhs.escape('x')`](crate::expression_methods::EscapeExpressionMethods::escape())
 pub type Escape<Lhs> = Grouped<
     super::operators::Escape<
         <Lhs as crate::expression_methods::EscapeExpressionMethods>::TextExpression,
@@ -106,11 +106,11 @@ pub type Escape<Lhs> = Grouped<
 >;
 
 /// The return type of
-/// [`lhs.like(rhs)`](super::expression_methods::TextExpressionMethods::like())
+/// [`lhs.like(rhs)`](crate::expression_methods::TextExpressionMethods::like())
 pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
 /// The return type of
-/// [`lhs.not_like(rhs)`](super::expression_methods::TextExpressionMethods::not_like())
+/// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
 #[doc(inline)]

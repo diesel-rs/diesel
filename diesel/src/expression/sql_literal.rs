@@ -113,7 +113,7 @@ where
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](super::sql_query()) instead.
+    /// [`sql_query`](crate::sql_query()) instead.
     ///
     /// # Safety
     ///
@@ -207,7 +207,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 ///
 /// This function is intended for use when you need a small bit of raw SQL in
 /// your query. If you want to write the entire query using raw SQL, use
-/// [`sql_query`](super::sql_query()) instead.
+/// [`sql_query`](crate::sql_query()) instead.
 ///
 /// Query parameters can be bound into the literal SQL using [`SqlLiteral::bind()`].
 ///
@@ -259,7 +259,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #     Ok(())
 /// # }
 /// ```
-/// [`SqlLiteral::bind()`]: super::expression::SqlLiteral::bind()
+/// [`SqlLiteral::bind()`]: crate::expression::SqlLiteral::bind()
 pub fn sql<ST>(sql: &str) -> SqlLiteral<ST>
 where
     ST: TypedExpressionType,
@@ -288,7 +288,7 @@ where
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](super::sql_query()) instead.
+    /// [`sql_query`](crate::sql_query()) instead.
     ///
     /// # Safety
     ///

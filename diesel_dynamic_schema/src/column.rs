@@ -10,7 +10,7 @@ use std::marker::PhantomData;
 
 #[derive(Debug, Clone, Copy)]
 /// A database table column.
-/// This type is created by the [`column`](Table::column()) function.
+/// This type is created by the [`column`](crate::Table::column()) function.
 pub struct Column<T, U, ST> {
     table: T,
     name: U,

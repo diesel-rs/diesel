@@ -100,7 +100,7 @@ pub trait BelongsTo<Parent> {
 ///
 /// See [the module documentation] for more examples
 ///
-/// [the module documentation]: self
+/// [the module documentation]: super
 pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
     /// See the trait documentation.
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Self::Item>>;
