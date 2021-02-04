@@ -15,7 +15,7 @@ use self::stmt::Statement;
 use crate::connection::*;
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
-use crate::pg::{metadata_lookup::PgMetadataCache, Pg, PgMetadataLookup, TransactionBuilder};
+use crate::pg::{metadata_lookup::{PgMetadataCache}, Pg, TransactionBuilder};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
@@ -133,7 +133,7 @@ impl PgConnection {
         source: &T,
     ) -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        source.collect_binds(&mut bind_collector, PgMetadataLookup::new(self))?;
+        source.collect_binds(&mut bind_collector, self)?;
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 

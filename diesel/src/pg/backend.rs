@@ -94,7 +94,7 @@ impl<'a> HasRawValue<'a> for Pg {
 
 impl TypeMetadata for Pg {
     type TypeMetadata = PgTypeMetadata;
-    type MetadataLookup = PgMetadataLookup;
+    type MetadataLookup = dyn PgMetadataLookup;
 }
 
 impl SupportsReturningClause for Pg {}

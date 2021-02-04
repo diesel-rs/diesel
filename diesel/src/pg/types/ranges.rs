@@ -5,7 +5,7 @@ use std::io::Write;
 use crate::deserialize::{self, FromSql, Queryable};
 use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
-use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
 
@@ -159,37 +159,37 @@ where
 }
 
 impl HasSqlType<Int4range> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3904, 3905)
     }
 }
 
 impl HasSqlType<Numrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3906, 3907)
     }
 }
 
 impl HasSqlType<Tsrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3908, 3909)
     }
 }
 
 impl HasSqlType<Tstzrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3910, 3911)
     }
 }
 
 impl HasSqlType<Daterange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3912, 3913)
     }
 }
 
 impl HasSqlType<Int8range> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3926, 3927)
     }
 }

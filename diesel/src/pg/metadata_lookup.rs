@@ -9,32 +9,25 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 /// Determines the OID of types at runtime
-#[allow(missing_debug_implementations)]
-#[repr(transparent)]
-pub struct PgMetadataLookup {
-    conn: PgConnection,
-}
-
-impl PgMetadataLookup {
-    #[allow(clippy::new_ret_no_self)]
-    pub(crate) fn new(conn: &PgConnection) -> &Self {
-        unsafe { &*(conn as *const PgConnection as *const PgMetadataLookup) }
-    }
-
+pub trait PgMetadataLookup {
     /// Determine the type metadata for the given `type_name`
     ///
     /// This function should only be used for user defined types, or types which
     /// come from an extension. This function may perform a SQL query to look
     /// up the type. For built-in types, a static OID should be preferred.
-    pub fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
-        let metadata_cache = self.conn.get_metadata_cache();
+    fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata;
+}
+
+impl PgMetadataLookup for PgConnection {
+    fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
+        let metadata_cache = self.get_metadata_cache();
         let cache_key = PgMetadataCacheKey {
             schema: schema.map(Cow::Borrowed),
             type_name: Cow::Borrowed(type_name),
         };
 
         metadata_cache.lookup_type(&cache_key).unwrap_or_else(|| {
-            let r = lookup_type(&cache_key, &self.conn);
+            let r = lookup_type(&cache_key, &self);
 
             match r {
                 Ok(type_metadata) => {
