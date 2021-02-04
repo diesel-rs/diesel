@@ -15,7 +15,7 @@ use self::stmt::Statement;
 use crate::connection::*;
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
-use crate::pg::{metadata_lookup::{PgMetadataCache}, Pg, TransactionBuilder};
+use crate::pg::{metadata_lookup::PgMetadataCache, Pg, TransactionBuilder};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
