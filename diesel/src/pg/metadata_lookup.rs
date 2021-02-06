@@ -48,7 +48,7 @@ pub trait GetPgTypeMetadataCache {
     fn get_metadata_cache(&self) -> &PgMetadataCache;
 }
 
-fn lookup_type<T: Connection<Backend=Pg> + GetPgTypeMetadataCache>(
+fn lookup_type<T: Connection<Backend=Pg>>(
     cache_key: &PgMetadataCacheKey<'_>,
     conn: &T,
 ) -> QueryResult<InnerPgTypeMetadata> {
