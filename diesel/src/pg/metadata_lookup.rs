@@ -1,7 +1,7 @@
 #![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
 
 use super::backend::{FailedToLookupTypeError, InnerPgTypeMetadata};
-use super::{PgTypeMetadata, Pg};
+use super::{Pg, PgTypeMetadata};
 use crate::prelude::*;
 
 use std::borrow::Cow;
@@ -19,7 +19,8 @@ pub trait PgMetadataLookup {
 }
 
 impl<T> PgMetadataLookup for T
-    where T: Connection<Backend=Pg> + GetPgTypeMetadataCache
+where
+    T: Connection<Backend = Pg> + GetPgTypeMetadataCache,
 {
     fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
         let metadata_cache = self.get_metadata_cache();
@@ -48,7 +49,7 @@ pub trait GetPgTypeMetadataCache {
     fn get_metadata_cache(&self) -> &PgMetadataCache;
 }
 
-fn lookup_type<T: Connection<Backend=Pg>>(
+fn lookup_type<T: Connection<Backend = Pg>>(
     cache_key: &PgMetadataCacheKey<'_>,
     conn: &T,
 ) -> QueryResult<InnerPgTypeMetadata> {
