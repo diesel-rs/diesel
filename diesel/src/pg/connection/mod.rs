@@ -15,7 +15,7 @@ use self::stmt::Statement;
 use crate::connection::*;
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
-use crate::pg::{metadata_lookup::PgMetadataCache, Pg, TransactionBuilder};
+use crate::pg::{metadata_lookup::{PgMetadataCache, GetPgTypeMetadataCache}, Pg, TransactionBuilder};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
@@ -99,6 +99,12 @@ impl Connection for PgConnection {
     }
 }
 
+impl GetPgTypeMetadataCache for PgConnection {
+    fn get_metadata_cache(&self) -> &PgMetadataCache {
+        &self.metadata_cache
+    }
+}
+
 impl PgConnection {
     /// Build a transaction, specifying additional details such as isolation level
     ///
@@ -163,10 +169,6 @@ impl PgConnection {
         self.raw_connection
             .set_notice_processor(noop_notice_processor);
         Ok(())
-    }
-
-    pub(crate) fn get_metadata_cache(&self) -> &PgMetadataCache {
-        &self.metadata_cache
     }
 }
 

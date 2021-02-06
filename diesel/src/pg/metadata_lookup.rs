@@ -1,7 +1,7 @@
 #![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
 
 use super::backend::{FailedToLookupTypeError, InnerPgTypeMetadata};
-use super::{PgConnection, PgTypeMetadata};
+use super::{PgTypeMetadata, Pg};
 use crate::prelude::*;
 
 use std::borrow::Cow;
@@ -18,7 +18,9 @@ pub trait PgMetadataLookup {
     fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata;
 }
 
-impl PgMetadataLookup for PgConnection {
+impl<T> PgMetadataLookup for T
+    where T: Connection<Backend=Pg> + GetPgTypeMetadataCache
+{
     fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
         let metadata_cache = self.get_metadata_cache();
         let cache_key = PgMetadataCacheKey {
@@ -27,7 +29,7 @@ impl PgMetadataLookup for PgConnection {
         };
 
         metadata_cache.lookup_type(&cache_key).unwrap_or_else(|| {
-            let r = lookup_type(&cache_key, &self);
+            let r = lookup_type(&cache_key, self);
 
             match r {
                 Ok(type_metadata) => {
@@ -42,9 +44,13 @@ impl PgMetadataLookup for PgConnection {
     }
 }
 
-fn lookup_type(
+pub trait GetPgTypeMetadataCache {
+    fn get_metadata_cache(&self) -> &PgMetadataCache;
+}
+
+fn lookup_type<T: Connection<Backend=Pg> + GetPgTypeMetadataCache>(
     cache_key: &PgMetadataCacheKey<'_>,
-    conn: &PgConnection,
+    conn: &T,
 ) -> QueryResult<InnerPgTypeMetadata> {
     let search_path: String;
     let mut search_path_has_temp_schema = false;
