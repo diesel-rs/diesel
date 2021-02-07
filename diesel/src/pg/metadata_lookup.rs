@@ -9,6 +9,10 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 /// Determines the OID of types at runtime
+///
+/// Most connections do not have to implement this manually.
+/// It is much easier to implement [`GetPgMetadataCache`] for a type that implements `Connection<Backend=Pg>`.
+/// This will cause this trait to be auto implemented.
 pub trait PgMetadataLookup {
     /// Determine the type metadata for the given `type_name`
     ///
@@ -20,7 +24,7 @@ pub trait PgMetadataLookup {
 
 impl<T> PgMetadataLookup for T
 where
-    T: Connection<Backend = Pg> + GetPgTypeMetadataCache,
+    T: Connection<Backend = Pg> + GetPgMetadataCache,
 {
     fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
         let metadata_cache = self.get_metadata_cache();
@@ -45,7 +49,12 @@ where
     }
 }
 
-pub trait GetPgTypeMetadataCache {
+/// Gets the [`PgMetadataCache`] for a `Connection<Backend=Pg>`
+/// so that the lookup of user defined types, or types which come from an extension can be cached.
+///
+/// Implementing this trait for a `Connection<Backend=Pg>` will cause [`PgMetadataLookup`] to be auto implemented.
+pub trait GetPgMetadataCache {
+    /// Get the [`PgMetadataCache`]
     fn get_metadata_cache(&self) -> &PgMetadataCache;
 }
 
@@ -125,10 +134,12 @@ impl PgMetadataCache {
         }
     }
 
+    /// Lookup the OID of a custom type
     fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
         Some(PgTypeMetadata(Ok(*self.cache.borrow().get(type_name)?)))
     }
 
+    /// Store the OID of a custom type
     fn store_type(&self, type_name: PgMetadataCacheKey, type_metadata: InnerPgTypeMetadata) {
         self.cache
             .borrow_mut()

@@ -16,7 +16,7 @@ use crate::connection::*;
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::pg::{
-    metadata_lookup::{GetPgTypeMetadataCache, PgMetadataCache},
+    metadata_lookup::{GetPgMetadataCache, PgMetadataCache},
     Pg, TransactionBuilder,
 };
 use crate::query_builder::bind_collector::RawBytesBindCollector;
@@ -102,7 +102,7 @@ impl Connection for PgConnection {
     }
 }
 
-impl GetPgTypeMetadataCache for PgConnection {
+impl GetPgMetadataCache for PgConnection {
     fn get_metadata_cache(&self) -> &PgMetadataCache {
         &self.metadata_cache
     }
