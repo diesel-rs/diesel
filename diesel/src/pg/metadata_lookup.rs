@@ -124,21 +124,19 @@ impl<'a> PgMetadataCacheKey<'a> {
     }
 }
 
-/// Stores a cache for the OID of custom types
+/// Cache for the [OIDs] of custom Postgres types
+///
+/// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
 #[allow(missing_debug_implementations)]
+#[derive(Default)]
 pub struct PgMetadataCache {
     cache: RefCell<HashMap<PgMetadataCacheKey<'static>, InnerPgTypeMetadata>>,
 }
 
-/// Cache for the [OIDs] of custom Postgres types
-///
-/// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
 impl PgMetadataCache {
     /// Construct a new `PgMetadataCache`
     pub fn new() -> Self {
-        PgMetadataCache {
-            cache: RefCell::new(HashMap::new()),
-        }
+        Default::default()
     }
 
     /// Lookup the OID of a custom type
