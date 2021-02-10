@@ -13,6 +13,9 @@ use std::collections::HashMap;
 /// Most connections do not have to implement this manually.
 /// It is much easier to implement [`GetPgMetadataCache`] for a type that implements `Connection<Backend=Pg>`.
 /// This will cause this trait to be auto implemented.
+///
+/// If this is implemented manually, make sure to use some sort of cache so that lookup
+/// don't cause a database query for types that have been seen before.
 pub trait PgMetadataLookup {
     /// Determine the type metadata for the given `type_name`
     ///
@@ -127,8 +130,12 @@ pub struct PgMetadataCache {
     cache: RefCell<HashMap<PgMetadataCacheKey<'static>, InnerPgTypeMetadata>>,
 }
 
+/// Cache for the [OIDs] of custom Postgres types
+///
+/// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
 impl PgMetadataCache {
-    pub(crate) fn new() -> Self {
+    /// Construct a new `PgMetadataCache`
+    pub fn new() -> Self {
         PgMetadataCache {
             cache: RefCell::new(HashMap::new()),
         }
