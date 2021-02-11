@@ -10,12 +10,9 @@ use std::collections::HashMap;
 
 /// Determines the OID of types at runtime
 ///
-/// Most connections do not have to implement this manually.
-/// It is much easier to implement [`GetPgMetadataCache`] for a type that implements `Connection<Backend=Pg>`.
-/// This will cause this trait to be auto implemented.
-///
-/// If this is implemented manually, make sure to use some sort of cache so that lookup
-/// don't cause a database query for types that have been seen before.
+/// Custom implementations of `Connection<Backend = Pg>` should not implement this trait directly.
+/// Instead `GetPgMetadataCache` should be implemented, afterwards the generic implementation will provide
+/// the necessary functions to perform the type lookup.
 pub trait PgMetadataLookup {
     /// Determine the type metadata for the given `type_name`
     ///
@@ -52,12 +49,12 @@ where
     }
 }
 
-/// Gets the [`PgMetadataCache`] for a `Connection<Backend=Pg>`
+/// Gets the `PgMetadataCache` for a `Connection<Backend=Pg>`
 /// so that the lookup of user defined types, or types which come from an extension can be cached.
 ///
-/// Implementing this trait for a `Connection<Backend=Pg>` will cause [`PgMetadataLookup`] to be auto implemented.
+/// Implementing this trait for a `Connection<Backend=Pg>` will cause `PgMetadataLookup` to be auto implemented.
 pub trait GetPgMetadataCache {
-    /// Get the [`PgMetadataCache`]
+    /// Get the `PgMetadataCache`
     fn get_metadata_cache(&self) -> &PgMetadataCache;
 }
 
