@@ -146,6 +146,13 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   [`diesel::deserialize::Result<Self>`](https://docs.diesel.rs/master/diesel/deserialize/type.Result.html)
   instead of a `Self`.
 
+* `TypeMetadata::MetadataLookup` is now `?Sized`.
+
+* Multiple implementations of `Connection<Backend=Pg>` are now possible 
+  because of the new `PgMetadataLookup` trait.
+
+* For the `Pg` backend, `TypeMetadata::MetadataLookup` has changed to `dyn PgMetadataLookup`.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
