@@ -8,12 +8,14 @@ macro_rules! assert_sets_eq {
         let s1r: Vec<_> = set1.iter().filter(|&si| !set2.contains(si)).collect();
         assert!(
             s1r.len() == 0,
-            format!("left set contains items not found in right set: {:?}", s1r)
+            "left set contains items not found in right set: {:?}",
+            s1r
         );
         let s2r: Vec<_> = set2.iter().filter(|&si| !set1.contains(si)).collect();
         assert!(
             s2r.len() == 0,
-            format!("right set contains items not found in left set: {:?}", s2r)
+            "right set contains items not found in left set: {:?}",
+            s2r
         );
     };
 }

@@ -14,6 +14,8 @@ use crate::result::{DatabaseErrorKind, QueryResult};
 
 pub use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 
+#[allow(dead_code)]
+// https://github.com/rust-lang/rust/issues/81658
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,
     input_binds: Option<Binds>,
