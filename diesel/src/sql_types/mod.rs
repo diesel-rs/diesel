@@ -426,7 +426,7 @@ pub trait TypeMetadata {
     ///
     /// For most backends, which don't support user defined types, this will
     /// be `()`.
-    type MetadataLookup;
+    type MetadataLookup: ?Sized;
 }
 
 /// Converts a type which may or may not be nullable into its nullable

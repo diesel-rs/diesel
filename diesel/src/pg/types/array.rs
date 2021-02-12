@@ -3,7 +3,7 @@ use std::fmt;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql};
-use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Array, HasSqlType, Nullable};
 
@@ -11,7 +11,7 @@ impl<T> HasSqlType<Array<T>> for Pg
 where
     Pg: HasSqlType<T>,
 {
-    fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
+    fn metadata(lookup: &Self::MetadataLookup) -> PgTypeMetadata {
         match <Pg as HasSqlType<T>>::metadata(lookup).0 {
             Ok(tpe) => PgTypeMetadata::new(tpe.array_oid, 0),
             c @ Err(_) => PgTypeMetadata(c),
