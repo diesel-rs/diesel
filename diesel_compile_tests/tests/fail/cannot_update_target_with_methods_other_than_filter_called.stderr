@@ -4,9 +4,9 @@ error[E0277]: the trait bound `diesel::query_builder::SelectStatement<users::tab
 15 |     let command = update(users.select(id)).set(id.eq(1));
    |                          ^^^^^^^^^^^^^^^^ the trait `diesel::Identifiable` is not implemented for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
    |
-  ::: $DIESEL/src/query_builder/functions.rs:78:18
+  ::: $DIESEL/src/query_builder/functions.rs
    |
-78 | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
+   | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
    |                  ---------------- required by this bound in `diesel::update`
    |
    = note: required because of the requirements on the impl of `diesel::query_builder::IntoUpdateTarget` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
@@ -17,9 +17,9 @@ error[E0277]: the trait bound `diesel::query_builder::SelectStatement<users::tab
 16 |     let command = update(users.order(id)).set(id.eq(1));
    |                          ^^^^^^^^^^^^^^^ the trait `diesel::Identifiable` is not implemented for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::OrderClause<users::columns::id>>`
    |
-  ::: $DIESEL/src/query_builder/functions.rs:78:18
+  ::: $DIESEL/src/query_builder/functions.rs
    |
-78 | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
+   | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
    |                  ---------------- required by this bound in `diesel::update`
    |
    = note: required because of the requirements on the impl of `diesel::query_builder::IntoUpdateTarget` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::OrderClause<users::columns::id>>`
