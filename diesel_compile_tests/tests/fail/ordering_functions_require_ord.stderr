@@ -4,7 +4,7 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOr
 13 |     let source = stuff::table.select(max(stuff::b));
    |                                      ^^^ the trait `diesel::sql_types::SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
-  ::: $WORKSPACE/diesel/src/expression/functions/aggregate_ordering.rs
+  ::: $DIESEL/src/expression/functions/aggregate_ordering.rs
    |
    |     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
    |                --------------- required by this bound in `diesel::dsl::max`
@@ -27,7 +27,7 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: diesel::sql_types::SqlOr
 14 |     let source = stuff::table.select(min(stuff::b));
    |                                      ^^^ the trait `diesel::sql_types::SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
-  ::: $WORKSPACE/diesel/src/expression/functions/aggregate_ordering.rs
+  ::: $DIESEL/src/expression/functions/aggregate_ordering.rs
    |
    |     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
    |                --------------- required by this bound in `diesel::dsl::min`

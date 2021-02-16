@@ -4,7 +4,7 @@ error[E0599]: no method named `execute` found for struct `diesel::upsert::Incomp
 37  |         .execute(&connection);
     |          ^^^^^^^ method not found in `diesel::upsert::IncompleteDoUpdate<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>`
     |
-   ::: $WORKSPACE/diesel/src/upsert/on_conflict_extension.rs
+   ::: $DIESEL/src/upsert/on_conflict_extension.rs
     |
     | pub struct IncompleteDoUpdate<Stmt, Target> {
     | -------------------------------------------

@@ -14,7 +14,6 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        if: steps.bench.outputs.triggered == 'true'
         uses: actions/checkout@v2
 
       - name: Install postgres (Linux)
@@ -26,16 +25,15 @@ jobs:
           sudo service postgresql restart && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart && sleep 3
-          echo 'name=PG_DATABASE_URL::postgres://postgres:postgres@localhost/' >> $GITHUB_ENV
+          echo 'DATABASE_URL=postgres://postgres:postgres@localhost/' >> $GITHUB_ENV
 
       - name: Install sqlite (Linux)
         if: matrix.backend == 'sqlite'
         run: |
           sudo apt-get update
           sudo apt-get install -y libsqlite3-dev
-          echo 'name=SQLITE_DATABASE_URL::/tmp/test.db' >> $GITHUB_ENV
+          echo 'DATABASE_URL=/tmp/test.db' >> $GITHUB_ENV
 
-        
       - name: Install mysql (Linux)
         if: matrix.backend == 'mysql'
         run: |
@@ -43,11 +41,60 @@ jobs:
           sudo apt-get -y install mysql-server libmysqlclient-dev
           sudo /etc/init.d/mysql start
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
-          echo 'name=MYSQL_DATABASE_URL::mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
+          echo 'DATABASE_URL=mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
 
-      - name: Run benches
-        uses: jasonwilliams/criterion-compare-action@move_to_actions
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          cwd: "diesel_bench"
-          token: ${{ secrets.GITHUB_TOKEN }}
-          
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install critcmp
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: critcmp
+
+      - name: Benchmark changes
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}" -- --save-baseline changes
+
+      - name: Checkout master
+        run: |
+          git fetch origin
+          git reset --hard origin/master
+
+      - name: Benchmark master
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}" -- --save-baseline master
+
+      - name: Critcmp
+        run: |
+          cd diesel_bench
+          critcmp master changes
+          echo "# ${{matrix.backend}}" > output.txt
+          echo "" >> output.txt
+          echo '```' >> output.txt
+          critcmp master changes >> output.txt
+          echo '```' >> output.txt
+
+      # This does not work due to github not allowing to post comments from forked repos
+      # - name: Post the output as comment
+      #   uses: actions/github-script@v3
+      #   with:
+      #     github-token: ${{secrets.GITHUB_TOKEN}}
+      #     script: |
+      #       const fs = require('fs');
+      #       const data = fs.readFileSync('diesel_bench/output.txt', 'utf8');
+
+      #       github.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: data
+      #       })

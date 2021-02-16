@@ -5,4 +5,6 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 
 [dependencies]
 diesel = { version = "2.0.0", default-features = false, features = ["extras", "sqlite", "postgres", "mysql", "unstable"], path = "../diesel" }
-trybuild = "1.0.35"
+trybuild = "1.0.41"
+
+[workspace]
