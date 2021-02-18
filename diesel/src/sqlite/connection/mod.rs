@@ -11,6 +11,7 @@ mod stmt;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
+use std::path::Path;
 
 use self::raw::RawConnection;
 use self::statement_iterator::*;
@@ -162,6 +163,16 @@ impl SqliteConnection {
         E: From<Error>,
     {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
+    }
+
+    #[doc(hidden)]
+    pub fn load_extension(
+        &self,
+        path: impl AsRef<Path>,
+        entry_point: Option<&str>,
+    ) -> QueryResult<()> {
+        self.raw_connection
+            .load_extension(path.as_ref(), entry_point)
     }
 
     fn transaction_sql<T, E, F>(&self, f: F, sql: &str) -> Result<T, E>

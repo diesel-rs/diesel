@@ -3,6 +3,7 @@ extern crate libsqlite3_sys as ffi;
 use std::ffi::{CStr, CString, NulError};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
+use std::path::Path;
 use std::ptr::NonNull;
 use std::{mem, ptr, slice, str};
 
@@ -162,6 +163,115 @@ impl RawConnection {
                 Box::new(error_message.to_string()),
             ))
         }
+    }
+
+    pub fn load_extension(&self, path: &Path, entry_point: Option<&str>) -> QueryResult<()> {
+        const SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION: i32 = 1005;
+
+        let invalid_c_string = |_| {
+            DatabaseError(
+                DatabaseErrorKind::__Unknown,
+                Box::new("String contained a null byte".to_string()),
+            )
+        };
+
+        fn handle_set_db_config_result(
+            result: i32,
+            success: i32,
+            expected: i32,
+        ) -> QueryResult<()> {
+            let msg = if expected == 1 {
+                "Failed to enable load extension via db_config"
+            } else {
+                "Failed to disable load extension via db_config"
+            };
+
+            match (result, success) {
+                (ffi::SQLITE_OK, a) if a == expected => Ok(()),
+                (ffi::SQLITE_OK, _) => Err(DatabaseError(
+                    DatabaseErrorKind::__Unknown,
+                    Box::new(msg.to_string()),
+                )),
+                (_, _) => Err(DatabaseError(
+                    DatabaseErrorKind::__Unknown,
+                    Box::new(msg.to_string()),
+                )),
+            }
+        }
+
+        let path = CString::new(path.to_str().ok_or_else(|| {
+            DatabaseError(
+                DatabaseErrorKind::__Unknown,
+                Box::new("Failed to convert path to UTF-8".to_string()),
+            )
+        })?)
+        .map_err(invalid_c_string)?;
+        let entry_point = if let Some(entry_point) = entry_point {
+            Some(CString::new(entry_point).map_err(invalid_c_string)?)
+        } else {
+            None
+        };
+        let entry_point = entry_point.map(|c| c.as_ptr()).unwrap_or(std::ptr::null());
+
+        let mut res = 0;
+        let config_result = unsafe {
+            ffi::sqlite3_db_config(
+                self.internal_connection.as_ptr(),
+                SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,
+                1,
+                &mut res as *mut i32,
+            )
+        };
+
+        handle_set_db_config_result(config_result, res, 1)?;
+
+        let mut error_message: *mut libc::c_char = std::ptr::null_mut();
+
+        let load_result = unsafe {
+            ffi::sqlite3_load_extension(
+                self.internal_connection.as_ptr(),
+                path.as_ptr(),
+                entry_point,
+                &mut error_message as *mut *mut libc::c_char,
+            )
+        };
+
+        let result = if load_result == ffi::SQLITE_OK {
+            Ok(())
+        } else {
+            if error_message.is_null() {
+                Err(DatabaseError(
+                    DatabaseErrorKind::__Unknown,
+                    Box::new("Failed to load a extension".to_string()),
+                ))
+            } else {
+                let error = {
+                    let error_message = unsafe { CStr::from_ptr(error_message) };
+                    Err(DatabaseError(
+                        DatabaseErrorKind::__Unknown,
+                        Box::new(error_message.to_string_lossy().into_owned()),
+                    ))
+                };
+
+                unsafe { ffi::sqlite3_free(error_message as *mut libc::c_void) };
+
+                error
+            }
+        };
+
+        res = 0;
+        let config_result = unsafe {
+            ffi::sqlite3_db_config(
+                self.internal_connection.as_ptr(),
+                SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION,
+                0,
+                &mut res as *mut i32,
+            )
+        };
+
+        handle_set_db_config_result(config_result, res, 0)?;
+
+        result
     }
 }
 
