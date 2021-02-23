@@ -159,10 +159,7 @@ pub trait DatabaseErrorInformation {
 
     /// An optional integer indicating an error cursor position as an index into
     /// the original statement string.
-    ///
-    /// Currently this method will return `None` for all backends other than
-    /// PostgreSQL.
-    fn statement_position(&self) -> Option<f32>;
+    fn statement_position(&self) -> Option<i32>;
 }
 
 impl fmt::Debug for dyn DatabaseErrorInformation + Send + Sync {
@@ -190,7 +187,7 @@ impl DatabaseErrorInformation for String {
     fn constraint_name(&self) -> Option<&str> {
         None
     }
-    fn statement_position(&self) -> Option<f32> {
+    fn statement_position(&self) -> Option<i32> {
         None
     }
 }

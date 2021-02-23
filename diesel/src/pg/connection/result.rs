@@ -168,12 +168,9 @@ impl DatabaseErrorInformation for PgErrorInformation {
         get_result_field(self.0.as_ptr(), ResultField::ConstraintName)
     }
 
-    fn statement_position(&self) -> Option<f32> {
-        if let Some(str_pos) = get_result_field(self.0.as_ptr(), ResultField::StatementPosition) {
-            Some(str_pos.parse::<f32>().expect("Invalid number"))
-        } else {
-            None
-        }
+    fn statement_position(&self) -> Option<i32> {
+        let str_pos = get_result_field(self.0.as_ptr(), ResultField::StatementPosition)?;
+        str_pos.parse::<i32>().ok()
     }
 }
 
