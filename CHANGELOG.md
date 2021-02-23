@@ -54,6 +54,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for `UNION`, `UNION ALL`, `INTERSECT`, `INTERSECT ALL`, `EXCEPT`, `EXCEPT ALL` clauses
 
+* Added the error position for PostgreSQL errors
+
 ### Removed
 
 * All previously deprecated items have been removed.
