@@ -164,7 +164,7 @@ mod tests {
     use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
     fn connection() -> MysqlConnection {
-        dotenv().ok();
+        let _ = dotenv();
 
         let connection_url = ::std::env::var("MYSQL_UNIT_TEST_DATABASE_URL")
             .or_else(|_| ::std::env::var("MYSQL_DATABASE_URL"))

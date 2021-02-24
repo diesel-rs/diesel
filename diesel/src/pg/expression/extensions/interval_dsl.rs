@@ -248,7 +248,7 @@ mod tests {
 
     thread_local! {
         static CONN: PgConnection = {
-            dotenv().ok();
+            let _ = dotenv();
 
             let connection_url = ::std::env::var("PG_DATABASE_URL")
                 .or_else(|_| ::std::env::var("DATABASE_URL"))

@@ -193,15 +193,11 @@ mod tests {
         let connection = connection();
         let query =
             crate::sql_query("SELECT not_existent FROM also_not_there;").execute(&connection);
+
         if let Err(err) = query {
-            match err {
-                DatabaseError(_, string) => {
-                    assert_eq!(Some(26), string.statement_position());
-                }
-                _ => unreachable!(),
+            if let DatabaseError(_, string) = err {
+                assert_eq!(Some(26), string.statement_position());
             }
-        } else {
-            unreachable!();
         }
     }
 
@@ -267,7 +263,7 @@ mod tests {
     }
 
     fn connection() -> PgConnection {
-        dotenv().ok();
+        let _ = dotenv();
         let database_url = env::var("PG_DATABASE_URL")
             .or_else(|_| env::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests");

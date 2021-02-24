@@ -24,7 +24,7 @@ pub struct Comment {
 }
 
 fn connection() -> Conn {
-    dotenv::dotenv().ok();
+    let _ = dotenv::dotenv();
     let connection_url = dotenv::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");

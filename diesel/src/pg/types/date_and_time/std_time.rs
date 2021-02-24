@@ -70,7 +70,7 @@ mod tests {
     use crate::sql_types::Timestamp;
 
     fn connection() -> PgConnection {
-        dotenv().ok();
+        let _ = dotenv();
 
         let connection_url = ::std::env::var("PG_DATABASE_URL")
             .or_else(|_| ::std::env::var("DATABASE_URL"))

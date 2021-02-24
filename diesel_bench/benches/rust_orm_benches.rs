@@ -79,7 +79,7 @@ mod for_load {
 
 fn connect() -> EntityManager {
     let mut pool = Pool::new();
-    dotenv::dotenv().ok();
+    let _ = dotenv::dotenv();
 
     let db_url = if cfg!(feature = "sqlite") {
         let url = dotenv::var("SQLITE_DATABASE_URL")

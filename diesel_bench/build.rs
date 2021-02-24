@@ -41,7 +41,7 @@ const MIGRATION_SUBDIR: &str = "sqlite";
 const MIGRATION_SUBDIR: &str = "mysql";
 
 fn database_url_from_env(backend_specific_env_var: &str) -> String {
-    dotenv().ok();
+    let _ = dotenv();
     match env::var(backend_specific_env_var) {
         Ok(val) => {
             println!(r#"cargo:rustc-cfg=feature="backend_specific_database_url""#);

@@ -44,7 +44,7 @@ use migrations_internals::TIMESTAMP_FORMAT;
 
 fn main() {
     use dotenv::dotenv;
-    dotenv().ok();
+    let _ = dotenv();
 
     let matches = cli::build_cli().get_matches();
 

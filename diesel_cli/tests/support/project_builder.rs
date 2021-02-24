@@ -98,7 +98,7 @@ impl Project {
     fn database_url_from_env(&self, var: &str) -> url::Url {
         use self::dotenv::dotenv;
         use std::env;
-        dotenv().ok();
+        let _ = dotenv();
 
         let mut db_url =
             url::Url::parse(&env::var_os(var).unwrap().into_string().unwrap()).unwrap();

@@ -8,7 +8,7 @@ use std::env;
 use self::models::{NewPost, Post};
 
 pub fn establish_connection() -> PgConnection {
-    dotenv().ok();
+    let _ = dotenv();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     PgConnection::establish(&database_url)
