@@ -183,9 +183,10 @@ where
 ///   query. This is generally referred as a "bind parameter". Types which
 ///   implement [`ToSql`] will generally implement `AsExpression` this way.
 ///
+///   [`IntoSql`]: crate::IntoSql
 ///   [`now`]: super::dsl::now
 ///   [`Timestamp`]: super::sql_types::Timestamp
-///   [`Timestamptz`]: super::pg::types::sql_types::Timestamptz
+///   [`Timestamptz`]: ../pg/types/sql_types/struct.Timestamptz.html
 ///   [`ToSql`]: super::serialize::ToSql
 ///
 ///  This trait could be [derived](AsExpression)

@@ -156,7 +156,7 @@ where
 ///   `type_metadata` for the given SQL type. See [`MysqlType`] for details.
 /// - For third party backends, consult that backend's documentation.
 ///
-/// [`MysqlType`]: super::mysql::MysqlType
+/// [`MysqlType`]: ../mysql/enum.MysqlType.html
 /// [`#[derive(AsExpression)]`]: ../expression/derive.AsExpression.html;
 ///
 /// ### Examples

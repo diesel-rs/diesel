@@ -296,8 +296,8 @@ pub struct Date;
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 ///
-/// [`PgInterval`]: super::pg::data_types::PgInterval
-/// [`IntervalDsl`]: super::pg::expression::extensions::IntervalDsl
+/// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
+/// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "1186", array_oid = "1187")]
 pub struct Interval;
@@ -334,7 +334,7 @@ pub struct Time;
 /// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
 /// [SystemTime]: std::time::SystemTime
-/// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
+/// [NaiveDateTime]: ../../../../chrono/naive/struct.NaiveDateTime.html
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "1114", array_oid = "1115")]
@@ -345,7 +345,7 @@ pub struct Timestamp;
 /// The JSON SQL type.  This type can only be used with `feature =
 /// "serde_json"`
 ///
-/// For postgresql you should normally prefer [`Jsonb`] instead,
+/// For postgresql you should normally prefer [`Jsonb`](struct.Jsonb.html) instead,
 /// for the reasons discussed there.
 ///
 /// ### [`ToSql`] impls

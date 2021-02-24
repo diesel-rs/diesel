@@ -62,8 +62,8 @@ pub mod sql_types {
     /// [`ToSql`]: super::super::super::serialize::ToSql
     /// [`FromSql`]: super::super::super::deserialize::FromSql
     /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
-    /// [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime
-    /// [`chrono::DateTime`]: chrono::DateTime
+    /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
+    /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "1184", array_oid = "1185")]
     pub struct Timestamptz;
@@ -227,7 +227,7 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: super::super::super::serialize::ToSql
     /// [`FromSql`]: super::super::super::deserialize::FromSql
-    /// [`serde_json::Value`]: serde_json::value::Value
+    /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
     ///
     /// # Examples
     ///
@@ -381,7 +381,7 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: super::super::super::serialize::ToSql
     /// [`FromSql`]: super::super::super::deserialize::FromSql
-    /// [IpNetwork]: ipnetwork::IpNetwork
+    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
     ///
     /// # Examples
     ///
@@ -434,7 +434,7 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: super::super::super::serialize::ToSql
     /// [`FromSql`]: super::super::super::deserialize::FromSql
-    /// [IpNetwork]: ipnetwork::IpNetwork
+    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
     ///
     /// # Examples
     ///

@@ -278,7 +278,7 @@ pub use diesel_derives::QueryableByName;
 ///   `type_metadata` for the given SQL type. See [`MysqlType`] for details.
 /// - For third party backends, consult that backend's documentation.
 ///
-/// [`MysqlType`]: super::mysql::MysqlType
+/// [`MysqlType`]: ../mysql/enum.MysqlType.html
 ///
 /// ### Examples
 ///
