@@ -193,12 +193,12 @@ mod tests {
         let connection = connection();
         let query =
             crate::sql_query("SELECT not_existent FROM also_not_there;").execute(&connection);
+
         if let Err(err) = query {
-            match err {
-                DatabaseError(_, string) => {
-                    assert_eq!(Some(26), string.statement_position());
-                }
-                _ => unreachable!(),
+            if let DatabaseError(_, string) = err {
+                assert_eq!(Some(26), string.statement_position());
+            } else {
+                unreachable!();
             }
         } else {
             unreachable!();

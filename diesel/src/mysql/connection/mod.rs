@@ -130,7 +130,7 @@ mod tests {
     use std::env;
 
     fn connection() -> MysqlConnection {
-        let _ = dotenv::dotenv();
+        dotenv::dotenv().ok();
         let database_url = env::var("MYSQL_UNIT_TEST_DATABASE_URL")
             .or_else(|_| env::var("MYSQL_DATABASE_URL"))
             .or_else(|_| env::var("DATABASE_URL"))
