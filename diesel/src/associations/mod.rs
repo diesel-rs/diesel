@@ -92,7 +92,7 @@
 //! You can load the children for one or more parents using
 //! [`belonging_to`]
 //!
-//! [`belonging_to`]: super::query_dsl::BelongingToDsl::belonging_to
+//! [`belonging_to`]: crate::query_dsl::BelongingToDsl::belonging_to
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
@@ -146,7 +146,7 @@
 //! with its parents. For this we use an additional method [`grouped_by`].
 //!
 //! [`grouped_by`]: GroupedBy::grouped_by
-//! [`belonging_to`]: super::query_dsl::BelongingToDsl::belonging_to
+//! [`belonging_to`]: crate::query_dsl::BelongingToDsl::belonging_to
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");

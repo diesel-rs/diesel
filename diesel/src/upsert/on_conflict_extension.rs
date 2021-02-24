@@ -231,8 +231,8 @@ impl<T, U, Op, Ret, Target> IncompleteOnConflict<InsertStatement<T, U, Op, Ret>,
     /// [`on_conflict_do_nothing`] instead. See [`on_conflict`] for usage
     /// examples.
     ///
-    /// [`on_conflict_do_nothing`]: super::super::query_builder::InsertStatement::on_conflict_do_nothing()
-    /// [`on_conflict`]: super::super::query_builder::InsertStatement::on_conflict()
+    /// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
+    /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
     pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
         let target = self.target;
         self.stmt

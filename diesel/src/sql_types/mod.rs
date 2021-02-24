@@ -28,11 +28,11 @@ use crate::query_builder::QueryId;
 /// On backends without a native boolean type,
 /// this is emulated with the smallest supported integer.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`bool`][bool]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`bool`][bool]
 ///
@@ -49,11 +49,11 @@ pub struct Bool;
 /// Keep in mind that `diesel print-schema` will see `TINYINT(1)` as `Bool`,
 /// not `TinyInt`.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`i8`][i8]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`i8`][i8]
 ///
@@ -66,11 +66,11 @@ pub type Tinyint = TinyInt;
 
 /// The small integer SQL type.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`i16`][i16]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`i16`][i16]
 ///
@@ -87,11 +87,11 @@ pub type Smallint = SmallInt;
 
 /// The integer SQL type.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`i32`][i32]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`i32`][i32]
 ///
@@ -106,11 +106,11 @@ pub type Int4 = Integer;
 
 /// The big integer SQL type.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`i64`][i64]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`i64`][i64]
 ///
@@ -127,11 +127,11 @@ pub type Bigint = BigInt;
 
 /// The float SQL type.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`f32`][f32]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`f32`][f32]
 ///
@@ -146,11 +146,11 @@ pub type Float4 = Float;
 
 /// The double precision float SQL type.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`f64`][f64]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`f64`][f64]
 ///
@@ -168,11 +168,11 @@ pub type Float8 = Double;
 /// This type is only supported on PostgreSQL and MySQL.
 /// On SQLite, [`Double`] should be used instead.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`bigdecimal::BigDecimal`] with `feature = ["numeric"]`
 ///
@@ -194,12 +194,12 @@ pub type Decimal = Numeric;
 /// Schema inference will treat all variants of `TEXT` as this type (e.g.
 /// `VARCHAR`, `MEDIUMTEXT`, etc).
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`String`][String]
 /// - [`&str`][str]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`String`][String]
 ///
@@ -237,12 +237,12 @@ pub type Longtext = Text;
 /// Schema inference will treat all variants of `BLOB` as this type (e.g.
 /// `VARBINARY`, `MEDIUMBLOB`, etc).
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`Vec<u8>`][Vec]
 /// - [`&[u8]`][slice]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`Vec<u8>`][Vec]
 ///
@@ -269,11 +269,11 @@ pub type Bit = Binary;
 
 /// The date SQL type.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
 ///
@@ -288,11 +288,11 @@ pub struct Date;
 ///
 /// This type is currently only implemented for PostgreSQL.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`PgInterval`] which can be constructed using [`IntervalDsl`]
 ///
@@ -304,11 +304,11 @@ pub struct Interval;
 
 /// The time SQL type.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
 ///
@@ -321,13 +321,13 @@ pub struct Time;
 
 /// The timestamp SQL type.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
 /// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
@@ -376,12 +376,12 @@ pub struct Json;
 /// This wraps another SQL type to indicate that it can be null.
 /// By default all values are assumed to be `NOT NULL`.
 ///
-/// ### [`ToSql`](super::serialize::ToSql) impls
+/// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
 /// - Any `T` which implements `ToSql<ST>`
 /// - `Option<T>` for any `T` which implements `ToSql<ST>`
 ///
-/// ### [`FromSql`](super::deserialize::FromSql) impls
+/// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
 /// - `Option<T>` for any `T` which implements `FromSql<ST>`
 #[derive(Debug, Clone, Copy, Default)]
@@ -559,7 +559,7 @@ pub mod is_nullable {
     ///
     /// The only diesel provided `SqlType` that uses this value is [`Nullable<T>`]
     ///
-    /// [`Nullable<T>`]: super::Nullable
+    /// [`Nullable<T>`]: Nullable
     #[derive(Debug, Clone, Copy)]
     pub struct IsNullable;
 
@@ -610,15 +610,15 @@ pub mod is_nullable {
         type Out = Nullable<O>;
     }
 
-    /// Represents the output type of [`MaybeNullableType`](super::MaybeNullableType)
+    /// Represents the output type of [`MaybeNullableType`]
     pub type MaybeNullable<N, T> = <N as MaybeNullableType<T>>::Out;
 
-    /// Represents the output type of [`OneIsNullable`](super::OneIsNullable)
+    /// Represents the output type of [`OneIsNullable`]
     /// for two given SQL types
     pub type IsOneNullable<S1, S2> =
         <IsSqlTypeNullable<S1> as OneIsNullable<IsSqlTypeNullable<S2>>>::Out;
 
-    /// Represents the output type of [`AllAreNullable`](super::AllAreNullable)
+    /// Represents the output type of [`AllAreNullable`]
     /// for two given SQL types
     pub type AreAllNullable<S1, S2> =
         <IsSqlTypeNullable<S1> as AllAreNullable<IsSqlTypeNullable<S2>>>::Out;

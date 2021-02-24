@@ -35,9 +35,9 @@ pub enum Error {
     /// does not treat 0 rows as an error. If you would like to allow either 0
     /// or 1 rows, call [`optional`] on the result.
     ///
-    /// [`get_result`]: super::query_dsl::RunQueryDsl::get_result()
-    /// [`first`]: super::query_dsl::RunQueryDsl::first()
-    /// [`load`]: super::query_dsl::RunQueryDsl::load()
+    /// [`get_result`]: crate::query_dsl::RunQueryDsl::get_result()
+    /// [`first`]: crate::query_dsl::RunQueryDsl::first()
+    /// [`load`]: crate::query_dsl::RunQueryDsl::load()
     /// [`optional`]: OptionalExtension::optional
     NotFound,
 
@@ -194,7 +194,7 @@ impl DatabaseErrorInformation for String {
 
 /// Errors which can occur during [`Connection::establish`]
 ///
-/// [`Connection::establish`]: super::connection::Connection::establish
+/// [`Connection::establish`]: crate::connection::Connection::establish
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum ConnectionError {
@@ -234,8 +234,8 @@ pub trait OptionalExtension<T> {
     /// row as an error (e.g. the return value of [`get_result`] or [`first`]). This method will
     /// handle that error, and give you back an `Option<T>` instead.
     ///
-    /// [`get_result`]: super::query_dsl::RunQueryDsl::get_result()
-    /// [`first`]: super::query_dsl::RunQueryDsl::first()
+    /// [`get_result`]: crate::query_dsl::RunQueryDsl::get_result()
+    /// [`first`]: crate::query_dsl::RunQueryDsl::first()
     ///
     /// # Example
     ///

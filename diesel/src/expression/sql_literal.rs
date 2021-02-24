@@ -11,7 +11,7 @@ use crate::sql_types::{DieselNumericOps, SqlType};
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`sql()`] function.
 ///
-/// [`sql()`]: super::dsl::sql()
+/// [`sql()`]: crate::dsl::sql()
 pub struct SqlLiteral<ST, T = ()> {
     sql: String,
     inner: T,

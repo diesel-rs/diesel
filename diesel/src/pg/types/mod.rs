@@ -37,8 +37,8 @@ pub mod sql_types {
     ///
     /// - [`u32`]
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "26", array_oid = "1018")]
@@ -59,8 +59,8 @@ pub mod sql_types {
     /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
     /// - [`chrono::DateTime`] with `feature = "chrono"`
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
     #[cfg_attr(
         feature = "chrono",
@@ -94,8 +94,8 @@ pub mod sql_types {
     ///
     /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<ST>`
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [Vec]: std::vec::Vec
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
@@ -113,8 +113,8 @@ pub mod sql_types {
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `FromSql<ST>`.
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [bound]: std::collections::Bound
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     pub struct Range<ST>(ST);
@@ -143,8 +143,8 @@ pub mod sql_types {
     ///
     /// - Any tuple which can be deserialized from each of the elements.
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     ///
     /// ### Caveats about serialization
     ///
@@ -193,8 +193,8 @@ pub mod sql_types {
     ///
     /// - [`uuid::Uuid`][Uuid]
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2950", array_oid = "2951")]
@@ -236,8 +236,8 @@ pub mod sql_types {
     ///
     /// - [`serde_json::Value`]
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     #[cfg_attr(
         feature = "serde_json",
         doc = "[`serde_json::Value`]: serde_json::value::Value"
@@ -301,9 +301,9 @@ pub mod sql_types {
     ///
     /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
-    /// [PgMoney]: super::super::data_types::PgMoney
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [PgMoney]: crate::data_types::PgMoney
     ///
     /// # Examples
     ///
@@ -349,8 +349,8 @@ pub mod sql_types {
     ///
     /// - `[u8; 6]`
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     ///
     /// # Examples
     ///
@@ -397,8 +397,8 @@ pub mod sql_types {
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
     #[cfg_attr(
         not(feature = "ipnetwork"),
@@ -454,8 +454,8 @@ pub mod sql_types {
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [`ToSql`]: super::super::super::serialize::ToSql
-    /// [`FromSql`]: super::super::super::deserialize::FromSql
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
     #[cfg_attr(
         not(feature = "ipnetwork"),

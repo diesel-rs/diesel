@@ -11,12 +11,12 @@ use crate::Expression;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `for_update` from generic code.
 ///
-/// [`QueryDsl`]: super::QueryDsl
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait LockingDsl<Lock> {
     /// The type returned by `set_lock`. See [`dsl::ForUpdate`] and friends for
     /// convenient access to this type.
     ///
-    /// [`dsl::ForUpdate`]: super::super::dsl::ForUpdate
+    /// [`dsl::ForUpdate`]: crate::dsl::ForUpdate
     type Output;
 
     /// See the trait level documentation
@@ -42,12 +42,12 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `skip_locked` from generic code.
 ///
-/// [`QueryDsl`]: super::QueryDsl
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait ModifyLockDsl<Modifier> {
     /// The type returned by `modify_lock`. See [`dsl::SkipLocked`] and friends
     /// for convenient access to this type.
     ///
-    /// [`dsl::SkipLocked`]: super::super::dsl::SkipLocked
+    /// [`dsl::SkipLocked`]: crate::dsl::SkipLocked
     type Output;
 
     /// See the trait level documentation

@@ -12,7 +12,7 @@ pub struct LimitOffsetClause<Limit, Offset> {
     pub offset_clause: Offset,
 }
 
-/// A boxed variant of [`LimitOffsetClause`](super::LimitOffsetClause)
+/// A boxed variant of [`LimitOffsetClause`](crate::query_builder::LimitOffsetClause)
 ///
 /// This type is only relevant for implementing custom backends
 #[allow(missing_debug_implementations)]

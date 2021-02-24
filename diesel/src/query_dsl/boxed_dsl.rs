@@ -12,7 +12,7 @@ use crate::Expression;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `into_boxed` from generic code.
 ///
-/// [`QueryDsl`]: super::QueryDsl
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait BoxedDsl<'a, DB> {
     /// The return type of `internal_into_boxed`
     type Output;

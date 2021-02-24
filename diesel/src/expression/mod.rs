@@ -4,14 +4,14 @@
 //! [`AsExpression`].
 //!
 //! The most common expression to work with is a
-//! [`Column`](super::query_source::Column). There are various methods
+//! [`Column`](crate::query_source::Column). There are various methods
 //! that you can call on these, found in
-//! [`expression_methods`](super::expression_methods).
+//! [`expression_methods`](crate::expression_methods).
 //!
 //! You can also use numeric operators such as `+` on expressions of the
 //! appropriate type.
 //!
-//! Any primitive which implements [`ToSql`](super::serialize::ToSql) will
+//! Any primitive which implements [`ToSql`](crate::serialize::ToSql) will
 //! also implement [`AsExpression`], allowing it to be
 //! used as an argument to any of the methods described here.
 #[macro_use]
@@ -67,13 +67,13 @@ pub mod dsl {
     #[cfg(feature = "postgres")]
     pub use crate::pg::expression::dsl::*;
 
-    /// The return type of [`count(expr)`](super::dsl::count())
+    /// The return type of [`count(expr)`](crate::dsl::count())
     pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
 
-    /// The return type of [`count_star()`](super::dsl::count_star())
+    /// The return type of [`count_star()`](crate::dsl::count_star())
     pub type count_star = super::count::CountStar;
 
-    /// The return type of [`date(expr)`](super::dsl::date())
+    /// The return type of [`date(expr)`](crate::dsl::date())
     pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
 }
 
@@ -88,8 +88,8 @@ use crate::sql_types::{HasSqlType, SingleValue, SqlType};
 ///
 /// Apps should not need to implement this type directly, but it may be common
 /// to use this in where clauses. Libraries should consider using
-/// [`infix_operator!`](super::infix_operator!) or
-/// [`postfix_operator!`](super::postfix_operator!) instead of
+/// [`infix_operator!`](crate::infix_operator!) or
+/// [`postfix_operator!`](crate::postfix_operator!) instead of
 /// implementing this directly.
 pub trait Expression {
     /// The type that this expression represents in SQL
@@ -117,7 +117,7 @@ pub mod expression_types {
     /// using [`#[derive(QueryableByName)]`](../deserialize/derive.QueryableByName.html)
     /// on the corresponding result type.
     ///
-    /// [`#[derive(QueryableByName)]`]: super::deserialize::QueryableByName
+    /// [`#[derive(QueryableByName)]`]: crate::deserialize::QueryableByName
     #[derive(Clone, Copy, Debug)]
     pub struct Untyped;
 
@@ -184,10 +184,10 @@ where
 ///   implement [`ToSql`] will generally implement `AsExpression` this way.
 ///
 ///   [`IntoSql`]: crate::IntoSql
-///   [`now`]: super::dsl::now
-///   [`Timestamp`]: super::sql_types::Timestamp
+///   [`now`]: crate::dsl::now
+///   [`Timestamp`]: crate::sql_types::Timestamp
 ///   [`Timestamptz`]: ../pg/types/sql_types/struct.Timestamptz.html
-///   [`ToSql`]: super::serialize::ToSql
+///   [`ToSql`]: crate::serialize::ToSql
 ///
 ///  This trait could be [derived](AsExpression)
 
@@ -507,7 +507,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// For cases where you want to dynamically construct a query,
 /// [boxing the query] is usually more ergonomic.
 ///
-/// [boxing the query]: super::query_dsl::QueryDsl::into_boxed()
+/// [boxing the query]: crate::query_dsl::QueryDsl::into_boxed()
 ///
 /// # Examples
 ///

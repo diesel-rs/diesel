@@ -322,7 +322,7 @@ pub trait QueryDsl: Sized {
     /// table directly.  Otherwise you will need to use [`.on`] to specify the `ON`
     /// clause.
     ///
-    /// [`joinable!`]: super::joinable!
+    /// [`joinable!`]: crate::joinable!
     /// [`.on`]: JoinOnDsl::on()
     ///
     /// You can join to as many tables as you'd like in a query, with the
@@ -358,8 +358,8 @@ pub trait QueryDsl: Sized {
     ///     INNER JOIN comments ON comments.user_id = users.id
     /// ```
     ///
-    /// [associations]: super::associations
-    /// [`allow_tables_to_appear_in_same_query!`]: super::allow_tables_to_appear_in_same_query!
+    /// [associations]: crate::associations
+    /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
     ///
     /// # Examples
     ///
@@ -613,9 +613,9 @@ pub trait QueryDsl: Sized {
     ///
     /// If there was already an order clause, it will be overridden. See
     /// also:
-    /// [`.desc()`](super::expression_methods::ExpressionMethods::desc())
+    /// [`.desc()`](crate::expression_methods::ExpressionMethods::desc())
     /// and
-    /// [`.asc()`](super::expression_methods::ExpressionMethods::asc())
+    /// [`.asc()`](crate::expression_methods::ExpressionMethods::asc())
     ///
     /// Ordering by multiple columns can be achieved by passing a tuple of those
     /// columns.
@@ -850,7 +850,7 @@ pub trait QueryDsl: Sized {
     /// For group by clauses containing columns from more than one table it
     /// is required to call [`allow_columns_to_appear_in_same_group_by_clause!`]
     ///
-    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: super::allow_columns_to_appear_in_same_group_by_clause!
+    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: crate::allow_columns_to_appear_in_same_group_by_clause!
     ///
     /// # Examples
     /// ```rust
@@ -1044,7 +1044,7 @@ pub trait QueryDsl: Sized {
     /// Boxing can achieve both.
     ///
     /// [iterator]: std::iter::Iterator
-    /// [helper_types]: super::helper_types
+    /// [helper_types]: crate::helper_types
     ///
     /// ### Example
     ///
@@ -1161,8 +1161,8 @@ impl<T: Table> QueryDsl for T {}
 pub trait RunQueryDsl<Conn>: Sized {
     /// Executes the given command, returning the number of rows affected.
     ///
-    /// `execute` is usually used in conjunction with [`insert_into`](super::insert_into()),
-    /// [`update`](super::update()) and [`delete`](super::delete()) where the number of
+    /// `execute` is usually used in conjunction with [`insert_into`](crate::insert_into()),
+    /// [`update`](crate::update()) and [`delete`](crate::delete()) where the number of
     /// affected rows is often enough information.
     ///
     /// When asking the database to return data from a query, [`load`](crate::query_dsl::RunQueryDsl::load()) should
@@ -1214,10 +1214,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// For insert, update, and delete operations where only a count of affected is needed,
     /// [`execute`] should be used instead.
     ///
-    /// [`Queryable`]: super::deserialize::Queryable
-    /// [`QueryableByName`]: super::deserialize::QueryableByName
+    /// [`Queryable`]: crate::deserialize::Queryable
+    /// [`QueryableByName`]: crate::deserialize::QueryableByName
     /// [`execute`]: crate::query_dsl::RunQueryDsl::execute()
-    /// [`sql_query`]: super::sql_query()
+    /// [`sql_query`]: crate::sql_query()
     ///
     /// # Examples
     ///

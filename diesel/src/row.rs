@@ -25,7 +25,7 @@ pub trait RowIndex<I> {
 ///
 /// This trait is used as an argument to [`FromSqlRow`].
 ///
-/// [`FromSqlRow`]: super::deserialize::FromSqlRow
+/// [`FromSqlRow`]: crate::deserialize::FromSqlRow
 pub trait Row<'a, DB: Backend>: RowIndex<usize> + for<'b> RowIndex<&'b str> + Sized {
     /// Field type returned by a `Row` implementation
     ///
@@ -171,7 +171,7 @@ where
 /// rather than by index.
 ///
 /// This trait is used by implementations of
-/// [`QueryableByName`](super::deserialize::QueryableByName)
+/// [`QueryableByName`](crate::deserialize::QueryableByName)
 pub trait NamedRow<'a, DB: Backend>: Row<'a, DB> {
     /// Retrieve and deserialize a single value from the query
     ///

@@ -14,7 +14,7 @@ use crate::backend::Backend;
 ///
 /// See [`debug_query`] for usage examples.
 ///
-/// [`debug_query`]: super::debug_query()
+/// [`debug_query`]: crate::query_builder::debug_query()
 pub struct DebugQuery<'a, T: 'a, DB> {
     pub(crate) query: &'a T,
     _marker: PhantomData<DB>,

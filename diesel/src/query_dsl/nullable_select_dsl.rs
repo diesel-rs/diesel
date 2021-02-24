@@ -4,7 +4,7 @@
 /// provided by [`QueryDsl`]. However you may need a where clause on this trait
 /// to call `nullable` from generic code.
 ///
-/// [`QueryDsl`]: super::QueryDsl::nullable()
+/// [`QueryDsl`]: crate::QueryDsl::nullable()
 pub trait SelectNullableDsl {
     /// The return type of `nullable`
     type Output;

@@ -13,7 +13,7 @@ use crate::Expression;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `distinct` from generic code.
 ///
-/// [`QueryDsl`]: super::QueryDsl
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait DistinctDsl {
     /// The type returned by `.distinct`
     type Output;
@@ -41,7 +41,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `distinct_on` from generic code.
 ///
-/// [`QueryDsl`]: super::QueryDsl
+/// [`QueryDsl`]: crate::QueryDsl
 #[cfg(feature = "postgres")]
 pub trait DistinctOnDsl<Selection> {
     /// The type returned by `.distinct_on`

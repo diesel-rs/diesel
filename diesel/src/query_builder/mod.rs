@@ -109,7 +109,7 @@ pub trait QueryBuilder<DB: Backend> {
 /// query. For example, an `INSERT` statement without a `RETURNING` clause will
 /// not implement this trait, but can still be executed.
 ///
-/// [`Expression`]: super::expression::Expression
+/// [`Expression`]: crate::expression::Expression
 pub trait Query {
     /// The SQL type that this query represents.
     ///
@@ -143,8 +143,8 @@ pub trait SelectQuery {
 /// represent a `WHERE` clause). Implementations of [`ExecuteDsl`] and
 /// [`LoadQuery`] will generally require that this trait be implemented.
 ///
-/// [`ExecuteDsl`]: super::query_dsl::methods::ExecuteDsl
-/// [`LoadQuery`]: super::query_dsl::methods::LoadQuery
+/// [`ExecuteDsl`]: crate::query_dsl::methods::ExecuteDsl
+/// [`LoadQuery`]: crate::query_dsl::methods::LoadQuery
 pub trait QueryFragment<DB: Backend> {
     /// Walk over this `QueryFragment` for all passes.
     ///

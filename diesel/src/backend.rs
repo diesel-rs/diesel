@@ -9,7 +9,7 @@ use crate::sql_types::{self, HasSqlType};
 /// A database backend
 ///
 /// This trait represents the concept of a backend (e.g. "MySQL" vs "SQLite").
-/// It is separate from a [`Connection`](super::connection::Connection)
+/// It is separate from a [`Connection`](crate::connection::Connection)
 /// to that backend.
 /// One backend may have multiple concrete connection implementations.
 ///
@@ -40,7 +40,7 @@ where
     ///
     /// Most backends should use [`RawBytesBindCollector`].
     ///
-    /// [`RawBytesBindCollector`]: super::query_builder::bind_collector::RawBytesBindCollector
+    /// [`RawBytesBindCollector`]: crate::query_builder::bind_collector::RawBytesBindCollector
     type BindCollector: BindCollector<Self>;
     /// What byte order is used to transmit integers?
     ///

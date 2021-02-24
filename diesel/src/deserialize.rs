@@ -163,7 +163,7 @@ pub use diesel_derives::Queryable;
 ///
 /// This trait can be [derived](QueryableByName)
 ///
-/// [`sql_query`]: super::sql_query()
+/// [`sql_query`]: crate::sql_query()
 ///
 /// # Examples
 ///
