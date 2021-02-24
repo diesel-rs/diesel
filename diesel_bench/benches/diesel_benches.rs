@@ -110,7 +110,7 @@ pub struct NewComment<'a>(
 
 #[cfg(feature = "mysql")]
 fn connection() -> TestConnection {
-    let _ = dotenv::dotenv();
+    dotenv::dotenv().ok();
     let connection_url = dotenv::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
@@ -125,7 +125,7 @@ fn connection() -> TestConnection {
 
 #[cfg(feature = "postgres")]
 fn connection() -> TestConnection {
-    let _ = dotenv::dotenv();
+    dotenv::dotenv().ok();
     let connection_url = dotenv::var("PG_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
@@ -138,7 +138,7 @@ fn connection() -> TestConnection {
 
 #[cfg(feature = "sqlite")]
 fn connection() -> TestConnection {
-    let _ = dotenv::dotenv();
+    dotenv::dotenv().ok();
     let conn = diesel::SqliteConnection::establish(":memory:").unwrap();
     for migration in super::SQLITE_MIGRATION_SQL {
         conn.execute(migration).unwrap();

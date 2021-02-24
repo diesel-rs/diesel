@@ -69,7 +69,7 @@ type Connection = sqlx::PgConnection;
 fn connection() -> Connection {
     use sqlx::Connection;
 
-    let _ = dotenv::dotenv();
+    dotenv::dotenv().ok();
     let connection_url = dotenv::var("POSTGRES_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
@@ -96,7 +96,7 @@ fn connection() -> Connection {
 fn connection() -> Connection {
     use sqlx::Connection;
 
-    let _ = dotenv::dotenv();
+    dotenv::dotenv().ok();
     let connection_url = dotenv::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");

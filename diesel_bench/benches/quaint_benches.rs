@@ -39,7 +39,7 @@ pub struct UserWithPost {
 }
 
 fn connect(rt: &mut Runtime) -> Quaint {
-    let _ = dotenv::dotenv();
+    dotenv::dotenv().ok();
     let db_url = if cfg!(feature = "sqlite") {
         dotenv::var("SQLITE_DATABASE_URL")
             .or_else(|_| dotenv::var("DATABASE_URL"))

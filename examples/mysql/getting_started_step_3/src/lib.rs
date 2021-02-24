@@ -8,7 +8,7 @@ use std::env;
 use self::models::{NewPost, Post};
 
 pub fn establish_connection() -> MysqlConnection {
-    let _ = dotenv();
+    dotenv().ok();
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     MysqlConnection::establish(&database_url)

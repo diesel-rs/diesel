@@ -197,7 +197,11 @@ mod tests {
         if let Err(err) = query {
             if let DatabaseError(_, string) = err {
                 assert_eq!(Some(26), string.statement_position());
+            } else {
+                unreachable!();
             }
+        } else {
+            unreachable!();
         }
     }
 
@@ -263,7 +267,7 @@ mod tests {
     }
 
     fn connection() -> PgConnection {
-        let _ = dotenv();
+        dotenv().ok();
         let database_url = env::var("PG_DATABASE_URL")
             .or_else(|_| env::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests");

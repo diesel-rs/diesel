@@ -199,7 +199,7 @@ cfg_if::cfg_if! {
 fn database_url_from_env(backend_specific_env_var: &str) -> String {
     use std::env;
 
-    let _ = dotenv();
+    dotenv().ok();
 
     env::var(backend_specific_env_var)
         .or_else(|_| env::var("DATABASE_URL"))

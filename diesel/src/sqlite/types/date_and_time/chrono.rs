@@ -121,7 +121,7 @@ mod tests {
     sql_function!(fn date(x: Text) -> Date);
 
     fn connection() -> SqliteConnection {
-        let _ = dotenv();
+        dotenv().ok();
 
         let connection_url = ::std::env::var("SQLITE_DATABASE_URL")
             .or_else(|_| ::std::env::var("DATABASE_URL"))
