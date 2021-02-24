@@ -62,8 +62,19 @@ pub mod sql_types {
     /// [`ToSql`]: super::super::super::serialize::ToSql
     /// [`FromSql`]: super::super::super::deserialize::FromSql
     /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
-    /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
-    /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
+    #[cfg_attr(
+        feature = "chrono",
+        doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html"
+    )]
+    #[cfg_attr(feature = "chrono", doc = " [`chrono::DateTime`]: chrono::DateTime")]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html"
+    )]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "1184", array_oid = "1185")]
     pub struct Timestamptz;
@@ -227,7 +238,14 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: super::super::super::serialize::ToSql
     /// [`FromSql`]: super::super::super::deserialize::FromSql
-    /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
+    #[cfg_attr(
+        feature = "serde_json",
+        doc = "[`serde_json::Value`]: serde_json::value::Value"
+    )]
+    #[cfg_attr(
+        not(feature = "serde_json"),
+        doc = "[`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html"
+    )]
     ///
     /// # Examples
     ///
@@ -381,7 +399,11 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: super::super::super::serialize::ToSql
     /// [`FromSql`]: super::super::super::deserialize::FromSql
-    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
+    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
+    #[cfg_attr(
+        not(feature = "ipnetwork"),
+        doc = " [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html"
+    )]
     ///
     /// # Examples
     ///
@@ -434,7 +456,11 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: super::super::super::serialize::ToSql
     /// [`FromSql`]: super::super::super::deserialize::FromSql
-    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
+    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
+    #[cfg_attr(
+        not(feature = "ipnetwork"),
+        doc = " [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html"
+    )]
     ///
     /// # Examples
     ///

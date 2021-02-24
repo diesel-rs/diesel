@@ -334,7 +334,14 @@ pub struct Time;
 /// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
 ///
 /// [SystemTime]: std::time::SystemTime
-/// [NaiveDateTime]: ../../../../chrono/naive/struct.NaiveDateTime.html
+#[cfg_attr(
+    feature = "chrono",
+    doc = " [NaiveDateTime]: chrono::naive::NaiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "chrono"),
+    doc = " [NaiveDateTime]: ../../../../chrono/naive/struct.NaiveDateTime.html"
+)]
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[postgres(oid = "1114", array_oid = "1115")]
