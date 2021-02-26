@@ -1,5 +1,5 @@
 use crate::migrations::migration_directory_from_given_path;
-use migrations_internals::{migration_paths_in_directory, version_from_path};
+use migrations_internals::{migrations_directories, version_from_path, TomlMetadata};
 use quote::quote;
 use std::error::Error;
 use std::fs::DirEntry;
@@ -13,61 +13,18 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
     };
     let migrations_expr =
         migration_directory_from_given_path(migrations_path_opt.as_ref().map(String::as_str))
-            .and_then(|path| migration_literals_from_path(&path));
-    let migrations_expr = match migrations_expr {
-        Ok(v) => v,
-        Err(e) => panic!("Error reading migrations: {}", e),
-    };
+            .unwrap();
+    let embeded_migrations = migration_literals_from_path(&migrations_expr).unwrap();
 
     quote! {
-        #[allow(dead_code)]
-        mod embedded_migrations {
-            extern crate diesel;
-            extern crate diesel_migrations;
-
-            use self::diesel_migrations::*;
-            use self::diesel::connection::SimpleConnection;
-            use std::io;
-
-            const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
-
-            struct EmbeddedMigration {
-                version: &'static str,
-                up_sql: &'static str,
-            }
-
-            impl Migration for EmbeddedMigration {
-                fn version(&self) -> &str {
-                    self.version
-                }
-
-                fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-                    conn.batch_execute(self.up_sql).map_err(Into::into)
-                }
-
-                fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-                    unreachable!()
-                }
-            }
-
-            pub fn run<C: MigrationConnection>(conn: &C) -> Result<(), RunMigrationsError> {
-                run_with_output(conn, &mut io::sink())
-            }
-
-            pub fn run_with_output<C: MigrationConnection>(
-                conn: &C,
-                out: &mut io::Write,
-            ) -> Result<(), RunMigrationsError> {
-                run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| *v), out)
-            }
-        }
+        diesel_migrations::EmbededMigrations::new(&[#(#embeded_migrations,)*])
     }
 }
 
 fn migration_literals_from_path(
     path: &Path,
 ) -> Result<Vec<proc_macro2::TokenStream>, Box<dyn Error>> {
-    let mut migrations = migration_paths_in_directory(path)?;
+    let mut migrations = migrations_directories(path).collect::<Result<Vec<_>, _>>()?;
 
     migrations.sort_by_key(DirEntry::path);
 
@@ -78,12 +35,18 @@ fn migration_literals_from_path(
 }
 
 fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<dyn Error>> {
-    let version = version_from_path(path)?;
-    let sql_file = path.join("up.sql");
-    let sql_file_path = sql_file.to_str();
+    let version: String = version_from_path(path).expect("Invalid version")?;
+    let up_sql = path.join("up.sql");
+    let up_sql_path = up_sql.to_str();
+    let down_sql = path.join("up.sql");
+    let down_sql_path = down_sql.to_str();
+    let metadata = TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default();
+    let run_in_transaction = metadata.run_in_transaction;
 
-    Ok(quote!(&EmbeddedMigration {
-        version: #version,
-        up_sql: include_str!(#sql_file_path),
-    }))
+    Ok(quote!(diesel_migrations::EmbededMigration::new(
+        include_str!(#up_sql_path),
+        include_str!(#down_sql_path),
+        #version,
+        diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction)
+    )))
 }

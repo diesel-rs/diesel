@@ -4,7 +4,7 @@ use clap::ArgMatches;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
 use diesel::*;
-use migrations_internals as migrations;
+use diesel_migrations::FileBasedMigrations;
 
 use crate::database_error::{DatabaseError, DatabaseResult};
 
@@ -12,7 +12,7 @@ use std::env;
 use std::error::Error;
 #[cfg(feature = "postgres")]
 use std::fs::{self, File};
-use std::io::stdout;
+//use std::io::stdout;
 #[cfg(feature = "postgres")]
 use std::io::Write;
 use std::path::Path;
@@ -234,12 +234,9 @@ fn create_schema_table_and_run_migrations_if_needed(
     migrations_dir: &Path,
 ) -> DatabaseResult<()> {
     if !schema_table_exists(database_url).unwrap_or_else(handle_error) {
-        call_with_conn!(database_url, migrations::setup_database())?;
-        call_with_conn!(
-            database_url,
-            migrations::run_pending_migrations_in_directory(migrations_dir, &mut stdout())
-        )
-        .unwrap_or_else(handle_error);
+        let migrations =
+            FileBasedMigrations::from_path(migrations_dir).unwrap_or_else(handle_error);
+        call_with_conn!(database_url, super::run_migrations_with_output(migrations))?;
     };
     Ok(())
 }

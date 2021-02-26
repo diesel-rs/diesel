@@ -136,7 +136,6 @@ where
     M::Connection: Connection + R2D2Connection + Send + 'static,
 {
     type Backend = <M::Connection as Connection>::Backend;
-    type TransactionManager = PooledConnectionTransactionManager<M>;
 
     fn establish(_: &str) -> ConnectionResult<Self> {
         Err(ConnectionError::BadConnection(String::from(
@@ -165,14 +164,17 @@ where
         (&**self).execute_returning_count(source)
     }
 
-    fn transaction_manager(&self) -> &Self::TransactionManager {
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
         // This is actually fine because we have an #[repr(transparent)]
         // on LoggingTransactionManager, which means the layout is the same
         // as the inner type
         // See the ref-cast crate for a longer version: https://github.com/dtolnay/ref-cast
-        unsafe {
-            &*((&**self).transaction_manager() as *const _ as *const Self::TransactionManager)
-        }
+        let _t = unsafe {
+            &*((&**self).transaction_manager() as *const _
+                as *const PooledConnectionTransactionManager<M>)
+        };
+        // Figure how to fix that conversion here
+        todo!()
     }
 }
 
@@ -184,7 +186,7 @@ where
     M: ManageConnection,
     M::Connection: Connection,
 {
-    inner: <M::Connection as Connection>::TransactionManager,
+    inner: dyn TransactionManager<M::Connection>,
 }
 
 impl<M> TransactionManager<PooledConnection<M>> for PooledConnectionTransactionManager<M>

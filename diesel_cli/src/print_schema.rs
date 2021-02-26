@@ -57,7 +57,7 @@ pub fn run_print_schema<W: IoWrite>(
     database_url: &str,
     config: &config::PrintSchema,
     output: &mut W,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     let schema = output_schema(database_url, config)?;
 
     output.write_all(schema.as_bytes())?;
@@ -67,7 +67,7 @@ pub fn run_print_schema<W: IoWrite>(
 pub fn output_schema(
     database_url: &str,
     config: &config::PrintSchema,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
     let table_names = load_table_names(database_url, config.schema_name())?
         .into_iter()
         .filter(|t| !config.filter.should_ignore_table(t))
@@ -78,7 +78,7 @@ pub fn output_schema(
     let table_data = table_names
         .into_iter()
         .map(|t| load_table_data(database_url, t, &config.column_sorting))
-        .collect::<Result<_, Box<dyn Error>>>()?;
+        .collect::<Result<_, Box<dyn Error + Send + Sync + 'static>>>()?;
     let definitions = TableDefinitions {
         tables: table_data,
         fk_constraints: foreign_keys,

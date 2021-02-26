@@ -244,7 +244,7 @@ where
 pub fn load_table_names<'a, Conn>(
     connection: &Conn,
     schema_name: Option<&'a str>,
-) -> Result<Vec<TableName>, Box<dyn Error>>
+) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,

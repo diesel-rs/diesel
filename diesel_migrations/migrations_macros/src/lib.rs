@@ -29,45 +29,42 @@ mod migrations;
 
 use proc_macro::TokenStream;
 
-/// This macro will read your migrations at compile time, and embed a module you can use to execute
-/// them at runtime without the migration files being present on the file system. This is useful if
-/// you would like to use Diesel's migration infrastructure, but want to ship a single executable
+/// This macro will read your migrations at compile time, and create a constant value containing
+/// a embedded list of all your migrations as avaible at compile time.
+/// This is useful if you would like to use Diesel's migration infrastructure, but want to ship a single executable
 /// file (such as for embedded applications). It can also be used to apply migrations to an in
 /// memory database (Diesel does this for its own test suite).
 ///
 /// You can optionally pass the path to the migrations directory to this macro. When left
-/// unspecified, Diesel Codegen will search for the migrations directory in the same way that
+/// unspecified, Diesel will search for the migrations directory in the same way that
 /// Diesel CLI does. If specified, the path should be relative to the directory where `Cargo.toml`
 /// resides.
 ///
 /// # Examples
 ///
 /// ```rust
-/// # use diesel_migrations::embed_migrations;
+/// use diesel_migrations::{embed_migrations, EmbededMigrations, MigrationHarness};
+/// # use std::error::Error;
 /// # include!("../../../diesel/src/doctest_setup.rs");
-/// # table! {
-/// #   users {
-/// #       id -> Integer,
-/// #       name -> VarChar,
-/// #   }
-/// # }
 /// #
 /// # #[cfg(feature = "postgres")]
-/// # embed_migrations!("../../migrations/postgresql");
+/// pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/postgresql");
 /// # #[cfg(all(feature = "mysql", not(feature = "postgres")))]
-/// # embed_migrations!("../../migrations/mysql");
+/// pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/mysql");
 /// # #[cfg(all(feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
-/// embed_migrations!("../../migrations/sqlite");
+/// pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/sqlite");
 ///
-/// fn main() {
+/// # fn main() {
+/// #     run_migrations().unwrap();
+/// # }
+///
+/// fn run_migrations() -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
 ///     let connection = establish_connection();
 ///
 ///     // This will run the necessary migrations.
-///     embedded_migrations::run(&connection);
+///     connection.run_pending_migrations(MIGRATIONS)?;
 ///
-///     // By default the output is thrown out. If you want to redirect it to stdout, you
-///     // should call embedded_migrations::run_with_output.
-///     embedded_migrations::run_with_output(&connection, &mut std::io::stdout());
+///     Ok(())
 /// }
 /// ```
 #[proc_macro]

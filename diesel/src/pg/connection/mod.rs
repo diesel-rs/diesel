@@ -47,7 +47,6 @@ impl SimpleConnection for PgConnection {
 
 impl Connection for PgConnection {
     type Backend = Pg;
-    type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).and_then(|raw_conn| {
@@ -95,7 +94,7 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager {
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
         &self.transaction_manager
     }
 }

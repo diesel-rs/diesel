@@ -1,5 +1,5 @@
 // Built-in Lints
-#![deny(warnings, missing_copy_implementations)]
+//#![deny(warnings, missing_copy_implementations)]
 // Clippy lints
 #![allow(
     clippy::needless_pass_by_value,
@@ -78,57 +78,17 @@
 //! DROP TABLE posts;
 //! ```
 
-extern crate migrations_internals;
-extern crate migrations_macros;
-#[doc(inline)]
-pub use migrations_internals::any_pending_migrations;
-#[doc(inline)]
-pub use migrations_internals::find_migrations_directory;
-#[doc(inline)]
-pub use migrations_internals::mark_migrations_in_directory;
-#[doc(inline)]
-pub use migrations_internals::migration_from;
-#[doc(inline)]
-pub use migrations_internals::migration_paths_in_directory;
-#[doc(inline)]
-pub use migrations_internals::name;
-#[doc(inline)]
-pub use migrations_internals::revert_latest_migration;
-#[doc(inline)]
-pub use migrations_internals::revert_latest_migration_in_directory;
-#[doc(inline)]
-pub use migrations_internals::revert_migration_with_version;
-#[doc(inline)]
-pub use migrations_internals::run_migration_with_version;
-#[doc(inline)]
-pub use migrations_internals::run_migrations;
-#[doc(inline)]
-pub use migrations_internals::run_pending_migrations;
-#[doc(inline)]
-pub use migrations_internals::run_pending_migrations_in_directory;
-#[doc(inline)]
-pub use migrations_internals::search_for_migrations_directory;
-#[doc(inline)]
-pub use migrations_internals::setup_database;
-#[doc(inline)]
-pub use migrations_internals::version_from_path;
-#[doc(inline)]
-pub use migrations_internals::Migration;
-#[doc(inline)]
-pub use migrations_internals::MigrationConnection;
-#[doc(inline)]
-pub use migrations_internals::MigrationError;
-#[doc(inline)]
-pub use migrations_internals::MigrationName;
-#[doc(inline)]
-pub use migrations_internals::RunMigrationsError;
-#[doc(hidden)]
-pub use migrations_macros::*;
+pub mod embeded_migrations;
+pub mod errors;
+pub mod file_based_migrations;
+pub mod migration_harness;
 
-pub mod connection {
-    #[doc(inline)]
-    pub use migrations_internals::connection::MigrationConnection;
-}
-
-#[doc(inline)]
+pub use crate::embeded_migrations::EmbededMigrations;
+pub use crate::file_based_migrations::FileBasedMigrations;
+pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness};
 pub use migrations_macros::embed_migrations;
+
+#[doc(hidden)]
+pub use crate::embeded_migrations::EmbededMigration;
+#[doc(hidden)]
+pub use crate::file_based_migrations::TomlMetadataWrapper;

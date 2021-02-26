@@ -7,7 +7,7 @@ use std::error::Error;
 use std::path::PathBuf;
 use std::{fmt, io};
 
-use crate::result;
+use diesel::migration::MigrationVersion;
 
 /// Errors that occur while preparing to run migrations
 #[derive(Debug)]
@@ -20,7 +20,7 @@ pub enum MigrationError {
     /// General system IO error
     IoError(io::Error),
     /// Provided migration had an incompatible version number
-    UnknownMigrationVersion(String),
+    UnknownMigrationVersion(MigrationVersion<'static>),
     /// No migrations had to be/ could be run
     NoMigrationRun,
 }
@@ -81,41 +81,27 @@ impl From<io::Error> for MigrationError {
 #[non_exhaustive]
 pub enum RunMigrationsError {
     /// A general migration error occured
-    MigrationError(MigrationError),
+    MigrationError(MigrationVersion<'static>, MigrationError),
     /// The provided migration included an invalid query
-    QueryError(result::Error),
+    QueryError(MigrationVersion<'static>, diesel::result::Error),
     /// The provided migration was empty
-    EmptyMigration,
+    EmptyMigration(MigrationVersion<'static>),
 }
 
 impl Error for RunMigrationsError {}
 
 impl fmt::Display for RunMigrationsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match *self {
-            RunMigrationsError::MigrationError(ref error) => write!(f, "Failed with: {}", error),
-            RunMigrationsError::QueryError(ref error) => write!(f, "Failed with: {}", error),
-            RunMigrationsError::EmptyMigration => {
-                write!(f, "Failed with: Attempted to run an empty migration.")
+        match self {
+            RunMigrationsError::MigrationError(v, err) => {
+                write!(f, "Failed to run {} with: {}", v, err)
+            }
+            RunMigrationsError::QueryError(v, err) => {
+                write!(f, "Failed to run {} with: {}", v, err)
+            }
+            RunMigrationsError::EmptyMigration(v) => {
+                write!(f, "Failed to run {} with: EmptyMigration", v)
             }
         }
-    }
-}
-
-impl From<MigrationError> for RunMigrationsError {
-    fn from(e: MigrationError) -> Self {
-        RunMigrationsError::MigrationError(e)
-    }
-}
-
-impl From<result::Error> for RunMigrationsError {
-    fn from(e: result::Error) -> Self {
-        RunMigrationsError::QueryError(e)
-    }
-}
-
-impl From<io::Error> for RunMigrationsError {
-    fn from(e: io::Error) -> Self {
-        RunMigrationsError::MigrationError(e.into())
     }
 }

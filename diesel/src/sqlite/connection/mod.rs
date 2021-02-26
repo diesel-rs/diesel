@@ -52,7 +52,6 @@ impl SimpleConnection for SqliteConnection {
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
-    type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         use crate::result::ConnectionError::CouldntSetupConfiguration;
@@ -100,7 +99,7 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager {
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
         &self.transaction_manager
     }
 }
@@ -169,7 +168,7 @@ impl SqliteConnection {
         F: FnOnce() -> Result<T, E>,
         E: From<Error>,
     {
-        let transaction_manager = self.transaction_manager();
+        let transaction_manager = &self.transaction_manager;
 
         transaction_manager.begin_transaction_sql(self, sql)?;
         match f() {

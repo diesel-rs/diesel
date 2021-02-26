@@ -275,7 +275,7 @@ impl<'a> TransactionBuilder<'a> {
         let mut query_builder = <Pg as Backend>::QueryBuilder::default();
         self.to_sql(&mut query_builder)?;
         let sql = query_builder.finish();
-        let transaction_manager = self.connection.transaction_manager();
+        let transaction_manager = &self.connection.transaction_manager;
 
         transaction_manager.begin_transaction_sql(self.connection, &sql)?;
         match f() {

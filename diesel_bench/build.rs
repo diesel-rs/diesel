@@ -52,14 +52,14 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
 }
 
 fn main() {
-    let migrations_dir = migrations::find_migrations_directory()
-        .unwrap()
-        .join(MIGRATION_SUBDIR);
+    use migrations::MigrationHarness;
+    use std::path::PathBuf;
+
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let migrations_dir = manifest_dir.join("migrations").join(MIGRATION_SUBDIR);
+    let migrations = migrations::FileBasedMigrations::from_path(&migrations_dir).unwrap();
+
     println!("cargo:rerun-if-changed={}", migrations_dir.display());
-    migrations::run_pending_migrations_in_directory(
-        &connection(),
-        &migrations_dir,
-        &mut io::sink(),
-    )
-    .unwrap();
+
+    connection().run_pending_migrations(migrations).unwrap();
 }

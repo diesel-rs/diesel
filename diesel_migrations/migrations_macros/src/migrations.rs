@@ -23,7 +23,7 @@ fn resolve_migrations_directory(
             // People commonly put their migrations in src/migrations
             // so start the search there rather than the project root
             let src_dir = cargo_manifest_dir.join("src");
-            search_for_migrations_directory(&src_dir)?
+            search_for_migrations_directory(&src_dir).expect("todo")
         }
     };
 

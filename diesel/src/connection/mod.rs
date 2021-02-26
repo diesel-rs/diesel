@@ -27,18 +27,20 @@ pub trait SimpleConnection {
 }
 
 /// A connection to a database
-pub trait Connection: SimpleConnection + Sized + Send {
+pub trait Connection: SimpleConnection + Send {
     /// The backend this type connects to
     type Backend: Backend;
-    #[doc(hidden)]
-    type TransactionManager: TransactionManager<Self>;
+    //    #[doc(hidden)]
+    //  type TransactionManager: TransactionManager<Self>;
 
     /// Establishes a new connection to the database
     ///
     /// The argument to this method varies by backend.
     /// See the documentation for that backend's connection class
     /// for details about what it accepts.
-    fn establish(database_url: &str) -> ConnectionResult<Self>;
+    fn establish(database_url: &str) -> ConnectionResult<Self>
+    where
+        Self: Sized;
 
     /// Executes the given function inside of a database transaction
     ///
@@ -100,6 +102,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// ```
     fn transaction<T, E, F>(&self, f: F) -> Result<T, E>
     where
+        Self: Sized,
         F: FnOnce() -> Result<T, E>,
         E: From<Error>,
     {
@@ -119,7 +122,10 @@ pub trait Connection: SimpleConnection + Sized + Send {
 
     /// Creates a transaction that will never be committed. This is useful for
     /// tests. Panics if called while inside of a transaction.
-    fn begin_test_transaction(&self) -> QueryResult<()> {
+    fn begin_test_transaction(&self) -> QueryResult<()>
+    where
+        Self: Sized,
+    {
         let transaction_manager = self.transaction_manager();
         assert_eq!(transaction_manager.get_transaction_depth(), 0);
         transaction_manager.begin_transaction(self)
@@ -162,6 +168,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     where
         F: FnOnce() -> Result<T, E>,
         E: Debug,
+        Self: Sized,
     {
         let mut user_result = None;
         let _ = self.transaction::<(), _, _>(|| {
@@ -177,6 +184,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     #[doc(hidden)]
     fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
     where
+        Self: Sized,
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         U: FromSqlRow<T::SqlType, Self::Backend>,
@@ -185,8 +193,57 @@ pub trait Connection: SimpleConnection + Sized + Send {
     #[doc(hidden)]
     fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
     where
+        Self: Sized,
         T: QueryFragment<Self::Backend> + QueryId;
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager;
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self>
+    where
+        Self: Sized;
+}
+
+/// A variant of the [`Connection`](trait.Connection.html) that is
+/// usable with dynamic dispatch
+///
+/// If you are looking for a way to use pass database connections
+/// for different database backends around in your application
+/// this trait won't help you much. Normally you should only
+/// need to use this trait if you are interacting with a connection
+/// passed to a [`Migration`](../migration/trait.Migration.html)
+pub trait BoxableConnection<DB: Backend>: Connection<Backend = DB> + std::any::Any {
+    #[doc(hidden)]
+    fn as_any(&self) -> &dyn std::any::Any;
+}
+
+impl<C> BoxableConnection<C::Backend> for C
+where
+    C: Connection + std::any::Any,
+{
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
+impl<DB: Backend> dyn BoxableConnection<DB> {
+    /// Downcast the current connection to a specific connection
+    /// type.
+    ///
+    /// This will return `None` if the underlying
+    /// connection does not match the corresponding
+    /// type, otherwise a reference to the underlying connection is returned
+    pub fn downcast_ref<T>(&self) -> Option<&T>
+    where
+        T: Connection<Backend = DB> + 'static,
+    {
+        self.as_any().downcast_ref::<T>()
+    }
+
+    /// Check if the current connection is
+    /// a specific connection type
+    pub fn is<T>(&self) -> bool
+    where
+        T: Connection<Backend = DB> + 'static,
+    {
+        self.as_any().is::<T>()
+    }
 }
