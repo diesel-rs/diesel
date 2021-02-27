@@ -1,6 +1,6 @@
 use crate::expression::expression_types::NotSelectable;
 use crate::pg::Pg;
-use crate::sql_types::{Bigint, Bool, Inet};
+use crate::sql_types::{Bigint, Bool, Inet, Jsonb};
 
 __diesel_infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
 __diesel_infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
@@ -20,3 +20,4 @@ infix_operator!(IsContainedByNetLoose, " <<= ", backend: Pg);
 infix_operator!(AndNet, " & ", Inet, backend: Pg);
 infix_operator!(OrNet, " | ", Inet, backend: Pg);
 infix_operator!(DifferenceNet, " - ", Bigint, backend: Pg);
+infix_operator!(JsonbMerge, " || ", Jsonb, backend: Pg);

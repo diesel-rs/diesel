@@ -4,7 +4,7 @@ use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Cidr, Inet, Nullable, Range, SqlType, Text};
+use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -1111,3 +1111,18 @@ impl InetOrCidr for Inet {}
 impl InetOrCidr for Cidr {}
 impl InetOrCidr for Nullable<Inet> {}
 impl InetOrCidr for Nullable<Cidr> {}
+
+/// PostgreSQL specific expression methods using the `Jsonb` datatype.
+pub trait PgJsonbExpressionMethods: Expression<SqlType = Jsonb> + Sized {
+    fn merge<T: AsExpression<Jsonb>>(self, other: T) -> dsl::JsonbMerge<Self, T::Expression> {
+        Grouped(JsonbMerge::<Self, T::Expression>::new(
+            self,
+            other.as_expression(),
+        ))
+    }
+}
+
+impl<T: Expression<SqlType = Jsonb>> PgJsonbExpressionMethods for T where
+    T: Expression<SqlType = Jsonb>
+{
+}
