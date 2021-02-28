@@ -1,7 +1,6 @@
 [![](https://diesel.rs/assets/images/diesel_logo_stacked_black.png)](https://diesel.rs)
 
-Query schemas not known at compile time with Diesel
-===================================================
+# Query schemas not known at compile time with Diesel
 
 [![Build Status](https://travis-ci.org/diesel-rs/diesel.svg)](https://travis-ci.org/diesel-rs/diesel-dynamic-schema)
 [![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
@@ -18,8 +17,7 @@ use Diesel's query builder. Keep in mind that many compile time guarantees are
 lost. We cannot verify that the tables/columns you ask for actually exist, or
 that the types you state are correct.
 
-Getting Started
----------------
+## Getting Started
 
 The main function used by this crate is `table`. Note that you must always
 provide an explicit select clause when using this crate.
@@ -45,10 +43,10 @@ this GitHub repository, must follow our [code of conduct](https://github.com/die
 
 Licensed under either of these:
 
- * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
-   https://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or
-   https://opensource.org/licenses/MIT)
+-   Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
+    https://www.apache.org/licenses/LICENSE-2.0)
+-   MIT license ([LICENSE-MIT](LICENSE-MIT) or
+    https://opensource.org/licenses/MIT)
 
 ### Contributing
 

@@ -1,6 +1,6 @@
 # `rs-diesel-sqlite`
 
-Diesel's `Getting Started` guide using SQLite instead of Postgresql
+Diesel's `Getting Started` guide using SQLite instead of PostgreSQL
 
 ## Usage
 
