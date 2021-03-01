@@ -265,7 +265,8 @@ pub trait QueryDsl: Sized {
     /// #         .first::<i32>(&connection)?;
     /// let join = users::table.left_join(posts::table);
     ///
-    /// // By default, all columns from both tables are selected
+    /// // By default, all columns from both tables are selected.
+    /// // Note, the structs must contain all the fields from original schemas in order.
     /// let all_data = join.load::<(User, Option<Post>)>(&connection)?;
     /// let expected_data = vec![
     ///     (User::new(1, "Sean"), Some(Post::new(post_id, 1, "Sean's Post"))),
