@@ -1113,7 +1113,7 @@ impl InetOrCidr for Nullable<Inet> {}
 impl InetOrCidr for Nullable<Cidr> {}
 
 /// PostgreSQL specific expression methods using the `Jsonb` datatype.
-pub trait PgJsonbExpressionMethods: Expression<SqlType = Jsonb> + Sized {
+pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `||` operator
     ///
     /// This operator merges two `Jsonb` objects.
@@ -1209,7 +1209,10 @@ pub trait PgJsonbExpressionMethods: Expression<SqlType = Jsonb> + Sized {
     /// # #[cfg(not(feature = "serde_json"))]
     /// # fn main() {}
     /// ```
-    fn merge<T: AsExpression<Jsonb>>(self, other: T) -> dsl::JsonbMerge<Self, T::Expression> {
+    fn merge<T: AsExpression<Self::SqlType>>(
+        self,
+        other: T,
+    ) -> dsl::JsonbMerge<Self, T::Expression> {
         Grouped(JsonbMerge::<Self, T::Expression>::new(
             self,
             other.as_expression(),
@@ -1217,7 +1220,14 @@ pub trait PgJsonbExpressionMethods: Expression<SqlType = Jsonb> + Sized {
     }
 }
 
-impl<T: Expression<SqlType = Jsonb>> PgJsonbExpressionMethods for T where
-    T: Expression<SqlType = Jsonb>
+// Support for nullable jsonb
+trait JsonbOrNullableJsonb {}
+impl JsonbOrNullableJsonb for Jsonb {}
+impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+impl<T> PgJsonbExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: JsonbOrNullableJsonb,
 {
 }
