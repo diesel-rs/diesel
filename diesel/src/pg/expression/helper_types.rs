@@ -1,6 +1,6 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
-use crate::sql_types::{Inet, Jsonb, VarChar};
+use crate::sql_types::{Inet, VarChar};
 
 /// The return type of `lhs.ilike(rhs)`
 pub type ILike<Lhs, Rhs> = Grouped<super::operators::ILike<Lhs, AsExprOf<Rhs, VarChar>>>;
@@ -80,4 +80,5 @@ pub type DifferenceNet<Lhs, Rhs> =
     Grouped<super::operators::DifferenceNet<Lhs, AsExprOf<Rhs, Inet>>>;
 
 /// The return type of `lsh.jsonb_merge(rhs)`
-pub type JsonbMerge<Lhs, Rhs> = Grouped<super::operators::JsonbMerge<Lhs, AsExprOf<Rhs, Jsonb>>>;
+pub type JsonbMerge<Lhs, Rhs> =
+    Grouped<super::operators::JsonbMerge<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;

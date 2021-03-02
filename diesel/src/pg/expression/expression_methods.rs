@@ -1173,7 +1173,7 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #     })
     /// #     diesel::insert_into(d_e_f).values(d_e_f_data);
     /// #
-    /// #     let projected_merged_json = json!({
+    ///       let projected_merged_json = json!({
     ///               "a": 1,
     ///               "b": 2,
     ///               "c": 3,
@@ -1198,10 +1198,10 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # #[cfg(not(feature = "serde_json"))]
     /// # fn main() {}
     /// ```
-    fn merge<T: AsExpression<Self::SqlType>>(
-        self,
-        other: T,
-    ) -> dsl::JsonbMerge<Self, T::Expression> {
+    fn merge<T: AsExpression<Self::SqlType>>(self, other: T) -> dsl::JsonbMerge<Self, T::Expression>
+    where
+        <Self as Expression>::SqlType: SqlType,
+    {
         Grouped(JsonbMerge::<Self, T::Expression>::new(
             self,
             other.as_expression(),
@@ -1209,8 +1209,8 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     }
 }
 
-// Support for nullable jsonb
-trait JsonbOrNullableJsonb {}
+/// Hack for adding support for nullable `jsonb`.
+pub trait JsonbOrNullableJsonb {}
 impl JsonbOrNullableJsonb for Jsonb {}
 impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
 
