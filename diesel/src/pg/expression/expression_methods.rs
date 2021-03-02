@@ -1052,7 +1052,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `-` expression.
     ///
-    /// This operator substracts an address from an address to compute the distance between the two
+    /// This operator subtracts an address from an address to compute the distance between the two.
     ///
     /// # Example
     ///
@@ -1114,6 +1114,101 @@ impl InetOrCidr for Nullable<Cidr> {}
 
 /// PostgreSQL specific expression methods using the `Jsonb` datatype.
 pub trait PgJsonbExpressionMethods: Expression<SqlType = Jsonb> + Sized {
+    /// Creates a PostgreSQL `||` operator
+    ///
+    /// This operator merges two `Jsonb` objects.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     characters {
+    /// #         id -> Integer,
+    /// #         a_b_c -> Jsonb,
+    /// #         d_e_f -> Jsonb,
+    /// #     }
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() {
+    /// #     use diesel::insert_into;
+    /// #     use self::characters::dsl::*;
+    /// #     use serde_json::from_str;
+    /// #
+    /// #     let connection = connection_no_data();
+    /// #     diesel::sql_query("CREATE TABLE characters (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         a_b_c JSONB NOT NULL,
+    /// #         d_e_f JSONB NOT NULL
+    /// #     )").execute(&connection)?;
+    /// #
+    /// #     // insert into a_b_c
+    /// #     let a_b_c_data = r#"
+    /// #         {
+    /// #             "a": 1,
+    /// #             "b": 2,
+    /// #             "c": 3,
+    /// #             "letters": [
+    /// #                 "a",
+    /// #                 "b",
+    /// #                 "c",
+    /// #             ]
+    /// #         }
+    /// #     "#;
+    /// #     diesel::insert_into(a_b_c).values(from_str(a_b_c_data));
+    /// #
+    /// #     // insert into d_e_f
+    /// #     let d_e_f_data = r#"
+    /// #         {
+    /// #             "d": 1,
+    /// #             "e": 2,
+    /// #             "f": 3,
+    /// #             "letters": [
+    /// #                 "d",
+    /// #                 "e",
+    /// #                 "f",
+    /// #             ]
+    /// #         }
+    /// #     "#;
+    /// #     diesel::insert_into(d_e_f).values(from_str(d_e_f_data));
+    /// #
+    /// #     let a_b_c_json = a_b_c.load(&connection);
+    /// #     let d_e_f_json = d_e_f.load(&connection);
+    /// #
+    /// #     let projected_merged_json = from_str(r#"
+    /// #         {
+    /// #             "a": 1,
+    /// #             "b": 2,
+    /// #             "c": 3,
+    /// #             "d": 1,
+    /// #             "e": 2,
+    /// #             "f": 3,
+    /// #             "letters": [
+    /// #                 "a",
+    /// #                 "b",
+    /// #                 "c",
+    /// #                 "d",
+    /// #                 "e",
+    /// #                 "f",
+    /// #             ]
+    /// #         }
+    /// #     "#
+    /// #     );
+    /// #
+    /// #     let merged_json = a_b_c_json.merge(d_e_f_json);
+    /// #     assert_eq!(projected_merged_json, merged_json);
+    /// #
+    /// # }
+    /// #
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn main() {}
+    /// ```
     fn merge<T: AsExpression<Jsonb>>(self, other: T) -> dsl::JsonbMerge<Self, T::Expression> {
         Grouped(JsonbMerge::<Self, T::Expression>::new(
             self,
