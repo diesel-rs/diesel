@@ -1139,7 +1139,6 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() {
     /// #     use diesel::insert_into;
     /// #     use self::characters::dsl::*;
-    /// #     use serde_json::from_str;
     /// #
     /// #     let connection = connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE characters (
@@ -1149,23 +1148,20 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #     )").execute(&connection)?;
     /// #
     /// #     // insert into a_b_c
-    /// #     let a_b_c_data = r#"
-    /// #         {
-    /// #             "a": 1,
-    /// #             "b": 2,
-    /// #             "c": 3,
-    /// #             "letters": [
+    /// #     a_b_c_data = json!({
+    /// #            "a": 1,
+    /// #            "b": 1,
+    /// #            "c": 1,
+    /// #            "letters": [
     /// #                 "a",
     /// #                 "b",
     /// #                 "c",
-    /// #             ]
-    /// #         }
-    /// #     "#;
-    /// #     diesel::insert_into(a_b_c).values(from_str(a_b_c_data));
+    /// #            ],
+    /// #     });
+    /// #     diesel::insert_into(a_b_c).values(a_b_c_data);
     /// #
     /// #     // insert into d_e_f
-    /// #     let d_e_f_data = r#"
-    /// #         {
+    /// #     let d_e_f_data = json!({
     /// #             "d": 1,
     /// #             "e": 2,
     /// #             "f": 3,
@@ -1174,15 +1170,10 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #                 "e",
     /// #                 "f",
     /// #             ]
-    /// #         }
-    /// #     "#;
-    /// #     diesel::insert_into(d_e_f).values(from_str(d_e_f_data));
+    /// #     })
+    /// #     diesel::insert_into(d_e_f).values(d_e_f_data);
     /// #
-    ///       let a_b_c_json = a_b_c.load(&connection);
-    ///       let d_e_f_json = d_e_f.load(&connection);
-    ///
-    ///       let projected_merged_json = from_str(r#"
-    ///           {
+    /// #     let projected_merged_json = json!({
     ///               "a": 1,
     ///               "b": 2,
     ///               "c": 3,
@@ -1197,11 +1188,9 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     ///                   "e",
     ///                   "f",
     ///               ]
-    ///           }
-    ///       "#
-    ///       );
+    ///     })
     ///
-    ///       let merged_json = a_b_c_json.merge(d_e_f_json);
+    ///       let merged_json = characters::table.select(characters::a_b_c.merge(characters::d_e_f)).load(&conn);
     ///       assert_eq!(projected_merged_json, merged_json);
     /// #
     /// # }
