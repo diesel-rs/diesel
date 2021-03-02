@@ -409,12 +409,6 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// # Attributes
 ///
-/// ## Optional container attributes
-///
-/// * `#[table_name = "some_table_name"]`, specifies the table this type
-/// is insertable into. Requires that `some_table_name` is in scope.
-/// If this attribute is not used, the type name converted to
-/// `snake_case` with an added `s` is used as table name
 ///
 /// ## Optional field attributes
 ///
