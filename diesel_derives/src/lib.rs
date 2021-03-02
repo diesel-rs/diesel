@@ -121,10 +121,6 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 ///
 /// ## Optional container attributes
 ///
-/// * `#[table_name = "some_table"]`, specifies the table for which the
-/// current type is a changeset. Requires that `some_table` is in scope.
-/// If this attribute is not used, the type name converted to
-/// `snake_case` with an added `s` is used as table name
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
 ///   that the type is `Sized`
 #[proc_macro_derive(AsExpression, attributes(diesel, sql_type))]
