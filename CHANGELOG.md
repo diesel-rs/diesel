@@ -8,6 +8,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* Jsonb merge for PostgreSQL
+
 * `Connection` and `SimpleConnection` traits are implemented for a broader range
   of `r2d2::PooledConnection<M>` types when the `r2d2` feature is enabled.
 
