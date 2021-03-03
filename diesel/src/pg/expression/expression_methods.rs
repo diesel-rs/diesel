@@ -1138,17 +1138,19 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() {
     /// #     use diesel::insert_into;
+    /// #     use diesel::associations::HasTable;
     /// #     use self::characters::dsl::*;
+    /// #     use serde_json::json;
     /// #
     /// #     let connection = connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE characters (
     /// #         id SERIAL PRIMARY KEY,
     /// #         a_b_c JSONB NOT NULL,
     /// #         d_e_f JSONB NOT NULL
-    /// #     )").execute(&connection)?;
+    /// #     )").execute(&connection);
     /// #
     /// #     // insert into a_b_c
-    /// #     a_b_c_data = json!({
+    /// #     let a_b_c_data = json!({
     /// #            "a": 1,
     /// #            "b": 1,
     /// #            "c": 1,
@@ -1170,7 +1172,7 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #                 "e",
     /// #                 "f",
     /// #             ]
-    /// #     })
+    /// #     });
     /// #     diesel::insert_into(d_e_f).values(d_e_f_data);
     /// #
     ///       let projected_merged_json = json!({
@@ -1188,9 +1190,9 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     ///                   "e",
     ///                   "f",
     ///               ]
-    ///     })
+    ///     });
     ///
-    ///       let merged_json = characters::table.select(characters::a_b_c.merge(characters::d_e_f)).load(&conn);
+    ///       let merged_json = characters::table.select(characters::a_b_c.merge(characters::d_e_f)).load(&connection);
     ///       assert_eq!(projected_merged_json, merged_json);
     /// #
     /// # }
