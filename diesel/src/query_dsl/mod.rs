@@ -266,7 +266,7 @@ pub trait QueryDsl: Sized {
     /// let join = users::table.left_join(posts::table);
     ///
     /// // By default, all columns from both tables are selected.
-    /// // Note, the structs must contain all the fields from original schemas in order.
+    /// // If no explicit select clause is used this means that the result type of this query must contain all fields from the original schema in order.
     /// let all_data = join.load::<(User, Option<Post>)>(&connection)?;
     /// let expected_data = vec![
     ///     (User::new(1, "Sean"), Some(Post::new(post_id, 1, "Sean's Post"))),
@@ -460,8 +460,8 @@ pub trait QueryDsl: Sized {
     ///     .execute(&connection)
     ///     .unwrap();
     ///
-    /// // It can load into struct as long as the struct contains all the
-    /// // fields in the schema in the same order without explicit select.
+    /// // By default, all columns from both tables are selected.
+    /// // If no explicit select clause is used this means that the result type of this query must contain all fields from the original schema in order.
     /// let data = users
     ///     .inner_join(posts.on(title.like(name.concat("%"))))
     ///     .load::<(User, Post)>(&connection); // type could be elided
