@@ -30,7 +30,7 @@ where
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// #     #[cfg(feature = "sqlite")]
     /// #     conn.execute("DELETE FROM users").unwrap();
-    /// let user = User { id: 1, name: "Sean", };
+    /// let user = User { id: 1, name: "Sean" };
     ///
     /// let inserted_row_count = diesel::insert_into(users)
     ///     .values(&user)
@@ -60,7 +60,7 @@ where
     /// #     #[cfg(feature = "postgres")]
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// # #[cfg(feature = "postgres")]
-    /// let user = User { id: 1, name: "Sean", };
+    /// let user = User { id: 1, name: "Sean" };
     ///
     /// # #[cfg(feature = "postgres")]
     /// let inserted_row_count = diesel::insert_into(users)
@@ -105,7 +105,7 @@ where
     /// #     #[cfg(feature = "sqlite")]
     /// #     conn.execute("DELETE FROM users").unwrap();
     /// conn.execute("CREATE UNIQUE INDEX users_name ON users (name)").unwrap();
-    /// let user = User { id: 1, name: "Sean", };
+    /// let user = User { id: 1, name: "Sean" };
     /// let same_name_different_id = User { id: 2, name: "Sean" };
     /// let same_id_different_name = User { id: 1, name: "Pascal" };
     ///
