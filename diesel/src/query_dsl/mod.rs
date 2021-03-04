@@ -265,7 +265,9 @@ pub trait QueryDsl: Sized {
     /// #         .first::<i32>(&connection)?;
     /// let join = users::table.left_join(posts::table);
     ///
-    /// // By default, all columns from both tables are selected
+    /// // By default, all columns from both tables are selected.
+    /// // If no explicit select clause is used this means that the result
+    /// // type of this query must contain all fields from the original schema in order.
     /// let all_data = join.load::<(User, Option<Post>)>(&connection)?;
     /// let expected_data = vec![
     ///     (User::new(1, "Sean"), Some(Post::new(post_id, 1, "Sean's Post"))),
@@ -419,6 +421,62 @@ pub trait QueryDsl: Sized {
     /// let expected_data = vec![
     ///     (String::from("Sean"), String::from("Sean's post")),
     ///     (String::from("Sean"), String::from("Sean is a jerk")),
+    /// ];
+    /// assert_eq!(Ok(expected_data), data);
+    /// # }
+    /// ```
+    ///
+    /// ### With explicit `ON` clause (struct)
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// #
+    /// # /*
+    /// allow_tables_to_appear_in_same_query!(users, posts);
+    /// # */
+    ///
+    /// # fn main() {
+    /// #     use self::users::dsl::{users, name};
+    /// #     use self::posts::dsl::{posts, user_id, title};
+    /// #     let connection = establish_connection();
+    /// #[derive(Debug, PartialEq, Queryable)]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// #[derive(Debug, PartialEq, Queryable)]
+    /// struct Post {
+    ///     id: i32,
+    ///     user_id: i32,
+    ///     title: String,
+    /// }
+    ///
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         (user_id.eq(1), title.eq("Sean's post")),
+    ///         (user_id.eq(2), title.eq("Sean is a jerk")),
+    ///     ])
+    ///     .execute(&connection)
+    ///     .unwrap();
+    ///
+    /// // By default, all columns from both tables are selected.
+    /// // If no explicit select clause is used this means that the
+    /// // result type of this query must contain all fields from the
+    /// // original schema in order.
+    /// let data = users
+    ///     .inner_join(posts.on(title.like(name.concat("%"))))
+    ///     .load::<(User, Post)>(&connection); // type could be elided
+    /// let expected_data = vec![
+    ///     (
+    ///         User { id: 1, name: String::from("Sean") },
+    ///         Post { id: 4, user_id: 1, title: String::from("Sean's post") },
+    ///     ),
+    ///     (
+    ///         User { id: 1, name: String::from("Sean") },
+    ///         Post { id: 5, user_id: 2, title: String::from("Sean is a jerk") },
+    ///     ),
     /// ];
     /// assert_eq!(Ok(expected_data), data);
     /// # }
