@@ -42,28 +42,35 @@ where
 
 pub struct NamedStatementIterator<'a, T> {
     stmt: StatementUse<'a>,
-    column_indices: HashMap<&'a str, usize>,
+    column_indices: Option<HashMap<&'a str, usize>>,
     _marker: PhantomData<T>,
 }
 
 impl<'a, T> NamedStatementIterator<'a, T> {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(stmt: StatementUse<'a>) -> QueryResult<Self> {
-        let column_indices = (0..stmt.num_fields())
+        Ok(NamedStatementIterator {
+            stmt,
+            column_indices: None,
+            _marker: PhantomData,
+        })
+    }
+
+    fn populate_column_indices(&mut self) -> QueryResult<()> {
+        let column_indices = (0..self.stmt.num_fields())
             .filter_map(|i| {
-                stmt.field_name(i).map(|column| {
-                    let column = column
-                        .to_str()
+                dbg!(i);
+                dbg!(self.stmt.field_name(i)).map(|column| {
+                    let column = dbg!(column
+                        .to_str())
                         .map_err(|e| DeserializationError(e.into()))?;
                     Ok((column, i))
                 })
             })
             .collect::<QueryResult<_>>()?;
-        Ok(NamedStatementIterator {
-            stmt,
-            column_indices,
-            _marker: PhantomData,
-        })
+
+        self.column_indices = Some(column_indices);
+        Ok(())
     }
 }
 
@@ -78,8 +85,13 @@ where
             Ok(row) => row,
             Err(e) => return Some(Err(e)),
         };
+        if self.column_indices.is_none() {
+            if let Err(e) = self.populate_column_indices() {
+                return Some(Err(e));
+            }
+        }
         row.map(|row| {
-            let row = row.into_named(&self.column_indices);
+            let row = row.into_named(self.column_indices.as_ref().expect("it's there because we populated it above"));
             T::build(&row).map_err(DeserializationError)
         })
     }
