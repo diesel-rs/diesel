@@ -345,7 +345,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --all
+          args: --manifest-path diesel/Cargo.toml --features="sqlite mysql postgres"
       - name: Run clippy
         uses: actions-rs/cargo@v1
         with:
