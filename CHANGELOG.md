@@ -10,6 +10,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Fixed a use-after-free issue in the `QueryableByName` implementation
   of our `Sqlite` backend
+* Updated several dependencies
 
 ## [1.4.5] - 2020-06-09
 
