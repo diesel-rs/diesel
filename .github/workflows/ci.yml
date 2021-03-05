@@ -97,11 +97,12 @@ jobs:
           brew services start mysql &&
           brew services stop mysql;sleep 3;brew services start mysql &&
           sleep 2 &&
-          /usr/local/Cellar/mysql/5.7.32/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          /usr/local/Cellar/mysql@5.7/5.7.32/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
           echo 'MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test' >> $GITHUB_ENV
           echo 'MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example' >> $GITHUB_ENV
           echo 'MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test' >> $GITHUB_ENV
-          echo 'MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mysql/8.0.19_1/lib' >> $GITHUB_ENV
+          echo 'MYSQLCLIENT_LIB_DIR=/usr/local/opt/mysql@5.7/lib' >> $GITHUB_ENV
+          echo 'PKG_CONFIG_PATH="/usr/local/opt/mysql@5.7/lib/pkgconfig"' >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -345,7 +346,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --features="sqlite mysql postgres"
+          args: --manifest-path=diesel/Cargo.toml
       - name: Run clippy
         uses: actions-rs/cargo@v1
         with:
