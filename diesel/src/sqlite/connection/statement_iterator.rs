@@ -95,7 +95,11 @@ where
             }
         }
         row.map(|row| {
-            let row = row.into_named(self.column_indices.as_ref().expect("it's there because we populated it above"));
+            let row = row.into_named(
+                self.column_indices
+                    .as_ref()
+                    .expect("it's there because we populated it above"),
+            );
             T::build(&row).map_err(DeserializationError)
         })
     }

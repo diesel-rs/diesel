@@ -65,7 +65,7 @@ impl Statement {
     /// > reprepared by the first call to sqlite3_step() for a particular
     /// > run or until the next call to sqlite3_column_name()
     /// > or sqlite3_column_name16() on the same column.
-    /// 
+    ///
     /// https://www.sqlite.org/c3ref/column_name.html
     unsafe fn field_name<'a, 'b: 'a>(&'a self, idx: usize) -> Option<&'b CStr> {
         let ptr = ffi::sqlite3_column_name(self.inner_statement.as_ptr(), idx as libc::c_int);
