@@ -93,7 +93,7 @@ jobs:
         if: runner.os == 'macOS' && matrix.backend == 'mysql'
         run: |
           brew update &&
-          brew install mysql &&
+          brew install mysql@8.0.19_1 &&
           brew services start mysql &&
           brew services stop mysql;sleep 3;brew services start mysql &&
           sleep 2 &&
