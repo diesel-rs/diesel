@@ -94,8 +94,8 @@ jobs:
         run: |
           brew update &&
           brew install mysql@5.7 &&
-          brew services start mysql &&
-          brew services stop mysql;sleep 3;brew services start mysql &&
+          brew services start mysql@5.7 &&
+          brew services stop mysql@5.7;sleep 3;brew services start mysql@5.7 &&
           sleep 2 &&
           /usr/local/Cellar/mysql@5.7/5.7.32/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
           echo 'MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test' >> $GITHUB_ENV
