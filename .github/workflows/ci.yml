@@ -92,17 +92,16 @@ jobs:
       - name: Install mysql (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mysql'
         run: |
-          brew update
-          brew install mariadb
-          mysql_install_db
-          mysql.server start
-          sleep 3
-          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
-          macos_mysql_version="$(ls /usr/local/Cellar/mariadb)"
-          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mariadb/${macos_mysql_version}/lib" >> $GITHUB_ENV
+          brew update &&
+          brew install mysql &&
+          brew services start mysql &&
+          brew services stop mysql;sleep 3;brew services start mysql &&
+          sleep 2 &&
+          /usr/local/Cellar/mysql/8.0.19_1/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
+          echo 'MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test' >> $GITHUB_ENV
+          echo 'MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example' >> $GITHUB_ENV
+          echo 'MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test' >> $GITHUB_ENV
+          echo 'MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mysql/8.0.19_1/lib' >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -346,7 +345,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --manifest-path diesel_cli/Cargo.toml 
+          args: --manifest-path diesel/Cargo.toml --features="sqlite mysql postgres"
       - name: Run clippy
         uses: actions-rs/cargo@v1
         with:
