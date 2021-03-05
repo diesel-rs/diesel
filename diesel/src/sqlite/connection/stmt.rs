@@ -58,9 +58,16 @@ impl Statement {
         unsafe { ffi::sqlite3_column_count(self.inner_statement.as_ptr()) as usize }
     }
 
-    /// The lifetime of the returned CStr is shorter than self. This function
-    /// should be tied to a lifetime that ends before the next call to `reset`
-    unsafe fn field_name<'a>(&self, idx: usize) -> Option<&'a CStr> {
+    /// The lifetime of the returned CStr is shorter than self.
+    ///
+    /// > The returned string pointer is valid until either the prepared statement
+    /// > is destroyed by sqlite3_finalize() or until the statement is automatically
+    /// > reprepared by the first call to sqlite3_step() for a particular
+    /// > run or until the next call to sqlite3_column_name()
+    /// > or sqlite3_column_name16() on the same column.
+    ///
+    /// https://www.sqlite.org/c3ref/column_name.html
+    unsafe fn field_name<'a, 'b: 'a>(&'a self, idx: usize) -> Option<&'b CStr> {
         let ptr = ffi::sqlite3_column_name(self.inner_statement.as_ptr(), idx as libc::c_int);
         if ptr.is_null() {
             None

@@ -4,6 +4,14 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [1.4.6] - 2021-03-05
+
+### Fixed
+
+* Fixed a use-after-free issue in the `QueryableByName` implementation
+  of our `Sqlite` backend
+* Updated several dependencies
+
 ## [1.4.5] - 2020-06-09
 
 ### Fixed
@@ -1640,3 +1648,4 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.4.3]: https://github.com/diesel-rs/diesel/compare/v1.4.2...v1.4.3
 [1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
 [1.4.5]: https://github.com/diesel-rs/diesel/compare/v1.4.4...v1.4.5
+[1.4.6]: https://github.com/diesel-rs/diesel/compare/v1.4.5...v1.4.6
