@@ -67,7 +67,7 @@ impl Statement {
     /// > or sqlite3_column_name16() on the same column.
     /// 
     /// https://www.sqlite.org/c3ref/column_name.html
-    unsafe fn field_name<'a>(&self, idx: usize) -> Option<&'a CStr> {
+    unsafe fn field_name<'a, 'b: 'a>(&'a self, idx: usize) -> Option<&'b CStr> {
         let ptr = ffi::sqlite3_column_name(self.inner_statement.as_ptr(), idx as libc::c_int);
         if ptr.is_null() {
             None

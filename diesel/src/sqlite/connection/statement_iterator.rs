@@ -42,6 +42,11 @@ where
 
 pub struct NamedStatementIterator<'a, T> {
     stmt: StatementUse<'a>,
+    // The actual lifetime of the stored column name is
+    // not really `'a`, but it's impossible to have a better
+    // fitting lifetime here.
+    // See the `Statement::field_name` method for details
+    // how long the underlying livetime is valid
     column_indices: Option<HashMap<&'a str, usize>>,
     _marker: PhantomData<T>,
 }
@@ -59,10 +64,9 @@ impl<'a, T> NamedStatementIterator<'a, T> {
     fn populate_column_indices(&mut self) -> QueryResult<()> {
         let column_indices = (0..self.stmt.num_fields())
             .filter_map(|i| {
-                dbg!(i);
-                dbg!(self.stmt.field_name(i)).map(|column| {
-                    let column = dbg!(column
-                        .to_str())
+                self.stmt.field_name(i).map(|column| {
+                    let column = column
+                        .to_str()
                         .map_err(|e| DeserializationError(e.into()))?;
                     Ok((column, i))
                 })
