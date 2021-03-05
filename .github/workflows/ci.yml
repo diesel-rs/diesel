@@ -347,10 +347,6 @@ jobs:
         with:
           command: check
           args: --manifest-path=diesel/Cargo.toml
-      - name: Run clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
       - name: Check formating
         uses: actions-rs/cargo@v1
         with:
