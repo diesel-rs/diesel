@@ -836,8 +836,8 @@ pub trait QueryDsl: Sized {
 
     /// Sets the `group by` clause of a query.
     ///
-    /// **Note:** Queries having a `group by` clause require a custom select clause.
-    /// Use `QueryDsl::select()` to specify one
+    /// **Note:** Queries having a `group by` clause require a custom select clause _after_ it.
+    /// Use `QueryDsl::select()` to specify one.
     ///
     /// If there was already a group by clause, it will be overridden.
     /// Ordering by multiple columns can be achieved by passing a tuple of those
