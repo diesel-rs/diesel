@@ -1231,8 +1231,8 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// let data = users
     ///     .load::<User>(&connection)?;
     /// let expected_data = vec![
-    ///     User { id: 1, name: String::from("Sean"), },
-    ///     User { id: 2, name: String::from("Tess"), },
+    ///     User { id: 1, name: String::from("Sean") },
+    ///     User { id: 2, name: String::from("Tess") },
     /// ];
     /// assert_eq!(expected_data, data);
     /// #     Ok(())

@@ -44,8 +44,8 @@ mod eager_loading_with_string_keys {
     use diesel::connection::SimpleConnection;
     use diesel::*;
 
-    table! { users { id -> Text, } }
-    table! { posts { id -> Text, user_id -> Text, } }
+    table! { users { id -> Text } }
+    table! { posts { id -> Text, user_id -> Text } }
     allow_tables_to_appear_in_same_query!(users, posts);
 
     #[derive(Queryable, Identifiable, Debug, PartialEq, Clone)]

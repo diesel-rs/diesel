@@ -896,7 +896,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # extern crate diesel;
 /// # use diesel::*;
 /// #
-/// # table! { crates { id -> Integer, name -> VarChar, } }
+/// # table! { crates { id -> Integer, name -> VarChar } }
 /// #
 /// use diesel::sql_types::Text;
 ///
@@ -935,7 +935,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # extern crate diesel;
 /// # use diesel::*;
 /// #
-/// # table! { crates { id -> Integer, name -> VarChar, } }
+/// # table! { crates { id -> Integer, name -> VarChar } }
 /// #
 /// use diesel::sql_types::Foldable;
 ///
@@ -960,7 +960,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # extern crate diesel;
 /// # use diesel::*;
 /// #
-/// # table! { crates { id -> Integer, name -> VarChar, } }
+/// # table! { crates { id -> Integer, name -> VarChar } }
 /// #
 /// sql_function!(fn random() -> Text);
 ///
