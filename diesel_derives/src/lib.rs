@@ -607,7 +607,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///   single database column, but is a type that implements
 ///   `QueryableByName` on it's own
 ///
-/// /// # Examples
+/// # Examples
 ///
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
