@@ -175,7 +175,7 @@ mod custom_foreign_keys_are_respected_on_belongs_to {
 
     use crate::schema::User;
 
-    table! { special_posts { id -> Integer, author_id -> Integer } }
+    table! { special_posts { id -> Integer, author_id -> Integer, } }
 
     #[derive(Identifiable, Associations)]
     #[belongs_to(User, foreign_key = "author_id")]
