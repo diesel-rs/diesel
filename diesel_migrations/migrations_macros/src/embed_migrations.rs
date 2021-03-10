@@ -29,7 +29,7 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
             use self::diesel::connection::SimpleConnection;
             use std::io;
 
-            const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
+            pub const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
 
             struct EmbeddedMigration {
                 version: &'static str,
