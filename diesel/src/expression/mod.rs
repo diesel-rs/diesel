@@ -119,7 +119,6 @@ pub mod expression_types {
     /// using [`#[derive(QueryableByName)]`](../deserialize/derive.QueryableByName.html)
     /// on the corresponding result type.
     ///
-    /// [`QueryableByName`]: ../deserialize/derive.QueryableByName.html
     #[derive(Clone, Copy, Debug)]
     pub struct Untyped;
 
