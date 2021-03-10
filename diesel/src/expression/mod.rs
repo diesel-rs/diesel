@@ -116,7 +116,8 @@ pub mod expression_types {
     /// we do not know which fields are returned from such a query at compile time.
     ///
     /// For loading values from queries returning a type of this expression, consider
-    /// using [`QueryableByName` derive] on the corresponding result type.
+    /// using [`#[derive(QueryableByName)]`](../deserialize/derive.QueryableByName.html)
+    /// on the corresponding result type.
     ///
     /// [`QueryableByName`]: ../deserialize/derive.QueryableByName.html
     #[derive(Clone, Copy, Debug)]
