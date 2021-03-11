@@ -113,11 +113,7 @@ mod bigdecimal {
             let digits_after_decimal = scale / 4 + 1;
             let weight = digits.len() as i16 - digits_after_decimal as i16 - 1;
 
-            let unnecessary_zeroes = if weight >= 0 {
-                digits.iter().rev().take_while(|i| i.is_zero()).count()
-            } else {
-                0
-            };
+            let unnecessary_zeroes = digits.iter().rev().take_while(|i| i.is_zero()).count();
 
             let relevant_digits = digits.len() - unnecessary_zeroes;
             digits.truncate(relevant_digits);
@@ -294,6 +290,33 @@ mod bigdecimal {
                 weight: 1,
                 scale: 0,
                 digits: vec![1],
+            };
+            assert_eq!(expected, decimal.into());
+        }
+
+        #[test]
+        fn bigdecimal_with_negative_weight_to_pg_numeric_works() {
+            let decimal = BigDecimal::from_str("0.1000000000000000").unwrap();
+            let expected = PgNumeric::Positive {
+                weight: -1,
+                scale: 16,
+                digits: vec![1000],
+            };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("0.00315937").unwrap();
+            let expected = PgNumeric::Positive {
+                weight: -1,
+                scale: 8,
+                digits: vec![31, 5937],
+            };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("0.003159370000000000").unwrap();
+            let expected = PgNumeric::Positive {
+                weight: -1,
+                scale: 18,
+                digits: vec![31, 5937],
             };
             assert_eq!(expected, decimal.into());
         }
