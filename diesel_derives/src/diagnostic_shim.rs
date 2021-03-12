@@ -15,6 +15,10 @@ pub trait DiagnosticShim {
     fn warning<T: Into<String>>(self, msg: T) -> Diagnostic;
 }
 
+pub trait DiagnosticExt {
+    fn span_help<T: Into<String>>(self, span: Span, msg: T) -> Diagnostic;
+}
+
 #[cfg(feature = "nightly")]
 impl DiagnosticShim for Span {
     fn error<T: Into<String>>(self, msg: T) -> Diagnostic {
@@ -23,6 +27,13 @@ impl DiagnosticShim for Span {
 
     fn warning<T: Into<String>>(self, msg: T) -> Diagnostic {
         self.unstable().warning(msg)
+    }
+}
+
+#[cfg(feature = "nightly")]
+impl DiagnosticExt for Diagnostic {
+    fn span_help<T: Into<String>>(self, span: Span, msg: T) -> Diagnostic {
+        self.span_help(span.unstable(), msg)
     }
 }
 
@@ -77,6 +88,15 @@ impl Diagnostic {
             Level::Error => panic!("{}", self.message),
             Level::Warning => println!("{}", self.message),
         }
+    }
+}
+
+#[cfg(not(feature = "nightly"))]
+impl DiagnosticExt for Diagnostic {
+    fn span_help<T: Into<String>>(mut self, _span: Span, msg: T) -> Diagnostic {
+        self.message.push_str("\n");
+        self.message.push_str(&msg.into());
+        self
     }
 }
 

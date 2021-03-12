@@ -1,5 +1,7 @@
+use diagnostic_shim::*;
 use proc_macro2::{self, Ident, Span};
 use syn;
+use syn::spanned::Spanned;
 
 use field::*;
 use model::*;
@@ -50,6 +52,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 .push(parse_quote!(#field_ty: QueryableByName<__DB>));
         } else {
             let st = sql_type(field, &model);
+            check_sql_type(&field_ty, &st);
             where_clause
                 .predicates
                 .push(parse_quote!(#field_ty: diesel::deserialize::FromSql<#st, __DB>));
@@ -114,6 +117,41 @@ fn sql_type(field: &Field, model: &Model) -> syn::Type {
                     )
                     .emit();
                 parse_quote!(())
+            }
+        }
+    }
+}
+
+fn check_sql_type(field_ty: &syn::Type, st: &syn::Type) {
+    // syn heapsize example trick won't work here because there is an additional database generic
+    // unless we create another trait without the DB part
+    //
+    //     quote_spanned! {field_ty.span()=>
+    //         function(st)
+    //     }
+    //
+    // So easier to just manually check as they will always be the same.
+    let ident = |s| Ident::new(s, Span::call_site());
+    if let syn::Type::Path(st_path) = st {
+        let sql_type_name = st_path
+            .path
+            .segments
+            .last()
+            .expect("should have at least one segment");
+        if sql_type_name.ident == ident("BigInt") {
+            match field_ty {
+                syn::Type::Path(ty_path) if ty_path.path.is_ident(&ident("i64")) => {}
+                syn::Type::Path(ty_path) => DiagnosticExt::span_help(
+                    ty_path.span().error(format!(
+                        "{} is not implemented for {}",
+                        ty_path.path.get_ident().unwrap(),
+                        ident("BigInt").to_string()
+                    )),
+                    st_path.span(),
+                    format!("{} implements {:?}", ident("BigInt").to_string(), "i64"),
+                )
+                .emit(),
+                _ => {} // not sure if this path is possible
             }
         }
     }

@@ -1,0 +1,11 @@
+error: i32 is not implemented for BigInt
+ --> $DIR/ensures_derive_queryable_by_name_valid_type.rs:9:6
+  |
+9 |     id: i32,
+  |         ^^^
+  |
+help: BigInt implements "i64"
+ --> $DIR/ensures_derive_queryable_by_name_valid_type.rs:8:18
+  |
+8 |     #[sql_type = "BigInt"]
+  |                  ^^^^^^^^
