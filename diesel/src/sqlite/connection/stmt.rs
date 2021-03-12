@@ -175,13 +175,12 @@ impl<'a, 'b> StatementUse<'a, 'b> {
             );
             CStr::from_ptr(column_name)
         };
-        let name = name.to_str().expect(
+        name.to_str().expect(
             "The Sqlite documentation states that this is UTF8. \
              If you see this error message something has gone \
              horribliy wrong. Please open an issue at the \
              diesel repository.",
-        );
-        name
+        )
     }
 
     pub(in crate::sqlite::connection) fn column_count(&self) -> i32 {
@@ -203,7 +202,7 @@ impl<'a, 'b> StatementUse<'a, 'b> {
     where
         'b: 'c,
     {
-        self.column_names.get(idx as usize).map(|a| *a)
+        self.column_names.get(idx as usize).copied()
     }
 
     pub(in crate::sqlite::connection) fn value<'c>(
