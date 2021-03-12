@@ -1,4 +1,4 @@
-//#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
+#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 // Clippy lints
 #![allow(
     clippy::option_map_unwrap_or_else,
@@ -62,8 +62,6 @@ pub fn search_for_migrations_directory(path: &Path) -> Option<PathBuf> {
     } else {
         path.parent()
             .and_then(|p| search_for_migrations_directory(p))
-        //.unwrap_or_else(|| Err(MigrationError::MigrationDirectoryNotFound(path.into())))
-        //.map_err(|_| MigrationError::MigrationDirectoryNotFound(path.into()))
     }
 }
 
@@ -73,14 +71,8 @@ pub fn valid_sql_migration_directory(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-pub fn version_from_path(path: &Path) -> Option<Result<String, std::io::Error>> {
-    path.file_name()
-        .unwrap_or_else(|| panic!("Can't get file name from path `{:?}`", path))
-        .to_string_lossy()
-        .split('_')
-        .next()
-        .map(|s| Ok(s.replace('-', "")))
-    //.unwrap_or_else(|| Err(MigrationError::UnknownMigrationFormat(path.to_path_buf())))
+pub fn version_from_string(path: &str) -> Option<String> {
+    path.split('_').next().map(|s| s.replace('-', ""))
 }
 
 pub fn file_names(path: &Path) -> Result<Vec<String>, std::io::Error> {
@@ -91,16 +83,12 @@ pub fn file_names(path: &Path) -> Result<Vec<String>, std::io::Error> {
             Err(e) => Some(Err(e)),
         })
         .collect::<Result<Vec<_>, _>>()
-    //.map_err(|e: std::io::Error| MigrationError::IoError(e, Some(path.to_path_buf())))
 }
 
 pub fn migrations_directories<'a>(
     path: &'a Path,
 ) -> impl Iterator<Item = Result<DirEntry, std::io::Error>> + 'a {
-    //    let map_io_err = move |io_err| MigrationError::IoError(io_err, Some(path.to_path_buf()));
-
     path.read_dir()
-        //.map_err(map_io_err)
         .into_iter()
         .flat_map(|read_dir| read_dir)
         .filter_map(move |entry| {

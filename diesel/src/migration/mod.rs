@@ -71,22 +71,32 @@ impl<'a> Display for MigrationVersion<'a> {
     }
 }
 
+pub trait MigrationName: Display {
+    fn version(&self) -> MigrationVersion;
+}
+
 /// Represents a migration that interacts with diesel
 pub trait Migration<DB: Backend> {
-    /// Get the migration version
-    fn version<'a>(&'a self) -> MigrationVersion<'a>;
     /// Apply this migration
     fn run(
         &self,
         conn: &dyn BoxableConnection<DB>,
     ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>;
+
     /// Revert this migration
     fn revert(
         &self,
         conn: &dyn BoxableConnection<DB>,
     ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>;
+
     /// Get a the attached metadata for this migration
     fn metadata(&self) -> &dyn MigrationMetadata;
+
+    fn name(&self) -> &dyn MigrationName;
+
+    fn version(&self) -> MigrationVersion {
+        self.name().version()
+    }
 }
 
 /// This trait is designed to customize the behaviour
@@ -114,10 +124,6 @@ pub trait MigrationSource<DB: Backend> {
 }
 
 impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
-    fn version<'b>(&'b self) -> MigrationVersion<'b> {
-        (&**self).version()
-    }
-
     fn run(
         &self,
         conn: &dyn BoxableConnection<DB>,
@@ -134,14 +140,14 @@ impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
 
     fn metadata(&self) -> &dyn MigrationMetadata {
         (&**self).metadata()
+    }
+
+    fn name(&self) -> &dyn MigrationName {
+        (&**self).name()
     }
 }
 
 impl<'a, DB: Backend> Migration<DB> for &'a dyn Migration<DB> {
-    fn version<'b>(&'b self) -> MigrationVersion<'b> {
-        (&**self).version()
-    }
-
     fn run(
         &self,
         conn: &dyn BoxableConnection<DB>,
@@ -158,6 +164,10 @@ impl<'a, DB: Backend> Migration<DB> for &'a dyn Migration<DB> {
 
     fn metadata(&self) -> &dyn MigrationMetadata {
         (&**self).metadata()
+    }
+
+    fn name(&self) -> &dyn MigrationName {
+        (&**self).name()
     }
 }
 

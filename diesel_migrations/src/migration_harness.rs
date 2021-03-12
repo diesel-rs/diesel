@@ -245,7 +245,7 @@ where
     ) -> Result<MigrationVersion<'static>, Box<dyn Error + Send + Sync + 'static>> {
         if migration.version() != MigrationVersion::from("00000000000000") {
             let mut output = self.output.try_borrow_mut()?;
-            writeln!(output, "Running migration {}", migration.version())?;
+            writeln!(output, "Running migration {}", migration.name())?;
         }
         self.connection.run_migration(migration)
     }
@@ -256,7 +256,7 @@ where
     ) -> Result<MigrationVersion<'static>, Box<dyn Error + Send + Sync + 'static>> {
         if migration.version() != MigrationVersion::from("00000000000000") {
             let mut output = self.output.try_borrow_mut()?;
-            writeln!(output, "Rolling backend migration {}", migration.version())?;
+            writeln!(output, "Rolling back migration {}", migration.name())?;
         }
         self.connection.revert_migration(migration)
     }

@@ -95,10 +95,21 @@ fn run_migration_command(
                     Some(number) => number,
                 };
                 for _ in 0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected.") {
-                        call_with_conn!(
+                        match call_with_conn!(
                             database_url,
                             revert_migration_with_output(dir.clone())
-                        )?;
+                        ) {
+                            Ok(_) => {}
+                            Err(e) if e.is::<MigrationError>() => {
+                                match e.downcast_ref::<MigrationError>() {
+                                    // If n is larger then the actual number of migrations,
+                                    // just stop reverting them
+                                    Some(MigrationError::NoMigrationRun) => break,
+                                    _ => return Err(e),
+                                }
+                            }
+                            Err(e) => return Err(e),
+                        }
                     }
             }
 
@@ -241,10 +252,12 @@ where
         .into_iter()
         .collect::<HashSet<_>>();
 
+    let mut migrations = MigrationSource::<DB>::migrations(&migrations)?;
+    migrations.sort_unstable_by(|a, b| a.version().cmp(&b.version()));
     println!("Migrations:");
-    for migration in MigrationSource::<DB>::migrations(&migrations)? {
+    for migration in migrations {
         let applied = applied_migrations.contains(&migration.version());
-        let name = migration.version();
+        let name = migration.name();
         let x = if applied { 'X' } else { ' ' };
         println!("  [{}] {}", x, name);
     }
@@ -428,8 +441,23 @@ where
             };
 
             (0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected."))
-                .map(|_|{
-                    harness.revert_last_migration(migrations_dir.clone())
+                .filter_map(|_|{
+                    match harness.revert_last_migration(migrations_dir.clone()) {
+                        Ok(v) => {
+                            Some(Ok(v))
+                        }
+                        Err(e) if e.is::<MigrationError>() => {
+                            match e.downcast_ref::<MigrationError>() {
+                                // If n is larger then the actual number of migrations,
+                                // just stop reverting them
+                                Some(MigrationError::NoMigrationRun) => None,
+                                _ => return Some(Err(e)),
+                            }
+                        }
+                        Err(e) => {
+                            Some(Err(e))
+                        }
+                    }
                 })
                 .collect::<Result<Vec<_>, _>>()?
         };

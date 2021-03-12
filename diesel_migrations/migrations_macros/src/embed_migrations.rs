@@ -1,5 +1,5 @@
 use crate::migrations::migration_directory_from_given_path;
-use migrations_internals::{migrations_directories, version_from_path, TomlMetadata};
+use migrations_internals::{migrations_directories, version_from_string, TomlMetadata};
 use quote::quote;
 use std::error::Error;
 use std::fs::DirEntry;
@@ -35,7 +35,17 @@ fn migration_literals_from_path(
 }
 
 fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<dyn Error>> {
-    let version: String = version_from_path(path).expect("Invalid version")?;
+    let name = path
+        .file_name()
+        .unwrap_or_else(|| panic!("Can't get file name from path `{:?}`", path))
+        .to_string_lossy();
+    if version_from_string(&name).is_none() {
+        panic!(
+            "Invalid migration directory, the directory's name should be \
+             <timestamp>_<name_of_migration>, and it should only contain \
+             up.sql and down.sql."
+        );
+    }
     let up_sql = path.join("up.sql");
     let up_sql_path = up_sql.to_str();
     let down_sql = path.join("up.sql");
@@ -46,7 +56,7 @@ fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, 
     Ok(quote!(diesel_migrations::EmbededMigration::new(
         include_str!(#up_sql_path),
         include_str!(#down_sql_path),
-        #version,
+        diesel_migrations::embeded_migrations::EmbeddedName::new(#name),
         diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction)
     )))
 }

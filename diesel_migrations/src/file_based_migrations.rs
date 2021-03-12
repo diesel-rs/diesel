@@ -1,10 +1,13 @@
+use std::fmt::Display;
 use std::fs::{DirEntry, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use diesel::backend::Backend;
 use diesel::connection::BoxableConnection;
-use diesel::migration::{Migration, MigrationMetadata, MigrationSource, MigrationVersion};
+use diesel::migration::{
+    Migration, MigrationMetadata, MigrationName, MigrationSource, MigrationVersion,
+};
 use migrations_internals::TomlMetadata;
 
 use crate::errors::{MigrationError, RunMigrationsError};
@@ -75,20 +78,19 @@ impl<DB: Backend> MigrationSource<DB> for FileBasedMigrations {
 struct SqlFileMigration {
     base_path: PathBuf,
     metadata: TomlMetadataWrapper,
-    version: String,
+    name: DieselMigrationName,
 }
 
 impl SqlFileMigration {
     fn from_path(path: &Path) -> Result<Self, MigrationError> {
         if migrations_internals::valid_sql_migration_directory(path) {
-            let version = version_from_path(path)?;
             let metadata = TomlMetadataWrapper(
                 TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default(),
             );
             Ok(Self {
                 base_path: path.to_path_buf(),
                 metadata,
-                version,
+                name: DieselMigrationName::from_path(path)?,
             })
         } else {
             Err(MigrationError::UnknownMigrationFormat(path.to_path_buf()))
@@ -97,18 +99,14 @@ impl SqlFileMigration {
 }
 
 impl<DB: Backend> Migration<DB> for SqlFileMigration {
-    fn version<'a>(&'a self) -> MigrationVersion<'a> {
-        MigrationVersion::from(&self.version)
-    }
-
     fn run(
         &self,
         conn: &dyn BoxableConnection<DB>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
         Ok(run_sql_from_file(
-            Migration::<DB>::version(self),
             conn,
             &self.base_path.join("up.sql"),
+            &self.name,
         )?)
     }
 
@@ -117,14 +115,64 @@ impl<DB: Backend> Migration<DB> for SqlFileMigration {
         conn: &dyn BoxableConnection<DB>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
         Ok(run_sql_from_file(
-            Migration::<DB>::version(self),
             conn,
-            &self.base_path.join("up.sql"),
+            &self.base_path.join("down.sql"),
+            &self.name,
         )?)
     }
 
     fn metadata(&self) -> &dyn MigrationMetadata {
         &self.metadata
+    }
+
+    fn name(&self) -> &dyn MigrationName {
+        &self.name
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct DieselMigrationName {
+    name: String,
+    version: MigrationVersion<'static>,
+}
+
+impl Clone for DieselMigrationName {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+            version: self.version.into_owned(),
+        }
+    }
+}
+
+impl DieselMigrationName {
+    fn from_path(path: &Path) -> Result<Self, MigrationError> {
+        let name = path
+            .file_name()
+            .ok_or_else(|| MigrationError::UnknownMigrationFormat(path.to_path_buf()))?
+            .to_string_lossy();
+        Self::from_name(&name)
+    }
+
+    pub(crate) fn from_name(name: &str) -> Result<Self, MigrationError> {
+        let version = migrations_internals::version_from_string(&name)
+            .ok_or_else(|| MigrationError::UnknownMigrationFormat(PathBuf::from(name)))?;
+        Ok(Self {
+            name: name.to_owned(),
+            version: MigrationVersion::from(version),
+        })
+    }
+}
+
+impl MigrationName for DieselMigrationName {
+    fn version(&self) -> MigrationVersion {
+        self.version.into_owned()
+    }
+}
+
+impl Display for DieselMigrationName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
     }
 }
 
@@ -145,29 +193,23 @@ impl MigrationMetadata for TomlMetadataWrapper {
 }
 
 fn run_sql_from_file<DB: Backend>(
-    version: MigrationVersion<'_>,
     conn: &dyn BoxableConnection<DB>,
     path: &Path,
+    name: &DieselMigrationName,
 ) -> Result<(), RunMigrationsError> {
-    let map_io_err =
-        |e| RunMigrationsError::MigrationError(version.into_owned(), MigrationError::from(e));
+    let map_io_err = |e| RunMigrationsError::MigrationError(name.clone(), MigrationError::from(e));
 
     let mut sql = String::new();
     let mut file = File::open(path).map_err(map_io_err)?;
     file.read_to_string(&mut sql).map_err(map_io_err)?;
 
     if sql.is_empty() {
-        return Err(RunMigrationsError::EmptyMigration(version.into_owned()));
+        return Err(RunMigrationsError::EmptyMigration(name.clone()));
     }
 
     conn.batch_execute(&sql)
-        .map_err(|e| RunMigrationsError::QueryError(version.into_owned(), e))?;
+        .map_err(|e| RunMigrationsError::QueryError(name.clone(), e))?;
     Ok(())
-}
-
-fn version_from_path(path: &Path) -> Result<String, MigrationError> {
-    Ok(migrations_internals::version_from_path(path)
-        .ok_or_else(|| MigrationError::UnknownMigrationFormat(path.to_path_buf()))??)
 }
 
 #[cfg(test)]

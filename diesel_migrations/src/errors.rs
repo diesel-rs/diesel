@@ -9,6 +9,8 @@ use std::{fmt, io};
 
 use diesel::migration::MigrationVersion;
 
+use crate::file_based_migrations::DieselMigrationName;
+
 /// Errors that occur while preparing to run migrations
 #[derive(Debug)]
 #[non_exhaustive]
@@ -81,11 +83,11 @@ impl From<io::Error> for MigrationError {
 #[non_exhaustive]
 pub enum RunMigrationsError {
     /// A general migration error occured
-    MigrationError(MigrationVersion<'static>, MigrationError),
+    MigrationError(DieselMigrationName, MigrationError),
     /// The provided migration included an invalid query
-    QueryError(MigrationVersion<'static>, diesel::result::Error),
+    QueryError(DieselMigrationName, diesel::result::Error),
     /// The provided migration was empty
-    EmptyMigration(MigrationVersion<'static>),
+    EmptyMigration(DieselMigrationName),
 }
 
 impl Error for RunMigrationsError {}
@@ -100,7 +102,11 @@ impl fmt::Display for RunMigrationsError {
                 write!(f, "Failed to run {} with: {}", v, err)
             }
             RunMigrationsError::EmptyMigration(v) => {
-                write!(f, "Failed to run {} with: EmptyMigration", v)
+                write!(
+                    f,
+                    "Failed to run {} with: Attempted to run an empty migration.",
+                    v
+                )
             }
         }
     }
