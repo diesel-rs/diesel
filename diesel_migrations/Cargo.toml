@@ -19,6 +19,7 @@ path = "migrations_macros"
 [dev-dependencies]
 dotenv = "0.15"
 cfg-if = "0.1.10"
+tempfile = "3.2"
 
 [dependencies]
 toml = "0.5.0"

@@ -170,90 +170,97 @@ fn version_from_path(path: &Path) -> Result<String, MigrationError> {
         .ok_or_else(|| MigrationError::UnknownMigrationFormat(path.to_path_buf()))??)
 }
 
-// #[cfg(test)]
-// mod tests {
-//     extern crate tempfile;
+#[cfg(test)]
+mod tests {
+    extern crate tempfile;
 
-//     use super::*;
+    use super::*;
 
-//     use self::tempfile::Builder;
-//     use std::fs;
+    use self::tempfile::Builder;
+    use std::fs;
 
-//     #[test]
-//     fn migration_directory_not_found_if_no_migration_dir_exists() {
-//         let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+    #[test]
+    fn migration_directory_not_found_if_no_migration_dir_exists() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
 
-//         assert_eq!(
-//             Err(MigrationError::MigrationDirectoryNotFound(
-//                 dir.path().into()
-//             )),
-//             search_for_migrations_directory(dir.path())
-//         );
-//     }
+        assert_eq!(
+            Err(MigrationError::MigrationDirectoryNotFound(
+                dir.path().into()
+            )),
+            search_for_migrations_directory(dir.path())
+        );
+    }
 
-//     #[test]
-//     fn migration_directory_defaults_to_pwd_slash_migrations() {
-//         let dir = Builder::new().prefix("diesel").tempdir().unwrap();
-//         let temp_path = dir.path().canonicalize().unwrap();
-//         let migrations_path = temp_path.join("migrations");
+    #[test]
+    fn migration_directory_defaults_to_pwd_slash_migrations() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let migrations_path = temp_path.join("migrations");
 
-//         fs::create_dir(&migrations_path).unwrap();
+        fs::create_dir(&migrations_path).unwrap();
 
-//         assert_eq!(
-//             Ok(migrations_path),
-//             search_for_migrations_directory(&temp_path)
-//         );
-//     }
+        assert_eq!(
+            Ok(migrations_path),
+            search_for_migrations_directory(&temp_path)
+        );
+    }
 
-//     #[test]
-//     fn migration_directory_checks_parents() {
-//         let dir = Builder::new().prefix("diesel").tempdir().unwrap();
-//         let temp_path = dir.path().canonicalize().unwrap();
-//         let migrations_path = temp_path.join("migrations");
-//         let child_path = temp_path.join("child");
+    #[test]
+    fn migration_directory_checks_parents() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let migrations_path = temp_path.join("migrations");
+        let child_path = temp_path.join("child");
 
-//         fs::create_dir(&child_path).unwrap();
-//         fs::create_dir(&migrations_path).unwrap();
+        fs::create_dir(&child_path).unwrap();
+        fs::create_dir(&migrations_path).unwrap();
 
-//         assert_eq!(
-//             Ok(migrations_path),
-//             search_for_migrations_directory(&child_path)
-//         );
-//     }
+        assert_eq!(
+            Ok(migrations_path),
+            search_for_migrations_directory(&child_path)
+        );
+    }
 
-//     #[test]
-//     fn migration_paths_in_directory_ignores_files() {
-//         let dir = Builder::new().prefix("diesel").tempdir().unwrap();
-//         let temp_path = dir.path().canonicalize().unwrap();
-//         let migrations_path = temp_path.join("migrations");
-//         let file_path = migrations_path.join("README.md");
+    #[cfg(feature = "sqlite")]
+    type Backend = diesel::sqlite::Sqlite;
 
-//         fs::create_dir(&migrations_path).unwrap();
-//         fs::File::create(&file_path).unwrap();
+    #[cfg(feature = "postgres")]
+    type Backend = diesel::pg::Pg;
 
-//         assert_eq!(
-//             0,
-//             migration_paths_in_directory(&migrations_path)
-//                 .unwrap()
-//                 .len()
-//         );
-//     }
+    #[cfg(feature = "mysql")]
+    type Backend = diesel::mysql::Mysql;
 
-//     #[test]
-//     fn migration_paths_in_directory_ignores_dot_directories() {
-//         let dir = Builder::new().prefix("diesel").tempdir().unwrap();
-//         let temp_path = dir.path().canonicalize().unwrap();
-//         let migrations_path = temp_path.join("migrations");
-//         let dot_path = migrations_path.join(".hidden_dir");
+    #[test]
+    fn migration_paths_in_directory_ignores_files() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let migrations_path = temp_path.join("migrations");
+        let file_path = migrations_path.join("README.md");
 
-//         fs::create_dir(&migrations_path).unwrap();
-//         fs::create_dir(&dot_path).unwrap();
+        fs::create_dir(&migrations_path).unwrap();
+        fs::File::create(&file_path).unwrap();
 
-//         assert_eq!(
-//             0,
-//             migration_paths_in_directory(&migrations_path)
-//                 .unwrap()
-//                 .len()
-//         );
-//     }
-// }
+        let migrations = migrations_in_directory::<Backend>(&migrations_path)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(0, migrations.len());
+    }
+
+    #[test]
+    fn migration_paths_in_directory_ignores_dot_directories() {
+        let dir = Builder::new().prefix("diesel").tempdir().unwrap();
+        let temp_path = dir.path().canonicalize().unwrap();
+        let migrations_path = temp_path.join("migrations");
+        let dot_path = migrations_path.join(".hidden_dir");
+
+        fs::create_dir(&migrations_path).unwrap();
+        fs::create_dir(&dot_path).unwrap();
+
+        let migrations = migrations_in_directory::<Backend>(&migrations_path)
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+
+        assert_eq!(0, migrations.len());
+    }
+}
