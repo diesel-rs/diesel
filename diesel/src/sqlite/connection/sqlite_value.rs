@@ -1,12 +1,13 @@
 extern crate libsqlite3_sys as ffi;
 
 use std::marker::PhantomData;
-use std::os::raw as libc;
 use std::ptr::NonNull;
 use std::{slice, str};
 
 use crate::row::*;
 use crate::sqlite::{Sqlite, SqliteType};
+
+use super::stmt::StatementUse;
 
 /// Raw sqlite value as received from the database
 ///
@@ -18,11 +19,8 @@ pub struct SqliteValue<'a> {
     p: PhantomData<&'a ()>,
 }
 
-#[derive(Clone)]
-pub struct SqliteRow<'a> {
-    stmt: NonNull<ffi::sqlite3_stmt>,
-    next_col_index: libc::c_int,
-    p: PhantomData<&'a ()>,
+pub struct SqliteRow<'a: 'b, 'b: 'c, 'c> {
+    stmt: &'c StatementUse<'a, 'b>,
 }
 
 impl<'a> SqliteValue<'a> {
@@ -92,22 +90,20 @@ impl<'a> SqliteValue<'a> {
     }
 }
 
-impl<'a> SqliteRow<'a> {
-    pub(crate) unsafe fn new(inner_statement: NonNull<ffi::sqlite3_stmt>) -> Self {
+impl<'a: 'b, 'b: 'c, 'c> SqliteRow<'a, 'b, 'c> {
+    pub(crate) fn new(inner_statement: &'c StatementUse<'a, 'b>) -> Self {
         SqliteRow {
             stmt: inner_statement,
-            next_col_index: 0,
-            p: PhantomData,
         }
     }
 }
 
-impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
-    type Field = SqliteField<'a>;
+impl<'a: 'b, 'b: 'c, 'c> Row<'c, Sqlite> for SqliteRow<'a, 'b, 'c> {
+    type Field = SqliteField<'a, 'b, 'c>;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
-        column_count(self.stmt) as usize
+        self.stmt.column_count() as usize
     }
 
     fn get<I>(&self, idx: I) -> Option<Self::Field>
@@ -116,9 +112,8 @@ impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
     {
         let idx = self.idx(idx)?;
         Some(SqliteField {
-            stmt: self.stmt,
+            stmt: &self.stmt,
             col_idx: idx as i32,
-            p: PhantomData,
         })
     }
 
@@ -127,9 +122,9 @@ impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
     }
 }
 
-impl<'a> RowIndex<usize> for SqliteRow<'a> {
+impl<'a: 'b, 'b: 'c, 'c> RowIndex<usize> for SqliteRow<'a, 'b, 'c> {
     fn idx(&self, idx: usize) -> Option<usize> {
-        if idx < self.field_count() {
+        if idx < self.stmt.column_count() as usize {
             Some(idx)
         } else {
             None
@@ -137,53 +132,27 @@ impl<'a> RowIndex<usize> for SqliteRow<'a> {
     }
 }
 
-impl<'a, 'b> RowIndex<&'a str> for SqliteRow<'b> {
-    fn idx(&self, field_name: &'a str) -> Option<usize> {
-        (0..column_count(self.stmt))
-            .find(|idx| column_name(self.stmt, *idx) == Some(field_name))
-            .map(|a| a as usize)
+impl<'a: 'b, 'b: 'c, 'c, 'd> RowIndex<&'d str> for SqliteRow<'a, 'b, 'c> {
+    fn idx(&self, field_name: &'d str) -> Option<usize> {
+        self.stmt.index_for_column_name(field_name)
     }
 }
 
-pub struct SqliteField<'a> {
-    stmt: NonNull<ffi::sqlite3_stmt>,
+pub struct SqliteField<'a: 'b, 'b: 'c, 'c> {
+    stmt: &'c StatementUse<'a, 'b>,
     col_idx: i32,
-    p: PhantomData<&'a ()>,
 }
 
-impl<'a> Field<'a, Sqlite> for SqliteField<'a> {
-    fn field_name(&self) -> Option<&'a str> {
-        column_name(self.stmt, self.col_idx)
+impl<'a: 'b, 'b: 'c, 'c> Field<'c, Sqlite> for SqliteField<'a, 'b, 'c> {
+    fn field_name(&self) -> Option<&'c str> {
+        self.stmt.field_name(self.col_idx)
     }
 
     fn is_null(&self) -> bool {
         self.value().is_none()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'a, Sqlite>> {
-        unsafe {
-            let ptr = ffi::sqlite3_column_value(self.stmt.as_ptr(), self.col_idx);
-            SqliteValue::new(ptr)
-        }
+    fn value(&self) -> Option<crate::backend::RawValue<'c, Sqlite>> {
+        self.stmt.value(self.col_idx)
     }
-}
-
-fn column_name<'a>(stmt: NonNull<ffi::sqlite3_stmt>, field_number: i32) -> Option<&'a str> {
-    unsafe {
-        let ptr = ffi::sqlite3_column_name(stmt.as_ptr(), field_number);
-        if ptr.is_null() {
-            None
-        } else {
-            Some(std::ffi::CStr::from_ptr(ptr).to_str().expect(
-                "The Sqlite documentation states that this is UTF8. \
-                 If you see this error message something has gone \
-                 horribliy wrong. Please open an issue at the \
-                 diesel repository.",
-            ))
-        }
-    }
-}
-
-fn column_count(stmt: NonNull<ffi::sqlite3_stmt>) -> i32 {
-    unsafe { ffi::sqlite3_column_count(stmt.as_ptr()) }
 }

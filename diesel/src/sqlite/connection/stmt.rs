@@ -8,6 +8,7 @@ use std::ptr::{self, NonNull};
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
 use super::sqlite_value::SqliteRow;
+use super::SqliteValue;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::SqliteType;
@@ -39,10 +40,6 @@ impl Statement {
         })
     }
 
-    fn run(&mut self) -> QueryResult<()> {
-        self.step().map(|_| ())
-    }
-
     pub fn bind(&mut self, tpe: SqliteType, value: Option<Vec<u8>>) -> QueryResult<()> {
         self.bind_index += 1;
         let value = SerializedValue {
@@ -52,16 +49,6 @@ impl Statement {
         let result = value.bind_to(self.inner_statement, self.bind_index);
 
         ensure_sqlite_ok(result, self.raw_connection())
-    }
-
-    fn step(&mut self) -> QueryResult<Option<SqliteRow>> {
-        unsafe {
-            match ffi::sqlite3_step(self.inner_statement.as_ptr()) {
-                ffi::SQLITE_DONE => Ok(None),
-                ffi::SQLITE_ROW => Ok(Some(SqliteRow::new(self.inner_statement))),
-                _ => Err(last_error(self.raw_connection())),
-            }
-        }
     }
 
     fn reset(&mut self) {
@@ -127,27 +114,113 @@ impl Drop for Statement {
     }
 }
 
-pub struct StatementUse<'a> {
+pub struct StatementUse<'a: 'b, 'b> {
     statement: &'a mut Statement,
+    column_names: Vec<&'b str>,
 }
 
-impl<'a> StatementUse<'a> {
-    pub fn new(statement: &'a mut Statement) -> Self {
+impl<'a, 'b> StatementUse<'a, 'b> {
+    pub(in crate::sqlite::connection) fn new(statement: &'a mut Statement) -> Self {
         StatementUse {
-            statement: statement,
+            statement,
+            // Init with empty vector because column names
+            // can change till the first call to `step()`
+            column_names: Vec::new(),
         }
     }
 
-    pub fn run(&mut self) -> QueryResult<()> {
-        self.statement.run()
+    pub(in crate::sqlite::connection) fn run(&mut self) -> QueryResult<()> {
+        self.step().map(|_| ())
     }
 
-    pub fn step(&mut self) -> QueryResult<Option<SqliteRow>> {
-        self.statement.step()
+    pub(in crate::sqlite::connection) fn step<'c>(
+        &'c mut self,
+    ) -> QueryResult<Option<SqliteRow<'a, 'b, 'c>>>
+    where
+        'b: 'c,
+    {
+        let res = unsafe {
+            match ffi::sqlite3_step(self.statement.inner_statement.as_ptr()) {
+                ffi::SQLITE_DONE => Ok(None),
+                ffi::SQLITE_ROW => Ok(Some(())),
+                _ => Err(last_error(self.statement.raw_connection())),
+            }
+        }?;
+        if self.column_names.is_empty() {
+            self.column_names = (0..self.column_count())
+                .map(|idx| unsafe { self.column_name(idx) })
+                .collect();
+        }
+        Ok(res.map(move |()| SqliteRow::new(self)))
+    }
+
+    // The returned string pointer is valid until either the prepared statement is
+    // destroyed by sqlite3_finalize() or until the statement is automatically
+    // reprepared by the first call to sqlite3_step() for a particular run or
+    // until the next call to sqlite3_column_name() or sqlite3_column_name16()
+    // on the same column.
+    //
+    // https://sqlite.org/c3ref/column_name.html
+    //
+    // As result of this requirements: Never use that function outside of `ColumnInformation`
+    // and never use `ColumnInformation` outside of `StatementUse`
+    unsafe fn column_name(&mut self, idx: i32) -> &'b str {
+        let name = {
+            let column_name =
+                ffi::sqlite3_column_name(self.statement.inner_statement.as_ptr(), idx);
+            assert!(
+                !column_name.is_null(),
+                "The Sqlite documentation states that it only returns a \
+                 null pointer here if we are in a OOM condition."
+            );
+            CStr::from_ptr(column_name)
+        };
+        let name = name.to_str().expect(
+            "The Sqlite documentation states that this is UTF8. \
+             If you see this error message something has gone \
+             horribliy wrong. Please open an issue at the \
+             diesel repository.",
+        );
+        name
+    }
+
+    pub(in crate::sqlite::connection) fn column_count(&self) -> i32 {
+        unsafe { ffi::sqlite3_column_count(self.statement.inner_statement.as_ptr()) }
+    }
+
+    pub(in crate::sqlite::connection) fn index_for_column_name(
+        &self,
+        field_name: &str,
+    ) -> Option<usize> {
+        self.column_names
+            .iter()
+            .enumerate()
+            .find(|(_, name)| name == &&field_name)
+            .map(|(idx, _)| idx)
+    }
+
+    pub(in crate::sqlite::connection) fn field_name<'c>(&'c self, idx: i32) -> Option<&'c str>
+    where
+        'b: 'c,
+    {
+        self.column_names.get(idx as usize).map(|a| *a)
+    }
+
+    pub(in crate::sqlite::connection) fn value<'c>(
+        &'c self,
+        idx: i32,
+    ) -> Option<super::SqliteValue<'c>>
+    where
+        'b: 'c,
+    {
+        unsafe {
+            let ptr = ffi::sqlite3_column_value(self.statement.inner_statement.as_ptr(), idx);
+            SqliteValue::new(ptr)
+        }
     }
 }
 
-impl<'a> Drop for StatementUse<'a> {
+impl<'a, 'b> Drop for StatementUse<'a, 'b> {
     fn drop(&mut self) {
         self.statement.reset();
     }
