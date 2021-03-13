@@ -1,0 +1,19 @@
+name: Request Review on PRs Automatically
+
+on:
+  pull_request:
+    types:
+      - opened
+
+jobs:
+  request:
+    name: Request reviews on opened PRs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create PR review request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr edit ${{ github.event.pull_request.html_url }} \
+              --add-reviewer diesel-rs/reviewers
