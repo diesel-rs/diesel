@@ -54,6 +54,12 @@ impl Connection for SqliteConnection {
     type Backend = Sqlite;
     type TransactionManager = AnsiTransactionManager;
 
+    /// Establish a connection to the database specified by `database_url`.
+    ///
+    /// See [SqliteConnection] for supported `database_url`.
+    ///
+    /// If the database does not exist, this method will try to
+    /// create a new database and then establish a connection to it.
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         use crate::result::ConnectionError::CouldntSetupConfiguration;
 

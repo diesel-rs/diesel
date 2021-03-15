@@ -35,9 +35,9 @@ pub trait Connection: SimpleConnection + Sized + Send {
 
     /// Establishes a new connection to the database
     ///
-    /// The argument to this method varies by backend.
+    /// The argument to this method and the method's behavior varies by backend.
     /// See the documentation for that backend's connection class
-    /// for details about what it accepts.
+    /// for details about what it accepts and how it behaves.
     fn establish(database_url: &str) -> ConnectionResult<Self>;
 
     /// Executes the given function inside of a database transaction
