@@ -83,7 +83,7 @@ impl Connection for SqliteConnection {
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         let mut statement = self.prepare_query(&source.as_query())?;
-        let statement_use = StatementUse::new(&mut statement);
+        let statement_use = StatementUse::new(&mut statement, true);
         let iter = StatementIterator::new(statement_use);
         iter.collect()
     }
@@ -94,7 +94,7 @@ impl Connection for SqliteConnection {
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let mut statement = self.prepare_query(source)?;
-        let mut statement_use = StatementUse::new(&mut statement);
+        let mut statement_use = StatementUse::new(&mut statement, false);
         statement_use.run()?;
         Ok(self.raw_connection.rows_affected_by_last_query())
     }

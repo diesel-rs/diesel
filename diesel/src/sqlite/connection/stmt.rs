@@ -117,15 +117,20 @@ impl Drop for Statement {
 pub struct StatementUse<'a: 'b, 'b> {
     statement: &'a mut Statement,
     column_names: Vec<&'b str>,
+    should_init_column_names: bool,
 }
 
 impl<'a, 'b> StatementUse<'a, 'b> {
-    pub(in crate::sqlite::connection) fn new(statement: &'a mut Statement) -> Self {
+    pub(in crate::sqlite::connection) fn new(
+        statement: &'a mut Statement,
+        should_init_column_names: bool,
+    ) -> Self {
         StatementUse {
             statement,
             // Init with empty vector because column names
             // can change till the first call to `step()`
             column_names: Vec::new(),
+            should_init_column_names,
         }
     }
 
@@ -146,10 +151,11 @@ impl<'a, 'b> StatementUse<'a, 'b> {
                 _ => Err(last_error(self.statement.raw_connection())),
             }
         }?;
-        if self.column_names.is_empty() {
+        if self.should_init_column_names {
             self.column_names = (0..self.column_count())
                 .map(|idx| unsafe { self.column_name(idx) })
                 .collect();
+            self.should_init_column_names = false;
         }
         Ok(res.map(move |()| SqliteRow::new(self)))
     }
