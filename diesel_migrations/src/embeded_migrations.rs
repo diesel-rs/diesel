@@ -3,8 +3,13 @@ use std::fmt::Display;
 use crate::errors::RunMigrationsError;
 use crate::file_based_migrations::{DieselMigrationName, TomlMetadataWrapper};
 use diesel::backend::Backend;
-use diesel::migration::{Migration, MigrationName, MigrationSource, MigrationVersion};
+use diesel::migration::{Migration, MigrationName, MigrationSource, MigrationVersion, Result};
 
+/// A migration source that embeds migrations into the final binary
+///
+/// This source can be create via the [`embed_migrations!`](crate::embed_migrations!)
+/// at compile time.
+#[allow(missing_copy_implementations)]
 pub struct EmbededMigrations {
     migrations: &'static [EmbededMigration],
 }
@@ -17,10 +22,7 @@ impl EmbededMigrations {
 }
 
 impl<DB: Backend> MigrationSource<DB> for EmbededMigrations {
-    fn migrations(
-        &self,
-    ) -> Result<Vec<Box<dyn Migration<DB>>>, Box<dyn std::error::Error + Send + Sync + 'static>>
-    {
+    fn migrations(&self) -> Result<Vec<Box<dyn Migration<DB>>>> {
         Ok(self
             .migrations
             .iter()
@@ -54,6 +56,8 @@ impl EmbededMigration {
     }
 }
 
+#[derive(Clone, Copy)]
+#[doc(hidden)]
 pub struct EmbeddedName {
     name: &'static str,
 }
@@ -81,10 +85,7 @@ impl Display for EmbeddedName {
 }
 
 impl<'a, DB: Backend> Migration<DB> for &'a EmbededMigration {
-    fn run(
-        &self,
-        conn: &dyn diesel::connection::BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    fn run(&self, conn: &dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
         Ok(conn.batch_execute(self.up).map_err(|e| {
             let name = DieselMigrationName::from_name(self.name.name)
                 .expect("We have a vaild name here, we checked this in `embed_migration!`");
@@ -92,10 +93,7 @@ impl<'a, DB: Backend> Migration<DB> for &'a EmbededMigration {
         })?)
     }
 
-    fn revert(
-        &self,
-        conn: &dyn diesel::connection::BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    fn revert(&self, conn: &dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
         Ok(conn.batch_execute(self.down).map_err(|e| {
             let name = DieselMigrationName::from_name(self.name.name)
                 .expect("We have a vaild name here, we checked this in `embed_migration!`");

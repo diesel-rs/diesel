@@ -6,18 +6,85 @@ use std::path::{Path, PathBuf};
 use diesel::backend::Backend;
 use diesel::connection::BoxableConnection;
 use diesel::migration::{
-    Migration, MigrationMetadata, MigrationName, MigrationSource, MigrationVersion,
+    self, Migration, MigrationMetadata, MigrationName, MigrationSource, MigrationVersion,
 };
 use migrations_internals::TomlMetadata;
 
 use crate::errors::{MigrationError, RunMigrationsError};
 
+/// A migration source based on a migration directory in the file system
+///
+/// A valid migration directroy contains a sub folder per migration.
+/// Each migration folder contains a `up.sql` file containing the migration itself
+/// and a `down.sql` file containing the nessesary SQL to revert the migration.
+/// Additionaly each folder can contain a `metadata.toml` file controling how the
+/// individual migration should be handled by the migration harness.
+///
+/// To embed an existing migration folder into the final binary see
+/// [`embed_migrations!`](crate::embed_migrations!).
+///
+/// ## Example
+///
+/// ```text
+/// # Directory Structure
+/// - 20151219180527_create_users
+///     - up.sql
+///     - down.sql
+/// - 20160107082941_create_posts
+///     - up.sql
+///     - down.sql
+/// ```
+///
+/// ```sql
+/// -- 20151219180527_create_users/up.sql
+/// CREATE TABLE users (
+///   id SERIAL PRIMARY KEY,
+///   name VARCHAR NOT NULL,
+///   hair_color VARCHAR
+/// );
+/// ```
+///
+/// ```sql
+/// -- 20151219180527_create_users/down.sql
+/// DROP TABLE users;
+/// ```
+///
+/// ```sql
+/// -- 20160107082941_create_posts/up.sql
+/// CREATE TABLE posts (
+///   id SERIAL PRIMARY KEY,
+///   user_id INTEGER NOT NULL,
+///   title VARCHAR NOT NULL,
+///   body TEXT
+/// );
+/// ```
+///
+/// ```sql
+/// -- 20160107082941_create_posts/down.sql
+/// DROP TABLE posts;
+/// ```
+///
+/// ```toml
+/// # 20160107082941_create_posts/metadata.toml
+///
+/// # specifices if a migration is executed inside a
+/// # transaction or not. This configuration is optional
+/// # by default all migrations are run in transactions.
+/// #
+/// # For certain types of migrations, like creating an
+/// # index onto a existing column, it is required
+/// # to set this to false
+/// run_in_transaction = true
+/// ```
 #[derive(Clone)]
 pub struct FileBasedMigrations {
     base_path: PathBuf,
 }
 
 impl FileBasedMigrations {
+    /// Create a new file based migration source based on a specific path
+    ///
+    /// This methods fails if the path passed as argument is no valid migration directory
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self, MigrationError> {
         for dir in migrations_directories(path.as_ref()) {
             let path = dir?.path();
@@ -30,10 +97,23 @@ impl FileBasedMigrations {
         })
     }
 
+    /// Create a new file based migration source by searching the migration diretcory
+    ///
+    /// This method looks in the current and all parent directories for a folder named
+    /// `migrations`
+    ///
+    /// This method fails if no valid migration directory is found
     pub fn find_migrations_directory() -> Result<Self, MigrationError> {
         Self::find_migrations_directory_in_path(&std::env::current_dir()?)
     }
 
+    /// Create a new file based migration source by searching a give path for the migration
+    /// directory
+    ///
+    /// This method looks in the passed directory and all parent directories for a folder
+    /// named `migrations`
+    ///
+    /// This method fails if no valid migration directory is found
     pub fn find_migrations_directory_in_path(
         path: impl AsRef<Path>,
     ) -> Result<Self, MigrationError> {
@@ -65,10 +145,7 @@ fn migrations_in_directory<'a, DB: Backend>(
 }
 
 impl<DB: Backend> MigrationSource<DB> for FileBasedMigrations {
-    fn migrations(
-        &self,
-    ) -> Result<Vec<Box<dyn Migration<DB>>>, Box<dyn std::error::Error + Send + Sync + 'static>>
-    {
+    fn migrations(&self) -> migration::Result<Vec<Box<dyn Migration<DB>>>> {
         migrations_in_directory::<DB>(&self.base_path)
             .map(|r| Ok(Box::new(r?) as Box<dyn Migration<DB>>))
             .collect()
@@ -99,10 +176,7 @@ impl SqlFileMigration {
 }
 
 impl<DB: Backend> Migration<DB> for SqlFileMigration {
-    fn run(
-        &self,
-        conn: &dyn BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    fn run(&self, conn: &dyn BoxableConnection<DB>) -> migration::Result<()> {
         Ok(run_sql_from_file(
             conn,
             &self.base_path.join("up.sql"),
@@ -110,10 +184,7 @@ impl<DB: Backend> Migration<DB> for SqlFileMigration {
         )?)
     }
 
-    fn revert(
-        &self,
-        conn: &dyn BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> migration::Result<()> {
         Ok(run_sql_from_file(
             conn,
             &self.base_path.join("down.sql"),
@@ -181,6 +252,7 @@ impl Display for DieselMigrationName {
 pub struct TomlMetadataWrapper(TomlMetadata);
 
 impl TomlMetadataWrapper {
+    #[doc(hidden)]
     pub const fn new(run_in_transaction: bool) -> Self {
         Self(TomlMetadata::new(run_in_transaction))
     }

@@ -30,8 +30,6 @@ pub trait SimpleConnection {
 pub trait Connection: SimpleConnection + Send {
     /// The backend this type connects to
     type Backend: Backend;
-    //    #[doc(hidden)]
-    //  type TransactionManager: TransactionManager<Self>;
 
     /// Establishes a new connection to the database
     ///

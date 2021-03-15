@@ -12,7 +12,6 @@ use std::env;
 use std::error::Error;
 #[cfg(feature = "postgres")]
 use std::fs::{self, File};
-//use std::io::stdout;
 #[cfg(feature = "postgres")]
 use std::io::Write;
 use std::path::Path;

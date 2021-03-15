@@ -30,7 +30,7 @@ mod migrations;
 use proc_macro::TokenStream;
 
 /// This macro will read your migrations at compile time, and create a constant value containing
-/// a embedded list of all your migrations as avaible at compile time.
+/// an embedded list of all your migrations as available at compile time.
 /// This is useful if you would like to use Diesel's migration infrastructure, but want to ship a single executable
 /// file (such as for embedded applications). It can also be used to apply migrations to an in
 /// memory database (Diesel does this for its own test suite).
@@ -50,9 +50,9 @@ use proc_macro::TokenStream;
 /// # #[cfg(feature = "postgres")]
 /// pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/postgresql");
 /// # #[cfg(all(feature = "mysql", not(feature = "postgres")))]
-/// pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/mysql");
+/// # pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/mysql");
 /// # #[cfg(all(feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
-/// pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/sqlite");
+/// # pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/sqlite");
 ///
 /// # fn main() {
 /// #     run_migrations().unwrap();
@@ -62,6 +62,9 @@ use proc_macro::TokenStream;
 ///     let connection = establish_connection();
 ///
 ///     // This will run the necessary migrations.
+///     //
+///     // See the documentation for `MigrationHarness` for
+///     // all available methods.
 ///     connection.run_pending_migrations(MIGRATIONS)?;
 ///
 ///     Ok(())

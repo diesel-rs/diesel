@@ -165,50 +165,33 @@ where
     }
 
     fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
-        // This is actually fine because we have an #[repr(transparent)]
-        // on LoggingTransactionManager, which means the layout is the same
-        // as the inner type
-        // See the ref-cast crate for a longer version: https://github.com/dtolnay/ref-cast
-        let _t = unsafe {
-            &*((&**self).transaction_manager() as *const _
-                as *const PooledConnectionTransactionManager<M>)
-        };
-        // Figure how to fix that conversion here
-        todo!()
+        self
     }
 }
 
-#[doc(hidden)]
-#[repr(transparent)]
-#[allow(missing_debug_implementations)]
-pub struct PooledConnectionTransactionManager<M>
+impl<M> TransactionManager<PooledConnection<M>> for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection,
+    M::Connection: Connection + R2D2Connection,
 {
-    inner: dyn TransactionManager<M::Connection>,
-}
-
-impl<M> TransactionManager<PooledConnection<M>> for PooledConnectionTransactionManager<M>
-where
-    M: ManageConnection,
-    PooledConnection<M>: Connection,
-    M::Connection: Connection,
-{
-    fn begin_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
-        self.inner.begin_transaction(&**conn)
+    fn begin_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
+        let conn = &**self;
+        conn.transaction_manager().begin_transaction(conn)
     }
 
-    fn rollback_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
-        self.inner.rollback_transaction(&**conn)
+    fn rollback_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
+        let conn = &**self;
+        conn.transaction_manager().rollback_transaction(conn)
     }
 
-    fn commit_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
-        self.inner.commit_transaction(&**conn)
+    fn commit_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
+        let conn = &**self;
+        conn.transaction_manager().commit_transaction(conn)
     }
 
     fn get_transaction_depth(&self) -> u32 {
-        self.inner.get_transaction_depth()
+        let conn = &**self;
+        conn.transaction_manager().get_transaction_depth()
     }
 }
 

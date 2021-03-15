@@ -1,4 +1,3 @@
-#![allow(unused_imports, missing_docs)]
 //! Representation of migrations
 
 use crate::backend::Backend;
@@ -11,13 +10,23 @@ use crate::sql_types::Text;
 use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::Display;
-use std::path::Path;
 
+/// A specialized result type representing the result of
+/// a migration operation
+pub type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
+
+/// A migration version identifier
+///
+/// This is used by the migration harness to place migrations
+/// in order, therefore two different instances of this type
+/// must be sortable
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
 #[sql_type = "Text"]
 pub struct MigrationVersion<'a>(Cow<'a, str>);
 
 impl<'a> MigrationVersion<'a> {
+    /// Convert the current migration version into
+    /// a owned variant with static life time
     pub fn into_owned(&self) -> MigrationVersion<'static> {
         MigrationVersion(Cow::Owned(self.0.as_ref().to_owned()))
     }
@@ -71,32 +80,35 @@ impl<'a> Display for MigrationVersion<'a> {
     }
 }
 
+/// Represents the name of a migration
+///
+/// Users should threat this as `impl Display` type,
+/// for implementors of custom migration types
+/// this opens the possibility to roll out their own versioning
+/// schema.
 pub trait MigrationName: Display {
+    /// The version corresponding to the current migration name
     fn version(&self) -> MigrationVersion;
 }
 
 /// Represents a migration that interacts with diesel
 pub trait Migration<DB: Backend> {
     /// Apply this migration
-    fn run(
-        &self,
-        conn: &dyn BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>;
+    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()>;
 
     /// Revert this migration
-    fn revert(
-        &self,
-        conn: &dyn BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>;
+    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()>;
 
     /// Get a the attached metadata for this migration
     fn metadata(&self) -> &dyn MigrationMetadata;
 
+    /// Get the name of the current migration
+    ///
+    /// The provided name is used by migration harness
+    /// to get the version of a migration and to
+    /// as something to that is displayed and allows
+    /// user to identify a specific migration
     fn name(&self) -> &dyn MigrationName;
-
-    fn version(&self) -> MigrationVersion {
-        self.name().version()
-    }
 }
 
 /// This trait is designed to customize the behaviour
@@ -117,24 +129,20 @@ pub trait MigrationMetadata {
     }
 }
 
+/// A migration source is an entity that can be used
+/// to receive a number of migrations from.
 pub trait MigrationSource<DB: Backend> {
-    fn migrations(
-        &self,
-    ) -> Result<Vec<Box<dyn Migration<DB>>>, Box<dyn Error + Send + Sync + 'static>>;
+    /// Get a list of migrations associated with this
+    /// migration soucre.
+    fn migrations(&self) -> Result<Vec<Box<dyn Migration<DB>>>>;
 }
 
 impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
-    fn run(
-        &self,
-        conn: &dyn BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).run(conn)
     }
 
-    fn revert(
-        &self,
-        conn: &dyn BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).revert(conn)
     }
 
@@ -148,17 +156,11 @@ impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
 }
 
 impl<'a, DB: Backend> Migration<DB> for &'a dyn Migration<DB> {
-    fn run(
-        &self,
-        conn: &dyn BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).run(conn)
     }
 
-    fn revert(
-        &self,
-        conn: &dyn BoxableConnection<DB>,
-    ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).revert(conn)
     }
 

@@ -31,10 +31,7 @@ use clap::{ArgMatches, Shell};
 use diesel::backend::Backend;
 use diesel::migration::MigrationSource;
 use diesel::Connection;
-use diesel_migrations::errors::MigrationError;
-use diesel_migrations::file_based_migrations::FileBasedMigrations;
-use diesel_migrations::migration_harness::MigrationHarness;
-use diesel_migrations::HarnessWithOutput;
+use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationError, MigrationHarness};
 use regex::Regex;
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
@@ -253,10 +250,10 @@ where
         .collect::<HashSet<_>>();
 
     let mut migrations = MigrationSource::<DB>::migrations(&migrations)?;
-    migrations.sort_unstable_by(|a, b| a.version().cmp(&b.version()));
+    migrations.sort_unstable_by(|a, b| a.name().version().cmp(&b.name().version()));
     println!("Migrations:");
     for migration in migrations {
-        let applied = applied_migrations.contains(&migration.version());
+        let applied = applied_migrations.contains(&migration.name().version());
         let name = migration.name();
         let x = if applied { 'X' } else { ' ' };
         println!("  [{}] {}", x, name);
@@ -464,7 +461,7 @@ where
 
         let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)?
             .into_iter()
-            .map(|m| (m.version().into_owned(), m))
+            .map(|m| (m.name().version().into_owned(), m))
             .collect::<HashMap<_, _>>();
 
         let migrations = reverted_versions
