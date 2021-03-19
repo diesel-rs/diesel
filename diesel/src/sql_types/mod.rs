@@ -402,7 +402,7 @@ pub use crate::mysql::types::*;
 
 /// Indicates that a SQL type exists for a backend.
 ///
-/// This trait can be derived using the [`SqlType` derive](SqlType)
+/// This trait can be derived using the [`SqlType` derive](derive@SqlType)
 ///
 /// # Example
 ///
@@ -491,9 +491,8 @@ where
 ///
 /// # Deriving
 ///
-/// This trait is automatically implemented by [`#[derive(SqlType)]`]
+/// This trait is automatically implemented by [`#[derive(SqlType)]`](derive@SqlType)
 ///
-/// [`#[derive(SqlType)]`]: SqlType
 pub trait SingleValue: SqlType {}
 
 impl<T: SqlType + SingleValue> SingleValue for Nullable<T> {}
@@ -507,10 +506,9 @@ pub use diesel_derives::SqlType;
 ///
 /// # Deriving
 ///
-/// This trait is automatically implemented by [`#[derive(SqlType)]`]
+/// This trait is automatically implemented by [`#[derive(SqlType)]`](derive@SqlType)
 /// which sets `IsNull` to [`is_nullable::NotNull`]
 ///
-/// [`#[derive(SqlType)]`]: SqlType
 pub trait SqlType {
     /// Is this type nullable?
     ///
