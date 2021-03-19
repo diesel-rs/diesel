@@ -68,12 +68,12 @@ pub mod sql_types {
     )]
     #[cfg_attr(
         not(feature = "chrono"),
-        doc = " [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html"
+        doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
     )]
     #[cfg_attr(feature = "chrono", doc = " [`chrono::DateTime`]: chrono::DateTime")]
     #[cfg_attr(
         not(feature = "chrono"),
-        doc = " [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html"
+        doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
     )]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "1184", array_oid = "1185")]
@@ -244,7 +244,7 @@ pub mod sql_types {
     )]
     #[cfg_attr(
         not(feature = "serde_json"),
-        doc = "[`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html"
+        doc = "[`serde_json::Value`]: https://docs.rs/serde_json/1.0.64/serde_json/value/enum.Value.html"
     )]
     ///
     /// # Examples
