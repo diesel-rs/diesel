@@ -258,7 +258,7 @@ Key points:
   (for applying migrations with output)
 - A set of migrations is now provided by a `MigrationSource`. Diesel brings implementations 
   `FileBasedMigrations` (for migration scripts in a `migration` folder) and `EmbededMigrations`
-  (for migrations embeded at compile time based on an existing `migration` folder)
+  (for migrations embedded at compile time based on an existing `migration` folder)
 - `embed_migrations!` now creates a value of the type `EmbededMigrations` instead of a module. 
 That means code using `embed_migrations!()` needs to be changed from
 ```rust
