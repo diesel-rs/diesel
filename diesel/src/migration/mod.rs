@@ -120,8 +120,8 @@ pub trait Migration<DB: Backend> {
 /// returning the old a value corresponding
 /// to the old uncustomized behaviour
 pub trait MigrationMetadata {
-    /// Should the current migration be executed in a migration
-    /// or not?
+    /// Whether the current migration be executed in a migration
+    /// or not
     ///
     /// By default this function returns true
     fn run_in_transaction(&self) -> bool {
