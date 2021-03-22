@@ -154,7 +154,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * For the `Pg` backend, `TypeMetadata::MetadataLookup` has changed to `dyn PgMetadataLookup`.
 
-* Diesels migration framework was rewritten from ground. Existing migrations continue to 
+* Diesel's migration framework was rewritten from the ground. Existing migrations continue to 
   be compatible with the rewrite, but code calling into `diesel_migrations` requires an update.
   See the [migration guide](#2-0-0-upgrade-migrations) for details.
 
