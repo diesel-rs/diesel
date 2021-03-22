@@ -230,8 +230,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// // Insert many records
 ///
 /// let new_users = vec![
-///     NewUser { name: "Leeloo Multipass", },
-///     NewUser { name: "Korben Dallas", },
+///     NewUser { name: "Leeloo Multipass" },
+///     NewUser { name: "Korben Dallas" },
 /// ];
 ///
 /// let inserted_names = diesel::insert_into(users)

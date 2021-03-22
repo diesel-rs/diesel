@@ -54,6 +54,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for `UNION`, `UNION ALL`, `INTERSECT`, `INTERSECT ALL`, `EXCEPT`, `EXCEPT ALL` clauses
 
+* Added the error position for PostgreSQL errors
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -278,6 +280,14 @@ fn run_migration(conn: &PgConnection) {
 ```
 
 [2-0-migration]: FIXME write a migration guide
+
+## [1.4.6] - 2021-03-05
+
+### Fixed
+
+* Fixed a use-after-free issue in the `QueryableByName` implementation
+  of our `Sqlite` backend
+* Updated several dependencies
 
 ## [1.4.5] - 2020-06-09
 
@@ -1916,3 +1926,5 @@ fn run_migration(conn: &PgConnection) {
 [1.4.2]: https://github.com/diesel-rs/diesel/compare/v1.4.1...v1.4.2
 [1.4.3]: https://github.com/diesel-rs/diesel/compare/v1.4.2...v1.4.3
 [1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
+[1.4.5]: https://github.com/diesel-rs/diesel/compare/v1.4.4...v1.4.5
+[1.4.6]: https://github.com/diesel-rs/diesel/compare/v1.4.5...v1.4.6

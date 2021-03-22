@@ -19,7 +19,7 @@ pub trait CombineDsl {
     /// # include!("../doctest_setup.rs");
     /// # use schema::{users, animals};
     /// # use crate::diesel::query_dsl::positional_order_dsl::PositionalOrderDsl;
-    ///
+    /// #
     /// # fn main() {
     /// #     use self::users::dsl::{users, name as user_name};
     /// #     use self::animals::dsl::{animals, name as animal_name};
