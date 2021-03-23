@@ -53,10 +53,10 @@ fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, 
     let metadata = TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default();
     let run_in_transaction = metadata.run_in_transaction;
 
-    Ok(quote!(diesel_migrations::EmbededMigration::new(
+    Ok(quote!(diesel_migrations::EmbeddedMigration::new(
         include_str!(#up_sql_path),
         include_str!(#down_sql_path),
-        diesel_migrations::embeded_migrations::EmbeddedName::new(#name),
+        diesel_migrations::embedded_migrations::EmbeddedName::new(#name),
         diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction)
     )))
 }

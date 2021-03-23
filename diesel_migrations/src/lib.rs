@@ -39,18 +39,18 @@
 //! For more information, consult the [`embed_migrations!`](macro.embed_migrations.html) macro.
 //!
 
-mod embeded_migrations;
+mod embedded_migrations;
 mod errors;
 mod file_based_migrations;
 mod migration_harness;
 
-pub use crate::embeded_migrations::EmbededMigrations;
+pub use crate::embedded_migrations::EmbeddedMigrations;
 pub use crate::file_based_migrations::FileBasedMigrations;
 pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness};
 pub use migrations_macros::embed_migrations;
 
 #[doc(hidden)]
-pub use crate::embeded_migrations::EmbededMigration;
+pub use crate::embedded_migrations::EmbeddedMigration;
 #[doc(hidden)]
 pub use crate::errors::MigrationError;
 #[doc(hidden)]
