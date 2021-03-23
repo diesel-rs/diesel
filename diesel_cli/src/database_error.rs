@@ -65,7 +65,7 @@ impl fmt::Display for DatabaseError {
             ConnectionError(ref error) => f.write_str(&error
                 .source()
                 .map(ToString::to_string)
-                                                      .unwrap_or_else(|| error.to_string())),
+                .unwrap_or_else(|| error.to_string())),
             MigrationError(ref error) => {
                 write!(f, "Failed to run migrations: {}", error)
             }
