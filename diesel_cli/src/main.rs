@@ -461,7 +461,7 @@ where
 
         let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)?
             .into_iter()
-            .map(|m| (m.name().version().into_owned(), m))
+            .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
 
         let migrations = reverted_versions
@@ -469,7 +469,7 @@ where
             .map(|v| {
                 migrations
                     .remove(&v)
-                    .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.into_owned()))
+                    .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.as_owned()))
             })
             .collect::<Result<Vec<_>, _>>()?;
 

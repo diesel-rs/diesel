@@ -67,7 +67,7 @@ pub trait MigrationHarness<DB: Backend> {
         let mut migrations = source
             .migrations()?
             .into_iter()
-            .map(|m| (m.name().version().into_owned(), m))
+            .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
 
         applied_versions
@@ -95,7 +95,7 @@ pub trait MigrationHarness<DB: Backend> {
             .iter()
             .find(|m| m.name().version() == *last_migration_version)
             .ok_or_else(|| {
-                MigrationError::UnknownMigrationVersion(last_migration_version.into_owned())
+                MigrationError::UnknownMigrationVersion(last_migration_version.as_owned())
             })?;
         self.revert_migration(migration_to_revert)
     }
@@ -112,7 +112,7 @@ pub trait MigrationHarness<DB: Backend> {
         let mut migrations = source
             .migrations()?
             .into_iter()
-            .map(|m| (m.name().version().into_owned(), m))
+            .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
 
         for applied_version in applied_versions {
@@ -175,7 +175,7 @@ where
         } else {
             apply_migration()?;
         }
-        Ok(migration.name().version().into_owned())
+        Ok(migration.name().version().as_owned())
     }
 
     fn revert_migration(&self, migration: &dyn Migration<DB>) -> Result<MigrationVersion<'static>> {
@@ -191,7 +191,7 @@ where
         } else {
             revert_migration()?;
         }
-        Ok(migration.name().version().into_owned())
+        Ok(migration.name().version().as_owned())
     }
 
     fn applied_migrations(&self) -> Result<Vec<MigrationVersion<'static>>> {

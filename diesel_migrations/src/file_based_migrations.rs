@@ -211,7 +211,7 @@ impl Clone for DieselMigrationName {
     fn clone(&self) -> Self {
         Self {
             name: self.name.clone(),
-            version: self.version.into_owned(),
+            version: self.version.as_owned(),
         }
     }
 }
@@ -237,7 +237,7 @@ impl DieselMigrationName {
 
 impl MigrationName for DieselMigrationName {
     fn version(&self) -> MigrationVersion {
-        self.version.into_owned()
+        self.version.as_owned()
     }
 }
 

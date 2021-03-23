@@ -27,7 +27,7 @@ pub struct MigrationVersion<'a>(Cow<'a, str>);
 impl<'a> MigrationVersion<'a> {
     /// Convert the current migration version into
     /// a owned variant with static life time
-    pub fn into_owned(&self) -> MigrationVersion<'static> {
+    pub fn as_owned(&self) -> MigrationVersion<'static> {
         MigrationVersion(Cow::Owned(self.0.as_ref().to_owned()))
     }
 }

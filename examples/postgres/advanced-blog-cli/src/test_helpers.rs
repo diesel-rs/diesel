@@ -1,6 +1,5 @@
 use diesel::prelude::*;
-use diesel_migrations::file_based_migrations::FileBasedMigrations;
-use diesel_migrations::MigrationHarness;
+use diesel_migrations::{FileBasedMigrations, MigrationHarness};
 use lazy_static::lazy_static;
 use std::sync::{Mutex, MutexGuard};
 
