@@ -359,7 +359,7 @@ mod tests {
     use std::env;
 
     fn connection() -> PgConnection {
-        let _ = dotenv();
+        dotenv().ok();
 
         let connection_url = env::var("PG_DATABASE_URL")
             .or_else(|_| env::var("DATABASE_URL"))

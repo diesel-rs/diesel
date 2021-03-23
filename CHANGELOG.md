@@ -54,6 +54,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for `UNION`, `UNION ALL`, `INTERSECT`, `INTERSECT ALL`, `EXCEPT`, `EXCEPT ALL` clauses
 
+* Added the error position for PostgreSQL errors
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -154,7 +156,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * For the `Pg` backend, `TypeMetadata::MetadataLookup` has changed to `dyn PgMetadataLookup`.
 
-* Diesels migration framework was rewritten from ground. Existing migrations continue to 
+* Diesel's migration framework was rewritten from the ground. Existing migrations continue to 
   be compatible with the rewrite, but code calling into `diesel_migrations` requires an update.
   See the [migration guide](#2-0-0-upgrade-migrations) for details.
 
@@ -258,7 +260,7 @@ Key points:
   (for applying migrations with output)
 - A set of migrations is now provided by a `MigrationSource`. Diesel brings implementations 
   `FileBasedMigrations` (for migration scripts in a `migration` folder) and `EmbededMigrations`
-  (for migrations embeded at compile time based on an existing `migration` folder)
+  (for migrations embedded at compile time based on an existing `migration` folder)
 - `embed_migrations!` now creates a value of the type `EmbededMigrations` instead of a module. 
 That means code using `embed_migrations!()` needs to be changed from
 ```rust
@@ -278,6 +280,14 @@ fn run_migration(conn: &PgConnection) {
 ```
 
 [2-0-migration]: FIXME write a migration guide
+
+## [1.4.6] - 2021-03-05
+
+### Fixed
+
+* Fixed a use-after-free issue in the `QueryableByName` implementation
+  of our `Sqlite` backend
+* Updated several dependencies
 
 ## [1.4.5] - 2020-06-09
 
@@ -1916,3 +1926,5 @@ fn run_migration(conn: &PgConnection) {
 [1.4.2]: https://github.com/diesel-rs/diesel/compare/v1.4.1...v1.4.2
 [1.4.3]: https://github.com/diesel-rs/diesel/compare/v1.4.2...v1.4.3
 [1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
+[1.4.5]: https://github.com/diesel-rs/diesel/compare/v1.4.4...v1.4.5
+[1.4.6]: https://github.com/diesel-rs/diesel/compare/v1.4.5...v1.4.6

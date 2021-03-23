@@ -20,7 +20,7 @@ use crate::result::QueryResult;
 /// #     let conn = establish_connection();
 /// #     conn.execute("TRUNCATE TABLE users").unwrap();
 /// conn.execute("ALTER TABLE users ADD CONSTRAINT users_name UNIQUE (name)").unwrap();
-/// let user = User { id: 1, name: "Sean", };
+/// let user = User { id: 1, name: "Sean" };
 /// let same_name_different_id = User { id: 2, name: "Sean" };
 /// let same_id_different_name = User { id: 1, name: "Pascal" };
 ///

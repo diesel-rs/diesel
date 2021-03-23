@@ -184,7 +184,25 @@ mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
+    use crate::result::Error::DatabaseError;
     use crate::sql_types::{Integer, VarChar};
+
+    #[test]
+    fn malformed_sql_query() {
+        let connection = connection();
+        let query =
+            crate::sql_query("SELECT not_existent FROM also_not_there;").execute(&connection);
+
+        if let Err(err) = query {
+            if let DatabaseError(_, string) = err {
+                assert_eq!(Some(26), string.statement_position());
+            } else {
+                unreachable!();
+            }
+        } else {
+            unreachable!();
+        }
+    }
 
     #[test]
     fn prepared_statements_are_cached() {
