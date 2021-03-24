@@ -90,7 +90,7 @@ pub fn migrations_directories<'a>(
 ) -> impl Iterator<Item = Result<DirEntry, std::io::Error>> + 'a {
     path.read_dir()
         .into_iter()
-        .flat_map(|read_dir| read_dir)
+        .flatten()
         .filter_map(move |entry| {
             let entry = match entry {
                 Ok(e) => e,

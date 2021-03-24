@@ -50,7 +50,7 @@ pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness};
 pub use migrations_macros::embed_migrations;
 
 #[doc(hidden)]
-pub use crate::embedded_migrations::EmbeddedMigration;
+pub use crate::embedded_migrations::{EmbeddedMigration, EmbeddedName};
 #[doc(hidden)]
 pub use crate::errors::MigrationError;
 #[doc(hidden)]

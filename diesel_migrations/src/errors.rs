@@ -101,13 +101,11 @@ impl fmt::Display for RunMigrationsError {
             RunMigrationsError::QueryError(v, err) => {
                 write!(f, "Failed to run {} with: {}", v, err)
             }
-            RunMigrationsError::EmptyMigration(v) => {
-                write!(
-                    f,
-                    "Failed to run {} with: Attempted to run an empty migration.",
-                    v
-                )
-            }
+            RunMigrationsError::EmptyMigration(v) => write!(
+                f,
+                "Failed to run {} with: Attempted to run an empty migration.",
+                v
+            ),
         }
     }
 }

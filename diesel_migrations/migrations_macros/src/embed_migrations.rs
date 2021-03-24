@@ -17,7 +17,7 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
     let embeded_migrations = migration_literals_from_path(&migrations_expr).unwrap();
 
     quote! {
-        diesel_migrations::EmbededMigrations::new(&[#(#embeded_migrations,)*])
+        diesel_migrations::EmbeddedMigrations::new(&[#(#embeded_migrations,)*])
     }
 }
 
@@ -56,7 +56,7 @@ fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, 
     Ok(quote!(diesel_migrations::EmbeddedMigration::new(
         include_str!(#up_sql_path),
         include_str!(#down_sql_path),
-        diesel_migrations::embedded_migrations::EmbeddedName::new(#name),
+        diesel_migrations::EmbeddedName::new(#name),
         diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction)
     )))
 }

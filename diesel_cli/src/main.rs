@@ -205,7 +205,7 @@ where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
-    HarnessWithOutput::to_stdout(conn)
+    HarnessWithOutput::write_to_stdout(conn)
         .run_pending_migrations(migrations)
         .map(|_| ())
 }
@@ -218,7 +218,7 @@ where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
-    HarnessWithOutput::to_stdout(conn)
+    HarnessWithOutput::write_to_stdout(conn)
         .revert_all_migrations(migrations)
         .map(|_| ())
 }
@@ -231,7 +231,7 @@ where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
-    HarnessWithOutput::to_stdout(conn)
+    HarnessWithOutput::write_to_stdout(conn)
         .revert_last_migration(migrations)
         .map(|_| ())
 }
@@ -421,7 +421,7 @@ where
     DB: Backend,
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
 {
-    let harness = HarnessWithOutput::to_stdout(conn);
+    let harness = HarnessWithOutput::write_to_stdout(conn);
 
     let migrations_inner = || -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let reverted_versions = if args.is_present("REDO_ALL") {
@@ -448,7 +448,7 @@ where
                                 // If n is larger then the actual number of migrations,
                                 // just stop reverting them
                                 Some(MigrationError::NoMigrationRun) => None,
-                                _ => return Some(Err(e)),
+                                _ => Some(Err(e)),
                             }
                         }
                         Err(e) => {

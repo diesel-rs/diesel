@@ -43,23 +43,23 @@ use proc_macro::TokenStream;
 /// # Examples
 ///
 /// ```rust
-/// use diesel_migrations::{embed_migrations, EmbededMigrations, MigrationHarness};
+/// use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 /// # use std::error::Error;
 /// # include!("../../../diesel/src/doctest_setup.rs");
 /// #
 /// # #[cfg(feature = "postgres")]
-/// pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/postgresql");
+/// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/postgresql");
 /// # #[cfg(all(feature = "mysql", not(feature = "postgres")))]
-/// # pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/mysql");
+/// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/mysql");
 /// # #[cfg(all(feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
-/// # pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/sqlite");
+/// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/sqlite");
 ///
 /// # fn main() {
-/// #     run_migrations().unwrap();
+/// #     let connection = connection_no_data();
+/// #     run_migrations(&connection).unwrap();
 /// # }
 ///
-/// fn run_migrations() -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-///     let connection = establish_connection();
+/// fn run_migrations(connection: &impl MigrationHarness<DB>) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
 ///
 ///     // This will run the necessary migrations.
 ///     //

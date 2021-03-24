@@ -227,7 +227,7 @@ impl<'a, C, W> HarnessWithOutput<'a, C, W> {
 
 impl<'a, C> HarnessWithOutput<'a, C, std::io::Stdout> {
     /// Create a new `HarnessWithOutput` that writes to stdout
-    pub fn to_stdout<DB>(harness: &'a C) -> Self
+    pub fn write_to_stdout<DB>(harness: &'a C) -> Self
     where
         C: MigrationHarness<DB>,
         DB: Backend,

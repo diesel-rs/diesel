@@ -1,0 +1,45 @@
+[package]
+name = "diesel-dynamic-schema"
+version = "1.0.0"
+authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+license = "MIT OR Apache-2.0"
+edition = "2018"
+<<<<<<< HEAD
+include = ["src/**/*", "LICENSE-*", "README.md"]
+=======
+autotests = false
+>>>>>>> Add support for dynamic select clauses to diesel_dynamic_schema
+
+[dependencies.diesel]
+version = "2.0.0"
+path = "../diesel/"
+default-features = false
+
+[dev-dependencies]
+dotenv = "0.14"
+
+[[example]]
+name = "querying_basic_schemas"
+path = "examples/querying_basic_schemas.rs"
+required-features = ["diesel/sqlite"]
+
+[[example]]
+name = "querying_multiple_types"
+path = "examples/querying_multiple_types.rs"
+required-features = ["diesel/sqlite"]
+
+[[example]]
+name = "columns_used_in_where_clause"
+path = "examples/columns_used_in_where_clause.rs"
+required-features = ["diesel/sqlite"]
+
+[[test]]
+name = "integration_tests"
+path = "tests/lib.rs"
+harness = true
+
+[features]
+default = ["mysql"]
+postgres = ["diesel/postgres"]
+sqlite = ["diesel/sqlite"]
+mysql = ["diesel/mysql"]
