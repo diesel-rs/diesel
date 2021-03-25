@@ -11,7 +11,7 @@ autotests = false
 include = ["src/**/*", "LICENSE-*"]
 
 [dependencies]
-syn = { version = "1.0.1", features = ["full", "fold"] }
+syn = { version = "1.0.1", features = ["full", "fold", "extra-traits", "clone-impls", "visit-mut"] }
 quote = "1"
 proc-macro2 = "1"
 
@@ -35,3 +35,6 @@ nightly = ["proc-macro2/nightly"]
 postgres = []
 sqlite = []
 mysql = []
+32-column-tables = []
+64-column-tables = ["32-column-tables"]
+128-column-tables = ["64-column-tables"]

@@ -70,37 +70,30 @@ where
 
 impl<T> OnConflictTarget<T::Table> for ConflictTarget<(T,)> where T: Column {}
 
-macro_rules! on_conflict_tuples {
-    ($(
-        $Tuple:tt {
-            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)*
+#[diesel_derives::__diesel_for_each_tuple]
+impl<_DB, T, #[repeat] O> QueryFragment<_DB> for ConflictTarget<(T, O)>
+where
+    _DB: Backend + SupportsOnConflictClause,
+    T: Column,
+    O: Column<Table = T::Table>,
+{
+    fn walk_ast(&self, mut out: AstPass<_DB>) -> QueryResult<()> {
+        out.push_sql(" (");
+        out.push_identifier(T::NAME)?;
+        #[repeat]
+        {
+            out.push_sql(", ");
+            out.push_identifier(O::NAME)?;
         }
-    )+) => {
-        $(
-            impl<_DB, _T, $($T),*> QueryFragment<_DB> for ConflictTarget<(_T, $($T),*)> where
-                _DB: Backend + SupportsOnConflictClause,
-                _T: Column,
-                $($T: Column<Table=_T::Table>,)*
-            {
-                fn walk_ast(&self, mut out: AstPass<_DB>) -> QueryResult<()> {
-                    out.push_sql(" (");
-                    out.push_identifier(_T::NAME)?;
-                    $(
-                        out.push_sql(", ");
-                        out.push_identifier($T::NAME)?;
-                    )*
-                    out.push_sql(")");
-                    Ok(())
-                }
-            }
-
-            impl<_T, $($T),*> OnConflictTarget<_T::Table> for ConflictTarget<(_T, $($T),*)> where
-                _T: Column,
-                $($T: Column<Table=_T::Table>,)*
-            {
-            }
-        )*
+        out.push_sql(")");
+        Ok(())
     }
 }
 
-__diesel_for_each_tuple!(on_conflict_tuples);
+#[diesel_derives::__diesel_for_each_tuple]
+impl<T, #[repeat] O> OnConflictTarget<T::Table> for ConflictTarget<(T, O)>
+where
+    T: Column,
+    O: Column<Table = T::Table>,
+{
+}

@@ -39,6 +39,7 @@ mod as_changeset;
 mod as_expression;
 mod associations;
 mod diesel_numeric_ops;
+mod for_each_tuple;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
@@ -1201,6 +1202,33 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, sql_function::expand)
+}
+
+#[proc_macro_attribute]
+pub fn __diesel_for_each_tuple(attr: TokenStream, input: TokenStream) -> TokenStream {
+    use quote::ToTokens;
+
+    let start = std::time::Instant::now();
+    let arg = syn::parse_macro_input!(attr as for_each_tuple::ArgWrapper);
+    let max_count = for_each_tuple::DEFAULT_SIZE;
+    let input = syn::parse_macro_input!(input as for_each_tuple::Repetition);
+    let impls = (1..=(max_count - arg.start_index))
+        .map(|i| input.repeat(arg.start_index, i, arg.timing, arg.debug));
+    let mut tokenstream = proc_macro2::TokenStream::new();
+
+    for im in impls {
+        im.to_tokens(&mut tokenstream);
+    }
+
+    if arg.debug {
+        dbg!(tokenstream.to_string());
+    }
+
+    if arg.timing {
+        let time = start.elapsed();
+        eprintln!("{}.{:06} s", time.as_secs(), time.subsec_micros());
+    }
+    tokenstream.into()
 }
 
 fn expand_proc_macro<T: syn::parse::Parse>(

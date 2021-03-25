@@ -90,7 +90,7 @@
 //! If you run into problems, Diesel has a very active Gitter room.
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
-
+#![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 #![cfg_attr(feature = "unstable", feature(specialization, trait_alias))]
 // For the `specialization` feature.
 #![cfg_attr(feature = "unstable", allow(incomplete_features))]

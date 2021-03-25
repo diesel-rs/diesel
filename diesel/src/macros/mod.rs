@@ -1287,8 +1287,6 @@ mod internal;
 mod static_cond;
 #[macro_use]
 mod ops;
-#[macro_use]
-mod tuples;
 
 #[cfg(test)]
 mod tests {

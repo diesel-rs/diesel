@@ -111,22 +111,12 @@ impl Order for Desc<OrderColumn> {
     }
 }
 
-macro_rules! impl_order_for_all_tuples {
-    ($(
-        $unused1:tt {
-            $(($idx:tt) -> $T:ident, $unused2:ident, $unused3:tt,)+
-        }
-    )+) => {
-        $(
-            impl<$($T: Order),+> Order for ($($T,)+) {
-                type Fragment = ($(<$T as Order>::Fragment,)+);
+#[diesel_derives::__diesel_for_each_tuple]
+impl<#[repeat] T: Order> Order for (T,) {
+    type Fragment = (<T as Order>::Fragment,);
 
-                fn into_fragment(self) -> Self::Fragment {
-                    ($(self.$idx.into_fragment(),)+)
-                }
-            }
-        )+
-    };
+    fn into_fragment(self) -> Self::Fragment {
+        #[repeat]
+        (self.idx.into_fragment(),)
+    }
 }
-
-__diesel_for_each_tuple!(impl_order_for_all_tuples);

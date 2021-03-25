@@ -14,59 +14,31 @@ pub trait EqAll<Rhs> {
     fn eq_all(self, rhs: Rhs) -> Self::Output;
 }
 
-macro_rules! impl_eq_all {
-    // General case for 2+ elements
-    (
-        ($Left1:ident, $($Left:ident,)+)
-        ($Right1:ident, $($Right:ident,)+)
-    ) => {
-        #[allow(non_snake_case)]
-        impl<$Left1, $($Left,)+ $Right1, $($Right,)+>
-            EqAll<($Right1, $($Right,)+)> for ($Left1, $($Left,)+)
-        where
-            $Left1: EqAll<$Right1>,
-            ($($Left,)+): EqAll<($($Right,)+)>,
-        {
-            type Output = Grouped<And<
-                <$Left1 as EqAll<$Right1>>::Output,
-                <($($Left,)+) as EqAll<($($Right,)+)>>::Output,
-            >>;
+impl<Left, Right> EqAll<(Right,)> for (Left,)
+where
+    Left: EqAll<Right>,
+{
+    type Output = <Left as EqAll<Right>>::Output;
 
-            fn eq_all(self, rhs: ($Right1, $($Right,)+)) -> Self::Output {
-                let ($Left1, $($Left,)+) = self;
-                let ($Right1, $($Right,)+) = rhs;
-                $Left1.eq_all($Right1).and(($($Left,)+).eq_all(($($Right,)+)))
-            }
-        }
-    };
-
-    // Special case for 1 element
-    (
-        ($Left:ident,) ($Right:ident,)
-    ) => {
-        impl<$Left, $Right> EqAll<($Right,)> for ($Left,)
-        where
-            $Left: EqAll<$Right>,
-        {
-            type Output = <$Left as EqAll<$Right>>::Output;
-
-            fn eq_all(self, rhs: ($Right,)) -> Self::Output {
-                self.0.eq_all(rhs.0)
-            }
-        }
-    };
+    fn eq_all(self, rhs: (Right,)) -> Self::Output {
+        self.0.eq_all(rhs.0)
+    }
 }
 
-macro_rules! impl_eq_all_for_all_tuples {
-    ($(
-        $unused1:tt {
-            $($unused2:tt -> $Left:ident, $Right:ident, $unused3:tt,)+
-        }
-    )+) => {
-        $(
-            impl_eq_all!(($($Left,)+) ($($Right,)+));
-        )+
-    };
-}
+#[diesel_derives::__diesel_for_each_tuple(index_start = 1)]
+impl<Left1, #[repeat] Left, Right1, #[repeat] Right> EqAll<(Right1, Right)> for (Left1, Left)
+where
+    Left1: EqAll<Right1>,
+    (Left,): EqAll<(Right,)>,
+{
+    type Output =
+        Grouped<And<<Left1 as EqAll<Right1>>::Output, <(Left,) as EqAll<(Right,)>>::Output>>;
 
-__diesel_for_each_tuple!(impl_eq_all_for_all_tuples);
+    fn eq_all(self, rhs: (Right1, Right)) -> Self::Output {
+        let new_lhs = #[repeat]
+        (self.idx,);
+        let new_rhs = #[repeat]
+        (rhs.idx,);
+        self.0.eq_all(rhs.0).and(new_lhs.eq_all(new_rhs))
+    }
+}
