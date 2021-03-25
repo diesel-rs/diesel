@@ -208,7 +208,7 @@ pub fn connection_without_transaction() -> TestConnection {
 }
 
 #[cfg(feature = "sqlite")]
-const MIGRATIONS: diesel_migrations::EmbededMigrations =
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
     diesel_migrations::embed_migrations!("../migrations/sqlite");
 
 #[cfg(feature = "sqlite")]
