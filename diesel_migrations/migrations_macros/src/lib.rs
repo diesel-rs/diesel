@@ -60,6 +60,8 @@ use proc_macro::TokenStream;
 /// # }
 ///
 /// fn run_migrations(connection: &impl MigrationHarness<DB>) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+/// #   #[cfg(feature = "mysql")]
+/// #   connection.revert_all_migrations(MIGRATIONS)?;
 ///
 ///     // This will run the necessary migrations.
 ///     //
