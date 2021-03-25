@@ -114,10 +114,9 @@ pub mod expression_types {
     /// we do not know which fields are returned from such a query at compile time.
     ///
     /// For loading values from queries returning a type of this expression, consider
-    /// using [`#[derive(QueryableByName)]`](../deserialize/derive.QueryableByName.html)
+    /// using [`#[derive(QueryableByName)]`](derive@QueryableByName)
     /// on the corresponding result type.
     ///
-    /// [`#[derive(QueryableByName)]`]: crate::deserialize::QueryableByName
     #[derive(Clone, Copy, Debug)]
     pub struct Untyped;
 
@@ -189,7 +188,7 @@ where
 ///   [`Timestamptz`]: ../pg/types/sql_types/struct.Timestamptz.html
 ///   [`ToSql`]: crate::serialize::ToSql
 ///
-///  This trait could be [derived](AsExpression)
+///  This trait could be [derived](derive@AsExpression)
 
 pub trait AsExpression<T>
 where
@@ -333,7 +332,7 @@ where
 ///
 /// This trait can be [derived]
 ///
-/// [derived]: ValidGrouping
+/// [derived]: derive@ValidGrouping
 pub trait ValidGrouping<GroupByClause> {
     /// Is this expression aggregate?
     ///

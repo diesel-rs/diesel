@@ -340,7 +340,7 @@ pub struct Time;
 )]
 #[cfg_attr(
     not(feature = "chrono"),
-    doc = " [NaiveDateTime]: ../../../../chrono/naive/struct.NaiveDateTime.html"
+    doc = " [NaiveDateTime]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDateTime.html"
 )]
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]

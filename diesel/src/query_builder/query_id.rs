@@ -15,7 +15,7 @@ use std::any::{Any, TypeId};
 ///
 /// ### Deriving
 ///
-/// This trait can [be automatically derived](QueryId)
+/// This trait can [be automatically derived](derive@QueryId)
 /// by Diesel.
 /// For example, given this struct:
 ///

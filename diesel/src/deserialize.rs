@@ -20,7 +20,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// trait is to convert from a tuple of Rust values that have been deserialized
 /// into your struct.
 ///
-/// This trait can be [derived](Queryable)
+/// This trait can be [derived](derive@Queryable)
 ///
 /// # Examples
 ///
@@ -161,7 +161,7 @@ pub use diesel_derives::Queryable;
 
 /// Deserializes the result of a query constructed with [`sql_query`].
 ///
-/// This trait can be [derived](QueryableByName)
+/// This trait can be [derived](derive@QueryableByName)
 ///
 /// [`sql_query`]: crate::sql_query()
 ///

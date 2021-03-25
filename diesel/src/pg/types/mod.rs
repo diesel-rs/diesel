@@ -402,7 +402,7 @@ pub mod sql_types {
     #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
     #[cfg_attr(
         not(feature = "ipnetwork"),
-        doc = " [IpNetwork]: https://docs.rs/ipnetwork/0.17.0/ipnetwork/enum.IpNetwork.html"
+        doc = " [IpNetwork]: https://docs.rs/ipnetwork/*/ipnetwork/enum.IpNetwork.html"
     )]
     ///
     /// # Examples
@@ -459,7 +459,7 @@ pub mod sql_types {
     #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
     #[cfg_attr(
         not(feature = "ipnetwork"),
-        doc = " [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html"
+        doc = " [IpNetwork]: https://docs.rs/ipnetwork/*/ipnetwork/enum.IpNetwork.html"
     )]
     ///
     /// # Examples

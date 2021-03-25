@@ -385,7 +385,7 @@ impl<'a, T: HasTable> HasTable for &'a T {
 /// `update(YourStruct::table().find(&your_struct.primary_key())`).
 ///
 /// This trait is usually implemented on a reference to a struct,
-/// not on the struct itself. It can be [derived](Identifiable).
+/// not on the struct itself. It can be [derived](derive@Identifiable).
 ///
 pub trait Identifiable: HasTable {
     /// The type of this struct's identifier.
