@@ -7,9 +7,9 @@ use crate::query_source::{Column, QuerySource};
 use crate::result::QueryResult;
 
 /// Types which can be passed to
-/// [`update.set`](struct.UpdateStatement.html#method.set).
+/// [`update.set`](UpdateStatement::set()).
 ///
-/// This trait can be [derived](derive.AsChangeset.html)
+/// This trait can be [derived](derive@AsChangeset)
 pub trait AsChangeset {
     /// The table which `Self::Changeset` will be updating
     type Target: QuerySource;

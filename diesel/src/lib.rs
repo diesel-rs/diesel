@@ -19,7 +19,6 @@
 //! to automatically generate these macro calls
 //! (by connecting to your database and querying its schema).
 //!
-//! [`table!`]: macro.table.html
 //!
 //! ## Getting started
 //!
@@ -32,7 +31,7 @@
 //! and avoid anything which has a generic name.
 //! Files which use Diesel are expected to have `use diesel::prelude::*;`.
 //!
-//! [`update`]: fn.update.html
+//! [`update`]: update()
 //!
 //! ## Constructing a query
 //!
@@ -61,7 +60,6 @@
 //!   with [the `sql_function!` macro][`sql_function!`].
 //!
 //! [`std::ops`]: //doc.rust-lang.org/stable/std/ops/index.html
-//! [`sql_function!`]: macro.sql_function.html
 //!
 //! ## Serializing and Deserializing
 //!
@@ -82,10 +80,10 @@
 //! go to the "Implementors" section,
 //! and find the Rust type you want to use.
 //!
-//! [`Queryable`]: deserialize/trait.Queryable.html
-//! [`diesel::sql_types::Integer`]: sql_types/struct.Integer.html
-//! [`ToSql`]: serialize/trait.ToSql.html
-//! [`FromSql`]: deserialize/trait.FromSql.html
+//! [`Queryable`]: deserialize::Queryable
+//! [`diesel::sql_types::Integer`]: sql_types::Integer
+//! [`ToSql`]: serialize::ToSql
+//! [`FromSql`]: deserialize::FromSql
 //!
 //! ## Getting help
 //!

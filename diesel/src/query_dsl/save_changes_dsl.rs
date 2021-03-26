@@ -22,7 +22,7 @@ use crate::Table;
 ///
 /// The only case where it is required to work with this trait is while
 /// implementing a new connection type.
-/// Otherwise use [`SaveChangesDsl`](trait.SaveChangesDsl.html)
+/// Otherwise use [`SaveChangesDsl`]
 ///
 /// For implementing this trait for a custom backend:
 /// * The `Changes` generic parameter represents the changeset that should be stored

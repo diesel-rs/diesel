@@ -17,7 +17,7 @@ use crate::sql_types::{HasSqlType, Untyped};
 /// rather than by index. This means that you cannot deserialize this query into
 /// a tuple, and any structs used must implement `QueryableByName`.
 ///
-/// See [`sql_query`](../fn.sql_query.html) for examples.
+/// See [`sql_query`](crate::sql_query()) for examples.
 pub struct SqlQuery<Inner = ()> {
     inner: Inner,
     query: String,
@@ -126,7 +126,6 @@ impl<Inner, Conn> RunQueryDsl<Conn> for SqlQuery<Inner> {}
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Returned by the [`SqlQuery::bind()`] method when binding a value to a fragment of SQL.
 ///
-/// [`SqlQuery::bind()`]: ./struct.SqlQuery.html#method.bind
 pub struct UncheckedBind<Query, Value, ST> {
     query: Query,
     value: Value,
@@ -160,7 +159,7 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     ///
     /// This function is intended for use when you want to write the entire query
     /// using raw SQL. If you only need a small bit of raw SQL in your query, use
-    /// [`sql`](./dsl/fn.sql.html) instead.
+    /// [`sql`](dsl::sql()) instead.
     ///
     /// Query parameters can be bound into the raw query using [`SqlQuery::bind()`].
     ///
@@ -208,7 +207,7 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// assert_eq!(Ok(expected_users), users);
     /// # }
     /// ```
-    /// [`SqlQuery::bind()`]: query_builder/struct.SqlQuery.html#method.bind
+    /// [`SqlQuery::bind()`]: query_builder::SqlQuery::bind()
     pub fn sql<T: Into<String>>(self, sql: T) -> SqlQuery<Self> {
         SqlQuery::new(self, sql.into())
     }
@@ -246,7 +245,7 @@ impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, S
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// See [`SqlQuery::into_boxed`].
 ///
-/// [`SqlQuery::into_boxed`]: ./struct.SqlQuery.html#method.into_boxed
+/// [`SqlQuery::into_boxed`]: SqlQuery::into_boxed()
 #[allow(missing_debug_implementations)]
 pub struct BoxedSqlQuery<'f, DB: Backend, Query> {
     query: Query,
@@ -265,7 +264,7 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
 
     /// See [`SqlQuery::bind`].
     ///
-    /// [`SqlQuery::bind`]: ./struct.SqlQuery.html#method.bind
+    /// [`SqlQuery::bind`]: SqlQuery::bind()
     pub fn bind<BindSt, Value>(mut self, b: Value) -> Self
     where
         DB: HasSqlType<BindSt>,
@@ -278,7 +277,7 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
 
     /// See [`SqlQuery::sql`].
     ///
-    /// [`SqlQuery::sql`]: ./struct.SqlQuery.html#method.sql
+    /// [`SqlQuery::sql`]: SqlQuery::sql()
     pub fn sql<T: AsRef<str>>(mut self, sql: T) -> Self {
         self.sql += sql.as_ref();
         self

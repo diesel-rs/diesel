@@ -17,7 +17,7 @@ pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
 
 /// Perform simple operations on a backend.
 ///
-/// You should likely use [`Connection`](trait.Connection.html) instead.
+/// You should likely use [`Connection`] instead.
 pub trait SimpleConnection {
     /// Execute multiple SQL statements within the same string.
     ///

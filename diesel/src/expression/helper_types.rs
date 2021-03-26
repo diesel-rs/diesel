@@ -16,54 +16,54 @@ pub type AsExpr<Item, TargetExpr> = AsExprOf<Item, SqlTypeOf<TargetExpr>>;
 pub type AsExprOf<Item, Type> = <Item as AsExpression<Type>>::Expression;
 
 /// The return type of
-/// [`lhs.eq(rhs)`](../expression_methods/trait.ExpressionMethods.html#method.eq)
+/// [`lhs.eq(rhs)`](crate::expression_methods::ExpressionMethods::eq())
 pub type Eq<Lhs, Rhs> = Grouped<super::operators::Eq<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.ne(rhs)`](../expression_methods/trait.ExpressionMethods.html#method.ne)
+/// [`lhs.ne(rhs)`](crate::expression_methods::ExpressionMethods::ne())
 pub type NotEq<Lhs, Rhs> = Grouped<super::operators::NotEq<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.eq_any(rhs)`](../expression_methods/trait.ExpressionMethods.html#method.eq_any)
+/// [`lhs.eq_any(rhs)`](crate::expression_methods::ExpressionMethods::eq_any())
 pub type EqAny<Lhs, Rhs> = Grouped<In<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>>;
 
 /// The return type of
-/// [`lhs.ne_any(rhs)`](../expression_methods/trait.ExpressionMethods.html#method.ne_any)
+/// [`lhs.ne_all(rhs)`](crate::expression_methods::ExpressionMethods::ne_all())
 pub type NeAny<Lhs, Rhs> =
     Grouped<NotIn<Lhs, <Rhs as AsInExpression<SqlTypeOf<Lhs>>>::InExpression>>;
 
 /// The return type of
-/// [`expr.is_null()`](../expression_methods/trait.ExpressionMethods.html#method.is_null)
+/// [`expr.is_null()`](crate::expression_methods::ExpressionMethods::is_null())
 pub type IsNull<Expr> = Grouped<super::operators::IsNull<Expr>>;
 
 /// The return type of
-/// [`expr.is_not_null()`](../expression_methods/trait.ExpressionMethods.html#method.is_not_null)
+/// [`expr.is_not_null()`](crate::expression_methods::ExpressionMethods::is_not_null())
 pub type IsNotNull<Expr> = Grouped<super::operators::IsNotNull<Expr>>;
 
 /// The return type of
-/// [`lhs.gt(rhs)`](../expression_methods/trait.ExpressionMethods.html#method.gt)
+/// [`lhs.gt(rhs)`](crate::expression_methods::ExpressionMethods::gt())
 pub type Gt<Lhs, Rhs> = Grouped<super::operators::Gt<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.ge(rhs)`](../expression_methods/trait.ExpressionMethods.html#method.ge)
+/// [`lhs.ge(rhs)`](crate::expression_methods::ExpressionMethods::ge())
 pub type GtEq<Lhs, Rhs> = Grouped<super::operators::GtEq<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.lt(rhs)`](../expression_methods/trait.ExpressionMethods.html#method.lt)
+/// [`lhs.lt(rhs)`](crate::expression_methods::ExpressionMethods::lt())
 pub type Lt<Lhs, Rhs> = Grouped<super::operators::Lt<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.le(rhs)`](../expression_methods/trait.ExpressionMethods.html#method.le)
+/// [`lhs.le(rhs)`](crate::expression_methods::ExpressionMethods::le())
 pub type LtEq<Lhs, Rhs> = Grouped<super::operators::LtEq<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`lhs.between(lower, upper)`](../expression_methods/trait.ExpressionMethods.html#method.between)
+/// [`lhs.between(lower, upper)`](crate::expression_methods::ExpressionMethods::between())
 pub type Between<Lhs, Lower, Upper> = Grouped<
     super::operators::Between<Lhs, super::operators::And<AsExpr<Lower, Lhs>, AsExpr<Upper, Lhs>>>,
 >;
 
 /// The return type of
-/// [`lhs.not_between(lower, upper)`](../expression_methods/trait.ExpressionMethods.html#method.not_between)
+/// [`lhs.not_between(lower, upper)`](crate::expression_methods::ExpressionMethods::not_between())
 pub type NotBetween<Lhs, Lower, Upper> = Grouped<
     super::operators::NotBetween<
         Lhs,
@@ -72,32 +72,32 @@ pub type NotBetween<Lhs, Lower, Upper> = Grouped<
 >;
 
 /// The return type of
-/// [`lhs.concat(rhs)`](../expression_methods/trait.TextExpressionMethods.html#method.concat)
+/// [`lhs.concat(rhs)`](crate::expression_methods::TextExpressionMethods::concat())
 pub type Concat<Lhs, Rhs> = Grouped<super::operators::Concat<Lhs, AsExpr<Rhs, Lhs>>>;
 
 /// The return type of
-/// [`expr.desc()`](../expression_methods/trait.ExpressionMethods.html#method.desc)
+/// [`expr.desc()`](crate::expression_methods::ExpressionMethods::desc())
 pub type Desc<Expr> = super::operators::Desc<Expr>;
 
 /// The return type of
-/// [`expr.asc()`](../expression_methods/trait.ExpressionMethods.html#method.asc)
+/// [`expr.asc()`](crate::expression_methods::ExpressionMethods::asc())
 pub type Asc<Expr> = super::operators::Asc<Expr>;
 
 /// The return type of
-/// [`expr.nullable()`](../expression_methods/trait.NullableExpressionMethods.html#method.nullable)
+/// [`expr.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable())
 pub type Nullable<Expr> = super::nullable::Nullable<Expr>;
 
 /// The return type of
-/// [`lhs.and(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.and)
+/// [`lhs.and(rhs)`](crate::expression_methods::BoolExpressionMethods::and())
 pub type And<Lhs, Rhs, ST = sql_types::Bool> =
     Grouped<super::operators::And<Lhs, AsExprOf<Rhs, ST>>>;
 
 /// The return type of
-/// [`lhs.or(rhs)`](../expression_methods/trait.BoolExpressionMethods.html#method.or)
+/// [`lhs.or(rhs)`](crate::expression_methods::BoolExpressionMethods::or())
 pub type Or<Lhs, Rhs, ST = sql_types::Bool> = Grouped<super::operators::Or<Lhs, AsExprOf<Rhs, ST>>>;
 
 /// The return type of
-/// [`lhs.escape('x')`](../expression_methods/trait.EscapeExpressionMethods.html#method.escape)
+/// [`lhs.escape('x')`](crate::expression_methods::EscapeExpressionMethods::escape())
 pub type Escape<Lhs> = Grouped<
     super::operators::Escape<
         <Lhs as crate::expression_methods::EscapeExpressionMethods>::TextExpression,
@@ -106,11 +106,11 @@ pub type Escape<Lhs> = Grouped<
 >;
 
 /// The return type of
-/// [`lhs.like(rhs)`](../expression_methods/trait.TextExpressionMethods.html#method.like)
+/// [`lhs.like(rhs)`](crate::expression_methods::TextExpressionMethods::like())
 pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
 /// The return type of
-/// [`lhs.not_like(rhs)`](../expression_methods/trait.TextExpressionMethods.html#method.not_like)
+/// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
 #[doc(inline)]

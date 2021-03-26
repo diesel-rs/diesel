@@ -98,7 +98,7 @@ pub use table::Table;
 #[doc(inline)]
 pub use self::dynamic_select::DynamicSelectClause;
 
-/// Create a new [`Table`](struct.Table.html) with the given name.
+/// Create a new [`Table`] with the given name.
 ///
 /// # Example
 ///
@@ -111,7 +111,7 @@ pub fn table<T>(name: T) -> Table<T> {
     Table::new(name)
 }
 
-/// Create a new [`Schema`](struct.Schema.html) with the given name.
+/// Create a new [`Schema`] with the given name.
 ///
 /// # Example
 ///

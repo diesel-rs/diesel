@@ -3,7 +3,7 @@
 //! Apps should not need to concern themselves with this module.
 //! If you are looking for where the actual implementation of `std::ops::Add`
 //! and friends are generated for columns, see
-//! [`numeric_expr!`](../../macro.numeric_expr.html).
+//! [`numeric_expr!`](super::super::numeric_expr!).
 //!
 //! Crates which add new types which allow numeric operators should implement
 //! these traits to specify what the output is for a given right hand side.

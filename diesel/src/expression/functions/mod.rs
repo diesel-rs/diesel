@@ -63,7 +63,7 @@ macro_rules! no_arg_sql_function_body {
 #[macro_export]
 /// Declare a 0 argument SQL function for use in your code. This will generate a
 /// unit struct, which is an expression representing calling this function. See
-/// [`now`](expression/dsl/struct.now.html) for example output. `now` was
+/// [`now`](crate::expression::dsl::now) for example output. `now` was
 /// generated using:
 ///
 /// ```no_run

@@ -8,10 +8,8 @@
 //!
 //! See also [`expression_methods`][expression_methods] and [`dsl`][dsl].
 //!
-//! [expression_methods]: ../expression_methods/index.html
-//! [dsl]: ../dsl/index.html
-//! [`QueryDsl`]: trait.QueryDsl.html
-//! [`RunQueryDsl`]: trait.RunQueryDsl.html
+//! [expression_methods]: super::expression_methods
+//! [dsl]: super::dsl
 
 use crate::backend::Backend;
 use crate::connection::Connection;
@@ -324,8 +322,8 @@ pub trait QueryDsl: Sized {
     /// table directly.  Otherwise you will need to use [`.on`] to specify the `ON`
     /// clause.
     ///
-    /// [`joinable!`]: ../macro.joinable.html
-    /// [`.on`]: trait.JoinOnDsl.html#method.on
+    /// [`joinable!`]: crate::joinable!
+    /// [`.on`]: JoinOnDsl::on()
     ///
     /// You can join to as many tables as you'd like in a query, with the
     /// restriction that no table can appear in the query more than once. The reason
@@ -360,8 +358,8 @@ pub trait QueryDsl: Sized {
     ///     INNER JOIN comments ON comments.user_id = users.id
     /// ```
     ///
-    /// [associations]: ../associations/index.html
-    /// [`allow_tables_to_appear_in_same_query!`]: ../macro.allow_tables_to_appear_in_same_query.html
+    /// [associations]: crate::associations
+    /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
     ///
     /// # Examples
     ///
@@ -493,7 +491,7 @@ pub trait QueryDsl: Sized {
     /// Behaves similarly to [`inner_join`], but will produce a left join
     /// instead. See [`inner_join`] for usage examples.
     ///
-    /// [`inner_join`]: #method.inner_join
+    /// [`inner_join`]: QueryDsl::inner_join()
     fn left_outer_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
@@ -503,7 +501,7 @@ pub trait QueryDsl: Sized {
 
     /// Alias for [`left_outer_join`].
     ///
-    /// [`left_outer_join`]: #method.left_outer_join
+    /// [`left_outer_join`]: QueryDsl::left_outer_join()
     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
@@ -615,14 +613,14 @@ pub trait QueryDsl: Sized {
     ///
     /// If there was already an order clause, it will be overridden. See
     /// also:
-    /// [`.desc()`](../expression_methods/trait.ExpressionMethods.html#method.desc)
+    /// [`.desc()`](crate::expression_methods::ExpressionMethods::desc())
     /// and
-    /// [`.asc()`](../expression_methods/trait.ExpressionMethods.html#method.asc)
+    /// [`.asc()`](crate::expression_methods::ExpressionMethods::asc())
     ///
     /// Ordering by multiple columns can be achieved by passing a tuple of those
     /// columns.
     /// To construct an order clause of an unknown number of columns,
-    /// see [`QueryDsl::then_order_by`](#method.then_order_by)
+    /// see [`QueryDsl::then_order_by`](QueryDsl::then_order_by())
     ///
     /// # Examples
     ///
@@ -852,7 +850,7 @@ pub trait QueryDsl: Sized {
     /// For group by clauses containing columns from more than one table it
     /// is required to call [`allow_columns_to_appear_in_same_group_by_clause!`]
     ///
-    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: ../macro.allow_columns_to_appear_in_same_group_by_clause.html
+    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: crate::allow_columns_to_appear_in_same_group_by_clause!
     ///
     /// # Examples
     /// ```rust
@@ -1045,8 +1043,8 @@ pub trait QueryDsl: Sized {
     /// but you might want to hide the return type or have it conditionally change.
     /// Boxing can achieve both.
     ///
-    /// [iterator]: https://doc.rust-lang.org/stable/std/iter/trait.Iterator.html
-    /// [helper_types]: ../helper_types/index.html
+    /// [iterator]: std::iter::Iterator
+    /// [helper_types]: crate::helper_types
     ///
     /// ### Example
     ///
@@ -1163,11 +1161,11 @@ impl<T: Table> QueryDsl for T {}
 pub trait RunQueryDsl<Conn>: Sized {
     /// Executes the given command, returning the number of rows affected.
     ///
-    /// `execute` is usually used in conjunction with [`insert_into`](../fn.insert_into.html),
-    /// [`update`](../fn.update.html) and [`delete`](../fn.delete.html) where the number of
+    /// `execute` is usually used in conjunction with [`insert_into`](crate::insert_into()),
+    /// [`update`](crate::update()) and [`delete`](crate::delete()) where the number of
     /// affected rows is often enough information.
     ///
-    /// When asking the database to return data from a query, [`load`](#method.load) should
+    /// When asking the database to return data from a query, [`load`](crate::query_dsl::RunQueryDsl::load()) should
     /// probably be used instead.
     ///
     /// # Example
@@ -1216,10 +1214,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// For insert, update, and delete operations where only a count of affected is needed,
     /// [`execute`] should be used instead.
     ///
-    /// [`Queryable`]: ../deserialize/trait.Queryable.html
-    /// [`QueryableByName`]: ../deserialize/trait.QueryableByName.html
-    /// [`execute`]: fn.execute.html
-    /// [`sql_query`]: ../fn.sql_query.html
+    /// [`Queryable`]: crate::deserialize::Queryable
+    /// [`QueryableByName`]: crate::deserialize::QueryableByName
+    /// [`execute`]: crate::query_dsl::RunQueryDsl::execute()
+    /// [`sql_query`]: crate::sql_query()
     ///
     /// # Examples
     ///
@@ -1360,7 +1358,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// This method is an alias for [`load`], but with a name that makes more
     /// sense for insert, update, and delete statements.
     ///
-    /// [`load`]: #method.load
+    /// [`load`]: crate::query_dsl::RunQueryDsl::load()
     fn get_results<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
     where
         Self: LoadQuery<Conn, U>,
