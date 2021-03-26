@@ -147,30 +147,6 @@ Running migration 12345_create_users_table
 }
 
 #[test]
-fn output_contains_path_to_migration_script() {
-    let p = project("output_contains_path_to_migration_script")
-        .folder("migrations")
-        .build();
-    p.create_migration(
-        "output_contains_path_to_migration_script",
-        "CREATE TABLE users (id INTEGER PRIMARY KEY);",
-        "DROP TABLE users};",
-    );
-
-    // Make sure the project is setup
-    p.command("setup").run();
-
-    let result = p.command("migration").arg("redo").run();
-
-    assert!(!result.is_success(), "Result was successful {:?}", result);
-    assert!(
-        result.stdout().contains("down.sql"),
-        "Unexpected stdout {}",
-        result.stdout()
-    );
-}
-
-#[test]
 fn error_migrations_fails() {
     let p = project("redo_error_migrations_fails")
         .folder("migrations")
@@ -187,7 +163,9 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("redo").run();
 
     assert!(!result.is_success());
-    assert!(result.stderr().contains("Failed with: "));
+    assert!(result
+        .stderr()
+        .contains("Failed to run redo_error_migrations_fails with: "));
 }
 
 #[test]

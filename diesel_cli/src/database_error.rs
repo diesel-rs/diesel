@@ -16,6 +16,7 @@ pub enum DatabaseError {
     IoError(io::Error),
     QueryError(result::Error),
     ConnectionError(result::ConnectionError),
+    MigrationError(Box<dyn Error + Send + Sync + 'static>),
 }
 
 impl From<io::Error> for DatabaseError {
@@ -33,6 +34,12 @@ impl From<result::Error> for DatabaseError {
 impl From<result::ConnectionError> for DatabaseError {
     fn from(e: result::ConnectionError) -> Self {
         ConnectionError(e)
+    }
+}
+
+impl From<Box<dyn Error + Send + Sync + 'static>> for DatabaseError {
+    fn from(e: Box<dyn Error + Send + Sync + 'static>) -> Self {
+        MigrationError(e)
     }
 }
 
@@ -59,6 +66,9 @@ impl fmt::Display for DatabaseError {
                 .source()
                 .map(ToString::to_string)
                 .unwrap_or_else(|| error.to_string())),
+            MigrationError(ref error) => {
+                write!(f, "Failed to run migrations: {}", error)
+            }
         }
     }
 }

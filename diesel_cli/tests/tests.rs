@@ -4,7 +4,6 @@ extern crate chrono;
 extern crate diesel;
 #[macro_use]
 extern crate difference;
-extern crate migrations_internals;
 extern crate regex;
 extern crate tempfile;
 

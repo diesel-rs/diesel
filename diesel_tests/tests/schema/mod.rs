@@ -208,12 +208,14 @@ pub fn connection_without_transaction() -> TestConnection {
 }
 
 #[cfg(feature = "sqlite")]
-diesel_migrations::embed_migrations!("../migrations/sqlite");
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/sqlite");
 
 #[cfg(feature = "sqlite")]
 pub fn connection_without_transaction() -> TestConnection {
+    use diesel_migrations::MigrationHarness;
     let connection = SqliteConnection::establish(":memory:").unwrap();
-    embedded_migrations::run(&connection).unwrap();
+    connection.run_pending_migrations(MIGRATIONS).unwrap();
     connection
 }
 

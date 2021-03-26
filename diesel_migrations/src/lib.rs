@@ -7,6 +7,7 @@
     clippy::option_map_unwrap_or
 )]
 #![warn(
+    missing_docs,
     clippy::wrong_pub_self_convention,
     clippy::mut_mut,
     clippy::non_ascii_literal,
@@ -28,7 +29,7 @@
 //! migrations directory in the current directory and its parents, stopping when it finds the
 //! directory containing `Cargo.toml`.
 //!
-//! Individual migrations should be a folder containing exactly two files, `up.sql` and `down.sql`.
+//! Individual migrations should be a folder containing two files, `up.sql` and `down.sql`.
 //! `up.sql` will be used to run the migration, while `down.sql` will be used for reverting it. The
 //! folder itself should have the structure `{version}_{migration_name}`. It is recommended that
 //! you use the timestamp of creation for the version.
@@ -37,98 +38,20 @@
 //! and executed with code, for example right after establishing a database connection.
 //! For more information, consult the [`embed_migrations!`](macro.embed_migrations.html) macro.
 //!
-//! ## Example
-//!
-//! ```text
-//! # Directory Structure
-//! - 20151219180527_create_users
-//!     - up.sql
-//!     - down.sql
-//! - 20160107082941_create_posts
-//!     - up.sql
-//!     - down.sql
-//! ```
-//!
-//! ```sql
-//! -- 20151219180527_create_users/up.sql
-//! CREATE TABLE users (
-//!   id SERIAL PRIMARY KEY,
-//!   name VARCHAR NOT NULL,
-//!   hair_color VARCHAR
-//! );
-//! ```
-//!
-//! ```sql
-//! -- 20151219180527_create_users/down.sql
-//! DROP TABLE users;
-//! ```
-//!
-//! ```sql
-//! -- 20160107082941_create_posts/up.sql
-//! CREATE TABLE posts (
-//!   id SERIAL PRIMARY KEY,
-//!   user_id INTEGER NOT NULL,
-//!   title VARCHAR NOT NULL,
-//!   body TEXT
-//! );
-//! ```
-//!
-//! ```sql
-//! -- 20160107082941_create_posts/down.sql
-//! DROP TABLE posts;
-//! ```
 
-extern crate migrations_internals;
-extern crate migrations_macros;
-#[doc(inline)]
-pub use migrations_internals::any_pending_migrations;
-#[doc(inline)]
-pub use migrations_internals::find_migrations_directory;
-#[doc(inline)]
-pub use migrations_internals::mark_migrations_in_directory;
-#[doc(inline)]
-pub use migrations_internals::migration_from;
-#[doc(inline)]
-pub use migrations_internals::migration_paths_in_directory;
-#[doc(inline)]
-pub use migrations_internals::name;
-#[doc(inline)]
-pub use migrations_internals::revert_latest_migration;
-#[doc(inline)]
-pub use migrations_internals::revert_latest_migration_in_directory;
-#[doc(inline)]
-pub use migrations_internals::revert_migration_with_version;
-#[doc(inline)]
-pub use migrations_internals::run_migration_with_version;
-#[doc(inline)]
-pub use migrations_internals::run_migrations;
-#[doc(inline)]
-pub use migrations_internals::run_pending_migrations;
-#[doc(inline)]
-pub use migrations_internals::run_pending_migrations_in_directory;
-#[doc(inline)]
-pub use migrations_internals::search_for_migrations_directory;
-#[doc(inline)]
-pub use migrations_internals::setup_database;
-#[doc(inline)]
-pub use migrations_internals::version_from_path;
-#[doc(inline)]
-pub use migrations_internals::Migration;
-#[doc(inline)]
-pub use migrations_internals::MigrationConnection;
-#[doc(inline)]
-pub use migrations_internals::MigrationError;
-#[doc(inline)]
-pub use migrations_internals::MigrationName;
-#[doc(inline)]
-pub use migrations_internals::RunMigrationsError;
-#[doc(hidden)]
-pub use migrations_macros::*;
+mod embedded_migrations;
+mod errors;
+mod file_based_migrations;
+mod migration_harness;
 
-pub mod connection {
-    #[doc(inline)]
-    pub use migrations_internals::connection::MigrationConnection;
-}
-
-#[doc(inline)]
+pub use crate::embedded_migrations::EmbeddedMigrations;
+pub use crate::file_based_migrations::FileBasedMigrations;
+pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness};
 pub use migrations_macros::embed_migrations;
+
+#[doc(hidden)]
+pub use crate::embedded_migrations::{EmbeddedMigration, EmbeddedName};
+#[doc(hidden)]
+pub use crate::errors::MigrationError;
+#[doc(hidden)]
+pub use crate::file_based_migrations::TomlMetadataWrapper;

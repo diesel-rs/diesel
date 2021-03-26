@@ -34,7 +34,6 @@ impl SimpleConnection for MysqlConnection {
 
 impl Connection for MysqlConnection {
     type Backend = Mysql;
-    type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         use crate::result::ConnectionError::CouldntSetupConfiguration;
@@ -89,7 +88,7 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager {
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
         &self.transaction_manager
     }
 }

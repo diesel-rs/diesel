@@ -122,8 +122,8 @@ mod associations_can_have_nullable_foreign_keys {
         id: i32,
     }
 
-    #[belongs_to(Foo)]
     #[derive(Identifiable, Associations)]
+    #[belongs_to(Foo)]
     pub struct Bar {
         id: i32,
         foo_id: Option<i32>,

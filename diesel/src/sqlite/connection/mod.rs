@@ -52,7 +52,6 @@ impl SimpleConnection for SqliteConnection {
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
-    type TransactionManager = AnsiTransactionManager;
 
     /// Establish a connection to the database specified by `database_url`.
     ///
@@ -106,7 +105,7 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager {
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
         &self.transaction_manager
     }
 }
@@ -175,7 +174,7 @@ impl SqliteConnection {
         F: FnOnce() -> Result<T, E>,
         E: From<Error>,
     {
-        let transaction_manager = self.transaction_manager();
+        let transaction_manager = &self.transaction_manager;
 
         transaction_manager.begin_transaction_sql(self, sql)?;
         match f() {
