@@ -114,7 +114,7 @@ pub mod expression_types {
     /// we do not know which fields are returned from such a query at compile time.
     ///
     /// For loading values from queries returning a type of this expression, consider
-    /// using [`#[derive(QueryableByName)]`](derive@QueryableByName)
+    /// using [`#[derive(QueryableByName)]`](derive@crate::deserialize::QueryableByName)
     /// on the corresponding result type.
     ///
     #[derive(Clone, Copy, Debug)]
