@@ -26,7 +26,7 @@ pub struct MigrationVersion<'a>(Cow<'a, str>);
 
 impl<'a> MigrationVersion<'a> {
     /// Convert the current migration version into
-    /// a owned variant with static life time
+    /// an owned variant with static life time
     pub fn as_owned(&self) -> MigrationVersion<'static> {
         MigrationVersion(Cow::Owned(self.0.as_ref().to_owned()))
     }
@@ -120,8 +120,11 @@ pub trait Migration<DB: Backend> {
 /// returning the old a value corresponding
 /// to the old uncustomized behaviour
 pub trait MigrationMetadata {
-    /// Whether the current migration be executed in a migration
-    /// or not
+    /// Whether the current migration is executed in a transaction or not
+    ///
+    /// By default each migration is executed in a own transaction, but
+    /// certain operations (like creating an index on an existing column)
+    /// requires running the migration without transaction.
     ///
     /// By default this function returns true
     fn run_in_transaction(&self) -> bool {

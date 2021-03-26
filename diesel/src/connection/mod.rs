@@ -200,7 +200,7 @@ pub trait Connection: SimpleConnection + Send {
         Self: Sized;
 }
 
-/// A variant of the [`Connection`](trait.Connection.html) that is
+/// A variant of the [`Connection`](trait.Connection.html) trait that is
 /// usable with dynamic dispatch
 ///
 /// If you are looking for a way to use pass database connections
