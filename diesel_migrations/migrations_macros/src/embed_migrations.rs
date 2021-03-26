@@ -48,7 +48,7 @@ fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, 
     }
     let up_sql = path.join("up.sql");
     let up_sql_path = up_sql.to_str();
-    let down_sql = path.join("up.sql");
+    let down_sql = path.join("down.sql");
     let down_sql_path = down_sql.to_str();
     let metadata = TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default();
     let run_in_transaction = metadata.run_in_transaction;
