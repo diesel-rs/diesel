@@ -416,7 +416,7 @@ where
             Some(&mut OptionalAggregator::Some(ref mut agg)) => agg,
             Some(a_ptr @ &mut OptionalAggregator::None) => {
                 ptr::write_unaligned(a_ptr as *mut _, OptionalAggregator::Some(A::default()));
-                if let &mut OptionalAggregator::Some(ref mut agg) = a_ptr {
+                if let OptionalAggregator::Some(ref mut agg) = a_ptr {
                     agg
                 } else {
                     return Err(SqliteCallbackError::Abort(NULL_CTX_ERR));
@@ -429,7 +429,8 @@ where
     };
     let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
 
-    Ok(aggregator.step(args))
+    aggregator.step(args);
+    Ok(())
 }
 
 extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
