@@ -1017,11 +1017,8 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// If an implementation of the custom function panics and unwinding is enabled, the panic is
 /// caught and the function returns to libsqlite with an error. It cannot propagate the panics due
 /// to the FFI bounary.
-/// The function or closure is internally wrapped in an
-/// [`AssertUnwindSafe`](std::panic::AssertUnwindSafe). Its implementation must take care of
-/// unwind-safety to avoid logic bugs on panic.
 ///
-/// This also holds for [custom aggregate functions](#custom-aggregate-functions).
+/// This is is the same for [custom aggregate functions](#custom-aggregate-functions).
 ///
 /// ## Custom Aggregate Functions
 ///

@@ -223,10 +223,8 @@ impl SqliteConnection {
         mut f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut(Args) -> Ret + Send + 'static + std::panic::RefUnwindSafe,
-        Args: FromSqlRow<ArgsSqlType, Sqlite>
-            + StaticallySizedRow<ArgsSqlType, Sqlite>
-            + std::panic::UnwindSafe,
+        F: FnMut(Args) -> Ret + std::panic::UnwindSafe + Send + 'static,
+        Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
@@ -244,14 +242,8 @@ impl SqliteConnection {
         fn_name: &str,
     ) -> QueryResult<()>
     where
-        A: SqliteAggregateFunction<Args, Output = Ret>
-            + 'static
-            + Send
-            + std::panic::UnwindSafe
-            + std::panic::RefUnwindSafe,
-        Args: FromSqlRow<ArgsSqlType, Sqlite>
-            + StaticallySizedRow<ArgsSqlType, Sqlite>
-            + std::panic::UnwindSafe,
+        A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+        Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
         Ret: ToSql<RetSqlType, Sqlite>,
         Sqlite: HasSqlType<RetSqlType>,
     {
@@ -262,7 +254,8 @@ impl SqliteConnection {
     ///
     /// `collation` must always return the same answer given the same inputs.
     /// If `collation` panics and unwinds the stack, the process is aborted, since it is used
-    /// across a C FFI boundary, which cannot be unwound across.
+    /// across a C FFI boundary, which cannot be unwound across and there is no way to
+    /// signal failures via the SQLite interface in this case..
     ///
     /// If the name is already registered it will be overwritten.
     ///

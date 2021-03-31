@@ -17,7 +17,7 @@ pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     mut f: F,
 ) -> QueryResult<()>
 where
-    F: FnMut(&RawConnection, Args) -> Ret + Send + 'static + std::panic::RefUnwindSafe,
+    F: FnMut(&RawConnection, Args) -> Ret + std::panic::UnwindSafe + Send + 'static,
     Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
@@ -37,6 +37,7 @@ where
 
         process_sql_function_result::<RetSqlType, Ret>(result)
     })?;
+
     Ok(())
 }
 
@@ -45,14 +46,8 @@ pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     fn_name: &str,
 ) -> QueryResult<()>
 where
-    A: SqliteAggregateFunction<Args, Output = Ret>
-        + 'static
-        + Send
-        + std::panic::UnwindSafe
-        + std::panic::RefUnwindSafe,
-    Args: FromSqlRow<ArgsSqlType, Sqlite>
-        + StaticallySizedRow<ArgsSqlType, Sqlite>
-        + std::panic::UnwindSafe,
+    A: SqliteAggregateFunction<Args, Output = Ret> + 'static + Send + std::panic::UnwindSafe,
+    Args: FromSqlRow<ArgsSqlType, Sqlite> + StaticallySizedRow<ArgsSqlType, Sqlite>,
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {

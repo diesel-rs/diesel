@@ -205,6 +205,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Queries containing a `distinct on` clause check now on compile time that a compatible order clause was set.
 
+* Implementations of custom SQLite SQL functions now probably check for panics
+
 ### Deprecated
 
 * `diesel_(prefix|postfix|infix)_operator!` have been deprecated. These macros
