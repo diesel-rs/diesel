@@ -1,10 +1,11 @@
-error[E0271]: type mismatch resolving `<users::columns::name as diesel::expression::IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+error[E0271]: type mismatch resolving `<columns::name as IsContainedInGroupBy<columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
   --> $DIR/cannot_load_default_select_with_group_by.rs:16:10
    |
 16 |         .load::<(i32, String)>(&conn);
    |          ^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
    |
-   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<users::columns::name>` for `users::columns::id`
-   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<users::columns::name>` for `(users::columns::id, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<_, (i32, std::string::String)>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::LimitOffsetClause<diesel::query_builder::NoLimitClause, diesel::query_builder::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
+   = note: required because of the requirements on the impl of `ValidGrouping<columns::name>` for `columns::id`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `ValidGrouping<columns::name>` for `(columns::id, columns::name)`
+   = note: required because of the requirements on the impl of `Query` for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::name>>`
+   = note: required because of the requirements on the impl of `LoadQuery<_, (i32, std::string::String)>` for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::name>>`

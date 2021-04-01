@@ -1,16 +1,16 @@
-error[E0599]: no method named `returning` found for struct `diesel::query_builder::DeleteStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>, diesel::query_builder::returning_clause::ReturningClause<users::columns::id>>` in the current scope
+error[E0599]: no method named `returning` found for struct `DeleteStatement<users::table, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>, diesel::query_builder::returning_clause::ReturningClause<columns::id>>` in the current scope
   --> $DIR/returning_cannot_be_called_twice.rs:23:11
    |
 23 |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
 
-error[E0599]: no method named `returning` found for struct `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<users::columns::id>>` in the current scope
+error[E0599]: no method named `returning` found for struct `InsertStatement<users::table, ValuesClause<(ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<columns::id>>` in the current scope
   --> $DIR/returning_cannot_be_called_twice.rs:28:11
    |
 28 |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
 
-error[E0599]: no method named `returning` found for struct `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<users::columns::id>>` in the current scope
+error[E0599]: no method named `returning` found for struct `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<columns::id>>` in the current scope
   --> $DIR/returning_cannot_be_called_twice.rs:33:11
    |
 33 |     query.returning(name);

@@ -296,7 +296,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2020-05-01
+          toolchain: nightly-2021-04-01
           profile: minimal
           override: true
       - name: Cache cargo registry

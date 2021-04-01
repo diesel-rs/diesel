@@ -1,16 +1,16 @@
-error[E0433]: failed to resolve: use of undeclared type or module `posts`
+error[E0433]: failed to resolve: use of undeclared crate or module `posts`
   --> $DIR/insertable_missing_table_or_column.rs:11:8
    |
 11 | struct Post {
-   |        ^^^^ use of undeclared type or module `posts`
+   |        ^^^^ use of undeclared crate or module `posts`
    |
    = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0433]: failed to resolve: use of undeclared type or module `posts`
+error[E0433]: failed to resolve: use of undeclared crate or module `posts`
   --> $DIR/insertable_missing_table_or_column.rs:16:16
    |
 16 | #[table_name = "posts"]
-   |                ^^^^^^^ use of undeclared type or module `posts`
+   |                ^^^^^^^ use of undeclared crate or module `posts`
    |
    = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
 
