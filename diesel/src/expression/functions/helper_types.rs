@@ -18,3 +18,6 @@ pub type sum<Expr> = super::aggregate_folding::sum::HelperType<SqlTypeOf<Expr>, 
 
 /// The return type of [`avg(expr)`](crate::dsl::avg())
 pub type avg<Expr> = super::aggregate_folding::avg::HelperType<SqlTypeOf<Expr>, Expr>;
+
+/// The return type of [`exists(expr)`](crate::dsl::exists())
+pub type exists<Expr> = crate::expression::exists::Exists<Expr>;
