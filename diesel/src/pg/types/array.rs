@@ -3,7 +3,7 @@ use std::fmt;
 use std::io::Write;
 
 use crate::deserialize::{self, FromSql};
-use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Array, HasSqlType, Nullable};
 
@@ -11,10 +11,10 @@ impl<T> HasSqlType<Array<T>> for Pg
 where
     Pg: HasSqlType<T>,
 {
-    fn metadata(lookup: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: <Pg as HasSqlType<T>>::metadata(lookup).array_oid,
-            array_oid: 0,
+    fn metadata(lookup: &Self::MetadataLookup) -> PgTypeMetadata {
+        match <Pg as HasSqlType<T>>::metadata(lookup).0 {
+            Ok(tpe) => PgTypeMetadata::new(tpe.array_oid, 0),
+            c @ Err(_) => PgTypeMetadata(c),
         }
     }
 }
@@ -91,7 +91,7 @@ where
         out.write_i32::<NetworkEndian>(num_dimensions)?;
         let flags = 0;
         out.write_i32::<NetworkEndian>(flags)?;
-        let element_oid = Pg::metadata(out.metadata_lookup()).oid;
+        let element_oid = Pg::metadata(out.metadata_lookup()).oid()?;
         out.write_u32::<NetworkEndian>(element_oid)?;
         out.write_i32::<NetworkEndian>(self.len() as i32)?;
         let lower_bound = 1;

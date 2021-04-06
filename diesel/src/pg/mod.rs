@@ -17,7 +17,8 @@ mod value;
 
 pub use self::backend::{Pg, PgTypeMetadata};
 pub use self::connection::PgConnection;
-pub use self::metadata_lookup::PgMetadataLookup;
+#[doc(hidden)]
+pub use self::metadata_lookup::{GetPgMetadataCache, PgMetadataCache, PgMetadataLookup};
 pub use self::query_builder::DistinctOnClause;
 pub use self::query_builder::PgQueryBuilder;
 pub use self::transaction::TransactionBuilder;

@@ -52,8 +52,13 @@ impl SimpleConnection for SqliteConnection {
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
-    type TransactionManager = AnsiTransactionManager;
 
+    /// Establish a connection to the database specified by `database_url`.
+    ///
+    /// See [SqliteConnection] for supported `database_url`.
+    ///
+    /// If the database does not exist, this method will try to
+    /// create a new database and then establish a connection to it.
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         use crate::result::ConnectionError::CouldntSetupConfiguration;
 
@@ -83,7 +88,7 @@ impl Connection for SqliteConnection {
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         let mut statement = self.prepare_query(&source.as_query())?;
-        let statement_use = StatementUse::new(&mut statement);
+        let statement_use = StatementUse::new(&mut statement, true);
         let iter = StatementIterator::new(statement_use);
         iter.collect()
     }
@@ -94,13 +99,13 @@ impl Connection for SqliteConnection {
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let mut statement = self.prepare_query(source)?;
-        let mut statement_use = StatementUse::new(&mut statement);
+        let mut statement_use = StatementUse::new(&mut statement, false);
         statement_use.run()?;
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager {
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
         &self.transaction_manager
     }
 }
@@ -169,7 +174,7 @@ impl SqliteConnection {
         F: FnOnce() -> Result<T, E>,
         E: From<Error>,
     {
-        let transaction_manager = self.transaction_manager();
+        let transaction_manager = &self.transaction_manager;
 
         transaction_manager.begin_transaction_sql(self, sql)?;
         match f() {

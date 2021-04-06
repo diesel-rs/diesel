@@ -20,7 +20,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// trait is to convert from a tuple of Rust values that have been deserialized
 /// into your struct.
 ///
-/// This trait can be [derived](derive.Queryable.html)
+/// This trait can be [derived](derive@Queryable)
 ///
 /// # Examples
 ///
@@ -57,7 +57,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # use schema::users;
 /// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::{Queryable, FromSql};
+/// # use diesel::deserialize::{self, Queryable, FromSql};
 /// # use diesel::sql_types::Text;
 /// #
 /// struct LowercaseString(String);
@@ -75,8 +75,8 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// {
 ///     type Row = String;
 ///
-///     fn build(s: String) -> Self {
-///         LowercaseString(s.to_lowercase())
+///     fn build(s: String) -> deserialize::Result<Self> {
+///         Ok(LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
@@ -107,7 +107,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// # include!("doctest_setup.rs");
 /// #
 /// use schema::users;
-/// use diesel::deserialize::Queryable;
+/// use diesel::deserialize::{self, Queryable};
 ///
 /// # /*
 /// type DB = diesel::sqlite::Sqlite;
@@ -122,11 +122,11 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// impl Queryable<users::SqlType, DB> for User {
 ///     type Row = (i32, String);
 ///
-///     fn build(row: Self::Row) -> Self {
-///         User {
+///     fn build(row: Self::Row) -> deserialize::Result<Self> {
+///         Ok(User {
 ///             id: row.0,
 ///             name: row.1.to_lowercase(),
-///         }
+///         })
 ///     }
 /// }
 ///
@@ -143,7 +143,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #     Ok(())
 /// # }
 /// ```
-pub trait Queryable<ST, DB>
+pub trait Queryable<ST, DB>: Sized
 where
     DB: Backend,
 {
@@ -153,7 +153,7 @@ where
     type Row: FromStaticSqlRow<ST, DB>;
 
     /// Construct an instance of this type
-    fn build(row: Self::Row) -> Self;
+    fn build(row: Self::Row) -> Result<Self>;
 }
 
 #[doc(inline)]
@@ -161,9 +161,9 @@ pub use diesel_derives::Queryable;
 
 /// Deserializes the result of a query constructed with [`sql_query`].
 ///
-/// This trait can be [derived](derive.QueryableByName.html)
+/// This trait can be [derived](derive@QueryableByName)
 ///
-/// [`sql_query`]: ../fn.sql_query.html
+/// [`sql_query`]: crate::sql_query()
 ///
 /// # Examples
 ///
@@ -335,8 +335,8 @@ pub trait FromSql<A, DB: Backend>: Sized {
 ///
 /// Diesel provides wild card implementations of this trait for all types
 /// that implement one of the following traits:
-///    * [`Queryable`](trait.Queryable.html)
-///    * [`QueryableByName`](trait.QueryableByName.html)
+///    * [`Queryable`]
+///    * [`QueryableByName`]
 pub trait FromSqlRow<ST, DB: Backend>: Sized {
     /// See the trait documentation.
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self>;
@@ -394,7 +394,7 @@ where
 {
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
         let row = <T::Row as FromStaticSqlRow<ST, DB>>::build_from_row(row)?;
-        Ok(T::build(row))
+        T::build(row)
     }
 }
 

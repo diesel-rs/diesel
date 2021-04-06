@@ -109,16 +109,13 @@ macro_rules! __diesel_column {
 
         impl<T> $crate::EqAll<T> for $column_name where
             T: $crate::expression::AsExpression<$($Type)*>,
-            $crate::dsl::Nullable<$crate::dsl::Eq<$column_name, T::Expression>>:
-            $crate::Expression<SqlType = $crate::sql_types::Nullable<$crate::sql_types::Bool>>,
+            $crate::dsl::Eq<$column_name, T::Expression>: $crate::Expression<SqlType=$crate::sql_types::Bool>,
         {
-            type Output = $crate::dsl::Nullable<$crate::dsl::Eq<Self, T::Expression>>;
+            type Output = $crate::dsl::Eq<Self, T::Expression>;
 
             fn eq_all(self, rhs: T) -> Self::Output {
                 use $crate::expression_methods::ExpressionMethods;
-                use $crate::expression_methods::NullableExpressionMethods;
-
-                self.eq(rhs).nullable()
+                self.eq(rhs)
             }
         }
 
@@ -277,7 +274,7 @@ macro_rules! __diesel_column {
 /// `all_columns`. The SQL type is needed for things like [returning boxed
 /// queries][boxed_queries].
 ///
-/// [boxed_queries]: query_dsl/trait.QueryDsl.html#method.into_boxed
+/// [boxed_queries]: crate::query_dsl::QueryDsl::into_boxed()
 ///
 /// `BoxedQuery`
 /// ----------
@@ -995,13 +992,13 @@ macro_rules! __diesel_table_query_source_impl {
 ///
 /// * `child_table` is the Table with the Foreign key.
 ///
-/// So given the Table decaration from [Associations docs](associations/index.html)
+/// So given the Table decaration from [Associations docs](crate::associations)
 ///
 /// * The parent table would be `User`
 /// * The child table would be `Post`
 /// * and the Foreign key would be `Post.user_id`
 ///
-/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](prelude/trait.JoinOnDsl.html)
+/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](crate::prelude::JoinOnDsl)
 /// the following on clause is generated implicitly:
 /// ```sql
 /// post JOIN users ON posts.user_id = users.id

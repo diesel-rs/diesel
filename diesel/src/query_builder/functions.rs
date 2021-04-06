@@ -16,7 +16,7 @@ use crate::query_dsl::methods::SelectDsl;
 /// Passing a type which implements `Identifiable` is the same as passing
 /// `some_table.find(some_struct.id())`.
 ///
-/// [`filter`]: query_builder/struct.UpdateStatement.html#method.filter
+/// [`filter`]: crate::query_builder::UpdateStatement::filter()
 ///
 /// # Examples
 ///
@@ -42,7 +42,7 @@ use crate::query_dsl::methods::SelectDsl;
 ///
 /// To update multiple columns, give [`set`] a tuple argument:
 ///
-/// [`set`]: query_builder/struct.UpdateStatement.html#method.set
+/// [`set`]: crate::query_builder::UpdateStatement::set()
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
@@ -86,7 +86,7 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// This scope can be narrowed by calling [`filter`]
 /// on the table before it is passed in.
 ///
-/// [`filter`]: query_builder/struct.DeleteStatement.html#method.filter
+/// [`filter`]: crate::query_builder::DeleteStatement::filter()
 ///
 /// # Examples
 ///
@@ -138,14 +138,14 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// You may add data by calling [`values()`] or [`default_values()`]
 /// as shown in the examples.
 ///
-/// [`values()`]: query_builder/struct.IncompleteInsertStatement.html#method.values
-/// [`default_values()`]: query_builder/struct.IncompleteInsertStatement.html#method.default_values
+/// [`values()`]: crate::query_builder::IncompleteInsertStatement::values()
+/// [`default_values()`]: crate::query_builder::IncompleteInsertStatement::default_values()
 ///
 /// Backends that support the `RETURNING` clause, such as PostgreSQL,
 /// can return the inserted rows by calling [`.get_results`] instead of [`.execute`].
 ///
-/// [`.get_results`]: query_dsl/trait.RunQueryDsl.html#method.get_results
-/// [`.execute`]: query_dsl/trait.RunQueryDsl.html#tymethod.execute
+/// [`.get_results`]: crate::query_dsl::RunQueryDsl::get_results()
+/// [`.execute`]: crate::query_dsl::RunQueryDsl::execute
 ///
 /// # Examples
 ///
@@ -230,8 +230,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// // Insert many records
 ///
 /// let new_users = vec![
-///     NewUser { name: "Leeloo Multipass", },
-///     NewUser { name: "Korben Dallas", },
+///     NewUser { name: "Leeloo Multipass" },
+///     NewUser { name: "Korben Dallas" },
 /// ];
 ///
 /// let inserted_names = diesel::insert_into(users)
@@ -347,8 +347,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// (See also [`SelectStatement::insert_into`], which generally
 /// reads better for select statements)
 ///
-/// [`SelectStatement::insert_into`]: prelude/trait.Insertable.html#method.insert_into
-/// [`.into_columns`]: query_builder/struct.InsertStatement.html#method.into_columns
+/// [`SelectStatement::insert_into`]: crate::prelude::Insertable::insert_into()
+/// [`.into_columns`]: crate::query_builder::InsertStatement::into_columns()
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
@@ -413,7 +413,7 @@ pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
 ///
 /// With PostgreSQL, similar functionality is provided by [`on_conflict_do_nothing`].
 ///
-/// [`on_conflict_do_nothing`]: query_builder/insert_statement/struct.InsertStatement.html#method.on_conflict_do_nothing
+/// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
 ///
 /// # Example
 ///
@@ -516,7 +516,7 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 ///
 /// This function is intended for use when you want to write the entire query
 /// using raw SQL. If you only need a small bit of raw SQL in your query, use
-/// [`sql`](./dsl/fn.sql.html) instead.
+/// [`sql`](crate::dsl::sql()) instead.
 ///
 /// Query parameters can be bound into the raw query using [`SqlQuery::bind()`].
 ///
@@ -585,7 +585,7 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// #     Ok(())
 /// # }
 /// ```
-/// [`SqlQuery::bind()`]: query_builder/struct.SqlQuery.html#method.bind
+/// [`SqlQuery::bind()`]: crate::query_builder::SqlQuery::bind()
 pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery<()> {
     SqlQuery::new((), query.into())
 }

@@ -53,6 +53,7 @@ pub fn load_foreign_key_constraints(
     let constraints = tc::table
         .filter(tc::constraint_type.eq("FOREIGN KEY"))
         .filter(tc::table_schema.eq(schema_name))
+        .filter(kcu::referenced_column_name.is_not_null())
         .inner_join(
             kcu::table.on(tc::constraint_schema
                 .eq(kcu::constraint_schema)
@@ -84,7 +85,9 @@ pub fn load_foreign_key_constraints(
     Ok(constraints)
 }
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<dyn Error>> {
+pub fn determine_column_type(
+    attr: &ColumnInformation,
+) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
     let tpe = determine_type_name(&attr.type_name)?;
     let unsigned = determine_unsigned(&attr.type_name);
 
@@ -96,7 +99,9 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     })
 }
 
-fn determine_type_name(sql_type_name: &str) -> Result<String, Box<dyn Error>> {
+fn determine_type_name(
+    sql_type_name: &str,
+) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
     let result = if sql_type_name == "tinyint(1)" {
         "bool"
     } else if sql_type_name.starts_with("int") {

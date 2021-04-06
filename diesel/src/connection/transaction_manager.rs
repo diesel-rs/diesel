@@ -5,7 +5,7 @@ use crate::result::{DatabaseErrorKind, Error, QueryResult};
 /// Manages the internal transaction state for a connection.
 ///
 /// You will not need to interact with this trait, unless you are writing an
-/// implementation of [`Connection`](trait.Connection.html).
+/// implementation of [`Connection`].
 pub trait TransactionManager<Conn: Connection> {
     /// Begin a new transaction or savepoint
     ///

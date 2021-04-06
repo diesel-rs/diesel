@@ -22,9 +22,9 @@ pub struct UpdateTarget<Table, WhereClause> {
 /// which implements `Identifiable` is the same as passing
 /// `SomeStruct::table().find(some_struct)`.
 ///
-/// [`update`]: ../fn.update.html
-/// [`delete`]: ../fn.delete.html
-/// [`filter`]: struct.UpdateStatement.html#method.filter
+/// [`update`]: crate::update()
+/// [`delete`]: crate::delete()
+/// [`filter`]: crate::query_builder::UpdateStatement::filter()
 pub trait IntoUpdateTarget: HasTable {
     /// What is the `WHERE` clause of this target?
     type WhereClause;

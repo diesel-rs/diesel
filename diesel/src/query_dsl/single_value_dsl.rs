@@ -11,7 +11,7 @@ use crate::sql_types::IntoNullable;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `single_value` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait SingleValueDsl {
     /// The type returned by `.single_value`.
     type Output;

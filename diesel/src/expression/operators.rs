@@ -365,7 +365,6 @@ macro_rules! diesel_infix_operator {
 /// a single argument rather than two. The operator SQL will be placed after
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
-/// [`infix_operator!`]: macro.infix_operator.html
 #[macro_export]
 macro_rules! postfix_operator {
     ($name:ident, $operator:expr) => {
@@ -420,7 +419,6 @@ macro_rules! diesel_postfix_operator {
 /// a single argument rather than two. The operator SQL will be placed before
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
-/// [`infix_operator!`]: macro.infix_operator.html
 #[macro_export]
 macro_rules! prefix_operator {
     ($name:ident, $operator:expr) => {
@@ -436,11 +434,26 @@ macro_rules! prefix_operator {
             notation = prefix,
             struct_name = $name,
             operator = $operator,
-            return_ty = ($return_ty),
+            return_ty = (
+                $crate::sql_types::is_nullable::MaybeNullable<
+                    $crate::sql_types::is_nullable::IsSqlTypeNullable<
+                        <Expr as $crate::expression::Expression>::SqlType
+                    >,
+                    $return_ty,
+                >
+            ),
             ty_params = (Expr,),
             field_names = (expr,),
             backend_ty_params = (DB,),
             backend_ty = DB,
+            expression_ty_params = (),
+            expression_bounds = (
+                Expr: $crate::expression::Expression,
+                <Expr as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
+                $crate::sql_types::is_nullable::IsSqlTypeNullable<
+                    <Expr as $crate::expression::Expression>::SqlType
+                >: $crate::sql_types::MaybeNullableType<$return_ty>,
+            ),
         );
     };
 
@@ -449,11 +462,26 @@ macro_rules! prefix_operator {
             notation = prefix,
             struct_name = $name,
             operator = $operator,
-            return_ty = ($return_ty),
+            return_ty = (
+                $crate::sql_types::is_nullable::MaybeNullable<
+                    $crate::sql_types::is_nullable::IsSqlTypeNullable<
+                        <Expr as $crate::expression::Expression>::SqlType
+                    >,
+                    $return_ty,
+                >
+            ),
             ty_params = (Expr,),
             field_names = (expr,),
             backend_ty_params = (),
             backend_ty = $backend,
+            expression_ty_params = (),
+            expression_bounds = (
+                Expr: $crate::expression::Expression,
+                <Expr as $crate::expression::Expression>::SqlType: $crate::sql_types::SqlType,
+                $crate::sql_types::is_nullable::IsSqlTypeNullable<
+                    <Expr as $crate::expression::Expression>::SqlType
+                >: $crate::sql_types::MaybeNullableType<$return_ty>,
+            ),
         );
     };
 }
@@ -495,11 +523,7 @@ postfix_operator!(
     crate::expression::expression_types::NotSelectable
 );
 
-prefix_operator!(
-    Not,
-    " NOT ",
-    crate::sql_types::Nullable<crate::sql_types::Bool>
-);
+prefix_operator!(Not, " NOT ");
 
 use crate::backend::Backend;
 use crate::expression::{TypedExpressionType, ValidGrouping};

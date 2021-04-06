@@ -57,7 +57,11 @@ impl Statement {
     ) -> QueryResult<Self> {
         let name = CString::new(name.unwrap_or(""))?;
         let sql = CString::new(sql)?;
-        let param_types_vec = param_types.iter().map(|x| x.oid).collect();
+        let param_types_vec = param_types
+            .iter()
+            .map(|x| x.oid())
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| crate::result::Error::SerializationError(Box::new(e)))?;
 
         let internal_result = unsafe {
             conn.raw_connection.prepare(

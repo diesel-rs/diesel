@@ -3,7 +3,7 @@ use std::thread::sleep;
 use std::time::Duration;
 
 use crate::support::{database, project};
-use migrations_internals::TIMESTAMP_FORMAT;
+pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 #[test]
 fn migration_list_lists_pending_applied_migrations() {

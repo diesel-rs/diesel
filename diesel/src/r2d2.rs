@@ -8,8 +8,8 @@ pub use self::r2d2::*;
 
 /// A re-export of [`r2d2::Error`], which is only used by methods on [`r2d2::Pool`].
 ///
-/// [`r2d2::Error`]: ../../r2d2/struct.Error.html
-/// [`r2d2::Pool`]: ../../r2d2/struct.Pool.html
+/// [`r2d2::Error`]: r2d2::Error
+/// [`r2d2::Pool`]: r2d2::Pool
 pub type PoolError = self::r2d2::Error;
 
 use std::convert::Into;
@@ -26,7 +26,7 @@ use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 ///
 /// See the [r2d2 documentation] for usage examples.
 ///
-/// [r2d2 documentation]: ../../r2d2
+/// [r2d2 documentation]: r2d2
 #[derive(Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,
@@ -136,7 +136,6 @@ where
     M::Connection: Connection + R2D2Connection + Send + 'static,
 {
     type Backend = <M::Connection as Connection>::Backend;
-    type TransactionManager = PooledConnectionTransactionManager<M>;
 
     fn establish(_: &str) -> ConnectionResult<Self> {
         Err(ConnectionError::BadConnection(String::from(
@@ -165,48 +164,34 @@ where
         (&**self).execute_returning_count(source)
     }
 
-    fn transaction_manager(&self) -> &Self::TransactionManager {
-        // This is actually fine because we have an #[repr(transparent)]
-        // on LoggingTransactionManager, which means the layout is the same
-        // as the inner type
-        // See the ref-cast crate for a longer version: https://github.com/dtolnay/ref-cast
-        unsafe {
-            &*((&**self).transaction_manager() as *const _ as *const Self::TransactionManager)
-        }
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
+        self
     }
 }
 
-#[doc(hidden)]
-#[repr(transparent)]
-#[allow(missing_debug_implementations)]
-pub struct PooledConnectionTransactionManager<M>
+impl<M> TransactionManager<PooledConnection<M>> for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection,
+    M::Connection: Connection + R2D2Connection,
 {
-    inner: <M::Connection as Connection>::TransactionManager,
-}
-
-impl<M> TransactionManager<PooledConnection<M>> for PooledConnectionTransactionManager<M>
-where
-    M: ManageConnection,
-    PooledConnection<M>: Connection,
-    M::Connection: Connection,
-{
-    fn begin_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
-        self.inner.begin_transaction(&**conn)
+    fn begin_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
+        let conn = &**self;
+        conn.transaction_manager().begin_transaction(conn)
     }
 
-    fn rollback_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
-        self.inner.rollback_transaction(&**conn)
+    fn rollback_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
+        let conn = &**self;
+        conn.transaction_manager().rollback_transaction(conn)
     }
 
-    fn commit_transaction(&self, conn: &PooledConnection<M>) -> QueryResult<()> {
-        self.inner.commit_transaction(&**conn)
+    fn commit_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
+        let conn = &**self;
+        conn.transaction_manager().commit_transaction(conn)
     }
 
     fn get_transaction_depth(&self) -> u32 {
-        self.inner.get_transaction_depth()
+        let conn = &**self;
+        conn.transaction_manager().get_transaction_depth()
     }
 }
 

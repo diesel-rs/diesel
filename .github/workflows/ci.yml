@@ -4,9 +4,8 @@ on:
   push:
     branches:
       - master
-      - '0.[0-9]+.x'
-      - '1.[0-9]+.x'
-
+      - "0.[0-9]+.x"
+      - "1.[0-9]+.x"
 
 name: CI Tests
 
@@ -115,11 +114,6 @@ jobs:
       - name: Install sqlite (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'sqlite'
         run: |
-          brew uninstall openssl@1.0.2t
-          brew uninstall python@2.7.17
-          brew untap local/openssl
-          brew untap local/python2
-          brew cask install xquartz
           brew update
           brew install sqlite
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
@@ -127,22 +121,17 @@ jobs:
       - name: Install mysql (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mysql'
         run: |
-          brew uninstall openssl@1.0.2t
-          brew uninstall python@2.7.17
-          brew untap local/openssl
-          brew untap local/python2
-          brew cask install xquartz
           brew update
-          brew install mysql
-          brew services start mysql
-          brew services stop mysql;sleep 3;brew services start mysql
+          brew install mariadb
+          mysql_install_db
+          mysql.server start
           sleep 3
-          macos_mysql_version="$(ls /usr/local/Cellar/mysql)"
-          /usr/local/Cellar/mysql/${macos_mysql_version}/bin/mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot
-          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
-          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
-          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
-          echo "MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mysql/${macos_mysql_version}/lib" >> $GITHUB_ENV
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
+          macos_mysql_version="$(ls /usr/local/Cellar/mariadb)"
+          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mariadb/${macos_mysql_version}/lib" >> $GITHUB_ENV
 
       - name: Install sqlite (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'sqlite'
@@ -176,8 +165,8 @@ jobs:
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
         shell: cmd
         run: |
-            choco install mysql
-            "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
+          choco install mysql
+          "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
 
       - name: Set variables for mysql (Windows)
         if: runner.os == 'Windows' && matrix.backend == 'mysql'
@@ -307,9 +296,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: nightly-2020-05-01
-            profile: minimal
-            override: true
+          toolchain: nightly-2020-05-01
+          profile: minimal
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -336,10 +325,10 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: 1.40.0
-            profile: minimal
-            components: clippy, rustfmt
-            override: true
+          toolchain: 1.40.0
+          profile: minimal
+          components: clippy, rustfmt
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -357,6 +346,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: clippy
+          args: --all
 
       - name: Check formating
         uses: actions-rs/cargo@v1
@@ -371,9 +361,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: stable
-            profile: minimal
-            override: true
+          toolchain: stable
+          profile: minimal
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -393,15 +383,15 @@ jobs:
           args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
 
   minimal_rust_version:
-    name: Check Minimal supported rust version (1.40.0)
+    name: Check Minimal supported rust version (1.48.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-            toolchain: 1.40.0
-            profile: minimal
-            override: true
+          toolchain: 1.48.0
+          profile: minimal
+          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -417,7 +407,7 @@ jobs:
         run: |
           RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
 
-      - name: Check building with rust 1.40.0
+      - name: Check building with rust 1.48.0
         uses: actions-rs/cargo@v1
         with:
           command: check

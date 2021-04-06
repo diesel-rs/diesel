@@ -73,8 +73,8 @@ macro_rules! tuple_impls {
         {
             type Row = Self;
 
-            fn build(row: Self::Row) -> Self {
-                row
+            fn build(row: Self::Row) -> deserialize::Result<Self> {
+                Ok(row)
             }
         }
 
@@ -103,7 +103,7 @@ macro_rules! tuple_impls {
                 out.write_i32::<NetworkEndian>($Tuple)?;
 
                 $(
-                    let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid;
+                    let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid()?;
                     out.write_u32::<NetworkEndian>(oid)?;
                     let is_null = self.$idx.to_sql(&mut buffer)?;
 

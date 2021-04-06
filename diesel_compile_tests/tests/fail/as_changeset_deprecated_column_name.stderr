@@ -1,0 +1,17 @@
+warning: The form `table_name(value)` is deprecated. Use `table_name = "value"` instead
+  --> $DIR/as_changeset_deprecated_column_name.rs:12:3
+   |
+12 | #[table_name(users)]
+   |   ^^^^^^^^^^^^^^^^^
+
+warning: The form `column_name(value)` is deprecated. Use `column_name = "value"` instead
+  --> $DIR/as_changeset_deprecated_column_name.rs:15:7
+   |
+15 |     #[column_name(name)]
+   |       ^^^^^^^^^^^^^^^^^
+
+error: warnings
+  --> $DIR/as_changeset_deprecated_column_name.rs:21:5
+   |
+21 |     compile_error!("warnings");
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^

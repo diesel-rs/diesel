@@ -8,10 +8,8 @@
 //!
 //! See also [`expression_methods`][expression_methods] and [`dsl`][dsl].
 //!
-//! [expression_methods]: ../expression_methods/index.html
-//! [dsl]: ../dsl/index.html
-//! [`QueryDsl`]: trait.QueryDsl.html
-//! [`RunQueryDsl`]: trait.RunQueryDsl.html
+//! [expression_methods]: super::expression_methods
+//! [dsl]: super::dsl
 
 use crate::backend::Backend;
 use crate::connection::Connection;
@@ -38,7 +36,7 @@ pub mod load_dsl;
 mod locking_dsl;
 mod nullable_select_dsl;
 mod offset_dsl;
-mod order_dsl;
+pub(crate) mod order_dsl;
 #[doc(hidden)]
 pub mod positional_order_dsl;
 mod save_changes_dsl;
@@ -152,7 +150,10 @@ pub trait QueryDsl: Sized {
     ///     .execute(&connection)
     ///     .unwrap();
     /// let all_animals = animals.select((species, name, legs)).load(&connection);
-    /// let distinct_animals = animals.select((species, name, legs)).distinct_on(species).load(&connection);
+    /// let distinct_animals = animals
+    ///     .select((species, name, legs))
+    ///     .order_by((species, legs))
+    ///     .distinct_on(species).load(&connection);
     ///
     /// assert_eq!(Ok(vec![Animal::new("dog", Some("Jack"), 4),
     ///                    Animal::new("dog", None, 4),
@@ -262,7 +263,9 @@ pub trait QueryDsl: Sized {
     /// #         .first::<i32>(&connection)?;
     /// let join = users::table.left_join(posts::table);
     ///
-    /// // By default, all columns from both tables are selected
+    /// // By default, all columns from both tables are selected.
+    /// // If no explicit select clause is used this means that the result
+    /// // type of this query must contain all fields from the original schema in order.
     /// let all_data = join.load::<(User, Option<Post>)>(&connection)?;
     /// let expected_data = vec![
     ///     (User::new(1, "Sean"), Some(Post::new(post_id, 1, "Sean's Post"))),
@@ -319,8 +322,8 @@ pub trait QueryDsl: Sized {
     /// table directly.  Otherwise you will need to use [`.on`] to specify the `ON`
     /// clause.
     ///
-    /// [`joinable!`]: ../macro.joinable.html
-    /// [`.on`]: trait.JoinOnDsl.html#method.on
+    /// [`joinable!`]: crate::joinable!
+    /// [`.on`]: JoinOnDsl::on()
     ///
     /// You can join to as many tables as you'd like in a query, with the
     /// restriction that no table can appear in the query more than once. The reason
@@ -355,8 +358,8 @@ pub trait QueryDsl: Sized {
     ///     INNER JOIN comments ON comments.user_id = users.id
     /// ```
     ///
-    /// [associations]: ../associations/index.html
-    /// [`allow_tables_to_appear_in_same_query!`]: ../macro.allow_tables_to_appear_in_same_query.html
+    /// [associations]: crate::associations
+    /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
     ///
     /// # Examples
     ///
@@ -420,6 +423,62 @@ pub trait QueryDsl: Sized {
     /// assert_eq!(Ok(expected_data), data);
     /// # }
     /// ```
+    ///
+    /// ### With explicit `ON` clause (struct)
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// #
+    /// # /*
+    /// allow_tables_to_appear_in_same_query!(users, posts);
+    /// # */
+    ///
+    /// # fn main() {
+    /// #     use self::users::dsl::{users, name};
+    /// #     use self::posts::dsl::{posts, user_id, title};
+    /// #     let connection = establish_connection();
+    /// #[derive(Debug, PartialEq, Queryable)]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// #[derive(Debug, PartialEq, Queryable)]
+    /// struct Post {
+    ///     id: i32,
+    ///     user_id: i32,
+    ///     title: String,
+    /// }
+    ///
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         (user_id.eq(1), title.eq("Sean's post")),
+    ///         (user_id.eq(2), title.eq("Sean is a jerk")),
+    ///     ])
+    ///     .execute(&connection)
+    ///     .unwrap();
+    ///
+    /// // By default, all columns from both tables are selected.
+    /// // If no explicit select clause is used this means that the
+    /// // result type of this query must contain all fields from the
+    /// // original schema in order.
+    /// let data = users
+    ///     .inner_join(posts.on(title.like(name.concat("%"))))
+    ///     .load::<(User, Post)>(&connection); // type could be elided
+    /// let expected_data = vec![
+    ///     (
+    ///         User { id: 1, name: String::from("Sean") },
+    ///         Post { id: 4, user_id: 1, title: String::from("Sean's post") },
+    ///     ),
+    ///     (
+    ///         User { id: 1, name: String::from("Sean") },
+    ///         Post { id: 5, user_id: 2, title: String::from("Sean is a jerk") },
+    ///     ),
+    /// ];
+    /// assert_eq!(Ok(expected_data), data);
+    /// # }
+    /// ```
     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
@@ -432,7 +491,7 @@ pub trait QueryDsl: Sized {
     /// Behaves similarly to [`inner_join`], but will produce a left join
     /// instead. See [`inner_join`] for usage examples.
     ///
-    /// [`inner_join`]: #method.inner_join
+    /// [`inner_join`]: QueryDsl::inner_join()
     fn left_outer_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
@@ -442,7 +501,7 @@ pub trait QueryDsl: Sized {
 
     /// Alias for [`left_outer_join`].
     ///
-    /// [`left_outer_join`]: #method.left_outer_join
+    /// [`left_outer_join`]: QueryDsl::left_outer_join()
     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
@@ -554,14 +613,14 @@ pub trait QueryDsl: Sized {
     ///
     /// If there was already an order clause, it will be overridden. See
     /// also:
-    /// [`.desc()`](../expression_methods/trait.ExpressionMethods.html#method.desc)
+    /// [`.desc()`](crate::expression_methods::ExpressionMethods::desc())
     /// and
-    /// [`.asc()`](../expression_methods/trait.ExpressionMethods.html#method.asc)
+    /// [`.asc()`](crate::expression_methods::ExpressionMethods::asc())
     ///
     /// Ordering by multiple columns can be achieved by passing a tuple of those
     /// columns.
     /// To construct an order clause of an unknown number of columns,
-    /// see [`QueryDsl::then_order_by`](#method.then_order_by)
+    /// see [`QueryDsl::then_order_by`](QueryDsl::then_order_by())
     ///
     /// # Examples
     ///
@@ -776,7 +835,7 @@ pub trait QueryDsl: Sized {
     /// Sets the `group by` clause of a query.
     ///
     /// **Note:** Queries having a `group by` clause require a custom select clause.
-    /// Use `QueryDsl::select()` to specify one
+    /// Use [`QueryDsl::select()`] to specify one.
     ///
     /// If there was already a group by clause, it will be overridden.
     /// Ordering by multiple columns can be achieved by passing a tuple of those
@@ -791,7 +850,7 @@ pub trait QueryDsl: Sized {
     /// For group by clauses containing columns from more than one table it
     /// is required to call [`allow_columns_to_appear_in_same_group_by_clause!`]
     ///
-    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: ../macro.allow_columns_to_appear_in_same_group_by_clause.html
+    /// [`allow_columns_to_appear_in_same_group_by_clause!`]: crate::allow_columns_to_appear_in_same_group_by_clause!
     ///
     /// # Examples
     /// ```rust
@@ -984,8 +1043,8 @@ pub trait QueryDsl: Sized {
     /// but you might want to hide the return type or have it conditionally change.
     /// Boxing can achieve both.
     ///
-    /// [iterator]: https://doc.rust-lang.org/stable/std/iter/trait.Iterator.html
-    /// [helper_types]: ../helper_types/index.html
+    /// [iterator]: std::iter::Iterator
+    /// [helper_types]: crate::helper_types
     ///
     /// ### Example
     ///
@@ -1102,11 +1161,11 @@ impl<T: Table> QueryDsl for T {}
 pub trait RunQueryDsl<Conn>: Sized {
     /// Executes the given command, returning the number of rows affected.
     ///
-    /// `execute` is usually used in conjunction with [`insert_into`](../fn.insert_into.html),
-    /// [`update`](../fn.update.html) and [`delete`](../fn.delete.html) where the number of
+    /// `execute` is usually used in conjunction with [`insert_into`](crate::insert_into()),
+    /// [`update`](crate::update()) and [`delete`](crate::delete()) where the number of
     /// affected rows is often enough information.
     ///
-    /// When asking the database to return data from a query, [`load`](#method.load) should
+    /// When asking the database to return data from a query, [`load`](crate::query_dsl::RunQueryDsl::load()) should
     /// probably be used instead.
     ///
     /// # Example
@@ -1155,10 +1214,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// For insert, update, and delete operations where only a count of affected is needed,
     /// [`execute`] should be used instead.
     ///
-    /// [`Queryable`]: ../deserialize/trait.Queryable.html
-    /// [`QueryableByName`]: ../deserialize/trait.QueryableByName.html
-    /// [`execute`]: fn.execute.html
-    /// [`sql_query`]: ../fn.sql_query.html
+    /// [`Queryable`]: crate::deserialize::Queryable
+    /// [`QueryableByName`]: crate::deserialize::QueryableByName
+    /// [`execute`]: crate::query_dsl::RunQueryDsl::execute()
+    /// [`sql_query`]: crate::sql_query()
     ///
     /// # Examples
     ///
@@ -1228,8 +1287,8 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// let data = users
     ///     .load::<User>(&connection)?;
     /// let expected_data = vec![
-    ///     User { id: 1, name: String::from("Sean"), },
-    ///     User { id: 2, name: String::from("Tess"), },
+    ///     User { id: 1, name: String::from("Sean") },
+    ///     User { id: 2, name: String::from("Tess") },
     /// ];
     /// assert_eq!(expected_data, data);
     /// #     Ok(())
@@ -1299,7 +1358,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// This method is an alias for [`load`], but with a name that makes more
     /// sense for insert, update, and delete statements.
     ///
-    /// [`load`]: #method.load
+    /// [`load`]: crate::query_dsl::RunQueryDsl::load()
     fn get_results<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
     where
         Self: LoadQuery<Conn, U>,

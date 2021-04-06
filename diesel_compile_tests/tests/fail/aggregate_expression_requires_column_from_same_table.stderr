@@ -1,0 +1,111 @@
+error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
+  --> $DIR/aggregate_expression_requires_column_from_same_table.rs:19:38
+   |
+19 |     let source = users::table.select(sum(posts::id));
+   |                                      ^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |
+   = help: the following implementations were found:
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
+             <posts::columns::id as diesel::SelectableExpression<posts::table>>
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+  --> $DIR/aggregate_expression_requires_column_from_same_table.rs:19:31
+   |
+19 |     let source = users::table.select(sum(posts::id));
+   |                               ^^^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |
+   = help: the following implementations were found:
+             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
+  --> $DIR/aggregate_expression_requires_column_from_same_table.rs:20:38
+   |
+20 |     let source = users::table.select(avg(posts::id));
+   |                                      ^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |
+   = help: the following implementations were found:
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
+             <posts::columns::id as diesel::SelectableExpression<posts::table>>
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+  --> $DIR/aggregate_expression_requires_column_from_same_table.rs:20:31
+   |
+20 |     let source = users::table.select(avg(posts::id));
+   |                               ^^^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |
+   = help: the following implementations were found:
+             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
+  --> $DIR/aggregate_expression_requires_column_from_same_table.rs:21:38
+   |
+21 |     let source = users::table.select(max(posts::id));
+   |                                      ^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |
+   = help: the following implementations were found:
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
+             <posts::columns::id as diesel::SelectableExpression<posts::table>>
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+  --> $DIR/aggregate_expression_requires_column_from_same_table.rs:21:31
+   |
+21 |     let source = users::table.select(max(posts::id));
+   |                               ^^^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |
+   = help: the following implementations were found:
+             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
+  --> $DIR/aggregate_expression_requires_column_from_same_table.rs:22:38
+   |
+22 |     let source = users::table.select(min(posts::id));
+   |                                      ^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |
+   = help: the following implementations were found:
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
+             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
+             <posts::columns::id as diesel::SelectableExpression<posts::table>>
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+  --> $DIR/aggregate_expression_requires_column_from_same_table.rs:22:31
+   |
+22 |     let source = users::table.select(min(posts::id));
+   |                               ^^^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |
+   = help: the following implementations were found:
+             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>>` for `diesel::query_builder::SelectStatement<users::table>`

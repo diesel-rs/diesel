@@ -1,0 +1,49 @@
+error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
+  --> $DIR/find_requires_correct_type.rs:20:33
+   |
+20 |     int_primary_key::table.find("1");
+   |                                 ^^^ the trait `diesel::Expression` is not implemented for `str`
+   |
+   = note: required because of the requirements on the impl of `diesel::Expression` for `&str`
+   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::operators::Eq<int_primary_key::columns::id, &str>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::filter_dsl::FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, &str>>>` for `diesel::query_builder::SelectStatement<int_primary_key::table>`
+
+error[E0277]: the trait bound `str: diesel::expression::ValidGrouping<()>` is not satisfied
+  --> $DIR/find_requires_correct_type.rs:20:33
+   |
+20 |     int_primary_key::table.find("1");
+   |                                 ^^^ the trait `diesel::expression::ValidGrouping<()>` is not implemented for `str`
+   |
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `&str`
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `diesel::expression::operators::Eq<int_primary_key::columns::id, &str>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::filter_dsl::FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, &str>>>` for `diesel::query_builder::SelectStatement<int_primary_key::table>`
+
+error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
+  --> $DIR/find_requires_correct_type.rs:22:36
+   |
+22 |     string_primary_key::table.find(1);
+   |                                    ^ the trait `diesel::Expression` is not implemented for `{integer}`
+   |
+   = help: the following implementations were found:
+             <&'a T as diesel::Expression>
+             <(A, B) as diesel::Expression>
+             <(A, B, C) as diesel::Expression>
+             <(A, B, C, D) as diesel::Expression>
+           and 105 others
+   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::filter_dsl::FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>>` for `diesel::query_builder::SelectStatement<string_primary_key::table>`
+
+error[E0277]: the trait bound `{integer}: diesel::expression::ValidGrouping<()>` is not satisfied
+  --> $DIR/find_requires_correct_type.rs:22:36
+   |
+22 |     string_primary_key::table.find(1);
+   |                                    ^ the trait `diesel::expression::ValidGrouping<()>` is not implemented for `{integer}`
+   |
+   = help: the following implementations were found:
+             <&'a T as diesel::expression::ValidGrouping<GB>>
+             <(A, B) as diesel::expression::ValidGrouping<__GroupByClause>>
+             <(A, B, C) as diesel::expression::ValidGrouping<__GroupByClause>>
+             <(A, B, C, D) as diesel::expression::ValidGrouping<__GroupByClause>>
+           and 126 others
+   = note: required because of the requirements on the impl of `diesel::expression::ValidGrouping<()>` for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::filter_dsl::FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>>` for `diesel::query_builder::SelectStatement<string_primary_key::table>`

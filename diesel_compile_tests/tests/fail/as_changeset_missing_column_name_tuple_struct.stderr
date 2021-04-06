@@ -1,0 +1,35 @@
+error: All fields of tuple structs must be annotated with `#[column_name]`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:13
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |             ^^^
+
+error: All fields of tuple structs must be annotated with `#[column_name]`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:50
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |                                                  ^^^^^^
+
+error[E0412]: cannot find type `unknown_column` in module `users`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:13
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |             ^^^ not found in `users`
+
+error[E0412]: cannot find type `unknown_column` in module `users`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:50
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |                                                  ^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `unknown_column` in module `users`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:13
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |             ^^^ not found in `users`
+
+error[E0425]: cannot find value `unknown_column` in module `users`
+  --> $DIR/as_changeset_missing_column_name_tuple_struct.rs:14:50
+   |
+14 | struct User(i32, #[column_name = "name"] String, String);
+   |                                                  ^^^^^^ not found in `users`

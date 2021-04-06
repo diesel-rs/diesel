@@ -1,0 +1,45 @@
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+  --> $DIR/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:27:10
+   |
+27 |         .load::<i32>(&connection);
+   |          ^^^^ expected struct `diesel::sqlite::Sqlite`, found struct `diesel::pg::Pg`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, i32>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, diesel::pg::expression::array_comparison::Any<diesel::expression::bound::Bound<diesel::sql_types::Array<diesel::sql_types::Text>, std::vec::Vec<std::string::String>>>>>>>`
+
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+  --> $DIR/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:29:10
+   |
+29 |         .load::<i32>(&connection);
+   |          ^^^^ expected struct `diesel::sqlite::Sqlite`, found struct `diesel::pg::Pg`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, i32>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::IsNotDistinctFrom<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>`
+
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == diesel::pg::Pg`
+  --> $DIR/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:31:10
+   |
+31 |         .load::<i32>(&connection);
+   |          ^^^^ expected struct `diesel::sqlite::Sqlite`, found struct `diesel::pg::Pg`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_dsl::LoadQuery<diesel::SqliteConnection, i32>` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::dsl::now, diesel::expression::grouped::Grouped<diesel::pg::expression::date_and_time::AtTimeZone<diesel::dsl::now, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>>>`
+
+error[E0599]: no method named `execute` found for struct `diesel::upsert::IncompleteOnConflict<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<diesel::upsert::OnConstraint<'_>>>` in the current scope
+   --> $DIR/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:34:10
+    |
+34  |         .execute(&connection);
+    |          ^^^^^^^ method not found in `diesel::upsert::IncompleteOnConflict<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<diesel::upsert::OnConstraint<'_>>>`
+    |
+   ::: $DIESEL/src/upsert/on_conflict_extension.rs
+    |
+    | pub struct IncompleteOnConflict<Stmt, Target> {
+    | ---------------------------------------------
+    | |
+    | doesn't satisfy `_: diesel::RunQueryDsl<_>`
+    | doesn't satisfy `_: diesel::Table`
+    |
+    = note: the method `execute` exists but the following trait bounds were not satisfied:
+            `diesel::upsert::IncompleteOnConflict<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::Table`
+            which is required by `diesel::upsert::IncompleteOnConflict<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
+            `&diesel::upsert::IncompleteOnConflict<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::Table`
+            which is required by `&diesel::upsert::IncompleteOnConflict<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
+            `&mut diesel::upsert::IncompleteOnConflict<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::Table`
+            which is required by `&mut diesel::upsert::IncompleteOnConflict<diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<diesel::upsert::OnConstraint<'_>>>: diesel::RunQueryDsl<_>`

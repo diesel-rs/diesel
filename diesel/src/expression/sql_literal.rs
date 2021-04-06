@@ -11,7 +11,7 @@ use crate::sql_types::{DieselNumericOps, SqlType};
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`sql()`] function.
 ///
-/// [`sql()`]: ../dsl/fn.sql.html
+/// [`sql()`]: crate::dsl::sql()
 pub struct SqlLiteral<ST, T = ()> {
     sql: String,
     inner: T,
@@ -113,7 +113,7 @@ where
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](../fn.sql_query.html) instead.
+    /// [`sql_query`](crate::sql_query()) instead.
     ///
     /// # Safety
     ///
@@ -207,7 +207,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 ///
 /// This function is intended for use when you need a small bit of raw SQL in
 /// your query. If you want to write the entire query using raw SQL, use
-/// [`sql_query`](../fn.sql_query.html) instead.
+/// [`sql_query`](crate::sql_query()) instead.
 ///
 /// Query parameters can be bound into the literal SQL using [`SqlLiteral::bind()`].
 ///
@@ -259,7 +259,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #     Ok(())
 /// # }
 /// ```
-/// [`SqlLiteral::bind()`]: ../expression/struct.SqlLiteral.html#method.bind
+/// [`SqlLiteral::bind()`]: crate::expression::SqlLiteral::bind()
 pub fn sql<ST>(sql: &str) -> SqlLiteral<ST>
 where
     ST: TypedExpressionType,
@@ -271,7 +271,6 @@ where
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`SqlLiteral::bind()`] method when binding a value to a fragment of SQL.
 ///
-/// [`SqlLiteral::bind()`]: ./struct.SqlLiteral.html#method.bind
 pub struct UncheckedBind<Query, Value> {
     query: Query,
     value: Value,
@@ -289,7 +288,7 @@ where
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](../fn.sql_query.html) instead.
+    /// [`sql_query`](crate::sql_query()) instead.
     ///
     /// # Safety
     ///

@@ -1,7 +1,7 @@
 use super::result::PgResult;
 use super::row::PgRow;
 
-/// The type returned by various [`Connection`](struct.Connection.html) methods.
+/// The type returned by various [`Connection`] methods.
 /// Acts as an iterator over `T`.
 pub struct Cursor<'a> {
     current_row: usize,

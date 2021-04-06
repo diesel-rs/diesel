@@ -109,7 +109,7 @@ impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
 
 impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let signed: i16 = FromSql::<SmallInt, Mysql>::from_sql(bytes)?;
+        let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
         Ok(signed as u16)
     }
 }
@@ -122,7 +122,7 @@ impl ToSql<Unsigned<Integer>, Mysql> for u32 {
 
 impl FromSql<Unsigned<Integer>, Mysql> for u32 {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
-        let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
+        let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
         Ok(signed as u32)
     }
 }
@@ -187,9 +187,16 @@ impl HasSqlType<Unsigned<BigInt>> for Mysql {
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 ///
-/// [`ToSql`]: ../../serialize/trait.ToSql.html
-/// [`FromSql`]: ../../deserialize/trait.FromSql.html
-/// [`chrono::NaiveDateTime`]: ../../../chrono/naive/struct.NaiveDateTime.html
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+#[cfg_attr(
+    feature = "chrono",
+    doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "chrono"),
+    doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
+)]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[mysql_type = "DateTime"]
 pub struct Datetime;

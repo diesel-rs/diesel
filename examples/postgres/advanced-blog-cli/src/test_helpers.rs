@@ -1,12 +1,13 @@
 use diesel::prelude::*;
-use diesel_migrations::run_pending_migrations;
+use diesel_migrations::{FileBasedMigrations, MigrationHarness};
 use lazy_static::lazy_static;
 use std::sync::{Mutex, MutexGuard};
 
 pub fn connection() -> PgConnection {
     let url = dotenv::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let conn = PgConnection::establish(&url).unwrap();
-    run_pending_migrations(&conn).unwrap();
+    let migrations = FileBasedMigrations::find_migrations_directory().unwrap();
+    conn.run_pending_migrations(migrations).unwrap();
     conn.begin_test_transaction().unwrap();
     conn
 }

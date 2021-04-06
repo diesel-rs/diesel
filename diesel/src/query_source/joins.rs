@@ -133,9 +133,9 @@ where
 ///
 /// See [`joinable!`] and [`inner_join`] for usage examples.
 ///
-/// [`joinable!`]: ../macro.joinable.html
-/// [`.on`]: ../query_dsl/trait.JoinOnDsl.html#method.on
-/// [`inner_join`]: ../query_dsl/trait.QueryDsl.html#method.inner_join
+/// [`joinable!`]: crate::joinable!
+/// [`.on`]: crate::query_dsl::JoinOnDsl::on()
+/// [`inner_join`]: crate::query_dsl::QueryDsl::inner_join()
 pub trait JoinTo<T> {
     #[doc(hidden)]
     type FromClause;

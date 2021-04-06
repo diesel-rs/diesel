@@ -72,16 +72,16 @@ use diagnostic_shim::*;
 ///
 /// # Attributes
 ///
-/// ## Optional type attributes
+/// ## Optional container attributes
 ///
-/// * `#[table_name = "some_table"]`, specifies the table for which the
-/// current type is a changeset. Requires that `some_table` is in scope.
-/// If this attribute is not used, the type name converted to
-/// `snake_case` with an added `s` is used as table name
 /// * `#[changeset_options(treat_none_as_null = "true")]`, specifies that
 /// the derive should threat `None` values as `NULL`. By default
 /// `Option::<T>::None` is just skipped. To insert a `NULL` using default
 /// behavior use `Option::<Option<T>>::Some(None)`
+/// * `#[table_name = "some_table"]`, specifies the table for which the
+/// current type is a changeset. Requires that `some_table` is in scope.
+/// If this attribute is not used, the type name converted to
+/// `snake_case` with an added `s` is used as table name
 ///
 /// ## Optional field attributes
 ///
@@ -113,13 +113,13 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 ///
 /// # Attributes:
 ///
-/// ## Required type attributes
+/// ## Required container attributes
 ///
 /// * `#[sql_type = "SqlType"]`, to specify the sql type of the
 ///  generated implementations. If the attribute exists multiple times
 ///  impls for each sql type are generated.
 ///
-/// ## Optional type attribute
+/// ## Optional container attributes
 ///
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
 ///   that the type is `Sized`
@@ -135,7 +135,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 ///
 /// # Attributes
 ///
-/// # Required type attributes
+/// # Required container attributes
 ///
 /// * `#[belongs_to(User)]`, to specify a child-to-parent relation ship
 /// between the current type and the specified parent type (`User`).
@@ -147,7 +147,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 /// appended `_id` is used as foreign key name. (`user_id` in this example
 /// case)
 ///
-/// # Optional type attributes
+/// # Optional container attributes
 ///
 /// * `#[table_name = "some_table_name"]` specifies the table this
 ///    type belongs to. Requires that `some_table_name` is in scope.
@@ -203,7 +203,7 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 ///
 /// # Attributes
 ///
-/// ## Optional type attributes
+/// ## Optional container attributes
 ///
 /// * `#[table_name = "some_table_name"]` specifies the table this
 ///    type belongs to. Requires that `some_table_name` is in scope.
@@ -212,8 +212,6 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// * `#[primary_key(id1, id2)]` to specify the struct field that
 ///    that corresponds to the primary key. If not used, `id` will be
 ///    assumed as primary key field
-///
-///
 #[proc_macro_derive(Identifiable, attributes(table_name, primary_key, column_name))]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, identifiable::derive)
@@ -251,7 +249,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///
 /// # Attributes
 ///
-/// ## Optional type attributes
+/// ## Optional container attributes
 ///
 /// * `#[table_name = "some_table_name"]`, specifies the table this type
 /// is insertable into. Requires that `some_table_name` is in scope.
@@ -394,27 +392,31 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// This trait can only be derived for structs, not enums.
 ///
-/// **When this trait is derived, it will assume that the order of fields on your
-/// struct match the order of the fields in the query. This means that field
-/// order is significant if you are using `#[derive(Queryable)]`. Field name has
-/// no effect.**
+/// **Note**: When this trait is derived, it will assume that __all fields on
+/// your struct__ matches __all fields in the query__, including the order and
+/// count. This means that field order is significant if you are using
+/// `#[derive(Queryable)]`. __Field name has no effect__.
 ///
 /// To provide custom deserialization behavior for a field, you can use
 /// `#[diesel(deserialize_as = "SomeType")]`. If this attribute is present, Diesel
 /// will deserialize the corresponding field into `SomeType`, rather than the
-/// actual field type on your struct and then call `.into` to convert it to the
-/// actual field type. This can be used to add custom behavior for a
+/// actual field type on your struct and then call
+/// [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
+/// to convert it to the actual field type. This can be used to add custom behavior for a
 /// single field, or use types that are otherwise unsupported by Diesel.
+/// (Note: all types that have `Into<T>` automatically implement `TryInto<T>`,
+/// for cases where your conversion is not faillible.)
 ///
 /// # Attributes
 ///
-/// ## Optional field attributes:
+///
+/// ## Optional field attributes
 ///
 /// * `#[diesel(deserialize_as = "Type")]`, instead of deserializing directly
 ///   into the field type, the implementation will deserialize into `Type`.
-///   Then `Type` is converted via `.into()` into the field type. By default
-///   this derive will deserialize directly into the field type
-///
+///   Then `Type` is converted via
+///   [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
+///   into the field type. By default this derive will deserialize directly into the field type
 ///
 /// # Examples
 ///
@@ -455,7 +457,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #
 /// # use schema::users;
 /// # use diesel::backend::{self, Backend};
-/// # use diesel::deserialize::{Queryable, FromSql};
+/// # use diesel::deserialize::{self, Queryable, FromSql};
 /// # use diesel::sql_types::Text;
 /// #
 /// struct LowercaseString(String);
@@ -474,8 +476,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 ///     type Row = String;
 ///
-///     fn build(s: String) -> Self {
-///         LowercaseString(s.to_lowercase())
+///     fn build(s: String) -> deserialize::Result<Self> {
+///         Ok(LowercaseString(s.to_lowercase()))
 ///     }
 /// }
 ///
@@ -508,7 +510,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// #
 /// use schema::users;
-/// use diesel::deserialize::{Queryable, FromSqlRow};
+/// use diesel::deserialize::{self, Queryable, FromSqlRow};
 /// use diesel::row::Row;
 ///
 /// # /*
@@ -527,8 +529,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// {
 ///     type Row = (i32, String);
 ///
-///     fn build((id, name): Self::Row) -> Self {
-///         User { id, name: name.to_lowercase() }
+///     fn build((id, name): Self::Row) -> deserialize::Result<Self> {
+///         Ok(User { id, name: name.to_lowercase() })
 ///     }
 /// }
 ///
@@ -589,6 +591,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///   the derive will use the sql type of the corresponding column.
 ///
 /// ## Field attributes
+///
 /// * `#[column_name = "some_column"]`, overrides the column name for
 ///    a given field. If not set, the name of the field is used as column
 ///    name. This attribute is required on tuple structs, if
@@ -604,7 +607,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///   single database column, but is a type that implements
 ///   `QueryableByName` on it's own
 ///
-/// /// # Examples
+/// # Examples
 ///
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
@@ -752,7 +755,7 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// You don't need to specify every backend,
 /// only the ones supported by your type.
 ///
-/// For PostgreSQL, add  `#[postgres(type_name = "pg_type_name")]`
+/// For PostgreSQL, add  `#[postgres(type_name = "pg_type_name", type_schema = "pg_schema_name")]`
 /// or `#[postgres(oid = "some_oid", array_oid = "some_oid")]` for
 /// builtin types.
 /// For MySQL, specify which variant of `MysqlType` should be used
@@ -764,9 +767,10 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///
 /// ## Type attributes
 ///
-/// * `#[postgres(type_name = "TypeName")]` specifies support for
-/// a postgresql type with the name `TypeName`. Prefer this variant
-/// for types with no stable OID (== everything but the builtin types)
+/// * `#[postgres(type_name = "TypeName", type_schema = "public")]` specifies support for
+/// a postgresql type with the name `TypeName` in the schema `public`. Prefer this variant
+/// for types with no stable OID (== everything but the builtin types). It's possible to leaf
+/// of the `type_schema` part. In that case diesel defaults to the default postgres search path.
 /// * `#[postgres(oid = 42, array_oid = 142)]`, specifies support for a
 /// postgresql type with the given `oid` and `array_oid`. This variant
 /// should only be used with types that have a stable OID.
@@ -816,7 +820,7 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 ///
 /// # Attributes
 ///
-/// ## Optional type attributes
+/// ## Optional container attributes
 ///
 /// * `#[diesel(aggregate)]` for cases where the type represents an aggregating
 ///   SQL expression
@@ -932,12 +936,12 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
-/// use diesel::sql_types::{Foldable, Nullable};
+/// use diesel::sql_types::Foldable;
 ///
 /// sql_function! {
 ///     #[aggregate]
 ///     #[sql_name = "SUM"]
-///     fn sum<ST: Foldable>(expr: Nullable<ST>) -> ST::Sum;
+///     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
 /// }
 ///
 /// # fn main() {

@@ -3,8 +3,7 @@ use crate::dsl;
 use crate::expression::SelectableExpression;
 use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
-use crate::query_builder::AsQuery;
-use crate::query_builder::SelectStatement;
+use crate::query_builder::{AsQuery, SelectStatement};
 use crate::query_source::Table;
 use crate::Expression;
 
@@ -14,7 +13,7 @@ use crate::Expression;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `distinct` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait DistinctDsl {
     /// The type returned by `.distinct`
     type Output;
@@ -42,7 +41,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `distinct_on` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 #[cfg(feature = "postgres")]
 pub trait DistinctOnDsl<Selection> {
     /// The type returned by `.distinct_on`
@@ -57,6 +56,7 @@ impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,
     T: Table + AsQuery<Query = SelectStatement<T>>,
+    SelectStatement<T>: DistinctOnDsl<Selection>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {

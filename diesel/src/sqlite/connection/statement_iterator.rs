@@ -6,21 +6,21 @@ use crate::result::Error::DeserializationError;
 use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
 
-pub struct StatementIterator<'a, ST, T> {
-    stmt: StatementUse<'a>,
+pub struct StatementIterator<'a: 'b, 'b, ST, T> {
+    stmt: StatementUse<'a, 'b>,
     _marker: PhantomData<(ST, T)>,
 }
 
-impl<'a, ST, T> StatementIterator<'a, ST, T> {
-    pub fn new(stmt: StatementUse<'a>) -> Self {
+impl<'a: 'b, 'b, ST, T> StatementIterator<'a, 'b, ST, T> {
+    pub fn new(stmt: StatementUse<'a, 'b>) -> Self {
         StatementIterator {
-            stmt: stmt,
+            stmt,
             _marker: PhantomData,
         }
     }
 }
 
-impl<'a, ST, T> Iterator for StatementIterator<'a, ST, T>
+impl<'a: 'b, 'b, ST, T> Iterator for StatementIterator<'a, 'b, ST, T>
 where
     T: FromSqlRow<ST, Sqlite>,
 {

@@ -109,9 +109,9 @@ fn empty_migrations_are_not_valid() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(result
-        .stderr()
-        .contains("Failed with: Attempted to run an empty migration."));
+    assert!(result.stderr().contains(
+        "Failed to run 12345_empty_migration with: Attempted to run an empty migration."
+    ));
 }
 
 #[test]
@@ -131,23 +131,9 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(result.stderr().contains("Failed with: "));
-}
-
-#[test]
-fn output_contains_path_to_migration_script() {
-    let p = project("output_contains_path_to_migration_script")
-        .folder("migrations")
-        .build();
-
-    p.command("setup").run();
-
-    p.create_migration("output_contains_path_to_migration_script", "", "");
-
-    let result = p.command("migration").arg("run").run();
-
-    assert!(!result.is_success());
-    assert!(result.stdout().contains("up.sql"));
+    assert!(result
+        .stderr()
+        .contains("Failed to run run_error_migrations_fails with: "));
 }
 
 #[test]

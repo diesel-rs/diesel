@@ -37,8 +37,8 @@ pub mod sql_types {
     ///
     /// - [`u32`]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "26", array_oid = "1018")]
@@ -59,11 +59,22 @@ pub mod sql_types {
     /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
     /// - [`chrono::DateTime`] with `feature = "chrono"`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [`PgTimestamp`]: ../../data_types/struct.PgTimestamp.html
-    /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
-    /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
+    #[cfg_attr(
+        feature = "chrono",
+        doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
+    )]
+    #[cfg_attr(feature = "chrono", doc = " [`chrono::DateTime`]: chrono::DateTime")]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
+    )]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "1184", array_oid = "1185")]
     pub struct Timestamptz;
@@ -83,9 +94,9 @@ pub mod sql_types {
     ///
     /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<ST>`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [Vec]: std::vec::Vec
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     pub struct Array<ST>(ST);
@@ -102,9 +113,9 @@ pub mod sql_types {
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `FromSql<ST>`.
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [bound]: https://doc.rust-lang.org/std/collections/enum.Bound.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [bound]: std::collections::Bound
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     pub struct Range<ST>(ST);
 
@@ -132,8 +143,8 @@ pub mod sql_types {
     ///
     /// - Any tuple which can be deserialized from each of the elements.
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     ///
     /// ### Caveats about serialization
     ///
@@ -157,7 +168,7 @@ pub mod sql_types {
     /// You can implement `ToSql` for named composite types. See [`WriteTuple`]
     /// for details.
     ///
-    /// [`WriteTuple`]: ../../../serialize/trait.WriteTuple.html
+    /// [`WriteTuple`]: super::super::super::serialize::WriteTuple
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2249", array_oid = "2287")]
     pub struct Record<ST>(ST);
@@ -182,8 +193,8 @@ pub mod sql_types {
     ///
     /// - [`uuid::Uuid`][Uuid]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2950", array_oid = "2951")]
@@ -225,9 +236,16 @@ pub mod sql_types {
     ///
     /// - [`serde_json::Value`]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    #[cfg_attr(
+        feature = "serde_json",
+        doc = "[`serde_json::Value`]: serde_json::value::Value"
+    )]
+    #[cfg_attr(
+        not(feature = "serde_json"),
+        doc = "[`serde_json::Value`]: https://docs.rs/serde_json/1.0.64/serde_json/value/enum.Value.html"
+    )]
     ///
     /// # Examples
     ///
@@ -283,9 +301,9 @@ pub mod sql_types {
     ///
     /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [PgMoney]: ../../data_types/struct.PgMoney.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [PgMoney]: crate::data_types::PgMoney
     ///
     /// # Examples
     ///
@@ -331,8 +349,8 @@ pub mod sql_types {
     ///
     /// - `[u8; 6]`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     ///
     /// # Examples
     ///
@@ -379,9 +397,13 @@ pub mod sql_types {
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
+    #[cfg_attr(
+        not(feature = "ipnetwork"),
+        doc = " [IpNetwork]: https://docs.rs/ipnetwork/*/ipnetwork/enum.IpNetwork.html"
+    )]
     ///
     /// # Examples
     ///
@@ -432,9 +454,13 @@ pub mod sql_types {
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
+    #[cfg_attr(
+        not(feature = "ipnetwork"),
+        doc = " [IpNetwork]: https://docs.rs/ipnetwork/*/ipnetwork/enum.IpNetwork.html"
+    )]
     ///
     /// # Examples
     ///

@@ -25,7 +25,7 @@ pub(crate) mod locking_clause;
 #[doc(hidden)]
 pub mod nodes;
 pub(crate) mod offset_clause;
-mod order_clause;
+pub(crate) mod order_clause;
 mod returning_clause;
 pub(crate) mod select_clause;
 mod select_statement;
@@ -79,7 +79,6 @@ pub type BuildQueryResult = Result<(), Box<dyn Error + Send + Sync>>;
 /// the query builder with new capabilities will interact with [`AstPass`]
 /// instead.
 ///
-/// [`AstPass`]: struct.AstPass.html
 pub trait QueryBuilder<DB: Backend> {
     /// Add `sql` to the end of the query being constructed.
     fn push_sql(&mut self, sql: &str);
@@ -110,7 +109,7 @@ pub trait QueryBuilder<DB: Backend> {
 /// query. For example, an `INSERT` statement without a `RETURNING` clause will
 /// not implement this trait, but can still be executed.
 ///
-/// [`Expression`]: ../expression/trait.Expression.html
+/// [`Expression`]: crate::expression::Expression
 pub trait Query {
     /// The SQL type that this query represents.
     ///
@@ -144,8 +143,8 @@ pub trait SelectQuery {
 /// represent a `WHERE` clause). Implementations of [`ExecuteDsl`] and
 /// [`LoadQuery`] will generally require that this trait be implemented.
 ///
-/// [`ExecuteDsl`]: ../query_dsl/methods/trait.ExecuteDsl.html
-/// [`LoadQuery`]: ../query_dsl/methods/trait.LoadQuery.html
+/// [`ExecuteDsl`]: crate::query_dsl::methods::ExecuteDsl
+/// [`LoadQuery`]: crate::query_dsl::methods::LoadQuery
 pub trait QueryFragment<DB: Backend> {
     /// Walk over this `QueryFragment` for all passes.
     ///
@@ -153,7 +152,6 @@ pub trait QueryFragment<DB: Backend> {
     /// This method will contain the behavior required for all possible AST
     /// passes. See [`AstPass`] for more details.
     ///
-    /// [`AstPass`]: struct.AstPass.html
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
 
     /// Converts this `QueryFragment` to its SQL representation.

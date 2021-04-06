@@ -1,0 +1,41 @@
+error[E0277]: the trait bound `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>: diesel::Identifiable` is not satisfied
+  --> $DIR/cannot_update_target_with_methods_other_than_filter_called.rs:15:26
+   |
+15 |     let command = update(users.select(id)).set(id.eq(1));
+   |                          ^^^^^^^^^^^^^^^^ the trait `diesel::Identifiable` is not implemented for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
+   |
+  ::: $DIESEL/src/query_builder/functions.rs
+   |
+   | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
+   |                  ---------------- required by this bound in `diesel::update`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_builder::IntoUpdateTarget` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
+
+error[E0277]: the trait bound `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::OrderClause<users::columns::id>>: diesel::Identifiable` is not satisfied
+  --> $DIR/cannot_update_target_with_methods_other_than_filter_called.rs:16:26
+   |
+16 |     let command = update(users.order(id)).set(id.eq(1));
+   |                          ^^^^^^^^^^^^^^^ the trait `diesel::Identifiable` is not implemented for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::OrderClause<users::columns::id>>`
+   |
+  ::: $DIESEL/src/query_builder/functions.rs
+   |
+   | pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::WhereClause> {
+   |                  ---------------- required by this bound in `diesel::update`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_builder::IntoUpdateTarget` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::OrderClause<users::columns::id>>`
+
+error[E0277]: the trait bound `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>: diesel::Identifiable` is not satisfied
+  --> $DIR/cannot_update_target_with_methods_other_than_filter_called.rs:15:19
+   |
+15 |     let command = update(users.select(id)).set(id.eq(1));
+   |                   ^^^^^^ the trait `diesel::Identifiable` is not implemented for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_builder::IntoUpdateTarget` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
+
+error[E0277]: the trait bound `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::OrderClause<users::columns::id>>: diesel::Identifiable` is not satisfied
+  --> $DIR/cannot_update_target_with_methods_other_than_filter_called.rs:16:19
+   |
+16 |     let command = update(users.order(id)).set(id.eq(1));
+   |                   ^^^^^^ the trait `diesel::Identifiable` is not implemented for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::OrderClause<users::columns::id>>`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_builder::IntoUpdateTarget` for `diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::OrderClause<users::columns::id>>`

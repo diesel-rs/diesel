@@ -1,0 +1,11 @@
+error[E0277]: the trait bound `diesel::query_builder::insert_statement::InsertOrIgnore: diesel::query_builder::QueryFragment<diesel::pg::Pg>` is not satisfied
+  --> $DIR/sqlite_insert_or_ignore_cannot_be_used_on_pg.rs:21:10
+   |
+21 |         .execute(&connection)
+   |          ^^^^^^^ the trait `diesel::query_builder::QueryFragment<diesel::pg::Pg>` is not implemented for `diesel::query_builder::insert_statement::InsertOrIgnore`
+   |
+   = help: the following implementations were found:
+             <diesel::query_builder::insert_statement::InsertOrIgnore as diesel::query_builder::QueryFragment<diesel::mysql::Mysql>>
+             <diesel::query_builder::insert_statement::InsertOrIgnore as diesel::query_builder::QueryFragment<diesel::sqlite::Sqlite>>
+   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<diesel::pg::Pg>` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, diesel::query_builder::insert_statement::InsertOrIgnore>`
+   = note: required because of the requirements on the impl of `diesel::query_dsl::load_dsl::ExecuteDsl<diesel::PgConnection, diesel::pg::Pg>` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<diesel::insertable::ColumnInsertValue<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, diesel::query_builder::insert_statement::InsertOrIgnore>`

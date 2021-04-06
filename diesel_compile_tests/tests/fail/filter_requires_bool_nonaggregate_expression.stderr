@@ -1,0 +1,18 @@
+error[E0277]: the trait bound `diesel::sql_types::Text: diesel::sql_types::BoolOrNullableBool` is not satisfied
+  --> $DIR/filter_requires_bool_nonaggregate_expression.rs:15:26
+   |
+15 |     let _ = users::table.filter(users::name);
+   |                          ^^^^^^ the trait `diesel::sql_types::BoolOrNullableBool` is not implemented for `diesel::sql_types::Text`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_dsl::filter_dsl::FilterDsl<users::columns::name>` for `diesel::query_builder::SelectStatement<users::table>`
+
+error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: diesel::expression::MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
+  --> $DIR/filter_requires_bool_nonaggregate_expression.rs:16:26
+   |
+16 |     let _ = users::table.filter(sum(users::id).eq(1));
+   |                          ^^^^^^ the trait `diesel::expression::MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
+   |
+   = help: the following implementations were found:
+             <diesel::expression::is_aggregate::Yes as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Never>>
+             <diesel::expression::is_aggregate::Yes as diesel::expression::MixedAggregates<diesel::expression::is_aggregate::Yes>>
+   = note: required because of the requirements on the impl of `diesel::query_dsl::filter_dsl::FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, users::columns::id>, diesel::expression::bound::Bound<diesel::sql_types::Nullable<diesel::sql_types::BigInt>, i64>>>>` for `diesel::query_builder::SelectStatement<users::table>`

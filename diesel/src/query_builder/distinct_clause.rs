@@ -1,5 +1,6 @@
 use crate::backend::Backend;
 use crate::query_builder::*;
+use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -19,6 +20,9 @@ impl<DB: Backend> QueryFragment<DB> for DistinctClause {
         Ok(())
     }
 }
+
+impl<O> ValidOrderingForDistinct<NoDistinctClause> for O {}
+impl<O> ValidOrderingForDistinct<DistinctClause> for O {}
 
 #[cfg(feature = "postgres")]
 pub use crate::pg::DistinctOnClause;

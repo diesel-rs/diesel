@@ -5,7 +5,7 @@ use std::io::Write;
 use crate::deserialize::{self, FromSql, Queryable};
 use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
-use crate::pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
+use crate::pg::{Pg, PgTypeMetadata, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
 
@@ -99,8 +99,8 @@ where
 {
     type Row = Self;
 
-    fn build(row: Self) -> Self {
-        row
+    fn build(row: Self) -> deserialize::Result<Self> {
+        Ok(row)
     }
 }
 
@@ -159,55 +159,37 @@ where
 }
 
 impl HasSqlType<Int4range> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3904,
-            array_oid: 3905,
-        }
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3904, 3905)
     }
 }
 
 impl HasSqlType<Numrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3906,
-            array_oid: 3907,
-        }
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3906, 3907)
     }
 }
 
 impl HasSqlType<Tsrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3908,
-            array_oid: 3909,
-        }
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3908, 3909)
     }
 }
 
 impl HasSqlType<Tstzrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3910,
-            array_oid: 3911,
-        }
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3910, 3911)
     }
 }
 
 impl HasSqlType<Daterange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3912,
-            array_oid: 3913,
-        }
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3912, 3913)
     }
 }
 
 impl HasSqlType<Int8range> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3926,
-            array_oid: 3927,
-        }
+    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3926, 3927)
     }
 }

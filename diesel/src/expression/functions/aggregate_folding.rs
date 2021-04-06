@@ -1,5 +1,5 @@
 use crate::expression::functions::sql_function;
-use crate::sql_types::{Foldable, Nullable};
+use crate::sql_types::Foldable;
 
 sql_function! {
     /// Represents a SQL `SUM` function. This function can only take types which are
@@ -18,7 +18,7 @@ sql_function! {
     /// # }
     /// ```
     #[aggregate]
-    fn sum<ST: Foldable>(expr: Nullable<ST>) -> ST::Sum;
+    fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
 }
 
 sql_function! {
@@ -64,5 +64,5 @@ sql_function! {
     /// #     Ok(())
     /// # }
     #[aggregate]
-    fn avg<ST: Foldable>(expr: Nullable<ST>) -> ST::Avg;
+    fn avg<ST: Foldable>(expr: ST) -> ST::Avg;
 }

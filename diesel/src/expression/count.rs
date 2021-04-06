@@ -3,7 +3,7 @@ use super::{Expression, ValidGrouping};
 use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;
-use crate::sql_types::{BigInt, DieselNumericOps, Nullable, SingleValue, SqlType};
+use crate::sql_types::{BigInt, DieselNumericOps, SingleValue, SqlType};
 
 sql_function! {
     /// Creates a SQL `COUNT` expression
@@ -25,13 +25,13 @@ sql_function! {
     /// # }
     /// ```
     #[aggregate]
-    fn count<T: SqlType + SingleValue>(expr: Nullable<T>) -> BigInt;
+    fn count<T: SqlType + SingleValue>(expr: T) -> BigInt;
 }
 
 /// Creates a SQL `COUNT(*)` expression
 ///
 /// For selecting the count of a query, and nothing else, you can just call
-/// [`count`](../query_dsl/trait.QueryDsl.html#method.count)
+/// [`count`](crate::query_dsl::QueryDsl::count())
 /// on the query instead.
 ///
 /// As with most bare functions, this is not exported by default. You can import

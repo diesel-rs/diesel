@@ -40,7 +40,7 @@ table! {
 pub fn load_table_names(
     connection: &SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<dyn Error>> {
+) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>> {
     use self::sqlite_master::dsl::*;
 
     if schema_name.is_some() {
@@ -64,7 +64,7 @@ pub fn load_table_names(
 pub fn load_foreign_key_constraints(
     connection: &SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error>> {
+) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error + Send + Sync + 'static>> {
     let tables = load_table_names(connection, schema_name)?;
     let rows = tables
         .into_iter()
@@ -138,7 +138,9 @@ pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResu
         .collect())
 }
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<dyn Error>> {
+pub fn determine_column_type(
+    attr: &ColumnInformation,
+) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
     let type_name = attr.type_name.to_lowercase();
     let path = if is_bool(&type_name) {
         String::from("Bool")

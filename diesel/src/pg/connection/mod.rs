@@ -15,7 +15,8 @@ use self::stmt::Statement;
 use crate::connection::*;
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
-use crate::pg::{metadata_lookup::PgMetadataCache, Pg, PgMetadataLookup, TransactionBuilder};
+use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
+use crate::pg::{Pg, TransactionBuilder};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
@@ -46,7 +47,6 @@ impl SimpleConnection for PgConnection {
 
 impl Connection for PgConnection {
     type Backend = Pg;
-    type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).and_then(|raw_conn| {
@@ -94,8 +94,14 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager {
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
         &self.transaction_manager
+    }
+}
+
+impl GetPgMetadataCache for PgConnection {
+    fn get_metadata_cache(&self) -> &PgMetadataCache {
+        &self.metadata_cache
     }
 }
 
@@ -104,7 +110,7 @@ impl PgConnection {
     ///
     /// See [`TransactionBuilder`] for more examples.
     ///
-    /// [`TransactionBuilder`]: ../pg/struct.TransactionBuilder.html
+    /// [`TransactionBuilder`]: crate::pg::TransactionBuilder
     ///
     /// ```rust
     /// # include!("../../doctest_setup.rs");
@@ -133,7 +139,7 @@ impl PgConnection {
         source: &T,
     ) -> QueryResult<(MaybeCached<Statement>, Vec<Option<Vec<u8>>>)> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        source.collect_binds(&mut bind_collector, PgMetadataLookup::new(self))?;
+        source.collect_binds(&mut bind_collector, self)?;
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
@@ -164,10 +170,6 @@ impl PgConnection {
             .set_notice_processor(noop_notice_processor);
         Ok(())
     }
-
-    pub(crate) fn get_metadata_cache(&self) -> &PgMetadataCache {
-        &self.metadata_cache
-    }
 }
 
 extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
@@ -182,7 +184,25 @@ mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
+    use crate::result::Error::DatabaseError;
     use crate::sql_types::{Integer, VarChar};
+
+    #[test]
+    fn malformed_sql_query() {
+        let connection = connection();
+        let query =
+            crate::sql_query("SELECT not_existent FROM also_not_there;").execute(&connection);
+
+        if let Err(err) = query {
+            if let DatabaseError(_, string) = err {
+                assert_eq!(Some(26), string.statement_position());
+            } else {
+                unreachable!();
+            }
+        } else {
+            unreachable!();
+        }
+    }
 
     #[test]
     fn prepared_statements_are_cached() {

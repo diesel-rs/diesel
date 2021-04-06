@@ -34,7 +34,6 @@ impl SimpleConnection for MysqlConnection {
 
 impl Connection for MysqlConnection {
     type Backend = Mysql;
-    type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         use crate::result::ConnectionError::CouldntSetupConfiguration;
@@ -89,7 +88,7 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &Self::TransactionManager {
+    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
         &self.transaction_manager
     }
 }
@@ -130,7 +129,7 @@ mod tests {
     use std::env;
 
     fn connection() -> MysqlConnection {
-        let _ = dotenv::dotenv();
+        dotenv::dotenv().ok();
         let database_url = env::var("MYSQL_UNIT_TEST_DATABASE_URL")
             .or_else(|_| env::var("MYSQL_DATABASE_URL"))
             .or_else(|_| env::var("DATABASE_URL"))

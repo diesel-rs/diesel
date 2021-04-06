@@ -30,7 +30,7 @@ where
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// #     #[cfg(feature = "sqlite")]
     /// #     conn.execute("DELETE FROM users").unwrap();
-    /// let user = User { id: 1, name: "Sean", };
+    /// let user = User { id: 1, name: "Sean" };
     ///
     /// let inserted_row_count = diesel::insert_into(users)
     ///     .values(&user)
@@ -60,7 +60,7 @@ where
     /// #     #[cfg(feature = "postgres")]
     /// #     conn.execute("TRUNCATE TABLE users").unwrap();
     /// # #[cfg(feature = "postgres")]
-    /// let user = User { id: 1, name: "Sean", };
+    /// let user = User { id: 1, name: "Sean" };
     ///
     /// # #[cfg(feature = "postgres")]
     /// let inserted_row_count = diesel::insert_into(users)
@@ -105,7 +105,7 @@ where
     /// #     #[cfg(feature = "sqlite")]
     /// #     conn.execute("DELETE FROM users").unwrap();
     /// conn.execute("CREATE UNIQUE INDEX users_name ON users (name)").unwrap();
-    /// let user = User { id: 1, name: "Sean", };
+    /// let user = User { id: 1, name: "Sean" };
     /// let same_name_different_id = User { id: 2, name: "Sean" };
     /// let same_id_different_name = User { id: 1, name: "Pascal" };
     ///
@@ -187,7 +187,7 @@ where
     /// more examples.
     ///
     /// [`on_constraint`]: ../upsert/fn.on_constraint.html
-    /// [`do_update`]: ../upsert/struct.IncompleteOnConflict.html#method.do_update
+    /// [`do_update`]: crate::upsert::IncompleteOnConflict::do_update()
     pub fn on_conflict<Target>(
         self,
         target: Target,
@@ -231,8 +231,8 @@ impl<T, U, Op, Ret, Target> IncompleteOnConflict<InsertStatement<T, U, Op, Ret>,
     /// [`on_conflict_do_nothing`] instead. See [`on_conflict`] for usage
     /// examples.
     ///
-    /// [`on_conflict_do_nothing`]: ../../query_builder/struct.InsertStatement.html#method.on_conflict_do_nothing
-    /// [`on_conflict`]: ../../query_builder/struct.InsertStatement.html#method.on_conflict
+    /// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
+    /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
     pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
         let target = self.target;
         self.stmt
@@ -374,7 +374,7 @@ pub struct IncompleteDoUpdate<Stmt, Target> {
 impl<T, U, Op, Ret, Target> IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, Target> {
     /// See [`do_update`] for usage examples.
     ///
-    /// [`do_update`]: struct.IncompleteOnConflict.html#method.do_update
+    /// [`do_update`]: IncompleteOnConflict::do_update()
     pub fn set<Changes>(
         self,
         changes: Changes,

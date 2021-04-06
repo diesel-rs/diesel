@@ -244,7 +244,7 @@ where
 pub fn load_table_names<'a, Conn>(
     connection: &Conn,
     schema_name: Option<&'a str>,
-) -> Result<Vec<TableName>, Box<dyn Error>>
+) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
@@ -359,7 +359,7 @@ mod tests {
     use std::env;
 
     fn connection() -> PgConnection {
-        let _ = dotenv();
+        dotenv().ok();
 
         let connection_url = env::var("PG_DATABASE_URL")
             .or_else(|_| env::var("DATABASE_URL"))

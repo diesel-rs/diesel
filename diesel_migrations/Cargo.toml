@@ -1,25 +1,27 @@
 [package]
 name = "diesel_migrations"
-version = "1.4.0"
+version = "2.0.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "Migration management for diesel"
 documentation = "https://docs.rs/crate/diesel_migrations"
 homepage = "https://diesel.rs"
+edition = "2018"
 
 [dependencies.migrations_internals]
-version = "~1.4.0"
+version = "~2.0.0"
 path = "migrations_internals"
 
 [dependencies.migrations_macros]
-version = "~1.4.0"
+version = "~2.0.0"
 path = "migrations_macros"
 
 [dev-dependencies]
 dotenv = "0.15"
 cfg-if = "0.1.10"
+tempfile = "3.2"
 
-[dev-dependencies.diesel]
+[dependencies.diesel]
 version = "~2.0.0"
 path = "../diesel"
 default-features = false

@@ -1,18 +1,18 @@
 //! AST types representing various typed SQL expressions.
 //!
-//! Almost all types implement either [`Expression`](trait.Expression.html) or
-//! [`AsExpression`](trait.AsExpression.html).
+//! Almost all types implement either [`Expression`] or
+//! [`AsExpression`].
 //!
 //! The most common expression to work with is a
-//! [`Column`](../query_source/trait.Column.html). There are various methods
+//! [`Column`](crate::query_source::Column). There are various methods
 //! that you can call on these, found in
-//! [`expression_methods`](../expression_methods).
+//! [`expression_methods`](crate::expression_methods).
 //!
 //! You can also use numeric operators such as `+` on expressions of the
 //! appropriate type.
 //!
-//! Any primitive which implements [`ToSql`](../serialize/trait.ToSql.html) will
-//! also implement [`AsExpression`](trait.AsExpression.html), allowing it to be
+//! Any primitive which implements [`ToSql`](crate::serialize::ToSql) will
+//! also implement [`AsExpression`], allowing it to be
 //! used as an argument to any of the methods described here.
 #[macro_use]
 #[doc(hidden)]
@@ -67,13 +67,13 @@ pub mod dsl {
     #[cfg(feature = "postgres")]
     pub use crate::pg::expression::dsl::*;
 
-    /// The return type of [`count(expr)`](../dsl/fn.count.html)
+    /// The return type of [`count(expr)`](crate::dsl::count())
     pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
 
-    /// The return type of [`count_star()`](../dsl/fn.count_star.html)
+    /// The return type of [`count_star()`](crate::dsl::count_star())
     pub type count_star = super::count::CountStar;
 
-    /// The return type of [`date(expr)`](../dsl/fn.date.html)
+    /// The return type of [`date(expr)`](crate::dsl::date())
     pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
 }
 
@@ -82,14 +82,14 @@ pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
 use crate::backend::Backend;
 use crate::dsl::AsExprOf;
-use crate::sql_types::{HasSqlType, IntoNotNullable, SingleValue, SqlType};
+use crate::sql_types::{HasSqlType, SingleValue, SqlType};
 
 /// Represents a typed fragment of SQL.
 ///
 /// Apps should not need to implement this type directly, but it may be common
 /// to use this in where clauses. Libraries should consider using
-/// [`infix_operator!`](../macro.infix_operator.html) or
-/// [`postfix_operator!`](../macro.postfix_operator.html) instead of
+/// [`infix_operator!`](crate::infix_operator!) or
+/// [`postfix_operator!`](crate::postfix_operator!) instead of
 /// implementing this directly.
 pub trait Expression {
     /// The type that this expression represents in SQL
@@ -98,12 +98,10 @@ pub trait Expression {
 
 /// Marker trait for possible types of [`Expression::SqlType`]
 ///
-/// [`Expression::SqlType`]: trait.Expression.html#associatedtype.SqlType
 pub trait TypedExpressionType {}
 
 /// Possible types for []`Expression::SqlType`]
 ///
-/// [`Expression::SqlType`]: trait.Expression.html#associatedtype.SqlType
 pub mod expression_types {
     use super::{QueryMetadata, TypedExpressionType};
     use crate::backend::Backend;
@@ -116,9 +114,9 @@ pub mod expression_types {
     /// we do not know which fields are returned from such a query at compile time.
     ///
     /// For loading values from queries returning a type of this expression, consider
-    /// using [`#[derive(QueryableByName)]`] on the corresponding result type.
+    /// using [`#[derive(QueryableByName)]`](derive@crate::deserialize::QueryableByName)
+    /// on the corresponding result type.
     ///
-    /// [`#[derive(QueryableByName)]`]: ../deserialize/derive.QueryableByName.html
     #[derive(Clone, Copy, Debug)]
     pub struct Untyped;
 
@@ -184,13 +182,13 @@ where
 ///   query. This is generally referred as a "bind parameter". Types which
 ///   implement [`ToSql`] will generally implement `AsExpression` this way.
 ///
-///   [`IntoSql`]: trait.IntoSql.html
-///   [`now`]: ../dsl/struct.now.html
-///   [`Timestamp`]: ../sql_types/struct.Timestamp.html
+///   [`IntoSql`]: crate::IntoSql
+///   [`now`]: crate::dsl::now
+///   [`Timestamp`]: crate::sql_types::Timestamp
 ///   [`Timestamptz`]: ../pg/types/sql_types/struct.Timestamptz.html
-///   [`ToSql`]: ../serialize/trait.ToSql.html
+///   [`ToSql`]: crate::serialize::ToSql
 ///
-///  This trait could be [derived](derive.AsExpression.html)
+///  This trait could be [derived](derive@AsExpression)
 
 pub trait AsExpression<T>
 where
@@ -208,101 +206,14 @@ pub use diesel_derives::AsExpression;
 
 impl<T, ST> AsExpression<ST> for T
 where
-    ST: SqlType + IntoNotNullable + TypedExpressionType,
-    ST::NotNullable: SingleValue,
-    self::as_expression_impl::ExpressionImplHelper<T, ST::IsNull, <T::SqlType as SqlType>::IsNull>:
-        self::as_expression_impl::AsExpressionHelper<ST>,
-    T: Expression,
-    T::SqlType: SqlType,
+    T: Expression<SqlType = ST>,
+    ST: SqlType + TypedExpressionType,
 {
-    type Expression = <self::as_expression_impl::ExpressionImplHelper<
-        T,
-        ST::IsNull,
-        <T::SqlType as SqlType>::IsNull,
-    > as self::as_expression_impl::AsExpressionHelper<ST>>::Expression;
+    type Expression = Self;
 
-    fn as_expression(self) -> Self::Expression {
-        use self::as_expression_impl::AsExpressionHelper;
-
-        let t = self::as_expression_impl::ExpressionImplHelper::<
-            _,
-            ST::IsNull,
-            <T::SqlType as SqlType>::IsNull,
-        >(self, std::marker::PhantomData);
-        t.as_expression()
+    fn as_expression(self) -> Self {
+        self
     }
-}
-
-mod as_expression_impl {
-    use super::*;
-    use crate::sql_types::is_nullable;
-
-    #[allow(missing_debug_implementations)]
-    pub struct ExpressionImplHelper<T, IsNullExpr, IsNullAsExpr>(
-        pub T,
-        pub std::marker::PhantomData<(IsNullExpr, IsNullAsExpr)>,
-    );
-
-    // We could use `AsExpression` here instead of defining a new trait in theory
-    // in practice we hit https://github.com/rust-lang/rust/issues/77446 then
-    // when defining a custom type in a third party crate
-    pub trait AsExpressionHelper<ST: TypedExpressionType> {
-        type Expression: Expression<SqlType = ST>;
-
-        fn as_expression(self) -> Self::Expression;
-    }
-
-    // This impl is for accepting a not nullable expression in a position where
-    // a not nullable expression is expected
-    impl<T, ST> AsExpressionHelper<ST>
-        for ExpressionImplHelper<T, is_nullable::NotNull, is_nullable::NotNull>
-    where
-        ST: SqlType<IsNull = is_nullable::NotNull> + TypedExpressionType,
-        T: Expression<SqlType = ST>,
-    {
-        type Expression = T;
-
-        fn as_expression(self) -> Self::Expression {
-            self.0
-        }
-    }
-
-    // This impl is for accepting a not nullable expression in a position where
-    // a nullable expression is expected
-    impl<T, ST> AsExpressionHelper<ST>
-        for ExpressionImplHelper<T, is_nullable::IsNullable, is_nullable::NotNull>
-    where
-        ST: SqlType<IsNull = is_nullable::IsNullable> + IntoNotNullable + TypedExpressionType,
-        ST::NotNullable: TypedExpressionType + SqlType,
-        T: Expression<SqlType = ST::NotNullable>,
-        super::nullable::Nullable<T>: Expression<SqlType = ST>,
-    {
-        type Expression = super::nullable::Nullable<T>;
-
-        fn as_expression(self) -> Self::Expression {
-            super::nullable::Nullable::new(self.0)
-        }
-    }
-
-    // This impl is for accepting a nullable expression in a position where
-    // a nullable expression is expected
-    impl<T, ST> AsExpressionHelper<ST>
-        for ExpressionImplHelper<T, is_nullable::IsNullable, is_nullable::IsNullable>
-    where
-        ST: SqlType<IsNull = is_nullable::IsNullable> + TypedExpressionType,
-        T: Expression<SqlType = ST>,
-    {
-        type Expression = T;
-
-        fn as_expression(self) -> Self::Expression {
-            self.0
-        }
-    }
-
-    // impl<T, ST> AsExpressionHelper<ST> for
-    //     ExpressionImplHelper<T, is_nullable::NotNull, is_nullable::IsNullable>
-    // is missing because we don't want to accept a nullable expression in possition where
-    // where a not nullable expression is expected
 }
 
 /// Converts a type to its representation for use in Diesel's query builder.
@@ -421,15 +332,13 @@ where
 ///
 /// This trait can be [derived]
 ///
-/// [derived]: derive.ValidGrouping.html
-/// [`MixedAggregates`]: trait.MixedAggregates.html
+/// [derived]: derive@ValidGrouping
 pub trait ValidGrouping<GroupByClause> {
     /// Is this expression aggregate?
     ///
     /// This type should always be one of the structs in the [`is_aggregate`]
     /// module. See the documentation of those structs for more details.
     ///
-    /// [`is_aggregate`]: is_aggregate/index.html
     type IsAggregate;
 }
 
@@ -481,9 +390,6 @@ pub mod is_contained_in_group_by {
 /// themselves or [`is_aggregate::Never`]. [`is_aggregate::Never`] can appear
 /// with anything.
 ///
-/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
-/// [`is_aggregate::No`]: is_aggregate/struct.No.html
-/// [`is_aggregate::Never`]: is_aggregate/struct.Never.html
 pub trait MixedAggregates<Other> {
     /// What is the resulting `IsAggregate` type?
     type Output;
@@ -546,9 +452,7 @@ pub mod is_aggregate {
 /// unless you need to abstract over both columns and literals, you should
 /// prefer to use [`ValidGrouping<()>`] in your bounds instead.
 ///
-/// [`ValidGrouping<()>`]: trait.ValidGrouping.html
-/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
-/// [`is_aggregate::No`]: is_aggregate/struct.No.html
+/// [`ValidGrouping<()>`]: ValidGrouping
 #[cfg(feature = "unstable")]
 pub trait NonAggregate = ValidGrouping<()>
 where
@@ -574,9 +478,7 @@ where
 /// unless you need to abstract over both columns and literals, you should
 /// prefer to use [`ValidGrouping<()>`] in your bounds instead.
 ///
-/// [`ValidGrouping<()>`]: trait.ValidGrouping.html
-/// [`is_aggregate::Yes`]: is_aggregate/struct.Yes.html
-/// [`is_aggregate::No`]: is_aggregate/struct.No.html
+/// [`ValidGrouping<()>`]: ValidGrouping
 #[cfg(not(feature = "unstable"))]
 pub trait NonAggregate: ValidGrouping<()> {}
 
@@ -604,7 +506,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// For cases where you want to dynamically construct a query,
 /// [boxing the query] is usually more ergonomic.
 ///
-/// [boxing the query]: ../query_dsl/trait.QueryDsl.html#method.into_boxed
+/// [boxing the query]: crate::query_dsl::QueryDsl::into_boxed()
 ///
 /// # Examples
 ///
@@ -804,7 +706,6 @@ impl<'a, QS, ST, DB, GB, IsAggregate> ValidGrouping<GB>
 /// This trait is similar to [`AsExpression`], but it operates on tuples.
 /// The expressions must all be of the same SQL type.
 ///
-/// [`AsExpression`]: trait.AsExpression.html
 pub trait AsExpressionList<ST> {
     /// The final output expression
     type Expression;

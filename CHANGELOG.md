@@ -54,6 +54,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for `UNION`, `UNION ALL`, `INTERSECT`, `INTERSECT ALL`, `EXCEPT`, `EXCEPT ALL` clauses
 
+* Added the error position for PostgreSQL errors
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -63,11 +65,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Support for `mysqlclient-sys` < 0.2.0 has been removed.
 * Support for `time` types has been removed.
 * Support for `chrono` < 0.4.19 has been removed.
-* The `NonNull` for sql types has been removed in favour of the new `SqlType` trait.
-
+* The `NonNull` trait for sql types has been removed in favour of the new `SqlType` trait.
 * `no_arg_sql_function!` has been deprecated without replacement.
   [`sql_function!`][sql-function-2-0-0] can now be used for functions with zero
   arguments. See [the migration guide][2-0-migration] for more details.
+* Support for `barrel` based migrations has been removed for now. We are happy to
+  add this support back as soon as `barrel` integrates with our new migration framework.
 
 ### Changed
 
@@ -84,7 +87,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   you are implementing `HasSqlType` for `Mysql` manually, you may need to adjust
   your implementation to fully use the new unsigned variants in `MysqlType`
 
-* The minimal officially supported rustc version is now 1.40.0
+* The minimal officially supported rustc version is now 1.48.0
 
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
   from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
@@ -131,16 +134,31 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   so non generic code does not require any change. For generic code you likely need to
   replace a trait bound on `Queryable<ST, DB>` with a trait bound on `FromSqlRow<ST, DB>`
   and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`.
-  
-* Diesel's dsl now accept not nullable expressions in positions where nullable expressions 
-  are expected, without needing to call `.nullable()` explicitly
 
 * CLI flags of `only-tables` and `except-tables` are now interpreted as regular expressions.
   Similary, `only_tabels` and `except_tables` in `diesel.toml` are treated as regular expressions.
 
 * Now you can sort column fields by name with the `column-sorting` option. 
-It can be set to either `ordinal_position` (default) or `name`.
-This ensures stable sorting even if columns are removed and re-added.
+  It can be set to either `ordinal_position` (default) or `name`.
+  This ensures stable sorting even if columns are removed and re-added.
+
+* The `Queryable<ST,DB>` trait was updated to be made faillible, in order to properly handle
+  cases where you detect a data inconsistency between fields on deserialization
+  (that e.g. was supposed to be made impossible by DB `CHECK`s). The `build` function now
+  returns a
+  [`diesel::deserialize::Result<Self>`](https://docs.diesel.rs/master/diesel/deserialize/type.Result.html)
+  instead of a `Self`.
+
+* `TypeMetadata::MetadataLookup` is now `?Sized`.
+
+* Multiple implementations of `Connection<Backend=Pg>` are now possible 
+  because of the new `PgMetadataLookup` trait.
+
+* For the `Pg` backend, `TypeMetadata::MetadataLookup` has changed to `dyn PgMetadataLookup`.
+
+* Diesel's migration framework was rewritten from the ground. Existing migrations continue to 
+  be compatible with the rewrite, but code calling into `diesel_migrations` requires an update.
+  See the [migration guide](#2-0-0-upgrade-migrations) for details.
 
 ### Fixed
 
@@ -182,6 +200,8 @@ This ensures stable sorting even if columns are removed and re-added.
   corner cases (#104, #2274)
   
 * Parenthesis are now inserted around all infix operations provided by diesel's `ExpressionMethods` traits
+
+* Queries containing a `distinct on` clause check now on compile time that a compatible order clause was set.
 
 ### Deprecated
 
@@ -227,8 +247,47 @@ Key points:
 - In diesel v1.4 sql functions without arguments used the `no_arg_sql_function!` macro,
   which has since been deprecated. The new `sql_function!` macro supports functions without
   arguments.
+  
+#### `diesel_migration` rewrite
+<a name = "2-0-0-upgrade-migrations"></a>
+
+Key points:
+
+- Functions for interacting with migrations are not any more free standing 
+  functions in `diesel_migration`. They are provided by anything that implements
+  `MigrationHarness` now. Out of the box implementations are provided by any 
+  connection type (for applying migrations without output) and `HarnessWithOutput`
+  (for applying migrations with output)
+- A set of migrations is now provided by a `MigrationSource`. Diesel brings implementations 
+  `FileBasedMigrations` (for migration scripts in a `migration` folder) and `EmbededMigrations`
+  (for migrations embedded at compile time based on an existing `migration` folder)
+- `embed_migrations!` now creates a value of the type `EmbededMigrations` instead of a module. 
+That means code using `embed_migrations!()` needs to be changed from
+```rust
+embed_migrations!()
+
+fn run_migration(conn: &PgConnection) {
+    embedded_migrations::run(conn).unwrap()
+}
+```
+to 
+```rust
+pub const MIGRATIONS: EmbededMigrations = embed_migrations!();
+
+fn run_migration(conn: &PgConnection) {
+    conn.run_pending_migrations(MIGRATIONS).unwrap();
+}
+```
 
 [2-0-migration]: FIXME write a migration guide
+
+## [1.4.6] - 2021-03-05
+
+### Fixed
+
+* Fixed a use-after-free issue in the `QueryableByName` implementation
+  of our `Sqlite` backend
+* Updated several dependencies
 
 ## [1.4.5] - 2020-06-09
 
@@ -1867,3 +1926,5 @@ Key points:
 [1.4.2]: https://github.com/diesel-rs/diesel/compare/v1.4.1...v1.4.2
 [1.4.3]: https://github.com/diesel-rs/diesel/compare/v1.4.2...v1.4.3
 [1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
+[1.4.5]: https://github.com/diesel-rs/diesel/compare/v1.4.4...v1.4.5
+[1.4.6]: https://github.com/diesel-rs/diesel/compare/v1.4.5...v1.4.6

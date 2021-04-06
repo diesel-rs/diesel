@@ -60,11 +60,12 @@ where
     }
 }
 
-impl<T, ST> AsExpression<ST> for Option<T>
+impl<T, ST> AsExpression<Nullable<ST>> for Option<T>
 where
-    ST: SqlType<IsNull = is_nullable::IsNullable> + SingleValue,
+    ST: SqlType<IsNull = is_nullable::NotNull>,
+    Nullable<ST>: TypedExpressionType,
 {
-    type Expression = Bound<ST, Self>;
+    type Expression = Bound<Nullable<ST>, Self>;
 
     fn as_expression(self) -> Self::Expression {
         Bound::new(self)
@@ -105,8 +106,8 @@ where
 {
     type Row = Self;
 
-    fn build(row: Self::Row) -> Self {
-        row
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
     }
 }
 

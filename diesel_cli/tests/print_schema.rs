@@ -154,6 +154,11 @@ fn print_schema_with_unmappable_names_and_schema_name() {
 }
 
 #[test]
+fn print_schema_with_seperate_unique_constraint_and_foreign_key() {
+    test_print_schema("print_schema_regression_test_for_2623", vec![])
+}
+
+#[test]
 fn schema_file_is_relative_to_project_root() {
     let p = project("schema_file_is_relative_to_project_root")
         .folder("foo")
