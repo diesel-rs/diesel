@@ -343,10 +343,7 @@ pub fn load_foreign_key_constraints(
                 })
             },
         )
-        .filter(|e| match e {
-            Err(NotFound) => false,
-            _ => true,
-        })
+        .filter(|e| !matches!(e, Err(NotFound)))
         .collect()
 }
 

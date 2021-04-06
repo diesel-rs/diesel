@@ -71,11 +71,11 @@ pub struct PrintSchema {
 
 impl PrintSchema {
     pub fn schema_name(&self) -> Option<&str> {
-        self.schema.as_ref().map(|s| &**s)
+        self.schema.as_deref()
     }
 
     pub fn import_types(&self) -> Option<&[String]> {
-        self.import_types.as_ref().map(|v| &**v)
+        self.import_types.as_deref()
     }
 
     fn set_relative_path_base(&mut self, base: &Path) {

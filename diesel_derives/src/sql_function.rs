@@ -9,7 +9,7 @@ use util::*;
 // Extremely curious why this triggers on a nearly branchless function
 #[allow(clippy::cognitive_complexity)]
 // for loop comes from `quote!`
-#[allow(clippy::for_loop_over_option)]
+#[allow(clippy::for_loops_over_fallibles)]
 // https://github.com/rust-lang/rust-clippy/issues/3768
 #[allow(clippy::useless_let_if_seq)]
 pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> {

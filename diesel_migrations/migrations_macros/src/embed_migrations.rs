@@ -11,10 +11,15 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
     } else {
         Some(path.replace("\"", ""))
     };
-    let migrations_expr =
-        migration_directory_from_given_path(migrations_path_opt.as_ref().map(String::as_str))
-            .unwrap();
-    let embeded_migrations = migration_literals_from_path(&migrations_expr).unwrap();
+    let migrations_expr = migration_directory_from_given_path(migrations_path_opt.as_deref())
+        .unwrap_or_else(|_| {
+            panic!(
+                "Failed to receive migrations dir from {:?}",
+                migrations_path_opt
+            )
+        });
+    let embeded_migrations =
+        migration_literals_from_path(&migrations_expr).expect("Failed to read migration literals");
 
     quote! {
         diesel_migrations::EmbeddedMigrations::new(&[#(#embeded_migrations,)*])

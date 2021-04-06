@@ -70,7 +70,7 @@ impl ConnectionOptions {
     }
 
     pub fn host(&self) -> Option<&CStr> {
-        self.host.as_ref().map(|x| &**x)
+        self.host.as_deref()
     }
 
     pub fn user(&self) -> &CStr {
@@ -78,11 +78,11 @@ impl ConnectionOptions {
     }
 
     pub fn password(&self) -> Option<&CStr> {
-        self.password.as_ref().map(|x| &**x)
+        self.password.as_deref()
     }
 
     pub fn database(&self) -> Option<&CStr> {
-        self.database.as_ref().map(|x| &**x)
+        self.database.as_deref()
     }
 
     pub fn port(&self) -> Option<u16> {
@@ -90,7 +90,7 @@ impl ConnectionOptions {
     }
 
     pub fn unix_socket(&self) -> Option<&CStr> {
-        self.unix_socket.as_ref().map(|x| &**x)
+        self.unix_socket.as_deref()
     }
 }
 

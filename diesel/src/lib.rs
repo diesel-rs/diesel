@@ -105,15 +105,13 @@
 #![allow(
     clippy::match_same_arms,
     clippy::needless_doctest_main,
-    clippy::option_map_unwrap_or_else,
-    clippy::option_map_unwrap_or,
+    clippy::map_unwrap_or,
     clippy::redundant_field_names,
     clippy::type_complexity
 )]
 #![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
 #![warn(
-    clippy::option_unwrap_used,
-    clippy::result_unwrap_used,
+    clippy::unwrap_used,
     clippy::print_stdout,
     clippy::wrong_pub_self_convention,
     clippy::mut_mut,
