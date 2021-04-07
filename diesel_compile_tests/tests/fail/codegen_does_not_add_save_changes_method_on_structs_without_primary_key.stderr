@@ -1,36 +1,36 @@
-error[E0599]: no method named `save_changes` found for struct `User` in the current scope
+error[E0599]: the method `save_changes` exists for struct `User`, but its trait bounds were not satisfied
   --> $DIR/codegen_does_not_add_save_changes_method_on_structs_without_primary_key.rs:26:10
    |
 15 | pub struct User {
    | ---------------
    | |
    | method `save_changes` not found for this
+   | doesn't satisfy `User: Copy`
+   | doesn't satisfy `User: HasTable`
+   | doesn't satisfy `User: IntoUpdateTarget`
    | doesn't satisfy `User: diesel::SaveChangesDsl<_>`
-   | doesn't satisfy `User: diesel::associations::HasTable`
-   | doesn't satisfy `User: diesel::query_builder::IntoUpdateTarget`
-   | doesn't satisfy `User: std::marker::Copy`
 ...
 26 |     user.save_changes(&connection);
-   |          ^^^^^^^^^^^^ method not found in `User`
+   |          ^^^^^^^^^^^^ method cannot be called on `User` due to unsatisfied trait bounds
    |
-   = note: the method `save_changes` exists but the following trait bounds were not satisfied:
-           `User: diesel::associations::HasTable`
+   = note: the following trait bounds were not satisfied:
+           `User: HasTable`
            which is required by `User: diesel::SaveChangesDsl<_>`
-           `User: std::marker::Copy`
+           `User: Copy`
            which is required by `User: diesel::SaveChangesDsl<_>`
-           `User: diesel::query_builder::IntoUpdateTarget`
+           `User: IntoUpdateTarget`
            which is required by `User: diesel::SaveChangesDsl<_>`
-           `User: diesel::associations::HasTable`
+           `User: HasTable`
            which is required by `&User: diesel::SaveChangesDsl<_>`
-           `&User: diesel::query_builder::IntoUpdateTarget`
+           `&User: IntoUpdateTarget`
            which is required by `&User: diesel::SaveChangesDsl<_>`
-           `&mut User: diesel::associations::HasTable`
+           `&mut User: HasTable`
            which is required by `&mut User: diesel::SaveChangesDsl<_>`
            `<&mut User as diesel::AsChangeset>::Target = _`
            which is required by `&mut User: diesel::SaveChangesDsl<_>`
-           `&mut User: std::marker::Copy`
+           `&mut User: Copy`
            which is required by `&mut User: diesel::SaveChangesDsl<_>`
            `&mut User: diesel::AsChangeset`
            which is required by `&mut User: diesel::SaveChangesDsl<_>`
-           `&mut User: diesel::query_builder::IntoUpdateTarget`
+           `&mut User: IntoUpdateTarget`
            which is required by `&mut User: diesel::SaveChangesDsl<_>`

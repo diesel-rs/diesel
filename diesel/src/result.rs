@@ -82,6 +82,7 @@ pub enum Error {
 /// identify errors which are commonly recovered from programmatically. This enum
 /// is not intended to be exhaustively matched, and new variants may be added in
 /// the future without a major version bump.
+#[non_exhaustive]
 pub enum DatabaseErrorKind {
     /// A unique constraint was violated.
     UniqueViolation,
@@ -118,7 +119,7 @@ pub enum DatabaseErrorKind {
     CheckViolation,
 
     #[doc(hidden)]
-    __Unknown, // Match against _ instead, more variants may be added in the future
+    Unknown, // Match against _ instead, more variants may be added in the future
 }
 
 /// Information about an error that was returned by the database.

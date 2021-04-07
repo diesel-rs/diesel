@@ -1,10 +1,10 @@
-error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
   --> $DIR/order_requires_column_from_same_table.rs:18:31
    |
 18 |     let source = users::table.order(posts::id);
-   |                               ^^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |                               ^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
    |
    = help: the following implementations were found:
-             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::id`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::OrderDsl<posts::columns::id>` for `diesel::query_builder::SelectStatement<users::table>`
+             <users::table as AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: required because of the requirements on the impl of `OrderDsl<posts::columns::id>` for `SelectStatement<users::table>`

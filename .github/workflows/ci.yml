@@ -296,7 +296,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2020-05-01
+          toolchain: nightly-2021-04-01
           profile: minimal
           override: true
       - name: Cache cargo registry
@@ -325,7 +325,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.40.0
+          toolchain: 1.48.0
           profile: minimal
           components: clippy, rustfmt
           override: true
@@ -341,6 +341,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+
+      - name: Remove potential newer clippy.toml from dependencies
+        run: |
+          cargo update
+          cargo fetch
+          find ~/.cargo/registry -iname "*clippy.toml" -delete
 
       - name: Run clippy
         uses: actions-rs/cargo@v1

@@ -54,7 +54,7 @@ pub trait MigrationHarness<DB: Backend> {
         let pending_migrations = self.pending_migrations(source)?;
         let next_migration = pending_migrations
             .first()
-            .ok_or_else(|| MigrationError::NoMigrationRun)?;
+            .ok_or(MigrationError::NoMigrationRun)?;
         self.run_migration(next_migration)
     }
 
@@ -75,7 +75,7 @@ pub trait MigrationHarness<DB: Backend> {
             .map(|version| {
                 let migration_to_revert = migrations
                     .remove(&version)
-                    .ok_or_else(|| MigrationError::UnknownMigrationVersion(version))?;
+                    .ok_or(MigrationError::UnknownMigrationVersion(version))?;
                 self.revert_migration(&migration_to_revert)
             })
             .collect()
@@ -90,7 +90,7 @@ pub trait MigrationHarness<DB: Backend> {
         let migrations = source.migrations()?;
         let last_migration_version = applied_versions
             .first()
-            .ok_or_else(|| MigrationError::NoMigrationRun)?;
+            .ok_or(MigrationError::NoMigrationRun)?;
         let migration_to_revert = migrations
             .iter()
             .find(|m| m.name().version() == *last_migration_version)

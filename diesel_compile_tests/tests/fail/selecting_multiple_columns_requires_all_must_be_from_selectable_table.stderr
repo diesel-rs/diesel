@@ -1,70 +1,72 @@
-error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
+error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
   --> $DIR/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:37
    |
 21 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = help: the following implementations were found:
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <posts::columns::id as diesel::SelectableExpression<posts::table>>
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `diesel::query_builder::SelectStatement<users::table>`
+             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::id as SelectableExpression<SelectStatement<From>>>
+             <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
+             <posts::columns::id as SelectableExpression<posts::table>>
+   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<users::table>`
 
-error[E0277]: the trait bound `posts::columns::user_id: diesel::SelectableExpression<users::table>` is not satisfied
+error[E0277]: the trait bound `posts::columns::user_id: SelectableExpression<users::table>` is not satisfied
   --> $DIR/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:37
    |
 21 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::user_id`
+   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::user_id`
    |
    = help: the following implementations were found:
-             <posts::columns::user_id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <posts::columns::user_id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <posts::columns::user_id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <posts::columns::user_id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <posts::columns::user_id as diesel::SelectableExpression<posts::table>>
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `diesel::query_builder::SelectStatement<users::table>`
+             <posts::columns::user_id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::user_id as SelectableExpression<SelectStatement<From>>>
+             <posts::columns::user_id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <posts::columns::user_id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
+             <posts::columns::user_id as SelectableExpression<posts::table>>
+   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<users::table>`
 
-error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
   --> $DIR/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
    |
 21 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |                              ^^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
    |
    = help: the following implementations were found:
-             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::id`
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::user_id)`
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `diesel::query_builder::SelectStatement<users::table>`
+             <users::table as AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::user_id)`
+   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<users::table>`
 
-error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
+error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
   --> $DIR/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:37
    |
 22 |     let stuff = users::table.select((posts::id, users::name));
-   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |                                     ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = help: the following implementations were found:
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <posts::columns::id as diesel::SelectableExpression<posts::table>>
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `(posts::columns::id, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<(posts::columns::id, users::columns::name)>` for `diesel::query_builder::SelectStatement<users::table>`
+             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::id as SelectableExpression<SelectStatement<From>>>
+             <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
+             <posts::columns::id as SelectableExpression<posts::table>>
+   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, users::columns::name)`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, users::columns::name)>` for `SelectStatement<users::table>`
 
-error[E0277]: the trait bound `users::table: diesel::query_source::AppearsInFromClause<posts::table>` is not satisfied
+error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
   --> $DIR/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
    |
 22 |     let stuff = users::table.select((posts::id, users::name));
-   |                              ^^^^^^ the trait `diesel::query_source::AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |                              ^^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
    |
    = help: the following implementations were found:
-             <users::table as diesel::query_source::AppearsInFromClause<users::table>>
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `posts::columns::id`
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<users::table>` for `(posts::columns::id, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<users::table>` for `(posts::columns::id, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::select_dsl::SelectDsl<(posts::columns::id, users::columns::name)>` for `diesel::query_builder::SelectStatement<users::table>`
+             <users::table as AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, users::columns::name)`
+   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, users::columns::name)`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, users::columns::name)>` for `SelectStatement<users::table>`

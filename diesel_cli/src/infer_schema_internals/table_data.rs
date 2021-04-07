@@ -40,7 +40,7 @@ impl TableName {
 
     #[cfg(feature = "uses_information_schema")]
     pub fn strip_schema_if_matches(&mut self, schema: &str) {
-        if self.schema.as_ref().map(|s| &**s) == Some(schema) {
+        if self.schema.as_deref() == Some(schema) {
             self.schema = None;
         }
     }

@@ -1,49 +1,50 @@
-error[E0277]: the trait bound `posts::columns::id: diesel::SelectableExpression<users::table>` is not satisfied
+error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
   --> $DIR/distinct_on_allows_only_fields_of_table.rs:23:30
    |
 23 |     users::table.distinct_on(posts::id).get_results(&connection);
-   |                              ^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |                              ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = help: the following implementations were found:
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <posts::columns::id as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <posts::columns::id as diesel::SelectableExpression<posts::table>>
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<posts::columns::id>` for `users::table`
+             <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::id as SelectableExpression<SelectStatement<From>>>
+             <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
+             <posts::columns::id as SelectableExpression<posts::table>>
+   = note: required because of the requirements on the impl of `DistinctOnDsl<posts::columns::id>` for `users::table`
 
-error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text): diesel::sql_types::SingleValue` is not satisfied
+error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text): SingleValue` is not satisfied
   --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:18
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&connection);
-   |                  ^^^^^^^^^^^ the trait `diesel::sql_types::SingleValue` is not implemented for `(diesel::sql_types::Text, diesel::sql_types::Text)`
+   |                  ^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Text, diesel::sql_types::Text)`
    |
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `diesel::query_builder::SelectStatement<posts::table>`
+   = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `SelectStatement<posts::table>`
 
-error[E0277]: the trait bound `users::columns::name: diesel::SelectableExpression<posts::table>` is not satisfied
+error[E0277]: the trait bound `users::columns::name: SelectableExpression<posts::table>` is not satisfied
   --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:30
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&connection);
-   |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<posts::table>` is not implemented for `users::columns::name`
+   |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
    |
    = help: the following implementations were found:
-             <users::columns::name as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <users::columns::name as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <users::columns::name as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <users::columns::name as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <users::columns::name as diesel::SelectableExpression<users::table>>
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
+             <users::columns::name as SelectableExpression<JoinOn<Join, On>>>
+             <users::columns::name as SelectableExpression<SelectStatement<From>>>
+             <users::columns::name as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <users::columns::name as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
+             <users::columns::name as SelectableExpression<users::table>>
+   = note: required because of the requirements on the impl of `SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
+   = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
 
-error[E0277]: the trait bound `posts::table: diesel::query_source::AppearsInFromClause<users::table>` is not satisfied
+error[E0277]: the trait bound `posts::table: AppearsInFromClause<users::table>` is not satisfied
   --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:18
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&connection);
-   |                  ^^^^^^^^^^^ the trait `diesel::query_source::AppearsInFromClause<users::table>` is not implemented for `posts::table`
+   |                  ^^^^^^^^^^^ the trait `AppearsInFromClause<users::table>` is not implemented for `posts::table`
    |
    = help: the following implementations were found:
-             <posts::table as diesel::query_source::AppearsInFromClause<posts::table>>
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<posts::table>` for `users::columns::name`
-   = note: required because of the requirements on the impl of `diesel::AppearsOnTable<posts::table>` for `(posts::columns::name, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::methods::DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
+             <posts::table as AppearsInFromClause<posts::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<posts::table>` for `users::columns::name`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `AppearsOnTable<posts::table>` for `(posts::columns::name, users::columns::name)`
+   = note: required because of the requirements on the impl of `SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
+   = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`

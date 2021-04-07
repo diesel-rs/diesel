@@ -140,7 +140,7 @@ where
                 // transaction is aborted or we've done a rollback
                 // To mirror the behaviour above we attempt to rollback
                 // to the last savepoint if we hit such a case
-                Err(Error::DatabaseError(DatabaseErrorKind::__Unknown, msg))
+                Err(Error::DatabaseError(DatabaseErrorKind::Unknown, msg))
                     if msg.message().starts_with("current transaction is aborted") =>
                 {
                     self.change_transaction_depth(
@@ -150,7 +150,7 @@ where
                             transaction_depth - 1
                         )),
                     )?;
-                    Err(Error::DatabaseError(DatabaseErrorKind::__Unknown, msg))
+                    Err(Error::DatabaseError(DatabaseErrorKind::Unknown, msg))
                 }
                 Err(e) => panic!("{}", e),
             }

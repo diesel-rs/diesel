@@ -1,11 +1,7 @@
 // Built-in Lints
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
-#![allow(
-    clippy::needless_pass_by_value,
-    clippy::option_map_unwrap_or_else,
-    clippy::option_map_unwrap_or
-)]
+#![allow(clippy::needless_pass_by_value, clippy::map_unwrap_or)]
 #![warn(
     missing_docs,
     clippy::wrong_pub_self_convention,

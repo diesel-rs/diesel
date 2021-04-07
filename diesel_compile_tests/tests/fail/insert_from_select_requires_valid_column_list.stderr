@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>> as diesel::query_builder::Query>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+error[E0271]: type mismatch resolving `<SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>> as Query>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
   --> $DIR/insert_from_select_requires_valid_column_list.rs:57:10
    |
 57 |         .execute(&conn)
@@ -6,9 +6,10 @@ error[E0271]: type mismatch resolving `<diesel::query_builder::SelectStatement<u
    |
    = note: expected tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
               found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<_>` for `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
-   = note: required because of the requirements on the impl of `diesel::query_builder::QueryFragment<_>` for `diesel::query_builder::InsertStatement<posts::table, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>>`
-   = note: required because of the requirements on the impl of `diesel::query_dsl::load_dsl::ExecuteDsl<_, _>` for `diesel::query_builder::InsertStatement<posts::table, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<diesel::query_builder::SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>>`
+   = note: required because of the requirements on the impl of `QueryFragment<_>` for `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `QueryFragment<_>` for `InsertStatement<posts::table, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>>`
+   = note: required because of the requirements on the impl of `ExecuteDsl<_, _>` for `InsertStatement<posts::table, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>>`
 
 error[E0271]: type mismatch resolving `<comments::columns::post_id as diesel::query_builder::insert_statement::column_list::ColumnList>::Table == posts::table`
   --> $DIR/insert_from_select_requires_valid_column_list.rs:63:10

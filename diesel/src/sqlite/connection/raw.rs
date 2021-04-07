@@ -67,7 +67,7 @@ impl RawConnection {
             Ok(())
         } else {
             let msg = convert_to_string_and_free(err_msg);
-            let error_kind = DatabaseErrorKind::__Unknown;
+            let error_kind = DatabaseErrorKind::Unknown;
             Err(DatabaseError(error_kind, Box::new(msg)))
         }
     }
@@ -158,7 +158,7 @@ impl RawConnection {
         } else {
             let error_message = super::error_message(result);
             Err(DatabaseError(
-                DatabaseErrorKind::__Unknown,
+                DatabaseErrorKind::Unknown,
                 Box::new(error_message.to_string()),
             ))
         }
