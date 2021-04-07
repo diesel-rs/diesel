@@ -89,12 +89,6 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                     (#(#ref_field_assign,)*).values()
                 }
             }
-
-            impl #impl_generics UndecoratedInsertRecord<#table_name::table>
-                for #struct_name #ty_generics
-            #where_clause
-            {
-            }
         }
     } else {
         quote! {}
@@ -108,6 +102,12 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         #insert_owned
 
         #insert_borrowed
+
+        impl #impl_generics UndecoratedInsertRecord<#table_name::table>
+                for #struct_name #ty_generics
+            #where_clause
+        {
+        }
     }))
 }
 
