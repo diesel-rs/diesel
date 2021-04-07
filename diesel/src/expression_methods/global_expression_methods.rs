@@ -21,6 +21,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), data.first(&connection));
     /// # }
     /// ```
+    #[doc(alias = "=")]
     fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
     where
         Self::SqlType: SqlType,
@@ -43,6 +44,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(2), data.first(&connection));
     /// # }
     /// ```
+    #[doc(alias = "<>")]
     fn ne<T>(self, other: T) -> dsl::NotEq<Self, T>
     where
         Self::SqlType: SqlType,
@@ -89,6 +91,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///
     /// # }
     /// ```
+    #[doc(alias = "in")]
     fn eq_any<T>(self, values: T) -> dsl::EqAny<Self, T>
     where
         Self::SqlType: SqlType,
@@ -125,6 +128,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(vec![1, 2, 3]), data.load(&connection));
     /// # }
     /// ```
+    #[doc(alias = "in")]
     fn ne_all<T>(self, values: T) -> dsl::NeAny<Self, T>
     where
         Self::SqlType: SqlType,
@@ -207,6 +211,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
+    #[doc(alias = ">")]
     fn gt<T>(self, other: T) -> dsl::Gt<Self, T>
     where
         Self::SqlType: SqlType,
@@ -237,6 +242,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
+    #[doc(alias = ">=")]
     fn ge<T>(self, other: T) -> dsl::GtEq<Self, T>
     where
         Self::SqlType: SqlType,
@@ -267,6 +273,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
+    #[doc(alias = "<")]
     fn lt<T>(self, other: T) -> dsl::Lt<Self, T>
     where
         Self::SqlType: SqlType,
@@ -296,6 +303,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("Sean", data);
     /// #     Ok(())
     /// # }
+    #[doc(alias = "<=")]
     fn le<T>(self, other: T) -> dsl::LtEq<Self, T>
     where
         Self::SqlType: SqlType,

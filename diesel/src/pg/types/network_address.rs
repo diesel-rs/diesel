@@ -13,9 +13,9 @@ use crate::sql_types::{Cidr, Inet};
 #[cfg(windows)]
 const AF_INET: u8 = 2;
 // Maybe not used, but defining to follow Rust's libstd/net/sys
-#[cfg(redox)]
+#[cfg(target_os = "redox")]
 const AF_INET: u8 = 1;
-#[cfg(not(any(windows, redox)))]
+#[cfg(not(any(windows, target_os = "redox")))]
 const AF_INET: u8 = libc::AF_INET as u8;
 
 const PGSQL_AF_INET: u8 = AF_INET;

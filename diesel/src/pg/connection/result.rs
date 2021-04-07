@@ -19,11 +19,9 @@ pub struct PgResult {
 impl PgResult {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(internal_result: RawResult) -> QueryResult<Self> {
-        use self::ExecStatusType::*;
-
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
-            PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
+            ExecStatusType::PGRES_COMMAND_OK | ExecStatusType::PGRES_TUPLES_OK => {
                 let column_count = unsafe { PQnfields(internal_result.as_ptr()) as usize };
                 let row_count = unsafe { PQntuples(internal_result.as_ptr()) as usize };
                 Ok(PgResult {
@@ -32,10 +30,10 @@ impl PgResult {
                     row_count,
                 })
             }
-            PGRES_EMPTY_QUERY => {
+            ExecStatusType::PGRES_EMPTY_QUERY => {
                 let error_message = "Received an empty query".to_string();
                 Err(Error::DatabaseError(
-                    DatabaseErrorKind::__Unknown,
+                    DatabaseErrorKind::Unknown,
                     Box::new(error_message),
                 ))
             }
@@ -56,7 +54,7 @@ impl PgResult {
                             DatabaseErrorKind::NotNullViolation
                         }
                         Some(error_codes::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
-                        _ => DatabaseErrorKind::__Unknown,
+                        _ => DatabaseErrorKind::Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
                 Err(Error::DatabaseError(error_kind, error_information))

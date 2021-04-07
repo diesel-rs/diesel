@@ -5,8 +5,7 @@
 #![allow(
     clippy::needless_doctest_main,
     clippy::needless_pass_by_value,
-    clippy::option_map_unwrap_or_else,
-    clippy::option_map_unwrap_or
+    clippy::map_unwrap_or
 )]
 #![warn(
     clippy::wrong_pub_self_convention,

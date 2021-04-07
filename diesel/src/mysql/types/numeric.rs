@@ -6,7 +6,7 @@ pub mod bigdecimal {
     use std::io::prelude::*;
 
     use crate::deserialize::{self, FromSql};
-    use crate::mysql::{Mysql, MysqlValue};
+    use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
     use crate::serialize::{self, IsNull, Output, ToSql};
     use crate::sql_types::Numeric;
 
@@ -20,18 +20,16 @@ pub mod bigdecimal {
 
     impl FromSql<Numeric, Mysql> for BigDecimal {
         fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-            use crate::mysql::NumericRepresentation::*;
-
             match value.numeric_value()? {
-                Tiny(x) => Ok(x.into()),
-                Small(x) => Ok(x.into()),
-                Medium(x) => Ok(x.into()),
-                Big(x) => Ok(x.into()),
-                Float(x) => BigDecimal::from_f32(x)
+                NumericRepresentation::Tiny(x) => Ok(x.into()),
+                NumericRepresentation::Small(x) => Ok(x.into()),
+                NumericRepresentation::Medium(x) => Ok(x.into()),
+                NumericRepresentation::Big(x) => Ok(x.into()),
+                NumericRepresentation::Float(x) => BigDecimal::from_f32(x)
                     .ok_or_else(|| format!("{} is not valid decimal number ", x).into()),
-                Double(x) => BigDecimal::from_f64(x)
+                NumericRepresentation::Double(x) => BigDecimal::from_f64(x)
                     .ok_or_else(|| format!("{} is not valid decimal number ", x).into()),
-                Decimal(bytes) => BigDecimal::parse_bytes(bytes, 10)
+                NumericRepresentation::Decimal(bytes) => BigDecimal::parse_bytes(bytes, 10)
                     .ok_or_else(|| format!("{:?} is not valid decimal number ", bytes).into()),
             }
         }

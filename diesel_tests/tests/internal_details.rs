@@ -39,7 +39,7 @@ fn query_which_cannot_be_transmitted_gives_proper_error_message() {
 #[cfg(feature = "postgres")]
 fn empty_query_gives_proper_error_instead_of_panicking() {
     use diesel::dsl::sql;
-    use diesel::result::DatabaseErrorKind::__Unknown;
+    use diesel::result::DatabaseErrorKind::Unknown;
     use diesel::result::Error::DatabaseError;
 
     let connection = connection();
@@ -47,7 +47,7 @@ fn empty_query_gives_proper_error_instead_of_panicking() {
 
     match query.execute(&connection) {
         Ok(_) => panic!("We successfully executed an empty query"),
-        Err(DatabaseError(__Unknown, info)) => assert_ne!("", info.message()),
+        Err(DatabaseError(Unknown, info)) => assert_ne!("", info.message()),
         Err(_) => panic!("We got back the wrong kind of error. This test is invalid."),
     }
 }

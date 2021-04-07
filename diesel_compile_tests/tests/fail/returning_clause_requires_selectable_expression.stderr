@@ -1,40 +1,40 @@
-error[E0277]: the trait bound `non_users::columns::noname: diesel::SelectableExpression<users::table>` is not satisfied
+error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<users::table>` is not satisfied
   --> $DIR/returning_clause_requires_selectable_expression.rs:27:20
    |
 27 |         .returning(non_users::columns::noname);
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
    |
    = help: the following implementations were found:
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <non_users::columns::noname as diesel::SelectableExpression<non_users::table>>
+             <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
+             <non_users::columns::noname as SelectableExpression<SelectStatement<From>>>
+             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
+             <non_users::columns::noname as SelectableExpression<non_users::table>>
 
-error[E0277]: the trait bound `non_users::columns::noname: diesel::SelectableExpression<users::table>` is not satisfied
+error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<users::table>` is not satisfied
   --> $DIR/returning_clause_requires_selectable_expression.rs:31:20
    |
 31 |         .returning(non_users::columns::noname);
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
    |
    = help: the following implementations were found:
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <non_users::columns::noname as diesel::SelectableExpression<non_users::table>>
-   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::InsertStatement<users::table, diesel::query_builder::ValuesClause<(diesel::insertable::ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`
+             <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
+             <non_users::columns::noname as SelectableExpression<SelectStatement<From>>>
+             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
+             <non_users::columns::noname as SelectableExpression<non_users::table>>
+   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`
 
-error[E0277]: the trait bound `non_users::columns::noname: diesel::SelectableExpression<users::table>` is not satisfied
+error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<users::table>` is not satisfied
   --> $DIR/returning_clause_requires_selectable_expression.rs:35:20
    |
 35 |         .returning(non_users::columns::noname);
-   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
+   |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `non_users::columns::noname`
    |
    = help: the following implementations were found:
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_builder::SelectStatement<From>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::Inner>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::Join<Left, Right, diesel::query_source::joins::LeftOuter>>>
-             <non_users::columns::noname as diesel::SelectableExpression<diesel::query_source::joins::JoinOn<Join, On>>>
-             <non_users::columns::noname as diesel::SelectableExpression<non_users::table>>
-   = note: required because of the requirements on the impl of `diesel::query_builder::Query` for `diesel::query_builder::UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`
+             <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
+             <non_users::columns::noname as SelectableExpression<SelectStatement<From>>>
+             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
+             <non_users::columns::noname as SelectableExpression<non_users::table>>
+   = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`

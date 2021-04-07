@@ -400,46 +400,46 @@ impl BindData {
 
 impl From<MysqlType> for (ffi::enum_field_types, Flags) {
     fn from(tpe: MysqlType) -> Self {
-        use self::ffi::enum_field_types::*;
+        use self::ffi::enum_field_types;
         let mut flags = Flags::empty();
         let tpe = match tpe {
-            MysqlType::Tiny => MYSQL_TYPE_TINY,
-            MysqlType::Short => MYSQL_TYPE_SHORT,
-            MysqlType::Long => MYSQL_TYPE_LONG,
-            MysqlType::LongLong => MYSQL_TYPE_LONGLONG,
-            MysqlType::Float => MYSQL_TYPE_FLOAT,
-            MysqlType::Double => MYSQL_TYPE_DOUBLE,
-            MysqlType::Time => MYSQL_TYPE_TIME,
-            MysqlType::Date => MYSQL_TYPE_DATE,
-            MysqlType::DateTime => MYSQL_TYPE_DATETIME,
-            MysqlType::Timestamp => MYSQL_TYPE_TIMESTAMP,
-            MysqlType::String => MYSQL_TYPE_STRING,
-            MysqlType::Blob => MYSQL_TYPE_BLOB,
-            MysqlType::Numeric => MYSQL_TYPE_NEWDECIMAL,
-            MysqlType::Bit => MYSQL_TYPE_BIT,
+            MysqlType::Tiny => enum_field_types::MYSQL_TYPE_TINY,
+            MysqlType::Short => enum_field_types::MYSQL_TYPE_SHORT,
+            MysqlType::Long => enum_field_types::MYSQL_TYPE_LONG,
+            MysqlType::LongLong => enum_field_types::MYSQL_TYPE_LONGLONG,
+            MysqlType::Float => enum_field_types::MYSQL_TYPE_FLOAT,
+            MysqlType::Double => enum_field_types::MYSQL_TYPE_DOUBLE,
+            MysqlType::Time => enum_field_types::MYSQL_TYPE_TIME,
+            MysqlType::Date => enum_field_types::MYSQL_TYPE_DATE,
+            MysqlType::DateTime => enum_field_types::MYSQL_TYPE_DATETIME,
+            MysqlType::Timestamp => enum_field_types::MYSQL_TYPE_TIMESTAMP,
+            MysqlType::String => enum_field_types::MYSQL_TYPE_STRING,
+            MysqlType::Blob => enum_field_types::MYSQL_TYPE_BLOB,
+            MysqlType::Numeric => enum_field_types::MYSQL_TYPE_NEWDECIMAL,
+            MysqlType::Bit => enum_field_types::MYSQL_TYPE_BIT,
             MysqlType::UnsignedTiny => {
                 flags = Flags::UNSIGNED_FLAG;
-                MYSQL_TYPE_TINY
+                enum_field_types::MYSQL_TYPE_TINY
             }
             MysqlType::UnsignedShort => {
                 flags = Flags::UNSIGNED_FLAG;
-                MYSQL_TYPE_SHORT
+                enum_field_types::MYSQL_TYPE_SHORT
             }
             MysqlType::UnsignedLong => {
                 flags = Flags::UNSIGNED_FLAG;
-                MYSQL_TYPE_LONG
+                enum_field_types::MYSQL_TYPE_LONG
             }
             MysqlType::UnsignedLongLong => {
                 flags = Flags::UNSIGNED_FLAG;
-                MYSQL_TYPE_LONGLONG
+                enum_field_types::MYSQL_TYPE_LONGLONG
             }
             MysqlType::Set => {
                 flags = Flags::SET_FLAG;
-                MYSQL_TYPE_STRING
+                enum_field_types::MYSQL_TYPE_STRING
             }
             MysqlType::Enum => {
                 flags = Flags::ENUM_FLAG;
-                MYSQL_TYPE_STRING
+                enum_field_types::MYSQL_TYPE_STRING
             }
         };
         (tpe, flags)
@@ -448,7 +448,7 @@ impl From<MysqlType> for (ffi::enum_field_types, Flags) {
 
 impl From<(ffi::enum_field_types, Flags)> for MysqlType {
     fn from((tpe, flags): (ffi::enum_field_types, Flags)) -> Self {
-        use self::ffi::enum_field_types::*;
+        use self::ffi::enum_field_types;
 
         let is_unsigned = flags.contains(Flags::UNSIGNED_FLAG);
 
@@ -457,48 +457,60 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
         // https://dev.mysql.com/doc/internals/en/binary-protocol-value.html
         // https://mariadb.com/kb/en/packet_bindata/
         match tpe {
-            MYSQL_TYPE_TINY if is_unsigned => MysqlType::UnsignedTiny,
-            MYSQL_TYPE_YEAR | MYSQL_TYPE_SHORT if is_unsigned => MysqlType::UnsignedShort,
-            MYSQL_TYPE_INT24 | MYSQL_TYPE_LONG if is_unsigned => MysqlType::UnsignedLong,
-            MYSQL_TYPE_LONGLONG if is_unsigned => MysqlType::UnsignedLongLong,
-            MYSQL_TYPE_TINY => MysqlType::Tiny,
-            MYSQL_TYPE_SHORT => MysqlType::Short,
-            MYSQL_TYPE_INT24 | MYSQL_TYPE_LONG => MysqlType::Long,
-            MYSQL_TYPE_LONGLONG => MysqlType::LongLong,
-            MYSQL_TYPE_FLOAT => MysqlType::Float,
-            MYSQL_TYPE_DOUBLE => MysqlType::Double,
-            MYSQL_TYPE_DECIMAL | MYSQL_TYPE_NEWDECIMAL => MysqlType::Numeric,
-            MYSQL_TYPE_BIT => MysqlType::Bit,
+            enum_field_types::MYSQL_TYPE_TINY if is_unsigned => MysqlType::UnsignedTiny,
+            enum_field_types::MYSQL_TYPE_YEAR | enum_field_types::MYSQL_TYPE_SHORT
+                if is_unsigned =>
+            {
+                MysqlType::UnsignedShort
+            }
+            enum_field_types::MYSQL_TYPE_INT24 | enum_field_types::MYSQL_TYPE_LONG
+                if is_unsigned =>
+            {
+                MysqlType::UnsignedLong
+            }
+            enum_field_types::MYSQL_TYPE_LONGLONG if is_unsigned => MysqlType::UnsignedLongLong,
+            enum_field_types::MYSQL_TYPE_TINY => MysqlType::Tiny,
+            enum_field_types::MYSQL_TYPE_SHORT => MysqlType::Short,
+            enum_field_types::MYSQL_TYPE_INT24 | enum_field_types::MYSQL_TYPE_LONG => {
+                MysqlType::Long
+            }
+            enum_field_types::MYSQL_TYPE_LONGLONG => MysqlType::LongLong,
+            enum_field_types::MYSQL_TYPE_FLOAT => MysqlType::Float,
+            enum_field_types::MYSQL_TYPE_DOUBLE => MysqlType::Double,
+            enum_field_types::MYSQL_TYPE_DECIMAL | enum_field_types::MYSQL_TYPE_NEWDECIMAL => {
+                MysqlType::Numeric
+            }
+            enum_field_types::MYSQL_TYPE_BIT => MysqlType::Bit,
 
-            MYSQL_TYPE_TIME => MysqlType::Time,
-            MYSQL_TYPE_DATE => MysqlType::Date,
-            MYSQL_TYPE_DATETIME => MysqlType::DateTime,
-            MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
+            enum_field_types::MYSQL_TYPE_TIME => MysqlType::Time,
+            enum_field_types::MYSQL_TYPE_DATE => MysqlType::Date,
+            enum_field_types::MYSQL_TYPE_DATETIME => MysqlType::DateTime,
+            enum_field_types::MYSQL_TYPE_TIMESTAMP => MysqlType::Timestamp,
             // Treat json as string because even mysql 8.0
             // throws errors sometimes if we use json for json
-            MYSQL_TYPE_JSON => MysqlType::String,
+            enum_field_types::MYSQL_TYPE_JSON => MysqlType::String,
 
             // The documentation states that
             // MYSQL_TYPE_STRING is used for enums and sets
             // but experimentation has shown that
             // just any string like type works, so
             // better be safe here
-            MYSQL_TYPE_BLOB
-            | MYSQL_TYPE_TINY_BLOB
-            | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_STRING
+            enum_field_types::MYSQL_TYPE_BLOB
+            | enum_field_types::MYSQL_TYPE_TINY_BLOB
+            | enum_field_types::MYSQL_TYPE_MEDIUM_BLOB
+            | enum_field_types::MYSQL_TYPE_LONG_BLOB
+            | enum_field_types::MYSQL_TYPE_VAR_STRING
+            | enum_field_types::MYSQL_TYPE_STRING
                 if flags.contains(Flags::ENUM_FLAG) =>
             {
                 MysqlType::Enum
             }
-            MYSQL_TYPE_BLOB
-            | MYSQL_TYPE_TINY_BLOB
-            | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_STRING
+            enum_field_types::MYSQL_TYPE_BLOB
+            | enum_field_types::MYSQL_TYPE_TINY_BLOB
+            | enum_field_types::MYSQL_TYPE_MEDIUM_BLOB
+            | enum_field_types::MYSQL_TYPE_LONG_BLOB
+            | enum_field_types::MYSQL_TYPE_VAR_STRING
+            | enum_field_types::MYSQL_TYPE_STRING
                 if flags.contains(Flags::SET_FLAG) =>
             {
                 MysqlType::Set
@@ -508,33 +520,33 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             // also "strings" can contain binary data
             // but all only if the binary flag is set
             // (see the check_all_the_types test case)
-            MYSQL_TYPE_BLOB
-            | MYSQL_TYPE_TINY_BLOB
-            | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_STRING
+            enum_field_types::MYSQL_TYPE_BLOB
+            | enum_field_types::MYSQL_TYPE_TINY_BLOB
+            | enum_field_types::MYSQL_TYPE_MEDIUM_BLOB
+            | enum_field_types::MYSQL_TYPE_LONG_BLOB
+            | enum_field_types::MYSQL_TYPE_VAR_STRING
+            | enum_field_types::MYSQL_TYPE_STRING
                 if flags.contains(Flags::BINARY_FLAG) =>
             {
                 MysqlType::Blob
             }
 
             // If the binary flag is not set consider everything as string
-            MYSQL_TYPE_BLOB
-            | MYSQL_TYPE_TINY_BLOB
-            | MYSQL_TYPE_MEDIUM_BLOB
-            | MYSQL_TYPE_LONG_BLOB
-            | MYSQL_TYPE_VAR_STRING
-            | MYSQL_TYPE_STRING => MysqlType::String,
+            enum_field_types::MYSQL_TYPE_BLOB
+            | enum_field_types::MYSQL_TYPE_TINY_BLOB
+            | enum_field_types::MYSQL_TYPE_MEDIUM_BLOB
+            | enum_field_types::MYSQL_TYPE_LONG_BLOB
+            | enum_field_types::MYSQL_TYPE_VAR_STRING
+            | enum_field_types::MYSQL_TYPE_STRING => MysqlType::String,
 
             // unsigned seems to be set for year in any case
-            MYSQL_TYPE_YEAR => unreachable!(
+            enum_field_types::MYSQL_TYPE_YEAR => unreachable!(
                 "The year type should have set the unsigned flag. If you ever \
                  see this error message, something has gone very wrong. Please \
                  open an issue at the diesel githup repo in this case"
             ),
             // Null value
-            MYSQL_TYPE_NULL => unreachable!(
+            enum_field_types::MYSQL_TYPE_NULL => unreachable!(
                 "We ensure at the call side that we do not hit this type here. \
                  If you ever see this error, something has gone very wrong. \
                  Please open an issue at the diesel github repo in this case"
@@ -542,7 +554,10 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             // Those exist in libmysqlclient
             // but are just not supported
             //
-            MYSQL_TYPE_VARCHAR | MYSQL_TYPE_ENUM | MYSQL_TYPE_SET | MYSQL_TYPE_GEOMETRY => {
+            enum_field_types::MYSQL_TYPE_VARCHAR
+            | enum_field_types::MYSQL_TYPE_ENUM
+            | enum_field_types::MYSQL_TYPE_SET
+            | enum_field_types::MYSQL_TYPE_GEOMETRY => {
                 unimplemented!(
                     "Hit a type that should be unsupported in libmysqlclient. If \
                      you ever see this error, they probably have added support for \
@@ -551,10 +566,10 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
                 )
             }
 
-            MYSQL_TYPE_NEWDATE
-            | MYSQL_TYPE_TIME2
-            | MYSQL_TYPE_DATETIME2
-            | MYSQL_TYPE_TIMESTAMP2 => unreachable!(
+            enum_field_types::MYSQL_TYPE_NEWDATE
+            | enum_field_types::MYSQL_TYPE_TIME2
+            | enum_field_types::MYSQL_TYPE_DATETIME2
+            | enum_field_types::MYSQL_TYPE_TIMESTAMP2 => unreachable!(
                 "The mysql documentation states that this types are \
                  only used on server side, so if you see this error \
                  something has gone wrong. Please open a issue at \

@@ -529,6 +529,7 @@ pub trait QueryDsl: Sized {
     /// assert_eq!(Ok(2), tess_id);
     /// # }
     /// ```
+    #[doc(alias = "where")]
     fn filter<Predicate>(self, predicate: Predicate) -> Filter<Self, Predicate>
     where
         Self: methods::FilterDsl<Predicate>,
@@ -577,6 +578,7 @@ pub trait QueryDsl: Sized {
     /// #     Ok(())
     /// # }
     /// ```
+    #[doc(alias = "where")]
     fn or_filter<Predicate>(self, predicate: Predicate) -> OrFilter<Self, Predicate>
     where
         Self: methods::OrFilterDsl<Predicate>,

@@ -152,7 +152,7 @@ impl PgConnection {
                 } else {
                     None
                 };
-                Statement::prepare(self, sql, query_name.as_ref().map(|s| &**s), &metadata)
+                Statement::prepare(self, sql, query_name.as_deref(), &metadata)
             });
 
         Ok((query?, binds))

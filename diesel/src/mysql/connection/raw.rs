@@ -145,7 +145,7 @@ impl RawConnection {
             Ok(())
         } else {
             Err(DatabaseError(
-                DatabaseErrorKind::__Unknown,
+                DatabaseErrorKind::Unknown,
                 Box::new(error_message),
             ))
         }
