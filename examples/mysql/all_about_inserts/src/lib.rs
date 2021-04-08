@@ -320,7 +320,7 @@ fn examine_sql_from_insert_get_results_batch() {
                     `users`.`hair_color`, `users`.`created_at`, \
                     `users`.`updated_at` \
                     FROM `users` \
-                    ORDER BY `users`.`id` DESC \
+                    ORDER BY `users`.`id` DESC  \
                     -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
@@ -372,7 +372,7 @@ fn examine_sql_from_insert_get_result() {
                     `users`.`hair_color`, `users`.`created_at`, \
                     `users`.`updated_at` \
                     FROM `users` \
-                    ORDER BY `users`.`id` DESC \
+                    ORDER BY `users`.`id` DESC  \
                     -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
@@ -399,7 +399,7 @@ fn examine_sql_from_explicit_returning() {
         debug_query::<Mysql, _>(&insert_query).to_string()
     );
     let load_query = users.select(id).order(id.desc());
-    let load_sql = "SELECT `users`.`id` FROM `users` ORDER BY `users`.`id` DESC -- binds: []";
+    let load_sql = "SELECT `users`.`id` FROM `users` ORDER BY `users`.`id` DESC  -- binds: []";
     assert_eq!(load_sql, debug_query::<Mysql, _>(&load_query).to_string());
 }
 
