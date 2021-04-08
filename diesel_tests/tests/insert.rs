@@ -611,3 +611,27 @@ fn batch_insert_is_atomic_on_sqlite() {
 
     assert_eq!(Ok(0), users.count().get_result(&connection));
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn insert_with_returning_into_selectable() {
+    #[derive(Insertable, Queryable, Selectable, Debug, PartialEq)]
+    #[table_name = "users"]
+    pub struct User {
+        pub name: String,
+        pub hair_color: Option<String>,
+    }
+
+    let connection = connection();
+    let new_user = User {
+        name: "Sean".to_string(),
+        hair_color: None,
+    };
+
+    let result = insert_into(users::table)
+        .values(&new_user)
+        .load_into_single::<User>(&connection)
+        .unwrap();
+
+    assert_eq!(new_user, result);
+}

@@ -45,7 +45,7 @@ pub use self::insert_statement::{
 pub use self::query_id::QueryId;
 #[doc(inline)]
 pub use self::select_clause::{
-    IntoBoxedSelectClause, SelectClauseExpression, SelectClauseQueryFragment,
+    IntoBoxedSelectClause, SelectClauseExpression, SelectClauseQueryFragment, Selectable,
 };
 #[doc(hidden)]
 pub use self::select_statement::{BoxedSelectStatement, SelectStatement};

@@ -301,3 +301,28 @@ fn upsert_with_sql_literal_for_target() {
     ];
     assert_eq!(Ok(expected_data), data);
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn update_with_returning_into_selectable() {
+    #[derive(Insertable, Queryable, Selectable, Debug, PartialEq)]
+    #[table_name = "users"]
+    pub struct User {
+        pub name: String,
+        pub hair_color: Option<String>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let sean = User {
+        name: "Sean".to_string(),
+        hair_color: Some("black".to_string()),
+    };
+
+    let user = update(users::table.filter(users::name.eq("Sean")))
+        .set(users::hair_color.eq("black"))
+        .load_into_single::<User>(&connection)
+        .unwrap();
+
+    assert_eq!(sean, user);
+}

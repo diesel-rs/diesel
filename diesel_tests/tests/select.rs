@@ -512,3 +512,129 @@ fn selecting_multiple_aggregate_expressions_without_group_by() {
     assert_eq!(2, count);
     assert_eq!(Some(String::from("Tess")), max_name);
 }
+
+#[test]
+fn select_into() {
+    #[derive(Queryable, Selectable, Debug, PartialEq)]
+    #[table_name = "users"]
+    pub struct User {
+        pub name: String,
+        pub hair_color: Option<String>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let users = users::table.load_into::<User>(&connection).unwrap();
+
+    let expected_data = vec![
+        User {
+            name: "Sean".to_string(),
+            hair_color: None::<String>,
+        },
+        User {
+            name: "Tess".to_string(),
+            hair_color: None::<String>,
+        },
+    ];
+
+    assert_eq!(users, expected_data);
+}
+
+#[test]
+fn select_into_with_embedded() {
+    #[derive(Queryable, Selectable, Debug, PartialEq)]
+    #[table_name = "users"]
+    pub struct EmbeddedName {
+        name: String,
+    }
+
+    #[derive(Queryable, Selectable, Debug, PartialEq)]
+    #[table_name = "users"]
+    pub struct User {
+        name: String,
+        hair_color: Option<String>,
+        #[diesel(embed)]
+        embedded_name: EmbeddedName,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let users = users::table.load_into::<User>(&connection).unwrap();
+
+    let expected_data = vec![
+        User {
+            name: "Sean".to_string(),
+            hair_color: None::<String>,
+            embedded_name: EmbeddedName {
+                name: "Sean".to_string(),
+            },
+        },
+        User {
+            name: "Tess".to_string(),
+            hair_color: None::<String>,
+            embedded_name: EmbeddedName {
+                name: "Tess".to_string(),
+            },
+        },
+    ];
+
+    assert_eq!(users, expected_data);
+}
+
+#[test]
+fn select_into_rename_column() {
+    #[derive(Queryable, Selectable, Debug, PartialEq)]
+    #[table_name = "users"]
+    pub struct User {
+        pub name: String,
+        #[column_name = "hair_color"]
+        pub hair: Option<String>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let users = users::table.load_into::<User>(&connection).unwrap();
+
+    let expected_data = vec![
+        User {
+            name: "Sean".to_string(),
+            hair: None::<String>,
+        },
+        User {
+            name: "Tess".to_string(),
+            hair: None::<String>,
+        },
+    ];
+
+    assert_eq!(users, expected_data);
+}
+
+#[test]
+fn select_into_boxed() {
+    #[derive(Queryable, Selectable, Debug, PartialEq)]
+    #[table_name = "users"]
+    pub struct User {
+        pub name: String,
+        pub hair_color: Option<String>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    let users = users::table
+        .into_boxed()
+        .load_into::<User>(&connection)
+        .unwrap();
+
+    let expected_data = vec![
+        User {
+            name: "Sean".to_string(),
+            hair_color: None::<String>,
+        },
+        User {
+            name: "Tess".to_string(),
+            hair_color: None::<String>,
+        },
+    ];
+
+    assert_eq!(users, expected_data);
+}

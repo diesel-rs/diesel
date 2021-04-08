@@ -21,6 +21,7 @@ use crate::query_builder::{
     AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement,
 };
 use crate::query_dsl::boxed_dsl::BoxedDsl;
+use crate::query_dsl::load_dsl::LoadIntoDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_dsl::*;
@@ -534,5 +535,17 @@ where
         Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>,
     {
         CombinationClause::new(Except, All, self, rhs.as_query())
+    }
+}
+
+impl<Conn, U, F, S, D, W, O, LOf, G, LC> LoadIntoDsl<Conn, U>
+    for SelectStatement<F, S, D, W, O, LOf, G, LC>
+where
+    U: Selectable,
+    Self: SelectDsl<U::SelectExpression>,
+    crate::dsl::Select<Self, U::SelectExpression>: LoadQuery<Conn, U>,
+{
+    fn load_into(self, conn: &Conn) -> crate::QueryResult<Vec<U>> {
+        <_ as SelectDsl<_>>::select(self, U::selection()).internal_load(conn)
     }
 }

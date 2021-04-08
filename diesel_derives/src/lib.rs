@@ -1,6 +1,6 @@
 #![recursion_limit = "1024"]
 // Built-in Lints
-#![deny(warnings, missing_copy_implementations)]
+#![deny(warnings)]
 // Clippy lints
 #![allow(
     clippy::needless_doctest_main,
@@ -8,6 +8,7 @@
     clippy::map_unwrap_or
 )]
 #![warn(
+    missing_copy_implementations,
     clippy::wrong_pub_self_convention,
     clippy::mut_mut,
     clippy::non_ascii_literal,
@@ -45,6 +46,7 @@ mod insertable;
 mod query_id;
 mod queryable;
 mod queryable_by_name;
+mod selectable;
 mod sql_function;
 mod sql_type;
 mod valid_grouping;
@@ -826,6 +828,64 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 #[proc_macro_derive(ValidGrouping, attributes(diesel))]
 pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, valid_grouping::derive)
+}
+
+/// Implements `Selectable`
+///
+/// This trait can be automatically derived for structs with no type parameters.
+/// It generates a `Selectable` impl based on the struct fields.
+///
+/// To implement `Selectable` this derive needs to know the corresponding table
+/// type. By default it uses the `snake_case` type name with an added `s`.
+/// It is possible to change this default by using `#[table_name = "something"]`.
+/// In both cases the module for that table must be in scope.
+/// For example, to derive this for a struct called `User`, you will
+/// likely need a line such as `use schema::users;`
+///
+/// If a field name of your
+/// struct differs from the name of the corresponding column,
+/// you can annotate the field with `#[column_name = "some_column_name"]`.
+///
+/// Your struct can also contain fields which implement `Selectable`. Add
+/// `#[diesel(embed)]` to any such fields.
+///
+/// ```ignore
+/// #[derive(Selectable)]
+/// #[table_name = "users"]
+/// struct User {
+///    id: i32,
+///    name: String
+/// }
+///
+/// // The following impl will be generated:
+///
+/// impl Selectable for Users {
+///     type SelectExpression = (users::id, users::name);
+///
+///     fn selection() -> Self::SelectExpression {
+///         (users::id, users::name)
+///     }
+/// }
+/// ```
+///
+/// # Attributes
+/// ## Optional container attributes
+///
+/// * `#[table_name = "some_table_name"]`, specifies the table this type
+/// is selectable. Requires that `some_table_name` is in scope.
+/// If this attribute is not used, the type name converted to
+/// `snake_case` with an added `s` is used as table name
+///
+/// ## Optional field attributes
+///
+/// * `#[column_name = "some_table_name"]`, overrides the column the current
+/// field maps to `some_table_name`. By default the field name is used
+/// as column name
+/// * `#[diesel(embed)]`, specifies that the current field maps not only
+/// to single database field, but is a struct that implements `Selectable`
+#[proc_macro_derive(Selectable, attributes(diesel, table_name))]
+pub fn derive_selectable(input: TokenStream) -> TokenStream {
+    expand_proc_macro(input, selectable::derive)
 }
 
 /// Declare a sql function for use in your code.

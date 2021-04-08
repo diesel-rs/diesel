@@ -12,8 +12,9 @@ use crate::expression::{
 use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
+use crate::query_dsl::load_dsl::LoadIntoDsl;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::query_source::Table;
 use crate::result::Error::QueryBuilderError;
 use crate::result::QueryResult;
@@ -286,3 +287,15 @@ impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
 /// Indicates that you have not yet called `.set` on an update statement
 #[derive(Debug, Clone, Copy)]
 pub struct SetNotCalled;
+
+impl<T, U, V, Conn, S> LoadIntoDsl<Conn, S> for UpdateStatement<T, U, V>
+where
+    S: Selectable,
+    T: Table,
+    S::SelectExpression: SelectableExpression<T>,
+    UpdateStatement<T, U, V, ReturningClause<S::SelectExpression>>: Query + LoadQuery<Conn, S>,
+{
+    fn load_into(self, conn: &Conn) -> QueryResult<Vec<S>> {
+        self.returning(S::selection()).internal_load(conn)
+    }
+}

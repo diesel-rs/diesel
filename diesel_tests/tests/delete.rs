@@ -42,3 +42,26 @@ fn return_deleted_records() {
     let num_users = users.count().first(&connection);
     assert_eq!(Ok(1), num_users);
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn delete_with_returning_into_selectable() {
+    #[derive(Insertable, Queryable, Selectable, Debug, PartialEq)]
+    #[table_name = "users"]
+    pub struct User {
+        pub name: String,
+        pub hair_color: Option<String>,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+    let deleted_user = User {
+        name: "Sean".to_string(),
+        hair_color: None,
+    };
+
+    let result = delete(users::table.filter(users::name.eq("Sean")))
+        .load_into_single::<User>(&connection)
+        .unwrap();
+
+    assert_eq!(deleted_user, result);
+}

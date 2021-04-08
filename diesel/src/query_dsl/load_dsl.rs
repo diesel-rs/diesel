@@ -5,6 +5,7 @@ use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 use crate::result::QueryResult;
+use crate::Table;
 
 /// The `load` method
 ///
@@ -18,6 +19,10 @@ pub trait LoadQuery<Conn, U>: RunQueryDsl<Conn> {
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>>;
 }
 
+pub trait LoadIntoDsl<Conn, U>: RunQueryDsl<Conn> {
+    fn load_into(self, conn: &Conn) -> QueryResult<Vec<U>>;
+}
+
 impl<Conn, T, U> LoadQuery<Conn, U> for T
 where
     Conn: Connection,
@@ -28,6 +33,16 @@ where
 {
     fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>> {
         conn.load(self)
+    }
+}
+
+impl<Conn, T, U> LoadIntoDsl<Conn, U> for T
+where
+    T: Table + AsQuery,
+    T::Query: LoadIntoDsl<Conn, U>,
+{
+    fn load_into(self, conn: &Conn) -> QueryResult<Vec<U>> {
+        <_ as LoadIntoDsl<Conn, U>>::load_into(self.as_query(), conn)
     }
 }
 

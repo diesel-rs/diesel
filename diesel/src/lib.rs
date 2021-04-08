@@ -399,6 +399,8 @@ pub mod prelude {
     #[doc(inline)]
     pub use crate::query_builder::DecoratableTarget;
     #[doc(inline)]
+    pub use crate::query_builder::Selectable;
+    #[doc(inline)]
     pub use crate::query_dsl::{
         BelongingToDsl, CombineDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl,
     };

@@ -8,6 +8,22 @@ pub struct DefaultSelectClause;
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct SelectClause<T>(pub T);
 
+/// This trait represents a type that can be used to construct a
+/// select or returning clause via
+/// [`RunQueryDsl::load_into`](crate::query_dsl::RunQueryDsl::load_into)
+///
+/// This trait [can be derived](derive@Selectable)
+pub trait Selectable {
+    /// The type of the select expression
+    type SelectExpression: Expression;
+
+    /// Construct the select expression
+    fn selection() -> Self::SelectExpression;
+}
+
+#[doc(inline)]
+pub use diesel_derives::Selectable;
+
 /// Specialised variant of `Expression` for select clause types
 ///
 /// The difference to the normal `Expression` trait is the query source (`QS`)

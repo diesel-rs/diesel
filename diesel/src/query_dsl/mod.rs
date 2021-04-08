@@ -47,6 +47,7 @@ mod single_value_dsl;
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::combine_dsl::CombineDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
+use self::load_dsl::LoadIntoDsl;
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
@@ -1303,7 +1304,62 @@ pub trait RunQueryDsl<Conn>: Sized {
         self.internal_load(conn)
     }
 
+    /// Executes the given query, returning a `Vec` with the returned rows.
+    ///
+    /// This method is similar to [load](self::RunQueryDsl::load), but sets
+    /// a corresponding select/returning clause based on the
+    /// [Selectable](crate::query_builder::Selectable) impl for `U`.
+    ///
+    ///
+    /// # Examples
+    ///
+    /// ## Returning a struct
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::users;
+    /// #
+    /// #[derive(Selectable, Queryable, PartialEq, Debug)]
+    /// #[table_name = "users"]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::insert_into;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let data = users
+    ///     .load_into::<User>(&connection)?;
+    ///
+    /// // This query is equivalent to
+    /// // users.select((users::id, users::name)).load::<User>(&connection)?;
+    ///
+    /// let expected_data = vec![
+    ///     User { id: 1, name: String::from("Sean") },
+    ///     User { id: 2, name: String::from("Tess") },
+    /// ];
+    /// assert_eq!(expected_data, data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn load_into<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
+    where
+        Self: LoadIntoDsl<Conn, U>,
+    {
+        LoadIntoDsl::load_into(self, conn)
+    }
+
     /// Runs the command, and returns the affected row.
+    ///
+    /// This method behaves similar to [get_result](self::RunQueryDsl::get_result)
+    /// than [load_into](self::RunQueryDsl::load_into) behaves to
+    /// [load](self::RunQueryDsl::load)
     ///
     /// `Err(NotFound)` will be returned if the query affected 0 rows. You can
     /// call `.optional()` on the result of this if the command was optional to
@@ -1353,6 +1409,67 @@ pub trait RunQueryDsl<Conn>: Sized {
         Self: LoadQuery<Conn, U>,
     {
         first_or_not_found(self.load(conn))
+    }
+
+    /// Runs the command, and returns the affected row.
+    ///
+    /// `Err(NotFound)` will be returned if the query affected 0 rows. You can
+    /// call `.optional()` on the result of this if the command was optional to
+    /// get back a `Result<Option<U>>`
+    ///
+    /// When this method is called on an insert, update, or delete statement,
+    /// it will implicitly add a `RETURNING *` to the query,
+    /// unless a returning clause was already specified.
+    ///
+    /// This method only returns the first row that was affected, even if more
+    /// rows are affected.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// #
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # use schema::users;
+    /// #
+    /// #[derive(Selectable, Queryable, PartialEq, Debug)]
+    /// #[table_name = "users"]
+    /// pub struct UserName {
+    ///     name: String
+    /// }
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::{insert_into, update};
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = establish_connection();
+    /// let inserted_row = insert_into(users)
+    ///     .values(name.eq("Ruby"))
+    ///     .load_into::<UserName>(&connection)?;
+    /// assert_eq!(UserName { name: "Ruby".into_string() }, inserted_row);
+    ///
+    /// // This will return `NotFound`, as there is no user with ID 4
+    /// let update_result = update(users.find(4))
+    ///     .set(name.eq("Jim"))
+    ///     .load_into::<UserName>(&connection);
+    /// assert_eq!(Err(diesel::NotFound), update_result);
+    /// #     Ok(())
+    /// # }
+    /// #
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn load_into_single<U>(self, conn: &Conn) -> QueryResult<U>
+    where
+        Self: LoadIntoDsl<Conn, U>,
+    {
+        first_or_not_found(<_ as RunQueryDsl<_>>::load_into(self, conn))
     }
 
     /// Runs the command, returning an `Vec` with the affected rows.

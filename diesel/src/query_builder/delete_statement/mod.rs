@@ -4,8 +4,9 @@ use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
+use crate::query_dsl::load_dsl::LoadIntoDsl;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::query_source::Table;
 use crate::result::QueryResult;
 
@@ -229,5 +230,16 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
             where_clause: self.where_clause,
             returning: ReturningClause(returns),
         }
+    }
+}
+
+impl<T, U, Conn, S> LoadIntoDsl<Conn, S> for DeleteStatement<T, U, NoReturningClause>
+where
+    S: Selectable,
+    S::SelectExpression: SelectableExpression<T>,
+    DeleteStatement<T, U, ReturningClause<S::SelectExpression>>: Query + LoadQuery<Conn, S>,
+{
+    fn load_into(self, conn: &Conn) -> QueryResult<Vec<S>> {
+        self.returning(S::selection()).internal_load(conn)
     }
 }

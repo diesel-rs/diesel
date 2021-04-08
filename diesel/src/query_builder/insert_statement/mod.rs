@@ -10,6 +10,7 @@ use std::fmt::{self, Debug, Display};
 use std::marker::PhantomData;
 
 use super::returning_clause::*;
+use super::select_clause::Selectable;
 use crate::backend::Backend;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
@@ -18,9 +19,10 @@ use crate::insertable::*;
 #[cfg(feature = "mysql")]
 use crate::mysql::Mysql;
 use crate::query_builder::*;
+use crate::query_dsl::load_dsl::LoadIntoDsl;
 #[cfg(feature = "sqlite")]
 use crate::query_dsl::methods::ExecuteDsl;
-use crate::query_dsl::RunQueryDsl;
+use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
 #[cfg(feature = "sqlite")]
@@ -201,6 +203,17 @@ where
         self.records.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
+    }
+}
+
+impl<T, U, Op, Conn, S> LoadIntoDsl<Conn, S> for InsertStatement<T, U, Op>
+where
+    S: Selectable,
+    S::SelectExpression: SelectableExpression<T>,
+    InsertStatement<T, U, Op, ReturningClause<S::SelectExpression>>: Query + LoadQuery<Conn, S>,
+{
+    fn load_into(self, conn: &Conn) -> QueryResult<Vec<S>> {
+        self.returning(S::selection()).internal_load(conn)
     }
 }
 
