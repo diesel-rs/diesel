@@ -18,6 +18,7 @@ use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::query_source::Table;
 use crate::result::Error::QueryBuilderError;
 use crate::result::QueryResult;
+use crate::Connection;
 
 impl<T, U> UpdateStatement<T, U, SetNotCalled> {
     pub(crate) fn new(target: UpdateTarget<T, U>) -> Self {
@@ -290,7 +291,8 @@ pub struct SetNotCalled;
 
 impl<T, U, V, Conn, S> LoadIntoDsl<Conn, S> for UpdateStatement<T, U, V>
 where
-    S: Selectable,
+    Conn: Connection,
+    S: Selectable<Conn::Backend>,
     T: Table,
     S::SelectExpression: SelectableExpression<T>,
     UpdateStatement<T, U, V, ReturningClause<S::SelectExpression>>: Query + LoadQuery<Conn, S>,

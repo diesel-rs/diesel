@@ -19,6 +19,7 @@ use crate::helper_types::*;
 use crate::query_builder::locking_clause as lock;
 use crate::query_source::{joins, Table};
 use crate::result::{first_or_not_found, QueryResult};
+use crate::Selectable;
 
 mod belonging_to_dsl;
 #[doc(hidden)]
@@ -1350,6 +1351,8 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// ```
     fn load_into<U>(self, conn: &Conn) -> QueryResult<Vec<U>>
     where
+        Conn: Connection,
+        U: Selectable<Conn::Backend>,
         Self: LoadIntoDsl<Conn, U>,
     {
         LoadIntoDsl::load_into(self, conn)
@@ -1449,13 +1452,13 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     let connection = establish_connection();
     /// let inserted_row = insert_into(users)
     ///     .values(name.eq("Ruby"))
-    ///     .load_into::<UserName>(&connection)?;
+    ///     .load_into_single::<UserName>(&connection)?;
     /// assert_eq!(UserName { name: "Ruby".into_string() }, inserted_row);
     ///
     /// // This will return `NotFound`, as there is no user with ID 4
     /// let update_result = update(users.find(4))
     ///     .set(name.eq("Jim"))
-    ///     .load_into::<UserName>(&connection);
+    ///     .load_into_single::<UserName>(&connection);
     /// assert_eq!(Err(diesel::NotFound), update_result);
     /// #     Ok(())
     /// # }
@@ -1467,6 +1470,8 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// ```
     fn load_into_single<U>(self, conn: &Conn) -> QueryResult<U>
     where
+        Conn: Connection,
+        U: Selectable<Conn::Backend>,
         Self: LoadIntoDsl<Conn, U>,
     {
         first_or_not_found(<_ as RunQueryDsl<_>>::load_into(self, conn))

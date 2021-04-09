@@ -27,7 +27,6 @@ use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
 #[cfg(feature = "sqlite")]
 use crate::sqlite::Sqlite;
-#[cfg(feature = "sqlite")]
 use crate::Connection;
 
 /// The structure returned by [`insert_into`].
@@ -208,7 +207,8 @@ where
 
 impl<T, U, Op, Conn, S> LoadIntoDsl<Conn, S> for InsertStatement<T, U, Op>
 where
-    S: Selectable,
+    Conn: Connection,
+    S: Selectable<Conn::Backend>,
     S::SelectExpression: SelectableExpression<T>,
     InsertStatement<T, U, Op, ReturningClause<S::SelectExpression>>: Query + LoadQuery<Conn, S>,
 {

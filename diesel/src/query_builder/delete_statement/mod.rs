@@ -9,6 +9,7 @@ use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
 use crate::query_dsl::{LoadQuery, RunQueryDsl};
 use crate::query_source::Table;
 use crate::result::QueryResult;
+use crate::Connection;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
@@ -235,7 +236,8 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
 
 impl<T, U, Conn, S> LoadIntoDsl<Conn, S> for DeleteStatement<T, U, NoReturningClause>
 where
-    S: Selectable,
+    Conn: Connection,
+    S: Selectable<Conn::Backend>,
     S::SelectExpression: SelectableExpression<T>,
     DeleteStatement<T, U, ReturningClause<S::SelectExpression>>: Query + LoadQuery<Conn, S>,
 {

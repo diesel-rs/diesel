@@ -28,6 +28,7 @@ use crate::query_dsl::*;
 use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::QuerySource;
 use crate::sql_types::{BigInt, BoolOrNullableBool};
+use crate::Connection;
 
 impl<F, S, D, W, O, LOf, G, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
     for SelectStatement<F, S, D, W, O, LOf, G, LC>
@@ -541,7 +542,8 @@ where
 impl<Conn, U, F, S, D, W, O, LOf, G, LC> LoadIntoDsl<Conn, U>
     for SelectStatement<F, S, D, W, O, LOf, G, LC>
 where
-    U: Selectable,
+    Conn: Connection,
+    U: Selectable<Conn::Backend>,
     Self: SelectDsl<U::SelectExpression>,
     crate::dsl::Select<Self, U::SelectExpression>: LoadQuery<Conn, U>,
 {

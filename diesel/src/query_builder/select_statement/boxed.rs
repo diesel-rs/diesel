@@ -22,6 +22,7 @@ use crate::query_source::joins::*;
 use crate::query_source::{QuerySource, Table};
 use crate::result::QueryResult;
 use crate::sql_types::{BigInt, BoolOrNullableBool, IntoNullable};
+use crate::Connection;
 
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB, GB = ()> {
@@ -404,7 +405,9 @@ where
 
 impl<'a, Conn, U, ST, QS, DB, GB> LoadIntoDsl<Conn, U> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
-    U: Selectable,
+    DB: Backend,
+    Conn: Connection<Backend = DB>,
+    U: Selectable<DB>,
     Self: SelectDsl<U::SelectExpression>,
     crate::dsl::Select<Self, U::SelectExpression>: LoadQuery<Conn, U>,
 {

@@ -13,7 +13,7 @@ pub struct SelectClause<T>(pub T);
 /// [`RunQueryDsl::load_into`](crate::query_dsl::RunQueryDsl::load_into)
 ///
 /// This trait [can be derived](derive@Selectable)
-pub trait Selectable {
+pub trait Selectable<DB: Backend> {
     /// The type of the select expression
     type SelectExpression: Expression;
 
