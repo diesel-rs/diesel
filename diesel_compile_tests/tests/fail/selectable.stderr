@@ -1,0 +1,95 @@
+error[E0433]: failed to resolve: use of undeclared crate or module `post`
+  --> $DIR/selectable.rs:58:16
+   |
+58 | #[table_name = "post"]
+   |                ^^^^^^ use of undeclared crate or module `post`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0412]: cannot find type `titel` in module `posts`
+  --> $DIR/selectable.rs:53:5
+   |
+53 |     titel: String
+   |     ^^^^^^^^^^^^^ not found in `posts`
+
+error[E0425]: cannot find value `titel` in module `posts`
+  --> $DIR/selectable.rs:53:5
+   |
+53 |     titel: String
+   |     ^^^^^^^^^^^^^ not found in `posts`
+
+error[E0277]: the trait bound `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>: LoadIntoDsl<_, UserWithEmbeddedPost>` is not satisfied
+   --> $DIR/selectable.rs:136:10
+    |
+136 |         .load_into::<UserWithEmbeddedPost>(&conn)
+    |          ^^^^^^^^^ the trait `LoadIntoDsl<_, UserWithEmbeddedPost>` is not implemented for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
+    |
+    = help: the following implementations were found:
+              <SelectStatement<F, S, D, W, O, LOf, G, LC> as LoadIntoDsl<Conn, U>>
+
+error[E0277]: the trait bound `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>: LoadIntoDsl<_, UserWithEmbeddedPost>` is not satisfied
+   --> $DIR/selectable.rs:143:10
+    |
+143 |         .load_into::<UserWithEmbeddedPost>(&conn)
+    |          ^^^^^^^^^ the trait `LoadIntoDsl<_, UserWithEmbeddedPost>` is not implemented for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+    |
+    = help: the following implementations were found:
+              <SelectStatement<F, S, D, W, O, LOf, G, LC> as LoadIntoDsl<Conn, U>>
+
+error[E0277]: the trait bound `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>: LoadIntoDsl<_, UserWithPostCount>` is not satisfied
+   --> $DIR/selectable.rs:149:10
+    |
+149 |         .load_into::<UserWithPostCount>(&conn)
+    |          ^^^^^^^^^ the trait `LoadIntoDsl<_, UserWithPostCount>` is not implemented for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>`
+    |
+    = help: the following implementations were found:
+              <SelectStatement<F, S, D, W, O, LOf, G, LC> as LoadIntoDsl<Conn, U>>
+
+error[E0277]: the trait bound `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>>: LoadIntoDsl<_, UserWithEmbeddedPost>` is not satisfied
+   --> $DIR/selectable.rs:156:10
+    |
+156 |         .load_into::<UserWithEmbeddedPost>(&conn)
+    |          ^^^^^^^^^ the trait `LoadIntoDsl<_, UserWithEmbeddedPost>` is not implemented for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>>`
+    |
+    = help: the following implementations were found:
+              <InsertStatement<T, U, Op> as LoadIntoDsl<Conn, S>>
+
+error[E0277]: the trait bound `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>: LoadIntoDsl<_, UserWithEmbeddedPost>` is not satisfied
+   --> $DIR/selectable.rs:163:10
+    |
+163 |         .load_into::<UserWithEmbeddedPost>(&conn)
+    |          ^^^^^^^^^ the trait `LoadIntoDsl<_, UserWithEmbeddedPost>` is not implemented for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
+    |
+    = help: the following implementations were found:
+              <UpdateStatement<T, U, V> as LoadIntoDsl<Conn, S>>
+
+error[E0277]: the trait bound `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>: LoadIntoDsl<_, UserWithEmbeddedPost>` is not satisfied
+   --> $DIR/selectable.rs:169:10
+    |
+169 |         .load_into::<UserWithEmbeddedPost>(&conn)
+    |          ^^^^^^^^^ the trait `LoadIntoDsl<_, UserWithEmbeddedPost>` is not implemented for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>`
+    |
+    = help: the following implementations were found:
+              <DeleteStatement<T, U> as LoadIntoDsl<Conn, S>>
+
+error[E0277]: the trait bound `UserWithoutSelectable: diesel::Selectable<_>` is not satisfied
+   --> $DIR/selectable.rs:173:26
+    |
+173 |     let _ = users::table.load_into::<UserWithoutSelectable>(&conn).unwrap();
+    |                          ^^^^^^^^^ the trait `diesel::Selectable<_>` is not implemented for `UserWithoutSelectable`
+
+error[E0277]: the trait bound `SelectStatement<users::table>: LoadIntoDsl<_, UserWithoutSelectable>` is not satisfied
+   --> $DIR/selectable.rs:173:26
+    |
+173 |     let _ = users::table.load_into::<UserWithoutSelectable>(&conn).unwrap();
+    |                          ^^^^^^^^^ the trait `LoadIntoDsl<_, UserWithoutSelectable>` is not implemented for `SelectStatement<users::table>`
+    |
+    = help: the following implementations were found:
+              <SelectStatement<F, S, D, W, O, LOf, G, LC> as LoadIntoDsl<Conn, U>>
+    = note: required because of the requirements on the impl of `LoadIntoDsl<_, UserWithoutSelectable>` for `users::table`
+
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == Pg`
+   --> $DIR/selectable.rs:180:10
+    |
+180 |         .load_into::<UserWithPostCount>(&conn)
+    |          ^^^^^^^^^ expected struct `Sqlite`, found struct `Pg`
