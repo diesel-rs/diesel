@@ -1453,7 +1453,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// let inserted_row = insert_into(users)
     ///     .values(name.eq("Ruby"))
     ///     .load_into_single::<UserName>(&connection)?;
-    /// assert_eq!(UserName { name: "Ruby".into_string() }, inserted_row);
+    /// assert_eq!(UserName { name: "Ruby".to_string() }, inserted_row);
     ///
     /// // This will return `NotFound`, as there is no user with ID 4
     /// let update_result = update(users.find(4))
