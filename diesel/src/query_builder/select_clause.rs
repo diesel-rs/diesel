@@ -21,6 +21,19 @@ pub trait Selectable<DB: Backend> {
     fn selection() -> Self::SelectExpression;
 }
 
+impl<T, DB> Selectable<DB> for Option<T>
+where
+    DB: Backend,
+    T: Selectable<DB>,
+    crate::expression::nullable::Nullable<T::SelectExpression>: Expression,
+{
+    type SelectExpression = crate::expression::nullable::Nullable<T::SelectExpression>;
+
+    fn selection() -> Self::SelectExpression {
+        crate::expression::nullable::Nullable::new(T::selection())
+    }
+}
+
 #[doc(inline)]
 pub use diesel_derives::Selectable;
 
