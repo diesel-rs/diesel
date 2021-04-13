@@ -134,7 +134,7 @@ macro_rules! call_with_conn {
         $($func:ident)::+ ($($args:expr),*)
     ) => {
         match crate::database::InferConnection::establish(&$database_url)
-            .unwrap_or_else(handle_error)
+            .unwrap_or_else(|err| {crate::database::handle_error_with_database_url(&$database_url, err)})
         {
             #[cfg(feature="postgres")]
             crate::database::InferConnection::Pg(ref conn) => $($func)::+ (conn, $($args),*),
@@ -371,6 +371,15 @@ fn change_database_of_url(database_url: &str, default_database: &str) -> (String
 #[allow(clippy::needless_pass_by_value)]
 fn handle_error<E: Error, T>(error: E) -> T {
     println!("{}", error);
+    ::std::process::exit(1);
+}
+
+#[allow(clippy::needless_pass_by_value)]
+pub fn handle_error_with_database_url<E: Error, T>(database_url: &str, error: E) -> T {
+    eprintln!(
+        "Could not connect to database via `{}`: {}",
+        database_url, error
+    );
     ::std::process::exit(1);
 }
 
