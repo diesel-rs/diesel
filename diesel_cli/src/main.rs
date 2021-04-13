@@ -326,10 +326,10 @@ fn show_which_engines_supported() -> Result<(), Box<dyn Error + Send + Sync + 's
             other => print!("'{}' ", other),
         };
     }
-    if features.len() >= 1 {
-        println!();
-    } else {
+    if features.is_empty() {
         println!("[warning] No features detected");
+    } else {
+        println!();
     }
     Ok(())
 }
