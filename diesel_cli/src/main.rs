@@ -56,6 +56,7 @@ fn main() {
         ("database", matches) => run_database_command(matches).unwrap_or_else(handle_error),
         ("completions", matches) => generate_completions_command(matches),
         ("print-schema", matches) => run_infer_schema(matches).unwrap_or_else(handle_error),
+        ("features", Some(matches)) => show_which_engines_supported(matches),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -308,6 +309,20 @@ fn regenerate_schema_if_file_specified(
     Ok(())
 }
 
+// List which features have been compiled into this version of diesel_cli
+fn show_which_engines_supported(matches: &ArgMatches,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    let mut features: Vec<String> = Vec::new();
+    // locate which --features "postgres sqlite mysql"
+    // were invoked at compile time and 
+    for f in featues {
+        print!("{}", f);
+    }
+    if features.len() >= 1 {
+        println!("");
+    }
+    Ok()
+}
 #[cfg(test)]
 mod tests {
     extern crate tempfile;
