@@ -186,14 +186,7 @@ pub fn build_cli() -> Command {
         );
 
     let features_subcommand = SubCommand::with_name("features")
-        .about("list support for which database engines have been compiled into this version of diesel")
-        .arg(
-            Arg::with_name("features")
-                .long("features")
-                .short("f")
-                .takes_value(false)
-                .help("Which engines supported."),
-        );
+        .about("list support for which database engines have been compiled into this version of diesel");
 
     let infer_schema_subcommand = Command::new("print-schema")
         .about("Print table definitions for database schema.")
