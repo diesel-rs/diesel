@@ -56,7 +56,7 @@ fn main() {
         ("database", matches) => run_database_command(matches).unwrap_or_else(handle_error),
         ("completions", matches) => generate_completions_command(matches),
         ("print-schema", matches) => run_infer_schema(matches).unwrap_or_else(handle_error),
-        ("features", Some(matches)) => show_which_engines_supported(matches),
+        ("features", Some(_)) => show_which_engines_supported().unwrap(),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -310,19 +310,30 @@ fn regenerate_schema_if_file_specified(
 }
 
 // List which features have been compiled into this version of diesel_cli
-fn show_which_engines_supported(matches: &ArgMatches,
-) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-    let mut features: Vec<String> = Vec::new();
-    // locate which --features "postgres sqlite mysql"
-    // were invoked at compile time and 
-    for f in featues {
-        print!("{}", f);
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
+fn show_which_engines_supported() -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    let mut features: Vec<&str> = Vec::new();
+    #[cfg(feature = "postgres")]
+    features.push("postgres");
+    #[cfg(feature = "mysql")]
+    features.push("mysql");
+    #[cfg(feature = "sqlite")]
+    features.push("sqlite");
+
+    for f in &features {
+        match f as &str {
+            "postgres" | "sqlite" | "mysql" | "sqlite-bundled" => print!("{} ", f),
+            other => print!("'{}' ", other),
+        };
     }
     if features.len() >= 1 {
         println!("");
+    } else {
+        println!("[warning] No features detected");
     }
-    Ok()
+    Ok(())
 }
+
 #[cfg(test)]
 mod tests {
     extern crate tempfile;
