@@ -137,6 +137,35 @@ fn error_migrations_fails() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn error_migrations_when_use_invalid_database_url() {
+    let p = project("error_migrations_when_use_invalid_database_url")
+        .folder("migrations")
+        .build();
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        "DROP TABLE users",
+    );
+
+    let result = p
+        .command_without_database_url("migration")
+        .arg("run")
+        .arg("--database-url")
+        .arg("postgres://localhost/lemmy")
+        .run();
+
+    assert!(!result.is_success());
+    assert!(result
+        .stderr()
+        .contains("Could not connect to database via `postgres://localhost/lemmy`:"));
+}
+
+#[test]
 fn any_pending_migrations_works() {
     let p = project("any_pending_migrations_one")
         .folder("migrations")
