@@ -310,7 +310,6 @@ fn regenerate_schema_if_file_specified(
 }
 
 // List which features have been compiled into this version of diesel_cli
-#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
 fn show_which_engines_supported() -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     let mut features: Vec<&str> = Vec::new();
     #[cfg(feature = "postgres")]
