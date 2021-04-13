@@ -21,6 +21,7 @@ pub fn build_cli() -> Command {
             "A group of commands for generating, running, and reverting \
              migrations.",
         )
+        .setting(AppSettings::VersionlessSubcommands)
         .arg(migration_dir_arg())
         .subcommand(Command::new("run").about("Runs all pending migrations."))
         .subcommand(
@@ -184,6 +185,16 @@ pub fn build_cli() -> Command {
                 .value_parser(EnumValueParser::<Shell>::new()),
         );
 
+    let features_subcommand = SubCommand::with_name("features")
+        .about("list support for which database engines have been compiled into this version of diesel")
+        .arg(
+            Arg::with_name("features")
+                .long("features")
+                .short("f")
+                .takes_value(false)
+                .help("Which engines supported."),
+        );
+
     let infer_schema_subcommand = Command::new("print-schema")
         .about("Print table definitions for database schema.")
         .arg(
@@ -292,6 +303,7 @@ pub fn build_cli() -> Command {
 
     Command::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
+        .setting(AppSettings::VersionlessSubcommands)
         .after_help(
             "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.",
         )
@@ -303,6 +315,7 @@ pub fn build_cli() -> Command {
         .subcommand(database_subcommand)
         .subcommand(generate_completions_subcommand)
         .subcommand(infer_schema_subcommand)
+	.subcommand(features_subcommand)
         .subcommand_required(true)
         .arg_required_else_help(true)
 }
