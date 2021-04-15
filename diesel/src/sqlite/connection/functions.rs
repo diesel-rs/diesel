@@ -37,7 +37,6 @@ where
 
         process_sql_function_result::<RetSqlType, Ret>(result)
     })?;
-
     Ok(())
 }
 

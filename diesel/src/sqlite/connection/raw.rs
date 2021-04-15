@@ -280,7 +280,7 @@ struct CustomFunctionUserPtr<F> {
 }
 
 #[allow(warnings)]
-extern "C" fn run_custom_function<'b, F>(
+extern "C" fn run_custom_function<F>(
     ctx: *mut ffi::sqlite3_context,
     num_args: libc::c_int,
     value_ptr: *mut *mut ffi::sqlite3_value,
