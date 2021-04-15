@@ -178,10 +178,15 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                             conn: &SqliteConnection
                         ) -> QueryResult<()>
                             where
-                            A: SqliteAggregateFunction<(#(#arg_name,)*)> + Send + 'static,
+                            A: SqliteAggregateFunction<(#(#arg_name,)*)>
+                                + Send
+                                + 'static
+                                + ::std::panic::UnwindSafe
+                                + ::std::panic::RefUnwindSafe,
                             A::Output: ToSql<#return_type, Sqlite>,
                             (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
-                                StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
+                                StaticallySizedRow<(#(#arg_type,)*), Sqlite> +
+                                ::std::panic::UnwindSafe,
                         {
                             conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
                         }
@@ -204,10 +209,15 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                             conn: &SqliteConnection
                         ) -> QueryResult<()>
                             where
-                            A: SqliteAggregateFunction<#arg_name> + Send + 'static,
+                            A: SqliteAggregateFunction<#arg_name>
+                                + Send
+                                + 'static
+                                + std::panic::UnwindSafe
+                                + std::panic::RefUnwindSafe,
                             A::Output: ToSql<#return_type, Sqlite>,
                             #arg_name: FromSqlRow<#arg_type, Sqlite> +
-                                StaticallySizedRow<#arg_type, Sqlite>,
+                                StaticallySizedRow<#arg_type, Sqlite> +
+                                ::std::panic::UnwindSafe,
                             {
                                 conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
                             }
@@ -253,7 +263,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                     f: F,
                 ) -> QueryResult<()>
                 where
-                    F: Fn(#(#arg_name,)*) -> Ret + Send + 'static,
+                    F: Fn(#(#arg_name,)*) -> Ret + std::panic::UnwindSafe + Send + 'static,
                     (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
                         StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                     Ret: ToSql<#return_type, Sqlite>,
@@ -279,7 +289,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                     mut f: F,
                 ) -> QueryResult<()>
                 where
-                    F: FnMut(#(#arg_name,)*) -> Ret + Send + 'static,
+                    F: FnMut(#(#arg_name,)*) -> Ret + std::panic::UnwindSafe + Send + 'static,
                     (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
                         StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                     Ret: ToSql<#return_type, Sqlite>,

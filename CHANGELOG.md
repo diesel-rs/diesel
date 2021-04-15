@@ -56,6 +56,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added the error position for PostgreSQL errors
 
+* Added ability to create custom collation functions in SQLite.
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -202,6 +204,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Parenthesis are now inserted around all infix operations provided by diesel's `ExpressionMethods` traits
 
 * Queries containing a `distinct on` clause check now on compile time that a compatible order clause was set.
+
+* Implementations of custom SQLite SQL functions now check for panics
 
 ### Deprecated
 
