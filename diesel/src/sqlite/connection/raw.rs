@@ -141,7 +141,7 @@ impl RawConnection {
     }
 
     fn get_fn_name(fn_name: &str) -> Result<CString, NulError> {
-        Ok(CString::new(fn_name)?)
+        CString::new(fn_name)
     }
 
     fn get_flags(deterministic: bool) -> i32 {
