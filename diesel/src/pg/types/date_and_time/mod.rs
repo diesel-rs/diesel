@@ -58,7 +58,11 @@ impl PgInterval {
     /// days greater than the longest possible month, as it is impossible to say
     /// how many months are in "40 days" without knowing a precise date.
     pub fn new(microseconds: i64, days: i32, months: i32) -> Self {
-        PgInterval { microseconds, days, months }
+        PgInterval {
+            microseconds,
+            days,
+            months,
+        }
     }
 
     /// Equivalent to `new(microseconds, 0, 0)`
