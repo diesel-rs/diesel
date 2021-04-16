@@ -61,7 +61,7 @@ struct Digit(i16);
 impl Arbitrary for Digit {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         let mut n = -1;
-        while n < 0 || n >= 10_000 {
+        while !(0..10_000).contains(&n) {
             n = i16::arbitrary(g);
         }
         Digit(n)

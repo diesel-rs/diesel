@@ -10,7 +10,7 @@ pub struct PgRow<'a> {
 
 impl<'a> PgRow<'a> {
     pub fn new(db_result: &'a PgResult, row_idx: usize) -> Self {
-        PgRow { row_idx, db_result }
+        PgRow { db_result, row_idx }
     }
 }
 
