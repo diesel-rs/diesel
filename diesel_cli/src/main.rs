@@ -321,8 +321,8 @@ fn show_which_engines_supported() -> Result<(), Box<dyn Error + Send + Sync + 's
 
     for f in &features {
         match f as &str {
-            "postgres" | "sqlite" | "mysql" | "sqlite-bundled" => print!("{} ", f),
-            other => print!("'{}' ", other),
+            "postgres" | "sqlite" | "mysql" => print!("{} ", f),
+            _ => {}
         };
     }
     if features.is_empty() {
