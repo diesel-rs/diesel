@@ -101,6 +101,31 @@ impl MetaItem {
         }
     }
 
+    pub fn path_value(&self) -> Result<syn::Path, Diagnostic> {
+        let maybe_attr = self.nested().ok().and_then(|mut n| n.next());
+        let maybe_path = maybe_attr.as_ref().and_then(|m| m.path().ok());
+        match maybe_path {
+            Some(path) => {
+                self.span()
+                    .warning(format!(
+                        "The form `{0}(value)` is deprecated. Use `{0} = \"value\"` instead",
+                        path_to_string(&self.name()),
+                    ))
+                    .emit();
+                Ok(path)
+            }
+            None => {
+                let lit = self.lit_str_value()?;
+                match lit.parse() {
+                    Ok(path) => Ok(path),
+                    _ => Err(lit
+                        .span()
+                        .error(format!("`{}` is not a valid path", lit.value()))),
+                }
+            }
+        }
+    }
+
     pub fn expect_path(&self) -> syn::Path {
         self.path().unwrap_or_else(|e| {
             e.emit();

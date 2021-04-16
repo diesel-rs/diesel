@@ -88,7 +88,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 
 fn field_changeset_ty(
     field: &Field,
-    table_name: &syn::Ident,
+    table_name: &syn::Path,
     treat_none_as_null: bool,
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Type {
@@ -104,7 +104,7 @@ fn field_changeset_ty(
 
 fn field_changeset_expr(
     field: &Field,
-    table_name: &syn::Ident,
+    table_name: &syn::Path,
     treat_none_as_null: bool,
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Expr {

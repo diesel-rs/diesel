@@ -55,10 +55,8 @@ use diagnostic_shim::*;
 ///
 /// To implement `AsChangeset` this derive needs to know the corresponding table
 /// type. By default it uses the `snake_case` type name with an added `s`.
+/// In this case the module for that table must be in scope.
 /// It is possible to change this default by using `#[table_name = "something"]`.
-/// In both cases the module for that table must be in scope.
-/// For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
 ///
 /// If a field name of your struct differs
 /// from the name of the corresponding column, you can annotate the field with
@@ -78,7 +76,7 @@ use diagnostic_shim::*;
 /// `Option::<T>::None` is just skipped. To insert a `NULL` using default
 /// behavior use `Option::<Option<T>>::Some(None)`
 /// * `#[table_name = "some_table"]`, specifies the table for which the
-/// current type is a changeset. Requires that `some_table` is in scope.
+/// current type is a changeset.
 /// If this attribute is not used, the type name converted to
 /// `snake_case` with an added `s` is used as table name
 ///
@@ -149,7 +147,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 /// # Optional container attributes
 ///
 /// * `#[table_name = "some_table_name"]` specifies the table this
-///    type belongs to. Requires that `some_table_name` is in scope.
+///    type belongs to.
 ///    If this attribute is not used, the type name converted to
 ///    `snake_case` with an added `s` is used as table name
 ///
@@ -194,9 +192,6 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// If your table name does not follow this convention
 /// or the plural form isn't just an `s`,
 /// you can specify the table name with `#[table_name = "some_table_name"]`.
-/// In both cases the module for that table must be in scope.
-/// For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
 /// Our rules for inferring table names is considered public API.
 /// It will never change without a major version bump.
 ///
@@ -205,7 +200,7 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// ## Optional container attributes
 ///
 /// * `#[table_name = "some_table_name"]` specifies the table this
-///    type belongs to. Requires that `some_table_name` is in scope.
+///    type belongs to.
 ///    If this attribute is not used, the type name converted to
 ///    `snake_case` with an added `s` is used as table name
 /// * `#[primary_key(id1, id2)]` to specify the struct field that
@@ -220,10 +215,8 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///
 /// To implement `Insertable` this derive needs to know the corresponding table
 /// type. By default it uses the `snake_case` type name with an added `s`.
+/// In this case the module for that table must be in scope.
 /// It is possible to change this default by using `#[table_name = "something"]`.
-/// In both cases the module for that table must be in scope.
-/// For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
 ///
 /// If a field name of your
 /// struct differs from the name of the corresponding column,
@@ -251,7 +244,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// ## Optional container attributes
 ///
 /// * `#[table_name = "some_table_name"]`, specifies the table this type
-/// is insertable into. Requires that `some_table_name` is in scope.
+/// is insertable into.
 /// If this attribute is not used, the type name converted to
 /// `snake_case` with an added `s` is used as table name
 ///
@@ -559,10 +552,6 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// "some_table"]` (in which case the SQL type will be
 /// `diesel::dsl::SqlTypeOf<table_name::column_name>`), or by annotating each
 /// field with `#[sql_type = "SomeType"]`.
-///
-/// If you are using `#[table_name]`, the module for that table must be in
-/// scope. For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
 ///
 /// If the name of a field on your struct is different than the column in your
 /// `table!` declaration, or if you are deriving this trait on a tuple struct,
