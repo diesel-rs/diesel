@@ -186,7 +186,7 @@ pub fn build_cli() -> Command {
         );
 
     let features_subcommand = SubCommand::with_name("features").about(
-        "list support for which database engines have been compiled into this version of diesel"
+        "lists all the database engines available with this version of diesel"
     );
 
     let infer_schema_subcommand = Command::new("print-schema")
