@@ -162,6 +162,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   be compatible with the rewrite, but code calling into `diesel_migrations` requires an update.
   See the [migration guide](#2-0-0-upgrade-migrations) for details.
 
+* The `#[table_name]` attribute for derive macros can now refer to any path and is no
+  longer limited to identifiers from the current scope.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
