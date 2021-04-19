@@ -1,6 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 
-use std::ffi::{CStr, CString, NulError};
+use std::ffi::{CString, NulError};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::ptr::NonNull;
@@ -8,6 +8,7 @@ use std::{mem, ptr, slice, str};
 
 use super::functions::{build_sql_function_args, process_sql_function_result};
 use super::serialized_value::SerializedValue;
+use super::stmt::ensure_sqlite_ok;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
 use crate::result::Error::DatabaseError;
@@ -62,27 +63,20 @@ impl RawConnection {
     }
 
     pub fn exec(&self, query: &str) -> QueryResult<()> {
-        let mut err_msg = ptr::null_mut();
         let query = CString::new(query)?;
         let callback_fn = None;
         let callback_arg = ptr::null_mut();
-        unsafe {
+        let result = unsafe {
             ffi::sqlite3_exec(
                 self.internal_connection.as_ptr(),
                 query.as_ptr(),
                 callback_fn,
                 callback_arg,
-                &mut err_msg,
-            );
-        }
+                ptr::null_mut(),
+            )
+        };
 
-        if err_msg.is_null() {
-            Ok(())
-        } else {
-            let msg = convert_to_string_and_free(err_msg);
-            let error_kind = DatabaseErrorKind::Unknown;
-            Err(DatabaseError(error_kind, Box::new(msg)))
-        }
+        ensure_sqlite_ok(result, self.internal_connection.as_ptr())
     }
 
     pub fn rows_affected_by_last_query(&self) -> usize {
@@ -233,16 +227,6 @@ impl Drop for RawConnection {
             }
         }
     }
-}
-
-fn convert_to_string_and_free(err_msg: *const libc::c_char) -> String {
-    let msg = unsafe {
-        let bytes = CStr::from_ptr(err_msg).to_bytes();
-        // sqlite is documented to return utf8 strings here
-        str::from_utf8_unchecked(bytes).into()
-    };
-    unsafe { ffi::sqlite3_free(err_msg as *mut libc::c_void) };
-    msg
 }
 
 enum SqliteCallbackError {
