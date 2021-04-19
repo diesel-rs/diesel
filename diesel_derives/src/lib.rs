@@ -76,7 +76,7 @@ use diagnostic_shim::*;
 /// `Option::<T>::None` is just skipped. To insert a `NULL` using default
 /// behavior use `Option::<Option<T>>::Some(None)`
 /// * `#[table_name = "path::to::table"]`, specifies a path to the table for which the
-/// current type is a changeset.
+/// current type is a changeset. The path is relative to the current module.
 /// If this attribute is not used, the type name converted to
 /// `snake_case` with an added `s` is used as table name.
 ///
@@ -147,7 +147,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 /// # Optional container attributes
 ///
 /// * `#[table_name = "path::to::table"]` specifies a path to the table this
-///    type belongs to.
+///    type belongs to. The path is relative to the current module.
 ///    If this attribute is not used, the type name converted to
 ///    `snake_case` with an added `s` is used as table name.
 ///
@@ -199,7 +199,7 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// ## Optional container attributes
 ///
 /// * `#[table_name = "path::to::table"]` specifies a path to the table this
-///    type belongs to.
+///    type belongs to. The path is relative to the current module.
 ///    If this attribute is not used, the type name converted to
 ///    `snake_case` with an added `s` is used as table name
 /// * `#[primary_key(id1, id2)]` to specify the struct field that
@@ -243,7 +243,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// ## Optional container attributes
 ///
 /// * `#[table_name = "path::to::table"]`, specifies a path to the table this type
-/// is insertable into.
+/// is insertable into. The path is relative to the current module.
 /// If this attribute is not used, the type name converted to
 /// `snake_case` with an added `s` is used as table name
 ///
@@ -573,9 +573,10 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///
 /// ## Type attributes
 ///
-/// * `#[table_name = "some_table"]`, to specify that this type contains
-///   columns for the specified table. If no field attributes are specified
-///   the derive will use the sql type of the corresponding column.
+/// * `#[table_name = "path::to::table"]`, to specify that this type contains
+///   columns for the specified table. The path is relative to the current module.
+///   If no field attributes are specified the derive will use the sql type of
+///   the corresponding column.
 ///
 /// ## Field attributes
 ///
