@@ -3,6 +3,7 @@ use proc_macro2::Span;
 use syn;
 
 use field::*;
+use meta::path_to_string;
 use model::*;
 use util::*;
 
@@ -14,7 +15,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             .error("Cannot derive Insertable for unit structs")
             .help(format!(
                 "Use `insert_into({}::table).default_values()` if you want `DEFAULT VALUES`",
-                model.table_name()
+                path_to_string(&model.table_name())
             )));
     }
 
@@ -123,7 +124,7 @@ fn field_expr_embed(field: &Field, lifetime: Option<proc_macro2::TokenStream>) -
     parse_quote!(#lifetime self#field_access)
 }
 
-fn field_ty_serialize_as(field: &Field, table_name: &syn::Ident, ty: &syn::Type) -> syn::Type {
+fn field_ty_serialize_as(field: &Field, table_name: &syn::Path, ty: &syn::Type) -> syn::Type {
     let inner_ty = inner_of_option_ty(&ty);
     let column_name = field.column_name();
 
@@ -135,7 +136,7 @@ fn field_ty_serialize_as(field: &Field, table_name: &syn::Ident, ty: &syn::Type)
     )
 }
 
-fn field_expr_serialize_as(field: &Field, table_name: &syn::Ident, ty: &syn::Type) -> syn::Expr {
+fn field_expr_serialize_as(field: &Field, table_name: &syn::Path, ty: &syn::Type) -> syn::Expr {
     let field_access = field.name.access();
     let column_name = field.column_name();
     let column: syn::Expr = parse_quote!(#table_name::#column_name);
@@ -149,7 +150,7 @@ fn field_expr_serialize_as(field: &Field, table_name: &syn::Ident, ty: &syn::Typ
 
 fn field_ty(
     field: &Field,
-    table_name: &syn::Ident,
+    table_name: &syn::Path,
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Type {
     let inner_ty = inner_of_option_ty(&field.ty);
@@ -165,7 +166,7 @@ fn field_ty(
 
 fn field_expr(
     field: &Field,
-    table_name: &syn::Ident,
+    table_name: &syn::Path,
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Expr {
     let field_access = field.name.access();

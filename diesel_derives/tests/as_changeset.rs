@@ -82,6 +82,33 @@ fn with_explicit_table_name() {
 }
 
 #[test]
+fn with_path_in_table_name() {
+    #[derive(AsChangeset)]
+    #[table_name = "crate::schema::users"]
+    struct UserForm {
+        name: String,
+        hair_color: String,
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    update(users::table.find(1))
+        .set(&UserForm {
+            name: String::from("Jim"),
+            hair_color: String::from("blue"),
+        })
+        .execute(&connection)
+        .unwrap();
+
+    let expected = vec![
+        (1, String::from("Jim"), Some(String::from("blue"))),
+        (2, String::from("Tess"), Some(String::from("brown"))),
+    ];
+    let actual = users::table.order(users::id).load(&connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
 fn with_lifetime() {
     #[derive(AsChangeset)]
     #[table_name = "users"]

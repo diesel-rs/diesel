@@ -11,5 +11,3 @@ error[E0433]: failed to resolve: use of undeclared crate or module `users`
    |
 11 | #[table_name = "users"]
    |                ^^^^^^^ use of undeclared crate or module `users`
-   |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -9,14 +9,15 @@ use resolved_at_shim::*;
 pub struct Model {
     pub name: syn::Ident,
     pub primary_key_names: Vec<syn::Ident>,
-    table_name_from_attribute: Option<syn::Ident>,
+    table_name_from_attribute: Option<syn::Path>,
     fields: Vec<Field>,
 }
 
 impl Model {
     pub fn from_item(item: &syn::DeriveInput) -> Result<Self, Diagnostic> {
-        let table_name_from_attribute =
-            MetaItem::with_name(&item.attrs, "table_name").map(|m| m.expect_ident_value());
+        let table_name_from_attribute = MetaItem::with_name(&item.attrs, "table_name")
+            .map(|m| m.path_value())
+            .transpose()?;
         let primary_key_names = MetaItem::with_name(&item.attrs, "primary_key")
             .map(|m| {
                 Ok(m.nested()?
@@ -33,12 +34,13 @@ impl Model {
         })
     }
 
-    pub fn table_name(&self) -> syn::Ident {
+    pub fn table_name(&self) -> syn::Path {
         self.table_name_from_attribute.clone().unwrap_or_else(|| {
             syn::Ident::new(
                 &infer_table_name(&self.name.to_string()),
                 self.name.span().resolved_at(Span::call_site()),
             )
+            .into()
         })
     }
 

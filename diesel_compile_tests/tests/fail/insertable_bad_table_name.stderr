@@ -1,0 +1,35 @@
+warning: The form `table_name(value)` is deprecated. Use `table_name = "value"` instead
+  --> $DIR/insertable_bad_table_name.rs:17:3
+   |
+17 | #[table_name(self::users)]
+   |   ^^^^^^^^^^^^^^^^^^^^^^^
+
+error: `table_name` must be in the form `table_name = "value"`
+  --> $DIR/insertable_bad_table_name.rs:23:3
+   |
+23 | #[table_name]
+   |   ^^^^^^^^^^
+
+error: `table_name` must be in the form `table_name = "value"`
+  --> $DIR/insertable_bad_table_name.rs:29:3
+   |
+29 | #[table_name = true]
+   |   ^^^^^^^^^^^^^^^^^
+
+error: `` is not a valid path
+  --> $DIR/insertable_bad_table_name.rs:35:16
+   |
+35 | #[table_name = ""]
+   |                ^^
+
+error: `not a path` is not a valid path
+  --> $DIR/insertable_bad_table_name.rs:41:16
+   |
+41 | #[table_name = "not a path"]
+   |                ^^^^^^^^^^^^
+
+error[E0433]: failed to resolve: use of undeclared crate or module `does`
+  --> $DIR/insertable_bad_table_name.rs:47:16
+   |
+47 | #[table_name = "does::not::exist"]
+   |                ^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `does`

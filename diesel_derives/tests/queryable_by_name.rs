@@ -35,6 +35,20 @@ fn tuple_struct() {
     assert_eq!(Ok(MyStruct(1, 2)), data);
 }
 
+#[test]
+fn struct_with_path_in_name() {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[table_name = "self::my_structs"]
+    struct MyStruct {
+        foo: i32,
+        bar: i32,
+    }
+
+    let conn = connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
+}
+
 // FIXME: Test usage with renamed columns
 
 #[test]

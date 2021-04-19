@@ -1,18 +1,62 @@
 use diesel::*;
 use helpers::*;
-
-table! {
-    users {
-        id -> Integer,
-        name -> VarChar,
-        hair_color -> Nullable<VarChar>,
-    }
-}
+use schema::*;
 
 #[test]
 fn simple_struct_definition() {
     #[derive(Insertable)]
     #[table_name = "users"]
+    struct NewUser {
+        name: String,
+        hair_color: String,
+    }
+
+    let conn = connection();
+    let new_user = NewUser {
+        name: "Sean".into(),
+        hair_color: "Black".into(),
+    };
+    insert_into(users::table)
+        .values(new_user)
+        .execute(&conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color))
+        .load::<(String, Option<String>)>(&conn);
+    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn with_implicit_table_name() {
+    #[derive(Insertable)]
+    struct User {
+        name: String,
+        hair_color: String,
+    }
+
+    let conn = connection();
+    let new_user = User {
+        name: "Sean".into(),
+        hair_color: "Black".into(),
+    };
+    insert_into(users::table)
+        .values(new_user)
+        .execute(&conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color))
+        .load::<(String, Option<String>)>(&conn);
+    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn with_path_in_table_name() {
+    #[derive(Insertable)]
+    #[table_name = "crate::schema::users"]
     struct NewUser {
         name: String,
         hair_color: String,

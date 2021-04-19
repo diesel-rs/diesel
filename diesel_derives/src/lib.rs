@@ -54,11 +54,9 @@ use diagnostic_shim::*;
 /// Implements `AsChangeset`
 ///
 /// To implement `AsChangeset` this derive needs to know the corresponding table
-/// type. By default it uses the `snake_case` type name with an added `s`.
+/// type. By default it uses the `snake_case` type name with an added `s` from
+/// the current scope.
 /// It is possible to change this default by using `#[table_name = "something"]`.
-/// In both cases the module for that table must be in scope.
-/// For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
 ///
 /// If a field name of your struct differs
 /// from the name of the corresponding column, you can annotate the field with
@@ -77,10 +75,10 @@ use diagnostic_shim::*;
 /// the derive should threat `None` values as `NULL`. By default
 /// `Option::<T>::None` is just skipped. To insert a `NULL` using default
 /// behavior use `Option::<Option<T>>::Some(None)`
-/// * `#[table_name = "some_table"]`, specifies the table for which the
-/// current type is a changeset. Requires that `some_table` is in scope.
+/// * `#[table_name = "path::to::table"]`, specifies a path to the table for which the
+/// current type is a changeset. The path is relative to the current module.
 /// If this attribute is not used, the type name converted to
-/// `snake_case` with an added `s` is used as table name
+/// `snake_case` with an added `s` is used as table name.
 ///
 /// ## Optional field attributes
 ///
@@ -148,15 +146,15 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 ///
 /// # Optional container attributes
 ///
-/// * `#[table_name = "some_table_name"]` specifies the table this
-///    type belongs to. Requires that `some_table_name` is in scope.
+/// * `#[table_name = "path::to::table"]` specifies a path to the table this
+///    type belongs to. The path is relative to the current module.
 ///    If this attribute is not used, the type name converted to
-///    `snake_case` with an added `s` is used as table name
+///    `snake_case` with an added `s` is used as table name.
 ///
 /// # Optional field attributes
 ///
-/// * `#[column_name = "some_table_name"]`, overrides the column the current
-/// field maps to to `some_table_name`. By default the field name is used
+/// * `#[column_name = "some_column_name"]`, overrides the column the current
+/// field maps to to `some_column_name`. By default the field name is used
 /// as column name. Only useful for the foreign key field.
 ///
 #[proc_macro_derive(Associations, attributes(belongs_to, column_name, table_name))]
@@ -187,16 +185,12 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// If it's not, you can put `#[primary_key(your_id)]` on your struct.
 /// If you have a composite primary key, the syntax is `#[primary_key(id1, id2)]`.
 ///
-/// By default, `#[derive(Identifiable)]` will assume that your table
-/// name is the plural form of your struct name.
+/// By default, `#[derive(Identifiable)]` will assume that your table is
+/// in scope and its name is the plural form of your struct name.
 /// Diesel uses very simple pluralization rules.
 /// It only adds an `s` to the end, and converts `CamelCase` to `snake_case`.
-/// If your table name does not follow this convention
-/// or the plural form isn't just an `s`,
-/// you can specify the table name with `#[table_name = "some_table_name"]`.
-/// In both cases the module for that table must be in scope.
-/// For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
+/// If your table name does not follow this convention or is not in scope,
+/// you can specify a path to the table with `#[table_name = "path::to::table"]`.
 /// Our rules for inferring table names is considered public API.
 /// It will never change without a major version bump.
 ///
@@ -204,8 +198,8 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 ///
 /// ## Optional container attributes
 ///
-/// * `#[table_name = "some_table_name"]` specifies the table this
-///    type belongs to. Requires that `some_table_name` is in scope.
+/// * `#[table_name = "path::to::table"]` specifies a path to the table this
+///    type belongs to. The path is relative to the current module.
 ///    If this attribute is not used, the type name converted to
 ///    `snake_case` with an added `s` is used as table name
 /// * `#[primary_key(id1, id2)]` to specify the struct field that
@@ -219,11 +213,9 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// Implements `Insertable`
 ///
 /// To implement `Insertable` this derive needs to know the corresponding table
-/// type. By default it uses the `snake_case` type name with an added `s`.
+/// type. By default it uses the `snake_case` type name with an added `s`
+/// from the current scope.
 /// It is possible to change this default by using `#[table_name = "something"]`.
-/// In both cases the module for that table must be in scope.
-/// For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
 ///
 /// If a field name of your
 /// struct differs from the name of the corresponding column,
@@ -250,15 +242,15 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///
 /// ## Optional container attributes
 ///
-/// * `#[table_name = "some_table_name"]`, specifies the table this type
-/// is insertable into. Requires that `some_table_name` is in scope.
+/// * `#[table_name = "path::to::table"]`, specifies a path to the table this type
+/// is insertable into. The path is relative to the current module.
 /// If this attribute is not used, the type name converted to
 /// `snake_case` with an added `s` is used as table name
 ///
 /// ## Optional field attributes
 ///
-/// * `#[column_name = "some_table_name"]`, overrides the column the current
-/// field maps to `some_table_name`. By default the field name is used
+/// * `#[column_name = "some_column_name"]`, overrides the column the current
+/// field maps to `some_column_name`. By default the field name is used
 /// as column name
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 /// to single database field, but is a struct that implements `Insertable`
@@ -560,10 +552,6 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// `diesel::dsl::SqlTypeOf<table_name::column_name>`), or by annotating each
 /// field with `#[sql_type = "SomeType"]`.
 ///
-/// If you are using `#[table_name]`, the module for that table must be in
-/// scope. For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
-///
 /// If the name of a field on your struct is different than the column in your
 /// `table!` declaration, or if you are deriving this trait on a tuple struct,
 /// you can annotate the field with `#[column_name = "some_column"]`. For tuple
@@ -585,9 +573,10 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///
 /// ## Type attributes
 ///
-/// * `#[table_name = "some_table"]`, to specify that this type contains
-///   columns for the specified table. If no field attributes are specified
-///   the derive will use the sql type of the corresponding column.
+/// * `#[table_name = "path::to::table"]`, to specify that this type contains
+///   columns for the specified table. The path is relative to the current module.
+///   If no field attributes are specified the derive will use the sql type of
+///   the corresponding column.
 ///
 /// ## Field attributes
 ///
