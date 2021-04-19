@@ -76,8 +76,7 @@ impl RawConnection {
             )
         };
 
-        ensure_sqlite_ok(result, self.internal_connection.as_ptr())?;
-        Ok(())
+        ensure_sqlite_ok(result, self.internal_connection.as_ptr())
     }
 
     pub fn rows_affected_by_last_query(&self) -> usize {
