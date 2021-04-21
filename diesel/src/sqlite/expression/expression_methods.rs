@@ -10,6 +10,11 @@ use crate::sql_types::SqlType;
 pub trait SqliteExpressionMethods: Expression + Sized {
     /// Creates a Sqlite `IS` expression.
     ///
+    /// The `IS` operator work like = except when one or both of the operands are NULL.
+    /// In this case, if both operands are NULL, then the `IS` operator evaluates to true.
+    /// If one operand is NULL and the other is not, then the `IS` operator evaluates to false.
+    /// It is not possible for an `IS` expression to evaluate to NULL.
+    ///
     /// # Example
     ///
     /// ```rust
@@ -39,6 +44,11 @@ pub trait SqliteExpressionMethods: Expression + Sized {
     }
 
     /// Creates a Sqlite `IS NOT` expression.
+    ///
+    /// The `IS NOT` operator work like != except when one or both of the operands are NULL.
+    /// In this case, if both operands are NULL, then the `IS NOT` operator evaluates to false.
+    /// If one operand is NULL and the other is not, then the `IS NOT` operator is true.
+    /// It is not possible for an `IS NOT` expression to evaluate to NULL.
     ///
     /// # Example
     ///
