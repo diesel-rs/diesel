@@ -58,6 +58,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added ability to create custom collation functions in SQLite.
 
+* Added support for SQLite's `IS` and `IS NOT`.
+
 ### Removed
 
 * All previously deprecated items have been removed.

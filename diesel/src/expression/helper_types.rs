@@ -119,3 +119,7 @@ pub use super::functions::helper_types::*;
 #[doc(inline)]
 #[cfg(feature = "postgres")]
 pub use crate::pg::expression::helper_types::*;
+
+#[doc(inline)]
+#[cfg(feature = "sqlite")]
+pub use crate::sqlite::expression::helper_types::*;
