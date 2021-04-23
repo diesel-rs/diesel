@@ -1,13 +1,11 @@
 use super::schema::*;
 use diesel::*;
+
 #[test]
 fn selecting_basic_data() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .unwrap();
+    let connection = connection_with_sean_and_tess_in_users_table();
 
     let expected_data = vec![
         User {
