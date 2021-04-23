@@ -192,9 +192,9 @@ fn main() {
     let _ = users::table.select(UserWithoutSelectable::as_select()).load(&conn).unwrap();
 
     // type locking
-    let _ = posts::table.select(Post::as_select()).load::<(i32, String, i32)>(&conn).unwrap();
-    let _ = posts::table.select(Post::as_select()).into_boxed().load::<(i32, String, i32)>(&conn).unwrap();
-    let _ = posts::table.select((Post::as_select(), posts::title)).load::<((i32, String, i32), String)>(&conn).unwrap();
+    let _ = posts::table.select(Post::as_select()).load::<(i32, String)>(&conn).unwrap();
+    let _ = posts::table.select(Post::as_select()).into_boxed().load::<(i32, String)>(&conn).unwrap();
+    let _ = posts::table.select((Post::as_select(), posts::title)).load::<((i32, String), String)>(&conn).unwrap();
     let _ = diesel::insert_into(posts::table)
         .values(posts::title.eq(""))
         .returning(Post::as_select())
