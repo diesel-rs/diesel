@@ -101,4 +101,4 @@ error[E0277]: the trait bound `SelectStatement<()>: SelectDsl<diesel::pg::expres
   |     ^^^^^^ the trait `SelectDsl<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>` is not implemented for `SelectStatement<()>`
   |
   = help: the following implementations were found:
-            <SelectStatement<F, S, D, W, O, LOf, G, LC> as SelectDsl<Selection>>
+            <SelectStatement<F, S, D, W, O, LOf, G, LC, H> as SelectDsl<Selection>>

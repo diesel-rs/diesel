@@ -33,16 +33,16 @@ where
     }
 }
 
-impl<ST, F, S, D, W, O, LOf, G, Selection> DistinctOnDsl<Selection>
-    for SelectStatement<F, S, D, W, O, LOf, G>
+impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
+    for SelectStatement<F, S, D, W, O, LOf, G, H>
 where
     Selection: SelectableExpression<F>,
     Selection::SqlType: SingleValue,
     Self: SelectQuery<SqlType = ST>,
     O: ValidOrderingForDistinct<DistinctOnClause<Selection>>,
-    SelectStatement<F, S, DistinctOnClause<Selection>, W, O, LOf, G>: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, DistinctOnClause<Selection>, W, O, LOf, G, H>: SelectQuery<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, DistinctOnClause<Selection>, W, O, LOf, G>;
+    type Output = SelectStatement<F, S, DistinctOnClause<Selection>, W, O, LOf, G, H>;
 
     fn distinct_on(self, selection: Selection) -> Self::Output {
         SelectStatement::new(
@@ -54,6 +54,7 @@ where
             self.limit_offset,
             self.group_by,
             self.locking,
+            self.having,
         )
     }
 }
