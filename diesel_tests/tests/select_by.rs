@@ -168,9 +168,13 @@ fn selecting_multiple_aggregate_expressions_without_group_by() {
         count: i64,
         max_name: Option<String>,
     }
-    impl Selectable for CountAndMax {
-        type Expression = (CountStar, max<name>);
-        fn new_expression() -> Self::Expression {
+    impl<DB> Selectable<DB> for CountAndMax
+    where
+        DB: diesel::backend::Backend,
+    {
+        type SelectExpression = (CountStar, max<name>);
+
+        fn construct_selection() -> Self::SelectExpression {
             (count_star(), max(name))
         }
     }

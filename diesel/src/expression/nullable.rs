@@ -49,15 +49,16 @@ impl<T: QueryId> QueryId for Nullable<T> {
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
-impl<T> Selectable for Option<T>
+impl<T, DB> Selectable<DB> for Option<T>
 where
-    T: Selectable,
-    Nullable<T::Expression>: Expression,
+    DB: Backend,
+    T: Selectable<DB>,
+    Nullable<T::SelectExpression>: Expression,
 {
-    type Expression = Nullable<T::Expression>;
+    type SelectExpression = Nullable<T::SelectExpression>;
 
-    fn new_expression() -> Self::Expression {
-        Nullable::new(T::new_expression())
+    fn construct_selection() -> Self::SelectExpression {
+        Nullable::new(T::construct_selection())
     }
 }
 

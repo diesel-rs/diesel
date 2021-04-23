@@ -403,27 +403,36 @@ where
 /// #     Ok(())
 /// # }
 /// ```
-pub trait Selectable {
+pub trait Selectable<DB: Backend> {
     /// The expression you'd like to select.
     ///
     /// This is typically a tuple of corresponding to the table columns of your struct's fields.
-    type Expression: Expression;
+    type SelectExpression: Expression;
 
     /// Construct an instance of the expression
-    fn new_expression() -> Self::Expression;
+    fn construct_selection() -> Self::SelectExpression;
 }
 
 #[doc(inline)]
 pub use diesel_derives::Selectable;
 
 /// TODO
-pub trait SelectableHelper: Selectable + Sized {
+pub trait SelectableHelper<DB: Backend>: Selectable<DB> + Sized {
     /// TODO
-    fn as_select() -> select_by::SelectBy<Self>;
+    fn as_select() -> select_by::SelectBy<Self, DB>;
+
+    /// TODO
+    fn as_returning() -> select_by::SelectBy<Self, DB> {
+        Self::as_select()
+    }
 }
 
-impl<T: Selectable> SelectableHelper for T {
-    fn as_select() -> select_by::SelectBy<Self> {
+impl<T, DB> SelectableHelper<DB> for T
+where
+    T: Selectable<DB>,
+    DB: Backend,
+{
+    fn as_select() -> select_by::SelectBy<Self, DB> {
         select_by::SelectBy::new()
     }
 }

@@ -61,13 +61,15 @@ macro_rules! tuple_impls {
                 type Nullable = Nullable<($($T,)*)>;
             }
 
-            impl<$($T),+> Selectable for ($($T,)+) where
-                $($T: Selectable),+,
+            impl<$($T,)+ __DB> Selectable<__DB> for ($($T,)+)
+            where
+                __DB: Backend,
+                $($T: Selectable<__DB>),+,
             {
-                type Expression = ($($T::Expression,)+);
+                type SelectExpression = ($($T::SelectExpression,)+);
 
-                fn new_expression() -> Self::Expression {
-                    ($($T::new_expression(),)+)
+                fn construct_selection() -> Self::SelectExpression {
+                    ($($T::construct_selection(),)+)
                 }
             }
 

@@ -68,10 +68,10 @@ struct UserWithPostCount {
     post_count: i64,
 }
 
-impl Selectable for UserWithPostCount {
-    type Expression = (users::id, users::name, diesel::dsl::count<posts::id>);
+impl Selectable<diesel::pg::Pg> for UserWithPostCount {
+    type SelectExpression = (users::id, users::name, diesel::dsl::count<posts::id>);
 
-    fn new_expression() -> Self::Expression {
+    fn construct_selection() -> Self::SelectExpression {
         (users::id, users::name, diesel::dsl::count(posts::id))
     }
 }

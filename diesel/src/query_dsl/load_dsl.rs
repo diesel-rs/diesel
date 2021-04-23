@@ -42,11 +42,11 @@ where
     type SqlType = Untyped;
 }
 
-impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U>
+impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
 where
     DB: Backend,
     ST: SqlType + TypedExpressionType,
-    U: Selectable<Expression = E>,
+    U: Selectable<DB, SelectExpression = E>,
     E: Expression<SqlType = ST>,
     U: FromSqlRow<ST, DB>,
 {
