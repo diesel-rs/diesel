@@ -20,8 +20,8 @@ fn named_struct_definition() {
 
     let conn = connection();
     let data = my_structs::table
-        .select_by::<MyStruct>()
-        .get_result::<MyStruct>(&conn);
+        .select(MyStruct::as_select())
+        .get_result(&conn);
     assert!(data.is_err());
 }
 
@@ -29,17 +29,12 @@ fn named_struct_definition() {
 fn tuple_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[table_name = "my_structs"]
-    struct MyStruct(
-        #[column_name = "foo"] i32,
-        #[table_name = "my_structs"]
-        #[column_name = "bar"]
-        i32,
-    );
+    struct MyStruct(#[column_name = "foo"] i32, #[column_name = "bar"] i32);
 
     let conn = connection();
     let data = my_structs::table
-        .select_by::<MyStruct>()
-        .get_result::<MyStruct>(&conn);
+        .select(MyStruct::as_select())
+        .get_result(&conn);
     assert!(data.is_err());
 }
 
@@ -56,13 +51,13 @@ fn embedded_struct() {
     }
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
+    #[table_name = "my_structs"]
     struct B {
-        #[table_name = "my_structs"]
         bar: i32,
     }
 
     let conn = connection();
-    let data = my_structs::table.select_by::<A>().get_result::<A>(&conn);
+    let data = my_structs::table.select(A::as_select()).get_result(&conn);
     assert!(data.is_err());
 }
 
@@ -83,6 +78,6 @@ fn embedded_option() {
     }
 
     let conn = connection();
-    let data = my_structs::table.select_by::<A>().get_result::<A>(&conn);
+    let data = my_structs::table.select(A::as_select()).get_result(&conn);
     assert!(data.is_err());
 }
