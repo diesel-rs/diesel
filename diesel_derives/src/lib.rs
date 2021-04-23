@@ -736,9 +736,6 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// To implement `Selectable` this derive needs to know the corresponding table
 /// type. By default it uses the `snake_case` type name with an added `s`.
 /// It is possible to change this default by using `#[table_name = "something"]`.
-/// In both cases the module for that table must be in scope.
-/// For example, to derive this for a struct called `User`, you will
-/// likely need a line such as `use schema::users;`
 ///
 /// If the name of a field on your struct is different than the column in your
 /// `table!` declaration, or if you are deriving this trait on a tuple struct,
@@ -751,24 +748,23 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// Fields from a inner struct can come from a different table, as long as the
 /// select clause is valid in current query.
 ///
-/// The derive enables SelectByDsl for the statement, in order to
-/// use LoadDsl, you might also check the `Queryable` trait and derive.
+/// The derive enables using the `SelectableHelper::as_select` method to construct
+/// select clauses, in order to use LoadDsl, you might also check the
+/// `Queryable` trait and derive.
 ///
 /// # Attributes
 ///
 /// ## Type attributes
 ///
-/// * `#[table_name = "some_table"]`, to specify that this type contains
-///   columns for the specified table. If no field attributes are specified
-///   the derive will use the sql type of the corresponding column.
+/// * `#[table_name = "path::to::table"]`, specifies a path to the table for which the
+/// current type is selectable. The path is relative to the current module.
+/// If this attribute is not used, the type name converted to
+/// `snake_case` with an added `s` is used as table name.
 ///
 /// ## Field attributes
-/// * `#[table_name = "some_table"]`, overrides the table name for
-///    a given field. This attribute is optional.
 /// * `#[column_name = "some_column"]`, overrides the column name for
 ///    a given field. If not set, the name of the field is used as column
-///    name. This attribute is required on tuple structs, if
-///    `#[table_name = "some_table"]` is used, otherwise it's optional.
+///    name.
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 ///    single database column, but is a type that implements
 ///    `Selectable` on it's own

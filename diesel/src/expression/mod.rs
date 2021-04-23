@@ -322,26 +322,20 @@ where
 
 /// Trait indicating that a record can be selected and queried from the database.
 ///
-/// Types which implement `Selectable` represent the select clause of a SQL query, and could
-/// be used to construct a select clause via [`select_by`] method. This does not necessarily
-/// mean they represent a single database table.
+/// Types which implement `Selectable` represent the select clause of a SQL query.
+/// Use [`SelectableHelper::as_select()`] to construct the select clause. Once you
+/// called `.select(YourType::as_select())` we enforce at type system level that you
+/// use the same type to load the query result into.
 ///
-/// The trait is used only to construct a select clause, and to verify if a [`SelectByQuery`]
-/// is valid, in order to [`load`] the result we might also like to implement or derive
-/// [`Queryable`](trait.Queryable.html)
-///
-/// This trait can be [derived](derive.Selectable.html)
-///
-/// [`SelectByQuery`]: ..//query_builder/trait.SelectByQuery.html
-/// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
-/// [`select_by`]: ../query_dsl/methods/trait.SelectByDsl.html#tymethod.select_by
+/// The constructed select clause can contain abitary expressions comming from different
+/// tables. The corresponding [derive](derive@Selectable) provides a simple way to
+/// construct a select clause matching fields to the corresponding table columns.
 ///
 /// # Examples
 ///
 /// If you just want to construct a select clause using an existing struct, you can use
-/// `#[derive(Selectable)]`, See [`Selectable`] for details.
+/// `#[derive(Selectable)]`, See [`#[derive(Selectable)]`](derive@Selectable) for details.
 ///
-/// [`Selectable`]: derive.Selectable.html
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
@@ -361,7 +355,7 @@ where
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
-/// let first_user = users.select_by::<User>().first(&connection)?;
+/// let first_user = users.select(User::as_select()).first(&connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -375,6 +369,7 @@ where
 /// #
 /// use schema::users;
 /// use diesel::prelude::{Queryable, Selectable};
+/// use diesel::backend::Backend;
 ///
 /// #[derive(Queryable, PartialEq, Debug)]
 /// struct User {
@@ -382,10 +377,13 @@ where
 ///     name: String,
 /// }
 ///
-/// impl Selectable for User {
-///     type Expression = (users::id, users::name);
+/// impl<DB> Selectable<DB> for User
+/// where
+///     DB: Backend
+/// {
+///     type SelectExpression = (users::id, users::name);
 ///
-///     fn new_expression() -> Self::Expression {
+///     fn construct_selection() -> Self::SelectExpression {
 ///         (users::id, users::name)
 ///     }
 /// }
@@ -397,7 +395,7 @@ where
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     let connection = establish_connection();
-/// let first_user = users.select_by::<User>().first(&connection)?;
+/// let first_user = users.select(User::as_select()).first(&connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -416,12 +414,17 @@ pub trait Selectable<DB: Backend> {
 #[doc(inline)]
 pub use diesel_derives::Selectable;
 
-/// TODO
+/// This helper trait provides several methods for
+/// constructing a select or returning clause based on a
+/// [`Selectable`] implementation.
 pub trait SelectableHelper<DB: Backend>: Selectable<DB> + Sized {
-    /// TODO
+    /// Construct a select clause based on a [`Selectable`] implementation.
+    ///
+    /// The returned select clause enforces that you use the same type
+    /// for constructing the select clause and for loading the query result into.
     fn as_select() -> select_by::SelectBy<Self, DB>;
 
-    /// TODO
+    /// An alias for `as_select` that can be used with returning clauses
     fn as_returning() -> select_by::SelectBy<Self, DB> {
         Self::as_select()
     }
