@@ -1,5 +1,6 @@
 use crate::expression::SelectableExpression;
 use crate::pg::Pg;
+use crate::query_builder::locking_clause::NoLockingClause;
 use crate::query_builder::order_clause::{NoOrderClause, OrderClause};
 use crate::query_builder::{AstPass, QueryFragment, QueryId, SelectQuery, SelectStatement};
 use crate::query_dsl::methods::DistinctOnDsl;
@@ -34,15 +35,17 @@ where
 }
 
 impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
-    for SelectStatement<F, S, D, W, O, LOf, G, H>
+    for SelectStatement<F, S, D, W, O, LOf, G, NoLockingClause, H>
 where
     Selection: SelectableExpression<F>,
     Selection::SqlType: SingleValue,
     Self: SelectQuery<SqlType = ST>,
     O: ValidOrderingForDistinct<DistinctOnClause<Selection>>,
-    SelectStatement<F, S, DistinctOnClause<Selection>, W, O, LOf, G, H>: SelectQuery<SqlType = ST>,
+    SelectStatement<F, S, DistinctOnClause<Selection>, W, O, LOf, G, NoLockingClause, H>:
+        SelectQuery<SqlType = ST>,
 {
-    type Output = SelectStatement<F, S, DistinctOnClause<Selection>, W, O, LOf, G, H>;
+    type Output =
+        SelectStatement<F, S, DistinctOnClause<Selection>, W, O, LOf, G, NoLockingClause, H>;
 
     fn distinct_on(self, selection: Selection) -> Self::Output {
         SelectStatement::new(

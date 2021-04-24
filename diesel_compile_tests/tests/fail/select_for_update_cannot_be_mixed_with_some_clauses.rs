@@ -21,4 +21,7 @@ fn main() {
 
     users.into_boxed().for_update();
     users.for_update().into_boxed();
+
+    users.for_update().group_by(id).having(id.gt(1));
+    users.group_by(id).having(id.gt(1)).for_update();
 }

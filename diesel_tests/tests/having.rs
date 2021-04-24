@@ -17,6 +17,7 @@ fn having_generates_having_sql() {
 
     if cfg!(feature = "postgres") {
         expected_sql = expected_sql.replace('`', "\"");
+        expected_sql = expected_sql.replace('?', "$1");
     }
 
     assert_eq!(
@@ -62,8 +63,7 @@ fn simple_having() {
 fn multi_condition_having() {
     let connection = connection();
     connection
-        .execute("INSERT INTO users (id, name, hair_color) VALUES (1, 'Sean', 'red'), (2, 'Tess', 'red'), \
-        (3, 'Nick', 'black')")
+        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
         .unwrap();
     connection
         .execute(
@@ -81,15 +81,11 @@ fn multi_condition_having() {
     let source = users::table
         .inner_join(posts::table.inner_join(comments::table))
         .group_by((users::id, posts::id))
-        .having(
-            diesel::dsl::count(comments::id)
-                .eq(2)
-                .and(users::hair_color.eq("black")),
-        )
-        .select((users::name, posts::title));
+        .having(diesel::dsl::count(comments::id).eq(2).and(users::id.eq(3)))
+        .select((users::id, users::name, posts::title));
 
-    let expected_data = vec![("Nick".to_string(), "Hi Nick".to_string())];
-    let data: Vec<(String, String)> = source.load(&connection).unwrap();
+    let expected_data = vec![(3, "Nick".to_string(), "Hi Nick".to_string())];
+    let data: Vec<(i32, String, String)> = source.load(&connection).unwrap();
 
     assert_eq!(expected_data, data);
 }

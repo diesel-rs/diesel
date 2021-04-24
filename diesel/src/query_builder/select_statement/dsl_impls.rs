@@ -472,10 +472,9 @@ where
 }
 
 impl<'a, F, S, D, W, O, LOf, G, H> SelectNullableDsl
-    for SelectStatement<F, SelectClause<S>, D, W, O, LOf, G, NoLockingClause, H>
+    for SelectStatement<F, SelectClause<S>, D, W, O, LOf, G, H>
 {
-    type Output =
-        SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, LOf, G, NoLockingClause, H>;
+    type Output = SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, LOf, G, H>;
 
     fn nullable(self) -> Self::Output {
         SelectStatement::new(
@@ -493,21 +492,12 @@ impl<'a, F, S, D, W, O, LOf, G, H> SelectNullableDsl
 }
 
 impl<'a, F, D, W, O, LOf, G, H> SelectNullableDsl
-    for SelectStatement<F, DefaultSelectClause, D, W, O, LOf, G, NoLockingClause, H>
+    for SelectStatement<F, DefaultSelectClause, D, W, O, LOf, G, H>
 where
     F: QuerySource,
 {
-    type Output = SelectStatement<
-        F,
-        SelectClause<Nullable<F::DefaultSelection>>,
-        D,
-        W,
-        O,
-        LOf,
-        G,
-        NoLockingClause,
-        H,
-    >;
+    type Output =
+        SelectStatement<F, SelectClause<Nullable<F::DefaultSelection>>, D, W, O, LOf, G, H>;
 
     fn nullable(self) -> Self::Output {
         SelectStatement::new(
@@ -525,13 +515,22 @@ where
 }
 
 impl<F, S, D, W, O, LOf, G, H, Predicate> HavingDsl<Predicate>
-    for SelectStatement<F, S, D, W, O, LOf, G, NoLockingClause, H>
+    for SelectStatement<F, S, D, W, O, LOf, GroupByClause<G>, NoLockingClause, H>
 where
     Predicate: Expression,
     Predicate::SqlType: BoolOrNullableBool,
-    G: ValidGroupByClause,
 {
-    type Output = SelectStatement<F, S, D, W, O, LOf, G, NoLockingClause, HavingClause<Predicate>>;
+    type Output = SelectStatement<
+        F,
+        S,
+        D,
+        W,
+        O,
+        LOf,
+        GroupByClause<G>,
+        NoLockingClause,
+        HavingClause<Predicate>,
+    >;
 
     fn having(self, predicate: Predicate) -> Self::Output {
         SelectStatement::new(
