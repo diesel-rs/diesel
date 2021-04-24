@@ -29,6 +29,7 @@ mod filter;
 mod filter_operators;
 mod find;
 mod group_by;
+mod having;
 mod insert;
 mod insert_from_select;
 mod internal_details;
