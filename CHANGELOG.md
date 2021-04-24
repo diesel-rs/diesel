@@ -60,6 +60,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for SQLite's `IS` and `IS NOT`.
 
+* Add support for HAVING clauses.
+
 ### Removed
 
 * All previously deprecated items have been removed.
