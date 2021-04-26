@@ -30,7 +30,7 @@ fn having_generates_having_sql() {
 }
 
 #[test]
-fn simple_having() {
+fn simple_having_with_group_by() {
     let connection = connection();
     connection
         .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
@@ -60,7 +60,7 @@ fn simple_having() {
 }
 
 #[test]
-fn multi_condition_having() {
+fn multi_condition_having_with_group_by() {
     let connection = connection();
     connection
         .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")

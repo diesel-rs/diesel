@@ -7,7 +7,7 @@ use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::DistinctClause;
-use crate::query_builder::group_by_clause::ValidGroupByClause;
+use crate::query_builder::group_by_clause::{GroupByClause, ValidGroupByClause};
 use crate::query_builder::having_clause::HavingClause;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::LimitClause;
@@ -362,7 +362,7 @@ where
 }
 
 impl<'a, ST, QS, DB, Predicate, GB> HavingDsl<Predicate>
-    for BoxedSelectStatement<'a, ST, QS, DB, GB>
+    for BoxedSelectStatement<'a, ST, QS, DB, GroupByClause<GB>>
 where
     DB: Backend,
     HavingClause<Predicate>: QueryFragment<DB> + Send + 'a,

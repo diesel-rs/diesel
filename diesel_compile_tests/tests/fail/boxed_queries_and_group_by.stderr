@@ -5,7 +5,7 @@ error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_build
    |                                        ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
    |
    = help: the following implementations were found:
-             <SelectStatement<F, S, D, W, O, LOf, G, diesel::query_builder::locking_clause::NoLockingClause, H> as BoxedDsl<'a, DB>>
+             <SelectStatement<F, S, D, W, O, LOf, G, H> as BoxedDsl<'a, DB>>
 
 error[E0271]: type mismatch resolving `<users::columns::name as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
   --> $DIR/boxed_queries_and_group_by.rs:59:10
@@ -23,7 +23,7 @@ error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_build
    |          ^^^^^^^^^^ the trait `BoxedDsl<'_, _>` is not implemented for `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
    |
    = help: the following implementations were found:
-             <SelectStatement<F, S, D, W, O, LOf, G, diesel::query_builder::locking_clause::NoLockingClause, H> as BoxedDsl<'a, DB>>
+             <SelectStatement<F, S, D, W, O, LOf, G, H> as BoxedDsl<'a, DB>>
 
 error[E0271]: type mismatch resolving `<users::columns::name as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
   --> $DIR/boxed_queries_and_group_by.rs:66:10
@@ -86,4 +86,4 @@ error[E0277]: the trait bound `SelectStatement<BoxedSelectStatement<'_, (diesel:
    |          ^^^^^^^^ the trait `GroupByDsl<_>` is not implemented for `SelectStatement<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), users::table, _>>`
    |
    = help: the following implementations were found:
-             <SelectStatement<F, S, D, W, O, LOf, G, diesel::query_builder::locking_clause::NoLockingClause, H> as GroupByDsl<Expr>>
+             <SelectStatement<F, S, D, W, O, LOf, G, H> as GroupByDsl<Expr>>

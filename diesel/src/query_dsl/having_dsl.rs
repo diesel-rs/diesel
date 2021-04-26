@@ -7,7 +7,7 @@ use crate::query_source::*;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `having` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait HavingDsl<Predicate> {
     /// The type returned by `.having`.
     type Output;
