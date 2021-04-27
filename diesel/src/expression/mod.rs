@@ -324,10 +324,10 @@ where
 ///
 /// Types which implement `Selectable` represent the select clause of a SQL query.
 /// Use [`SelectableHelper::as_select()`] to construct the select clause. Once you
-/// called `.select(YourType::as_select())` we enforce at type system level that you
+/// called `.select(YourType::as_select())` we enforce at the type system level that you
 /// use the same type to load the query result into.
 ///
-/// The constructed select clause can contain abitary expressions comming from different
+/// The constructed select clause can contain arbitrary expressions coming from different
 /// tables. The corresponding [derive](derive@Selectable) provides a simple way to
 /// construct a select clause matching fields to the corresponding table columns.
 ///
