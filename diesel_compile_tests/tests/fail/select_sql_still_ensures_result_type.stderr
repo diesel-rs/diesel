@@ -13,4 +13,5 @@ error[E0277]: the trait bound `*const str: FromSql<BigInt, _>` is not satisfied
    = note: required because of the requirements on the impl of `FromSql<BigInt, _>` for `std::string::String`
    = note: required because of the requirements on the impl of `Queryable<BigInt, _>` for `std::string::String`
    = note: required because of the requirements on the impl of `FromSqlRow<BigInt, _>` for `std::string::String`
+   = note: required because of the requirements on the impl of `CompatibleType<std::string::String, _>` for `BigInt`
    = note: required because of the requirements on the impl of `LoadQuery<_, std::string::String>` for `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<SqlLiteral<BigInt>>>`

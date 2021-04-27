@@ -40,6 +40,8 @@ pub mod nullable;
 #[macro_use]
 pub mod operators;
 #[doc(hidden)]
+pub mod select_by;
+#[doc(hidden)]
 pub mod sql_literal;
 #[doc(hidden)]
 pub mod subselect;
@@ -316,6 +318,126 @@ where
     T: SelectableExpression<QS>,
     &'a T: AppearsOnTable<QS>,
 {
+}
+
+/// Trait indicating that a record can be selected and queried from the database.
+///
+/// Types which implement `Selectable` represent the select clause of a SQL query.
+/// Use [`SelectableHelper::as_select()`] to construct the select clause. Once you
+/// called `.select(YourType::as_select())` we enforce at the type system level that you
+/// use the same type to load the query result into.
+///
+/// The constructed select clause can contain arbitrary expressions coming from different
+/// tables. The corresponding [derive](derive@Selectable) provides a simple way to
+/// construct a select clause matching fields to the corresponding table columns.
+///
+/// # Examples
+///
+/// If you just want to construct a select clause using an existing struct, you can use
+/// `#[derive(Selectable)]`, See [`#[derive(Selectable)]`](derive@Selectable) for details.
+///
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// #
+/// use schema::users;
+///
+/// #[derive(Queryable, PartialEq, Debug, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.select(User::as_select()).first(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// Alternatively, we can implement the trait for our struct manually.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// #
+/// use schema::users;
+/// use diesel::prelude::{Queryable, Selectable};
+/// use diesel::backend::Backend;
+///
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// impl<DB> Selectable<DB> for User
+/// where
+///     DB: Backend
+/// {
+///     type SelectExpression = (users::id, users::name);
+///
+///     fn construct_selection() -> Self::SelectExpression {
+///         (users::id, users::name)
+///     }
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users::dsl::*;
+/// #     let connection = establish_connection();
+/// let first_user = users.select(User::as_select()).first(&connection)?;
+/// let expected = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected, first_user);
+/// #     Ok(())
+/// # }
+/// ```
+pub trait Selectable<DB: Backend> {
+    /// The expression you'd like to select.
+    ///
+    /// This is typically a tuple of corresponding to the table columns of your struct's fields.
+    type SelectExpression: Expression;
+
+    /// Construct an instance of the expression
+    fn construct_selection() -> Self::SelectExpression;
+}
+
+#[doc(inline)]
+pub use diesel_derives::Selectable;
+
+/// This helper trait provides several methods for
+/// constructing a select or returning clause based on a
+/// [`Selectable`] implementation.
+pub trait SelectableHelper<DB: Backend>: Selectable<DB> + Sized {
+    /// Construct a select clause based on a [`Selectable`] implementation.
+    ///
+    /// The returned select clause enforces that you use the same type
+    /// for constructing the select clause and for loading the query result into.
+    fn as_select() -> select_by::SelectBy<Self, DB>;
+
+    /// An alias for `as_select` that can be used with returning clauses
+    fn as_returning() -> select_by::SelectBy<Self, DB> {
+        Self::as_select()
+    }
+}
+
+impl<T, DB> SelectableHelper<DB> for T
+where
+    T: Selectable<DB>,
+    DB: Backend,
+{
+    fn as_select() -> select_by::SelectBy<Self, DB> {
+        select_by::SelectBy::new()
+    }
 }
 
 /// Is this expression valid for a given group by clause?

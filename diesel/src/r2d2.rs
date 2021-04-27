@@ -21,6 +21,7 @@ use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::prelude::*;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
+use crate::query_dsl::load_dsl::CompatibleType;
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -147,11 +148,12 @@ where
         (&**self).execute(query)
     }
 
-    fn load<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U, ST>(&self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        U: FromSqlRow<T::SqlType, Self::Backend>,
+        T::SqlType: CompatibleType<U, Self::Backend, SqlType = ST>,
+        U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         (&**self).load(source)

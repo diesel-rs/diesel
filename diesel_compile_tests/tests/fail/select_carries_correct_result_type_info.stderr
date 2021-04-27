@@ -10,6 +10,7 @@ error[E0277]: the trait bound `i32: FromSql<diesel::sql_types::Text, _>` is not 
              <i32 as FromSql<diesel::sql_types::Integer, Sqlite>>
    = note: required because of the requirements on the impl of `Queryable<diesel::sql_types::Text, _>` for `i32`
    = note: required because of the requirements on the impl of `FromSqlRow<diesel::sql_types::Text, _>` for `i32`
+   = note: required because of the requirements on the impl of `CompatibleType<i32, _>` for `diesel::sql_types::Text`
    = note: required because of the requirements on the impl of `LoadQuery<_, i32>` for `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<columns::name>>`
 
 error[E0277]: the trait bound `*const str: FromSql<diesel::sql_types::Integer, _>` is not satisfied
@@ -27,4 +28,5 @@ error[E0277]: the trait bound `*const str: FromSql<diesel::sql_types::Integer, _
    = note: required because of the requirements on the impl of `FromSql<diesel::sql_types::Integer, _>` for `std::string::String`
    = note: required because of the requirements on the impl of `Queryable<diesel::sql_types::Integer, _>` for `std::string::String`
    = note: required because of the requirements on the impl of `FromSqlRow<diesel::sql_types::Integer, _>` for `std::string::String`
+   = note: required because of the requirements on the impl of `CompatibleType<std::string::String, _>` for `diesel::sql_types::Integer`
    = note: required because of the requirements on the impl of `LoadQuery<_, std::string::String>` for `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<columns::id>>`

@@ -9,5 +9,5 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
              <(A, B) as diesel::Expression>
              <(A, B, C) as diesel::Expression>
              <(A, B, C, D) as diesel::Expression>
-           and 107 others
+           and 108 others
    = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Text>` for `{integer}`

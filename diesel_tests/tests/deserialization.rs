@@ -2,7 +2,8 @@ use crate::schema::*;
 use diesel::*;
 use std::borrow::Cow;
 
-#[derive(Queryable, PartialEq, Debug)]
+#[derive(Queryable, PartialEq, Debug, Selectable)]
+#[table_name = "users"]
 struct CowUser<'a> {
     id: i32,
     name: Cow<'a, str>,
@@ -20,5 +21,9 @@ fn generated_queryable_allows_lifetimes() {
     assert_eq!(
         Ok(expected_user),
         users.select((id, name)).first(&connection)
+    );
+    assert_eq!(
+        users.select((id, name)).first::<CowUser>(&connection),
+        users.select(CowUser::as_select()).first(&connection)
     );
 }
