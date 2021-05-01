@@ -19,7 +19,7 @@ cfg_if::cfg_if! {
             connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS comments CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS brands CASCADE").unwrap();
-
+       
             connection
         }
 
@@ -128,11 +128,13 @@ cfg_if::cfg_if! {
         fn connection_no_data() -> MysqlConnection {
             let connection_url = database_url_from_env("MYSQL_UNIT_TEST_DATABASE_URL");
             let connection = MysqlConnection::establish(&connection_url).unwrap();
+            connection.execute("SET FOREIGN_KEY_CHECKS=0;").unwrap();
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS comments CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS brands CASCADE").unwrap();
+            connection.execute("SET FOREIGN_KEY_CHECKS=1;").unwrap();
 
             connection
         }

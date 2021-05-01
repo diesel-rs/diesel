@@ -1,3 +1,5 @@
+// @generated automatically by Diesel CLI.
+
 diesel::table! {
     use diesel::sql_types::*;
     use crate::model::exports::*;
