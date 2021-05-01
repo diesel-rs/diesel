@@ -515,6 +515,7 @@ where
 impl<F, S, D, W, O, LOf, G, H, Predicate> HavingDsl<Predicate>
     for SelectStatement<F, S, D, W, O, LOf, GroupByClause<G>, H>
 where
+    Predicate: AppearsOnTable<F>,
     Predicate: Expression,
     Predicate::SqlType: BoolOrNullableBool,
 {

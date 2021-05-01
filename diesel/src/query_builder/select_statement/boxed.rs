@@ -361,7 +361,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, Predicate, GB> HavingDsl<Predicate>
+impl<'a, ST, QS, DB, GB, Predicate> HavingDsl<Predicate>
     for BoxedSelectStatement<'a, ST, QS, DB, GroupByClause<GB>>
 where
     DB: Backend,

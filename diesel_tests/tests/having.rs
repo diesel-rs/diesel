@@ -142,9 +142,9 @@ fn boxed_multi_condition_having_with_group_by() {
 
     let source = users::table
         .inner_join(posts::table.inner_join(comments::table))
+        .select((users::id, users::name, posts::title))
         .group_by((users::id, posts::id))
         .having(diesel::dsl::count(comments::id).eq(2).and(users::id.eq(3)))
-        .select((users::id, users::name, posts::title))
         .into_boxed();
 
     let expected_data = vec![(3, "Nick".to_string(), "Hi Nick".to_string())];
