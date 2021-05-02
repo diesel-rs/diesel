@@ -306,6 +306,9 @@ pub mod helper_types {
     /// Represents the return type of `.group_by(expr)`
     pub type GroupBy<Source, Expr> = <Source as GroupByDsl<Expr>>::Output;
 
+    /// Represents the return type of `.having(predicate)`
+    pub type Having<Source, Predicate> = <Source as HavingDsl<Predicate>>::Output;
+
     /// Represents the return type of `.union(rhs)`
     pub type Union<Source, Rhs> = CombinationClause<
         combination_clause::Union,

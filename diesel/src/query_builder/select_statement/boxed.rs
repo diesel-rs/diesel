@@ -8,6 +8,7 @@ use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::DistinctClause;
 use crate::query_builder::group_by_clause::ValidGroupByClause;
+use crate::query_builder::having_clause::HavingClause;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::LimitClause;
 use crate::query_builder::limit_offset_clause::BoxedLimitOffsetClause;
@@ -31,6 +32,7 @@ pub struct BoxedSelectStatement<'a, ST, QS, DB, GB = ()> {
     order: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
     limit_offset: BoxedLimitOffsetClause<'a, DB>,
     group_by: Box<dyn QueryFragment<DB> + Send + 'a>,
+    having: Box<dyn QueryFragment<DB> + Send + 'a>,
     _marker: PhantomData<(ST, GB)>,
 }
 
@@ -44,6 +46,7 @@ impl<'a, ST, QS, DB, GB> BoxedSelectStatement<'a, ST, QS, DB, GB> {
         order: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
         limit_offset: BoxedLimitOffsetClause<'a, DB>,
         group_by: G,
+        having: Box<dyn QueryFragment<DB> + Send + 'a>,
     ) -> Self
     where
         DB: Backend,
@@ -59,6 +62,7 @@ impl<'a, ST, QS, DB, GB> BoxedSelectStatement<'a, ST, QS, DB, GB> {
             order,
             limit_offset,
             group_by: Box::new(group_by),
+            having,
             _marker: PhantomData,
         }
     }
@@ -83,6 +87,7 @@ impl<'a, ST, QS, DB, GB> BoxedSelectStatement<'a, ST, QS, DB, GB> {
         self.from.from_clause().walk_ast(out.reborrow())?;
         where_clause_handler(&self.where_clause, out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
+        self.having.walk_ast(out.reborrow())?;
 
         if let Some(ref order) = self.order {
             out.push_sql(" ORDER BY ");
@@ -135,6 +140,7 @@ where
         self.select.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
+        self.having.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
         self.limit_offset.walk_ast(out.reborrow())?;
         Ok(())
@@ -163,6 +169,7 @@ where
             order: self.order,
             limit_offset: self.limit_offset,
             group_by: self.group_by,
+            having: self.having,
             _marker: PhantomData,
         }
     }
@@ -198,6 +205,7 @@ where
             order: self.order,
             limit_offset: self.limit_offset,
             group_by: self.group_by,
+            having: self.having,
             _marker: PhantomData,
         }
     }
@@ -347,8 +355,26 @@ where
             order: self.order,
             limit_offset: self.limit_offset,
             group_by: self.group_by,
+            having: self.having,
             _marker: PhantomData,
         }
+    }
+}
+
+impl<'a, ST, QS, DB, GB, Predicate> HavingDsl<Predicate>
+    for BoxedSelectStatement<'a, ST, QS, DB, GB>
+where
+    DB: Backend,
+    GB: Expression,
+    HavingClause<Predicate>: QueryFragment<DB> + Send + 'a,
+    Predicate: AppearsOnTable<QS>,
+    Predicate::SqlType: BoolOrNullableBool,
+{
+    type Output = Self;
+
+    fn having(mut self, predicate: Predicate) -> Self::Output {
+        self.having = Box::new(HavingClause(predicate));
+        self
     }
 }
 

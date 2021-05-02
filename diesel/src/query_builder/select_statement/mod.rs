@@ -8,6 +8,7 @@
 //! L: Limit Clause
 //! Of: Offset Clause
 //! G: Group By Clause
+//! H: Having clause
 //! LC: For Update Clause
 #![allow(missing_docs)] // The missing_docs lint triggers even though this is hidden
 
@@ -28,6 +29,7 @@ use super::{AstPass, Query, QueryFragment};
 use crate::backend::Backend;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
+use crate::query_builder::having_clause::NoHavingClause;
 use crate::query_builder::limit_offset_clause::LimitOffsetClause;
 use crate::query_builder::{QueryId, SelectQuery};
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
@@ -46,6 +48,7 @@ pub struct SelectStatement<
     Order = NoOrderClause,
     LimitOffset = LimitOffsetClause<NoLimitClause, NoOffsetClause>,
     GroupBy = NoGroupByClause,
+    Having = NoHavingClause,
     Locking = NoLockingClause,
 > {
     pub(crate) select: Select,
@@ -55,10 +58,11 @@ pub struct SelectStatement<
     pub(crate) order: Order,
     pub(crate) limit_offset: LimitOffset,
     pub(crate) group_by: GroupBy,
+    pub(crate) having: Having,
     pub(crate) locking: Locking,
 }
 
-impl<F, S, D, W, O, LOf, G, LC> SelectStatement<F, S, D, W, O, LOf, G, LC> {
+impl<F, S, D, W, O, LOf, G, H, LC> SelectStatement<F, S, D, W, O, LOf, G, H, LC> {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         select: S,
@@ -68,6 +72,7 @@ impl<F, S, D, W, O, LOf, G, LC> SelectStatement<F, S, D, W, O, LOf, G, LC> {
         order: O,
         limit_offset: LOf,
         group_by: G,
+        having: H,
         locking: LC,
     ) -> Self {
         SelectStatement {
@@ -78,6 +83,7 @@ impl<F, S, D, W, O, LOf, G, LC> SelectStatement<F, S, D, W, O, LOf, G, LC> {
             order,
             limit_offset,
             group_by,
+            having,
             locking,
         }
     }
@@ -96,12 +102,13 @@ impl<F> SelectStatement<F> {
                 offset_clause: NoOffsetClause,
             },
             NoGroupByClause,
+            NoHavingClause,
             NoLockingClause,
         )
     }
 }
 
-impl<F, S, D, W, O, LOf, G, LC> Query for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, H, LC> Query for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     G: ValidGroupByClause,
     S: SelectClauseExpression<F>,
@@ -111,7 +118,7 @@ where
     type SqlType = S::SelectClauseSqlType;
 }
 
-impl<F, S, D, W, O, LOf, G, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, H, LC> SelectQuery for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     S: SelectClauseExpression<F>,
     O: ValidOrderingForDistinct<D>,
@@ -119,7 +126,8 @@ where
     type SqlType = S::SelectClauseSqlType;
 }
 
-impl<F, S, D, W, O, LOf, G, LC, DB> QueryFragment<DB> for SelectStatement<F, S, D, W, O, LOf, G, LC>
+impl<F, S, D, W, O, LOf, G, H, LC, DB> QueryFragment<DB>
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     DB: Backend,
     S: SelectClauseQueryFragment<F, DB>,
@@ -130,6 +138,7 @@ where
     O: QueryFragment<DB>,
     LOf: QueryFragment<DB>,
     G: QueryFragment<DB>,
+    H: QueryFragment<DB>,
     LC: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -140,6 +149,7 @@ where
         self.from.from_clause().walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
+        self.having.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
         self.limit_offset.walk_ast(out.reborrow())?;
         self.locking.walk_ast(out.reborrow())?;
@@ -147,7 +157,8 @@ where
     }
 }
 
-impl<S, D, W, O, LOf, G, LC, DB> QueryFragment<DB> for SelectStatement<(), S, D, W, O, LOf, G, LC>
+impl<S, D, W, O, LOf, G, H, LC, DB> QueryFragment<DB>
+    for SelectStatement<(), S, D, W, O, LOf, G, H, LC>
 where
     DB: Backend,
     S: SelectClauseQueryFragment<(), DB>,
@@ -156,6 +167,7 @@ where
     O: QueryFragment<DB>,
     LOf: QueryFragment<DB>,
     G: QueryFragment<DB>,
+    H: QueryFragment<DB>,
     LC: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -164,6 +176,7 @@ where
         self.select.walk_ast(&(), out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
+        self.having.walk_ast(out.reborrow())?;
         self.order.walk_ast(out.reborrow())?;
         self.limit_offset.walk_ast(out.reborrow())?;
         self.locking.walk_ast(out.reborrow())?;
@@ -171,8 +184,8 @@ where
     }
 }
 
-impl<S, F, D, W, O, LOf, G, LC, QS> ValidSubselect<QS>
-    for SelectStatement<F, S, D, W, O, LOf, LC, G>
+impl<S, F, D, W, O, LOf, G, H, LC, QS> ValidSubselect<QS>
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     Self: SelectQuery,
     W: ValidWhereClause<Join<F, QS, Inner>>,

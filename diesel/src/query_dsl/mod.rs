@@ -28,6 +28,7 @@ mod distinct_dsl;
 #[doc(hidden)]
 pub mod filter_dsl;
 mod group_by_dsl;
+mod having_dsl;
 mod join_dsl;
 #[doc(hidden)]
 pub mod limit_dsl;
@@ -65,6 +66,7 @@ pub mod methods {
     #[doc(inline)]
     pub use super::filter_dsl::*;
     pub use super::group_by_dsl::GroupByDsl;
+    pub use super::having_dsl::HavingDsl;
     pub use super::limit_dsl::LimitDsl;
     pub use super::load_dsl::{ExecuteDsl, LoadQuery};
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
@@ -883,6 +885,36 @@ pub trait QueryDsl: Sized {
         Self: methods::GroupByDsl<GB>,
     {
         methods::GroupByDsl::group_by(self, group_by)
+    }
+
+    /// Adds to the `HAVING` clause of a query.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::{users, posts};
+    /// #     use diesel::dsl::count;
+    /// #     let connection = establish_connection();
+    /// let data = users::table.inner_join(posts::table)
+    ///     .group_by(users::id)
+    ///     .having(count(posts::id).gt(1))
+    ///     .select((users::name, count(posts::id)))
+    ///     .load::<(String, i64)>(&connection)?;
+    ///
+    /// assert_eq!(vec![(String::from("Sean"), 2)], data);
+    /// # Ok(())
+    /// # }
+    /// ```
+    fn having<Predicate>(self, predicate: Predicate) -> Having<Self, Predicate>
+    where
+        Self: methods::HavingDsl<Predicate>,
+    {
+        methods::HavingDsl::having(self, predicate)
     }
 
     /// Adds `FOR UPDATE` to the end of the select statement.
