@@ -28,4 +28,6 @@ fn main() {
     users::table.into_boxed().having(users::id.gt(1)).load(&conn);
 
     users::table.select(users::name).group_by(users::id).having(posts::id.eq(42)).load(&conn);
+
+    users::table.select(users::name).group_by(users::id).into_boxed().having(posts::id.eq(42)).load(&conn);
 }
