@@ -144,8 +144,8 @@ fn boxed_multi_condition_having_with_group_by() {
         .inner_join(posts::table.inner_join(comments::table))
         .select((users::id, users::name, posts::title))
         .group_by((users::id, posts::id))
-        .having(diesel::dsl::count(comments::id).eq(2).and(users::id.eq(3)))
-        .into_boxed();
+        .into_boxed()
+        .having(diesel::dsl::count(comments::id).eq(2).and(users::id.eq(3)));
 
     let expected_data = vec![(3, "Nick".to_string(), "Hi Nick".to_string())];
     let data: Vec<(i32, String, String)> = source.load(&connection).unwrap();
