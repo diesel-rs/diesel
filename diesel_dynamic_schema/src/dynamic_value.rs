@@ -151,7 +151,7 @@
 
 use diesel::backend::Backend;
 use diesel::deserialize::{self, FromSql};
-use diesel::expression::{QueryMetadata, TypedExpressionType};
+use diesel::expression::TypedExpressionType;
 use diesel::row::{Field, NamedRow, Row};
 use diesel::QueryableByName;
 use std::iter::FromIterator;
@@ -166,21 +166,21 @@ pub struct Any;
 impl TypedExpressionType for Any {}
 
 #[cfg(feature = "postgres")]
-impl QueryMetadata<Any> for diesel::pg::Pg {
+impl diesel::expression::QueryMetadata<Any> for diesel::pg::Pg {
     fn row_metadata(_lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(None)
     }
 }
 
 #[cfg(feature = "sqlite")]
-impl QueryMetadata<Any> for diesel::sqlite::Sqlite {
+impl diesel::expression::QueryMetadata<Any> for diesel::sqlite::Sqlite {
     fn row_metadata(_lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(None)
     }
 }
 
 #[cfg(feature = "mysql")]
-impl QueryMetadata<Any> for diesel::mysql::Mysql {
+impl diesel::expression::QueryMetadata<Any> for diesel::mysql::Mysql {
     fn row_metadata(_lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(None)
     }
