@@ -3,7 +3,7 @@ extern crate diesel_migrations as migrations;
 extern crate dotenv;
 use self::diesel::*;
 use self::dotenv::dotenv;
-use std::{env, io};
+use std::env;
 
 #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
 compile_error!(
@@ -56,7 +56,10 @@ fn main() {
     use std::path::PathBuf;
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let migrations_dir = manifest_dir.join("migrations").join(MIGRATION_SUBDIR);
+    let migrations_dir = manifest_dir
+        .join("..")
+        .join("migrations")
+        .join(MIGRATION_SUBDIR);
     let migrations = migrations::FileBasedMigrations::from_path(&migrations_dir).unwrap();
 
     println!("cargo:rerun-if-changed={}", migrations_dir.display());

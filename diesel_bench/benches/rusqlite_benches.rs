@@ -2,7 +2,7 @@ use criterion::Bencher;
 use rusqlite::params;
 use rusqlite::Connection;
 use rusqlite::Row;
-use rusqlite::NO_PARAMS;
+use rusqlite::ToSql;
 use std::collections::HashMap;
 
 pub struct User {
@@ -67,12 +67,12 @@ fn connection() -> Connection {
     let conn = Connection::open_in_memory().unwrap();
 
     for migration in super::SQLITE_MIGRATION_SQL {
-        conn.execute(migration, NO_PARAMS).unwrap();
+        conn.execute(migration, []).unwrap();
     }
 
-    conn.execute("DELETE FROM comments", NO_PARAMS).unwrap();
-    conn.execute("DELETE FROM posts", NO_PARAMS).unwrap();
-    conn.execute("DELETE FROM users", NO_PARAMS).unwrap();
+    conn.execute("DELETE FROM comments", []).unwrap();
+    conn.execute("DELETE FROM posts", []).unwrap();
+    conn.execute("DELETE FROM users", []).unwrap();
 
     conn
 }
@@ -113,7 +113,7 @@ pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         query
-            .query_map(NO_PARAMS, |row| Ok(User::from_row_by_id(row)))
+            .query_map([], |row| Ok(User::from_row_by_id(row)))
             .unwrap()
             .collect::<Vec<_>>()
     });
@@ -129,7 +129,7 @@ pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         query
-            .query_map(NO_PARAMS, |row| Ok(User::from_row_by_name(row)))
+            .query_map([], |row| Ok(User::from_row_by_name(row)))
             .unwrap()
             .collect::<Vec<_>>()
     });
@@ -148,7 +148,7 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         query
-            .query_map(NO_PARAMS, |row| {
+            .query_map([], |row| {
                 let user = User::from_row_by_id(row);
                 let post = if let Some(id) = row.get(4).unwrap() {
                     Some(Post {
@@ -180,7 +180,7 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         query
-            .query_map(NO_PARAMS, |row| {
+            .query_map([], |row| {
                 let user = User {
                     id: row.get("myuser_id").unwrap(),
                     name: row.get("name").unwrap(),
@@ -224,7 +224,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         let mut user_query = conn.prepare("SELECT id FROM users").unwrap();
 
         user_query
-            .query_map(NO_PARAMS, |row| Ok(row.get("id").unwrap()))
+            .query_map([], |row| Ok(row.get("id").unwrap()))
             .unwrap()
             .collect::<Result<Vec<i32>, _>>()
             .unwrap()
@@ -257,7 +257,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         let mut post_query = conn.prepare("SELECT id FROM posts").unwrap();
 
         post_query
-            .query_map(NO_PARAMS, |row| Ok(row.get("id").unwrap()))
+            .query_map([], |row| Ok(row.get("id").unwrap()))
             .unwrap()
             .collect::<Result<Vec<i32>, _>>()
             .unwrap()
@@ -291,7 +291,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
 
     b.iter(|| {
         let users = user_query
-            .query_map(NO_PARAMS, |row| Ok(User::from_row_by_id(row)))
+            .query_map([], |row| Ok(User::from_row_by_id(row)))
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
@@ -304,7 +304,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
             .enumerate()
             .map(|(i, &User { ref id, .. })| {
                 posts_query += &format!("{}?", if i == 0 { "" } else { "," });
-                id
+                id as &dyn ToSql
             })
             .collect::<Vec<_>>();
 
@@ -313,7 +313,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         let mut posts_query = conn.prepare(&posts_query).unwrap();
 
         let posts = posts_query
-            .query_map(user_ids, |row| Ok(Post::from_row_by_id(row)))
+            .query_map(&user_ids as &[_], |row| Ok(Post::from_row_by_id(row)))
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
@@ -326,7 +326,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
             .enumerate()
             .map(|(i, &Post { ref id, .. })| {
                 comments_query += &format!("{}?", if i == 0 { "" } else { "," });
-                id
+                id as &dyn ToSql
             })
             .collect::<Vec<_>>();
 
@@ -335,7 +335,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         let mut comments_query = conn.prepare(&comments_query).unwrap();
 
         let comments = comments_query
-            .query_map(post_ids, |row| Ok(Comment::from_row_by_id(row)))
+            .query_map(&post_ids as &[_], |row| Ok(Comment::from_row_by_id(row)))
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
