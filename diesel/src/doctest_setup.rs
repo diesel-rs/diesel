@@ -12,7 +12,7 @@ cfg_if::cfg_if! {
         }
 
         fn connection_no_data() -> PgConnection {
-            let connection = connection_no_transaction();
+            let mut connection = connection_no_transaction();
             connection.begin_test_transaction().unwrap();
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
@@ -25,7 +25,7 @@ cfg_if::cfg_if! {
 
         #[allow(dead_code)]
         fn establish_connection() -> PgConnection {
-            let connection = connection_no_data();
+            let mut connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
                 id SERIAL PRIMARY KEY,
@@ -81,7 +81,7 @@ cfg_if::cfg_if! {
 
         #[allow(dead_code)]
         fn establish_connection() -> SqliteConnection {
-            let connection = connection_no_data();
+            let mut connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,7 +127,7 @@ cfg_if::cfg_if! {
 
         fn connection_no_data() -> MysqlConnection {
             let connection_url = database_url_from_env("MYSQL_UNIT_TEST_DATABASE_URL");
-            let connection = MysqlConnection::establish(&connection_url).unwrap();
+            let mut connection = MysqlConnection::establish(&connection_url).unwrap();
             connection.execute("SET FOREIGN_KEY_CHECKS=0;").unwrap();
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
@@ -141,7 +141,7 @@ cfg_if::cfg_if! {
 
         #[allow(dead_code)]
         fn establish_connection() -> MysqlConnection {
-            let connection = connection_no_data();
+            let mut connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,

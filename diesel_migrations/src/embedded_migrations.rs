@@ -86,7 +86,7 @@ impl Display for EmbeddedName {
 }
 
 impl<'a, DB: Backend> Migration<DB> for &'a EmbeddedMigration {
-    fn run(&self, conn: &dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
+    fn run(&self, conn: &mut dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
         Ok(conn.batch_execute(self.up).map_err(|e| {
             let name = DieselMigrationName::from_name(self.name.name)
                 .expect("We have a vaild name here, we checked this in `embed_migration!`");
@@ -94,7 +94,7 @@ impl<'a, DB: Backend> Migration<DB> for &'a EmbeddedMigration {
         })?)
     }
 
-    fn revert(&self, conn: &dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
+    fn revert(&self, conn: &mut dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
         Ok(conn.batch_execute(self.down).map_err(|e| {
             let name = DieselMigrationName::from_name(self.name.name)
                 .expect("We have a vaild name here, we checked this in `embed_migration!`");

@@ -55,16 +55,16 @@ where
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::{Integer, Text, Bool};
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// let seans_id = users
     ///     .select(id)
     ///     .filter(sql::<Bool>("name = ").bind::<Text, _>("Sean"))
-    ///     .get_result(&connection);
+    ///     .get_result(&mut connection);
     /// assert_eq!(Ok(1), seans_id);
     ///
     /// let tess_id = sql::<Integer>("SELECT id FROM users WHERE name = ")
     ///     .bind::<Text, _>("Tess")
-    ///     .get_result(&connection);
+    ///     .get_result(&mut connection);
     /// assert_eq!(Ok(2), tess_id);
     /// # }
     /// ```
@@ -85,9 +85,9 @@ where
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::{Integer, Text, Bool};
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(&mut connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
@@ -96,7 +96,7 @@ where
     ///         .sql(" AND name <> ")
     ///         .bind::<Text, _>("Ryan")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(&mut connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }
@@ -137,16 +137,16 @@ where
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::Bool;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(&mut connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
     ///         sql::<Bool>("id > 1")
     ///         .sql(" AND name <> 'Ryan'")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(&mut connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }
@@ -230,8 +230,8 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::sql_types::Bool;
 /// use diesel::dsl::sql;
-/// #     let connection = establish_connection();
-/// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(&connection)?;
+/// #     let mut connection = establish_connection();
+/// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(&mut connection)?;
 /// let expected = (1, String::from("Sean"));
 /// assert_eq!(expected, user);
 /// #     Ok(())
@@ -241,10 +241,10 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #     use crate::schema::users::dsl::*;
 /// #     use diesel::dsl::sql;
 /// #     use diesel::sql_types::{Bool, Integer, Text};
-/// #     let connection = establish_connection();
+/// #     let mut connection = establish_connection();
 /// #     diesel::insert_into(users)
 /// #         .values(name.eq("Ryan"))
-/// #         .execute(&connection).unwrap();
+/// #         .execute(&mut connection).unwrap();
 /// let query = users
 ///     .select(name)
 ///     .filter(
@@ -253,7 +253,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 ///         .sql(" AND name <> ")
 ///         .bind::<Text, _>("Ryan")
 ///     )
-///     .get_results(&connection);
+///     .get_results(&mut connection);
 /// let expected = vec!["Tess".to_string()];
 /// assert_eq!(Ok(expected), query);
 /// #     Ok(())
@@ -312,9 +312,9 @@ where
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::{Integer, Bool};
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(&mut connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
@@ -322,7 +322,7 @@ where
     ///         .bind::<Integer,_>(1)
     ///         .sql(" AND name <> 'Ryan'")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(&mut connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }

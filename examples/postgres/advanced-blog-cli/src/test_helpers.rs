@@ -5,7 +5,7 @@ use std::sync::{Mutex, MutexGuard};
 
 pub fn connection() -> PgConnection {
     let url = dotenv::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let conn = PgConnection::establish(&url).unwrap();
+    let mut conn = PgConnection::establish(&url).unwrap();
     let migrations = FileBasedMigrations::find_migrations_directory().unwrap();
     conn.run_pending_migrations(migrations).unwrap();
     conn.begin_test_transaction().unwrap();

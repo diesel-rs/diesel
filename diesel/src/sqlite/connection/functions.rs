@@ -83,7 +83,8 @@ where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    let mut buf = Output::new(Vec::new(), &());
+    let mut metadata_lookup = ();
+    let mut buf = Output::new(Vec::new(), &mut metadata_lookup);
     let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
 
     let bytes = if let IsNull::Yes = is_null {
@@ -93,7 +94,7 @@ where
     };
 
     Ok(SerializedValue {
-        ty: Sqlite::metadata(&()),
+        ty: Sqlite::metadata(&mut ()),
         data: bytes,
     })
 }

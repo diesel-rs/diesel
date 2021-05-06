@@ -114,7 +114,7 @@ fn connection() -> TestConnection {
     let connection_url = dotenv::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let conn = MysqlConnection::establish(&connection_url).unwrap();
+    let mut conn = MysqlConnection::establish(&connection_url).unwrap();
     conn.execute("SET FOREIGN_KEY_CHECKS = 0;").unwrap();
     conn.execute("TRUNCATE TABLE comments").unwrap();
     conn.execute("TRUNCATE TABLE posts").unwrap();
@@ -129,7 +129,7 @@ fn connection() -> TestConnection {
     let connection_url = dotenv::var("PG_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let conn = PgConnection::establish(&connection_url).unwrap();
+    let mut conn = PgConnection::establish(&connection_url).unwrap();
     conn.execute("TRUNCATE TABLE comments CASCADE").unwrap();
     conn.execute("TRUNCATE TABLE posts CASCADE").unwrap();
     conn.execute("TRUNCATE TABLE users CASCADE").unwrap();
@@ -139,7 +139,7 @@ fn connection() -> TestConnection {
 #[cfg(feature = "sqlite")]
 fn connection() -> TestConnection {
     dotenv::dotenv().ok();
-    let conn = diesel::SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = diesel::SqliteConnection::establish(":memory:").unwrap();
     for migration in super::SQLITE_MIGRATION_SQL {
         conn.execute(migration).unwrap();
     }
@@ -151,7 +151,7 @@ fn connection() -> TestConnection {
 
 fn insert_users(
     size: usize,
-    conn: &TestConnection,
+    conn: &mut TestConnection,
     hair_color_init: impl Fn(usize) -> Option<&'static str>,
 ) {
     let data: Vec<_> = (0..size)
@@ -164,34 +164,34 @@ fn insert_users(
 }
 
 pub fn bench_trivial_query(b: &mut Bencher, size: usize) {
-    let conn = connection();
-    insert_users(size, &conn, |_| None);
+    let mut conn = connection();
+    insert_users(size, &mut conn, |_| None);
 
-    b.iter(|| users::table.load::<User>(&conn).unwrap())
+    b.iter(|| users::table.load::<User>(&mut conn).unwrap())
 }
 
 pub fn bench_trivial_query_boxed(b: &mut Bencher, size: usize) {
-    let conn = connection();
+    let mut conn = connection();
 
-    insert_users(size, &conn, |_| None);
-    b.iter(|| users::table.into_boxed().load::<User>(&conn).unwrap())
+    insert_users(size, &mut conn, |_| None);
+    b.iter(|| users::table.into_boxed().load::<User>(&mut conn).unwrap())
 }
 
 pub fn bench_trivial_query_raw(b: &mut Bencher, size: usize) {
-    let conn = connection();
-    insert_users(size, &conn, |_| None);
+    let mut conn = connection();
+    insert_users(size, &mut conn, |_| None);
 
     b.iter(|| {
         diesel::sql_query("SELECT id, name, hair_color FROM users")
-            .load::<User>(&conn)
+            .load::<User>(&mut conn)
             .unwrap()
     })
 }
 
 pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
-    let conn = connection();
+    let mut conn = connection();
 
-    insert_users(size, &conn, |i| {
+    insert_users(size, &mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" })
     });
 
@@ -201,13 +201,13 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
             .left_outer_join(posts::table)
             .filter(hair_color.eq("black"))
             .order(name.desc());
-        target.load::<(User, Option<Post>)>(&conn).unwrap()
+        target.load::<(User, Option<Post>)>(&mut conn).unwrap()
     })
 }
 
 pub fn bench_medium_complex_query_boxed(b: &mut Bencher, size: usize) {
-    let conn = connection();
-    insert_users(size, &conn, |i| {
+    let mut conn = connection();
+    insert_users(size, &mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" })
     });
 
@@ -218,13 +218,13 @@ pub fn bench_medium_complex_query_boxed(b: &mut Bencher, size: usize) {
             .filter(hair_color.eq("black"))
             .order(name.desc())
             .into_boxed();
-        target.load::<(User, Option<Post>)>(&conn).unwrap()
+        target.load::<(User, Option<Post>)>(&mut conn).unwrap()
     })
 }
 
 pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize) {
-    let conn = connection();
-    insert_users(size, &conn, |i| {
+    let mut conn = connection();
+    insert_users(size, &mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" })
     });
 
@@ -233,15 +233,15 @@ pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize
             "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
              FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
         )
-        .load::<(User, Option<Post>)>(&conn)
+        .load::<(User, Option<Post>)>(&mut conn)
         .unwrap()
     })
 }
 
 pub fn bench_insert(b: &mut Bencher, size: usize) {
-    let conn = connection();
+    let mut conn = connection();
 
-    b.iter(|| insert_users(size, &conn, |_| Some("hair_color")))
+    b.iter(|| insert_users(size, &mut conn, |_| Some("hair_color")))
 }
 
 pub fn loading_associations_sequentially(b: &mut Bencher) {
@@ -252,12 +252,12 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     const USER_NUMBER: usize = 100;
 
     // SETUP A TON OF DATA
-    let conn = connection();
-    insert_users(USER_NUMBER, &conn, |i| {
+    let mut conn = connection();
+    insert_users(USER_NUMBER, &mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" })
     });
 
-    let all_users = users::table.load::<User>(&conn).unwrap();
+    let all_users = users::table.load::<User>(&mut conn).unwrap();
     let data: Vec<_> = all_users
         .iter()
         .flat_map(|user| {
@@ -270,9 +270,9 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         .collect();
     insert_into(posts::table)
         .values(&data)
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
-    let all_posts = posts::table.load::<Post>(&conn).unwrap();
+    let all_posts = posts::table.load::<Post>(&mut conn).unwrap();
     let data: Vec<_> = all_posts
         .iter()
         .flat_map(|post| {
@@ -289,15 +289,15 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         .collect();
     insert_into(comments::table)
         .values(&comment_data)
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
 
     // ACTUAL BENCHMARK
     b.iter(|| {
-        let users = users::table.load::<User>(&conn).unwrap();
-        let posts = Post::belonging_to(&users).load::<Post>(&conn).unwrap();
+        let users = users::table.load::<User>(&mut conn).unwrap();
+        let posts = Post::belonging_to(&users).load::<Post>(&mut conn).unwrap();
         let comments = Comment::belonging_to(&posts)
-            .load::<Comment>(&conn)
+            .load::<Comment>(&mut conn)
             .unwrap()
             .grouped_by(&posts);
         let posts_and_comments = posts.into_iter().zip(comments).grouped_by(&users);

@@ -12,7 +12,7 @@ struct CowUser<'a> {
 #[test]
 fn generated_queryable_allows_lifetimes() {
     use crate::schema::users::dsl::*;
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     let expected_user = CowUser {
         id: 1,
@@ -20,10 +20,10 @@ fn generated_queryable_allows_lifetimes() {
     };
     assert_eq!(
         Ok(expected_user),
-        users.select((id, name)).first(&connection)
+        users.select((id, name)).first(&mut connection)
     );
     assert_eq!(
-        users.select((id, name)).first::<CowUser>(&connection),
-        users.select(CowUser::as_select()).first(&connection)
+        users.select((id, name)).first::<CowUser>(&mut connection),
+        users.select(CowUser::as_select()).first(&mut connection)
     );
 }

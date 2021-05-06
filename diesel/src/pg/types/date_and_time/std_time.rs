@@ -61,47 +61,38 @@ fn duration_to_usecs(duration: Duration) -> u64 {
 mod tests {
     extern crate dotenv;
 
-    use self::dotenv::dotenv;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
     use crate::sql_types::Timestamp;
-
-    fn connection() -> PgConnection {
-        dotenv().ok();
-
-        let connection_url = ::std::env::var("PG_DATABASE_URL")
-            .or_else(|_| ::std::env::var("DATABASE_URL"))
-            .expect("DATABASE_URL must be set in order to run tests");
-        PgConnection::establish(&connection_url).unwrap()
-    }
+    use crate::test_helpers::pg_connection;
 
     #[test]
     fn unix_epoch_encodes_correctly() {
-        let connection = connection();
+        let mut connection = pg_connection();
         let query = select(sql::<Timestamp>("'1970-01-01'").eq(UNIX_EPOCH));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_decodes_correctly() {
-        let connection = connection();
+        let mut connection = pg_connection();
         let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
-            .get_result::<SystemTime>(&connection);
+            .get_result::<SystemTime>(&mut connection);
         assert_eq!(Ok(UNIX_EPOCH), epoch_from_sql);
     }
 
     #[test]
     fn times_relative_to_now_encode_correctly() {
-        let connection = connection();
+        let mut connection = pg_connection();
         let time = SystemTime::now() + Duration::from_secs(60);
         let query = select(now.at_time_zone("utc").lt(time));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
 
         let time = SystemTime::now() - Duration::from_secs(60);
         let query = select(now.at_time_zone("utc").gt(time));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
     }
 }

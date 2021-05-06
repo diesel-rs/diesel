@@ -48,8 +48,8 @@ pub trait Insertable<T> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::{posts, users};
-    /// #     let conn = establish_connection();
-    /// #     diesel::delete(posts::table).execute(&conn)?;
+    /// #     let mut conn = establish_connection();
+    /// #     diesel::delete(posts::table).execute(&mut conn)?;
     /// users::table
     ///     .select((
     ///         users::name.concat("'s First Post"),
@@ -57,11 +57,11 @@ pub trait Insertable<T> {
     ///     ))
     ///     .insert_into(posts::table)
     ///     .into_columns((posts::title, posts::user_id))
-    ///     .execute(&conn)?;
+    ///     .execute(&mut conn)?;
     ///
     /// let inserted_posts = posts::table
     ///     .select(posts::title)
-    ///     .load::<String>(&conn)?;
+    ///     .load::<String>(&mut conn)?;
     /// let expected = vec!["Sean's First Post", "Tess's First Post"];
     /// assert_eq!(expected, inserted_posts);
     /// #     Ok(())

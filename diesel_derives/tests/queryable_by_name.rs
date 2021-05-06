@@ -19,8 +19,8 @@ fn named_struct_definition() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let mut conn = connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&mut conn);
     assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
 }
 
@@ -30,8 +30,8 @@ fn tuple_struct() {
     #[table_name = "my_structs"]
     struct MyStruct(#[column_name = "foo"] i32, #[column_name = "bar"] i32);
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let mut conn = connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&mut conn);
     assert_eq!(Ok(MyStruct(1, 2)), data);
 }
 
@@ -44,8 +44,8 @@ fn struct_with_path_in_name() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let mut conn = connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&mut conn);
     assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
 }
 
@@ -61,8 +61,8 @@ fn struct_with_no_table() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let mut conn = connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&mut conn);
     assert_eq!(Ok(MyStructNamedSoYouCantInferIt { foo: 1, bar: 2 }), data);
 }
 
@@ -101,8 +101,8 @@ fn embedded_struct() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let mut conn = connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&mut conn);
     assert_eq!(
         Ok(A {
             foo: 1,
@@ -128,8 +128,8 @@ fn embedded_option() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let mut conn = connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&mut conn);
     assert_eq!(
         Ok(A {
             foo: 1,
@@ -137,6 +137,6 @@ fn embedded_option() {
         }),
         data
     );
-    let data = sql_query("SELECT 1 AS foo, NULL AS bar").get_result(&conn);
+    let data = sql_query("SELECT 1 AS foo, NULL AS bar").get_result(&mut conn);
     assert_eq!(Ok(A { foo: 1, b: None }), data);
 }

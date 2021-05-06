@@ -15,14 +15,14 @@ use diesel_dynamic_schema::table;
 
 fn main() {
     // Create a connection; we are using a simple Sqlite memory database.
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
 
     // Create some example data by using typical SQL statements.
     sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)")
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
     sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
 
     // Use diesel-dynamic-schema to create a table and a column.
@@ -31,7 +31,7 @@ fn main() {
     let name = users.column::<Text, _>("name");
 
     // Use typical Diesel syntax to get some data.
-    let users = users.select((id, name)).load::<(i32, String)>(&conn);
+    let users = users.select((id, name)).load::<(i32, String)>(&mut conn);
 
     // Print the results.
     // The `users` are type `std::result::Result<std::vec::Vec<(i32, std::string::String)>, diesel::result::Error>`

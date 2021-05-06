@@ -162,120 +162,111 @@ mod tests {
     use crate::prelude::*;
     use crate::select;
     use crate::sql_types::{Date, Datetime, Time, Timestamp};
-
-    fn connection() -> MysqlConnection {
-        dotenv().ok();
-
-        let connection_url = ::std::env::var("MYSQL_UNIT_TEST_DATABASE_URL")
-            .or_else(|_| ::std::env::var("MYSQL_DATABASE_URL"))
-            .or_else(|_| ::std::env::var("DATABASE_URL"))
-            .expect("DATABASE_URL must be set in order to run tests");
-        MysqlConnection::establish(&connection_url).unwrap()
-    }
+    use crate::test_helpers::connection;
 
     #[test]
     fn unix_epoch_encodes_correctly() {
-        let connection = connection();
+        let mut connection = connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
         let query = select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)").eq(time));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
         let query = select(sql::<Datetime>("CAST('1970-01-01' AS DATETIME)").eq(time));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_decodes_correctly() {
-        let connection = connection();
+        let mut connection = connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
         let epoch_from_sql =
-            select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)")).get_result(&connection);
+            select(sql::<Timestamp>("CAST('1970-01-01' AS DATETIME)")).get_result(&mut connection);
         assert_eq!(Ok(time), epoch_from_sql);
         let epoch_from_sql =
-            select(sql::<Datetime>("CAST('1970-01-01' AS DATETIME)")).get_result(&connection);
+            select(sql::<Datetime>("CAST('1970-01-01' AS DATETIME)")).get_result(&mut connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
     #[test]
     fn times_relative_to_now_encode_correctly() {
-        let connection = connection();
+        let mut connection = connection();
         let time = Utc::now().naive_utc() + Duration::days(1);
         let query = select(now.lt(time));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
 
         let time = Utc::now().naive_utc() - Duration::days(1);
         let query = select(now.gt(time));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
     }
 
     #[test]
     fn times_of_day_encode_correctly() {
-        let connection = connection();
+        let mut connection = connection();
 
         let midnight = NaiveTime::from_hms(0, 0, 0);
         let query = select(sql::<Time>("CAST('00:00:00' AS TIME)").eq(midnight));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
 
         let noon = NaiveTime::from_hms(12, 0, 0);
         let query = select(sql::<Time>("CAST('12:00:00' AS TIME)").eq(noon));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
 
         let roughly_half_past_eleven = NaiveTime::from_hms(23, 37, 4);
         let query = select(sql::<Time>("CAST('23:37:04' AS TIME)").eq(roughly_half_past_eleven));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
     }
 
     #[test]
     fn times_of_day_decode_correctly() {
-        let connection = connection();
+        let mut connection = connection();
         let midnight = NaiveTime::from_hms(0, 0, 0);
         let query = select(sql::<Time>("CAST('00:00:00' AS TIME)"));
-        assert_eq!(Ok(midnight), query.get_result::<NaiveTime>(&connection));
+        assert_eq!(Ok(midnight), query.get_result::<NaiveTime>(&mut connection));
 
         let noon = NaiveTime::from_hms(12, 0, 0);
         let query = select(sql::<Time>("CAST('12:00:00' AS TIME)"));
-        assert_eq!(Ok(noon), query.get_result::<NaiveTime>(&connection));
+        assert_eq!(Ok(noon), query.get_result::<NaiveTime>(&mut connection));
 
         let roughly_half_past_eleven = NaiveTime::from_hms(23, 37, 4);
         let query = select(sql::<Time>("CAST('23:37:04' AS TIME)"));
         assert_eq!(
             Ok(roughly_half_past_eleven),
-            query.get_result::<NaiveTime>(&connection)
+            query.get_result::<NaiveTime>(&mut connection)
         );
     }
 
     #[test]
     fn dates_encode_correctly() {
-        let connection = connection();
+        let mut connection = connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
         let query = select(sql::<Date>("CAST('2000-1-1' AS DATE)").eq(january_first_2000));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
         let query = select(sql::<Date>("CAST('2018-1-1' AS DATE)").eq(january_first_2018));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(&mut connection).unwrap());
     }
 
     #[test]
     fn dates_decode_correctly() {
-        let connection = connection();
+        let mut connection = connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
         let query = select(sql::<Date>("CAST('2000-1-1' AS DATE)"));
         assert_eq!(
             Ok(january_first_2000),
-            query.get_result::<NaiveDate>(&connection)
+            query.get_result::<NaiveDate>(&mut connection)
         );
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
         let query = select(sql::<Date>("CAST('2018-1-1' AS DATE)"));
         assert_eq!(
             Ok(january_first_2018),
-            query.get_result::<NaiveDate>(&connection)
+            query.get_result::<NaiveDate>(&mut connection)
         );
 
         connection
             .execute("SET sql_mode = (SELECT REPLACE(@@sql_mode, 'NO_ZERO_DATE,', ''))")
             .unwrap();
         let query = select(sql::<Date>("CAST('0000-00-00' AS DATE)"));
-        assert!(query.get_result::<NaiveDate>(&connection).is_err());
+        assert!(query.get_result::<NaiveDate>(&mut connection).is_err());
     }
 }

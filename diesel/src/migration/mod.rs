@@ -94,10 +94,10 @@ pub trait MigrationName: Display {
 /// Represents a migration that interacts with diesel
 pub trait Migration<DB: Backend> {
     /// Apply this migration
-    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()>;
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()>;
 
     /// Revert this migration
-    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()>;
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()>;
 
     /// Get a the attached metadata for this migration
     fn metadata(&self) -> &dyn MigrationMetadata;
@@ -141,11 +141,11 @@ pub trait MigrationSource<DB: Backend> {
 }
 
 impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
-    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).run(conn)
     }
 
-    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).revert(conn)
     }
 
@@ -159,11 +159,11 @@ impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
 }
 
 impl<'a, DB: Backend> Migration<DB> for &'a dyn Migration<DB> {
-    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).run(conn)
     }
 
-    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).revert(conn)
     }
 
@@ -195,12 +195,12 @@ pub trait MigrationConnection: Connection {
     ///      }
     /// }
     /// ```
-    fn setup(&self) -> QueryResult<usize>;
+    fn setup(&mut self) -> QueryResult<usize>;
 }
 
 #[cfg(feature = "postgres")]
 impl MigrationConnection for crate::pg::PgConnection {
-    fn setup(&self) -> QueryResult<usize> {
+    fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }
@@ -208,7 +208,7 @@ impl MigrationConnection for crate::pg::PgConnection {
 
 #[cfg(feature = "mysql")]
 impl MigrationConnection for crate::mysql::MysqlConnection {
-    fn setup(&self) -> QueryResult<usize> {
+    fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }
@@ -216,7 +216,7 @@ impl MigrationConnection for crate::mysql::MysqlConnection {
 
 #[cfg(feature = "sqlite")]
 impl MigrationConnection for crate::sqlite::SqliteConnection {
-    fn setup(&self) -> QueryResult<usize> {
+    fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }

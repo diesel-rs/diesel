@@ -38,7 +38,7 @@ mod information_schema {
 /// Even though this is using `information_schema`, MySQL needs non-ANSI columns
 /// in order to do this.
 pub fn load_foreign_key_constraints(
-    connection: &MysqlConnection,
+    connection: &mut MysqlConnection,
     schema_name: Option<&str>,
 ) -> QueryResult<Vec<ForeignKeyConstraint>> {
     use self::information_schema::key_column_usage as kcu;

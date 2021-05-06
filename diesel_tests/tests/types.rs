@@ -36,7 +36,7 @@ fn errors_during_deserialization_do_not_panic() {
     use self::has_timestamps::dsl::*;
     use diesel::result::Error::DeserializationError;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute(
             "CREATE TABLE has_timestamps (
@@ -52,7 +52,9 @@ fn errors_during_deserialization_do_not_panic() {
             valid_pg_date_too_large_for_chrono
         ))
         .unwrap();
-    let values = has_timestamps.select(ts).load::<NaiveDateTime>(&connection);
+    let values = has_timestamps
+        .select(ts)
+        .load::<NaiveDateTime>(&mut connection);
 
     match values {
         Err(DeserializationError(_)) => {}
@@ -67,7 +69,7 @@ fn errors_during_deserialization_do_not_panic() {
     use self::has_timestamps::dsl::*;
     use diesel::result::Error::DeserializationError;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute(
             "CREATE TABLE has_timestamps (
@@ -84,7 +86,9 @@ fn errors_during_deserialization_do_not_panic() {
             valid_sqlite_date_too_large_for_chrono
         ))
         .unwrap();
-    let values = has_timestamps.select(ts).load::<NaiveDateTime>(&connection);
+    let values = has_timestamps
+        .select(ts)
+        .load::<NaiveDateTime>(&mut connection);
 
     match values {
         Err(DeserializationError(_)) => {}
@@ -106,7 +110,7 @@ fn test_chrono_types_sqlite() {
         time: NaiveTime,
     }
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute(
             "CREATE TABLE has_time_types (
@@ -126,11 +130,11 @@ fn test_chrono_types_sqlite() {
 
     insert_into(has_time_types::table)
         .values(&new_time_types)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     let result = has_time_types::table
-        .first::<NewTimeTypes>(&connection)
+        .first::<NewTimeTypes>(&mut connection)
         .unwrap();
     assert_eq!(result.datetime, dt);
     assert_eq!(result.date, dt.date());
@@ -146,10 +150,10 @@ fn boolean_from_sql() {
 
 #[test]
 fn nullable_boolean_from_sql() {
-    let connection = connection();
+    let mut connection = connection();
     let one = Some(1).into_sql::<diesel::sql_types::Nullable<Integer>>();
     let query = select(one.eq(None::<i32>));
-    assert_eq!(Ok(Option::<bool>::None), query.first(&connection));
+    assert_eq!(Ok(Option::<bool>::None), query.first(&mut connection));
 }
 
 #[test]
@@ -1199,18 +1203,21 @@ fn pg_jsonb_to_sql_jsonb() {
 #[test]
 #[cfg(feature = "postgres")]
 fn text_array_can_be_assigned_to_varchar_array_column() {
-    let conn = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &conn);
+    let mut conn = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &mut conn);
     let post = insert_into(posts::table)
         .values(&sean.new_post("Hello", None))
-        .get_result::<Post>(&conn)
+        .get_result::<Post>(&mut conn)
         .unwrap();
 
     update(posts::table.find(post.id))
         .set(posts::tags.eq(vec!["tag1", "tag2"]))
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
-    let tags_in_db = posts::table.find(post.id).select(posts::tags).first(&conn);
+    let tags_in_db = posts::table
+        .find(post.id)
+        .select(posts::tags)
+        .first(&mut conn);
 
     assert_eq!(Ok(vec!["tag1".to_string(), "tag2".to_string()]), tags_in_db);
 }
@@ -1225,7 +1232,7 @@ fn third_party_crates_can_add_new_types() {
     struct MyInt;
 
     impl HasSqlType<MyInt> for Pg {
-        fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata {
+        fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
             <Pg as HasSqlType<Integer>>::metadata(lookup)
         }
     }
@@ -1247,8 +1254,8 @@ where
     T: QueryId + SingleValue + SqlType,
 {
     use diesel::dsl::sql;
-    let connection = connection();
-    select(sql::<T>(sql_str)).first(&connection).unwrap()
+    let mut connection = connection();
+    select(sql::<T>(sql_str)).first(&mut connection).unwrap()
 }
 
 use diesel::expression::{is_aggregate, AsExpression, SqlLiteral, ValidGrouping};
@@ -1271,7 +1278,7 @@ where
         Expression<SqlType = diesel::sql_types::Nullable<diesel::sql_types::Bool>>,
 {
     use diesel::dsl::sql;
-    let connection = connection();
+    let mut connection = connection();
     let query = select(
         sql::<T>(sql_str)
             .is_null()
@@ -1279,7 +1286,7 @@ where
             .or(sql::<T>(sql_str).eq(value.clone()).nullable()),
     );
     query
-        .get_result::<Option<bool>>(&connection)
+        .get_result::<Option<bool>>(&mut connection)
         .expect(&format!("Error comparing {}, {:?}", sql_str, value))
         .unwrap_or(false)
 }
@@ -1291,10 +1298,10 @@ fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
     use diesel::dsl::sql;
     use diesel::sql_types::Integer;
 
-    let connection = connection();
+    let mut connection = connection();
     users::table
         .select(sql::<Integer>("COUNT(*)"))
-        .get_result::<i32>(&connection)
+        .get_result::<i32>(&mut connection)
         .unwrap();
 }
 
@@ -1304,7 +1311,7 @@ fn test_range_from_sql() {
     use diesel::dsl::sql;
     use std::collections::Bound;
 
-    let connection = connection();
+    let mut connection = connection();
 
     let query = "'[1,)'::int4range";
     let expected_value = (Bound::Included(1), Bound::Unbounded);
@@ -1322,7 +1329,7 @@ fn test_range_from_sql() {
 
     let query = "SELECT '(1,1]'::int4range";
     assert!(sql::<Range<Int4>>(query)
-        .load::<(Bound<i32>, Bound<i32>)>(&connection)
+        .load::<(Bound<i32>, Bound<i32>)>(&mut connection)
         .is_err());
 }
 
@@ -1345,7 +1352,7 @@ fn test_range_to_sql() {
 fn test_inserting_ranges() {
     use std::collections::Bound;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute(
             "CREATE TABLE has_ranges (
@@ -1366,7 +1373,7 @@ fn test_inserting_ranges() {
 
     let (_, v1, v2): (i32, Option<(_, _)>, (_, _)) = insert_into(has_ranges::table)
         .values((has_ranges::nul_range.eq(value), has_ranges::range.eq(value)))
-        .get_result(&connection)
+        .get_result(&mut connection)
         .unwrap();
     assert_eq!(v1, Some(value));
     assert_eq!(v2, value);

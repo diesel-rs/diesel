@@ -123,22 +123,29 @@ where
 
         out.write_u8(flags.bits())?;
 
+        let mut buffer = Vec::new();
+
         match self.0 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
-                let mut buffer = out.with_buffer(Vec::new());
-
-                value.to_sql(&mut buffer)?;
+                {
+                    let mut inner_buffer = Output::new(buffer, *out.metadata_lookup());
+                    value.to_sql(&mut inner_buffer)?;
+                    buffer = inner_buffer.into_inner();
+                }
                 out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
                 out.write_all(&buffer)?;
+                buffer.clear();
             }
             Bound::Unbounded => {}
         }
 
         match self.1 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
-                let mut buffer = out.with_buffer(Vec::new());
-
-                value.to_sql(&mut buffer)?;
+                {
+                    let mut inner_buffer = Output::new(buffer, *out.metadata_lookup());
+                    value.to_sql(&mut inner_buffer)?;
+                    buffer = inner_buffer.into_inner();
+                }
                 out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
                 out.write_all(&buffer)?;
             }
@@ -159,37 +166,37 @@ where
 }
 
 impl HasSqlType<Int4range> for Pg {
-    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3904, 3905)
     }
 }
 
 impl HasSqlType<Numrange> for Pg {
-    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3906, 3907)
     }
 }
 
 impl HasSqlType<Tsrange> for Pg {
-    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3908, 3909)
     }
 }
 
 impl HasSqlType<Tstzrange> for Pg {
-    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3910, 3911)
     }
 }
 
 impl HasSqlType<Daterange> for Pg {
-    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3912, 3913)
     }
 }
 
 impl HasSqlType<Int8range> for Pg {
-    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3926, 3927)
     }
 }

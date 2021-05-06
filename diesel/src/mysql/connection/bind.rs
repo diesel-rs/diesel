@@ -622,7 +622,7 @@ mod tests {
     #[cfg(feature = "extras")]
     #[test]
     fn check_all_the_types() {
-        let conn = crate::test_helpers::connection();
+        let mut conn = crate::test_helpers::connection();
 
         conn.execute("DROP TABLE IF EXISTS all_mysql_types CASCADE")
             .unwrap();
@@ -1149,7 +1149,7 @@ mod tests {
 
     #[test]
     fn check_json_bind() {
-        let conn: MysqlConnection = crate::test_helpers::connection();
+        let mut conn: MysqlConnection = crate::test_helpers::connection();
 
         table! {
             json_test {
@@ -1168,7 +1168,7 @@ mod tests {
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
@@ -1185,7 +1185,7 @@ mod tests {
 
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1205,7 +1205,7 @@ mod tests {
 
         input_bind(
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
-            &conn,
+            &mut conn,
             41,
             (
                 b"{\"abc\": 42}".to_vec(),
@@ -1216,7 +1216,7 @@ mod tests {
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
@@ -1233,7 +1233,7 @@ mod tests {
 
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1253,14 +1253,14 @@ mod tests {
 
         input_bind(
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
-            &conn,
+            &mut conn,
             41,
             (b"{\"abca\": 42}".to_vec(), MysqlType::String),
         );
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_JSON, Flags::empty()),
         );
 
@@ -1277,7 +1277,7 @@ mod tests {
 
         let json_col_as_text = query_single_table(
             "SELECT json_field FROM json_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1296,7 +1296,7 @@ mod tests {
 
     #[test]
     fn check_enum_bind() {
-        let conn: MysqlConnection = crate::test_helpers::connection();
+        let mut conn: MysqlConnection = crate::test_helpers::connection();
 
         conn.execute("DROP TABLE IF EXISTS enum_test CASCADE")
             .unwrap();
@@ -1307,8 +1307,11 @@ mod tests {
         conn.execute("INSERT INTO enum_test(id, enum_field) VALUES (1, 'green')")
             .unwrap();
 
-        let enum_col_as_enum: BindData =
-            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
+        let enum_col_as_enum: BindData = query_single_table(
+            "SELECT enum_field FROM enum_test",
+            &mut conn,
+            MysqlType::Enum,
+        );
 
         assert_eq!(
             enum_col_as_enum.tpe,
@@ -1333,7 +1336,7 @@ mod tests {
         ] {
             let enum_col_as_text = query_single_table(
                 "SELECT enum_field FROM enum_test",
-                &conn,
+                &mut conn,
                 (*tpe, Flags::ENUM_FLAG),
             );
 
@@ -1352,7 +1355,7 @@ mod tests {
 
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1372,13 +1375,16 @@ mod tests {
 
         input_bind(
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
-            &conn,
+            &mut conn,
             41,
             (b"blue".to_vec(), MysqlType::Enum),
         );
 
-        let enum_col_as_enum =
-            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
+        let enum_col_as_enum = query_single_table(
+            "SELECT enum_field FROM enum_test",
+            &mut conn,
+            MysqlType::Enum,
+        );
 
         assert_eq!(
             enum_col_as_enum.tpe,
@@ -1393,7 +1399,7 @@ mod tests {
 
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
         );
 
@@ -1408,7 +1414,7 @@ mod tests {
 
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
         );
 
@@ -1425,7 +1431,7 @@ mod tests {
 
         input_bind(
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
-            &conn,
+            &mut conn,
             41,
             (
                 b"red".to_vec(),
@@ -1433,8 +1439,11 @@ mod tests {
             ),
         );
 
-        let enum_col_as_enum =
-            query_single_table("SELECT enum_field FROM enum_test", &conn, MysqlType::Enum);
+        let enum_col_as_enum = query_single_table(
+            "SELECT enum_field FROM enum_test",
+            &mut conn,
+            MysqlType::Enum,
+        );
 
         assert_eq!(
             enum_col_as_enum.tpe,
@@ -1449,7 +1458,7 @@ mod tests {
 
         let enum_col_as_text = query_single_table(
             "SELECT enum_field FROM enum_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::ENUM_FLAG),
         );
 
@@ -1465,7 +1474,7 @@ mod tests {
 
     #[test]
     fn check_set_bind() {
-        let conn: MysqlConnection = crate::test_helpers::connection();
+        let mut conn: MysqlConnection = crate::test_helpers::connection();
 
         conn.execute("DROP TABLE IF EXISTS set_test CASCADE")
             .unwrap();
@@ -1477,7 +1486,7 @@ mod tests {
             .unwrap();
 
         let set_col_as_set: BindData =
-            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
+            query_single_table("SELECT set_field FROM set_test", &mut conn, MysqlType::Set);
 
         assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
@@ -1496,7 +1505,7 @@ mod tests {
         ] {
             let set_col_as_text = query_single_table(
                 "SELECT set_field FROM set_test",
-                &conn,
+                &mut conn,
                 (*tpe, Flags::SET_FLAG),
             );
 
@@ -1511,7 +1520,7 @@ mod tests {
         }
         let set_col_as_text = query_single_table(
             "SELECT set_field FROM set_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::empty()),
         );
 
@@ -1528,13 +1537,13 @@ mod tests {
 
         input_bind(
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",
-            &conn,
+            &mut conn,
             41,
             (b"blue".to_vec(), MysqlType::Set),
         );
 
         let set_col_as_set =
-            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
+            query_single_table("SELECT set_field FROM set_test", &mut conn, MysqlType::Set);
 
         assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
@@ -1546,7 +1555,7 @@ mod tests {
 
         let set_col_as_text = query_single_table(
             "SELECT set_field FROM set_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::SET_FLAG),
         );
 
@@ -1563,13 +1572,13 @@ mod tests {
 
         input_bind(
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",
-            &conn,
+            &mut conn,
             41,
             (b"red".to_vec(), MysqlType::String),
         );
 
         let set_col_as_set =
-            query_single_table("SELECT set_field FROM set_test", &conn, MysqlType::Set);
+            query_single_table("SELECT set_field FROM set_test", &mut conn, MysqlType::Set);
 
         assert_eq!(set_col_as_set.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
         assert!(!set_col_as_set.flags.contains(Flags::NUM_FLAG));
@@ -1581,7 +1590,7 @@ mod tests {
 
         let set_col_as_text = query_single_table(
             "SELECT set_field FROM set_test",
-            &conn,
+            &mut conn,
             (ffi::enum_field_types::MYSQL_TYPE_BLOB, Flags::SET_FLAG),
         );
 

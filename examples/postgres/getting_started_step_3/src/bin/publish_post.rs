@@ -11,11 +11,11 @@ fn main() {
         .expect("publish_post requires a post id")
         .parse::<i32>()
         .expect("Invalid ID");
-    let connection = establish_connection();
+    let mut connection = establish_connection();
 
     let post = diesel::update(posts.find(id))
         .set(published.eq(true))
-        .get_result::<Post>(&connection)
+        .get_result::<Post>(&mut connection)
         .unwrap();
     println!("Published post {}", post.title);
 }

@@ -30,7 +30,7 @@ fn main() {
 }
 
 fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
-    let conn = PgConnection::establish(database_url)?;
+    let mut conn = PgConnection::establish(database_url)?;
 
     match cli {
         Cli::AllPosts { page, per_page } => {
@@ -50,13 +50,13 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
             }
 
             let (posts_with_user, total_pages) =
-                query.load_and_count_pages::<(Post, User)>(&conn)?;
+                query.load_and_count_pages::<(Post, User)>(&mut conn)?;
             let (posts, post_users): (Vec<_>, Vec<_>) = posts_with_user.into_iter().unzip();
 
             let comments = Comment::belonging_to(&posts)
                 .inner_join(users::table)
                 .select((comments::all_columns, (users::id, users::username)))
-                .load::<(Comment, User)>(&conn)?
+                .load::<(Comment, User)>(&mut conn)?
                 .grouped_by(&posts);
 
             let to_display = posts.into_iter().zip(post_users).zip(comments);
@@ -67,7 +67,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
             println!("Page {} of {}", page, total_pages);
         }
         Cli::CreatePost { title } => {
-            let user = current_user(&conn)?;
+            let user = current_user(&mut conn)?;
             let body = editor::edit_string("")?;
             let id = diesel::insert_into(posts::table)
                 .values((
@@ -76,7 +76,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                     posts::body.eq(body),
                 ))
                 .returning(posts::id)
-                .get_result::<i32>(&conn)?;
+                .get_result::<i32>(&mut conn)?;
             println!("Successfully created post with id {}", id);
         }
         Cli::EditPost { post_id, publish } => {
@@ -84,10 +84,10 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
             use post::Status::*;
             use schema::posts::dsl::*;
 
-            let user = current_user(&conn)?;
+            let user = current_user(&mut conn)?;
             let post = Post::belonging_to(&user)
                 .find(post_id)
-                .first::<Post>(&conn)?;
+                .first::<Post>(&mut conn)?;
             let new_body = editor::edit_string(&post.body)?;
 
             let updated_status = match post.status {
@@ -97,7 +97,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
 
             diesel::update(&post)
                 .set((body.eq(new_body), updated_status))
-                .execute(&conn)?;
+                .execute(&mut conn)?;
         }
         Cli::AddComment {
             post_id: given_post_id,
@@ -106,32 +106,32 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
 
             let inserted = diesel::insert_into(comments)
                 .values((
-                    user_id.eq(current_user(&conn)?.id),
+                    user_id.eq(current_user(&mut conn)?.id),
                     post_id.eq(given_post_id),
                     body.eq(editor::edit_string("")?),
                 ))
                 .returning(id)
-                .get_result::<i32>(&conn)?;
+                .get_result::<i32>(&mut conn)?;
             println!("Created comment with ID {}", inserted);
         }
         Cli::EditComment { comment_id } => {
             use comment::Comment;
             use schema::comments::dsl::*;
 
-            let user = current_user(&conn)?;
+            let user = current_user(&mut conn)?;
 
             let comment = Comment::belonging_to(&user)
                 .find(comment_id)
-                .first::<Comment>(&conn)?;
+                .first::<Comment>(&mut conn)?;
 
             diesel::update(comments)
                 .set(body.eq(editor::edit_string(&comment.body)?))
-                .execute(&conn)?;
+                .execute(&mut conn)?;
         }
         Cli::MyComments { page, per_page } => {
             use comment::Comment;
 
-            let user = current_user(&conn)?;
+            let user = current_user(&mut conn)?;
 
             let mut query = Comment::belonging_to(&user)
                 .order(comments::created_at.desc())
@@ -145,18 +145,18 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
             }
 
             let (comments_and_post_title, total_pages) =
-                query.load_and_count_pages::<(Comment, String)>(&conn)?;
+                query.load_and_count_pages::<(Comment, String)>(&mut conn)?;
             comment::render(&comments_and_post_title);
             println!("Page {} of {}", page, total_pages);
         }
         Cli::Register => {
-            register_user(&conn)?;
+            register_user(&mut conn)?;
         }
     }
     Ok(())
 }
 
-fn current_user(conn: &PgConnection) -> Result<auth::User, Box<dyn Error>> {
+fn current_user(conn: &mut PgConnection) -> Result<auth::User, Box<dyn Error>> {
     match auth::current_user_from_env(conn) {
         Ok(Some(user)) => Ok(user),
         Ok(None) => Err("No user found with the given username".into()),
@@ -164,7 +164,7 @@ fn current_user(conn: &PgConnection) -> Result<auth::User, Box<dyn Error>> {
     }
 }
 
-fn register_user(conn: &PgConnection) -> Result<(), Box<dyn Error>> {
+fn register_user(conn: &mut PgConnection) -> Result<(), Box<dyn Error>> {
     use auth::AuthenticationError as Auth;
     use diesel::result::DatabaseErrorKind::UniqueViolation;
     use diesel::result::Error::DatabaseError;

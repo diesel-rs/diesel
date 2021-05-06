@@ -15,7 +15,7 @@ use crate::result::QueryResult;
 /// [`RunQueryDsl`]: crate::RunQueryDsl
 pub trait LoadQuery<Conn, U>: RunQueryDsl<Conn> {
     /// Load this query
-    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>>;
+    fn internal_load(self, conn: &mut Conn) -> QueryResult<Vec<U>>;
 }
 
 use crate::expression::TypedExpressionType;
@@ -62,7 +62,7 @@ where
     Conn::Backend: QueryMetadata<T::SqlType>,
     U: FromSqlRow<<T::SqlType as CompatibleType<U, Conn::Backend>>::SqlType, Conn::Backend>,
 {
-    fn internal_load(self, conn: &Conn) -> QueryResult<Vec<U>> {
+    fn internal_load(self, conn: &mut Conn) -> QueryResult<Vec<U>> {
         conn.load(self)
     }
 }
@@ -78,7 +78,7 @@ pub trait ExecuteDsl<Conn: Connection<Backend = DB>, DB: Backend = <Conn as Conn
     Sized
 {
     /// Execute this command
-    fn execute(query: Self, conn: &Conn) -> QueryResult<usize>;
+    fn execute(query: Self, conn: &mut Conn) -> QueryResult<usize>;
 }
 
 impl<Conn, DB, T> ExecuteDsl<Conn, DB> for T
@@ -87,7 +87,7 @@ where
     DB: Backend,
     T: QueryFragment<DB> + QueryId,
 {
-    fn execute(query: Self, conn: &Conn) -> QueryResult<usize> {
+    fn execute(query: Self, conn: &mut Conn) -> QueryResult<usize> {
         conn.execute_returning_count(&query)
     }
 }

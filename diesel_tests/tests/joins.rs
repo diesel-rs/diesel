@@ -3,7 +3,7 @@ use diesel::*;
 
 #[test]
 fn belongs_to() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -21,14 +21,14 @@ fn belongs_to() {
 
     let expected_data = vec![(seans_post, sean), (tess_post, tess)];
     let source = posts::table.inner_join(users::table);
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn select_single_from_join() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -44,19 +44,19 @@ fn select_single_from_join() {
     let select_title = source.select(posts::title);
 
     let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
-    let actual_names: Vec<String> = select_name.load(&connection).unwrap();
+    let actual_names: Vec<String> = select_name.load(&mut connection).unwrap();
 
     assert_eq!(expected_names, actual_names);
 
     let expected_titles = vec!["Hello".to_string(), "World".to_string()];
-    let actual_titles: Vec<String> = select_title.load(&connection).unwrap();
+    let actual_titles: Vec<String> = select_title.load(&mut connection).unwrap();
 
     assert_eq!(expected_titles, actual_titles);
 }
 
 #[test]
 fn select_multiple_from_join() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -75,14 +75,14 @@ fn select_multiple_from_join() {
         ("Sean".to_string(), "Hello".to_string()),
         ("Tess".to_string(), "World".to_string()),
     ];
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn join_boxed_query() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -102,14 +102,14 @@ fn join_boxed_query() {
         ("Sean".to_string(), "Hello".to_string()),
         ("Tess".to_string(), "World".to_string()),
     ];
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn select_only_one_side_of_join() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute("INSERT INTO posts (user_id, title) VALUES (2, 'Hello')")
@@ -120,14 +120,14 @@ fn select_only_one_side_of_join() {
         .select(users::all_columns);
 
     let expected_data = vec![User::new(2, "Tess")];
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn left_outer_joins() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -151,14 +151,14 @@ fn left_outer_joins() {
     let source = users::table
         .left_outer_join(posts::table)
         .order_by((users::id.asc(), posts::id.asc()));
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn columns_on_right_side_of_left_outer_joins_are_nullable() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -178,14 +178,14 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
         .left_outer_join(posts::table)
         .select((users::name, posts::title.nullable()))
         .order_by((users::id.asc(), posts::title.asc()));
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -201,14 +201,14 @@ fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
         .left_outer_join(posts::table)
         .select((users::name, posts::title.nullable()))
         .filter(posts::title.eq("Hello"));
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_called() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -229,14 +229,14 @@ fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_calle
         .left_outer_join(posts::table)
         .select((posts::title, posts::body).nullable())
         .order_by((users::id.asc(), posts::id.asc()));
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn select_complex_from_left_join() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -262,14 +262,14 @@ fn select_complex_from_left_join() {
         .left_outer_join(posts::table)
         .select((users::all_columns, (posts::title, posts::body).nullable()))
         .order_by((users::id.asc(), posts::id.asc()));
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn select_right_side_with_nullable_column_first() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -295,14 +295,14 @@ fn select_right_side_with_nullable_column_first() {
         .left_outer_join(posts::table)
         .select((users::all_columns, (posts::body, posts::title).nullable()))
         .order_by((users::id.asc(), posts::id.asc()));
-    let actual_data: Vec<_> = source.load(&connection).unwrap();
+    let actual_data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn select_left_join_right_side_with_non_null_inside() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -324,7 +324,8 @@ fn select_left_join_right_side_with_non_null_inside() {
             users::id,
         ))
         .order_by((users::id.desc(), posts::id.asc()));
-    let actual_data: Vec<(Option<(i32, String, String)>, i32)> = source.load(&connection).unwrap();
+    let actual_data: Vec<(Option<(i32, String, String)>, i32)> =
+        source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -332,7 +333,7 @@ fn select_left_join_right_side_with_non_null_inside() {
 #[test]
 fn select_then_join() {
     use crate::schema::users::dsl::*;
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello')")
@@ -341,7 +342,7 @@ fn select_then_join() {
     let data: Vec<i32> = users
         .select(id)
         .inner_join(posts::table)
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
 
     assert_eq!(expected_data, data);
@@ -350,7 +351,7 @@ fn select_then_join() {
     let data: Vec<i32> = users
         .select(id)
         .left_outer_join(posts::table)
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
 
     assert_eq!(expected_data, data);
@@ -361,21 +362,21 @@ sql_function!(fn lower(x: Text) -> Text);
 
 #[test]
 fn selecting_complex_expression_from_right_side_of_left_join() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
     let new_posts = vec![
         NewPost::new(1, "Post One", None),
         NewPost::new(1, "Post Two", None),
     ];
     insert_into(posts::table)
         .values(&new_posts)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     let titles = users::table
         .left_outer_join(posts::table)
         .select(lower(posts::title).nullable())
         .order((users::id, posts::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected_data = vec![
         Some("post one".to_string()),
         Some("post two".to_string()),
@@ -386,14 +387,14 @@ fn selecting_complex_expression_from_right_side_of_left_join() {
 
 #[test]
 fn selecting_complex_expression_from_both_sides_of_outer_join() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
     let new_posts = vec![
         NewPost::new(1, "Post One", None),
         NewPost::new(1, "Post Two", None),
     ];
     insert_into(posts::table)
         .values(&new_posts)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     let titles = users::table
@@ -405,7 +406,7 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
                 .nullable(),
         )
         .order((users::id, posts::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected_data = vec![
         Some("Sean wrote Post One".to_string()),
         Some("Sean wrote Post Two".to_string()),
@@ -416,40 +417,40 @@ fn selecting_complex_expression_from_both_sides_of_outer_join() {
 
 #[test]
 fn join_with_explicit_on_clause() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
     let new_posts = vec![
         NewPost::new(1, "Post One", None),
         NewPost::new(1, "Post Two", None),
     ];
     insert_into(posts::table)
         .values(&new_posts)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
-    let sean = find_user_by_name("Sean", &connection);
-    let tess = find_user_by_name("Tess", &connection);
+    let sean = find_user_by_name("Sean", &mut connection);
+    let tess = find_user_by_name("Tess", &mut connection);
     let post_one = posts::table
         .filter(posts::title.eq("Post One"))
-        .first::<Post>(&connection)
+        .first::<Post>(&mut connection)
         .unwrap();
     let expected_data = Ok(vec![(sean, post_one.clone()), (tess, post_one)]);
 
     let data = users::table
         .inner_join(posts::table.on(posts::title.eq("Post One")))
-        .load(&connection);
+        .load(&mut connection);
 
     assert_eq!(expected_data, data);
 
     let data = users::table
         .inner_join(posts::table.on(posts::title.eq_any(vec!["Post One"])))
-        .load(&connection);
+        .load(&mut connection);
 
     assert_eq!(expected_data, data);
 }
 
 #[test]
 fn selecting_parent_child_grandchild() {
-    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
     let TestData {
         sean,
         tess,
@@ -461,7 +462,7 @@ fn selecting_parent_child_grandchild() {
     let data = users::table
         .inner_join(posts::table.inner_join(comments::table))
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (sean.clone(), (posts[0].clone(), comments[0].clone())),
         (sean.clone(), (posts[0].clone(), comments[2].clone())),
@@ -476,7 +477,7 @@ fn selecting_parent_child_grandchild() {
                 .inner_join(comments::table),
         )
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (sean.clone(), (posts[0].clone(), comments[0].clone())),
         (sean.clone(), (posts[0].clone(), comments[2].clone())),
@@ -486,7 +487,7 @@ fn selecting_parent_child_grandchild() {
     let data = users::table
         .inner_join(posts::table.left_outer_join(comments::table))
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (sean.clone(), (posts[0].clone(), Some(comments[0].clone()))),
         (sean.clone(), (posts[0].clone(), Some(comments[2].clone()))),
@@ -498,7 +499,7 @@ fn selecting_parent_child_grandchild() {
     let data = users::table
         .left_outer_join(posts::table.left_outer_join(comments::table))
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (
             sean.clone(),
@@ -519,7 +520,7 @@ fn selecting_parent_child_grandchild() {
     let data = users::table
         .left_outer_join(posts::table.inner_join(comments::table))
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (sean.clone(), Some((posts[0].clone(), comments[0].clone()))),
         (sean.clone(), Some((posts[0].clone(), comments[2].clone()))),
@@ -531,7 +532,7 @@ fn selecting_parent_child_grandchild() {
 
 #[test]
 fn selecting_grandchild_child_parent() {
-    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
     let TestData {
         sean,
         posts,
@@ -542,7 +543,7 @@ fn selecting_grandchild_child_parent() {
     let data = comments::table
         .inner_join(posts::table.inner_join(users::table))
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (comments[0].clone(), (posts[0].clone(), sean.clone())),
         (comments[2].clone(), (posts[0].clone(), sean.clone())),
@@ -553,7 +554,7 @@ fn selecting_grandchild_child_parent() {
 
 #[test]
 fn selecting_four_tables_deep() {
-    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
     let TestData {
         sean,
         posts,
@@ -565,7 +566,7 @@ fn selecting_four_tables_deep() {
     let data = users::table
         .inner_join(posts::table.inner_join(comments::table.inner_join(likes::table)))
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![(
         sean.clone(),
         (posts[0].clone(), (comments[0].clone(), likes[0].clone())),
@@ -575,7 +576,7 @@ fn selecting_four_tables_deep() {
     let data = users::table
         .inner_join(posts::table.inner_join(comments::table.left_outer_join(likes::table)))
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (
             sean.clone(),
@@ -598,7 +599,7 @@ fn selecting_four_tables_deep() {
 
 #[test]
 fn selecting_parent_child_sibling() {
-    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
     let TestData {
         sean,
         tess,
@@ -610,7 +611,7 @@ fn selecting_parent_child_sibling() {
     let data = users::table
         .inner_join(posts::table)
         .inner_join(likes::table)
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![(tess.clone(), posts[1].clone(), likes[0].clone())];
     assert_eq!(Ok(expected), data);
 
@@ -618,7 +619,7 @@ fn selecting_parent_child_sibling() {
         .inner_join(posts::table)
         .left_outer_join(likes::table)
         .order((users::id, posts::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (sean.clone(), posts[0].clone(), None),
         (sean.clone(), posts[2].clone(), None),
@@ -629,7 +630,7 @@ fn selecting_parent_child_sibling() {
 
 #[test]
 fn selecting_crazy_nested_joins() {
-    let (connection, test_data) = connection_with_fixture_data_for_multitable_joins();
+    let (mut connection, test_data) = connection_with_fixture_data_for_multitable_joins();
     let TestData {
         sean,
         tess,
@@ -647,7 +648,7 @@ fn selecting_crazy_nested_joins() {
                 .left_join(followings::table),
         )
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (
             sean.clone(),
@@ -676,7 +677,7 @@ fn selecting_crazy_nested_joins() {
         .inner_join(posts::table.left_join(comments::table.left_join(likes::table)))
         .left_join(followings::table)
         .order((users::id, posts::id, comments::id))
-        .load(&connection);
+        .load(&mut connection);
     let expected = vec![
         (
             sean.clone(),
@@ -702,10 +703,10 @@ fn selecting_crazy_nested_joins() {
 }
 
 fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
 
-    let sean = find_user_by_name("Sean", &connection);
-    let tess = find_user_by_name("Tess", &connection);
+    let sean = find_user_by_name("Sean", &mut connection);
+    let tess = find_user_by_name("Tess", &mut connection);
 
     let new_posts = vec![
         NewPost::new(sean.id, "First Post", None),
@@ -714,12 +715,12 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
     ];
     insert_into(posts::table)
         .values(&new_posts)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     let posts = posts::table
         .order(posts::id)
-        .load::<Post>(&connection)
+        .load::<Post>(&mut connection)
         .unwrap();
     let new_comments: &[NewComment<'static>] = &[
         NewComment(posts[0].id, "First Comment"),
@@ -728,12 +729,12 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
     ];
     insert_into(comments::table)
         .values(new_comments)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     let comments = comments::table
         .order(comments::id)
-        .load::<Comment>(&connection)
+        .load::<Comment>(&mut connection)
         .unwrap();
     let like = Like {
         user_id: tess.id,
@@ -741,12 +742,12 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
     };
     insert_into(likes::table)
         .values(&like)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     let likes = likes::table
         .order((likes::user_id, likes::comment_id))
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
 
     let new_following = Following {
@@ -756,11 +757,11 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
     };
     insert_into(followings::table)
         .values(&new_following)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
     let followings = followings::table
         .order((followings::user_id, followings::post_id))
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
 
     let test_data = TestData {

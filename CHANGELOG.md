@@ -169,6 +169,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `#[table_name]` attribute for derive macros can now refer to any path and is no
   longer limited to identifiers from the current scope.
 
+* Interacting with a database requires a mutable connection. 
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not

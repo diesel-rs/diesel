@@ -31,13 +31,13 @@ pub struct ArrayLiteral<T, ST> {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::dsl::array;
 /// #     use diesel::sql_types::Integer;
-/// #     let connection = establish_connection();
+/// #     let mut connection = establish_connection();
 /// let ints = diesel::select(array::<Integer, _>((1, 2)))
-///     .get_result::<Vec<i32>>(&connection)?;
+///     .get_result::<Vec<i32>>(&mut connection)?;
 /// assert_eq!(vec![1, 2], ints);
 ///
 /// let ids = users.select(array((id, id * 2)))
-///     .get_results::<Vec<i32>>(&connection)?;
+///     .get_results::<Vec<i32>>(&mut connection)?;
 /// let expected = vec![
 ///     vec![1, 2],
 ///     vec![2, 4],

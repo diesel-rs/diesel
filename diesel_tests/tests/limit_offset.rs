@@ -5,7 +5,7 @@ use diesel::*;
 fn limit() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
@@ -14,7 +14,7 @@ fn limit() {
     let actual_data: Vec<_> = users
         .select((name, hair_color))
         .limit(1)
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 }
@@ -24,14 +24,14 @@ fn limit() {
 fn offset() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     let expected_data = vec![("Tess".to_string(), None::<String>)];
     let q = users.select((name, hair_color)).offset(1);
-    let actual_data: Vec<_> = q.load(&connection).unwrap();
+    let actual_data: Vec<_> = q.load(&mut connection).unwrap();
     assert_eq!(expected_data, actual_data);
 }
 
@@ -39,14 +39,14 @@ fn offset() {
 fn limit_offset() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess'), ('Ruby')")
         .unwrap();
 
     let expected_data = vec![("Ruby".to_string(), None::<String>)];
     let q = users.select((name, hair_color)).limit(1).offset(2);
-    let actual_data: Vec<_> = q.load(&connection).unwrap();
+    let actual_data: Vec<_> = q.load(&mut connection).unwrap();
     assert_eq!(expected_data, actual_data);
 }
 
@@ -54,7 +54,7 @@ fn limit_offset() {
 fn boxed_limit() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
@@ -64,7 +64,7 @@ fn boxed_limit() {
         .into_boxed()
         .select((name, hair_color))
         .limit(1)
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 
@@ -72,7 +72,7 @@ fn boxed_limit() {
         .select((name, hair_color))
         .limit(1)
         .into_boxed()
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 }
@@ -81,7 +81,7 @@ fn boxed_limit() {
 fn boxed_offset() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
@@ -92,7 +92,7 @@ fn boxed_offset() {
         .select((name, hair_color))
         .into_boxed()
         .offset(1)
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 
@@ -102,7 +102,7 @@ fn boxed_offset() {
             .select((name, hair_color))
             .offset(1)
             .into_boxed()
-            .load(&connection)
+            .load(&mut connection)
             .unwrap();
         assert_eq!(expected_data, actual_data);
     }
@@ -112,7 +112,7 @@ fn boxed_offset() {
 fn boxed_limit_offset() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess'), ('Ruby')")
         .unwrap();
@@ -124,7 +124,7 @@ fn boxed_limit_offset() {
         .select((name, hair_color))
         .limit(1)
         .offset(2)
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 
@@ -133,7 +133,7 @@ fn boxed_limit_offset() {
         .limit(1)
         .offset(2)
         .into_boxed()
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 
@@ -142,7 +142,7 @@ fn boxed_limit_offset() {
         .limit(1)
         .into_boxed()
         .offset(2)
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 
@@ -153,7 +153,7 @@ fn boxed_limit_offset() {
             .offset(2)
             .into_boxed()
             .limit(1)
-            .load(&connection)
+            .load(&mut connection)
             .unwrap();
         assert_eq!(expected_data, actual_data);
     }

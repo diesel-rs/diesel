@@ -306,7 +306,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = connection_no_data();
+/// #     let mut connection = connection_no_data();
 /// #     connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)").unwrap();
 /// let user = InsertableUser {
 ///     id: 1,
@@ -315,12 +315,12 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///
 /// diesel::insert_into(users)
 ///     .values(user)
-///     .execute(&connection)
+///     .execute(&mut connection)
 ///     .unwrap();
 ///
 /// assert_eq!(
 ///     Ok("THOMAS".to_string()),
-///     users.select(name).first(&connection)
+///     users.select(name).first(&mut connection)
 /// );
 /// # Ok(())
 /// # }
@@ -431,8 +431,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
+/// #     let mut connection = establish_connection();
+/// let first_user = users.first(&mut connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -486,8 +486,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
+/// #     let mut connection = establish_connection();
+/// let first_user = users.first(&mut connection)?;
 /// let expected = User { id: 1, name: "sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -532,8 +532,8 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.first(&connection)?;
+/// #     let mut connection = establish_connection();
+/// let first_user = users.first(&mut connection)?;
 /// let expected = User { id: 1, name: "sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -619,9 +619,9 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let connection = establish_connection();
+/// #     let mut connection = establish_connection();
 /// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(&connection)?;
+///     .get_result(&mut connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -672,9 +672,9 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let connection = establish_connection();
+/// #     let mut connection = establish_connection();
 /// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(&connection)?;
+///     .get_result(&mut connection)?;
 /// let expected = User { id: 1, name: "sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -718,9 +718,9 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let connection = establish_connection();
+/// #     let mut connection = establish_connection();
 /// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(&connection)?;
+///     .get_result(&mut connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -1030,14 +1030,14 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 /// # #[cfg(feature = "sqlite")]
 /// # fn run_test() -> Result<(), Box<::std::error::Error>> {
-/// let connection = SqliteConnection::establish(":memory:")?;
+/// let mut connection = SqliteConnection::establish(":memory:")?;
 ///
-/// add_mul::register_impl(&connection, |x: i32, y: i32, z: f64| {
+/// add_mul::register_impl(&mut connection, |x: i32, y: i32, z: f64| {
 ///     (x + y) as f64 * z
 /// })?;
 ///
 /// let result = select(add_mul(1, 2, 1.5))
-///     .get_result::<f64>(&connection)?;
+///     .get_result::<f64>(&mut connection)?;
 /// assert_eq!(4.5, result);
 /// #     Ok(())
 /// # }
@@ -1105,14 +1105,14 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
 /// #    use self::players::dsl::*;
-///     let connection = SqliteConnection::establish(":memory:")?;
+///     let mut connection = SqliteConnection::establish(":memory:")?;
 /// #    connection.execute("create table players (id integer primary key autoincrement, score integer)").unwrap();
 /// #    connection.execute("insert into players (score) values (10), (20), (30)").unwrap();
 ///
-///     my_sum::register_impl::<MySum, _>(&connection)?;
+///     my_sum::register_impl::<MySum, _>(&mut connection)?;
 ///
 ///     let total_score = players.select(my_sum(score))
-///         .get_result::<i32>(&connection)?;
+///         .get_result::<i32>(&mut connection)?;
 ///
 ///     println!("The total score of all the players is: {}", total_score);
 ///
@@ -1181,14 +1181,14 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
 /// #    use self::student_avgs::dsl::*;
-///     let connection = SqliteConnection::establish(":memory:")?;
+///     let mut connection = SqliteConnection::establish(":memory:")?;
 /// #    connection.execute("create table student_avgs (id integer primary key autoincrement, s1_avg float, s2_avg float)").unwrap();
 /// #    connection.execute("insert into student_avgs (s1_avg, s2_avg) values (85.5, 90), (79.8, 80.1)").unwrap();
 ///
-///     range_max::register_impl::<RangeMax<f32>, _, _>(&connection)?;
+///     range_max::register_impl::<RangeMax<f32>, _, _>(&mut connection)?;
 ///
 ///     let result = student_avgs.select(range_max(s1_avg, s2_avg))
-///         .get_result::<Option<f32>>(&connection)?;
+///         .get_result::<Option<f32>>(&mut connection)?;
 ///
 ///     if let Some(max_semeseter_avg) = result {
 ///         println!("The largest semester average is: {}", max_semeseter_avg);

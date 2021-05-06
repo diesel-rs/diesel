@@ -135,7 +135,7 @@ pub mod expression_types {
     impl<ST> TypedExpressionType for ST where ST: SingleValue {}
 
     impl<DB: Backend> QueryMetadata<Untyped> for DB {
-        fn row_metadata(_: &DB::MetadataLookup, row: &mut Vec<Option<DB::TypeMetadata>>) {
+        fn row_metadata(_: &mut DB::MetadataLookup, row: &mut Vec<Option<DB::TypeMetadata>>) {
             row.push(None)
         }
     }
@@ -158,7 +158,7 @@ pub trait QueryMetadata<T>: Backend {
     /// The exact return value of this function is considerded to be a
     /// backend specific implementation detail. You should not rely on those
     /// values if you not own the corresponding backend
-    fn row_metadata(lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>);
+    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>);
 }
 
 impl<T, DB> QueryMetadata<T> for DB
@@ -166,7 +166,7 @@ where
     DB: Backend + HasSqlType<T>,
     T: SingleValue,
 {
-    fn row_metadata(lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(Some(<DB as HasSqlType<T>>::metadata(lookup)))
     }
 }
@@ -233,10 +233,10 @@ where
 /// #
 /// # fn main() {
 /// use diesel::sql_types::Text;
-/// #   let conn = establish_connection();
+/// #   let mut conn = establish_connection();
 /// let names = users::table
 ///     .select("The Amazing ".into_sql::<Text>().concat(users::name))
-///     .load(&conn);
+///     .load(&mut conn);
 /// let expected_names = vec![
 ///     "The Amazing Sean".to_string(),
 ///     "The Amazing Tess".to_string(),
@@ -354,8 +354,8 @@ where
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.select(User::as_select()).first(&connection)?;
+/// #     let mut connection = establish_connection();
+/// let first_user = users.select(User::as_select()).first(&mut connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -394,8 +394,8 @@ where
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// let first_user = users.select(User::as_select()).first(&connection)?;
+/// #     let mut connection = establish_connection();
+/// let first_user = users.select(User::as_select()).first(&mut connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -644,7 +644,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let conn = establish_connection();
+/// #     let mut conn = establish_connection();
 /// enum Search {
 ///     Id(i32),
 ///     Name(String),
@@ -663,12 +663,12 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///
 /// let user_one = users::table
 ///     .filter(find_user(Search::Id(1)))
-///     .first(&conn)?;
+///     .first(&mut conn)?;
 /// assert_eq!((1, String::from("Sean")), user_one);
 ///
 /// let tess = users::table
 ///     .filter(find_user(Search::Name("Tess".into())))
-///     .first(&conn)?;
+///     .first(&mut conn)?;
 /// assert_eq!((2, String::from("Tess")), tess);
 /// #     Ok(())
 /// # }
@@ -689,7 +689,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let conn = establish_connection();
+/// #     let mut conn = establish_connection();
 /// enum NameOrConst {
 ///     Name,
 ///     Const(String),
@@ -727,22 +727,24 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///
 /// let user_one = users::table
 ///     .select(selection(NameOrConst::Name))
-///     .first::<String>(&conn)?;
+///     .first::<String>(&mut conn)?;
 /// assert_eq!(String::from("Sean"), user_one);
 ///
 /// let with_name = users::table
 ///     .group_by(users::name)
 ///     .select(selection(NameOrConst::Const("Jane Doe".into())))
-///     .first::<String>(&conn)?;
+///     .first::<String>(&mut conn)?;
 /// assert_eq!(String::from("Jane Doe"), with_name);
 /// #     Ok(())
 /// # }
 /// ```
 ///
 /// ## More advanced query source
+///
 /// This example is a bit contrived, but in general, if you want to for example filter based on
 /// different criteria on a joined table, you can use `InnerJoinQuerySource` and
 /// `LeftJoinQuerySource` in the QS parameter of `BoxableExpression`.
+///
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// # use schema::{users, posts};
@@ -754,7 +756,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let conn = establish_connection();
+/// #     let mut conn = establish_connection();
 /// enum UserPostFilter {
 ///     User(i32),
 ///     Post(i32),
@@ -778,7 +780,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///     .inner_join(posts::table)
 ///     .filter(filter_user_posts(UserPostFilter::User(2)))
 ///     .select((posts::title, users::name))
-///     .first::<(String, String)>(&conn)?;
+///     .first::<(String, String)>(&mut conn)?;
 ///
 /// assert_eq!(
 ///     ("My first post too".to_string(), "Tess".to_string()),

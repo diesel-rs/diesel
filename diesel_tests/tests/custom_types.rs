@@ -65,7 +65,7 @@ fn custom_types_round_trip() {
             custom_enum: MyEnum::Bar,
         },
     ];
-    let connection = connection();
+    let mut connection = connection();
     connection
         .batch_execute(
             r#"
@@ -80,7 +80,7 @@ fn custom_types_round_trip() {
 
     let inserted = insert_into(custom_types::table)
         .values(&data)
-        .get_results(&connection)
+        .get_results(&mut connection)
         .unwrap();
     assert_eq!(data, inserted);
 }
@@ -144,7 +144,7 @@ fn custom_types_in_custom_schema_round_trip() {
             custom_enum: MyEnumInCustomSchema::Bar,
         },
     ];
-    let connection = connection();
+    let mut connection = connection();
     connection
         .batch_execute(
             r#"
@@ -160,7 +160,7 @@ fn custom_types_in_custom_schema_round_trip() {
 
     let inserted = insert_into(custom_types_with_custom_schema::table)
         .values(&data)
-        .get_results(&connection)
+        .get_results(&mut connection)
         .unwrap();
     assert_eq!(data, inserted);
 }

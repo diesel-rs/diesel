@@ -46,7 +46,7 @@ where
     #[doc(hidden)]
     pub fn collect_binds(
         collector: &'a mut DB::BindCollector,
-        metadata_lookup: &'a DB::MetadataLookup,
+        metadata_lookup: &'a mut DB::MetadataLookup,
     ) -> Self {
         AstPass {
             internals: AstPassInternals::CollectBinds {
@@ -96,10 +96,10 @@ where
             AstPassInternals::ToSql(ref mut builder) => AstPassInternals::ToSql(&mut **builder),
             AstPassInternals::CollectBinds {
                 ref mut collector,
-                metadata_lookup,
+                ref mut metadata_lookup,
             } => AstPassInternals::CollectBinds {
                 collector: &mut **collector,
-                metadata_lookup: &*metadata_lookup,
+                metadata_lookup: &mut **metadata_lookup,
             },
             AstPassInternals::IsSafeToCachePrepared(ref mut result) => {
                 AstPassInternals::IsSafeToCachePrepared(&mut **result)
@@ -199,7 +199,7 @@ where
             AstPassInternals::ToSql(ref mut out) => out.push_bind_param(),
             AstPassInternals::CollectBinds {
                 ref mut collector,
-                metadata_lookup,
+                ref mut metadata_lookup,
             } => collector.push_bound_value(bind, metadata_lookup)?,
             AstPassInternals::DebugBinds(ref mut f) => {
                 f.entry(bind);
@@ -244,7 +244,7 @@ where
     ToSql(&'a mut DB::QueryBuilder),
     CollectBinds {
         collector: &'a mut DB::BindCollector,
-        metadata_lookup: &'a DB::MetadataLookup,
+        metadata_lookup: &'a mut DB::MetadataLookup,
     },
     IsSafeToCachePrepared(&'a mut bool),
     DebugBinds(&'a mut fmt::DebugList<'a, 'a>),

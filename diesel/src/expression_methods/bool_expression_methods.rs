@@ -19,18 +19,18 @@ pub trait BoolExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #
     /// diesel::insert_into(animals)
     ///     .values(&vec![
     ///         (species.eq("ferret"), legs.eq(4), name.eq("Freddy")),
     ///         (species.eq("ferret"), legs.eq(4), name.eq("Jack")),
     ///     ])
-    ///     .execute(&connection)?;
+    ///     .execute(&mut connection)?;
     ///
     /// let data = animals.select((species, name))
     ///     .filter(species.eq("ferret").and(name.eq("Jack")))
-    ///     .load(&connection)?;
+    ///     .load(&mut connection)?;
     /// let expected = vec![
     ///     (String::from("ferret"), Some(String::from("Jack"))),
     /// ];
@@ -65,18 +65,18 @@ pub trait BoolExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #
     /// diesel::insert_into(animals)
     ///     .values(&vec![
     ///         (species.eq("ferret"), legs.eq(4), name.eq("Freddy")),
     ///         (species.eq("ferret"), legs.eq(4), name.eq("Jack")),
     ///     ])
-    ///     .execute(&connection)?;
+    ///     .execute(&mut connection)?;
     ///
     /// let data = animals.select((species, name))
     ///     .filter(species.eq("ferret").or(name.eq("Jack")))
-    ///     .load(&connection)?;
+    ///     .load(&mut connection)?;
     /// let expected = vec![
     ///     (String::from("dog"), Some(String::from("Jack"))),
     ///     (String::from("ferret"), Some(String::from("Freddy"))),

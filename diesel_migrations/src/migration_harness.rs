@@ -26,16 +26,17 @@ diesel::table! {
 /// A migration harness is an entity which applies migration to an existing database
 pub trait MigrationHarness<DB: Backend> {
     /// Checks if the database represented by the current harness has unapplied migrations
-    fn has_pending_migration<S: MigrationSource<DB>>(&self, source: S) -> Result<bool> {
+    fn has_pending_migration<S: MigrationSource<DB>>(&mut self, source: S) -> Result<bool> {
         self.pending_migrations(source).map(|p| !p.is_empty())
     }
 
     /// Execute all unapplied migrations for a given migration source
     fn run_pending_migrations<S: MigrationSource<DB>>(
-        &self,
+        &mut self,
         source: S,
     ) -> Result<Vec<MigrationVersion>> {
-        self.run_migrations(&self.pending_migrations(source)?)
+        let pending = self.pending_migrations(source)?;
+        self.run_migrations(&pending)
     }
 
     /// Execute all migrations in the given list
@@ -43,14 +44,17 @@ pub trait MigrationHarness<DB: Backend> {
     /// This method does not check if a certain migration was already applied or not
     #[doc(hidden)]
     fn run_migrations(
-        &self,
+        &mut self,
         migrations: &[Box<dyn Migration<DB>>],
     ) -> Result<Vec<MigrationVersion>> {
         migrations.iter().map(|m| self.run_migration(m)).collect()
     }
 
     /// Execute the next migration from the given migration source
-    fn run_next_migration<S: MigrationSource<DB>>(&self, source: S) -> Result<MigrationVersion> {
+    fn run_next_migration<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+    ) -> Result<MigrationVersion> {
         let pending_migrations = self.pending_migrations(source)?;
         let next_migration = pending_migrations
             .first()
@@ -60,7 +64,7 @@ pub trait MigrationHarness<DB: Backend> {
 
     /// Revert all applied migrations from a given migration source
     fn revert_all_migrations<S: MigrationSource<DB>>(
-        &self,
+        &mut self,
         source: S,
     ) -> Result<Vec<MigrationVersion>> {
         let applied_versions = self.applied_migrations()?;
@@ -85,7 +89,10 @@ pub trait MigrationHarness<DB: Backend> {
     ///
     /// This method returns a error if the given migration source does not
     /// contain the last applied migration
-    fn revert_last_migration<S: MigrationSource<DB>>(&self, source: S) -> Result<MigrationVersion> {
+    fn revert_last_migration<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+    ) -> Result<MigrationVersion<'static>> {
         let applied_versions = self.applied_migrations()?;
         let migrations = source.migrations()?;
         let last_migration_version = applied_versions
@@ -105,7 +112,7 @@ pub trait MigrationHarness<DB: Backend> {
     /// The returned migration list is sorted in ascending order by the individual version
     /// of each migration
     fn pending_migrations<S: MigrationSource<DB>>(
-        &self,
+        &mut self,
         source: S,
     ) -> Result<Vec<Box<dyn Migration<DB>>>> {
         let applied_versions = self.applied_migrations()?;
@@ -130,16 +137,20 @@ pub trait MigrationHarness<DB: Backend> {
     ///
     /// Types implementing this trait should call [`Migration::run`] internally and record
     /// that a specific migration version was executed afterwards.
-    fn run_migration(&self, migration: &dyn Migration<DB>) -> Result<MigrationVersion<'static>>;
+    fn run_migration(&mut self, migration: &dyn Migration<DB>)
+        -> Result<MigrationVersion<'static>>;
 
     /// Revert a single migration
     ///
     /// Types implementing this trait should call [`Migration::revert`] internally
     /// and record that a specific migration version was reverted afterwards.
-    fn revert_migration(&self, migration: &dyn Migration<DB>) -> Result<MigrationVersion<'static>>;
+    fn revert_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>>;
 
     /// Get a list of already applied migration versions
-    fn applied_migrations(&self) -> Result<Vec<MigrationVersion<'static>>>;
+    fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>>;
 }
 
 impl<C, DB> MigrationHarness<DB> for C
@@ -161,40 +172,46 @@ where
         >,
     >: ExecuteDsl<C>,
 {
-    fn run_migration(&self, migration: &dyn Migration<DB>) -> Result<MigrationVersion<'static>> {
-        let apply_migration = || -> Result<()> {
-            migration.run(self)?;
+    fn run_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>> {
+        let apply_migration = |conn: &mut C| -> Result<()> {
+            migration.run(conn)?;
             diesel::insert_into(__diesel_schema_migrations::table)
                 .values(__diesel_schema_migrations::version.eq(migration.name().version()))
-                .execute(self)?;
+                .execute(conn)?;
             Ok(())
         };
 
         if migration.metadata().run_in_transaction() {
             self.transaction(apply_migration)?;
         } else {
-            apply_migration()?;
+            apply_migration(self)?;
         }
         Ok(migration.name().version().as_owned())
     }
 
-    fn revert_migration(&self, migration: &dyn Migration<DB>) -> Result<MigrationVersion<'static>> {
-        let revert_migration = || -> Result<()> {
-            migration.revert(self)?;
+    fn revert_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>> {
+        let revert_migration = |conn: &mut C| -> Result<()> {
+            migration.revert(conn)?;
             diesel::delete(__diesel_schema_migrations::table.find(migration.name().version()))
-                .execute(self)?;
+                .execute(conn)?;
             Ok(())
         };
 
         if migration.metadata().run_in_transaction() {
             self.transaction(revert_migration)?;
         } else {
-            revert_migration()?;
+            revert_migration(self)?;
         }
         Ok(migration.name().version().as_owned())
     }
 
-    fn applied_migrations(&self) -> Result<Vec<MigrationVersion<'static>>> {
+    fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
         setup_database(self)?;
         Ok(__diesel_schema_migrations::table
             .select(__diesel_schema_migrations::version)
@@ -206,13 +223,13 @@ where
 /// A migration harness that writes messages
 /// into some output for each applied/reverted migration
 pub struct HarnessWithOutput<'a, C, W> {
-    connection: &'a C,
+    connection: &'a mut C,
     output: RefCell<W>,
 }
 
 impl<'a, C, W> HarnessWithOutput<'a, C, W> {
     /// Create a new `HarnessWithOutput` that writes to a specific writer
-    pub fn new<DB>(harness: &'a C, output: W) -> Self
+    pub fn new<DB>(harness: &'a mut C, output: W) -> Self
     where
         C: MigrationHarness<DB>,
         DB: Backend,
@@ -227,7 +244,7 @@ impl<'a, C, W> HarnessWithOutput<'a, C, W> {
 
 impl<'a, C> HarnessWithOutput<'a, C, std::io::Stdout> {
     /// Create a new `HarnessWithOutput` that writes to stdout
-    pub fn write_to_stdout<DB>(harness: &'a C) -> Self
+    pub fn write_to_stdout<DB>(harness: &'a mut C) -> Self
     where
         C: MigrationHarness<DB>,
         DB: Backend,
@@ -245,7 +262,10 @@ where
     C: MigrationHarness<DB>,
     DB: Backend,
 {
-    fn run_migration(&self, migration: &dyn Migration<DB>) -> Result<MigrationVersion<'static>> {
+    fn run_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>> {
         if migration.name().version() != MigrationVersion::from("00000000000000") {
             let mut output = self.output.try_borrow_mut()?;
             writeln!(output, "Running migration {}", migration.name())?;
@@ -253,7 +273,10 @@ where
         self.connection.run_migration(migration)
     }
 
-    fn revert_migration(&self, migration: &dyn Migration<DB>) -> Result<MigrationVersion<'static>> {
+    fn revert_migration(
+        &mut self,
+        migration: &dyn Migration<DB>,
+    ) -> Result<MigrationVersion<'static>> {
         if migration.name().version() != MigrationVersion::from("00000000000000") {
             let mut output = self.output.try_borrow_mut()?;
             writeln!(output, "Rolling back migration {}", migration.name())?;
@@ -261,11 +284,11 @@ where
         self.connection.revert_migration(migration)
     }
 
-    fn applied_migrations(&self) -> Result<Vec<MigrationVersion<'static>>> {
+    fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
         self.connection.applied_migrations()
     }
 }
 
-fn setup_database<Conn: MigrationConnection>(conn: &Conn) -> QueryResult<usize> {
+fn setup_database<Conn: MigrationConnection>(conn: &mut Conn) -> QueryResult<usize> {
     conn.setup()
 }

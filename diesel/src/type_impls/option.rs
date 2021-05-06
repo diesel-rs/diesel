@@ -13,7 +13,7 @@ where
     DB: Backend + HasSqlType<T>,
     T: SqlType,
 {
-    fn metadata(lookup: &DB::MetadataLookup) -> DB::TypeMetadata {
+    fn metadata(lookup: &mut DB::MetadataLookup) -> DB::TypeMetadata {
         <DB as HasSqlType<T>>::metadata(lookup)
     }
 }

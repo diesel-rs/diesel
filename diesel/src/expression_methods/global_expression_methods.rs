@@ -16,9 +16,9 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// let data = users.select(id).filter(name.eq("Sean"));
-    /// assert_eq!(Ok(1), data.first(&connection));
+    /// assert_eq!(Ok(1), data.first(&mut connection));
     /// # }
     /// ```
     #[doc(alias = "=")]
@@ -39,9 +39,9 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// let data = users.select(id).filter(name.ne("Sean"));
-    /// assert_eq!(Ok(2), data.first(&connection));
+    /// assert_eq!(Ok(2), data.first(&mut connection));
     /// # }
     /// ```
     #[doc(alias = "<>")]
@@ -72,22 +72,22 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # fn main() {
     /// #     use schema::users;
     /// #     use schema::posts;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
     /// let data = users::table.select(users::id).filter(users::name.eq_any(vec!["Sean", "Jim"]));
-    /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
+    /// assert_eq!(Ok(vec![1, 3]), data.load(&mut connection));
     ///
     /// // Calling `eq_any` with an empty array is the same as doing `WHERE 1=0`
     /// let data = users::table.select(users::id).filter(users::name.eq_any(Vec::<String>::new()));
-    /// assert_eq!(Ok(vec![]), data.load::<i32>(&connection));
+    /// assert_eq!(Ok(vec![]), data.load::<i32>(&mut connection));
     ///
     /// // Calling `eq_any` with a subquery is the same as using
     /// // `WHERE {column} IN {subquery}`.
     ///
     /// let subquery = users::table.filter(users::name.eq("Sean")).select(users::id).into_boxed();
     /// let data = posts::table.select(posts::id).filter(posts::user_id.eq_any(subquery));
-    /// assert_eq!(Ok(vec![1, 2]), data.load::<i32>(&connection));
+    /// assert_eq!(Ok(vec![1, 2]), data.load::<i32>(&mut connection));
     ///
     /// # }
     /// ```
@@ -114,18 +114,18 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
     /// let data = users.select(id).filter(name.ne_all(vec!["Sean", "Jim"]));
-    /// assert_eq!(Ok(vec![2]), data.load(&connection));
+    /// assert_eq!(Ok(vec![2]), data.load(&mut connection));
     ///
     /// let data = users.select(id).filter(name.ne_all(vec!["Tess"]));
-    /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
+    /// assert_eq!(Ok(vec![1, 3]), data.load(&mut connection));
     ///
     /// // Calling `ne_any` with an empty array is the same as doing `WHERE 1=1`
     /// let data = users.select(id).filter(name.ne_all(Vec::<String>::new()));
-    /// assert_eq!(Ok(vec![1, 2, 3]), data.load(&connection));
+    /// assert_eq!(Ok(vec![1, 2, 3]), data.load(&mut connection));
     /// # }
     /// ```
     #[doc(alias = "in")]
@@ -150,12 +150,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(name.is_null())
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(&mut connection)?;
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
@@ -176,12 +176,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(name.is_not_null())
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(&mut connection)?;
     /// assert_eq!("dog", data);
     /// #     Ok(())
     /// # }
@@ -202,11 +202,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// let data = users
     ///     .select(name)
     ///     .filter(id.gt(1))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(&mut connection)?;
     /// assert_eq!("Tess", data);
     /// #     Ok(())
     /// # }
@@ -233,11 +233,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// let data = users
     ///     .select(name)
     ///     .filter(id.ge(2))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(&mut connection)?;
     /// assert_eq!("Tess", data);
     /// #     Ok(())
     /// # }
@@ -264,11 +264,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// let data = users
     ///     .select(name)
     ///     .filter(id.lt(2))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(&mut connection)?;
     /// assert_eq!("Sean", data);
     /// #     Ok(())
     /// # }
@@ -295,11 +295,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// let data = users
     ///     .select(name)
     ///     .filter(id.le(2))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(&mut connection)?;
     /// assert_eq!("Sean", data);
     /// #     Ok(())
     /// # }
@@ -322,12 +322,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(legs.between(2, 6))
-    ///     .first(&connection);
+    ///     .first(&mut connection);
     /// #
     /// assert_eq!(Ok("dog".to_string()), data);
     /// # }
@@ -358,12 +358,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(legs.not_between(2, 6))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(&mut connection)?;
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
@@ -393,12 +393,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let mut connection = establish_connection();
     /// #
     /// let names = users
     ///     .select(name)
     ///     .order(name.desc())
-    ///     .load::<String>(&connection)?;
+    ///     .load::<String>(&mut connection)?;
     /// assert_eq!(vec!["Tess", "Sean"], names);
     /// #     Ok(())
     /// # }
@@ -470,12 +470,12 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// fn main() {
     ///     use self::users::dsl::*;
     ///     use self::posts::dsl::{posts, author_name};
-    ///     let connection = establish_connection();
+    ///     let mut connection = establish_connection();
     ///
     ///     let data = users.inner_join(posts)
     ///         .filter(name.nullable().eq(author_name))
     ///         .select(name)
-    ///         .load::<String>(&connection);
+    ///         .load::<String>(&mut connection);
     ///     println!("{:?}", data);
     /// }
     /// ```

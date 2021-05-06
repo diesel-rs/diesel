@@ -56,14 +56,14 @@ where
 /// # use schema::{users, posts};
 /// #
 /// # fn main() {
-/// #     let connection = establish_connection();
+/// #     let mut connection = establish_connection();
 /// let data = users::table
 ///     .left_join(posts::table.on(
 ///         users::id.eq(posts::user_id).and(
 ///             posts::title.eq("My first post"))
 ///     ))
 ///     .select((users::name, posts::title.nullable()))
-///     .load(&connection);
+///     .load(&mut connection);
 /// let expected = vec![
 ///     ("Sean".to_string(), Some("My first post".to_string())),
 ///     ("Tess".to_string(), None),

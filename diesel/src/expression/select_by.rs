@@ -66,7 +66,7 @@ where
     T: Selectable<DB>,
     DB: QueryMetadata<SqlTypeOf<T::SelectExpression>>,
 {
-    fn row_metadata(lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+    fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         <DB as QueryMetadata<SqlTypeOf<<T as Selectable<DB>>::SelectExpression>>>::row_metadata(
             lookup, out,
         )

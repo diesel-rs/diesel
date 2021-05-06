@@ -11,7 +11,7 @@ impl<T> HasSqlType<Array<T>> for Pg
 where
     Pg: HasSqlType<T>,
 {
-    fn metadata(lookup: &Self::MetadataLookup) -> PgTypeMetadata {
+    fn metadata(lookup: &mut Self::MetadataLookup) -> PgTypeMetadata {
         match <Pg as HasSqlType<T>>::metadata(lookup).0 {
             Ok(tpe) => PgTypeMetadata::new(tpe.array_oid, 0),
             c @ Err(_) => PgTypeMetadata(c),
@@ -91,15 +91,24 @@ where
         out.write_i32::<NetworkEndian>(num_dimensions)?;
         let flags = 0;
         out.write_i32::<NetworkEndian>(flags)?;
-        let element_oid = Pg::metadata(out.metadata_lookup()).oid()?;
+        let element_oid = Pg::metadata(*out.metadata_lookup()).oid()?;
         out.write_u32::<NetworkEndian>(element_oid)?;
         out.write_i32::<NetworkEndian>(self.len() as i32)?;
         let lower_bound = 1;
         out.write_i32::<NetworkEndian>(lower_bound)?;
 
-        let mut buffer = out.with_buffer(Vec::new());
+        // This buffer is created outside of the loop to reuse the underlying memory allocation
+        // For most cases all array elements will have the same serialized size
+        let mut buffer = Vec::new();
+
         for elem in self.iter() {
-            let is_null = elem.to_sql(&mut buffer)?;
+            let is_null = {
+                let mut temp_buffer = Output::new(buffer, *out.metadata_lookup());
+                let is_null = elem.to_sql(&mut temp_buffer)?;
+                buffer = temp_buffer.into_inner();
+                is_null
+            };
+
             if let IsNull::No = is_null {
                 out.write_i32::<NetworkEndian>(buffer.len() as i32)?;
                 out.write_all(&buffer)?;

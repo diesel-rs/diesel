@@ -6,7 +6,7 @@ use diesel::*;
 fn selecting_basic_data() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
@@ -15,20 +15,26 @@ fn selecting_basic_data() {
         ("Sean".to_string(), None::<String>),
         ("Tess".to_string(), None::<String>),
     ];
-    let actual_data: Vec<_> = users.select((name, hair_color)).load(&connection).unwrap();
+    let actual_data: Vec<_> = users
+        .select((name, hair_color))
+        .load(&mut connection)
+        .unwrap();
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 fn selecting_a_struct() {
     use crate::schema::users::dsl::*;
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     let expected_users = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
-    let actual_users: Vec<_> = users.select((name, hair_color)).load(&connection).unwrap();
+    let actual_users: Vec<_> = users
+        .select((name, hair_color))
+        .load(&mut connection)
+        .unwrap();
     assert_eq!(expected_users, actual_users);
 }
 
@@ -36,13 +42,13 @@ fn selecting_a_struct() {
 fn with_safe_select() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     let select_name = users.select(name);
-    let names: Vec<String> = select_name.load(&connection).unwrap();
+    let names: Vec<String> = select_name.load(&mut connection).unwrap();
 
     assert_eq!(vec!["Sean".to_string(), "Tess".to_string()], names);
 }
@@ -51,35 +57,34 @@ fn with_safe_select() {
 fn with_select_sql() {
     use diesel::dsl::sql;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     let select_count = users::table.select(sql::<sql_types::BigInt>("COUNT(*)"));
-    let get_count = || select_count.clone().first::<i64>(&connection);
 
-    assert_eq!(Ok(2), get_count());
+    assert_eq!(Ok(2), select_count.clone().first(&mut connection));
 
     connection
         .execute("INSERT INTO users (name) VALUES ('Jim')")
         .unwrap();
 
-    assert_eq!(Ok(3), get_count());
+    assert_eq!(Ok(3), select_count.clone().first(&mut connection));
 }
 
 #[test]
 fn selecting_nullable_followed_by_non_null() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean')")
         .unwrap();
 
     let source = users.select((hair_color, name));
     let expected_data = vec![(None::<String>, "Sean".to_string())];
-    let data: Vec<_> = source.load(&connection).unwrap();
+    let data: Vec<_> = source.load(&mut connection).unwrap();
 
     assert_eq!(expected_data, data);
 }
@@ -88,14 +93,14 @@ fn selecting_nullable_followed_by_non_null() {
 fn selecting_expression_with_bind_param() {
     use crate::schema::users::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     let source = users.select(name.eq("Sean".to_string()));
     let expected_data = vec![true, false];
-    let actual_data = source.load::<bool>(&connection).unwrap();
+    let actual_data = source.load::<bool>(&mut connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -112,7 +117,7 @@ table! {
 fn selecting_columns_and_tables_with_reserved_names() {
     use self::select::dsl::*;
 
-    let connection = connection();
+    let mut connection = connection();
     create_table(
         "select",
         (
@@ -120,26 +125,26 @@ fn selecting_columns_and_tables_with_reserved_names() {
             integer("join").not_null(),
         ),
     )
-    .execute(&connection)
+    .execute(&mut connection)
     .unwrap();
     connection
         .execute("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
         .unwrap();
 
     let expected_data = vec![(1, 1), (2, 2), (3, 3)];
-    let actual_data: Vec<(i32, i32)> = select.load(&connection).unwrap();
+    let actual_data: Vec<(i32, i32)> = select.load(&mut connection).unwrap();
     assert_eq!(expected_data, actual_data);
 
     let expected_data = vec![1, 2, 3];
-    let actual_data: Vec<i32> = select.select(join).load(&connection).unwrap();
+    let actual_data: Vec<i32> = select.select(join).load(&mut connection).unwrap();
     assert_eq!(expected_data, actual_data);
 }
 
 #[test]
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
-    let connection = connection();
-    drop_table_cascade(&connection, "users");
+    let mut connection = connection();
+    drop_table_cascade(&mut connection, "users");
     create_table(
         "users",
         (
@@ -148,14 +153,14 @@ fn selecting_columns_with_different_definition_order() {
             string("name").not_null(),
         ),
     )
-    .execute(&connection)
+    .execute(&mut connection)
     .unwrap();
     let expected_user = User::with_hair_color(1, "Sean", "black");
     insert_into(users::table)
         .values(&NewUser::new("Sean", Some("black")))
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
-    let user_from_select = users::table.first(&connection);
+    let user_from_select = users::table.first(&mut connection);
 
     assert_eq!(Ok(&expected_user), user_from_select.as_ref());
 }
@@ -164,8 +169,11 @@ fn selecting_columns_with_different_definition_order() {
 fn selection_using_subselect() {
     use crate::schema::posts::dsl::*;
 
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let ids: Vec<i32> = users::table.select(users::id).load(&connection).unwrap();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
+    let ids: Vec<i32> = users::table
+        .select(users::id)
+        .load(&mut connection)
+        .unwrap();
     let query = format!(
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
         ids[0], ids[1]
@@ -178,7 +186,7 @@ fn selection_using_subselect() {
     let data: Vec<String> = posts
         .select(title)
         .filter(user_id.eq_any(users))
-        .load(&connection)
+        .load(&mut connection)
         .unwrap();
 
     assert_eq!(vec!["Hello".to_string()], data);
@@ -225,7 +233,7 @@ fn select_for_update_locks_selected_rows() {
     use std::thread;
     use std::time::Duration;
 
-    let conn_1 = connection_without_transaction();
+    let mut conn_1 = connection_without_transaction();
     conn_1
         .execute("DROP TABLE IF EXISTS users_select_for_update")
         .unwrap();
@@ -237,7 +245,7 @@ fn select_for_update_locks_selected_rows() {
             string("hair_color"),
         ),
     )
-    .execute(&conn_1)
+    .execute(&mut conn_1)
     .unwrap();
     conn_1
         .batch_execute(
@@ -253,26 +261,26 @@ fn select_for_update_locks_selected_rows() {
     let _sean = users_select_for_update
         .for_update()
         .filter(name.eq("Sean"))
-        .first::<User>(&conn_1)
+        .first::<User>(&mut conn_1)
         .unwrap();
 
     let (send, recv) = mpsc::channel();
     let send2 = send.clone();
 
     let _blocked_thread = thread::spawn(move || {
-        let conn_2 = connection();
+        let mut conn_2 = connection();
         update(users_select_for_update.filter(name.eq("Sean")))
             .set(name.eq("Jim"))
-            .execute(&conn_2)
+            .execute(&mut conn_2)
             .unwrap();
         send.send("Sean").unwrap();
     });
 
     let _unblocked_thread = thread::spawn(move || {
-        let conn_3 = connection();
+        let mut conn_3 = connection();
         update(users_select_for_update.filter(name.eq("Tess")))
             .set(name.eq("Bob"))
-            .execute(&conn_3)
+            .execute(&mut conn_3)
             .unwrap();
         send2.send("Tess").unwrap();
     });
@@ -297,9 +305,9 @@ fn select_for_update_modifiers() {
 
     // We need to actually commit some data for the
     // test
-    let conn_1 = connection_without_transaction();
-    let conn_2 = connection();
-    let conn_3 = connection();
+    let mut conn_1 = connection_without_transaction();
+    let mut conn_2 = connection();
+    let mut conn_3 = connection();
 
     // Recreate the table
     conn_1
@@ -313,7 +321,7 @@ fn select_for_update_modifiers() {
             string("hair_color"),
         ),
     )
-    .execute(&conn_1)
+    .execute(&mut conn_1)
     .unwrap();
 
     // Add some test data
@@ -333,7 +341,7 @@ fn select_for_update_modifiers() {
     let _sean = users_select_for_update_modifieres
         .order(name)
         .for_update()
-        .first::<User>(&conn_1)
+        .first::<User>(&mut conn_1)
         .unwrap();
 
     // Try to access the "Sean" row with `NOWAIT`
@@ -342,7 +350,7 @@ fn select_for_update_modifiers() {
         .order(name)
         .for_update()
         .no_wait()
-        .first::<User>(&conn_2);
+        .first::<User>(&mut conn_2);
 
     // Make sure we errored in the correct way (without timing out)
     assert!(result.is_err());
@@ -355,7 +363,7 @@ fn select_for_update_modifiers() {
         .order(name)
         .for_update()
         .skip_locked()
-        .first::<User>(&conn_3)
+        .first::<User>(&mut conn_3)
         .unwrap();
 
     // Make sure got back "Tess"
@@ -370,10 +378,10 @@ fn select_for_no_key_update_modifiers() {
 
     // We need to actually commit some data for the
     // test
-    let conn_1 = connection_without_transaction();
-    let conn_2 = connection();
-    let conn_3 = connection();
-    let conn_4 = connection();
+    let mut conn_1 = connection_without_transaction();
+    let mut conn_2 = connection();
+    let mut conn_3 = connection();
+    let mut conn_4 = connection();
 
     // Recreate the table
     conn_1
@@ -391,7 +399,7 @@ fn select_for_no_key_update_modifiers() {
             string("hair_color"),
         ),
     )
-    .execute(&conn_1)
+    .execute(&mut conn_1)
     .unwrap();
 
     create_table(
@@ -401,7 +409,7 @@ fn select_for_no_key_update_modifiers() {
             integer("users_fk").not_null(),
         ),
     )
-    .execute(&conn_1)
+    .execute(&mut conn_1)
     .unwrap();
 
     // Add a foreign key
@@ -425,7 +433,7 @@ fn select_for_no_key_update_modifiers() {
     let _sean = users_select_for_no_key_update
         .order(name)
         .for_no_key_update()
-        .first::<User>(&conn_1)
+        .first::<User>(&mut conn_1)
         .unwrap();
 
     // Try to add an object referencing the "Sean" row
@@ -438,7 +446,7 @@ fn select_for_no_key_update_modifiers() {
 
     // Check that it was successfully added
     let expected_data = vec![(1, 1)];
-    let actual_data: Vec<(i32, i32)> = users_fk_for_no_key_update.load(&conn_2).unwrap();
+    let actual_data: Vec<(i32, i32)> = users_fk_for_no_key_update.load(&mut conn_2).unwrap();
     assert_eq!(expected_data, actual_data);
 
     // Try to access the "Sean" row with `for no key update` and `SKIP LOCKED`
@@ -446,7 +454,7 @@ fn select_for_no_key_update_modifiers() {
         .order(name)
         .for_no_key_update()
         .skip_locked()
-        .first::<User>(&conn_3)
+        .first::<User>(&mut conn_3)
         .unwrap();
 
     // Make sure got back "Tess"
@@ -457,7 +465,7 @@ fn select_for_no_key_update_modifiers() {
         .order(name)
         .for_update()
         .skip_locked()
-        .first::<User>(&conn_4)
+        .first::<User>(&mut conn_4)
         .unwrap();
 
     assert_eq!(will.name, "Will");
@@ -477,15 +485,15 @@ fn select_for_no_key_update_modifiers() {
 
 #[test]
 fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
-    let connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &connection);
-    let tess = find_user_by_name("Tess", &connection);
+    let mut connection = connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", &mut connection);
+    let tess = find_user_by_name("Tess", &mut connection);
     insert_into(posts::table)
         .values(&vec![
             tess.new_post("Tess", None),
             sean.new_post("Hi", None),
         ])
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     let invalid_query_but_valid_subselect = posts::table
@@ -493,7 +501,7 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
         .select(posts::user_id);
     let users_with_post_using_name_as_title = users::table
         .filter(users::id.eq_any(invalid_query_but_valid_subselect))
-        .load(&connection);
+        .load(&mut connection);
 
     assert_eq!(Ok(vec![tess]), users_with_post_using_name_as_title);
 }
@@ -503,10 +511,10 @@ fn selecting_multiple_aggregate_expressions_without_group_by() {
     use self::users::dsl::*;
     use diesel::dsl::{count_star, max};
 
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let mut connection = connection_with_sean_and_tess_in_users_table();
     let (count, max_name) = users
         .select((count_star(), max(name)))
-        .get_result::<(i64, _)>(&connection)
+        .get_result::<(i64, _)>(&mut connection)
         .unwrap();
 
     assert_eq!(2, count);

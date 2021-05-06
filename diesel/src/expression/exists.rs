@@ -20,11 +20,11 @@ use crate::sql_types::Bool;
 /// #     use schema::users::dsl::*;
 /// #     use diesel::select;
 /// #     use diesel::dsl::exists;
-/// #     let connection = establish_connection();
+/// #     let mut connection = establish_connection();
 /// let sean_exists = select(exists(users.filter(name.eq("Sean"))))
-///     .get_result(&connection);
+///     .get_result(&mut connection);
 /// let jim_exists = select(exists(users.filter(name.eq("Jim"))))
-///     .get_result(&connection);
+///     .get_result(&mut connection);
 /// assert_eq!(Ok(true), sean_exists);
 /// assert_eq!(Ok(false), jim_exists);
 /// # }
