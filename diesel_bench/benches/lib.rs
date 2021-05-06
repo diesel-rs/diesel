@@ -14,6 +14,7 @@ mod sqlx_benches;
 
 use criterion::{BenchmarkId, Criterion};
 
+#[cfg(any(feature = "sqlite", feature = "rustorm"))]
 const SQLITE_MIGRATION_SQL: &[&str] = &[
     "CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,

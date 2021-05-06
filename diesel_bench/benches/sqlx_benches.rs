@@ -247,7 +247,7 @@ pub fn bench_medium_complex_query_query_as_macro(b: &mut Bencher, size: usize) {
     b.iter(|| {
         async_std::task::block_on(async {
             let res = sqlx::query_as!(UserWithPost,
-                "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as \"post_id?\", p.user_id as \"user_id?\", p.title as \"title?\", p.body  as \"body?\"\
+                "SELECT u.id as \"myuser_id!\", u.name as \"name!\", u.hair_color, p.id as \"post_id?\", p.user_id as \"user_id?\", p.title as \"title?\", p.body  as \"body?\"\
                  FROM users as u LEFT JOIN posts as p on u.id = p.user_id"
             )
             .fetch_all(&mut conn)
