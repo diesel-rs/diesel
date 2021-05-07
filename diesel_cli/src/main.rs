@@ -307,28 +307,7 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
             .join("migrations"),
     };
 
-    if dir.exists() {
-        // This is a cleanup code for migrating from an
-        // older version of diesel_cli that set a `.gitkeep` instead of a `.keep` file.
-        // TODO: remove this after a few releases
-        if let Ok(read_dir) = fs::read_dir(&dir) {
-            if let Some(dir_entry) =
-                read_dir
-                    .filter_map(|entry| entry.ok())
-                    .find(|entry| match entry.file_type() {
-                        Ok(file_type) => file_type.is_file() && entry.file_name() == ".gitkeep",
-                        Err(_) => false,
-                    })
-            {
-                fs::remove_file(dir_entry.path()).unwrap_or_else(|err| {
-                    eprintln!(
-                        "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}",
-                        err
-                    )
-                });
-            }
-        }
-    } else {
+    if !dir.exists() {
         create_migrations_directory(&dir)?;
     }
 
