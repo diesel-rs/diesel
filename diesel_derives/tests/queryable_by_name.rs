@@ -25,6 +25,16 @@ fn named_struct_definition() {
 }
 
 #[test]
+fn non_ident_column_name() {
+    #[derive(QueryableByName)]
+    struct Out {
+        #[sql_type = "diesel::sql_types::Text"]
+        #[column_name = "QUERY PLAN "]
+        qp: String,
+    }
+}
+
+#[test]
 fn tuple_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
