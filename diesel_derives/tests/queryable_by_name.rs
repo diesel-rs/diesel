@@ -25,16 +25,6 @@ fn named_struct_definition() {
 }
 
 #[test]
-fn non_ident_column_name() {
-    #[derive(QueryableByName)]
-    struct Out {
-        #[sql_type = "diesel::sql_types::Text"]
-        #[column_name = "QUERY PLAN "]
-        qp: String,
-    }
-}
-
-#[test]
 fn tuple_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]
@@ -74,6 +64,25 @@ fn struct_with_no_table() {
     let conn = connection();
     let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
     assert_eq!(Ok(MyStructNamedSoYouCantInferIt { foo: 1, bar: 2 }), data);
+}
+
+#[test]
+fn struct_with_non_ident_column_name() {
+    #[derive(Debug, Clone, PartialEq, Eq, QueryableByName)]
+    struct QueryPlan {
+        #[sql_type = "diesel::sql_types::Text"]
+        #[column_name = "QUERY PLAN"]
+        qp: String,
+    }
+
+    let conn = connection();
+    let data = sql_query("SELECT 'some plan' AS \"QUERY PLAN\"").get_result(&conn);
+    assert_eq!(
+        Ok(QueryPlan {
+            qp: "some plan".to_string()
+        }),
+        data
+    );
 }
 
 #[test]

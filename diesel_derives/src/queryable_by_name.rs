@@ -25,18 +25,18 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 let field_ty = &f.ty;
                 let deserialize_ty = f.ty_for_deserialize()?;
                 if model.has_table_name_attribute() {
-                    let name = f.column_name();
+                    let name = f.column_name_ident();
                     Ok(quote!(
-                            {
-                                let field = diesel::row::NamedRow::get(row, stringify!(#name))?;
-                                <#deserialize_ty as Into<#field_ty>>::into(field)
-                            }
+                        {
+                            let field = diesel::row::NamedRow::get(row, stringify!(#name))?;
+                            <#deserialize_ty as Into<#field_ty>>::into(field)
+                        }
                     ))
                 } else {
-                    let name = f.column_str_name();
+                    let name = f.column_name_str();
                     Ok(quote!(
                        {
-                           let field = diesel::row::NamedRow::get(row, stringify!(#name))?;
+                           let field = diesel::row::NamedRow::get(row, #name)?;
                            <#deserialize_ty as Into<#field_ty>>::into(field)
                        }
                     ))
@@ -108,7 +108,7 @@ fn sql_type(field: &Field, model: &Model) -> syn::Type {
         Some(ref st) => st.clone(),
         None => {
             if model.has_table_name_attribute() {
-                let column_name = field.column_name();
+                let column_name = field.column_name_ident();
                 parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
             } else {
                 let field_name = match field.name {

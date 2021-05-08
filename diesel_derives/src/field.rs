@@ -48,7 +48,7 @@ impl Field {
         }
     }
 
-    pub fn column_name(&self) -> syn::Ident {
+    pub fn column_name_ident(&self) -> syn::Ident {
         self.column_name_from_attribute
             .as_ref()
             .map(|m| m.expect_ident_value())
@@ -65,20 +65,25 @@ impl Field {
             })
     }
 
-    pub fn column_str_name(&self) -> String {
+    pub fn column_name_str(&self) -> String {
         self.column_name_from_attribute
             .as_ref()
             .map(|m| {
                 m.str_value().unwrap_or_else(|e| {
                     e.emit();
-                    "unknown_column".to_string()
+                    m.name().segments.first().unwrap().ident.to_string()
                 })
             })
-            .unwrap_or_else(|| {
-                self.span
-                    .error("All fields of tuple structs must be annotated with `#[column_name]`")
-                    .emit();
-                "unknown_column".to_string()
+            .unwrap_or_else(|| match self.name {
+                FieldName::Named(ref x) => x.to_string(),
+                _ => {
+                    self.span
+                        .error(
+                            "All fields of tuple structs must be annotated with `#[column_name]`",
+                        )
+                        .emit();
+                    "unknown_column".to_string()
+                }
             })
     }
 

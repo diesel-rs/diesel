@@ -51,7 +51,7 @@ impl Model {
     pub fn find_column(&self, column_name: &syn::Ident) -> Result<&Field, Diagnostic> {
         self.fields()
             .iter()
-            .find(|f| &f.column_name() == column_name)
+            .find(|f| &f.column_name_ident() == column_name)
             .ok_or_else(|| {
                 column_name
                     .span()
