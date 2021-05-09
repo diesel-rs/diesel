@@ -92,13 +92,18 @@ fn field_changeset_ty(
     treat_none_as_null: bool,
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Type {
-    let column_name = field.column_name();
-    if !treat_none_as_null && is_option_ty(&field.ty) {
-        let field_ty = inner_of_option_ty(&field.ty);
-        parse_quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>>)
-    } else {
+    if field.has_flag("embed") {
         let field_ty = &field.ty;
-        parse_quote!(diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>)
+        parse_quote!(#lifetime #field_ty)
+    } else {
+        let column_name = field.column_name();
+        if !treat_none_as_null && is_option_ty(&field.ty) {
+            let field_ty = inner_of_option_ty(&field.ty);
+            parse_quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>>)
+        } else {
+            let field_ty = &field.ty;
+            parse_quote!(diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>)
+        }
     }
 }
 
@@ -109,14 +114,19 @@ fn field_changeset_expr(
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Expr {
     let field_access = field.name.access();
-    let column_name = field.column_name();
-    if !treat_none_as_null && is_option_ty(&field.ty) {
-        if lifetime.is_some() {
-            parse_quote!(self#field_access.as_ref().map(|x| #table_name::#column_name.eq(x)))
-        } else {
-            parse_quote!(self#field_access.map(|x| #table_name::#column_name.eq(x)))
-        }
+    if field.has_flag("embed") {
+        parse_quote!(#lifetime self#field_access)
     } else {
-        parse_quote!(#table_name::#column_name.eq(#lifetime self#field_access))
+        let column_name = field.column_name();
+        let column: syn::Expr = parse_quote!(#table_name::#column_name);
+        if !treat_none_as_null && is_option_ty(&field.ty) {
+            if lifetime.is_some() {
+                parse_quote!(self#field_access.as_ref().map(|x| #column.eq(x)))
+            } else {
+                parse_quote!(self#field_access.map(|x| #column.eq(x)))
+            }
+        } else {
+            parse_quote!(#column.eq(#lifetime self#field_access))
+        }
     }
 }

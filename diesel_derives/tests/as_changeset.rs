@@ -1,3 +1,5 @@
+use diesel::expression::{bound::Bound, grouped::Grouped, operators};
+use diesel::sql_types::{Nullable, Text};
 use diesel::*;
 use helpers::*;
 use schema::*;
@@ -470,6 +472,140 @@ fn option_fields_are_assigned_null_when_specified() {
     let expected = vec![
         (1, String::from("Jim"), Some(String::from("blue"))),
         (2, String::from("Ruby"), None),
+    ];
+    let actual = users::table.order(users::id).load(&connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
+fn update_user_with_embed() {
+    #[derive(AsChangeset)]
+    #[table_name = "users"]
+    struct UserForm {
+        name: Option<String>,
+        #[diesel(embed)]
+        hair_color: HairColor,
+    }
+
+    #[allow(dead_code)]
+    enum HairColor {
+        Bald,
+        Black,
+        White,
+        Other(String),
+    }
+
+    impl AsChangeset for HairColor {
+        type Target = users::table;
+        type Changeset =
+            Option<Grouped<operators::Eq<users::hair_color, Bound<Nullable<Text>, String>>>>;
+
+        fn as_changeset(self) -> Self::Changeset {
+            match self {
+                HairColor::Black => Some(users::hair_color.eq("Black".to_string())),
+                HairColor::White => Some(users::hair_color.eq("White".to_string())),
+                HairColor::Other(x) => Some(users::hair_color.eq(x)),
+                HairColor::Bald => None,
+            }
+        }
+    }
+
+    impl AsChangeset for &HairColor {
+        type Target = users::table;
+        type Changeset =
+            Option<Grouped<operators::Eq<users::hair_color, Bound<Nullable<Text>, String>>>>;
+
+        fn as_changeset(self) -> Self::Changeset {
+            match self {
+                HairColor::Black => Some(users::hair_color.eq("Black".to_string())),
+                HairColor::White => Some(users::hair_color.eq("White".to_string())),
+                HairColor::Other(x) => Some(users::hair_color.eq(x.clone())),
+                HairColor::Bald => None,
+            }
+        }
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    diesel::update(users::table)
+        .filter(users::id.eq(1))
+        .set(UserForm {
+            name: None,
+            hair_color: HairColor::Black,
+        })
+        .execute(&connection)
+        .unwrap();
+
+    let expected = vec![
+        (1, String::from("Sean"), Some(String::from("Black"))),
+        (2, String::from("Tess"), Some(String::from("brown"))),
+    ];
+    let actual = users::table.order(users::id).load(&connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
+fn update_user_with_embed_that_sets_null() {
+    #[derive(AsChangeset)]
+    #[table_name = "users"]
+    struct UserForm {
+        name: Option<String>,
+        #[diesel(embed)]
+        hair_color: HairColor,
+    }
+
+    #[allow(dead_code)]
+    enum HairColor {
+        Bald,
+        Black,
+        White,
+        Other(String),
+    }
+
+    impl AsChangeset for HairColor {
+        type Target = users::table;
+        type Changeset =
+            Option<Grouped<operators::Eq<users::hair_color, Bound<Nullable<Text>, String>>>>;
+
+        fn as_changeset(self) -> Self::Changeset {
+            match self {
+                HairColor::Black => Some(users::hair_color.eq("Black".to_string())),
+                HairColor::White => Some(users::hair_color.eq("White".to_string())),
+                HairColor::Other(x) => Some(users::hair_color.eq(x)),
+                HairColor::Bald => None,
+            }
+        }
+    }
+
+    impl AsChangeset for &HairColor {
+        type Target = users::table;
+        type Changeset =
+            Option<Grouped<operators::Eq<users::hair_color, Bound<Nullable<Text>, String>>>>;
+
+        fn as_changeset(self) -> Self::Changeset {
+            match self {
+                HairColor::Black => Some(users::hair_color.eq("Black".to_string())),
+                HairColor::White => Some(users::hair_color.eq("White".to_string())),
+                HairColor::Other(x) => Some(users::hair_color.eq(x.clone())),
+                HairColor::Bald => None,
+            }
+        }
+    }
+
+    let connection = connection_with_sean_and_tess_in_users_table();
+
+    diesel::update(users::table)
+        .filter(users::id.eq(1))
+        .set(UserForm {
+            name: None,
+            hair_color: HairColor::Bald,
+        })
+        .execute(&connection)
+        .unwrap();
+
+    let expected = vec![
+        (1, String::from("Sean"), Some(String::from("Black"))),
+        (2, String::from("Tess"), None),
     ];
     let actual = users::table.order(users::id).load(&connection);
     assert_eq!(Ok(expected), actual);

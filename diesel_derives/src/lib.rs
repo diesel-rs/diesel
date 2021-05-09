@@ -68,6 +68,11 @@ use diagnostic_shim::*;
 /// annotate your struct with `#[changeset_options(treat_none_as_null =
 /// "true")]`.
 ///
+/// Your struct can also contain fields which implement `AsChangeset`. This is
+/// useful when you want to have one field map to more than one column (for
+/// example, an enum that maps to a label and a value column). Add
+/// `#[diesel(embed)]` to any such fields.
+///
 /// # Attributes
 ///
 /// ## Optional container attributes
@@ -86,9 +91,11 @@ use diagnostic_shim::*;
 /// * `#[column_name = "some_column_name"]`, overrides the column name
 /// of the current field to `some_column_name`. By default the field
 /// name is used as column name.
+/// * `#[diesel(embed)]`, specifies that the current field maps not only
+/// to single database field, but is a type that implements `AsChangeset`
 #[proc_macro_derive(
     AsChangeset,
-    attributes(table_name, primary_key, column_name, changeset_options)
+    attributes(diesel, table_name, primary_key, column_name, changeset_options)
 )]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, as_changeset::derive)
