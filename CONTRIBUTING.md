@@ -111,7 +111,7 @@ Thank you! We'll try to respond as quickly as possible.
 5. Now, try running the test suite to confirm everything works for you locally
    by executing `bin/test`. (Initially, this will take a while to compile
    everything.) In addition, if you want to compile and test a crate separately, 
-   you can refer to the command in `bin/test`.
+   you can refer to the commands in `bin/test`.
 
 [rustup]: https://rustup.rs/
 
