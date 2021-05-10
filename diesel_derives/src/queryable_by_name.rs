@@ -24,23 +24,13 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             } else {
                 let field_ty = &f.ty;
                 let deserialize_ty = f.ty_for_deserialize()?;
-                if model.has_table_name_attribute() {
-                    let name = f.column_name_ident();
-                    Ok(quote!(
-                        {
-                            let field = diesel::row::NamedRow::get(row, stringify!(#name))?;
-                            <#deserialize_ty as Into<#field_ty>>::into(field)
-                        }
-                    ))
-                } else {
-                    let name = f.column_name_str();
-                    Ok(quote!(
-                       {
-                           let field = diesel::row::NamedRow::get(row, #name)?;
-                           <#deserialize_ty as Into<#field_ty>>::into(field)
-                       }
-                    ))
-                }
+                let name = f.column_name_str();
+                Ok(quote!(
+                   {
+                       let field = diesel::row::NamedRow::get(row, #name)?;
+                       <#deserialize_ty as Into<#field_ty>>::into(field)
+                   }
+                ))
             }
         })
         .collect::<Result<Vec<_>, Diagnostic>>()?;
