@@ -50,7 +50,7 @@ fn field_column_ty(field: &Field, model: &Model) -> Result<syn::Type, Diagnostic
         Ok(parse_quote!(<#embed_ty as Selectable<__DB>>::SelectExpression))
     } else {
         let table_name = model.table_name();
-        let column_name = field.column_name();
+        let column_name = field.column_name_ident();
         Ok(parse_quote!(#table_name::#column_name))
     }
 }
@@ -61,7 +61,7 @@ fn field_column_inst(field: &Field, model: &Model) -> Result<syn::Expr, Diagnost
         Ok(parse_quote!(<#embed_ty as Selectable<__DB>>::construct_selection()))
     } else {
         let table_name = model.table_name();
-        let column_name = field.column_name();
+        let column_name = field.column_name_ident();
         Ok(parse_quote!(#table_name::#column_name))
     }
 }

@@ -67,6 +67,25 @@ fn struct_with_no_table() {
 }
 
 #[test]
+fn struct_with_non_ident_column_name() {
+    #[derive(Debug, Clone, PartialEq, Eq, QueryableByName)]
+    struct QueryPlan {
+        #[sql_type = "diesel::sql_types::Text"]
+        #[column_name = "QUERY PLAN"]
+        qp: String,
+    }
+
+    let conn = connection();
+    let data = sql_query("SELECT 'some plan' AS \"QUERY PLAN\"").get_result(&conn);
+    assert_eq!(
+        Ok(QueryPlan {
+            qp: "some plan".to_string()
+        }),
+        data
+    );
+}
+
+#[test]
 fn embedded_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
     #[table_name = "my_structs"]

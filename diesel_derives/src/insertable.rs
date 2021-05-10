@@ -126,7 +126,7 @@ fn field_expr_embed(field: &Field, lifetime: Option<proc_macro2::TokenStream>) -
 
 fn field_ty_serialize_as(field: &Field, table_name: &syn::Path, ty: &syn::Type) -> syn::Type {
     let inner_ty = inner_of_option_ty(&ty);
-    let column_name = field.column_name();
+    let column_name = field.column_name_ident();
 
     parse_quote!(
         std::option::Option<diesel::dsl::Eq<
@@ -138,7 +138,7 @@ fn field_ty_serialize_as(field: &Field, table_name: &syn::Path, ty: &syn::Type) 
 
 fn field_expr_serialize_as(field: &Field, table_name: &syn::Path, ty: &syn::Type) -> syn::Expr {
     let field_access = field.name.access();
-    let column_name = field.column_name();
+    let column_name = field.column_name_ident();
     let column: syn::Expr = parse_quote!(#table_name::#column_name);
 
     if is_option_ty(&ty) {
@@ -154,7 +154,7 @@ fn field_ty(
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Type {
     let inner_ty = inner_of_option_ty(&field.ty);
-    let column_name = field.column_name();
+    let column_name = field.column_name_ident();
 
     parse_quote!(
         std::option::Option<diesel::dsl::Eq<
@@ -170,7 +170,7 @@ fn field_expr(
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Expr {
     let field_access = field.name.access();
-    let column_name = field.column_name();
+    let column_name = field.column_name_ident();
     let column: syn::Expr = parse_quote!(#table_name::#column_name);
     if is_option_ty(&field.ty) {
         if lifetime.is_some() {

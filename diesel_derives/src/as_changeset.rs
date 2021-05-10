@@ -28,7 +28,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let fields_for_update = model
         .fields()
         .iter()
-        .filter(|f| !model.primary_key_names.contains(&f.column_name()))
+        .filter(|f| !model.primary_key_names.contains(&f.column_name_ident()))
         .collect::<Vec<_>>();
     let ref_changeset_ty = fields_for_update.iter().map(|field| {
         field_changeset_ty(
@@ -92,7 +92,7 @@ fn field_changeset_ty(
     treat_none_as_null: bool,
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Type {
-    let column_name = field.column_name();
+    let column_name = field.column_name_ident();
     if !treat_none_as_null && is_option_ty(&field.ty) {
         let field_ty = inner_of_option_ty(&field.ty);
         parse_quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>>)
@@ -109,7 +109,7 @@ fn field_changeset_expr(
     lifetime: Option<proc_macro2::TokenStream>,
 ) -> syn::Expr {
     let field_access = field.name.access();
-    let column_name = field.column_name();
+    let column_name = field.column_name_ident();
     if !treat_none_as_null && is_option_ty(&field.ty) {
         if lifetime.is_some() {
             parse_quote!(self#field_access.as_ref().map(|x| #table_name::#column_name.eq(x)))
