@@ -199,7 +199,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras"
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras r2d2"
 
       - name: Test diesel (with-deprecated)
         uses: actions-rs/cargo@v1
