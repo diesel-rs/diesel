@@ -75,8 +75,8 @@ fn struct_with_non_ident_column_name() {
         qp: String,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 'some plan' AS \"QUERY PLAN\"").get_result(&conn);
+    let mut conn = connection();
+    let data = sql_query("SELECT 'some plan' AS \"QUERY PLAN\"").get_result(&mut conn);
     assert_eq!(
         Ok(QueryPlan {
             qp: "some plan".to_string()
