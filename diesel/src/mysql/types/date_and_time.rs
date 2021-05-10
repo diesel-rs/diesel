@@ -156,7 +156,6 @@ mod tests {
     extern crate dotenv;
 
     use self::chrono::{Duration, NaiveDate, NaiveTime, Utc};
-    use self::dotenv::dotenv;
 
     use crate::dsl::{now, sql};
     use crate::prelude::*;

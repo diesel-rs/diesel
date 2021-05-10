@@ -88,7 +88,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL 1 HOUR)",
         ))
-        .get_result(&db.conn())
+        .get_result(&mut db.conn())
         .unwrap()
     }
 
