@@ -9,7 +9,7 @@ error[E0271]: type mismatch resolving `<foo::foo<diesel::expression::bound::Boun
 error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
   --> $DIR/user_defined_functions_follow_same_selection_rules.rs:38:10
    |
-38 |         .load::<User>(&conn);
+38 |         .load::<User>(&mut conn);
    |          ^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
    |
    = help: the following implementations were found:

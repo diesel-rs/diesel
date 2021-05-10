@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/filter_cannot_take_comparison_for_columns_from_another_table.rs:32:10
    |
-32 |         .load::<User>(&conn);
+32 |         .load::<User>(&mut conn);
    |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
@@ -34,7 +34,7 @@ error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_build
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/filter_cannot_take_comparison_for_columns_from_another_table.rs:43:10
    |
-43 |         .load::<User>(&conn);
+43 |         .load::<User>(&mut conn);
    |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`

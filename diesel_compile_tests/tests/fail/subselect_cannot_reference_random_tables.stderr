@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
   --> $DIR/subselect_cannot_reference_random_tables.rs:32:10
    |
-32 |         .load::<(i32,)>(&conn);
+32 |         .load::<(i32,)>(&mut conn);
    |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<diesel::query_source::joins::Join<posts::table, users::table, Inner>>` for `comments::columns::id`
@@ -17,7 +17,7 @@ error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<posts:
 error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
   --> $DIR/subselect_cannot_reference_random_tables.rs:38:10
    |
-38 |         .load::<(i32,)>(&conn);
+38 |         .load::<(i32,)>(&mut conn);
    |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<diesel::query_source::joins::Join<posts::table, users::table, Inner>>` for `comments::columns::id`
@@ -33,7 +33,7 @@ error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<posts:
 error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
   --> $DIR/subselect_cannot_reference_random_tables.rs:42:10
    |
-42 |         .load::<(i32,)>(&conn);
+42 |         .load::<(i32,)>(&mut conn);
    |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<diesel::query_source::joins::Join<posts::table, users::table, Inner>>` for `comments::columns::id`

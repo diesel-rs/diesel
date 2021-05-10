@@ -84,32 +84,32 @@ struct UserWithoutSelectable {
 
 
 fn main() {
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     // supported queries
     //
     // plain queries
-    let _  = posts::table.select(Post::as_select()).load(&conn).unwrap();
+    let _  = posts::table.select(Post::as_select()).load(&mut conn).unwrap();
 
     // boxed queries
-    let _  = posts::table.into_boxed().select(Post::as_select()).load(&conn).unwrap();
-    let _  = posts::table.select(Post::as_select()).into_boxed().load(&conn).unwrap();
+    let _  = posts::table.into_boxed().select(Post::as_select()).load(&mut conn).unwrap();
+    let _  = posts::table.select(Post::as_select()).into_boxed().load(&mut conn).unwrap();
 
     // mixed clauses
-    let _ = posts::table.select((Post::as_select(), posts::title)).load::<(_, String)>(&conn).unwrap();
+    let _ = posts::table.select((Post::as_select(), posts::title)).load::<(_, String)>(&mut conn).unwrap();
 
     // This works for inner joins
     let _ = users::table
         .inner_join(posts::table)
         .select(UserWithEmbeddedPost::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // also for left joins
     let _ = users::table
         .left_join(posts::table)
         .select(UserWithOptionalPost::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // allow manual impls with complex expressions
@@ -118,27 +118,27 @@ fn main() {
         .inner_join(posts::table)
         .group_by(users::id)
         .select(UserWithPostCount::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // inserts
     let _ = diesel::insert_into(posts::table)
         .values(posts::title.eq(""))
         .returning(Post::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // update
     let _ = diesel::update(posts::table)
         .set(posts::title.eq(""))
         .returning(Post::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // delete
     let _ = diesel::delete(posts::table)
         .returning(Post::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // forbidden queries
@@ -147,7 +147,7 @@ fn main() {
     let _ = users::table
         .left_join(posts::table)
         .select(UserWithEmbeddedPost::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // group by clauses are considered
@@ -155,14 +155,14 @@ fn main() {
         .inner_join(posts::table)
         .group_by(posts::id)
         .select(UserWithEmbeddedPost::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // missing group by clause
     let _ = users::table
         .inner_join(posts::table)
         .select(UserWithPostCount::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // cannot load results from more than one table via
@@ -170,7 +170,7 @@ fn main() {
     let _ = diesel::insert_into(users::table)
         .values(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // cannot load results from more than one table via
@@ -178,35 +178,35 @@ fn main() {
     let _ = diesel::update(users::table)
         .set(users::name.eq(""))
         .returning(UserWithEmbeddedPost::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // cannot load results from more than one table via
     // returning clauses
     let _ = diesel::delete(users::table)
         .returning(UserWithEmbeddedPost::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 
     // cannot use this method without deriving selectable
-    let _ = users::table.select(UserWithoutSelectable::as_select()).load(&conn).unwrap();
+    let _ = users::table.select(UserWithoutSelectable::as_select()).load(&mut conn).unwrap();
 
     // type locking
-    let _ = posts::table.select(Post::as_select()).load::<(i32, String)>(&conn).unwrap();
-    let _ = posts::table.select(Post::as_select()).into_boxed().load::<(i32, String)>(&conn).unwrap();
-    let _ = posts::table.select((Post::as_select(), posts::title)).load::<((i32, String), String)>(&conn).unwrap();
+    let _ = posts::table.select(Post::as_select()).load::<(i32, String)>(&mut conn).unwrap();
+    let _ = posts::table.select(Post::as_select()).into_boxed().load::<(i32, String)>(&mut conn).unwrap();
+    let _ = posts::table.select((Post::as_select(), posts::title)).load::<((i32, String), String)>(&mut conn).unwrap();
     let _ = diesel::insert_into(posts::table)
         .values(posts::title.eq(""))
         .returning(Post::as_select())
-        .load::<(i32, String, i32)>(&conn)
+        .load::<(i32, String, i32)>(&mut conn)
         .unwrap();
 
     // cannot use backend specific selectable with other backend
-    let conn = SqliteConnection::establish("").unwrap();
+    let mut conn = SqliteConnection::establish("").unwrap();
     let _ = users::table
         .inner_join(posts::table)
         .group_by(users::id)
         .select(UserWithPostCount::as_select())
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 }

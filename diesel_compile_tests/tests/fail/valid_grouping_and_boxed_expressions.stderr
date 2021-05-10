@@ -20,7 +20,7 @@ error[E0277]: the trait bound `dyn diesel::BoxableExpression<users::table, Pg, S
 error[E0277]: the trait bound `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>: ValidGrouping<columns::id>` is not satisfied
   --> $DIR/valid_grouping_and_boxed_expressions.rs:72:10
    |
-72 |         .load::<i32>(&conn);
+72 |         .load::<i32>(&mut conn);
    |          ^^^^ the trait `ValidGrouping<columns::id>` is not implemented for `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>`
    |
    = help: the following implementations were found:
@@ -56,7 +56,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
 error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
    --> $DIR/valid_grouping_and_boxed_expressions.rs:108:10
     |
-108 |         .load::<(Option<i32>, i32)>(&conn);
+108 |         .load::<(Option<i32>, i32)>(&mut conn);
     |          ^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
     |
     = help: the following implementations were found:

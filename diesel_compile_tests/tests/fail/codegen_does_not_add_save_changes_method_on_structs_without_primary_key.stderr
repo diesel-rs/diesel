@@ -10,7 +10,7 @@ error[E0599]: the method `save_changes` exists for struct `User`, but its trait 
    | doesn't satisfy `User: IntoUpdateTarget`
    | doesn't satisfy `User: diesel::SaveChangesDsl<_>`
 ...
-26 |     user.save_changes(&connection);
+26 |     user.save_changes(&mut connection);
    |          ^^^^^^^^^^^^ method cannot be called on `User` due to unsatisfied trait bounds
    |
    = note: the following trait bounds were not satisfied:

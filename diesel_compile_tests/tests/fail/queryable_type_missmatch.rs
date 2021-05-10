@@ -52,7 +52,7 @@ struct UserNullableTypeMissmatch {
     bio: Option<String>,
 }
 
-fn test(conn: &PgConnection) {
+fn test(conn: &mut PgConnection) {
     // check that this works fine
     let _ = users::table.load::<User>(conn);
 

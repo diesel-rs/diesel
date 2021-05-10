@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::name>>: HavingDsl<_>` is not satisfied
   --> $DIR/having_cant_be_used_without_group_by.rs:26:38
    |
-26 |     users::table.select(users::name).having(users::id.gt(1)).load(&conn);
+26 |     users::table.select(users::name).having(users::id.gt(1)).load(&mut conn);
    |                                      ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::name>>`
    |
    = help: the following implementations were found:
@@ -10,7 +10,7 @@ error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_build
 error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
   --> $DIR/having_cant_be_used_without_group_by.rs:28:31
    |
-28 |     users::table.into_boxed().having(users::id.gt(1)).load(&conn);
+28 |     users::table.into_boxed().having(users::id.gt(1)).load(&mut conn);
    |                               ^^^^^^ the trait `diesel::Expression` is not implemented for `()`
    |
    = note: required because of the requirements on the impl of `HavingDsl<_>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), users::table, _>`
@@ -18,7 +18,7 @@ error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/having_cant_be_used_without_group_by.rs:30:58
    |
-30 |     users::table.select(users::name).group_by(users::id).having(posts::id.eq(42)).load(&conn);
+30 |     users::table.select(users::name).group_by(users::id).having(posts::id.eq(42)).load(&mut conn);
    |                                                          ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
@@ -29,7 +29,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/having_cant_be_used_without_group_by.rs:32:71
    |
-32 |     users::table.select(users::name).group_by(users::id).into_boxed().having(posts::id.eq(42)).load(&conn);
+32 |     users::table.select(users::name).group_by(users::id).into_boxed().having(posts::id.eq(42)).load(&mut conn);
    |                                                                       ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`

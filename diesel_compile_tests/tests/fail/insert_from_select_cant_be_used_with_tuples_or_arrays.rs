@@ -22,12 +22,12 @@ table! {
 fn main() {
     use self::users::dsl::*;
     use self::posts::dsl::*;
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     // Sanity check, valid query
     insert_into(posts)
         .values(users)
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
 
     insert_into(posts)

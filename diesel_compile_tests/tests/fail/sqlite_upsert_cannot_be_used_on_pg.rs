@@ -15,8 +15,8 @@ struct User {
 }
 
 fn main() {
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
     replace_into(users::table)
         .values(&User { id: 1 })
-        .execute(&connection);
+        .execute(&mut connection);
 }

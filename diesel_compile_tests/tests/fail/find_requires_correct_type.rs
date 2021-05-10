@@ -15,7 +15,7 @@ table! {
 }
 
 fn main() {
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
     // FIXME: It'd be nice if this mentioned `AsExpression`
     int_primary_key::table.find("1");
     // FIXME: It'd be nice if this mentioned `AsExpression`

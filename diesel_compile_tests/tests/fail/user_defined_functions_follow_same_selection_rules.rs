@@ -30,10 +30,10 @@ fn main() {
     use self::users::name;
     use self::posts::title;
 
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     let _ = users::table.filter(name.eq(foo(1)));
 
     let _ = users::table.filter(name.eq(bar(title)))
-        .load::<User>(&conn);
+        .load::<User>(&mut conn);
 }

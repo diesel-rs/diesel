@@ -9,7 +9,7 @@ table! {
 }
 
 fn main() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     update(users::table)
-        .execute(&conn);
+        .execute(&mut conn);
 }

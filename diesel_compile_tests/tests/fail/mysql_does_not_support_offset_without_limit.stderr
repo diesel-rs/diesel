@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>: QueryFragment<Mysql>` is not satisfied
   --> $DIR/mysql_does_not_support_offset_without_limit.rs:16:29
    |
-16 |     users::table.offset(42).get_result::<(i32, String)>(&connection);
+16 |     users::table.offset(42).get_result::<(i32, String)>(&mut connection);
    |                             ^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
    |
    = help: the following implementations were found:
@@ -16,7 +16,7 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<die
 error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>: IntoBoxedClause<'_, Mysql>` is not satisfied
   --> $DIR/mysql_does_not_support_offset_without_limit.rs:18:29
    |
-18 |     users::table.offset(42).into_boxed().get_result::<(i32, String)>(&connection);
+18 |     users::table.offset(42).into_boxed().get_result::<(i32, String)>(&mut connection);
    |                             ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
    |
    = help: the following implementations were found:

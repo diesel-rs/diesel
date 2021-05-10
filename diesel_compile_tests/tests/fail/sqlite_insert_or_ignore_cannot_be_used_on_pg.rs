@@ -15,9 +15,9 @@ struct User {
 }
 
 fn main() {
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
     insert_or_ignore_into(users::table)
         .values(users::id.eq(1))
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 }

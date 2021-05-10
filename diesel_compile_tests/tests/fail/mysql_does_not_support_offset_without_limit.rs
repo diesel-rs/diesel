@@ -12,8 +12,8 @@ table! {
 
 
 fn main() {
-    let connection = MysqlConnection::establish("").unwrap();
-    users::table.offset(42).get_result::<(i32, String)>(&connection);
+    let mut connection = MysqlConnection::establish("").unwrap();
+    users::table.offset(42).get_result::<(i32, String)>(&mut connection);
 
-    users::table.offset(42).into_boxed().get_result::<(i32, String)>(&connection);
+    users::table.offset(42).into_boxed().get_result::<(i32, String)>(&mut connection);
 }

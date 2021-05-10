@@ -24,17 +24,17 @@ pub struct NewUser(#[column_name = "name"] &'static str);
 #[allow(deprecated)]
 fn main() {
     use self::users::dsl::*;
-    let connection = PgConnection::establish("postgres://localhost").unwrap();
+    let mut connection = PgConnection::establish("postgres://localhost").unwrap();
 
     // Valid update as sanity check
-    insert_into(users).values(&NewUser("Sean")).on_conflict(id).do_update().set(name.eq("Sean")).execute(&connection);
+    insert_into(users).values(&NewUser("Sean")).on_conflict(id).do_update().set(name.eq("Sean")).execute(&mut connection);
 
     // No set clause
     insert_into(users)
         .values(&NewUser("Sean"))
         .on_conflict(id)
         .do_update()
-        .execute(&connection);
+        .execute(&mut connection);
 
     // Update column from other table
     insert_into(users)
@@ -67,5 +67,5 @@ fn main() {
 
     // Excluded is only valid in upsert
     // FIXME: This should not compile
-    update(users).set(name.eq(excluded(name))).execute(&connection);
+    update(users).set(name.eq(excluded(name))).execute(&mut connection);
 }

@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `*const str: FromSql<BigInt, _>` is not satisfied
   --> $DIR/select_sql_still_ensures_result_type.rs:16:30
    |
-16 |     let count = select_count.get_result::<String>(&connection).unwrap();
+16 |     let count = select_count.get_result::<String>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `FromSql<BigInt, _>` is not implemented for `*const str`
    |
    = help: the following implementations were found:

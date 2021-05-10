@@ -26,10 +26,10 @@ struct User {
 }
 
 fn main() {
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     let _ = users::table.filter(posts::id.eq(1))
-        .load::<User>(&conn);
+        .load::<User>(&mut conn);
 
     let _ = users::table
         .into_boxed::<Pg>()
@@ -40,7 +40,7 @@ fn main() {
         // FIXME: It'd be great if this mentioned `AppearsInFromClause` instead...
 
     let _ = users::table.filter(users::name.eq(posts::title))
-        .load::<User>(&conn);
+        .load::<User>(&mut conn);
         //~^ ERROR AppearsInFromClause
 
     let _ = users::table.into_boxed::<Pg>()

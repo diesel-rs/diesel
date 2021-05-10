@@ -17,7 +17,7 @@ table! {
 }
 
 fn main() {
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
     let subquery = users::table.filter(users::id.eq(1));
     let query = posts::table.filter(posts::user_id.eq_any(subquery));
 }

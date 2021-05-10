@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `diesel::query_builder::locking_clause::ForUpdate: QueryFragment<Sqlite>` is not satisfied
   --> $DIR/select_for_update_cannot_be_used_on_sqlite.rs:16:10
    |
-16 |         .load(&conn)
+16 |         .load(&mut conn)
    |          ^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::ForUpdate`
    |
    = help: the following implementations were found:
@@ -15,7 +15,7 @@ error[E0277]: the trait bound `diesel::query_builder::locking_clause::ForUpdate:
 error[E0277]: the trait bound `diesel::query_builder::locking_clause::NoModifier: QueryFragment<Sqlite>` is not satisfied
   --> $DIR/select_for_update_cannot_be_used_on_sqlite.rs:16:10
    |
-16 |         .load(&conn)
+16 |         .load(&mut conn)
    |          ^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::locking_clause::NoModifier`
    |
    = help: the following implementations were found:
