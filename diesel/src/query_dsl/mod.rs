@@ -498,8 +498,8 @@ pub trait QueryDsl: Sized {
     /// [`inner_join`]: QueryDsl::inner_join()
     ///
     /// Columns in the right hand table will become `Nullable` which means
-    /// you must call `nullable()` on the corresponding fields in the select 
-    /// clause: 
+    /// you must call `nullable()` on the corresponding fields in the select
+    /// clause:
     ///
     /// ### Selecting after a left join
     ///
