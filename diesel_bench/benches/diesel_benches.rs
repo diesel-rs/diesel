@@ -57,9 +57,9 @@ pub struct NewUser {
 }
 
 impl NewUser {
-    pub fn new(name: &str, hair_color: Option<&str>) -> Self {
+    pub fn new(name: String, hair_color: Option<&'static str>) -> Self {
         NewUser {
-            name: name.to_string(),
+            name: name,
             hair_color: hair_color.map(|s| s.to_string()),
         }
     }
@@ -155,10 +155,10 @@ fn insert_users(
     hair_color_init: impl Fn(usize) -> Option<&'static str>,
 ) {
     let data: Vec<_> = (0..size)
-        .map(|i| NewUser::new(&format!("User {}", i), hair_color_init(i)))
+        .map(|i| NewUser::new(format!("User {}", i), hair_color_init(i)))
         .collect();
     insert_into(users::table)
-        .values(&data)
+        .values(data)
         .execute(conn)
         .unwrap();
 }
