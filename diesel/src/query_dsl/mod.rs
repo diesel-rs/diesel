@@ -496,6 +496,75 @@ pub trait QueryDsl: Sized {
     /// instead. See [`inner_join`] for usage examples.
     ///
     /// [`inner_join`]: QueryDsl::inner_join()
+    ///
+    /// Columns in the right hand table will become `Nullable` which means
+    /// you must call `nullable()` on the corresponding fields in the select
+    /// clause:
+    ///
+    /// ### Selecting after a left join
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// # use schema::{users, posts};
+    /// #
+    /// # #[derive(Queryable, PartialEq, Eq, Debug)]
+    /// # struct User {
+    /// #     id: i32,
+    /// #     name: String,
+    /// # }
+    /// #
+    /// # impl User {
+    /// #     fn new(id: i32, name: &str) -> Self {
+    /// #         User {
+    /// #             id,
+    /// #             name: name.into(),
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # #[derive(Queryable, PartialEq, Eq, Debug)]
+    /// # struct Post {
+    /// #     id: i32,
+    /// #     user_id: i32,
+    /// #     title: String,
+    /// # }
+    /// #
+    /// # impl Post {
+    /// #     fn new(id: i32, user_id: i32, title: &str) -> Self {
+    /// #         Post {
+    /// #             id,
+    /// #             user_id,
+    /// #             title: title.into(),
+    /// #         }
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     let connection = establish_connection();
+    /// #     connection.execute("DELETE FROM posts")?;
+    /// #     diesel::insert_into(posts::table)
+    /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
+    /// #         .execute(&connection)?;
+    /// #     let post_id = posts::table.select(posts::id)
+    /// #         .first::<i32>(&connection)?;
+    /// let join = users::table.left_join(posts::table);
+    ///
+    /// // Since `posts` is on the right side of a left join, `.nullable` is
+    /// // needed.
+    /// let names_and_titles = join.select((users::name, posts::title.nullable()))
+    ///     .load::<(String, Option<String>)>(&connection)?;
+    /// let expected_data = vec![
+    ///     (String::from("Sean"), Some(String::from("Sean's Post"))),
+    ///     (String::from("Tess"), None),
+    /// ];
+    /// assert_eq!(expected_data, names_and_titles);
+    /// #     Ok(())
+    /// # }
+    /// ```
     fn left_outer_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
     where
         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
