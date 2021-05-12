@@ -92,7 +92,8 @@ impl_selectable_expression!(CountStar);
 /// # fn main() {
 /// #     use schema::posts::dsl::*;
 /// #     let connection = establish_connection();
-/// assert_eq!(Ok(2), posts.select(count_distinct(user_id)).first(&connection));
+/// let unique_user_count = posts.select(count_distinct(user_id)).first(&connection);
+/// assert_eq!(Ok(2), unique_user_count);
 /// # }
 /// ```
 pub fn count_distinct<T, E>(expr: E) -> CountDistinct<T, E::Expression>
