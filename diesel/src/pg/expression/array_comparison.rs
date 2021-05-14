@@ -1,5 +1,8 @@
 use crate::expression::subselect::Subselect;
-use crate::expression::{AsExpression, Expression, TypedExpressionType, ValidGrouping};
+use crate::expression::{
+    AsExpression, AsExpressionOrArrayComparison, Expression, ExpressionOrArrayComparison,
+    TypedExpressionType, ValidGrouping,
+};
 use crate::pg::Pg;
 use crate::query_builder::*;
 use crate::result::QueryResult;
@@ -33,6 +36,51 @@ where
     Any::new(vals.as_expression())
 }
 
+#[doc(hidden)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+pub struct Any<Expr> {
+    expr: Expr,
+}
+
+impl<Expr> Any<Expr> {
+    fn new(expr: Expr) -> Self {
+        Any { expr }
+    }
+}
+
+impl<Expr, ST> ExpressionOrArrayComparison for Any<Expr>
+where
+    Expr: Expression<SqlType = Array<ST>>,
+    ST: SqlType + TypedExpressionType,
+{
+    type SqlType = ST;
+}
+
+impl<Expr, ST> AsExpressionOrArrayComparison<ST> for Any<Expr>
+where
+    Self: ExpressionOrArrayComparison<SqlType = ST>,
+{
+    type ExpressionOrArrayCmp = Self;
+
+    fn as_expression(self) -> Self {
+        self
+    }
+}
+
+impl<Expr> QueryFragment<Pg> for Any<Expr>
+where
+    Expr: QueryFragment<Pg>,
+{
+    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+        out.push_sql("ANY(");
+        self.expr.walk_ast(out.reborrow())?;
+        out.push_sql(")");
+        Ok(())
+    }
+}
+
+impl_selectable_expression!(Any<Expr>);
+
 /// Creates a PostgreSQL `ALL` expression.
 ///
 /// As with most bare functions, this is not exported by default. You can import
@@ -59,40 +107,6 @@ where
 {
     All::new(vals.as_expression())
 }
-
-#[doc(hidden)]
-#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
-pub struct Any<Expr> {
-    expr: Expr,
-}
-
-impl<Expr> Any<Expr> {
-    fn new(expr: Expr) -> Self {
-        Any { expr: expr }
-    }
-}
-
-impl<Expr, ST> Expression for Any<Expr>
-where
-    Expr: Expression<SqlType = Array<ST>>,
-    ST: SqlType + TypedExpressionType,
-{
-    type SqlType = ST;
-}
-
-impl<Expr> QueryFragment<Pg> for Any<Expr>
-where
-    Expr: QueryFragment<Pg>,
-{
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
-        out.push_sql("ANY(");
-        self.expr.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
-    }
-}
-
-impl_selectable_expression!(Any<Expr>);
 
 #[doc(hidden)]
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]

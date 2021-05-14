@@ -98,6 +98,19 @@ pub trait Expression {
     type SqlType: TypedExpressionType;
 }
 
+/// TODO
+pub trait ExpressionOrArrayComparison {
+    /// TODO
+    type SqlType;
+}
+
+impl<T> ExpressionOrArrayComparison for T
+where
+    T: Expression,
+{
+    type SqlType = T::SqlType;
+}
+
 /// Marker trait for possible types of [`Expression::SqlType`]
 ///
 pub trait TypedExpressionType {}
@@ -202,6 +215,14 @@ where
     /// Perform the conversion
     fn as_expression(self) -> Self::Expression;
 }
+/// TODO
+pub trait AsExpressionOrArrayComparison<T> {
+    /// The expression being returned
+    type ExpressionOrArrayCmp: ExpressionOrArrayComparison<SqlType = T>;
+
+    /// Perform the conversion
+    fn as_expression(self) -> Self::ExpressionOrArrayCmp;
+}
 
 #[doc(inline)]
 pub use diesel_derives::AsExpression;
@@ -215,6 +236,18 @@ where
 
     fn as_expression(self) -> Self {
         self
+    }
+}
+
+impl<T, ST> AsExpressionOrArrayComparison<ST> for T
+where
+    T: AsExpression<ST>,
+    ST: SqlType + TypedExpressionType,
+{
+    type ExpressionOrArrayCmp = T::Expression;
+
+    fn as_expression(self) -> T::Expression {
+        <T as AsExpression<ST>>::as_expression(self)
     }
 }
 

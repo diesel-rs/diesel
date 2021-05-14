@@ -2,7 +2,7 @@ use crate::dsl;
 use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
-use crate::expression::{nullable, AsExpression, Expression};
+use crate::expression::{nullable, AsExpression, AsExpressionOrArrayComparison, Expression};
 use crate::sql_types::{SingleValue, SqlType};
 
 /// Methods present on all expressions, except tuples
@@ -25,7 +25,7 @@ pub trait ExpressionMethods: Expression + Sized {
     fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
     where
         Self::SqlType: SqlType,
-        T: AsExpression<Self::SqlType>,
+        T: AsExpressionOrArrayComparison<Self::SqlType>,
     {
         Grouped(Eq::new(self, other.as_expression()))
     }

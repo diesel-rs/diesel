@@ -3,7 +3,7 @@
 //! a boxed trait object, these can be useful for writing concise return types.
 use super::array_comparison::{AsInExpression, In, NotIn};
 use super::grouped::Grouped;
-use super::{AsExpression, Expression};
+use super::Expression;
 use crate::sql_types;
 
 /// The SQL type of an expression
@@ -13,7 +13,7 @@ pub type SqlTypeOf<Expr> = <Expr as Expression>::SqlType;
 pub type AsExpr<Item, TargetExpr> = AsExprOf<Item, SqlTypeOf<TargetExpr>>;
 
 /// The type of `Item` when converted to an expression of `Type`
-pub type AsExprOf<Item, Type> = <Item as AsExpression<Type>>::Expression;
+pub type AsExprOf<Item, Type> = <Item as AsExpressionOrArrayComparison<Type>>::ExpressionOrArrayCmp;
 
 /// The return type of
 /// [`lhs.eq(rhs)`](crate::expression_methods::ExpressionMethods::eq())
@@ -120,6 +120,7 @@ pub use super::functions::helper_types::*;
 #[cfg(feature = "postgres")]
 pub use crate::pg::expression::helper_types::*;
 
+use crate::expression::AsExpressionOrArrayComparison;
 #[doc(inline)]
 #[cfg(feature = "sqlite")]
 pub use crate::sqlite::expression::helper_types::*;
