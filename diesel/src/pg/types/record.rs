@@ -103,10 +103,10 @@ macro_rules! tuple_impls {
                 out.write_i32::<NetworkEndian>($Tuple)?;
 
                 $(
-                    let oid = <Pg as HasSqlType<$ST>>::metadata(*out.metadata_lookup()).oid()?;
+                    let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid()?;
                     out.write_u32::<NetworkEndian>(oid)?;
                     let is_null = {
-                        let mut temp_buffer = Output::new(buffer, *out.metadata_lookup());
+                        let mut temp_buffer = Output::new(buffer, out.metadata_lookup());
                         let is_null = self.$idx.to_sql(&mut temp_buffer)?;
                         buffer = temp_buffer.into_inner();
                         is_null

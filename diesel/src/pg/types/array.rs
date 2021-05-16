@@ -91,7 +91,7 @@ where
         out.write_i32::<NetworkEndian>(num_dimensions)?;
         let flags = 0;
         out.write_i32::<NetworkEndian>(flags)?;
-        let element_oid = Pg::metadata(*out.metadata_lookup()).oid()?;
+        let element_oid = Pg::metadata(out.metadata_lookup()).oid()?;
         out.write_u32::<NetworkEndian>(element_oid)?;
         out.write_i32::<NetworkEndian>(self.len() as i32)?;
         let lower_bound = 1;
@@ -103,7 +103,7 @@ where
 
         for elem in self.iter() {
             let is_null = {
-                let mut temp_buffer = Output::new(buffer, *out.metadata_lookup());
+                let mut temp_buffer = Output::new(buffer, out.metadata_lookup());
                 let is_null = elem.to_sql(&mut temp_buffer)?;
                 buffer = temp_buffer.into_inner();
                 is_null

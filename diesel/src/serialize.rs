@@ -56,8 +56,8 @@ impl<'a, T, DB: TypeMetadata> Output<'a, T, DB> {
 
     /// Returns the backend's mechanism for dynamically looking up type
     /// metadata at runtime, if relevant for the given backend.
-    pub fn metadata_lookup(&mut self) -> &mut &'a mut DB::MetadataLookup {
-        self.metadata_lookup.as_mut().expect("Lookup is there")
+    pub fn metadata_lookup(&mut self) -> &mut DB::MetadataLookup {
+        *self.metadata_lookup.as_mut().expect("Lookup is there")
     }
 }
 

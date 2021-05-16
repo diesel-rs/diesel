@@ -128,7 +128,7 @@ where
         match self.0 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
                 {
-                    let mut inner_buffer = Output::new(buffer, *out.metadata_lookup());
+                    let mut inner_buffer = Output::new(buffer, out.metadata_lookup());
                     value.to_sql(&mut inner_buffer)?;
                     buffer = inner_buffer.into_inner();
                 }
@@ -142,7 +142,7 @@ where
         match self.1 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
                 {
-                    let mut inner_buffer = Output::new(buffer, *out.metadata_lookup());
+                    let mut inner_buffer = Output::new(buffer, out.metadata_lookup());
                     value.to_sql(&mut inner_buffer)?;
                     buffer = inner_buffer.into_inner();
                 }
