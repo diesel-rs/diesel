@@ -13,11 +13,19 @@ pub type SqlTypeOf<Expr> = <Expr as Expression>::SqlType;
 pub type AsExpr<Item, TargetExpr> = AsExprOf<Item, SqlTypeOf<TargetExpr>>;
 
 /// The type of `Item` when converted to an expression of `Type`
-pub type AsExprOf<Item, Type> = <Item as AsExpressionOrArrayComparison<Type>>::ExpressionOrArrayCmp;
+pub type AsExprOf<Item, Type> = <Item as AsExpression<Type>>::Expression;
+
+/// TODO
+pub type AsExprOrArrayComparison<Item, TargetExpr> =
+    AsExprOrArrayComparisonOf<Item, SqlTypeOf<TargetExpr>>;
+
+/// TODO
+pub type AsExprOrArrayComparisonOf<Item, Type> =
+    <Item as AsExpressionOrArrayComparison<Type>>::ExpressionOrArrayCmp;
 
 /// The return type of
 /// [`lhs.eq(rhs)`](crate::expression_methods::ExpressionMethods::eq())
-pub type Eq<Lhs, Rhs> = Grouped<super::operators::Eq<Lhs, AsExpr<Rhs, Lhs>>>;
+pub type Eq<Lhs, Rhs> = Grouped<super::operators::Eq<Lhs, AsExprOrArrayComparison<Rhs, Lhs>>>;
 
 /// The return type of
 /// [`lhs.ne(rhs)`](crate::expression_methods::ExpressionMethods::ne())
@@ -120,7 +128,7 @@ pub use super::functions::helper_types::*;
 #[cfg(feature = "postgres")]
 pub use crate::pg::expression::helper_types::*;
 
-use crate::expression::AsExpressionOrArrayComparison;
+use crate::expression::{AsExpression, AsExpressionOrArrayComparison};
 #[doc(inline)]
 #[cfg(feature = "sqlite")]
 pub use crate::sqlite::expression::helper_types::*;
