@@ -36,7 +36,7 @@ use crate::sqlite::Sqlite;
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: RawConnection,
-    transaction_state: AnsiTransactionManagerData,
+    transaction_state: AnsiTransactionManager,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -53,7 +53,6 @@ impl SimpleConnection for SqliteConnection {
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
     type TransactionManager = AnsiTransactionManager;
-    type TransactionData = AnsiTransactionManagerData;
 
     /// Establish a connection to the database specified by `database_url`.
     ///
@@ -68,7 +67,7 @@ impl Connection for SqliteConnection {
         let conn = Self {
             statement_cache: StatementCache::new(),
             raw_connection,
-            transaction_state: AnsiTransactionManagerData::default(),
+            transaction_state: AnsiTransactionManager::default(),
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
@@ -109,7 +108,7 @@ impl Connection for SqliteConnection {
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
-    fn transaction_state(&mut self) -> &mut Self::TransactionData
+    fn transaction_state(&mut self) -> &mut AnsiTransactionManager
     where
         Self: Sized,
     {

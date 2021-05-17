@@ -139,7 +139,6 @@ where
     type Backend = <M::Connection as Connection>::Backend;
     type TransactionManager =
         PoolTransactionManager<<M::Connection as Connection>::TransactionManager>;
-    type TransactionData = <M::Connection as Connection>::TransactionData;
 
     fn establish(_: &str) -> ConnectionResult<Self> {
         Err(ConnectionError::BadConnection(String::from(
@@ -169,7 +168,9 @@ where
         (&mut **self).execute_returning_count(source)
     }
 
-    fn transaction_state(&mut self) -> &mut Self::TransactionData {
+    fn transaction_state(
+        &mut self,
+    ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
         (&mut **self).transaction_state()
     }
 
@@ -188,6 +189,8 @@ where
     M::Connection: Connection<TransactionManager = T> + R2D2Connection,
     T: TransactionManager<M::Connection>,
 {
+    type TransactionStateData = T::TransactionStateData;
+
     fn begin_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
         T::begin_transaction(&mut **conn)
     }

@@ -20,7 +20,7 @@ use crate::result::*;
 /// `mysql://[user[:password]@]host/database_name`
 pub struct MysqlConnection {
     raw_connection: RawConnection,
-    transaction_state: AnsiTransactionManagerData,
+    transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Mysql, Statement>,
 }
 
@@ -36,7 +36,6 @@ impl SimpleConnection for MysqlConnection {
 impl Connection for MysqlConnection {
     type Backend = Mysql;
     type TransactionManager = AnsiTransactionManager;
-    type TransactionData = AnsiTransactionManagerData;
 
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         use crate::result::ConnectionError::CouldntSetupConfiguration;
@@ -46,7 +45,7 @@ impl Connection for MysqlConnection {
         raw_connection.connect(&connection_options)?;
         let mut conn = MysqlConnection {
             raw_connection,
-            transaction_state: AnsiTransactionManagerData::default(),
+            transaction_state: AnsiTransactionManager::default(),
             statement_cache: StatementCache::new(),
         };
         conn.set_config_options()
@@ -92,7 +91,7 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn transaction_state(&mut self) -> &mut AnsiTransactionManagerData {
+    fn transaction_state(&mut self) -> &mut AnsiTransactionManager {
         &mut self.transaction_state
     }
 }

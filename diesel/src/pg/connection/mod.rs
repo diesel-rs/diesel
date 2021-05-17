@@ -30,7 +30,7 @@ use crate::result::*;
 #[allow(missing_debug_implementations)]
 pub struct PgConnection {
     pub(crate) raw_connection: RawConnection,
-    transaction_state: AnsiTransactionManagerData,
+    transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
 }
@@ -49,13 +49,12 @@ impl SimpleConnection for PgConnection {
 impl Connection for PgConnection {
     type Backend = Pg;
     type TransactionManager = AnsiTransactionManager;
-    type TransactionData = AnsiTransactionManagerData;
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).and_then(|raw_conn| {
             let mut conn = PgConnection {
                 raw_connection: raw_conn,
-                transaction_state: AnsiTransactionManagerData::default(),
+                transaction_state: AnsiTransactionManager::default(),
                 statement_cache: StatementCache::new(),
                 metadata_cache: PgMetadataCache::new(),
             };
@@ -99,7 +98,7 @@ impl Connection for PgConnection {
         })
     }
 
-    fn transaction_state(&mut self) -> &mut Self::TransactionData
+    fn transaction_state(&mut self) -> &mut AnsiTransactionManager
     where
         Self: Sized,
     {

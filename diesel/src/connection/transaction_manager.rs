@@ -7,6 +7,10 @@ use crate::result::{DatabaseErrorKind, Error, QueryResult};
 /// You will not need to interact with this trait, unless you are writing an
 /// implementation of [`Connection`].
 pub trait TransactionManager<Conn: Connection> {
+    /// Data stored as part of the connection implementation
+    /// to track the current transaction state of a connection
+    type TransactionStateData;
+
     /// Begin a new transaction or savepoint
     ///
     /// If the transaction depth is greater than 0,
@@ -35,14 +39,15 @@ pub trait TransactionManager<Conn: Connection> {
     fn get_transaction_depth(conn: &mut Conn) -> u32;
 }
 
-/// The internal state used by `AnsiTransactionManager`
+/// An implementation of `TransactionManager` which can be used for backends
+/// which use ANSI standard syntax for savepoints such as SQLite and PostgreSQL.
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 #[derive(Default)]
-pub struct AnsiTransactionManagerData {
+pub struct AnsiTransactionManager {
     transaction_depth: i32,
 }
 
-impl AnsiTransactionManagerData {
+impl AnsiTransactionManager {
     fn change_transaction_depth(&mut self, by: i32, query: QueryResult<()>) -> QueryResult<()> {
         if query.is_ok() {
             self.transaction_depth += by;
@@ -50,11 +55,6 @@ impl AnsiTransactionManagerData {
         query
     }
 }
-
-/// An implementation of `TransactionManager` which can be used for backends
-/// which use ANSI standard syntax for savepoints such as SQLite and PostgreSQL.
-#[derive(Debug, Clone, Copy)]
-pub struct AnsiTransactionManager;
 
 impl AnsiTransactionManager {
     /// Begin a transaction with custom SQL
@@ -64,7 +64,8 @@ impl AnsiTransactionManager {
     /// Returns an error if already inside of a transaction.
     pub fn begin_transaction_sql<Conn>(conn: &mut Conn, sql: &str) -> QueryResult<()>
     where
-        Conn: Connection<TransactionData = AnsiTransactionManagerData>,
+        Conn: Connection<TransactionManager = Self>,
+        Conn::Backend: UsesAnsiSavepointSyntax,
     {
         use crate::result::Error::AlreadyInTransaction;
 
@@ -79,9 +80,11 @@ impl AnsiTransactionManager {
 
 impl<Conn> TransactionManager<Conn> for AnsiTransactionManager
 where
-    Conn: Connection<TransactionData = AnsiTransactionManagerData>,
+    Conn: Connection<TransactionManager = Self>,
     Conn::Backend: UsesAnsiSavepointSyntax,
 {
+    type TransactionStateData = Self;
+
     fn begin_transaction(conn: &mut Conn) -> QueryResult<()> {
         let transaction_depth = conn.transaction_state().transaction_depth;
         let r = if transaction_depth == 0 {

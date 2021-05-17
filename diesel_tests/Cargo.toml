@@ -27,7 +27,7 @@ bigdecimal = ">= 0.0.13, < 0.3.0"
 rand = "0.7"
 
 [features]
-default = ["mysql"]
+default = []
 unstable = ["diesel/unstable"]
 postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]

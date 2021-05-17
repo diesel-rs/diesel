@@ -30,7 +30,7 @@ pub enum IsNull {
 }
 
 /// Wraps a buffer to be written by `ToSql` with additional backend specific
-/// utilities.y
+/// utilities.
 pub struct Output<'a, T, DB>
 where
     DB: TypeMetadata,

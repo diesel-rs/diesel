@@ -14,9 +14,7 @@ use crate::result::*;
 
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
-pub use self::transaction_manager::{
-    AnsiTransactionManager, AnsiTransactionManagerData, TransactionManager,
-};
+pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
 
 /// Perform simple operations on a backend.
 ///
@@ -36,8 +34,6 @@ pub trait Connection: SimpleConnection + Sized + Send {
 
     #[doc(hidden)]
     type TransactionManager: TransactionManager<Self>;
-    #[doc(hidden)]
-    type TransactionData;
 
     /// Establishes a new connection to the database
     ///
@@ -193,7 +189,9 @@ pub trait Connection: SimpleConnection + Sized + Send {
         T: QueryFragment<Self::Backend> + QueryId;
 
     #[doc(hidden)]
-    fn transaction_state(&mut self) -> &mut Self::TransactionData;
+    fn transaction_state(
+        &mut self,
+    ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData;
 }
 
 /// A variant of the [`Connection`](trait.Connection.html) trait that is
