@@ -545,19 +545,19 @@ pub trait QueryDsl: Sized {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     connection.execute("DELETE FROM posts")?;
     /// #     diesel::insert_into(posts::table)
     /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
-    /// #         .execute(&connection)?;
+    /// #         .execute(connection)?;
     /// #     let post_id = posts::table.select(posts::id)
-    /// #         .first::<i32>(&connection)?;
+    /// #         .first::<i32>(connection)?;
     /// let join = users::table.left_join(posts::table);
     ///
     /// // Since `posts` is on the right side of a left join, `.nullable` is
     /// // needed.
     /// let names_and_titles = join.select((users::name, posts::title.nullable()))
-    ///     .load::<(String, Option<String>)>(&connection)?;
+    ///     .load::<(String, Option<String>)>(connection)?;
     /// let expected_data = vec![
     ///     (String::from("Sean"), Some(String::from("Sean's Post"))),
     ///     (String::from("Tess"), None),
