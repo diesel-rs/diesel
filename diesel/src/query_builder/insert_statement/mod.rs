@@ -67,7 +67,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
     /// #     use self::users::dsl::*;
-    /// #     let mut connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// connection.execute("CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
     ///     hair_color VARCHAR(255) NOT NULL DEFAULT 'Green'
@@ -75,9 +75,9 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     ///
     /// insert_into(users)
     ///     .default_values()
-    ///     .execute(&mut connection)
+    ///     .execute(connection)
     ///     .unwrap();
-    /// let inserted_user = users.first(&mut connection)?;
+    /// let inserted_user = users.first(connection)?;
     /// let expected_data = (String::from("Sean"), String::from("Green"));
     ///
     /// assert_eq!(expected_data, inserted_user);
@@ -403,11 +403,11 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let inserted_names = diesel::insert_into(users)
     ///     .values(&vec![name.eq("Timmy"), name.eq("Jimmy")])
     ///     .returning(name)
-    ///     .get_results(&mut connection);
+    ///     .get_results(connection);
     /// assert_eq!(Ok(vec!["Timmy".to_string(), "Jimmy".to_string()]), inserted_names);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]

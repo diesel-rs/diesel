@@ -5,14 +5,14 @@ use diesel::*;
 fn test_updating_single_column() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
     update(users)
         .set(name.eq("Jim"))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec!["Jim".to_string(); 2];
-    let data: Vec<String> = users.select(name).load(&mut connection).unwrap();
+    let data: Vec<String> = users.select(name).load(connection).unwrap();
     assert_eq!(expected_data, data);
 }
 
@@ -20,16 +20,16 @@ fn test_updating_single_column() {
 fn test_updating_single_column_of_single_row() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
 
     update(users.filter(id.eq(sean.id)))
         .set(name.eq("Jim"))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec!["Jim".to_string(), "Tess".to_string()];
-    let data: Vec<String> = users.select(name).order(id).load(&mut connection).unwrap();
+    let data: Vec<String> = users.select(name).order(id).load(connection).unwrap();
     assert_eq!(expected_data, data);
 }
 
@@ -37,30 +37,30 @@ fn test_updating_single_column_of_single_row() {
 fn test_updating_nullable_column() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
 
     update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq(Some("black")))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let data: Option<String> = users
         .select(hair_color)
         .filter(id.eq(sean.id))
-        .first(&mut connection)
+        .first(connection)
         .unwrap();
     assert_eq!(Some("black".to_string()), data);
 
     update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq(None::<String>))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let data: QueryResult<Option<String>> = users
         .select(hair_color)
         .filter(id.eq(sean.id))
-        .first(&mut connection);
+        .first(connection);
     assert_eq!(Ok(None::<String>), data);
 }
 
@@ -68,16 +68,16 @@ fn test_updating_nullable_column() {
 fn test_updating_multiple_columns() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
 
     update(users.filter(id.eq(sean.id)))
         .set((name.eq("Jim"), hair_color.eq(Some("black"))))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let expected_user = User::with_hair_color(sean.id, "Jim", "black");
-    let user = users.find(sean.id).first(&mut connection);
+    let user = users.find(sean.id).first(connection);
     assert_eq!(Ok(expected_user), user);
 }
 
@@ -86,11 +86,11 @@ fn test_updating_multiple_columns() {
 fn update_returning_struct() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
     let user = update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq("black"))
-        .get_result(&mut connection);
+        .get_result(connection);
     let expected_user = User::with_hair_color(sean.id, "Sean", "black");
 
     assert_eq!(Ok(expected_user), user);
@@ -101,12 +101,12 @@ fn update_returning_struct() {
 fn update_with_custom_returning_clause() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
     let user = update(users.filter(id.eq(sean.id)))
         .set(hair_color.eq("black"))
         .returning((name, hair_color))
-        .get_result::<(String, Option<String>)>(&mut connection);
+        .get_result::<(String, Option<String>)>(connection);
     let expected_result = ("Sean".to_string(), Some("black".to_string()));
 
     assert_eq!(Ok(expected_result), user);
@@ -116,15 +116,15 @@ fn update_with_custom_returning_clause() {
 fn update_with_struct_as_changes() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
     let changes = NewUser::new("Jim", Some("blue"));
 
     update(users.filter(id.eq(sean.id)))
         .set(&changes)
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
-    let user = users.find(sean.id).first(&mut connection);
+    let user = users.find(sean.id).first(connection);
     let expected_user = User::with_hair_color(sean.id, "Jim", "blue");
 
     assert_eq!(Ok(expected_user), user);
@@ -134,11 +134,11 @@ fn update_with_struct_as_changes() {
 fn save_on_struct_with_primary_key_changes_that_struct() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
-    let user = User::with_hair_color(sean.id, "Jim", "blue").save_changes::<User>(&mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
+    let user = User::with_hair_color(sean.id, "Jim", "blue").save_changes::<User>(connection);
 
-    let user_in_db = users.find(sean.id).first(&mut connection);
+    let user_in_db = users.find(sean.id).first(connection);
 
     assert_eq!(user, user_in_db);
 }
@@ -156,13 +156,13 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
         hair_color: None,
         name: "Jim".into(),
     };
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
     update(users::table.filter(users::id.eq(sean.id)))
         .set(&changes)
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
-    let user = users::table.find(sean.id).first(&mut connection);
+    let user = users::table.find(sean.id).first(connection);
 
     let expected_user = User::new(sean.id, "Jim");
     assert_eq!(Ok(expected_user), user);
@@ -178,12 +178,12 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
         body: String,
     }
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
     let new_post = sean.new_post("Hello", Some("world"));
     insert_into(posts::table)
         .values(&new_post)
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let changes = Changes {
@@ -193,11 +193,11 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     };
     update(posts::table)
         .set(&changes)
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
     let post = posts::table
         .order(posts::id.desc())
-        .first::<Post>(&mut connection)
+        .first::<Post>(connection)
         .unwrap();
 
     let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
@@ -214,14 +214,14 @@ fn update_with_no_changes() {
         hair_color: Option<String>,
     }
 
-    let mut connection = connection();
+    let connection = &mut connection();
     let changes = Changes {
         name: None,
         hair_color: None,
     };
     update(users::table)
         .set(&changes)
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 }
 
@@ -234,13 +234,13 @@ fn upsert_with_no_changes_executes_do_nothing() {
         hair_color: Option<String>,
     }
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
     let result = insert_into(users::table)
         .values(&User::new(1, "Sean"))
         .on_conflict(users::id)
         .do_update()
         .set(&Changes { hair_color: None })
-        .execute(&mut connection);
+        .execute(connection);
 
     assert_eq!(Ok(0), result);
 }
@@ -254,13 +254,13 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
         hair_color: Option<String>,
     }
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
     let result = insert_into(users::table)
         .values(User::new(1, "Sean"))
         .on_conflict(users::id)
         .do_update()
         .set(&Changes { hair_color: None })
-        .execute(&mut connection);
+        .execute(connection);
 
     assert_eq!(Ok(0), result);
 }
@@ -273,13 +273,13 @@ fn upsert_with_sql_literal_for_target() {
     use diesel::sql_types::Text;
     use diesel::upsert::*;
 
-    let mut connection = connection();
+    let connection = &mut connection();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
     connection
         .execute("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
         .unwrap();
-    insert_sean_and_tess_into_users_table(&mut connection);
+    insert_sean_and_tess_into_users_table(connection);
 
     let new_users = vec![
         NewUser::new("Sean", Some("Green")),
@@ -290,13 +290,10 @@ fn upsert_with_sql_literal_for_target() {
         .on_conflict(sql::<Text>("(name) WHERE name != 'Tess'"))
         .do_update()
         .set(hair_color.eq(excluded(hair_color)))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
-    let data = users
-        .select((name, hair_color))
-        .order(id)
-        .load(&mut connection);
+    let data = users.select((name, hair_color)).order(id).load(connection);
     let expected_data = vec![
         ("Sean".to_string(), Some("Green".to_string())),
         ("Tess".to_string(), None),

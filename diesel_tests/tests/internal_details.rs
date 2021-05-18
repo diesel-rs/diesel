@@ -7,10 +7,10 @@ use diesel::*;
 #[test]
 #[cfg(not(feature = "mysql"))] // ? IS NULL is invalid syntax for MySQL
 fn bind_params_are_passed_for_null_when_not_inserting() {
-    let mut connection = connection();
+    let connection = &mut connection();
     let query =
         select(sql::<Integer>("1")).filter(None::<i32>.into_sql::<Nullable<Integer>>().is_null());
-    assert_eq!(Ok(1), query.first(&mut connection));
+    assert_eq!(Ok(1), query.first(connection));
 }
 
 #[test]
@@ -42,10 +42,10 @@ fn empty_query_gives_proper_error_instead_of_panicking() {
     use diesel::result::DatabaseErrorKind::Unknown;
     use diesel::result::Error::DatabaseError;
 
-    let mut connection = connection();
+    let connection = &mut connection();
     let query = sql::<Integer>("");
 
-    match query.execute(&mut connection) {
+    match query.execute(connection) {
         Ok(_) => panic!("We successfully executed an empty query"),
         Err(DatabaseError(Unknown, info)) => assert_ne!("", info.message()),
         Err(_) => panic!("We got back the wrong kind of error. This test is invalid."),

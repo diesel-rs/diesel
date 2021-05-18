@@ -54,14 +54,14 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let deleted_rows = diesel::delete(users)
     ///     .filter(name.eq("Sean"))
-    ///     .execute(&mut connection);
+    ///     .execute(connection);
     /// assert_eq!(Ok(1), deleted_rows);
     ///
     /// let expected_names = vec!["Tess".to_string()];
-    /// let names = users.select(name).load(&mut connection);
+    /// let names = users.select(name).load(connection);
     ///
     /// assert_eq!(Ok(expected_names), names);
     /// # }
@@ -96,7 +96,7 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use std::collections::HashMap;
     /// #     use schema::users::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     let mut params = HashMap::new();
     /// #     params.insert("sean_has_been_a_jerk", true);
     /// let mut query = diesel::delete(users)
@@ -106,11 +106,11 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     ///     query = query.filter(name.eq("Sean"));
     /// }
     ///
-    /// let deleted_rows = query.execute(&mut connection)?;
+    /// let deleted_rows = query.execute(connection)?;
     /// assert_eq!(1, deleted_rows);
     ///
     /// let expected_names = vec!["Tess"];
-    /// let names = users.select(name).load::<String>(&mut connection)?;
+    /// let names = users.select(name).load::<String>(connection)?;
     ///
     /// assert_eq!(expected_names, names);
     /// #     Ok(())
@@ -210,10 +210,10 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let deleted_name = diesel::delete(users.filter(name.eq("Sean")))
     ///     .returning(name)
-    ///     .get_result(&mut connection);
+    ///     .get_result(connection);
     /// assert_eq!(Ok("Sean".to_string()), deleted_name);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]

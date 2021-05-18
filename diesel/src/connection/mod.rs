@@ -70,7 +70,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// conn.transaction::<_, Error, _>(|conn| {
     ///     diesel::insert_into(users)
     ///         .values(name.eq("Ruby"))
@@ -95,7 +95,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     ///     Err(Error::RollbackTransaction)
     /// });
     ///
-    /// let all_names = users.select(name).load::<String>(&mut conn)?;
+    /// let all_names = users.select(name).load::<String>(conn)?;
     /// assert_eq!(vec!["Sean", "Tess", "Ruby"], all_names);
     /// #     Ok(())
     /// # }
@@ -140,7 +140,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// conn.test_transaction::<_, Error, _>(|conn| {
     ///     diesel::insert_into(users)
     ///         .values(name.eq("Ruby"))
@@ -153,7 +153,7 @@ pub trait Connection: SimpleConnection + Sized + Send {
     /// });
     ///
     /// // Even though we returned `Ok`, the transaction wasn't committed.
-    /// let all_names = users.select(name).load::<String>(&mut conn)?;
+    /// let all_names = users.select(name).load::<String>(conn)?;
     /// assert_eq!(vec!["Sean", "Tess"], all_names);
     /// #     Ok(())
     /// # }

@@ -192,10 +192,10 @@ mod test {
             }
         }
 
-        let mut conn = crate::test_helpers::pg_connection_no_transaction();
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
 
         sql_query("DROP TABLE IF EXISTS transaction_depth_is_tracked_properly_on_commit_failure;")
-            .execute(&mut conn)
+            .execute(conn)
             .unwrap();
         sql_query(
             r#"
@@ -205,7 +205,7 @@ mod test {
             )
         "#,
         )
-        .execute(&mut conn)
+        .execute(conn)
         .unwrap();
 
         insert_into(serialization_example::table)
@@ -213,7 +213,7 @@ mod test {
                 serialization_example::class.eq(1),
                 serialization_example::class.eq(2),
             ])
-            .execute(&mut conn)
+            .execute(conn)
             .unwrap();
 
         let barrier = Arc::new(Barrier::new(2));
@@ -223,8 +223,8 @@ mod test {
                 thread::spawn(move || {
                     use crate::connection::transaction_manager::AnsiTransactionManager;
                     use crate::connection::transaction_manager::TransactionManager;
-                    let mut conn = crate::test_helpers::pg_connection_no_transaction();
-                    assert_eq!(0, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(&mut conn));
+                    let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+                    assert_eq!(0, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(conn));
 
                     let result =
                     conn.build_transaction().serializable().run(|conn| {
@@ -243,7 +243,7 @@ mod test {
                             .execute(conn)
                     });
 
-                    assert_eq!(0, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(&mut conn));
+                    assert_eq!(0, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(conn));
                     result
                 })
             })

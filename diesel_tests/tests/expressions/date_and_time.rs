@@ -62,8 +62,8 @@ table! {
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_timestamps (created_at) VALUES
@@ -74,11 +74,11 @@ fn now_executes_sql_function_now() {
     let before_today = has_timestamps
         .select(id)
         .filter(created_at.lt(now))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     let after_today = has_timestamps
         .select(id)
         .filter(created_at.gt(now))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     assert_eq!(Ok(vec![1]), before_today);
     assert_eq!(Ok(vec![2]), after_today);
 }
@@ -90,8 +90,8 @@ fn now_can_be_used_as_timestamptz() {
     use self::has_timestamps::dsl::*;
     use diesel::sql_types::Timestamptz;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_timestamps (created_at) VALUES \
@@ -103,7 +103,7 @@ fn now_can_be_used_as_timestamptz() {
     let before_now = has_timestamps
         .select(id)
         .filter(created_at_tz.lt(now))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     assert_eq!(Ok(vec![1]), before_now);
 }
 
@@ -114,8 +114,8 @@ fn now_can_be_used_as_nullable_timestamptz() {
     use self::has_timestamps::dsl::*;
     use diesel::sql_types::Timestamptz;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_timestamps (created_at) VALUES \
@@ -127,7 +127,7 @@ fn now_can_be_used_as_nullable_timestamptz() {
     let before_now = has_timestamps
         .select(id)
         .filter(created_at_tz.lt(now))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     assert_eq!(Ok(vec![1]), before_now);
 }
 
@@ -156,8 +156,8 @@ fn today_can_be_used_as_nullable() {
 fn today_executes_sql_function_current_date() {
     use self::has_date::dsl::*;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_date (date) VALUES
@@ -168,11 +168,11 @@ fn today_executes_sql_function_current_date() {
     let before_today = has_date
         .select(id)
         .filter(date.lt(today))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     let after_today = has_date
         .select(id)
         .filter(date.gt(today))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     assert_eq!(Ok(vec![1]), before_today);
     assert_eq!(Ok(vec![2]), after_today);
 }
@@ -182,8 +182,8 @@ fn today_executes_sql_function_current_date() {
 fn today_executes_sql_function_current_date() {
     use self::has_date::dsl::*;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_date (date) VALUES
@@ -194,11 +194,11 @@ fn today_executes_sql_function_current_date() {
     let before_today = has_date
         .select(id)
         .filter(date.lt(today))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     let after_today = has_date
         .select(id)
         .filter(date.gt(today))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     assert_eq!(Ok(vec![1]), before_today);
     assert_eq!(Ok(vec![2]), after_today);
 }
@@ -208,8 +208,8 @@ fn today_executes_sql_function_current_date() {
 fn today_executes_sql_function_current_date() {
     use self::has_date::dsl::*;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_date (id, date) VALUES
@@ -220,11 +220,11 @@ fn today_executes_sql_function_current_date() {
     let before_today = has_date
         .select(id)
         .filter(date.lt(today))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     let after_today = has_date
         .select(id)
         .filter(date.gt(today))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     assert_eq!(Ok(vec![42]), before_today);
     assert_eq!(Ok(vec![43]), after_today);
 }
@@ -234,8 +234,8 @@ fn today_executes_sql_function_current_date() {
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_timestamps (id, created_at) VALUES
@@ -246,12 +246,12 @@ fn now_executes_sql_function_now() {
     let before_today = has_timestamps.select(id).filter(created_at.lt(now));
 
     dbg!(diesel::debug_query(&before_today));
-    let before_today = before_today.load::<i32>(&mut connection);
+    let before_today = before_today.load::<i32>(connection);
 
     let after_today = has_timestamps.select(id).filter(created_at.gt(now));
 
     dbg!(diesel::debug_query(&after_today));
-    let after_today = after_today.load::<i32>(&mut connection);
+    let after_today = after_today.load::<i32>(connection);
 
     assert_eq!(Ok(vec![42]), before_today);
     assert_eq!(Ok(vec![43]), after_today);
@@ -262,8 +262,8 @@ fn now_executes_sql_function_now() {
 fn now_executes_sql_function_now() {
     use self::has_timestamps::dsl::*;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_timestamps (created_at) VALUES
@@ -274,11 +274,11 @@ fn now_executes_sql_function_now() {
     let before_today = has_timestamps
         .select(id)
         .filter(created_at.lt(now))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     let after_today = has_timestamps
         .select(id)
         .filter(created_at.gt(now))
-        .load::<i32>(&mut connection);
+        .load::<i32>(connection);
     assert_eq!(Ok(vec![1]), before_today);
     assert_eq!(Ok(vec![2]), after_today);
 }
@@ -287,8 +287,8 @@ fn now_executes_sql_function_now() {
 fn date_uses_sql_function_date() {
     use self::has_timestamps::dsl::*;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_timestamps (created_at, updated_at) VALUES
@@ -303,7 +303,7 @@ fn date_uses_sql_function_date() {
     let actual_data = has_timestamps
         .select(id)
         .filter(date(created_at).eq(date(updated_at)))
-        .load(&mut connection);
+        .load(connection);
     assert_eq!(Ok(expected_data), actual_data);
 }
 
@@ -312,8 +312,8 @@ fn date_uses_sql_function_date() {
 fn time_is_deserialized_properly() {
     use self::has_time::dsl::*;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_time (\"time\") VALUES
@@ -326,7 +326,7 @@ fn time_is_deserialized_properly() {
     let three_hours = PgTime(10_800_000_000);
     let expected_data = vec![one_second, two_minutes, three_hours];
 
-    let actual_data = has_time.select(time).load(&mut connection);
+    let actual_data = has_time.select(time).load(connection);
     assert_eq!(Ok(expected_data), actual_data);
 }
 
@@ -334,7 +334,7 @@ fn time_is_deserialized_properly() {
 #[cfg(feature = "postgres")]
 fn interval_is_deserialized_properly() {
     use diesel::dsl::sql;
-    let mut connection = connection();
+    let connection = &mut connection();
 
     let data = select(sql::<(
         sql_types::Interval,
@@ -345,7 +345,7 @@ fn interval_is_deserialized_properly() {
         "'1 minute'::interval, '1 day'::interval, '1 month'::interval,
                     '4 years 3 days 2 hours 1 minute'::interval",
     ))
-    .first(&mut connection);
+    .first(connection);
 
     let one_minute = 1.minute();
     let one_day = 1.day();
@@ -361,8 +361,8 @@ fn adding_interval_to_timestamp() {
     use self::has_timestamps::dsl::*;
     use diesel::dsl::sql;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_timestamps (created_at, updated_at) VALUES
@@ -373,10 +373,10 @@ fn adding_interval_to_timestamp() {
     let expected_data = select(sql::<sql_types::Timestamp>(
         "'2015-11-16 06:07:41'::timestamp",
     ))
-    .get_result::<PgTimestamp>(&mut connection);
+    .get_result::<PgTimestamp>(connection);
     let actual_data = has_timestamps
         .select(created_at + 1.day())
-        .first::<PgTimestamp>(&mut connection);
+        .first::<PgTimestamp>(connection);
     assert_eq!(expected_data, actual_data);
 }
 
@@ -386,8 +386,8 @@ fn adding_interval_to_timestamptz() {
     use self::has_timestamptzs::dsl::*;
     use diesel::dsl::sql;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO has_timestamptzs (created_at, updated_at) VALUES
@@ -398,10 +398,10 @@ fn adding_interval_to_timestamptz() {
     let expected_data = select(sql::<sql_types::Timestamptz>(
         "'2015-11-16 06:07:41+0100'::timestamptz",
     ))
-    .get_result::<PgTimestamp>(&mut connection);
+    .get_result::<PgTimestamp>(connection);
     let actual_data = has_timestamptzs
         .select(created_at + 1.day())
-        .first::<PgTimestamp>(&mut connection);
+        .first::<PgTimestamp>(connection);
     assert_eq!(expected_data, actual_data);
 }
 
@@ -411,8 +411,8 @@ fn adding_interval_to_nullable_things() {
     use self::nullable_date_and_time::dsl::*;
     use diesel::dsl::sql;
 
-    let mut connection = connection();
-    setup_test_table(&mut connection);
+    let connection = &mut connection();
+    setup_test_table(connection);
     connection
         .execute(
             "INSERT INTO nullable_date_and_time (timestamp, timestamptz, date, time) VALUES
@@ -423,35 +423,35 @@ fn adding_interval_to_nullable_things() {
     let expected_data = select(sql::<Nullable<sql_types::Timestamp>>(
         "'2017-08-21 18:13:37'::timestamp",
     ))
-    .get_result::<Option<PgTimestamp>>(&mut connection);
+    .get_result::<Option<PgTimestamp>>(connection);
     let actual_data = nullable_date_and_time
         .select(timestamp + 1.day())
-        .first::<Option<PgTimestamp>>(&mut connection);
+        .first::<Option<PgTimestamp>>(connection);
     assert_eq!(expected_data, actual_data);
 
     let expected_data = select(sql::<Nullable<sql_types::Timestamptz>>(
         "'2017-08-21 18:13:37+0100'::timestamptz",
     ))
-    .get_result::<Option<PgTimestamp>>(&mut connection);
+    .get_result::<Option<PgTimestamp>>(connection);
     let actual_data = nullable_date_and_time
         .select(timestamptz + 1.day())
-        .first::<Option<PgTimestamp>>(&mut connection);
+        .first::<Option<PgTimestamp>>(connection);
     assert_eq!(expected_data, actual_data);
 
     let expected_data = select(sql::<Nullable<sql_types::Timestamp>>(
         "'2017-08-21'::timestamp",
     ))
-    .get_result::<Option<PgTimestamp>>(&mut connection);
+    .get_result::<Option<PgTimestamp>>(connection);
     let actual_data = nullable_date_and_time
         .select(date + 1.day())
-        .first::<Option<PgTimestamp>>(&mut connection);
+        .first::<Option<PgTimestamp>>(connection);
     assert_eq!(expected_data, actual_data);
 
     let expected_data = select(sql::<Nullable<sql_types::Time>>("'19:13:37'::time"))
-        .get_result::<Option<PgTime>>(&mut connection);
+        .get_result::<Option<PgTime>>(connection);
     let actual_data = nullable_date_and_time
         .select(time + 1.hour())
-        .first::<Option<PgTime>>(&mut connection);
+        .first::<Option<PgTime>>(connection);
     assert_eq!(expected_data, actual_data);
 }
 

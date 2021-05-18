@@ -19,7 +19,7 @@ fn managing_updated_at_for_table() {
     use std::{thread, time::Duration};
 
     // transactions have frozen time, so we can't use them
-    let mut connection = connection_without_transaction();
+    let connection = &mut connection_without_transaction();
     create_table(
         "auto_time",
         (
@@ -28,7 +28,7 @@ fn managing_updated_at_for_table() {
             timestamp("updated_at"),
         ),
     )
-    .execute(&mut connection)
+    .execute(connection)
     .unwrap();
     let mut _drop_conn = connection_without_transaction();
     let _guard = DropTable {
@@ -38,29 +38,29 @@ fn managing_updated_at_for_table() {
     };
 
     sql_query("SELECT diesel_manage_updated_at('auto_time')")
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     insert_into(auto_time)
         .values(&vec![n.eq(2), n.eq(1), n.eq(5)])
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let result = auto_time
         .count()
         .filter(updated_at.is_null())
-        .get_result::<i64>(&mut connection);
+        .get_result::<i64>(connection);
     assert_eq!(Ok(3), result);
 
     update(auto_time)
         .set(n.eq(n + 1))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let result = auto_time
         .count()
         .filter(updated_at.is_null())
-        .get_result::<i64>(&mut connection);
+        .get_result::<i64>(connection);
     assert_eq!(Ok(0), result);
 
     if cfg!(feature = "sqlite") {
@@ -69,12 +69,12 @@ fn managing_updated_at_for_table() {
     }
 
     let query = auto_time.find(2).select(updated_at);
-    let old_time: NaiveDateTime = query.first(&mut connection).unwrap();
+    let old_time: NaiveDateTime = query.first(connection).unwrap();
     update(auto_time.find(2))
         .set(n.eq(0))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
-    let new_time: NaiveDateTime = query.first(&mut connection).unwrap();
+    let new_time: NaiveDateTime = query.first(connection).unwrap();
     assert!(old_time < new_time);
 }
 

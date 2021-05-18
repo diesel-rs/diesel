@@ -26,11 +26,11 @@ pub trait SqliteExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let jack_is_a_dog = animals
     ///     .select(name)
     ///     .filter(species.is("dog"))
-    ///     .get_results::<Option<String>>(&mut connection)?;
+    ///     .get_results::<Option<String>>(connection)?;
     /// assert_eq!(vec![Some("Jack".to_string())], jack_is_a_dog);
     /// #     Ok(())
     /// # }
@@ -61,11 +61,11 @@ pub trait SqliteExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let jack_is_not_a_spider = animals
     ///     .select(name)
     ///     .filter(species.is_not("spider"))
-    ///     .get_results::<Option<String>>(&mut connection)?;
+    ///     .get_results::<Option<String>>(connection)?;
     /// assert_eq!(vec![Some("Jack".to_string())], jack_is_not_a_spider);
     /// #     Ok(())
     /// # }

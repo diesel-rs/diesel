@@ -12,15 +12,15 @@ use crate::sql_types::BoolOrNullableBool;
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// use diesel::dsl::not;
 ///
 /// let users_with_name = users.select(id).filter(name.eq("Sean"));
 /// let users_not_with_name = users.select(id).filter(
 ///     not(name.eq("Sean")));
 ///
-/// assert_eq!(Ok(1), users_with_name.first(&mut connection));
-/// assert_eq!(Ok(2), users_not_with_name.first(&mut connection));
+/// assert_eq!(Ok(1), users_with_name.first(connection));
+/// assert_eq!(Ok(2), users_not_with_name.first(connection));
 /// # }
 /// ```
 pub fn not<T>(expr: T) -> not<T>

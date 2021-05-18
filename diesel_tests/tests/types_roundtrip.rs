@@ -32,9 +32,9 @@ where
         + QueryFragment<<TestConnection as Connection>::Backend>
         + QueryId,
 {
-    let mut connection = connection_without_transaction();
+    let connection = &mut connection_without_transaction();
     let query = select(value.clone().into_sql::<ST>());
-    let result = query.get_result::<T>(&mut connection);
+    let result = query.get_result::<T>(connection);
     match result {
         Ok(res) => {
             if value != res {

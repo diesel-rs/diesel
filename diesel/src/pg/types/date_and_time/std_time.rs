@@ -71,28 +71,28 @@ mod tests {
 
     #[test]
     fn unix_epoch_encodes_correctly() {
-        let mut connection = pg_connection();
+        let connection = &mut pg_connection();
         let query = select(sql::<Timestamp>("'1970-01-01'").eq(UNIX_EPOCH));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_decodes_correctly() {
-        let mut connection = pg_connection();
+        let connection = &mut pg_connection();
         let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
-            .get_result::<SystemTime>(&mut connection);
+            .get_result::<SystemTime>(connection);
         assert_eq!(Ok(UNIX_EPOCH), epoch_from_sql);
     }
 
     #[test]
     fn times_relative_to_now_encode_correctly() {
-        let mut connection = pg_connection();
+        let connection = &mut pg_connection();
         let time = SystemTime::now() + Duration::from_secs(60);
         let query = select(now.at_time_zone("utc").lt(time));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let time = SystemTime::now() - Duration::from_secs(60);
         let query = select(now.at_time_zone("utc").gt(time));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 }

@@ -77,13 +77,13 @@
 //! #
 //! # fn result_main() -> QueryResult<()> {
 //! #
-//! # let mut conn = connection_setup::establish_connection();
+//! # let conn = &mut connection_setup::establish_connection();
 //! #
 //! # // Create some example data by using typical SQL statements.
-//! # connection_setup::create_user_table(&mut conn);
+//! # connection_setup::create_user_table(conn);
 //! # // Create some example data by using typical SQL statements.
-//! # connection_setup::create_user_table(&mut conn);
-//! # sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").execute(&mut conn)?;
+//! # connection_setup::create_user_table(conn);
+//! # sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").execute(conn)?;
 //!
 //!     let users = diesel_dynamic_schema::table("users");
 //!     let id = users.column::<Untyped, _>("id");
@@ -95,7 +95,7 @@
 //!     select.add_field(name);
 //!
 //!     let actual_data: Vec<DynamicRow<NamedField<MyDynamicValue>>> =
-//!         users.select(select).load(&mut conn)?;
+//!         users.select(select).load(conn)?;
 //!
 //!     assert_eq!(
 //!         actual_data[0]["name"],

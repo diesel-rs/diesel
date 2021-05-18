@@ -43,8 +43,8 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
-/// let first_user = users.first(&mut connection)?;
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.first(connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -95,8 +95,8 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
-/// let first_user = users.first(&mut connection)?;
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.first(connection)?;
 /// let expected = User { id: 1, name: "sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -138,8 +138,8 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
-/// let first_user = users.first(&mut connection)?;
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.first(connection)?;
 /// let expected = User { id: 1, name: "sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -188,9 +188,9 @@ pub use diesel_derives::Queryable;
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(&mut connection)?;
+///     .get_result(connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -239,9 +239,9 @@ pub use diesel_derives::Queryable;
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let first_user = sql_query("SELECT * FROM users ORDER BY id LIMIT 1")
-///     .get_result(&mut connection)?;
+///     .get_result(connection)?;
 /// let expected = User { id: 1, name: "sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())

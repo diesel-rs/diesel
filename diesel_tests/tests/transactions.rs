@@ -6,9 +6,9 @@ use diesel::*;
 #[cfg(not(feature = "sqlite"))] // FIXME: This test is only valid when operating on a file and not :memory:
 fn transaction_executes_fn_in_a_sql_transaction() {
     const TEST_NAME: &'static str = "transaction_executes_fn_in_a_sql_transaction";
-    let mut conn1 = connection_without_transaction();
-    let mut conn2 = connection_without_transaction();
-    setup_test_table(&mut conn1, TEST_NAME);
+    let conn1 = &mut connection_without_transaction();
+    let conn2 = &mut connection_without_transaction();
+    setup_test_table(conn1, TEST_NAME);
 
     fn get_count(conn: &mut TestConnection) -> i64 {
         count_test_table(conn, TEST_NAME)
@@ -17,32 +17,32 @@ fn transaction_executes_fn_in_a_sql_transaction() {
     conn1
         .transaction::<_, Error, _>(|conn1| {
             assert_eq!(0, get_count(conn1));
-            assert_eq!(0, get_count(&mut conn2));
+            assert_eq!(0, get_count(conn2));
             conn1.execute(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))?;
             assert_eq!(1, get_count(conn1));
-            assert_eq!(0, get_count(&mut conn2));
+            assert_eq!(0, get_count(conn2));
             Ok(())
         })
         .unwrap();
 
-    assert_eq!(1, get_count(&mut conn1));
-    assert_eq!(1, get_count(&mut conn2));
+    assert_eq!(1, get_count(conn1));
+    assert_eq!(1, get_count(conn2));
 
-    drop_test_table(&mut conn1, TEST_NAME);
+    drop_test_table(conn1, TEST_NAME);
 }
 
 #[test]
 fn transaction_returns_the_returned_value() {
-    let mut conn1 = connection_without_transaction();
+    let conn1 = &mut connection_without_transaction();
 
     assert_eq!(Ok(1), conn1.transaction::<_, Error, _>(|_| Ok(1)));
 }
 
 #[test]
 fn transaction_is_rolled_back_when_returned_an_error() {
-    let mut connection = connection_without_transaction();
+    let connection = &mut connection_without_transaction();
     let test_name = "transaction_is_rolled_back_when_returned_an_error";
-    setup_test_table(&mut connection, test_name);
+    setup_test_table(connection, test_name);
 
     let _ = connection.transaction::<(), _, _>(|connection| {
         connection
@@ -50,16 +50,16 @@ fn transaction_is_rolled_back_when_returned_an_error() {
             .unwrap();
         Err(Error::RollbackTransaction)
     });
-    assert_eq!(0, count_test_table(&mut connection, test_name));
+    assert_eq!(0, count_test_table(connection, test_name));
 
-    drop_test_table(&mut connection, test_name);
+    drop_test_table(connection, test_name);
 }
 
 #[test]
 fn transactions_can_be_nested() {
-    let mut connection = connection_without_transaction();
+    let connection = &mut connection_without_transaction();
     const TEST_NAME: &'static str = "transactions_can_be_nested";
-    setup_test_table(&mut connection, TEST_NAME);
+    setup_test_table(connection, TEST_NAME);
     fn get_count(connection: &mut TestConnection) -> i64 {
         count_test_table(connection, TEST_NAME)
     }
@@ -87,32 +87,32 @@ fn transactions_can_be_nested() {
         assert_eq!(2, get_count(connection));
         Err(Error::RollbackTransaction)
     });
-    assert_eq!(0, get_count(&mut connection));
+    assert_eq!(0, get_count(connection));
 
-    drop_test_table(&mut connection, TEST_NAME);
+    drop_test_table(connection, TEST_NAME);
 }
 
 #[test]
 fn test_transaction_always_rolls_back() {
-    let mut connection = connection_without_transaction();
+    let connection = &mut connection_without_transaction();
     let test_name = "test_transaction_always_rolls_back";
-    setup_test_table(&mut connection, test_name);
+    setup_test_table(connection, test_name);
 
     let result = connection.test_transaction::<_, Error, _>(|connection| {
         connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name))?;
         assert_eq!(1, count_test_table(connection, test_name));
         Ok("success")
     });
-    assert_eq!(0, count_test_table(&mut connection, test_name));
+    assert_eq!(0, count_test_table(connection, test_name));
     assert_eq!("success", result);
 
-    drop_test_table(&mut connection, test_name);
+    drop_test_table(connection, test_name);
 }
 
 #[test]
 #[should_panic(expected = "Transaction did not succeed")]
 fn test_transaction_panics_on_error() {
-    let mut connection = connection_without_transaction();
+    let connection = &mut connection_without_transaction();
     connection.test_transaction::<(), _, _>(|_| Err(()));
 }
 
@@ -142,7 +142,7 @@ fn count_test_table(connection: &mut TestConnection, table_name: &str) -> i64 {
 #[test]
 #[cfg(feature = "postgres")]
 fn regression_test_for_2123() {
-    let mut conn = connection_without_transaction();
+    let conn = &mut connection_without_transaction();
     // fail once
     let ret = conn.transaction(|conn| {
         let _ = conn.transaction(|conn| {

@@ -256,7 +256,7 @@ fn examine_sql_from_insertable_struct_batch() {
 
 #[test]
 fn insert_get_results_batch() {
-    let mut conn = establish_connection();
+    let conn = &mut establish_connection();
     conn.test_transaction::<_, diesel::result::Error, _>(|conn| {
         use diesel::select;
         use schema::users::dsl::*;
@@ -308,7 +308,7 @@ fn examine_sql_from_insert_get_results_batch() {
 
 #[test]
 fn insert_get_result() {
-    let mut conn = establish_connection();
+    let conn = &mut establish_connection();
     conn.test_transaction::<_, diesel::result::Error, _>(|conn| {
         use diesel::select;
         use schema::users::dsl::*;

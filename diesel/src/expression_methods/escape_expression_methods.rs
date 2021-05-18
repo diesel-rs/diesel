@@ -18,15 +18,15 @@ use crate::sql_types::VarChar;
 /// # fn main() {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::insert_into;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// #     insert_into(users).values(name.eq("Ha%%0r"))
-/// #         .execute(&mut connection).unwrap();
+/// #         .execute(connection).unwrap();
 /// let users_with_percent = users.select(name)
 ///     .filter(name.like("%😀%%").escape('😀'))
-///     .load(&mut connection);
+///     .load(connection);
 /// let users_without_percent = users.select(name)
 ///     .filter(name.not_like("%a%%").escape('a'))
-///     .load(&mut connection);
+///     .load(connection);
 /// assert_eq!(Ok(vec![String::from("Ha%%0r")]), users_with_percent);
 /// assert_eq!(Ok(vec![String::from("Sean"), String::from("Tess")]), users_without_percent);
 /// # }

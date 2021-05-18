@@ -5,7 +5,7 @@ use diesel::*;
 fn selecting_basic_data() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
 
     let expected_data = vec![
         User {
@@ -19,10 +19,7 @@ fn selecting_basic_data() {
             hair_color: None,
         },
     ];
-    let actual_data: Vec<_> = users
-        .select(User::as_select())
-        .load(&mut connection)
-        .unwrap();
+    let actual_data: Vec<_> = users.select(User::as_select()).load(connection).unwrap();
     assert_eq!(expected_data, actual_data);
 }
 
@@ -30,13 +27,13 @@ fn selecting_basic_data() {
 fn with_safe_select() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection();
+    let connection = &mut connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
 
     let select_name = users.select(UserName::as_select());
-    let names: Vec<UserName> = select_name.load(&mut connection).unwrap();
+    let names: Vec<UserName> = select_name.load(connection).unwrap();
 
     assert_eq!(vec![UserName::new("Sean"), UserName::new("Tess")], names);
 }
@@ -52,7 +49,7 @@ table! {
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_and_tables_with_reserved_names() {
     use crate::schema_dsl::*;
-    let mut connection = connection();
+    let connection = &mut connection();
     create_table(
         "select",
         (
@@ -60,7 +57,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
             integer("join").not_null(),
         ),
     )
-    .execute(&mut connection)
+    .execute(connection)
     .unwrap();
     connection
         .execute("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
@@ -78,7 +75,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
         .collect::<Vec<_>>();
     let actual_data: Vec<Select> = select::table
         .select(Select::as_select())
-        .load(&mut connection)
+        .load(connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 }
@@ -87,8 +84,8 @@ fn selecting_columns_and_tables_with_reserved_names() {
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 fn selecting_columns_with_different_definition_order() {
     use crate::schema_dsl::*;
-    let mut connection = connection();
-    drop_table_cascade(&mut connection, "users");
+    let connection = &mut connection();
+    drop_table_cascade(connection, "users");
     create_table(
         "users",
         (
@@ -97,27 +94,22 @@ fn selecting_columns_with_different_definition_order() {
             string("name").not_null(),
         ),
     )
-    .execute(&mut connection)
+    .execute(connection)
     .unwrap();
     let expected_user = User::with_hair_color(1, "Sean", "black");
     insert_into(users::table)
         .values(&NewUser::new("Sean", Some("black")))
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
-    let user_from_select = users::table
-        .select(User::as_select())
-        .first(&mut connection);
+    let user_from_select = users::table.select(User::as_select()).first(connection);
 
     assert_eq!(Ok(&expected_user), user_from_select.as_ref());
 }
 
 #[test]
 fn selection_using_subselect() {
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let ids: Vec<i32> = users::table
-        .select(users::id)
-        .load(&mut connection)
-        .unwrap();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let ids: Vec<i32> = users::table.select(users::id).load(connection).unwrap();
     let query = format!(
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
         ids[0], ids[1]
@@ -133,7 +125,7 @@ fn selection_using_subselect() {
     let data = posts::table
         .select(Post::as_select())
         .filter(posts::user_id.eq_any(users))
-        .load(&mut connection)
+        .load(connection)
         .unwrap();
 
     assert_eq!(vec![Post("Hello".to_string())], data);
@@ -141,15 +133,15 @@ fn selection_using_subselect() {
 
 #[test]
 fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
-    let mut connection = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &mut connection);
-    let tess = find_user_by_name("Tess", &mut connection);
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", connection);
+    let tess = find_user_by_name("Tess", connection);
     insert_into(posts::table)
         .values(&vec![
             tess.new_post("Tess", None),
             sean.new_post("Hi", None),
         ])
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     let invalid_query_but_valid_subselect = posts::table
@@ -158,7 +150,7 @@ fn select_can_be_called_on_query_that_is_valid_subselect_but_invalid_query() {
     let users_with_post_using_name_as_title = users::table
         .select(User::as_select())
         .filter(users::id.eq_any(invalid_query_but_valid_subselect))
-        .load(&mut connection);
+        .load(connection);
 
     assert_eq!(Ok(vec![tess]), users_with_post_using_name_as_title);
 }
@@ -185,10 +177,10 @@ fn selecting_multiple_aggregate_expressions_without_group_by() {
         }
     }
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
     let CountAndMax { count, max_name } = users
         .select(CountAndMax::as_select())
-        .get_result(&mut connection)
+        .get_result(connection)
         .unwrap();
 
     assert_eq!(2, count);
@@ -199,7 +191,7 @@ fn selecting_multiple_aggregate_expressions_without_group_by() {
 fn mixed_selectable_and_plain_select() {
     use crate::schema::users::dsl::*;
 
-    let mut connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
 
     let expected_data = vec![
         (
@@ -221,7 +213,7 @@ fn mixed_selectable_and_plain_select() {
     ];
     let actual_data: Vec<_> = users
         .select((User::as_select(), name))
-        .load(&mut connection)
+        .load(connection)
         .unwrap();
     assert_eq!(expected_data, actual_data);
 }

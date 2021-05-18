@@ -143,14 +143,14 @@ mod tests {
 
     #[test]
     fn batch_execute_handles_single_queries_with_results() {
-        let mut connection = connection();
+        let connection = &mut connection();
         assert!(connection.batch_execute("SELECT 1").is_ok());
         assert!(connection.batch_execute("SELECT 1").is_ok());
     }
 
     #[test]
     fn batch_execute_handles_multi_queries_with_results() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let query = "SELECT 1; SELECT 2; SELECT 3;";
         assert!(connection.batch_execute(query).is_ok());
         assert!(connection.batch_execute(query).is_ok());
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn execute_handles_queries_which_return_results() {
-        let mut connection = connection();
+        let connection = &mut connection();
         assert!(connection.execute("SELECT 1").is_ok());
         assert!(connection.execute("SELECT 1").is_ok());
     }

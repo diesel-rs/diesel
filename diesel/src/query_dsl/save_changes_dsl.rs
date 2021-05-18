@@ -125,9 +125,9 @@ where
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use self::animals::dsl::*;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let form = AnimalForm { id: 2, name: "Super scary" };
-/// let changed_animal = form.save_changes(&mut connection)?;
+/// let changed_animal = form.save_changes(connection)?;
 /// let expected_animal = Animal {
 ///     id: 2,
 ///     species: String::from("spider"),

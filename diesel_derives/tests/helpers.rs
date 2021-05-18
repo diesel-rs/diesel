@@ -26,7 +26,7 @@ cfg_if! {
                 .expect("DATABASE_URL must be set in order to run tests");
             let mut conn = PgConnection::establish(&database_url).unwrap();
             conn.begin_test_transaction().unwrap();
-            sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&mut conn).unwrap();
+            sql_query("DROP TABLE IF EXISTS users CASCADE").execute(conn).unwrap();
             sql_query("CREATE TABLE users (\
                 id SERIAL PRIMARY KEY, \
                 name VARCHAR NOT NULL, \
@@ -45,7 +45,7 @@ cfg_if! {
                 .or_else(|_| dotenv::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
             let mut conn = MysqlConnection::establish(&database_url).unwrap();
-            sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&mut conn).unwrap();
+            sql_query("DROP TABLE IF EXISTS users CASCADE").execute(conn).unwrap();
             sql_query("CREATE TABLE users (\
                 id INTEGER PRIMARY KEY AUTO_INCREMENT, \
                 name TEXT NOT NULL, \

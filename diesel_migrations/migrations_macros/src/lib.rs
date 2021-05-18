@@ -78,8 +78,8 @@ use proc_macro::TokenStream;
 /// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/sqlite");
 ///
 /// # fn main() {
-/// #     let mut connection = migration_connection();
-/// #     run_migrations(&mut connection).unwrap();
+/// #     let connection = &mut migration_connection();
+/// #     run_migrations(connection).unwrap();
 /// # }
 ///
 /// fn run_migrations(connection: &mut impl MigrationHarness<DB>) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {

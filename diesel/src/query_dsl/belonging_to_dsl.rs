@@ -26,21 +26,21 @@
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// #     use self::users::dsl::*;
 /// #     use self::posts::dsl::{posts, title};
-/// let sean = users.filter(name.eq("Sean")).first::<User>(&mut connection)?;
-/// let tess = users.filter(name.eq("Tess")).first::<User>(&mut connection)?;
+/// let sean = users.filter(name.eq("Sean")).first::<User>(connection)?;
+/// let tess = users.filter(name.eq("Tess")).first::<User>(connection)?;
 ///
 /// let seans_posts = Post::belonging_to(&sean)
 ///     .select(title)
-///     .load::<String>(&mut connection)?;
+///     .load::<String>(connection)?;
 /// assert_eq!(vec!["My first post", "About Rust"], seans_posts);
 ///
 /// // A vec or slice can be passed as well
 /// let more_posts = Post::belonging_to(&vec![sean, tess])
 ///     .select(title)
-///     .load::<String>(&mut connection)?;
+///     .load::<String>(connection)?;
 /// assert_eq!(vec!["My first post", "About Rust", "My first post too"], more_posts);
 /// #     Ok(())
 /// # }

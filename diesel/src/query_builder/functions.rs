@@ -26,10 +26,10 @@ use crate::query_dsl::methods::SelectDsl;
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set(name.eq("James"))
-///     .get_result(&mut connection);
+///     .get_result(connection);
 /// // On backends that support it, you can call `get_result` instead of `execute`
 /// // to have `RETURNING *` automatically appended to the query. Alternatively, you
 /// // can explicitly return an expression by using the `returning` method before
@@ -58,7 +58,7 @@ use crate::query_dsl::methods::SelectDsl;
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
 /// # use self::users::dsl::*;
-/// # let mut connection = establish_connection();
+/// # let connection = &mut establish_connection();
 /// # connection.execute("DROP TABLE users").unwrap();
 /// # connection.execute("CREATE TABLE users (
 /// #     id SERIAL PRIMARY KEY,
@@ -68,7 +68,7 @@ use crate::query_dsl::methods::SelectDsl;
 ///
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set((name.eq("James"), surname.eq("Bond")))
-///     .get_result(&mut connection);
+///     .get_result(connection);
 ///
 /// assert_eq!(Ok((1, "James".to_string(), "Bond".to_string())), updated_row);
 /// # }
@@ -102,10 +102,10 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// #
 /// # fn delete() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
-/// let old_count = users.count().first::<i64>(&mut connection);
-/// diesel::delete(users.filter(id.eq(1))).execute(&mut connection)?;
-/// assert_eq!(old_count.map(|count| count - 1), users.count().first(&mut connection));
+/// #     let connection = &mut establish_connection();
+/// let old_count = users.count().first::<i64>(connection);
+/// diesel::delete(users.filter(id.eq(1))).execute(connection)?;
+/// assert_eq!(old_count.map(|count| count - 1), users.count().first(connection));
 /// # Ok(())
 /// # }
 /// ```
@@ -121,9 +121,9 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// #
 /// # fn delete() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
-/// diesel::delete(users).execute(&mut connection)?;
-/// assert_eq!(Ok(0), users.count().first::<i64>(&mut connection));
+/// #     let connection = &mut establish_connection();
+/// diesel::delete(users).execute(connection)?;
+/// assert_eq!(Ok(0), users.count().first::<i64>(connection));
 /// # Ok(())
 /// # }
 /// ```
@@ -153,10 +153,10 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&name.eq("Sean"))
-///     .execute(&mut connection);
+///     .execute(connection);
 ///
 /// assert_eq!(Ok(1), rows_inserted);
 ///
@@ -167,7 +167,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_users)
-///     .execute(&mut connection);
+///     .execute(connection);
 ///
 /// assert_eq!(Ok(2), rows_inserted);
 /// # }
@@ -180,12 +180,12 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
-/// #     diesel::delete(users).execute(&mut connection).unwrap();
+/// #     let connection = &mut establish_connection();
+/// #     diesel::delete(users).execute(connection).unwrap();
 /// let new_user = (id.eq(1), name.eq("Sean"));
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_user)
-///     .execute(&mut connection);
+///     .execute(connection);
 ///
 /// assert_eq!(Ok(1), rows_inserted);
 ///
@@ -196,7 +196,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_users)
-///     .execute(&mut connection);
+///     .execute(connection);
 ///
 /// assert_eq!(Ok(2), rows_inserted);
 /// # }
@@ -216,14 +216,14 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// // Insert one record at a time
 ///
 /// let new_user = NewUser { name: "Ruby Rhod" };
 ///
 /// diesel::insert_into(users)
 ///     .values(&new_user)
-///     .execute(&mut connection)
+///     .execute(connection)
 ///     .unwrap();
 ///
 /// // Insert many records
@@ -235,7 +235,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// let inserted_names = diesel::insert_into(users)
 ///     .values(&new_users)
-///     .execute(&mut connection)
+///     .execute(connection)
 ///     .unwrap();
 /// # }
 /// ```
@@ -264,13 +264,13 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[cfg(not(feature = "sqlite"))]
 /// # fn main() {
 /// #     use schema::brands::dsl::*;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// // Insert `Red`
 /// let new_brand = NewBrand { color: Some("Red".into()) };
 ///
 /// diesel::insert_into(brands)
 ///     .values(&new_brand)
-///     .execute(&mut connection)
+///     .execute(connection)
 ///     .unwrap();
 ///
 /// // Insert the default color
@@ -278,7 +278,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// diesel::insert_into(brands)
 ///     .values(&new_brand)
-///     .execute(&mut connection)
+///     .execute(connection)
 ///     .unwrap();
 /// # }
 /// # #[cfg(feature = "sqlite")]
@@ -310,13 +310,13 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[cfg(not(feature = "sqlite"))]
 /// # fn main() {
 /// #     use schema::brands::dsl::*;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// // Insert `Red`
 /// let new_brand = NewBrand { accent: Some(Some("Red".into())) };
 ///
 /// diesel::insert_into(brands)
 ///     .values(&new_brand)
-///     .execute(&mut connection)
+///     .execute(connection)
 ///     .unwrap();
 ///
 /// // Insert the default accent
@@ -324,7 +324,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// diesel::insert_into(brands)
 ///     .values(&new_brand)
-///     .execute(&mut connection)
+///     .execute(connection)
 ///     .unwrap();
 ///
 /// // Insert `NULL`
@@ -332,7 +332,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// diesel::insert_into(brands)
 ///     .values(&new_brand)
-///     .execute(&mut connection)
+///     .execute(connection)
 ///     .unwrap();
 /// # }
 /// # #[cfg(feature = "sqlite")]
@@ -358,8 +358,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::{posts, users};
-/// #     let mut conn = establish_connection();
-/// #     diesel::delete(posts::table).execute(&mut conn)?;
+/// #     let conn = &mut establish_connection();
+/// #     diesel::delete(posts::table).execute(conn)?;
 /// let new_posts = users::table
 ///     .select((
 ///         users::name.concat("'s First Post"),
@@ -368,11 +368,11 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// diesel::insert_into(posts::table)
 ///     .values(new_posts)
 ///     .into_columns((posts::title, posts::user_id))
-///     .execute(&mut conn)?;
+///     .execute(conn)?;
 ///
 /// let inserted_posts = posts::table
 ///     .select(posts::title)
-///     .load::<String>(&mut conn)?;
+///     .load::<String>(conn)?;
 /// let expected = vec!["Sean's First Post", "Tess's First Post"];
 /// assert_eq!(expected, inserted_posts);
 /// #     Ok(())
@@ -387,14 +387,14 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let inserted_names = diesel::insert_into(users)
 ///     .values(&vec![
 ///         name.eq("Diva Plavalaguna"),
 ///         name.eq("Father Vito Cornelius"),
 ///     ])
 ///     .returning(name)
-///     .get_results(&mut connection);
+///     .get_results(connection);
 /// assert_eq!(Ok(vec!["Diva Plavalaguna".to_string(), "Father Vito Cornelius".to_string()]), inserted_names);
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
@@ -428,20 +428,20 @@ pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::{delete, insert_or_ignore_into};
 /// #
-/// #     let mut connection = establish_connection();
-/// #     diesel::delete(users).execute(&mut connection)?;
+/// #     let connection = &mut establish_connection();
+/// #     diesel::delete(users).execute(connection)?;
 /// insert_or_ignore_into(users)
 ///     .values((id.eq(1), name.eq("Jim")))
-///     .execute(&mut connection)?;
+///     .execute(connection)?;
 ///
 /// insert_or_ignore_into(users)
 ///     .values(&vec![
 ///         (id.eq(1), name.eq("Sean")),
 ///         (id.eq(2), name.eq("Tess")),
 ///     ])
-///     .execute(&mut connection)?;
+///     .execute(connection)?;
 ///
-/// let names = users.select(name).order(id).load::<String>(&mut connection)?;
+/// let names = users.select(name).order(id).load::<String>(connection)?;
 /// assert_eq!(vec![String::from("Jim"), String::from("Tess")], names);
 /// #     Ok(())
 /// # }
@@ -482,22 +482,22 @@ where
 /// #     use schema::users::dsl::*;
 /// #     use diesel::{insert_into, replace_into};
 /// #
-/// #     let mut conn = establish_connection();
+/// #     let conn = &mut establish_connection();
 /// #     conn.execute("DELETE FROM users").unwrap();
 /// replace_into(users)
 ///     .values(&vec![
 ///         (id.eq(1), name.eq("Sean")),
 ///         (id.eq(2), name.eq("Tess")),
 ///     ])
-///     .execute(&mut conn)
+///     .execute(conn)
 ///     .unwrap();
 ///
 /// replace_into(users)
 ///     .values((id.eq(1), name.eq("Jim")))
-///     .execute(&mut conn)
+///     .execute(conn)
 ///     .unwrap();
 ///
-/// let names = users.select(name).order(id).load::<String>(&mut conn);
+/// let names = users.select(name).order(id).load::<String>(conn);
 /// assert_eq!(Ok(vec!["Jim".into(), "Tess".into()]), names);
 /// # }
 /// # #[cfg(feature = "postgres")] fn main() {}
@@ -549,9 +549,9 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// #     use diesel::sql_query;
 /// #     use diesel::sql_types::{Integer, Text};
 /// #
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let users = sql_query("SELECT * FROM users ORDER BY id")
-///     .load(&mut connection);
+///     .load(connection);
 /// let expected_users = vec![
 ///     User { id: 1, name: "Sean".into() },
 ///     User { id: 2, name: "Tess".into() },
@@ -564,10 +564,10 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// #     use diesel::sql_query;
 /// #     use diesel::sql_types::{Integer, Text};
 /// #
-/// #     let mut connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// #     diesel::insert_into(users::table)
 /// #         .values(users::name.eq("Jim"))
-/// #         .execute(&mut connection).unwrap();
+/// #         .execute(connection).unwrap();
 /// #     #[cfg(feature = "postgres")]
 /// #     let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
 /// #     #[cfg(not(feature = "postgres"))]
@@ -578,7 +578,7 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// let users = users
 ///     .bind::<Integer, _>(1)
 ///     .bind::<Text, _>("Tess")
-///     .get_results(&mut connection);
+///     .get_results(connection);
 /// let expected_users = vec![
 ///     User { id: 3, name: "Jim".into() },
 /// ];

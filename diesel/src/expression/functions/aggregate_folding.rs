@@ -13,8 +13,8 @@ sql_function! {
     /// #
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
-    /// #     let mut connection = establish_connection();
-    /// assert_eq!(Ok(Some(12i64)), animals.select(sum(legs)).first(&mut connection));
+    /// #     let connection = &mut establish_connection();
+    /// assert_eq!(Ok(Some(12i64)), animals.select(sum(legs)).first(connection));
     /// # }
     /// ```
     #[aggregate]
@@ -47,13 +47,13 @@ sql_function! {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use bigdecimal::BigDecimal;
     /// #     use self::numbers::dsl::*;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS numbers")?;
     /// #     conn.execute("CREATE TABLE numbers (number INTEGER)")?;
     /// diesel::insert_into(numbers)
     ///     .values(&vec![number.eq(1), number.eq(2)])
-    ///     .execute(&mut conn)?;
-    /// let average = numbers.select(avg(number)).get_result(&mut conn)?;
+    ///     .execute(conn)?;
+    /// let average = numbers.select(avg(number)).get_result(conn)?;
     /// let expected = "1.5".parse::<BigDecimal>().unwrap();
     /// assert_eq!(Some(expected), average);
     /// #     Ok(())

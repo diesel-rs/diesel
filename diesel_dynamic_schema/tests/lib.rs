@@ -20,24 +20,24 @@ type Backend = diesel::sqlite::Sqlite;
 
 #[test]
 fn querying_basic_schemas() {
-    let mut conn = establish_connection();
-    create_user_table(&mut conn);
+    let conn = &mut establish_connection();
+    create_user_table(conn);
     sql_query("INSERT INTO users(name) VALUES ('Sean')")
-        .execute(&mut conn)
+        .execute(conn)
         .unwrap();
 
     let users = table("users");
     let name = users.column::<Text, _>("name");
-    let names = users.select(name).load::<String>(&mut conn);
+    let names = users.select(name).load::<String>(conn);
     assert_eq!(Ok(vec!["Sean".into()]), names);
 }
 
 #[test]
 fn querying_multiple_types() {
-    let mut conn = establish_connection();
-    create_user_table(&mut conn);
+    let conn = &mut establish_connection();
+    create_user_table(conn);
     sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .execute(&mut conn)
+        .execute(conn)
         .unwrap();
 
     let users = table("users");
@@ -45,7 +45,7 @@ fn querying_multiple_types() {
     let name = users.column::<Text, _>("name");
     let users = users
         .select((name, hair_color))
-        .load::<(String, Option<String>)>(&mut conn);
+        .load::<(String, Option<String>)>(conn);
     assert_eq!(
         Ok(vec![("Sean".into(), None), ("Tess".into(), None)]),
         users
@@ -54,10 +54,10 @@ fn querying_multiple_types() {
 
 #[test]
 fn columns_used_in_where_clause() {
-    let mut conn = establish_connection();
-    create_user_table(&mut conn);
+    let conn = &mut establish_connection();
+    create_user_table(conn);
     sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
-        .execute(&mut conn)
+        .execute(conn)
         .unwrap();
 
     let users = table("users");
@@ -65,7 +65,7 @@ fn columns_used_in_where_clause() {
     let users = users
         .select(name)
         .filter(name.eq("Sean"))
-        .load::<String>(&mut conn);
+        .load::<String>(conn);
 
     assert_eq!(Ok(vec!["Sean".into()]), users);
 }

@@ -62,10 +62,10 @@ mod eager_loading_with_string_keys {
 
     #[test]
     fn eager_loading_associations_for_multiple_records() {
-        let mut connection = connection();
-        drop_table_cascade(&mut connection, "users");
-        drop_table_cascade(&mut connection, "posts");
-        drop_table_cascade(&mut connection, "fk_doesnt_reference_pk");
+        let connection = &mut connection();
+        drop_table_cascade(connection, "users");
+        drop_table_cascade(connection, "posts");
+        drop_table_cascade(connection, "fk_doesnt_reference_pk");
         connection
             .batch_execute(
                 r#"
@@ -81,13 +81,13 @@ mod eager_loading_with_string_keys {
 
         let users = vec![sean.clone(), tess.clone()];
         let posts = Post::belonging_to(&users)
-            .load::<Post>(&mut connection)
+            .load::<Post>(connection)
             .unwrap()
             .grouped_by(&users);
         let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
 
-        let seans_posts = Post::belonging_to(&sean).load(&mut connection).unwrap();
-        let tess_posts = Post::belonging_to(&tess).load(&mut connection).unwrap();
+        let seans_posts = Post::belonging_to(&sean).load(connection).unwrap();
+        let tess_posts = Post::belonging_to(&tess).load(connection).unwrap();
         let expected_data = vec![(sean, seans_posts), (tess, tess_posts)];
         assert_eq!(expected_data, users_and_posts);
     }
@@ -185,7 +185,7 @@ fn self_referencing_associations() {
         parent_id: Option<i32>,
     }
 
-    let mut conn = connection();
+    let conn = &mut connection();
     let test_data = vec![
         Tree {
             id: 1,
@@ -210,16 +210,14 @@ fn self_referencing_associations() {
     ];
     insert_into(trees::table)
         .values(&test_data)
-        .execute(&mut conn)
+        .execute(conn)
         .unwrap();
 
     let parents = trees::table
         .filter(trees::parent_id.is_null())
-        .load::<Tree>(&mut conn)
+        .load::<Tree>(conn)
         .unwrap();
-    let children = Tree::belonging_to(&parents)
-        .load::<Tree>(&mut conn)
-        .unwrap();
+    let children = Tree::belonging_to(&parents).load::<Tree>(conn).unwrap();
     let children = children.grouped_by(&parents);
     let data = parents.into_iter().zip(children).collect::<Vec<_>>();
 
@@ -302,7 +300,7 @@ fn custom_foreign_key() {
     }
 
     joinable!(posts1 -> users1(belongs_to_user));
-    let mut connection = connection();
+    let connection = &mut connection();
     connection
         .batch_execute(
             r#"
@@ -345,14 +343,12 @@ fn custom_foreign_key() {
     };
 
     assert_eq!(
-        Post::belonging_to(&sean).load(&mut connection),
+        Post::belonging_to(&sean).load(connection),
         Ok(vec![post1.clone(), post3.clone()])
     );
 
     assert_eq!(
-        users1::table
-            .inner_join(posts1::table)
-            .load(&mut connection),
+        users1::table.inner_join(posts1::table).load(connection),
         Ok(vec![(sean.clone(), post1), (tess, post2), (sean, post3)])
     );
 }

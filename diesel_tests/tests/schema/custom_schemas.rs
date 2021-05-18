@@ -12,12 +12,12 @@ struct NewUser {
 
 #[test]
 fn custom_schemas_are_loaded_by_infer_schema() {
-    let mut conn = connection();
+    let conn = &mut connection();
     insert_into(users::table)
         .values(&NewUser { id: 1 })
-        .execute(&mut conn)
+        .execute(conn)
         .unwrap();
-    let users = users::table.select(users::id).load(&mut conn);
+    let users = users::table.select(users::id).load(conn);
 
     assert_eq!(Ok(vec![1]), users);
 }

@@ -139,171 +139,165 @@ mod tests {
 
     #[test]
     fn unix_epoch_encodes_correctly() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
         let query = select(sql::<Timestamp>("'1970-01-01'").eq(time));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let query = select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz").eq(time));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_encodes_correctly_with_timezone() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let time = FixedOffset::west(3600).ymd(1970, 1, 1).and_hms(0, 0, 0);
         let query = select(sql::<Timestamptz>("'1970-01-01 01:00:00Z'::timestamptz").eq(time));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_decodes_correctly() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
         let epoch_from_sql =
-            select(sql::<Timestamp>("'1970-01-01'::timestamp")).get_result(&mut connection);
+            select(sql::<Timestamp>("'1970-01-01'::timestamp")).get_result(connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
     #[test]
     fn unix_epoch_decodes_correctly_with_timezone() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let time = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
         let epoch_from_sql =
-            select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz")).get_result(&mut connection);
+            select(sql::<Timestamptz>("'1970-01-01Z'::timestamptz")).get_result(connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
 
     #[test]
     fn times_relative_to_now_encode_correctly() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let time = Utc::now().naive_utc() + Duration::seconds(60);
         let query = select(now.at_time_zone("utc").lt(time));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let time = Utc::now().naive_utc() - Duration::seconds(60);
         let query = select(now.at_time_zone("utc").gt(time));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn times_with_timezones_round_trip_after_conversion() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let time = FixedOffset::east(3600).ymd(2016, 1, 2).and_hms(1, 0, 0);
         let expected = NaiveDate::from_ymd(2016, 1, 1).and_hms(20, 0, 0);
         let query = select(time.into_sql::<Timestamptz>().at_time_zone("EDT"));
-        assert_eq!(Ok(expected), query.get_result(&mut connection));
+        assert_eq!(Ok(expected), query.get_result(connection));
     }
 
     #[test]
     fn times_of_day_encode_correctly() {
-        let mut connection = connection();
+        let connection = &mut connection();
 
         let midnight = NaiveTime::from_hms(0, 0, 0);
         let query = select(sql::<Time>("'00:00:00'::time").eq(midnight));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let noon = NaiveTime::from_hms(12, 0, 0);
         let query = select(sql::<Time>("'12:00:00'::time").eq(noon));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
         let query = select(sql::<Time>("'23:37:04.002200'::time").eq(roughly_half_past_eleven));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn times_of_day_decode_correctly() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let midnight = NaiveTime::from_hms(0, 0, 0);
         let query = select(sql::<Time>("'00:00:00'::time"));
-        assert_eq!(Ok(midnight), query.get_result::<NaiveTime>(&mut connection));
+        assert_eq!(Ok(midnight), query.get_result::<NaiveTime>(connection));
 
         let noon = NaiveTime::from_hms(12, 0, 0);
         let query = select(sql::<Time>("'12:00:00'::time"));
-        assert_eq!(Ok(noon), query.get_result::<NaiveTime>(&mut connection));
+        assert_eq!(Ok(noon), query.get_result::<NaiveTime>(connection));
 
         let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
         let query = select(sql::<Time>("'23:37:04.002200'::time"));
         assert_eq!(
             Ok(roughly_half_past_eleven),
-            query.get_result::<NaiveTime>(&mut connection)
+            query.get_result::<NaiveTime>(connection)
         );
     }
 
     #[test]
     fn dates_encode_correctly() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
         let query = select(sql::<Date>("'2000-1-1'").eq(january_first_2000));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let distant_past = NaiveDate::from_ymd(-398, 4, 11); // year 0 is 1 BC in this function
         let query = select(sql::<Date>("'399-4-11 BC'").eq(distant_past));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let julian_epoch = NaiveDate::from_ymd(-4713, 11, 24);
         let query = select(sql::<Date>("'J0'::date").eq(julian_epoch));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let max_date = MAX_DATE;
         let query = select(sql::<Date>("'262143-12-31'::date").eq(max_date));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
         let query = select(sql::<Date>("'2018-1-1'::date").eq(january_first_2018));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let distant_future = NaiveDate::from_ymd(72_400, 1, 8);
         let query = select(sql::<Date>("'72400-1-8'::date").eq(distant_future));
-        assert!(query.get_result::<bool>(&mut connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn dates_decode_correctly() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
         let query = select(sql::<Date>("'2000-1-1'::date"));
         assert_eq!(
             Ok(january_first_2000),
-            query.get_result::<NaiveDate>(&mut connection)
+            query.get_result::<NaiveDate>(connection)
         );
 
         let distant_past = NaiveDate::from_ymd(-398, 4, 11);
         let query = select(sql::<Date>("'399-4-11 BC'::date"));
-        assert_eq!(
-            Ok(distant_past),
-            query.get_result::<NaiveDate>(&mut connection)
-        );
+        assert_eq!(Ok(distant_past), query.get_result::<NaiveDate>(connection));
 
         let julian_epoch = NaiveDate::from_ymd(-4713, 11, 24);
         let query = select(sql::<Date>("'J0'::date"));
-        assert_eq!(
-            Ok(julian_epoch),
-            query.get_result::<NaiveDate>(&mut connection)
-        );
+        assert_eq!(Ok(julian_epoch), query.get_result::<NaiveDate>(connection));
 
         let max_date = MAX_DATE;
         let query = select(sql::<Date>("'262143-12-31'::date"));
-        assert_eq!(Ok(max_date), query.get_result::<NaiveDate>(&mut connection));
+        assert_eq!(Ok(max_date), query.get_result::<NaiveDate>(connection));
 
         let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
         let query = select(sql::<Date>("'2018-1-1'::date"));
         assert_eq!(
             Ok(january_first_2018),
-            query.get_result::<NaiveDate>(&mut connection)
+            query.get_result::<NaiveDate>(connection)
         );
 
         let distant_future = NaiveDate::from_ymd(72_400, 1, 8);
         let query = select(sql::<Date>("'72400-1-8'::date"));
         assert_eq!(
             Ok(distant_future),
-            query.get_result::<NaiveDate>(&mut connection)
+            query.get_result::<NaiveDate>(connection)
         );
     }
 }

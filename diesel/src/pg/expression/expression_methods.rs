@@ -20,11 +20,11 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let distinct = users.select(id).filter(name.is_distinct_from("Sean"));
     /// let not_distinct = users.select(id).filter(name.is_not_distinct_from("Sean"));
-    /// assert_eq!(Ok(2), distinct.first(&mut connection));
-    /// assert_eq!(Ok(1), not_distinct.first(&mut connection));
+    /// assert_eq!(Ok(2), distinct.first(connection));
+    /// assert_eq!(Ok(1), not_distinct.first(connection));
     /// # }
     /// ```
     fn is_not_distinct_from<T>(self, other: T) -> dsl::IsNotDistinctFrom<Self, T>
@@ -47,11 +47,11 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let distinct = users.select(id).filter(name.is_distinct_from("Sean"));
     /// let not_distinct = users.select(id).filter(name.is_not_distinct_from("Sean"));
-    /// assert_eq!(Ok(2), distinct.first(&mut connection));
-    /// assert_eq!(Ok(1), not_distinct.first(&mut connection));
+    /// assert_eq!(Ok(2), distinct.first(connection));
+    /// assert_eq!(Ok(1), not_distinct.first(connection));
     /// # }
     /// ```
     fn is_distinct_from<T>(self, other: T) -> dsl::IsDistinctFrom<Self, T>
@@ -99,23 +99,23 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::timestamps::dsl::*;
     /// #     use chrono::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     connection.execute("CREATE TABLE timestamps (\"timestamp\"
     /// #         timestamp NOT NULL)")?;
     /// let christmas_morning = NaiveDate::from_ymd(2017, 12, 25)
     ///     .and_hms(8, 0, 0);
     /// diesel::insert_into(timestamps)
     ///     .values(timestamp.eq(christmas_morning))
-    ///     .execute(&mut connection)?;
+    ///     .execute(connection)?;
     ///
     /// let utc_time = timestamps
     ///     .select(timestamp.at_time_zone("UTC"))
-    ///     .first(&mut connection)?;
+    ///     .first(connection)?;
     /// assert_eq!(christmas_morning, utc_time);
     ///
     /// let eastern_time = timestamps
     ///     .select(timestamp.at_time_zone("EST"))
-    ///     .first(&mut connection)?;
+    ///     .first(connection)?;
     /// let five_hours_later = christmas_morning + Duration::hours(5);
     /// assert_eq!(five_hours_later, eastern_time);
     /// #     Ok(())
@@ -160,7 +160,7 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
     /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
     /// #
@@ -170,21 +170,21 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     ///         tags.eq(vec!["awesome", "great"]),
     ///         tags.eq(vec!["cool", "great"]),
     ///     ])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let data = posts.select(id)
     ///     .filter(tags.overlaps_with(vec!["horrid", "cool"]))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 3], data);
     ///
     /// let data = posts.select(id)
     ///     .filter(tags.overlaps_with(vec!["cool", "great"]))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 2, 3], data);
     ///
     /// let data = posts.select(id)
     ///     .filter(tags.overlaps_with(vec!["horrid"]))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert!(data.is_empty());
     /// #     Ok(())
     /// # }
@@ -219,22 +219,22 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
     /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(tags.eq(vec!["cool", "awesome"]))
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let cool_posts = posts.select(id)
     ///     .filter(tags.contains(vec!["cool"]))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1], cool_posts);
     ///
     /// let amazing_posts = posts.select(id)
     ///     .filter(tags.contains(vec!["cool", "amazing"]))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert!(amazing_posts.is_empty());
     /// #     Ok(())
     /// # }
@@ -270,22 +270,22 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
     /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(tags.eq(vec!["cool", "awesome"]))
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let data = posts.select(id)
     ///     .filter(tags.is_contained_by(vec!["cool", "awesome", "amazing"]))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1], data);
     ///
     /// let data = posts.select(id)
     ///     .filter(tags.is_contained_by(vec!["cool"]))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert!(data.is_empty());
     /// #     Ok(())
     /// # }
@@ -346,7 +346,7 @@ pub trait PgSortExpressionMethods: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::nullable_numbers::dsl::*;
-    /// #     let mut connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     connection.execute("CREATE TABLE nullable_numbers (nullable_number INTEGER)")?;
     /// diesel::insert_into(nullable_numbers)
     ///     .values(&vec![
@@ -354,16 +354,16 @@ pub trait PgSortExpressionMethods: Sized {
     ///         nullable_number.eq(Some(1)),
     ///         nullable_number.eq(Some(2)),
     ///     ])
-    ///     .execute(&mut connection)?;
+    ///     .execute(connection)?;
     ///
     /// let asc_default_nulls = nullable_numbers.select(nullable_number)
     ///     .order(nullable_number.asc())
-    ///     .load(&mut connection)?;
+    ///     .load(connection)?;
     /// assert_eq!(vec![Some(1), Some(2), None], asc_default_nulls);
     ///
     /// let asc_nulls_first = nullable_numbers.select(nullable_number)
     ///     .order(nullable_number.asc().nulls_first())
-    ///     .load(&mut connection)?;
+    ///     .load(connection)?;
     /// assert_eq!(vec![None, Some(1), Some(2)], asc_nulls_first);
     /// #     Ok(())
     /// # }
@@ -394,7 +394,7 @@ pub trait PgSortExpressionMethods: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::nullable_numbers::dsl::*;
-    /// #     let mut connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     connection.execute("CREATE TABLE nullable_numbers (nullable_number INTEGER)")?;
     /// diesel::insert_into(nullable_numbers)
     ///     .values(&vec![
@@ -402,16 +402,16 @@ pub trait PgSortExpressionMethods: Sized {
     ///         nullable_number.eq(Some(1)),
     ///         nullable_number.eq(Some(2)),
     ///     ])
-    ///     .execute(&mut connection)?;
+    ///     .execute(connection)?;
     ///
     /// let desc_default_nulls = nullable_numbers.select(nullable_number)
     ///     .order(nullable_number.desc())
-    ///     .load(&mut connection)?;
+    ///     .load(connection)?;
     /// assert_eq!(vec![None, Some(2), Some(1)], desc_default_nulls);
     ///
     /// let desc_nulls_last = nullable_numbers.select(nullable_number)
     ///     .order(nullable_number.desc().nulls_last())
-    ///     .load(&mut connection)?;
+    ///     .load(connection)?;
     /// assert_eq!(vec![Some(2), Some(1), None], desc_nulls_last);
     /// #     Ok(())
     /// # }
@@ -439,11 +439,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let starts_with_s = animals
     ///     .select(species)
     ///     .filter(name.ilike("s%").or(species.ilike("s%")))
-    ///     .get_results::<String>(&mut connection)?;
+    ///     .get_results::<String>(connection)?;
     /// assert_eq!(vec!["spider"], starts_with_s);
     /// #     Ok(())
     /// # }
@@ -468,11 +468,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let doesnt_start_with_s = animals
     ///     .select(species)
     ///     .filter(name.not_ilike("s%").and(species.not_ilike("s%")))
-    ///     .get_results::<String>(&mut connection)?;
+    ///     .get_results::<String>(connection)?;
     /// assert_eq!(vec!["dog"], doesnt_start_with_s);
     /// #     Ok(())
     /// # }
@@ -496,11 +496,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let starts_with_s = animals
     ///     .select(species)
     ///     .filter(name.similar_to("s%").or(species.similar_to("s%")))
-    ///     .get_results::<String>(&mut connection)?;
+    ///     .get_results::<String>(connection)?;
     /// assert_eq!(vec!["spider"], starts_with_s);
     /// #     Ok(())
     /// # }
@@ -524,11 +524,11 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let doesnt_start_with_s = animals
     ///     .select(species)
     ///     .filter(name.not_similar_to("s%").and(species.not_similar_to("s%")))
-    ///     .get_results::<String>(&mut connection)?;
+    ///     .get_results::<String>(connection)?;
     /// assert_eq!(vec!["dog"], doesnt_start_with_s);
     /// #     Ok(())
     /// # }
@@ -637,22 +637,22 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
     /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let cool_posts = posts.select(id)
     ///     .filter(versions.contains(42))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1], cool_posts);
     ///
     /// let amazing_posts = posts.select(id)
     ///     .filter(versions.contains(1))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert!(amazing_posts.is_empty());
     /// #     Ok(())
     /// # }
@@ -710,27 +710,27 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
     /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.contains(IpNetwork::from_str("10.0.2.5").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 2], my_hosts);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.contains(IpNetwork::from_str("10.0.2.5/24").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![2], my_hosts);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.contains(IpNetwork::from_str("10.0.3.31").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![2], my_hosts);
     /// #     Ok(())
     /// # }
@@ -772,27 +772,27 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
     /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.contains_or_eq(IpNetwork::from_str("10.0.2.5").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 2], my_hosts);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.contains_or_eq(IpNetwork::from_str("10.0.2.5/24").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 2], my_hosts);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.contains_or_eq(IpNetwork::from_str("10.0.3.31").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![2], my_hosts);
     /// #     Ok(())
     /// # }
@@ -834,27 +834,27 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
     /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.is_contained_by(IpNetwork::from_str("10.0.2.5/24").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(my_hosts.len(), 0);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.is_contained_by(IpNetwork::from_str("10.0.3.31/23").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1], my_hosts);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.is_contained_by(IpNetwork::from_str("10.0.3.31/22").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 2], my_hosts);
     /// #     Ok(())
     /// # }
@@ -896,22 +896,22 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
     /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.is_contained_by_or_eq(IpNetwork::from_str("10.0.2.5/24").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1], my_hosts);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.is_contained_by_or_eq(IpNetwork::from_str("10.0.3.31/23").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 2], my_hosts);
     /// #     Ok(())
     /// # }
@@ -953,27 +953,27 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
     /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.overlaps_with(IpNetwork::from_str("10.0.2.5/24").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 2], my_hosts);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.overlaps_with(IpNetwork::from_str("10.0.3.31/24").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![2], my_hosts);
     ///
     /// let my_hosts = hosts.select(id)
     ///     .filter(address.overlaps_with(IpNetwork::from_str("10.0.3.31/23").unwrap()))
-    ///     .load::<i32>(&mut conn)?;
+    ///     .load::<i32>(conn)?;
     /// assert_eq!(vec![1, 2], my_hosts);
     /// #     Ok(())
     /// # }
@@ -1015,16 +1015,16 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
     /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let addr = hosts
     ///     .select(address.and(IpNetwork::from_str("0.0.0.255").unwrap()))
-    ///     .first::<IpNetwork>(&mut conn)?;
+    ///     .first::<IpNetwork>(conn)?;
     /// assert_eq!(addr, IpNetwork::from_str("0.0.0.3").unwrap());
     /// #     Ok(())
     /// # }
@@ -1066,16 +1066,16 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
     /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let addr = hosts
     ///     .select(address.or(IpNetwork::from_str("0.0.0.255").unwrap()))
-    ///     .first::<IpNetwork>(&mut conn)?;
+    ///     .first::<IpNetwork>(conn)?;
     /// assert_eq!(addr, IpNetwork::from_str("10.0.2.255").unwrap());
     /// #     Ok(())
     /// # }
@@ -1117,16 +1117,16 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use self::hosts::dsl::*;
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
-    /// #     let mut conn = establish_connection();
+    /// #     let conn = &mut establish_connection();
     /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
     /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.53").unwrap())])
-    ///     .execute(&mut conn)?;
+    ///     .execute(conn)?;
     ///
     /// let offset = hosts
     ///     .select(address.diff(IpNetwork::from_str("10.0.2.42").unwrap()))
-    ///     .first::<i64>(&mut conn)?;
+    ///     .first::<i64>(conn)?;
     /// assert_eq!(offset, 11);
     /// #     Ok(())
     /// # }

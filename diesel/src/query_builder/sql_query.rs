@@ -58,10 +58,10 @@ impl<Inner> SqlQuery<Inner> {
     /// #     use diesel::sql_query;
     /// #     use diesel::sql_types::{Integer, Text};
     /// #
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users::table)
     /// #         .values(users::name.eq("Jim"))
-    /// #         .execute(&mut connection).unwrap();
+    /// #         .execute(connection).unwrap();
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
     /// # #[cfg(not(feature = "postgres"))]
@@ -70,7 +70,7 @@ impl<Inner> SqlQuery<Inner> {
     /// # let users = users
     ///     .bind::<Integer, _>(1)
     ///     .bind::<Text, _>("Tess")
-    ///     .get_results(&mut connection);
+    ///     .get_results(connection);
     /// let expected_users = vec![
     ///     User { id: 3, name: "Jim".into() },
     /// ];
@@ -188,10 +188,10 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// #     use diesel::sql_query;
     /// #     use diesel::sql_types::{Integer, Text};
     /// #
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users::table)
     /// #         .values(users::name.eq("Jim"))
-    /// #         .execute(&mut connection).unwrap();
+    /// #         .execute(connection).unwrap();
     /// # #[cfg(feature = "postgres")]
     /// # let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
     /// # #[cfg(not(feature = "postgres"))]
@@ -200,7 +200,7 @@ impl<Query, Value, ST> UncheckedBind<Query, Value, ST> {
     /// # let users = users
     ///     .bind::<Integer, _>(1)
     ///     .bind::<Text, _>("Tess")
-    ///     .get_results(&mut connection);
+    ///     .get_results(connection);
     /// let expected_users = vec![
     ///     User { id: 3, name: "Jim".into() },
     /// ];

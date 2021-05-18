@@ -233,10 +233,10 @@ where
 /// #
 /// # fn main() {
 /// use diesel::sql_types::Text;
-/// #   let mut conn = establish_connection();
+/// #   let conn = &mut establish_connection();
 /// let names = users::table
 ///     .select("The Amazing ".into_sql::<Text>().concat(users::name))
-///     .load(&mut conn);
+///     .load(conn);
 /// let expected_names = vec![
 ///     "The Amazing Sean".to_string(),
 ///     "The Amazing Tess".to_string(),
@@ -354,8 +354,8 @@ where
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
-/// let first_user = users.select(User::as_select()).first(&mut connection)?;
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.select(User::as_select()).first(connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -394,8 +394,8 @@ where
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let mut connection = establish_connection();
-/// let first_user = users.select(User::as_select()).first(&mut connection)?;
+/// #     let connection = &mut establish_connection();
+/// let first_user = users.select(User::as_select()).first(connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
@@ -644,7 +644,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let mut conn = establish_connection();
+/// #     let conn = &mut establish_connection();
 /// enum Search {
 ///     Id(i32),
 ///     Name(String),
@@ -663,12 +663,12 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///
 /// let user_one = users::table
 ///     .filter(find_user(Search::Id(1)))
-///     .first(&mut conn)?;
+///     .first(conn)?;
 /// assert_eq!((1, String::from("Sean")), user_one);
 ///
 /// let tess = users::table
 ///     .filter(find_user(Search::Name("Tess".into())))
-///     .first(&mut conn)?;
+///     .first(conn)?;
 /// assert_eq!((2, String::from("Tess")), tess);
 /// #     Ok(())
 /// # }
@@ -689,7 +689,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let mut conn = establish_connection();
+/// #     let conn = &mut establish_connection();
 /// enum NameOrConst {
 ///     Name,
 ///     Const(String),
@@ -727,13 +727,13 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///
 /// let user_one = users::table
 ///     .select(selection(NameOrConst::Name))
-///     .first::<String>(&mut conn)?;
+///     .first::<String>(conn)?;
 /// assert_eq!(String::from("Sean"), user_one);
 ///
 /// let with_name = users::table
 ///     .group_by(users::name)
 ///     .select(selection(NameOrConst::Const("Jane Doe".into())))
-///     .first::<String>(&mut conn)?;
+///     .first::<String>(conn)?;
 /// assert_eq!(String::from("Jane Doe"), with_name);
 /// #     Ok(())
 /// # }
@@ -756,7 +756,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let mut conn = establish_connection();
+/// #     let conn = &mut establish_connection();
 /// enum UserPostFilter {
 ///     User(i32),
 ///     Post(i32),
@@ -780,7 +780,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 ///     .inner_join(posts::table)
 ///     .filter(filter_user_posts(UserPostFilter::User(2)))
 ///     .select((posts::title, users::name))
-///     .first::<(String, String)>(&mut conn)?;
+///     .first::<(String, String)>(conn)?;
 ///
 /// assert_eq!(
 ///     ("My first post too".to_string(), "Tess".to_string()),

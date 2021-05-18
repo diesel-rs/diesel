@@ -34,7 +34,7 @@ struct InsertableUser {
 #[test]
 fn serialization_can_be_customized() {
     use crate::schema::users::dsl::*;
-    let mut connection = connection();
+    let connection = &mut connection();
 
     let user = InsertableUser {
         name: "thomas".to_string(),
@@ -42,11 +42,11 @@ fn serialization_can_be_customized() {
 
     diesel::insert_into(users)
         .values(user)
-        .execute(&mut connection)
+        .execute(connection)
         .unwrap();
 
     assert_eq!(
         Ok("THOMAS".to_string()),
-        users.select(name).first(&mut connection)
+        users.select(name).first(connection)
     );
 }

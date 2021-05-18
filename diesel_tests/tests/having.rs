@@ -24,14 +24,14 @@ fn having_generates_having_sql() {
         expected_sql,
         debug_query::<TestBackend, _>(&source).to_string()
     );
-    let mut conn = connection();
+    let conn = &mut connection();
 
-    assert!(source.execute(&mut conn).is_ok());
+    assert!(source.execute(conn).is_ok());
 }
 
 #[test]
 fn simple_having_with_group_by() {
-    let mut connection = connection();
+    let connection = &mut connection();
     connection
         .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
@@ -54,14 +54,14 @@ fn simple_having_with_group_by() {
         .select((users::name, posts::title));
 
     let expected_data = vec![("Tess".to_string(), "Hi Tess".to_string())];
-    let data: Vec<(String, String)> = source.load(&mut connection).unwrap();
+    let data: Vec<(String, String)> = source.load(connection).unwrap();
 
     assert_eq!(expected_data, data);
 }
 
 #[test]
 fn boxed_simple_having_with_group_by() {
-    let mut connection = connection();
+    let connection = &mut connection();
     connection
         .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
@@ -85,14 +85,14 @@ fn boxed_simple_having_with_group_by() {
         .into_boxed();
 
     let expected_data = vec![("Tess".to_string(), "Hi Tess".to_string())];
-    let data: Vec<(String, String)> = source.load(&mut connection).unwrap();
+    let data: Vec<(String, String)> = source.load(connection).unwrap();
 
     assert_eq!(expected_data, data);
 }
 
 #[test]
 fn multi_condition_having_with_group_by() {
-    let mut connection = connection();
+    let connection = &mut connection();
     connection
         .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
         .unwrap();
@@ -116,14 +116,14 @@ fn multi_condition_having_with_group_by() {
         .select((users::id, users::name, posts::title));
 
     let expected_data = vec![(3, "Nick".to_string(), "Hi Nick".to_string())];
-    let data: Vec<(i32, String, String)> = source.load(&mut connection).unwrap();
+    let data: Vec<(i32, String, String)> = source.load(connection).unwrap();
 
     assert_eq!(expected_data, data);
 }
 
 #[test]
 fn boxed_multi_condition_having_with_group_by() {
-    let mut connection = connection();
+    let connection = &mut connection();
     connection
         .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
         .unwrap();
@@ -148,7 +148,7 @@ fn boxed_multi_condition_having_with_group_by() {
         .having(diesel::dsl::count(comments::id).eq(2).and(users::id.eq(3)));
 
     let expected_data = vec![(3, "Nick".to_string(), "Hi Nick".to_string())];
-    let data: Vec<(i32, String, String)> = source.load(&mut connection).unwrap();
+    let data: Vec<(i32, String, String)> = source.load(connection).unwrap();
 
     assert_eq!(expected_data, data);
 }

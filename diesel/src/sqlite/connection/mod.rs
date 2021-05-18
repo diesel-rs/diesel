@@ -329,50 +329,50 @@ mod tests {
 
     #[test]
     fn prepared_statements_are_cached_when_run() {
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let query = crate::select(1.into_sql::<Integer>());
 
-        assert_eq!(Ok(1), query.get_result(&mut connection));
-        assert_eq!(Ok(1), query.get_result(&mut connection));
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(Ok(1), query.get_result(connection));
         assert_eq!(1, connection.statement_cache.len());
     }
 
     #[test]
     fn sql_literal_nodes_are_not_cached() {
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let query = crate::select(sql::<Integer>("1"));
 
-        assert_eq!(Ok(1), query.get_result(&mut connection));
+        assert_eq!(Ok(1), query.get_result(connection));
         assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_containing_sql_literal_nodes_are_not_cached() {
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let one_as_expr = 1.into_sql::<Integer>();
         let query = crate::select(one_as_expr.eq(sql::<Integer>("1")));
 
-        assert_eq!(Ok(true), query.get_result(&mut connection));
+        assert_eq!(Ok(true), query.get_result(connection));
         assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_containing_in_with_vec_are_not_cached() {
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let one_as_expr = 1.into_sql::<Integer>();
         let query = crate::select(one_as_expr.eq_any(vec![1, 2, 3]));
 
-        assert_eq!(Ok(true), query.get_result(&mut connection));
+        assert_eq!(Ok(true), query.get_result(connection));
         assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_containing_in_with_subselect_are_cached() {
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let one_as_expr = 1.into_sql::<Integer>();
         let query = crate::select(one_as_expr.eq_any(crate::select(one_as_expr)));
 
-        assert_eq!(Ok(true), query.get_result(&mut connection));
+        assert_eq!(Ok(true), query.get_result(connection));
         assert_eq!(1, connection.statement_cache.len());
     }
 
@@ -381,8 +381,8 @@ mod tests {
 
     #[test]
     fn register_custom_function() {
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
-        fun_case::register_impl(&mut connection, |x: String| {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        fun_case::register_impl(connection, |x: String| {
             x.chars()
                 .enumerate()
                 .map(|(i, c)| {
@@ -397,7 +397,7 @@ mod tests {
         .unwrap();
 
         let mapped_string = crate::select(fun_case("foobar"))
-            .get_result::<String>(&mut connection)
+            .get_result::<String>(connection)
             .unwrap();
         assert_eq!("fOoBaR", mapped_string);
     }
@@ -406,10 +406,10 @@ mod tests {
 
     #[test]
     fn register_multiarg_function() {
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
-        my_add::register_impl(&mut connection, |x: i32, y: i32| x + y).unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        my_add::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
 
-        let added = crate::select(my_add(1, 2)).get_result::<i32>(&mut connection);
+        let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
         assert_eq!(Ok(3), added);
     }
 
@@ -417,16 +417,16 @@ mod tests {
 
     #[test]
     fn register_nondeterministic_function() {
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let mut y = 0;
-        add_counter::register_nondeterministic_impl(&mut connection, move |x: i32| {
+        add_counter::register_nondeterministic_impl(connection, move |x: i32| {
             y += 1;
             x + y
         })
         .unwrap();
 
         let added = crate::select((add_counter(1), add_counter(1), add_counter(1)))
-            .get_result::<(i32, i32, i32)>(&mut connection);
+            .get_result::<(i32, i32, i32)>(connection);
         assert_eq!(Ok((2, 3, 4)), added);
     }
 
@@ -465,7 +465,7 @@ mod tests {
     fn register_aggregate_function() {
         use self::my_sum_example::dsl::*;
 
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         connection
             .execute(
                 "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
@@ -475,11 +475,11 @@ mod tests {
             .execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
             .unwrap();
 
-        my_sum::register_impl::<MySum, _>(&mut connection).unwrap();
+        my_sum::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<i32>(&mut connection);
+            .get_result::<i32>(connection);
         assert_eq!(Ok(6), result);
     }
 
@@ -487,18 +487,18 @@ mod tests {
     fn register_aggregate_function_returns_finalize_default_on_empty_set() {
         use self::my_sum_example::dsl::*;
 
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         connection
             .execute(
                 "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
             )
             .unwrap();
 
-        my_sum::register_impl::<MySum, _>(&mut connection).unwrap();
+        my_sum::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<i32>(&mut connection);
+            .get_result::<i32>(connection);
         assert_eq!(Ok(0), result);
     }
 
@@ -549,7 +549,7 @@ mod tests {
     fn register_aggregate_multiarg_function() {
         use self::range_max_example::dsl::*;
 
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         connection
             .execute(
                 r#"CREATE TABLE range_max_example (
@@ -562,10 +562,10 @@ mod tests {
             .unwrap();
         connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)").unwrap();
 
-        range_max::register_impl::<RangeMax<i32>, _, _, _>(&mut connection).unwrap();
+        range_max::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
         let result = range_max_example
             .select(range_max(value1, value2, value3))
-            .get_result::<Option<i32>>(&mut connection)
+            .get_result::<Option<i32>>(connection)
             .unwrap();
         assert_eq!(Some(3), result);
     }
@@ -581,7 +581,7 @@ mod tests {
     fn register_collation_function() {
         use self::my_collation_example::dsl::*;
 
-        let mut connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
 
         connection
             .register_collation("RUSTNOCASE", |rhs, lhs| {
@@ -601,7 +601,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("foo"))
             .select(value)
-            .load::<String>(&mut connection);
+            .load::<String>(connection);
         assert_eq!(
             Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
             result.as_ref().map(|vec| vec.as_ref())
@@ -610,7 +610,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("FOO"))
             .select(value)
-            .load::<String>(&mut connection);
+            .load::<String>(connection);
         assert_eq!(
             Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
             result.as_ref().map(|vec| vec.as_ref())
@@ -619,7 +619,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("f00"))
             .select(value)
-            .load::<String>(&mut connection);
+            .load::<String>(connection);
         assert_eq!(
             Ok(&["f00".to_owned()][..]),
             result.as_ref().map(|vec| vec.as_ref())
@@ -628,7 +628,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("F00"))
             .select(value)
-            .load::<String>(&mut connection);
+            .load::<String>(connection);
         assert_eq!(
             Ok(&["f00".to_owned()][..]),
             result.as_ref().map(|vec| vec.as_ref())
@@ -637,7 +637,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("oof"))
             .select(value)
-            .load::<String>(&mut connection);
+            .load::<String>(connection);
         assert_eq!(Ok(&[][..]), result.as_ref().map(|vec| vec.as_ref()));
     }
 }

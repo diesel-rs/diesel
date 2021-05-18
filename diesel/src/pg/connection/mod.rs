@@ -128,7 +128,7 @@ impl PgConnection {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .read_only()
     ///     .serializable()
@@ -189,9 +189,6 @@ extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc:
 mod tests {
     extern crate dotenv;
 
-    use self::dotenv::dotenv;
-    use std::env;
-
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
@@ -200,9 +197,9 @@ mod tests {
 
     #[test]
     fn malformed_sql_query() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let query =
-            crate::sql_query("SELECT not_existent FROM also_not_there;").execute(&mut connection);
+            crate::sql_query("SELECT not_existent FROM also_not_there;").execute(connection);
 
         if let Err(err) = query {
             if let DatabaseError(_, string) = err {
@@ -217,37 +214,37 @@ mod tests {
 
     #[test]
     fn prepared_statements_are_cached() {
-        let mut connection = connection();
+        let connection = &mut connection();
 
         let query = crate::select(1.into_sql::<Integer>());
 
-        assert_eq!(Ok(1), query.get_result(&mut connection));
-        assert_eq!(Ok(1), query.get_result(&mut connection));
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(Ok(1), query.get_result(connection));
         assert_eq!(1, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_with_identical_sql_but_different_types_are_cached_separately() {
-        let mut connection = connection();
+        let connection = &mut connection();
 
         let query = crate::select(1.into_sql::<Integer>());
         let query2 = crate::select("hi".into_sql::<VarChar>());
 
-        assert_eq!(Ok(1), query.get_result(&mut connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(&mut connection));
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
         assert_eq!(2, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_with_identical_types_and_sql_but_different_bind_types_are_cached_separately() {
-        let mut connection = connection();
+        let connection = &mut connection();
 
         let query = crate::select(1.into_sql::<Integer>()).into_boxed::<Pg>();
         let query2 = crate::select("hi".into_sql::<VarChar>()).into_boxed::<Pg>();
 
         assert_eq!(0, connection.statement_cache.len());
-        assert_eq!(Ok(1), query.get_result(&mut connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(&mut connection));
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
         assert_eq!(2, connection.statement_cache.len());
     }
 
@@ -255,32 +252,28 @@ mod tests {
 
     #[test]
     fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {
-        let mut connection = connection();
+        let connection = &mut connection();
 
         let hi = "HI".into_sql::<VarChar>();
         let query = crate::select(hi).into_boxed::<Pg>();
         let query2 = crate::select(lower(hi)).into_boxed::<Pg>();
 
         assert_eq!(0, connection.statement_cache.len());
-        assert_eq!(Ok("HI".to_string()), query.get_result(&mut connection));
-        assert_eq!(Ok("hi".to_string()), query2.get_result(&mut connection));
+        assert_eq!(Ok("HI".to_string()), query.get_result(connection));
+        assert_eq!(Ok("hi".to_string()), query2.get_result(connection));
         assert_eq!(2, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_with_sql_literal_nodes_are_not_cached() {
-        let mut connection = connection();
+        let connection = &mut connection();
         let query = crate::select(sql::<Integer>("1"));
 
-        assert_eq!(Ok(1), query.get_result(&mut connection));
+        assert_eq!(Ok(1), query.get_result(connection));
         assert_eq!(0, connection.statement_cache.len());
     }
 
     fn connection() -> PgConnection {
-        dotenv().ok();
-        let database_url = env::var("PG_DATABASE_URL")
-            .or_else(|_| env::var("DATABASE_URL"))
-            .expect("DATABASE_URL must be set in order to run tests");
-        PgConnection::establish(&database_url).unwrap()
+        crate::test_helpers::pg_connection_no_transaction()
     }
 }

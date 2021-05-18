@@ -59,11 +59,11 @@ where
     /// # fn run_test() -> QueryResult<()> {
     /// #     use users_for_read_only::table as users;
     /// #     use users_for_read_only::columns::*;
-    /// #     let mut conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// #     sql_query("CREATE TABLE IF NOT EXISTS users_for_read_only (
     /// #       id SERIAL PRIMARY KEY,
     /// #       name TEXT NOT NULL
-    /// #     )").execute(&mut conn)?;
+    /// #     )").execute(conn)?;
     /// conn.build_transaction()
     ///     .read_only()
     ///     .run::<_, diesel::result::Error, _>(|conn| {
@@ -77,7 +77,7 @@ where
     ///
     ///         Ok(())
     ///     })?;
-    /// #     sql_query("DROP TABLE users_for_read_only").execute(&mut conn)?;
+    /// #     sql_query("DROP TABLE users_for_read_only").execute(conn)?;
     /// #     Ok(())
     /// # }
     /// ```
@@ -104,7 +104,7 @@ where
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .read_write()
     ///     .run(|conn| {
@@ -145,7 +145,7 @@ where
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .deferrable()
     ///     .run(|conn| Ok(()))
@@ -172,7 +172,7 @@ where
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .not_deferrable()
     ///     .run(|conn| Ok(()))
@@ -199,7 +199,7 @@ where
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .read_committed()
     ///     .run(|conn| Ok(()))
@@ -223,7 +223,7 @@ where
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .repeatable_read()
     ///     .run(|conn| Ok(()))
@@ -247,7 +247,7 @@ where
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .serializable()
     ///     .run(|conn| Ok(()))

@@ -25,7 +25,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     use diesel::insert_into;
     /// #
-    /// #     let mut connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     connection.execute("CREATE TABLE users (
     /// #         id INTEGER PRIMARY KEY,
     /// #         name VARCHAR(255) NOT NULL,
@@ -37,10 +37,10 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #             (id.eq(1), name.eq("Sean"), hair_color.eq(Some("Green"))),
     /// #             (id.eq(2), name.eq("Tess"), hair_color.eq(None)),
     /// #         ])
-    /// #         .execute(&mut connection)
+    /// #         .execute(connection)
     /// #         .unwrap();
     /// #
-    /// let names = users.select(name.concat(" the Greatest")).load(&mut connection);
+    /// let names = users.select(name.concat(" the Greatest")).load(connection);
     /// let expected_names = vec![
     ///     "Sean the Greatest".to_string(),
     ///     "Tess the Greatest".to_string(),
@@ -48,7 +48,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(expected_names), names);
     ///
     /// // If the value is nullable, the output will be nullable
-    /// let names = users.select(hair_color.concat("ish")).load(&mut connection);
+    /// let names = users.select(hair_color.concat("ish")).load(connection);
     /// let expected_names = vec![
     ///     Some("Greenish".to_string()),
     ///     None,
@@ -82,12 +82,12 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let starts_with_s = users
     ///     .select(name)
     ///     .filter(name.like("S%"))
-    ///     .load::<String>(&mut connection)?;
+    ///     .load::<String>(connection)?;
     /// assert_eq!(vec!["Sean"], starts_with_s);
     /// #     Ok(())
     /// # }
@@ -118,12 +118,12 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let mut connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let doesnt_start_with_s = users
     ///     .select(name)
     ///     .filter(name.not_like("S%"))
-    ///     .load::<String>(&mut connection)?;
+    ///     .load::<String>(connection)?;
     /// assert_eq!(vec!["Tess"], doesnt_start_with_s);
     /// #     Ok(())
     /// # }

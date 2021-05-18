@@ -5,11 +5,11 @@ use diesel_demo_step_3_pg::*;
 fn main() {
     use self::schema::posts::dsl::*;
 
-    let mut connection = establish_connection();
+    let connection = &mut establish_connection();
     let results = posts
         .filter(published.eq(true))
         .limit(5)
-        .load::<Post>(&mut connection)
+        .load::<Post>(connection)
         .expect("Error loading posts");
 
     println!("Displaying {} posts", results.len());

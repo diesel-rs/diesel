@@ -29,11 +29,11 @@
 //! # }
 //! #
 //! # fn run_test() -> QueryResult<()> {
-//! #     let mut connection = establish_connection();
+//! #     let connection = &mut establish_connection();
 //! #     use self::users::dsl::*;
-//! let user = users.find(2).get_result::<User>(&mut connection)?;
+//! let user = users.find(2).get_result::<User>(connection)?;
 //! let users_post = Post::belonging_to(&user)
-//!     .first(&mut connection)?;
+//!     .first(connection)?;
 //! let expected = Post { id: 3, user_id: 2, title: "My first post too".into() };
 //! assert_eq!(expected, users_post);
 //! #     Ok(())
@@ -115,11 +115,11 @@
 //! #
 //! # fn main() {
 //! #   use self::users::dsl::*;
-//! #   let mut connection = establish_connection();
+//! #   let connection = &mut establish_connection();
 //! #
-//! let user = users.find(1).first::<User>(&mut connection).expect("Error loading user");
+//! let user = users.find(1).first::<User>(connection).expect("Error loading user");
 //! let post_list = Post::belonging_to(&user)
-//!     .load::<Post>(&mut connection)
+//!     .load::<Post>(connection)
 //!     .expect("Error loading posts");
 //! let expected = vec![
 //!     Post { id: 1, user_id: 1, title: "My first post".to_string() },
@@ -172,21 +172,21 @@
 //! # }
 //! #
 //! # fn run_test() -> QueryResult<()> {
-//! #     let mut connection = establish_connection();
+//! #     let connection = &mut establish_connection();
 //! #     use self::users::dsl::*;
 //! #     use self::posts::dsl::{posts, title};
-//! let sean = users.filter(name.eq("Sean")).first::<User>(&mut connection)?;
-//! let tess = users.filter(name.eq("Tess")).first::<User>(&mut connection)?;
+//! let sean = users.filter(name.eq("Sean")).first::<User>(connection)?;
+//! let tess = users.filter(name.eq("Tess")).first::<User>(connection)?;
 //!
 //! let seans_posts = Post::belonging_to(&sean)
 //!     .select(title)
-//!     .load::<String>(&mut connection)?;
+//!     .load::<String>(connection)?;
 //! assert_eq!(vec!["My first post", "About Rust"], seans_posts);
 //!
 //! // A vec or slice can be passed as well
 //! let more_posts = Post::belonging_to(&vec![sean, tess])
 //!     .select(title)
-//!     .load::<String>(&mut connection)?;
+//!     .load::<String>(connection)?;
 //! assert_eq!(vec!["My first post", "About Rust", "My first post too"], more_posts);
 //! #     Ok(())
 //! # }
@@ -226,10 +226,10 @@
 //! # }
 //! #
 //! # fn run_test() -> QueryResult<()> {
-//! #     let mut connection = establish_connection();
-//! let users = users::table.load::<User>(&mut connection)?;
+//! #     let connection = &mut establish_connection();
+//! let users = users::table.load::<User>(connection)?;
 //! let posts = Post::belonging_to(&users)
-//!     .load::<Post>(&mut connection)?
+//!     .load::<Post>(connection)?
 //!     .grouped_by(&users);
 //! let data = users.into_iter().zip(posts).collect::<Vec<_>>();
 //!
@@ -290,15 +290,15 @@
 //! # }
 //! #
 //! # fn main() {
-//! #   let mut connection = establish_connection();
+//! #   let connection = &mut establish_connection();
 //! #
-//! let users: Vec<User> = users::table.load::<User>(&mut connection)
+//! let users: Vec<User> = users::table.load::<User>(connection)
 //!     .expect("error loading users");
 //! let posts: Vec<Post> = Post::belonging_to(&users)
-//!     .load::<Post>(&mut connection)
+//!     .load::<Post>(connection)
 //!     .expect("error loading posts");
 //! let comments: Vec<Comment> = Comment::belonging_to(&posts)
-//!     .load::<Comment>(&mut connection)
+//!     .load::<Comment>(connection)
 //!     .expect("Error loading comments");
 //! let grouped_comments: Vec<Vec<Comment>> = comments.grouped_by(&posts);
 //! let posts_and_comments: Vec<Vec<(Post, Vec<Comment>)>> = posts
