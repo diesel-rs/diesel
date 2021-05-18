@@ -3,10 +3,10 @@ use std::marker::PhantomData;
 use super::functions::sql_function;
 use super::{is_aggregate, AsExpression};
 use super::{Expression, ValidGrouping};
+use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::{BigInt, DieselNumericOps, SingleValue, SqlType};
-use crate::backend::Backend;
 use crate::{AppearsOnTable, SelectableExpression};
 
 sql_function! {
