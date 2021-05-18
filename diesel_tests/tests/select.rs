@@ -224,7 +224,7 @@ fn select_for_update_locks_selected_rows() {
     use std::thread;
     use std::time::Duration;
 
-    let conn_1 = &mut connection_without_transaction();
+    let mut conn_1 = connection_without_transaction();
     conn_1
         .execute("DROP TABLE IF EXISTS users_select_for_update")
         .unwrap();
@@ -236,7 +236,7 @@ fn select_for_update_locks_selected_rows() {
             string("hair_color"),
         ),
     )
-    .execute(conn_1)
+    .execute(&mut conn_1)
     .unwrap();
     conn_1
         .batch_execute(
@@ -252,26 +252,26 @@ fn select_for_update_locks_selected_rows() {
     let _sean = users_select_for_update
         .for_update()
         .filter(name.eq("Sean"))
-        .first::<User>(conn_1)
+        .first::<User>(&mut conn_1)
         .unwrap();
 
     let (send, recv) = mpsc::channel();
     let send2 = send.clone();
 
     let _blocked_thread = thread::spawn(move || {
-        let conn_2 = &mut connection();
+        let mut conn_2 = connection();
         update(users_select_for_update.filter(name.eq("Sean")))
             .set(name.eq("Jim"))
-            .execute(conn_2)
+            .execute(&mut conn_2)
             .unwrap();
         send.send("Sean").unwrap();
     });
 
     let _unblocked_thread = thread::spawn(move || {
-        let conn_3 = &mut connection();
+        let mut conn_3 = connection();
         update(users_select_for_update.filter(name.eq("Tess")))
             .set(name.eq("Bob"))
-            .execute(conn_3)
+            .execute(&mut conn_3)
             .unwrap();
         send2.send("Tess").unwrap();
     });
