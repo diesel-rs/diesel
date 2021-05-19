@@ -171,6 +171,33 @@ fn schema_file_is_relative_to_project_root() {
     assert!(p.has_file("src/schema.rs"));
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn schema_file_contains_custom_types() {
+    test_print_schema(
+        "schema_file_contains_custom_types",
+        vec!["--generate-custom-type-definitions", "true"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_disabling_custom_type_works() {
+    test_print_schema(
+        "print_schema_disabling_custom_type_works",
+        vec!["--generate-custom-type-definitions", "false"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_default_is_to_generate_custom_types() {
+    test_print_schema(
+        "print_schema_default_is_to_generate_custom_types",
+        vec!["--with-docs"],
+    )
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

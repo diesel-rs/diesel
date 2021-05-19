@@ -15,9 +15,10 @@ pub struct ColumnInformation {
     pub nullable: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ColumnType {
     pub rust_name: String,
+    pub sql_name: String,
     pub is_array: bool,
     pub is_nullable: bool,
     pub is_unsigned: bool,

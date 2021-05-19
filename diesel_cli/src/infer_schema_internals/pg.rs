@@ -30,6 +30,7 @@ pub fn determine_column_type(
     }
 
     Ok(ColumnType {
+        sql_name: tpe.to_lowercase(),
         rust_name: tpe.to_camel_case(),
         is_array,
         is_nullable: attr.nullable,

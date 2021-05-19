@@ -562,6 +562,10 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
         config.import_types = Some(types);
     }
 
+    if let Some(generate_types) = matches.value_of("generate-custom-type-definitions") {
+        config.generate_missing_sql_type_definitions = Some(generate_types.parse()?);
+    }
+
     run_print_schema(&database_url, &config, &mut stdout())?;
     Ok(())
 }

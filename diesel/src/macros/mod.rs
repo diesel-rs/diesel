@@ -616,10 +616,10 @@ macro_rules! __diesel_table_impl {
         },)+],
     ) => {
         $($meta)*
+        #[allow(unused_imports)]
         pub mod $table_name {
-            #![allow(dead_code)]
-            $($imports)*
             pub use self::columns::*;
+            $($imports)*
 
             /// Re-exports all of the columns of this table, as well as the
             /// table struct renamed to the module name. This is meant to be

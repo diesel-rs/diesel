@@ -67,9 +67,15 @@ pub struct PrintSchema {
     pub patch_file: Option<PathBuf>,
     #[serde(default)]
     pub import_types: Option<Vec<String>>,
+    #[serde(default)]
+    pub generate_missing_sql_type_definitions: Option<bool>,
 }
 
 impl PrintSchema {
+    pub fn generate_missing_sql_type_definitions(&self) -> bool {
+        self.generate_missing_sql_type_definitions.unwrap_or(true)
+    }
+
     pub fn schema_name(&self) -> Option<&str> {
         self.schema.as_deref()
     }
