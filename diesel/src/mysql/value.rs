@@ -1,7 +1,6 @@
 use super::MysqlType;
 use crate::deserialize;
 use crate::mysql::types::MYSQL_TIME;
-use std::error::Error;
 
 /// Raw mysql value as received from the database
 #[derive(Copy, Clone, Debug)]
@@ -76,7 +75,7 @@ impl<'a> MysqlValue<'a> {
         })
     }
 
-    fn invalid_type_code(&self, expected: &str) -> Box<dyn Error + Send + Sync> {
+    fn invalid_type_code(&self, expected: &str) -> crate::deserialize::DeserializeError {
         format!(
             "Invalid representation received for {}: {:?}",
             expected, self.tpe

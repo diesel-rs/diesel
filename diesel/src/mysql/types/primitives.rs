@@ -1,6 +1,5 @@
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
-use crate::result::Error::DeserializationError;
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
 use std::convert::TryInto;
 use std::error::Error;
@@ -28,9 +27,7 @@ fn f32_to_i64(f: f32) -> deserialize::Result<i64> {
     if f <= i64::MAX as f32 && f >= i64::MIN as f32 {
         Ok(f.trunc() as i64)
     } else {
-        Err(Box::new(DeserializationError(
-            "Numeric overflow/underflow occurred".into(),
-        )) as _)
+        Err("Numeric overflow/underflow occurred".into())
     }
 }
 
@@ -40,9 +37,7 @@ fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
     if f <= i64::MAX as f64 && f >= i64::MIN as f64 {
         Ok(f.trunc() as i64)
     } else {
-        Err(Box::new(DeserializationError(
-            "Numeric overflow/underflow occurred".into(),
-        )) as _)
+        Err("Numeric overflow/underflow occurred".into())
     }
 }
 
@@ -51,26 +46,18 @@ impl FromSql<SmallInt, Mysql> for i16 {
         match value.numeric_value()? {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
             NumericRepresentation::Small(x) => Ok(x),
-            NumericRepresentation::Medium(x) => x.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occurred".into(),
-                )) as _
-            }),
-            NumericRepresentation::Big(x) => x.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
-                )) as _
-            }),
-            NumericRepresentation::Float(x) => f32_to_i64(x)?.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
-                )) as _
-            }),
-            NumericRepresentation::Double(x) => f64_to_i64(x)?.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
-                )) as _
-            }),
+            NumericRepresentation::Medium(x) => x
+                .try_into()
+                .map_err(|_| "Numeric overflow/underflow occurred".into()),
+            NumericRepresentation::Big(x) => x
+                .try_into()
+                .map_err(|_| "Numeric overflow/underflow occured".into()),
+            NumericRepresentation::Float(x) => f32_to_i64(x)?
+                .try_into()
+                .map_err(|_| "Numeric overflow/underflow occured".into()),
+            NumericRepresentation::Double(x) => f64_to_i64(x)?
+                .try_into()
+                .map_err(|_| "Numeric overflow/underflow occured".into()),
             NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
         }
     }
@@ -82,24 +69,16 @@ impl FromSql<Integer, Mysql> for i32 {
             NumericRepresentation::Tiny(x) => Ok(x.into()),
             NumericRepresentation::Small(x) => Ok(x.into()),
             NumericRepresentation::Medium(x) => Ok(x),
-            NumericRepresentation::Big(x) => x.try_into().map_err(|_| {
-                Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
-                )) as _
-            }),
+            NumericRepresentation::Big(x) => x
+                .try_into()
+                .map_err(|_| "Numeric overflow/underflow occured".into()),
             NumericRepresentation::Float(x) => f32_to_i64(x).and_then(|i| {
-                i.try_into().map_err(|_| {
-                    Box::new(DeserializationError(
-                        "Numeric overflow/underflow occured".into(),
-                    )) as _
-                })
+                i.try_into()
+                    .map_err(|_| "Numeric overflow/underflow occured".into())
             }),
             NumericRepresentation::Double(x) => f64_to_i64(x).and_then(|i| {
-                i.try_into().map_err(|_| {
-                    Box::new(DeserializationError(
-                        "Numeric overflow/underflow occured".into(),
-                    )) as _
-                })
+                i.try_into()
+                    .map_err(|_| "Numeric overflow/underflow occured".into())
             }),
             NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
         }

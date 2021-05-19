@@ -53,7 +53,7 @@ pub enum Error {
     /// Typically this error means that the stated type of the query is
     /// incorrect. An example of when this error might occur in normal usage is
     /// attempting to deserialize an infinite date into chrono.
-    DeserializationError(Box<dyn StdError + Send + Sync>),
+    DeserializationError(crate::deserialize::DeserializeError),
 
     /// An error occurred serializing the data being sent to the database.
     ///
@@ -297,7 +297,7 @@ impl StdError for Error {
         match *self {
             Error::InvalidCString(ref e) => Some(e),
             Error::QueryBuilderError(ref e) => Some(&**e),
-            Error::DeserializationError(ref e) => Some(&**e),
+            Error::DeserializationError(ref _e) => None,
             Error::SerializationError(ref e) => Some(&**e),
             _ => None,
         }
@@ -360,8 +360,6 @@ impl fmt::Display for UnexpectedNullError {
         write!(f, "Unexpected null for non-null column")
     }
 }
-
-impl StdError for UnexpectedNullError {}
 
 /// Expected more fields then present in the current row while deserialising results
 #[derive(Debug, Clone, Copy)]

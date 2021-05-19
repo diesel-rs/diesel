@@ -285,7 +285,7 @@ impl<I> DynamicRow<NamedField<Option<I>>> {
 
                 let value = match I::from_nullable_sql(field.value()) {
                     Ok(o) => Some(o),
-                    Err(e) if e.is::<diesel::result::UnexpectedNullError>() => None,
+                    Err(e) if e.is_nullable_error() => None,
                     Err(e) => return Err(e),
                 };
 
@@ -344,7 +344,7 @@ where
 
                 match I::from_nullable_sql(field.value()) {
                     Ok(o) => Ok(Some(o)),
-                    Err(e) if e.is::<diesel::result::UnexpectedNullError>() => Ok(None),
+                    Err(e) if e.is_nullable_error() => Ok(None),
                     Err(e) => Err(e),
                 }
             })

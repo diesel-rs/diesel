@@ -90,9 +90,10 @@ where
     T: QueryableByName<DB>,
 {
     fn build<'a>(row: &impl crate::row::NamedRow<'a, DB>) -> deserialize::Result<Self> {
+        use crate::deserialize::{DeserializeError, InnerError};
         match T::build(row) {
             Ok(v) => Ok(Some(v)),
-            Err(e) if e.is::<crate::result::UnexpectedNullError>() => Ok(None),
+            Err(DeserializeError(InnerError::UnexpectedNullValue(_))) => Ok(None),
             Err(e) => Err(e),
         }
     }

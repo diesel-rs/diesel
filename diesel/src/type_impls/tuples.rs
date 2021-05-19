@@ -266,9 +266,10 @@ macro_rules! tuple_impls {
                 fn build_from_row<'a>(row: &impl Row<'a, __DB>)
                                       -> deserialize::Result<Self>
                 {
+                    use crate::deserialize::{DeserializeError, InnerError};
                     match <__T as FromSqlRow<($($ST,)*), __DB>>::build_from_row(row) {
                         Ok(v) => Ok(Some(v)),
-                        Err(e) if e.is::<crate::result::UnexpectedNullError>() => Ok(None),
+                        Err(DeserializeError(InnerError::UnexpectedNullValue(_))) => Ok(None),
                         Err(e) => Err(e)
                     }
                 }

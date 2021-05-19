@@ -9,9 +9,56 @@ use crate::row::{NamedRow, Row};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
 use crate::Selectable;
 
+/// TODO
+pub struct DeserializeError(pub(crate) InnerError);
+
+impl DeserializeError {
+    #[doc(hidden)]
+    pub fn is_nullable_error(&self) -> bool {
+        matches!(self.0, InnerError::UnexpectedNullValue(_))
+    }
+}
+
+pub(crate) enum InnerError {
+    UnexpectedNullValue(crate::result::UnexpectedNullError),
+    OtherError(Box<dyn Error + Send + Sync>),
+}
+
+impl From<crate::result::UnexpectedNullError> for DeserializeError {
+    fn from(e: crate::result::UnexpectedNullError) -> Self {
+        Self(InnerError::UnexpectedNullValue(e))
+    }
+}
+
+impl<T> From<T> for DeserializeError where T: Into<Box<dyn Error + Send + Sync>> {
+    fn from(t: T) -> Self {
+        Self(InnerError::OtherError(t.into()))
+    }
+}
+
+// TODO: find a way to implement `Error` for `DeserializeError`
+
+impl std::fmt::Display for DeserializeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            InnerError::UnexpectedNullValue(ref e) => e.fmt(f),
+            InnerError::OtherError(ref e) => e.fmt(f),
+        }
+    }
+}
+
+impl std::fmt::Debug for DeserializeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            InnerError::UnexpectedNullValue(ref e) => e.fmt(f),
+            InnerError::OtherError(ref e) => e.fmt(f),
+        }
+    }
+}
+
 /// A specialized result type representing the result of deserializing
 /// a value from the database.
-pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
+pub type Result<T> = result::Result<T, DeserializeError>;
 
 /// Trait indicating that a record can be queried from the database.
 ///
@@ -328,7 +375,7 @@ pub trait FromSql<A, DB: Backend>: Sized {
     fn from_nullable_sql(bytes: Option<backend::RawValue<DB>>) -> Result<Self> {
         match bytes {
             Some(bytes) => Self::from_sql(bytes),
-            None => Err(Box::new(crate::result::UnexpectedNullError)),
+            None => Err(crate::result::UnexpectedNullError.into()),
         }
     }
 }

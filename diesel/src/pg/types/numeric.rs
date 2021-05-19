@@ -18,7 +18,6 @@ mod bigdecimal {
     use crate::sql_types::Numeric;
 
     use std::convert::{TryFrom, TryInto};
-    use std::error::Error;
 
     /// Iterator over the digits of a big uint in base 10k.
     /// The digits will be returned in little endian order.
@@ -39,7 +38,7 @@ mod bigdecimal {
     }
 
     impl<'a> TryFrom<&'a PgNumeric> for BigDecimal {
-        type Error = Box<dyn Error + Send + Sync>;
+        type Error = deserialize::DeserializeError;
 
         fn try_from(numeric: &'a PgNumeric) -> deserialize::Result<Self> {
             let (sign, weight, scale, digits) = match *numeric {
@@ -54,7 +53,7 @@ mod bigdecimal {
                     ref digits,
                 } => (Sign::Minus, weight, scale, digits),
                 PgNumeric::NaN => {
-                    return Err(Box::from("NaN is not (yet) supported in BigDecimal"))
+                    return Err("NaN is not (yet) supported in BigDecimal".into())
                 }
             };
 
@@ -73,7 +72,7 @@ mod bigdecimal {
     }
 
     impl TryFrom<PgNumeric> for BigDecimal {
-        type Error = Box<dyn Error + Send + Sync>;
+        type Error = deserialize::DeserializeError;
 
         fn try_from(numeric: PgNumeric) -> deserialize::Result<Self> {
             (&numeric).try_into()

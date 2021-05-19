@@ -1,5 +1,4 @@
 use byteorder::{ReadBytesExt, WriteBytesExt};
-use std::error::Error;
 use std::io::prelude::*;
 
 use crate::backend::{Backend, BinaryRawValue};
@@ -26,7 +25,7 @@ where
         );
         bytes
             .read_i16::<DB::ByteOrder>()
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .map_err(Into::into)
     }
 }
 
@@ -34,7 +33,7 @@ impl<DB: Backend> ToSql<sql_types::SmallInt, DB> for i16 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_i16::<DB::ByteOrder>(*self)
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .map_err(Into::into)
     }
 }
 
@@ -54,17 +53,17 @@ where
             "Received fewer than 4 bytes decoding i32. \
              Was a SmallInt expression accidentally identified as Integer?"
         );
-        bytes
+        Ok(bytes
             .read_i32::<DB::ByteOrder>()
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .map_err(|e| Box::new(e))?)
     }
 }
 
 impl<DB: Backend> ToSql<sql_types::Integer, DB> for i32 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
-        out.write_i32::<DB::ByteOrder>(*self)
+        Ok(out.write_i32::<DB::ByteOrder>(*self)
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .map_err(|e| Box::new(e))?)
     }
 }
 
@@ -84,16 +83,16 @@ where
             "Received fewer than 8 bytes decoding i64. \
              Was an Integer expression misidentified as BigInt?"
         );
-        bytes
+        Ok(bytes
             .read_i64::<DB::ByteOrder>()
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .map_err(|e| Box::new(e))?)
     }
 }
 
 impl<DB: Backend> ToSql<sql_types::BigInt, DB> for i64 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
-        out.write_i64::<DB::ByteOrder>(*self)
+        Ok(out.write_i64::<DB::ByteOrder>(*self)
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+            .map_err(|e| Box::new(e))?)
     }
 }

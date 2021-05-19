@@ -73,7 +73,7 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
                 digits: digits,
             }),
             0xC000 => Ok(PgNumeric::NaN),
-            invalid => Err(Box::new(InvalidNumericSign(invalid))),
+            invalid => Err(InvalidNumericSign(invalid).into()),
         }
     }
 }
