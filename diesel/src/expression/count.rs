@@ -91,8 +91,8 @@ impl_selectable_expression!(CountStar);
 /// #
 /// # fn main() {
 /// #     use schema::posts::dsl::*;
-/// #     let connection = establish_connection();
-/// let unique_user_count = posts.select(count_distinct(user_id)).first(&connection);
+/// #     let connection = &mut establish_connection();
+/// let unique_user_count = posts.select(count_distinct(user_id)).first(connection);
 /// assert_eq!(Ok(2), unique_user_count);
 /// # }
 /// ```
