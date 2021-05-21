@@ -18,10 +18,10 @@ pub fn build_cli() -> App<'static, 'static> {
         )
         .setting(AppSettings::VersionlessSubcommands)
         .arg(migration_dir_arg())
-        .subcommand(SubCommand::with_name("run").about("Runs all pending migrations"))
+        .subcommand(SubCommand::with_name("run").about("Runs all pending migrations."))
         .subcommand(
             SubCommand::with_name("revert")
-                .about("Reverts the specified migrations")
+                .about("Reverts the specified migrations.")
                 .arg(
                     Arg::with_name("REVERT_ALL")
                         .long("all")
@@ -34,7 +34,7 @@ pub fn build_cli() -> App<'static, 'static> {
                     Arg::with_name("REVERT_NUMBER")
                         .long("number")
                         .short("n")
-                        .help("Reverts the last `n` migration files")
+                        .help("Reverts the last `n` migration files.")
                         .long_help(
                             "When this option is specified the last `n` migration files \
                              will be reverted. By default revert the last one.",
@@ -70,7 +70,7 @@ pub fn build_cli() -> App<'static, 'static> {
                     Arg::with_name("REDO_NUMBER")
                         .long("number")
                         .short("n")
-                        .help("Redo the last `n` migration files")
+                        .help("Redo the last `n` migration files.")
                         .long_help(
                             "When this option is specified the last `n` migration files \
                              will be reverted and re-runs. By default redo the last migration.",
@@ -95,11 +95,11 @@ pub fn build_cli() -> App<'static, 'static> {
             SubCommand::with_name("generate")
                 .about(
                     "Generate a new migration with the given name, and \
-                     the current timestamp as the version",
+                     the current timestamp as the version.",
                 )
                 .arg(
                     Arg::with_name("MIGRATION_NAME")
-                        .help("The name of the migration to create")
+                        .help("The name of the migration to create.")
                         .required(true),
                 )
                 .arg(
@@ -177,31 +177,31 @@ pub fn build_cli() -> App<'static, 'static> {
                 .index(1)
                 .takes_value(true)
                 .multiple(true)
-                .help("Table names to filter (default only-tables if not empty)"),
+                .help("Table names to filter (default only-tables if not empty)."),
         )
         .arg(
             Arg::with_name("only-tables")
                 .short("o")
                 .long("only-tables")
-                .help("Only include tables from table-name that matches regexp")
+                .help("Only include tables from table-name that matches regexp.")
                 .conflicts_with("except-tables"),
         )
         .arg(
             Arg::with_name("except-tables")
                 .short("e")
                 .long("except-tables")
-                .help("Exclude tables from table-name that matches regex")
+                .help("Exclude tables from table-name that matches regex.")
                 .conflicts_with("only-tables"),
         )
         .arg(
             Arg::with_name("with-docs")
                 .long("with-docs")
-                .help("Render documentation comments for tables and columns"),
+                .help("Render documentation comments for tables and columns."),
         )
         .arg(
             Arg::with_name("column-sorting")
                 .long("column-sorting")
-                .help("Sort order for table columns")
+                .help("Sort order for table columns.")
                 .takes_value(true)
                 .possible_values(&["ordinal_position", "name"]),
         )
@@ -209,7 +209,7 @@ pub fn build_cli() -> App<'static, 'static> {
             Arg::with_name("patch-file")
                 .long("patch-file")
                 .takes_value(true)
-                .help("A unified diff file to be applied to the final schema"),
+                .help("A unified diff file to be applied to the final schema."),
         )
         .arg(
             Arg::with_name("import-types")
@@ -217,7 +217,7 @@ pub fn build_cli() -> App<'static, 'static> {
                 .takes_value(true)
                 .multiple(true)
                 .number_of_values(1)
-                .help("A list of types to import for every table, separated by commas"),
+                .help("A list of types to import for every table, separated by commas."),
         );
 
     let config_arg = Arg::with_name("CONFIG_FILE")
@@ -233,7 +233,7 @@ pub fn build_cli() -> App<'static, 'static> {
 
     let locked_schema_arg = Arg::with_name("LOCKED_SCHEMA")
         .long("locked-schema")
-        .help("Require that the schema file is up to date")
+        .help("Require that the schema file is up to date.")
         .long_help(
             "When `print_schema.file` is specified in your config file, this \
              flag will cause Diesel CLI to error if any command would result in \
