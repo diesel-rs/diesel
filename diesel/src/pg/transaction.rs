@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use crate::backend::Backend;
-use crate::connection::TransactionManager;
+use crate::connection::{AnsiTransactionManager, TransactionManager};
 use crate::pg::Pg;
 use crate::prelude::*;
 use crate::query_builder::{AstPass, QueryBuilder, QueryFragment};
@@ -16,17 +16,19 @@ use crate::result::Error;
 /// [`.build_transaction`]: PgConnection::build_transaction()
 /// [pg-docs]: https://www.postgresql.org/docs/current/static/sql-set-transaction.html
 #[allow(missing_debug_implementations)] // False positive. Connection isn't Debug.
-#[derive(Clone, Copy)]
 #[must_use = "Transaction builder does nothing unless you call `run` on it"]
-pub struct TransactionBuilder<'a> {
-    connection: &'a PgConnection,
+pub struct TransactionBuilder<'a, C> {
+    connection: &'a mut C,
     isolation_level: Option<IsolationLevel>,
     read_mode: Option<ReadMode>,
     deferrable: Option<Deferrable>,
 }
 
-impl<'a> TransactionBuilder<'a> {
-    pub(crate) fn new(connection: &'a PgConnection) -> Self {
+impl<'a, C> TransactionBuilder<'a, C>
+where
+    C: Connection<Backend = Pg, TransactionManager = AnsiTransactionManager>,
+{
+    pub(crate) fn new(connection: &'a mut C) -> Self {
         Self {
             connection,
             isolation_level: None,
@@ -57,25 +59,25 @@ impl<'a> TransactionBuilder<'a> {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use users_for_read_only::table as users;
     /// #     use users_for_read_only::columns::*;
-    /// #     let conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// #     sql_query("CREATE TABLE IF NOT EXISTS users_for_read_only (
     /// #       id SERIAL PRIMARY KEY,
     /// #       name TEXT NOT NULL
-    /// #     )").execute(&conn)?;
+    /// #     )").execute(conn)?;
     /// conn.build_transaction()
     ///     .read_only()
-    ///     .run::<_, diesel::result::Error, _>(|| {
-    ///         let read_attempt = users.select(name).load::<String>(&conn);
+    ///     .run::<_, diesel::result::Error, _>(|conn| {
+    ///         let read_attempt = users.select(name).load::<String>(conn);
     ///         assert!(read_attempt.is_ok());
     ///
     ///         let write_attempt = diesel::insert_into(users)
     ///             .values(name.eq("Ruby"))
-    ///             .execute(&conn);
+    ///             .execute(conn);
     ///         assert!(write_attempt.is_err());
     ///
     ///         Ok(())
     ///     })?;
-    /// #     sql_query("DROP TABLE users_for_read_only").execute(&conn)?;
+    /// #     sql_query("DROP TABLE users_for_read_only").execute(conn)?;
     /// #     Ok(())
     /// # }
     /// ```
@@ -102,20 +104,20 @@ impl<'a> TransactionBuilder<'a> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .read_write()
-    ///     .run(|| {
+    ///     .run(|conn| {
     /// #         sql_query("CREATE TABLE IF NOT EXISTS users (
     /// #             id SERIAL PRIMARY KEY,
     /// #             name TEXT NOT NULL
-    /// #         )").execute(&conn)?;
-    ///         let read_attempt = users.select(name).load::<String>(&conn);
+    /// #         )").execute(conn)?;
+    ///         let read_attempt = users.select(name).load::<String>(conn);
     ///         assert!(read_attempt.is_ok());
     ///
     ///         let write_attempt = diesel::insert_into(users)
     ///             .values(name.eq("Ruby"))
-    ///             .execute(&conn);
+    ///             .execute(conn);
     ///         assert!(write_attempt.is_ok());
     ///
     /// #       Err(RollbackTransaction)
@@ -143,10 +145,10 @@ impl<'a> TransactionBuilder<'a> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .deferrable()
-    ///     .run(|| Ok(()))
+    ///     .run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn deferrable(mut self) -> Self {
@@ -170,10 +172,10 @@ impl<'a> TransactionBuilder<'a> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .not_deferrable()
-    ///     .run(|| Ok(()))
+    ///     .run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn not_deferrable(mut self) -> Self {
@@ -197,10 +199,10 @@ impl<'a> TransactionBuilder<'a> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .read_committed()
-    ///     .run(|| Ok(()))
+    ///     .run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn read_committed(mut self) -> Self {
@@ -221,10 +223,10 @@ impl<'a> TransactionBuilder<'a> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .repeatable_read()
-    ///     .run(|| Ok(()))
+    ///     .run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn repeatable_read(mut self) -> Self {
@@ -245,10 +247,10 @@ impl<'a> TransactionBuilder<'a> {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let conn = connection_no_transaction();
+    /// #     let conn = &mut connection_no_transaction();
     /// conn.build_transaction()
     ///     .serializable()
-    ///     .run(|| Ok(()))
+    ///     .run(|conn| Ok(()))
     /// # }
     /// ```
     pub fn serializable(mut self) -> Self {
@@ -267,31 +269,30 @@ impl<'a> TransactionBuilder<'a> {
     /// the original error will be returned, otherwise the error generated by the rollback
     /// will be returned. In the second case the connection should be considered broken
     /// as it contains a uncommitted unabortable open transaction.
-    pub fn run<T, E, F>(&self, f: F) -> Result<T, E>
+    pub fn run<T, E, F>(&mut self, f: F) -> Result<T, E>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut C) -> Result<T, E>,
         E: From<Error>,
     {
         let mut query_builder = <Pg as Backend>::QueryBuilder::default();
         self.to_sql(&mut query_builder)?;
         let sql = query_builder.finish();
-        let transaction_manager = &self.connection.transaction_manager;
 
-        transaction_manager.begin_transaction_sql(self.connection, &sql)?;
-        match f() {
+        AnsiTransactionManager::begin_transaction_sql(&mut *self.connection, &sql)?;
+        match f(&mut *self.connection) {
             Ok(value) => {
-                transaction_manager.commit_transaction(self.connection)?;
+                AnsiTransactionManager::commit_transaction(&mut *self.connection)?;
                 Ok(value)
             }
             Err(e) => {
-                transaction_manager.rollback_transaction(self.connection)?;
+                AnsiTransactionManager::rollback_transaction(&mut *self.connection)?;
                 Err(e)
             }
         }
     }
 }
 
-impl<'a> QueryFragment<Pg> for TransactionBuilder<'a> {
+impl<'a, C> QueryFragment<Pg> for TransactionBuilder<'a, C> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
         out.push_sql("BEGIN TRANSACTION");
         if let Some(ref isolation_level) = self.isolation_level {
@@ -374,28 +375,42 @@ fn test_transaction_builder_generates_correct_sql() {
     let database_url = dotenv::var("PG_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    let conn = PgConnection::establish(&database_url).unwrap();
+    let mut conn = PgConnection::establish(&database_url).unwrap();
 
-    let t = conn.build_transaction();
-    assert_sql!(t, "BEGIN TRANSACTION");
-    assert_sql!(t.read_only(), "BEGIN TRANSACTION READ ONLY");
-    assert_sql!(t.read_write(), "BEGIN TRANSACTION READ WRITE");
-    assert_sql!(t.deferrable(), "BEGIN TRANSACTION DEFERRABLE");
-    assert_sql!(t.not_deferrable(), "BEGIN TRANSACTION NOT DEFERRABLE");
+    assert_sql!(conn.build_transaction(), "BEGIN TRANSACTION");
     assert_sql!(
-        t.read_committed(),
+        conn.build_transaction().read_only(),
+        "BEGIN TRANSACTION READ ONLY"
+    );
+    assert_sql!(
+        conn.build_transaction().read_write(),
+        "BEGIN TRANSACTION READ WRITE"
+    );
+    assert_sql!(
+        conn.build_transaction().deferrable(),
+        "BEGIN TRANSACTION DEFERRABLE"
+    );
+    assert_sql!(
+        conn.build_transaction().not_deferrable(),
+        "BEGIN TRANSACTION NOT DEFERRABLE"
+    );
+    assert_sql!(
+        conn.build_transaction().read_committed(),
         "BEGIN TRANSACTION ISOLATION LEVEL READ COMMITTED"
     );
     assert_sql!(
-        t.repeatable_read(),
+        conn.build_transaction().repeatable_read(),
         "BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ"
     );
     assert_sql!(
-        t.serializable(),
+        conn.build_transaction().serializable(),
         "BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE"
     );
     assert_sql!(
-        t.serializable().deferrable().read_only(),
+        conn.build_transaction()
+            .serializable()
+            .deferrable()
+            .read_only(),
         "BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE READ ONLY DEFERRABLE"
     );
 }

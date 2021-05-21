@@ -18,10 +18,10 @@ pub struct User {
 }
 
 fn main() {
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
     let mut user = User {
         name: "Sean".to_string(),
         hair_color: "black".to_string(),
     };
-    user.save_changes(&connection);
+    user.save_changes(&mut connection);
 }

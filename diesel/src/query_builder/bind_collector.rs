@@ -18,7 +18,7 @@ pub trait BindCollector<DB: Backend> {
     fn push_bound_value<T, U>(
         &mut self,
         bind: &U,
-        metadata_lookup: &DB::MetadataLookup,
+        metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
@@ -57,7 +57,7 @@ impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB>
     fn push_bound_value<T, U>(
         &mut self,
         bind: &U,
-        metadata_lookup: &DB::MetadataLookup,
+        metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()>
     where
         DB: HasSqlType<T>,

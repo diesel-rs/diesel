@@ -176,7 +176,7 @@ impl SqlFileMigration {
 }
 
 impl<DB: Backend> Migration<DB> for SqlFileMigration {
-    fn run(&self, conn: &dyn BoxableConnection<DB>) -> migration::Result<()> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> migration::Result<()> {
         Ok(run_sql_from_file(
             conn,
             &self.base_path.join("up.sql"),
@@ -184,7 +184,7 @@ impl<DB: Backend> Migration<DB> for SqlFileMigration {
         )?)
     }
 
-    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> migration::Result<()> {
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> migration::Result<()> {
         Ok(run_sql_from_file(
             conn,
             &self.base_path.join("down.sql"),
@@ -265,7 +265,7 @@ impl MigrationMetadata for TomlMetadataWrapper {
 }
 
 fn run_sql_from_file<DB: Backend>(
-    conn: &dyn BoxableConnection<DB>,
+    conn: &mut dyn BoxableConnection<DB>,
     path: &Path,
     name: &DieselMigrationName,
 ) -> Result<(), RunMigrationsError> {

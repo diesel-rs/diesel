@@ -16,7 +16,7 @@ table! {
 }
 
 fn main() {
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     insert_into(users::table)
         .values(&posts::id.eq(1));

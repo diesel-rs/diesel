@@ -29,32 +29,32 @@ table! {
 fn main() {
     use self::users::dsl::*;
     use self::posts::dsl::*;
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     // Sanity check, valid query with no column list
     users
         .insert_into(posts)
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
 
     // Sanity check, valid query with single column
     users.select(id)
         .insert_into(posts)
         .into_columns(user_id)
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
 
     // Sanity check, valid query with column list
     users.select((name, hair_color))
         .insert_into(posts)
         .into_columns((title, body))
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
 
     // No column list, mismatched types
     users.select((name, hair_color))
         .insert_into(posts)
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
 
     // Single column, wrong table

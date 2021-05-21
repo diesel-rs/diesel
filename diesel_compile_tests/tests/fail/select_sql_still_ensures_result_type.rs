@@ -11,7 +11,7 @@ table! {
 }
 
 fn main() {
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
     let select_count = users::table.select(sql::<sql_types::BigInt>("COUNT(*)"));
-    let count = select_count.get_result::<String>(&connection).unwrap();
+    let count = select_count.get_result::<String>(&mut connection).unwrap();
 }

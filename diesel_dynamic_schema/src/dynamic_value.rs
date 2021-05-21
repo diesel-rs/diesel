@@ -77,13 +77,13 @@
 //! #
 //! # fn result_main() -> QueryResult<()> {
 //! #
-//! # let conn = connection_setup::establish_connection();
+//! # let conn = &mut connection_setup::establish_connection();
 //! #
 //! # // Create some example data by using typical SQL statements.
-//! # connection_setup::create_user_table(&conn);
+//! # connection_setup::create_user_table(conn);
 //! # // Create some example data by using typical SQL statements.
-//! # connection_setup::create_user_table(&conn);
-//! # sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").execute(&conn)?;
+//! # connection_setup::create_user_table(conn);
+//! # sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')").execute(conn)?;
 //!
 //!     let users = diesel_dynamic_schema::table("users");
 //!     let id = users.column::<Untyped, _>("id");
@@ -95,7 +95,7 @@
 //!     select.add_field(name);
 //!
 //!     let actual_data: Vec<DynamicRow<NamedField<MyDynamicValue>>> =
-//!         users.select(select).load(&conn)?;
+//!         users.select(select).load(conn)?;
 //!
 //!     assert_eq!(
 //!         actual_data[0]["name"],
@@ -167,21 +167,21 @@ impl TypedExpressionType for Any {}
 
 #[cfg(feature = "postgres")]
 impl diesel::expression::QueryMetadata<Any> for diesel::pg::Pg {
-    fn row_metadata(_lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+    fn row_metadata(_lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(None)
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl diesel::expression::QueryMetadata<Any> for diesel::sqlite::Sqlite {
-    fn row_metadata(_lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+    fn row_metadata(_lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(None)
     }
 }
 
 #[cfg(feature = "mysql")]
 impl diesel::expression::QueryMetadata<Any> for diesel::mysql::Mysql {
-    fn row_metadata(_lookup: &Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
+    fn row_metadata(_lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>) {
         out.push(None)
     }
 }

@@ -18,10 +18,10 @@ fn named_struct_definition() {
         bar: i32,
     }
 
-    let conn = connection();
+    let conn = &mut connection();
     let data = my_structs::table
         .select(MyStruct::as_select())
-        .get_result(&conn);
+        .get_result(conn);
     assert!(data.is_err());
 }
 
@@ -31,10 +31,10 @@ fn tuple_struct() {
     #[table_name = "my_structs"]
     struct MyStruct(#[column_name = "foo"] i32, #[column_name = "bar"] i32);
 
-    let conn = connection();
+    let conn = &mut connection();
     let data = my_structs::table
         .select(MyStruct::as_select())
-        .get_result(&conn);
+        .get_result(conn);
     assert!(data.is_err());
 }
 
@@ -56,8 +56,8 @@ fn embedded_struct() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = my_structs::table.select(A::as_select()).get_result(&conn);
+    let conn = &mut connection();
+    let data = my_structs::table.select(A::as_select()).get_result(conn);
     assert!(data.is_err());
 }
 
@@ -77,7 +77,7 @@ fn embedded_option() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = my_structs::table.select(A::as_select()).get_result(&conn);
+    let conn = &mut connection();
+    let data = my_structs::table.select(A::as_select()).get_result(conn);
     assert!(data.is_err());
 }

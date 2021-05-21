@@ -21,7 +21,7 @@ table! {
 }
 
 fn main() {
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
 
     delete(users::table.filter(users::columns::name.eq("Bill")))
         .returning(non_users::columns::noname);

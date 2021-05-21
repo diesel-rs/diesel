@@ -15,7 +15,7 @@ pub fn establish_connection() -> SqliteConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-pub fn create_post(conn: &SqliteConnection, title: &str, body: &str) -> usize {
+pub fn create_post(conn: &mut SqliteConnection, title: &str, body: &str) -> usize {
     use crate::schema::posts;
 
     let new_post = NewPost { title, body };

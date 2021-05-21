@@ -5,7 +5,6 @@ use super::{Pg, PgTypeMetadata};
 use crate::prelude::*;
 
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::collections::HashMap;
 
 /// Determines the OID of types at runtime
@@ -19,33 +18,37 @@ pub trait PgMetadataLookup {
     /// This function should only be used for user defined types, or types which
     /// come from an extension. This function may perform a SQL query to look
     /// up the type. For built-in types, a static OID should be preferred.
-    fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata;
+    fn lookup_type(&mut self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata;
 }
 
 impl<T> PgMetadataLookup for T
 where
     T: Connection<Backend = Pg> + GetPgMetadataCache,
 {
-    fn lookup_type(&self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
-        let metadata_cache = self.get_metadata_cache();
+    fn lookup_type(&mut self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
         let cache_key = PgMetadataCacheKey {
             schema: schema.map(Cow::Borrowed),
             type_name: Cow::Borrowed(type_name),
         };
 
-        metadata_cache.lookup_type(&cache_key).unwrap_or_else(|| {
-            let r = lookup_type(&cache_key, self);
+        {
+            let metadata_cache = self.get_metadata_cache();
 
-            match r {
-                Ok(type_metadata) => {
-                    metadata_cache.store_type(cache_key, type_metadata);
-                    PgTypeMetadata(Ok(type_metadata))
-                }
-                Err(_e) => {
-                    PgTypeMetadata(Err(FailedToLookupTypeError::new(cache_key.into_owned())))
-                }
+            if let Some(metadata) = metadata_cache.lookup_type(&cache_key) {
+                return metadata;
             }
-        })
+        }
+
+        let r = lookup_type(&&cache_key, self);
+
+        match r {
+            Ok(type_metadata) => {
+                self.get_metadata_cache()
+                    .store_type(cache_key, type_metadata);
+                PgTypeMetadata(Ok(type_metadata))
+            }
+            Err(_e) => PgTypeMetadata(Err(FailedToLookupTypeError::new(cache_key.into_owned()))),
+        }
     }
 }
 
@@ -55,12 +58,12 @@ where
 /// Implementing this trait for a `Connection<Backend=Pg>` will cause `PgMetadataLookup` to be auto implemented.
 pub trait GetPgMetadataCache {
     /// Get the `PgMetadataCache`
-    fn get_metadata_cache(&self) -> &PgMetadataCache;
+    fn get_metadata_cache(&mut self) -> &mut PgMetadataCache;
 }
 
 fn lookup_type<T: Connection<Backend = Pg>>(
     cache_key: &PgMetadataCacheKey<'_>,
-    conn: &T,
+    conn: &mut T,
 ) -> QueryResult<InnerPgTypeMetadata> {
     let search_path: String;
     let mut search_path_has_temp_schema = false;
@@ -128,7 +131,7 @@ impl<'a> PgMetadataCacheKey<'a> {
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
 pub struct PgMetadataCache {
-    cache: RefCell<HashMap<PgMetadataCacheKey<'static>, InnerPgTypeMetadata>>,
+    cache: HashMap<PgMetadataCacheKey<'static>, InnerPgTypeMetadata>,
 }
 
 impl PgMetadataCache {
@@ -139,14 +142,12 @@ impl PgMetadataCache {
 
     /// Lookup the OID of a custom type
     fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
-        Some(PgTypeMetadata(Ok(*self.cache.borrow().get(type_name)?)))
+        Some(PgTypeMetadata(Ok(*self.cache.get(type_name)?)))
     }
 
     /// Store the OID of a custom type
-    fn store_type(&self, type_name: PgMetadataCacheKey, type_metadata: InnerPgTypeMetadata) {
-        self.cache
-            .borrow_mut()
-            .insert(type_name.into_owned(), type_metadata);
+    fn store_type(&mut self, type_name: PgMetadataCacheKey, type_metadata: InnerPgTypeMetadata) {
+        self.cache.insert(type_name.into_owned(), type_metadata);
     }
 }
 

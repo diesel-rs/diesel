@@ -198,20 +198,23 @@ pub type TestBackend = <TestConnection as Connection>::Backend;
 
 //Used to ensure cleanup of one-off tables, e.g. for a table created for a single test
 pub struct DropTable<'a> {
-    pub connection: &'a TestConnection,
+    pub connection: &'a mut TestConnection,
     pub table_name: &'static str,
+    pub can_drop: bool,
 }
 
 impl<'a> Drop for DropTable<'a> {
     fn drop(&mut self) {
-        self.connection
-            .execute(&format!("DROP TABLE {}", self.table_name))
-            .unwrap();
+        if self.can_drop {
+            self.connection
+                .execute(&format!("DROP TABLE {}", self.table_name))
+                .unwrap();
+        }
     }
 }
 
 pub fn connection() -> TestConnection {
-    let result = connection_without_transaction();
+    let mut result = connection_without_transaction();
     #[cfg(feature = "sqlite")]
     result.execute("PRAGMA foreign_keys = ON").unwrap();
     result.begin_test_transaction().unwrap();
@@ -223,7 +226,13 @@ pub fn connection_without_transaction() -> TestConnection {
     let connection_url = dotenv::var("PG_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    PgConnection::establish(&connection_url).unwrap()
+    let mut conn = PgConnection::establish(&connection_url).unwrap();
+
+    // we do match the error messages in some tests and depending on your
+    // operating system configuration postgres may return localized error messages
+    // This forces the language to english
+    conn.execute("SET lc_messages TO 'en_US.UTF-8';").unwrap();
+    conn
 }
 
 #[cfg(feature = "sqlite")]
@@ -233,7 +242,7 @@ const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
 #[cfg(feature = "sqlite")]
 pub fn connection_without_transaction() -> TestConnection {
     use diesel_migrations::MigrationHarness;
-    let connection = SqliteConnection::establish(":memory:").unwrap();
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
     connection.run_pending_migrations(MIGRATIONS).unwrap();
     connection
 }
@@ -247,31 +256,31 @@ pub fn connection_without_transaction() -> TestConnection {
 }
 
 #[cfg(feature = "postgres")]
-pub fn disable_foreign_keys(connection: &TestConnection) {
+pub fn disable_foreign_keys(connection: &mut TestConnection) {
     connection.execute("SET CONSTRAINTS ALL DEFERRED").unwrap();
 }
 
 #[cfg(feature = "mysql")]
-pub fn disable_foreign_keys(connection: &TestConnection) {
+pub fn disable_foreign_keys(connection: &mut TestConnection) {
     connection.execute("SET FOREIGN_KEY_CHECKS = 0").unwrap();
 }
 
 #[cfg(feature = "sqlite")]
-pub fn disable_foreign_keys(connection: &TestConnection) {
+pub fn disable_foreign_keys(connection: &mut TestConnection) {
     connection
         .execute("PRAGMA defer_foreign_keys = ON")
         .unwrap();
 }
 
 #[cfg(feature = "sqlite")]
-pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
+pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
     connection
         .execute(&format!("DROP TABLE {}", table))
         .unwrap();
 }
 
 #[cfg(feature = "postgres")]
-pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
+pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
     connection
         .execute(&format!("DROP TABLE {} CASCADE", table))
         .unwrap();
@@ -280,20 +289,20 @@ pub fn drop_table_cascade(connection: &TestConnection, table: &str) {
 sql_function!(fn nextval(a: sql_types::VarChar) -> sql_types::BigInt);
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
-    let connection = connection();
-    insert_sean_and_tess_into_users_table(&connection);
+    let mut connection = connection();
+    insert_sean_and_tess_into_users_table(&mut connection);
     connection
 }
 
-pub fn insert_sean_and_tess_into_users_table(connection: &TestConnection) {
+pub fn insert_sean_and_tess_into_users_table(connection: &mut TestConnection) {
     connection
         .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
         .unwrap();
-    ensure_primary_key_seq_greater_than(2, &connection);
+    ensure_primary_key_seq_greater_than(2, connection);
 }
 
 pub fn connection_with_nullable_table_data() -> TestConnection {
-    let connection = connection();
+    let mut connection = connection();
 
     let test_data = vec![
         NullableColumn { id: 1, value: None },
@@ -313,13 +322,13 @@ pub fn connection_with_nullable_table_data() -> TestConnection {
     ];
     insert_into(nullable_table::table)
         .values(&test_data)
-        .execute(&connection)
+        .execute(&mut connection)
         .unwrap();
 
     connection
 }
 
-fn ensure_primary_key_seq_greater_than(x: i64, connection: &TestConnection) {
+fn ensure_primary_key_seq_greater_than(x: i64, connection: &mut TestConnection) {
     if cfg!(feature = "postgres") {
         for _ in 0..x {
             select(nextval("users_id_seq")).execute(connection).unwrap();
@@ -327,7 +336,7 @@ fn ensure_primary_key_seq_greater_than(x: i64, connection: &TestConnection) {
     }
 }
 
-pub fn find_user_by_name(name: &str, connection: &TestConnection) -> User {
+pub fn find_user_by_name(name: &str, connection: &mut TestConnection) -> User {
     users::table
         .filter(users::name.eq(name))
         .first(connection)

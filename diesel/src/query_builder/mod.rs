@@ -171,7 +171,7 @@ pub trait QueryFragment<DB: Backend> {
     fn collect_binds(
         &self,
         out: &mut DB::BindCollector,
-        metadata_lookup: &DB::MetadataLookup,
+        metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()> {
         self.walk_ast(AstPass::collect_binds(out, metadata_lookup))
     }

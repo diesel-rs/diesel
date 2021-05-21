@@ -25,7 +25,7 @@ pub trait UsesInformationSchema: Backend {
         + QueryFragment<Self>;
 
     fn type_column() -> Self::TypeColumn;
-    fn default_schema<C>(conn: &C) -> QueryResult<String>
+    fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
         C: Connection<Backend = Self>,
         String: FromSql<sql_types::Text, C::Backend>;
@@ -39,7 +39,7 @@ impl UsesInformationSchema for Pg {
         self::information_schema::columns::udt_name
     }
 
-    fn default_schema<C>(_conn: &C) -> QueryResult<String> {
+    fn default_schema<C>(_conn: &mut C) -> QueryResult<String> {
         Ok("public".into())
     }
 }
@@ -55,7 +55,7 @@ impl UsesInformationSchema for Mysql {
         self::information_schema::columns::column_type
     }
 
-    fn default_schema<C>(conn: &C) -> QueryResult<String>
+    fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
         C: Connection<Backend = Self>,
         String: FromSql<sql_types::Text, C::Backend>,
@@ -124,7 +124,7 @@ mod information_schema {
 }
 
 pub fn get_table_data<'a, Conn>(
-    conn: &Conn,
+    conn: &mut Conn,
     table: &'a TableName,
     column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>>
@@ -194,7 +194,7 @@ where
     }
 }
 
-pub fn get_primary_keys<'a, Conn>(conn: &Conn, table: &'a TableName) -> QueryResult<Vec<String>>
+pub fn get_primary_keys<'a, Conn>(conn: &mut Conn, table: &'a TableName) -> QueryResult<Vec<String>>
 where
     Conn: Connection,
     Conn::Backend: UsesInformationSchema,
@@ -242,7 +242,7 @@ where
 }
 
 pub fn load_table_names<'a, Conn>(
-    connection: &Conn,
+    connection: &mut Conn,
     schema_name: Option<&'a str>,
 ) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>>
 where
@@ -290,7 +290,7 @@ where
 #[allow(clippy::similar_names)]
 #[cfg(feature = "postgres")]
 pub fn load_foreign_key_constraints(
-    connection: &PgConnection,
+    connection: &mut PgConnection,
     schema_name: Option<&str>,
 ) -> QueryResult<Vec<ForeignKeyConstraint>> {
     use self::information_schema::key_column_usage as kcu;
@@ -361,14 +361,14 @@ mod tests {
         let connection_url = env::var("PG_DATABASE_URL")
             .or_else(|_| env::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests");
-        let connection = PgConnection::establish(&connection_url).unwrap();
+        let mut connection = PgConnection::establish(&connection_url).unwrap();
         connection.begin_test_transaction().unwrap();
         connection
     }
 
     #[test]
     fn skip_views() {
-        let connection = connection();
+        let mut connection = connection();
 
         connection
             .execute("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)")
@@ -377,7 +377,7 @@ mod tests {
             .execute("CREATE VIEW a_view AS SELECT 42")
             .unwrap();
 
-        let table_names = load_table_names(&connection, None).unwrap();
+        let table_names = load_table_names(&mut connection, None).unwrap();
 
         assert!(table_names.contains(&TableName::from_name("a_regular_table")));
         assert!(!table_names.contains(&TableName::from_name("a_view")));
@@ -385,7 +385,7 @@ mod tests {
 
     #[test]
     fn load_table_names_loads_from_public_schema_if_none_given() {
-        let connection = connection();
+        let mut connection = connection();
 
         connection
             .execute(
@@ -393,7 +393,7 @@ mod tests {
             )
             .unwrap();
 
-        let table_names = load_table_names(&connection, None).unwrap();
+        let table_names = load_table_names(&mut connection, None).unwrap();
         for &TableName { ref schema, .. } in &table_names {
             assert_eq!(None, *schema);
         }
@@ -404,21 +404,21 @@ mod tests {
 
     #[test]
     fn load_table_names_loads_from_custom_schema() {
-        let connection = connection();
+        let mut connection = connection();
 
         connection.execute("CREATE SCHEMA test_schema").unwrap();
         connection
             .execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)")
             .unwrap();
 
-        let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
+        let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
         assert_eq!(vec![TableName::new("table_1", "test_schema")], table_names);
 
         connection
             .execute("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
             .unwrap();
 
-        let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
+        let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
         let expected = vec![
             TableName::new("table_1", "test_schema"),
             TableName::new("table_2", "test_schema"),
@@ -432,13 +432,13 @@ mod tests {
             .execute("CREATE TABLE other_test_schema.table_1 (id SERIAL PRIMARY KEY)")
             .unwrap();
 
-        let table_names = load_table_names(&connection, Some("test_schema")).unwrap();
+        let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
         let expected = vec![
             TableName::new("table_1", "test_schema"),
             TableName::new("table_2", "test_schema"),
         ];
         assert_eq!(expected, table_names);
-        let table_names = load_table_names(&connection, Some("other_test_schema")).unwrap();
+        let table_names = load_table_names(&mut connection, Some("other_test_schema")).unwrap();
         assert_eq!(
             vec![TableName::new("table_1", "other_test_schema")],
             table_names
@@ -447,7 +447,7 @@ mod tests {
 
     #[test]
     fn load_table_names_output_is_ordered() {
-        let connection = connection();
+        let mut connection = connection();
         connection.execute("CREATE SCHEMA test_schema").unwrap();
         connection
             .execute("CREATE TABLE test_schema.ccc (id SERIAL PRIMARY KEY)")
@@ -459,7 +459,7 @@ mod tests {
             .execute("CREATE TABLE test_schema.bbb (id SERIAL PRIMARY KEY)")
             .unwrap();
 
-        let table_names = load_table_names(&connection, Some("test_schema"))
+        let table_names = load_table_names(&mut connection, Some("test_schema"))
             .unwrap()
             .iter()
             .map(|table| table.to_string())
@@ -472,7 +472,7 @@ mod tests {
 
     #[test]
     fn get_primary_keys_only_includes_primary_key() {
-        let connection = connection();
+        let mut connection = connection();
 
         connection.execute("CREATE SCHEMA test_schema").unwrap();
         connection
@@ -488,17 +488,17 @@ mod tests {
         let table_2 = TableName::new("table_2", "test_schema");
         assert_eq!(
             vec!["id".to_string()],
-            get_primary_keys(&connection, &table_1).unwrap()
+            get_primary_keys(&mut connection, &table_1).unwrap()
         );
         assert_eq!(
             vec!["id".to_string(), "id2".to_string()],
-            get_primary_keys(&connection, &table_2).unwrap()
+            get_primary_keys(&mut connection, &table_2).unwrap()
         );
     }
 
     #[test]
     fn get_table_data_loads_column_information() {
-        let connection = connection();
+        let mut connection = connection();
 
         connection.execute("CREATE SCHEMA test_schema").unwrap();
         connection
@@ -518,17 +518,17 @@ mod tests {
         let array_col = ColumnInformation::new("array_col", "_varchar", false);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
-            get_table_data(&connection, &table_1, &ColumnSorting::OrdinalPosition)
+            get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)
         );
         assert_eq!(
             Ok(vec![array_col]),
-            get_table_data(&connection, &table_2, &ColumnSorting::OrdinalPosition)
+            get_table_data(&mut connection, &table_2, &ColumnSorting::OrdinalPosition)
         );
     }
 
     #[test]
     fn get_foreign_keys_loads_foreign_keys() {
-        let connection = connection();
+        let mut connection = connection();
 
         connection.execute("CREATE SCHEMA test_schema").unwrap();
         connection
@@ -564,7 +564,7 @@ mod tests {
         };
         assert_eq!(
             Ok(vec![fk_one, fk_two]),
-            load_foreign_key_constraints(&connection, Some("test_schema"))
+            load_foreign_key_constraints(&mut connection, Some("test_schema"))
         );
     }
 }

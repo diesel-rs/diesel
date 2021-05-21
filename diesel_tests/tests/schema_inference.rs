@@ -26,7 +26,7 @@ mod sqlite {
 
     #[test]
     fn integers_infer_to_semantically_correct_types() {
-        let conn = connection();
+        let conn = &mut connection();
         let inferred_ints = InferredInts {
             col1: 1,
             col2: 2,
@@ -44,12 +44,12 @@ mod sqlite {
         };
         insert_into(infer_all_the_ints::table)
             .values(&inferred_ints)
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
 
         assert_eq!(
             Ok(vec![inferred_ints]),
-            infer_all_the_ints::table.load(&conn)
+            infer_all_the_ints::table.load(conn)
         );
     }
 
@@ -64,7 +64,7 @@ mod sqlite {
 
     #[test]
     fn bool_types_infer_to_bool() {
-        let conn = connection();
+        let conn = &mut connection();
         let inferred_bools = InferredBools {
             col1: true,
             col2: true,
@@ -73,12 +73,12 @@ mod sqlite {
         };
         insert_into(infer_all_the_bools::table)
             .values(&inferred_bools)
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
 
         assert_eq!(
             Ok(vec![inferred_bools]),
-            infer_all_the_bools::table.load(&conn)
+            infer_all_the_bools::table.load(conn)
         );
     }
 
@@ -99,7 +99,7 @@ mod sqlite {
 
     #[test]
     fn strings_infer_to_semantically_correct_types() {
-        let conn = connection();
+        let conn = &mut connection();
         let inferred_strings = InferredStrings {
             col1: "Hello".into(),
             col2: "Hello".into(),
@@ -114,12 +114,12 @@ mod sqlite {
         };
         insert_into(infer_all_the_strings::table)
             .values(&inferred_strings)
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
 
         assert_eq!(
             Ok(vec![inferred_strings]),
-            infer_all_the_strings::table.load(&conn)
+            infer_all_the_strings::table.load(conn)
         );
     }
 
@@ -136,7 +136,7 @@ mod sqlite {
 
     #[test]
     fn floats_infer_to_semantically_correct_types() {
-        let conn = connection();
+        let conn = &mut connection();
         let inferred_floats = InferredFloats {
             col1: 1.0,
             col2: 2.0,
@@ -147,12 +147,12 @@ mod sqlite {
         };
         insert_into(infer_all_the_floats::table)
             .values(&inferred_floats)
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
 
         assert_eq!(
             Ok(vec![inferred_floats]),
-            infer_all_the_floats::table.load(&conn)
+            infer_all_the_floats::table.load(conn)
         );
     }
 
@@ -167,7 +167,7 @@ mod sqlite {
 
     #[test]
     fn datetime_types_are_correctly_inferred() {
-        let conn = connection();
+        let conn = &mut connection();
 
         let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
         let inferred_datetime_types = InferredDatetimeTypes {
@@ -179,12 +179,12 @@ mod sqlite {
 
         insert_into(infer_all_the_datetime_types::table)
             .values(&inferred_datetime_types)
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
 
         assert_eq!(
             Ok(vec![inferred_datetime_types]),
-            infer_all_the_datetime_types::table.load(&conn)
+            infer_all_the_datetime_types::table.load(conn)
         );
     }
 }
@@ -210,7 +210,7 @@ mod postgres {
 
     #[test]
     fn ranges_are_correctly_inferred() {
-        let conn = connection();
+        let conn = &mut connection();
         let numeric = PgNumeric::Positive {
             weight: 1,
             scale: 1,
@@ -232,10 +232,10 @@ mod postgres {
 
         insert_into(all_the_ranges::table)
             .values(&inferred_ranges)
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
 
-        assert_eq!(Ok(vec![inferred_ranges]), all_the_ranges::table.load(&conn));
+        assert_eq!(Ok(vec![inferred_ranges]), all_the_ranges::table.load(conn));
     }
 }
 
@@ -265,7 +265,7 @@ mod mysql {
 
     #[test]
     fn blobs_are_correctly_inferred() {
-        let conn = connection();
+        let conn = &mut connection();
         let inferred_blobs = InferredBlobs {
             id: 0,
             tiny: &[0x01],
@@ -284,9 +284,9 @@ mod mysql {
 
         insert_into(all_the_blobs::table)
             .values(&inferred_blobs)
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
-        assert_eq!(Ok(vec![blobs]), all_the_blobs::table.load(&conn));
+        assert_eq!(Ok(vec![blobs]), all_the_blobs::table.load(conn));
     }
 }
 
@@ -309,10 +309,10 @@ fn columns_named_as_reserved_keywords_are_renamed() {
         extern_: 51,
     };
 
-    let conn = connection();
+    let conn = &mut connection();
     insert_into(with_keywords::table)
         .values(&value)
-        .execute(&conn)
+        .execute(conn)
         .unwrap();
-    assert_eq!(Ok(vec![value]), with_keywords::table.load(&conn));
+    assert_eq!(Ok(vec![value]), with_keywords::table.load(conn));
 }

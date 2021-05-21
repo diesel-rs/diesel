@@ -24,8 +24,8 @@ sql_function! {
     /// #
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
-    /// assert_eq!(Ok(1), animals.select(count(name)).first(&connection));
+    /// #     let connection = &mut establish_connection();
+    /// assert_eq!(Ok(1), animals.select(count(name)).first(connection));
     /// # }
     /// ```
     #[aggregate]
@@ -50,8 +50,8 @@ sql_function! {
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// assert_eq!(Ok(2), users.select(count_star()).first(&connection));
+/// #     let connection = &mut establish_connection();
+/// assert_eq!(Ok(2), users.select(count_star()).first(connection));
 /// # }
 /// ```
 pub fn count_star() -> CountStar {

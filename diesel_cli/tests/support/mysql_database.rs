@@ -14,7 +14,7 @@ impl Database {
 
     pub fn create(self) -> Self {
         let (database, mysql_url) = self.split_url();
-        let conn = MysqlConnection::establish(&mysql_url).unwrap();
+        let mut conn = MysqlConnection::establish(&mysql_url).unwrap();
         conn.execute(&format!("CREATE DATABASE `{}`", database))
             .unwrap();
         self
@@ -33,7 +33,7 @@ impl Database {
                  AND table_schema = DATABASE())",
             table
         )))
-        .get_result(&self.conn())
+        .get_result(&mut self.conn())
         .unwrap()
     }
 
@@ -59,7 +59,7 @@ impl Database {
 impl Drop for Database {
     fn drop(&mut self) {
         let (database, mysql_url) = self.split_url();
-        let conn = try_drop!(
+        let mut conn = try_drop!(
             MysqlConnection::establish(&mysql_url),
             "Couldn't connect to database"
         );

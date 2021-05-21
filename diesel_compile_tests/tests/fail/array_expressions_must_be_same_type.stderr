@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `f64: SelectableExpression<()>` is not satisfied
    --> $DIR/array_expressions_must_be_same_type.rs:11:5
     |
-11  |     select(array((1, 3f64))).get_result::<Vec<i32>>(&connection).unwrap();
+11  |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
     |     ^^^^^^ the trait `SelectableExpression<()>` is not implemented for `f64`
     |
    ::: $DIESEL/src/query_builder/functions.rs
@@ -17,7 +17,7 @@ error[E0277]: the trait bound `f64: SelectableExpression<()>` is not satisfied
 error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
    --> $DIR/array_expressions_must_be_same_type.rs:11:5
     |
-11  |     select(array((1, 3f64))).get_result::<Vec<i32>>(&connection).unwrap();
+11  |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
     |     ^^^^^^ the trait `ValidGrouping<()>` is not implemented for `f64`
     |
    ::: $DIESEL/src/query_builder/functions.rs
@@ -33,7 +33,7 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
 error[E0277]: the trait bound `f64: SelectableExpression<()>` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:11:30
    |
-11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&connection).unwrap();
+11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `SelectableExpression<()>` is not implemented for `f64`
    |
    = note: required because of the requirements on the impl of `SelectableExpression<()>` for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)`
@@ -46,7 +46,7 @@ error[E0277]: the trait bound `f64: SelectableExpression<()>` is not satisfied
 error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:11:30
    |
-11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&connection).unwrap();
+11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `ValidGrouping<()>` is not implemented for `f64`
    |
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)`
@@ -58,7 +58,7 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
 error[E0277]: the trait bound `f64: QueryId` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:11:30
    |
-11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&connection).unwrap();
+11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `QueryId` is not implemented for `f64`
    |
    = note: required because of the requirements on the impl of `QueryId` for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)`
@@ -69,7 +69,7 @@ error[E0277]: the trait bound `f64: QueryId` is not satisfied
 error[E0277]: the trait bound `f64: QueryFragment<_>` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:11:30
    |
-11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&connection).unwrap();
+11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `f64`
    |
    = note: required because of the requirements on the impl of `QueryFragment<_>` for `(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64)`
@@ -83,7 +83,7 @@ error[E0277]: the trait bound `f64: QueryFragment<_>` is not satisfied
 error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:11:12
    |
-11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&connection).unwrap();
+11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
    |            ^^^^^ the trait `diesel::Expression` is not implemented for `f64`
    |
   ::: $DIESEL/src/pg/expression/array.rs
@@ -97,7 +97,7 @@ error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
 error[E0277]: the trait bound `{integer}: SelectableExpression<()>` is not satisfied
    --> $DIR/array_expressions_must_be_same_type.rs:12:5
     |
-12  |     select(array((1, 3f64))).get_result::<Vec<f64>>(&connection).unwrap();
+12  |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
     |     ^^^^^^ the trait `SelectableExpression<()>` is not implemented for `{integer}`
     |
    ::: $DIESEL/src/query_builder/functions.rs
@@ -119,7 +119,7 @@ error[E0277]: the trait bound `{integer}: SelectableExpression<()>` is not satis
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
    --> $DIR/array_expressions_must_be_same_type.rs:12:5
     |
-12  |     select(array((1, 3f64))).get_result::<Vec<f64>>(&connection).unwrap();
+12  |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
     |     ^^^^^^ the trait `ValidGrouping<()>` is not implemented for `{integer}`
     |
    ::: $DIESEL/src/query_builder/functions.rs
@@ -141,7 +141,7 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
 error[E0277]: the trait bound `{integer}: SelectableExpression<()>` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:12:30
    |
-12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&connection).unwrap();
+12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `SelectableExpression<()>` is not implemented for `{integer}`
    |
    = help: the following implementations were found:
@@ -160,7 +160,7 @@ error[E0277]: the trait bound `{integer}: SelectableExpression<()>` is not satis
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:12:30
    |
-12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&connection).unwrap();
+12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `ValidGrouping<()>` is not implemented for `{integer}`
    |
    = help: the following implementations were found:
@@ -178,7 +178,7 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
 error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:12:30
    |
-12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&connection).unwrap();
+12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `QueryId` is not implemented for `{integer}`
    |
    = help: the following implementations were found:
@@ -195,7 +195,7 @@ error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
 error[E0277]: the trait bound `{integer}: QueryFragment<_>` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:12:30
    |
-12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&connection).unwrap();
+12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
    |                              ^^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `{integer}`
    |
    = help: the following implementations were found:
@@ -215,7 +215,7 @@ error[E0277]: the trait bound `{integer}: QueryFragment<_>` is not satisfied
 error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:12:12
    |
-12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&connection).unwrap();
+12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
    |            ^^^^^ the trait `diesel::Expression` is not implemented for `{integer}`
    |
   ::: $DIESEL/src/pg/expression/array.rs
@@ -235,7 +235,7 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
 error[E0277]: the trait bound `SelectStatement<()>: SelectDsl<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:11:5
    |
-11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&connection).unwrap();
+11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
    |     ^^^^^^ the trait `SelectDsl<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>` is not implemented for `SelectStatement<()>`
    |
    = help: the following implementations were found:
@@ -244,7 +244,7 @@ error[E0277]: the trait bound `SelectStatement<()>: SelectDsl<diesel::pg::expres
 error[E0277]: the trait bound `SelectStatement<()>: SelectDsl<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>` is not satisfied
   --> $DIR/array_expressions_must_be_same_type.rs:12:5
    |
-12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&connection).unwrap();
+12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
    |     ^^^^^^ the trait `SelectDsl<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>` is not implemented for `SelectStatement<()>`
    |
    = help: the following implementations were found:

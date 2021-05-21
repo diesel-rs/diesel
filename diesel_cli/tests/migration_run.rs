@@ -50,7 +50,7 @@ fn migration_run_inserts_run_on_timestamps() {
     let migrations_done: bool = select(sql::<Bool>(
         "EXISTS (SELECT * FROM __diesel_schema_migrations WHERE version >= '1')",
     ))
-    .get_result(&db.conn())
+    .get_result(&mut db.conn())
     .unwrap();
     assert!(!migrations_done, "Migrations table should be empty");
 
@@ -68,7 +68,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < DATETIME('now', '+1 hour'))",
         ))
-        .get_result(&db.conn())
+        .get_result(&mut db.conn())
         .unwrap()
     }
 
@@ -78,7 +78,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL '1 hour')",
         ))
-        .get_result(&db.conn())
+        .get_result(&mut db.conn())
         .unwrap()
     }
 
@@ -88,7 +88,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL 1 HOUR)",
         ))
-        .get_result(&db.conn())
+        .get_result(&mut db.conn())
         .unwrap()
     }
 

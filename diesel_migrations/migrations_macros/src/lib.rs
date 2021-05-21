@@ -49,7 +49,7 @@ use proc_macro::TokenStream;
 /// # #[cfg(feature = "postgres")]
 /// # fn migration_connection() -> diesel::PgConnection {
 /// #    let connection_url = database_url_from_env("PG_DATABASE_URL");
-/// #    let conn = diesel::PgConnection::establish(&connection_url).unwrap();
+/// #    let mut conn = diesel::PgConnection::establish(&connection_url).unwrap();
 /// #    conn.begin_test_transaction().unwrap();
 /// #    conn
 /// # }
@@ -57,7 +57,7 @@ use proc_macro::TokenStream;
 /// # #[cfg(feature = "sqlite")]
 /// # fn migration_connection() -> diesel::SqliteConnection {
 /// #    let connection_url = database_url_from_env("SQLITE_DATABASE_URL");
-/// #    let conn = diesel::SqliteConnection::establish(&connection_url).unwrap();
+/// #    let mut conn = diesel::SqliteConnection::establish(&connection_url).unwrap();
 /// #    conn.begin_test_transaction().unwrap();
 /// #    conn
 /// # }
@@ -65,7 +65,7 @@ use proc_macro::TokenStream;
 /// # #[cfg(feature = "mysql")]
 /// # fn migration_connection() -> diesel::MysqlConnection {
 /// #    let connection_url = database_url_from_env("MYSQL_DATABASE_URL");
-/// #    let conn = diesel::MysqlConnection::establish(&connection_url).unwrap();
+/// #    let mut conn = diesel::MysqlConnection::establish(&connection_url).unwrap();
 /// #    conn
 /// # }
 /// #
@@ -78,11 +78,11 @@ use proc_macro::TokenStream;
 /// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/sqlite");
 ///
 /// # fn main() {
-/// #     let connection = migration_connection();
-/// #     run_migrations(&connection).unwrap();
+/// #     let connection = &mut migration_connection();
+/// #     run_migrations(connection).unwrap();
 /// # }
 ///
-/// fn run_migrations(connection: &impl MigrationHarness<DB>) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+/// fn run_migrations(connection: &mut impl MigrationHarness<DB>) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
 /// #   #[cfg(feature = "mysql")]
 /// #   connection.revert_all_migrations(MIGRATIONS)?;
 ///

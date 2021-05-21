@@ -17,9 +17,9 @@ struct User {
 }
 
 fn main() {
-    let connection = SqliteConnection::establish("").unwrap();
-    users::table.filter(users::name.ilike("%hey%")).execute(&connection);
+    let mut connection = SqliteConnection::establish("").unwrap();
+    users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
 
-    let connection = MysqlConnection::establish("").unwrap();
-    users::table.filter(users::name.ilike("%hey%")).execute(&connection);
+    let mut connection = MysqlConnection::establish("").unwrap();
+    users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
 }

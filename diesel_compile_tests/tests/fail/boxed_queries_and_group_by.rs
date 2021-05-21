@@ -19,14 +19,14 @@ table! {
 joinable!(posts -> users (user_id));
 
 fn main() {
-    let conn = PgConnection::establish("connection-url").unwrap();
+    let mut conn = PgConnection::establish("connection-url").unwrap();
 
     // a boxed query with group by just works
     users::table
         .group_by(users::name)
         .select(users::name)
         .into_boxed()
-        .load::<String>(&conn);
+        .load::<String>(&mut conn);
 
     // it's fine to change the select clause afterwards as long as it is valid for the
     // given group by clause
@@ -35,7 +35,7 @@ fn main() {
         .select(users::name)
         .into_boxed()
         .select(users::name)
-        .load::<String>(&conn);
+        .load::<String>(&mut conn);
 
     let mut q = users::table
         .group_by(users::name)
@@ -64,14 +64,14 @@ fn main() {
         .select(users::name)
         .into_boxed()
         .select(users::id)
-        .load::<i32>(&conn);
+        .load::<i32>(&mut conn);
 
     users::table
         .group_by(users::name)
         .select(users::name)
         .into_boxed()
         .inner_join(posts::table)
-        .load::<String>(&conn);
+        .load::<String>(&mut conn);
 
     let mut a = users::table.into_boxed();
 
@@ -83,5 +83,5 @@ fn main() {
         .into_boxed()
         .group_by(users::id)
         .select(users::name)
-        .load::<String>(&conn);
+        .load::<String>(&mut conn);
 }

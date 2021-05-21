@@ -192,7 +192,7 @@ macro_rules! __diesel_operator_to_sql {
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// diesel::infix_operator!(MyEq, " = ");
 ///
 /// use diesel::expression::AsExpression;
@@ -208,7 +208,7 @@ macro_rules! __diesel_operator_to_sql {
 ///
 /// let users_with_name = users.select(id).filter(my_eq(name, "Sean"));
 ///
-/// assert_eq!(Ok(1), users_with_name.first(&connection));
+/// assert_eq!(Ok(1), users_with_name.first(connection));
 /// # }
 /// ```
 #[macro_export]

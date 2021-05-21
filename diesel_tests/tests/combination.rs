@@ -6,14 +6,14 @@ use diesel::*;
 fn union() {
     use crate::schema::users::dsl::*;
 
-    let conn = connection();
+    let conn = &mut connection();
     let data = vec![
         NewUser::new("Sean", None),
         NewUser::new("Tess", None),
         NewUser::new("Jim", None),
     ];
-    insert_into(users).values(&data).execute(&conn).unwrap();
-    let data = users.load::<User>(&conn).unwrap();
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.load::<User>(conn).unwrap();
     let sean = &data[0];
     let tess = &data[1];
     let jim = &data[2];
@@ -27,7 +27,7 @@ fn union() {
         .filter(id.le(tess.id))
         .union(users.filter(id.ge(tess.id)))
         .positional_order_by(2) // name is the second column
-        .load(&conn)
+        .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);
 }
@@ -36,14 +36,14 @@ fn union() {
 fn union_all() {
     use crate::schema::users::dsl::*;
 
-    let conn = connection();
+    let conn = &mut connection();
     let data = vec![
         NewUser::new("Sean", None),
         NewUser::new("Tess", None),
         NewUser::new("Jim", None),
     ];
-    insert_into(users).values(&data).execute(&conn).unwrap();
-    let data = users.load::<User>(&conn).unwrap();
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.load::<User>(conn).unwrap();
     let sean = &data[0];
     let tess = &data[1];
     let jim = &data[2];
@@ -58,7 +58,7 @@ fn union_all() {
         .filter(id.le(tess.id))
         .union_all(users.filter(id.ge(tess.id)))
         .positional_order_by(2) // name is the second column
-        .load(&conn)
+        .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);
 }
@@ -68,14 +68,14 @@ fn union_all() {
 fn intersect() {
     use crate::schema::users::dsl::*;
 
-    let conn = connection();
+    let conn = &mut connection();
     let data = vec![
         NewUser::new("Sean", None),
         NewUser::new("Tess", None),
         NewUser::new("Jim", None),
     ];
-    insert_into(users).values(&data).execute(&conn).unwrap();
-    let data = users.load::<User>(&conn).unwrap();
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.load::<User>(conn).unwrap();
     let _sean = &data[0];
     let tess = &data[1];
     let _jim = &data[2];
@@ -85,7 +85,7 @@ fn intersect() {
         .filter(id.le(tess.id))
         .intersect(users.filter(id.ge(tess.id)))
         .positional_order_by(2) // name is the second column
-        .load(&conn)
+        .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);
 }
@@ -95,14 +95,14 @@ fn intersect() {
 fn except() {
     use crate::schema::users::dsl::*;
 
-    let conn = connection();
+    let conn = &mut connection();
     let data = vec![
         NewUser::new("Sean", None),
         NewUser::new("Tess", None),
         NewUser::new("Jim", None),
     ];
-    insert_into(users).values(&data).execute(&conn).unwrap();
-    let data = users.load::<User>(&conn).unwrap();
+    insert_into(users).values(&data).execute(conn).unwrap();
+    let data = users.load::<User>(conn).unwrap();
     let sean = &data[0];
     let tess = &data[1];
     let _jim = &data[2];
@@ -112,7 +112,7 @@ fn except() {
         .filter(id.le(tess.id))
         .except(users.filter(id.ge(tess.id)))
         .positional_order_by(2) // name is the second column
-        .load(&conn)
+        .load(conn)
         .unwrap();
     assert_eq!(expected_data, data);
 }

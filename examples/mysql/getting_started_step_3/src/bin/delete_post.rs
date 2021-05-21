@@ -8,10 +8,10 @@ fn main() {
     let target = args().nth(1).expect("Expected a target to match against");
     let pattern = format!("%{}%", target);
 
-    let connection = establish_connection();
+    let connection = &mut establish_connection();
 
     let num_deleted = diesel::delete(posts.filter(title.like(pattern)))
-        .execute(&connection)
+        .execute(connection)
         .expect("Error deleting posts");
 
     println!("Deleted {} posts", num_deleted);

@@ -10,9 +10,9 @@ table! {
 }
 
 fn main() {
-    let conn = SqliteConnection::establish("").unwrap();
+    let mut conn = SqliteConnection::establish("").unwrap();
     users::table
         .for_update()
-        .load(&conn)
+        .load(&mut conn)
         .unwrap();
 }

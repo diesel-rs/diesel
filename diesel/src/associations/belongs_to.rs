@@ -70,10 +70,10 @@ pub trait BelongsTo<Parent> {
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let connection = establish_connection();
-/// let users = users::table.load::<User>(&connection)?;
+/// #     let connection = &mut establish_connection();
+/// let users = users::table.load::<User>(connection)?;
 /// let posts = Post::belonging_to(&users)
-///     .load::<Post>(&connection)?
+///     .load::<Post>(connection)?
 ///     .grouped_by(&users);
 /// let data = users.into_iter().zip(posts).collect::<Vec<_>>();
 ///

@@ -175,7 +175,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                         /// this SQL function can be used on SQLite. The implementation must be
                         /// deterministic (returns the same result given the same arguments).
                         pub fn register_impl<A, #(#arg_name,)*>(
-                            conn: &SqliteConnection
+                            conn: &mut SqliteConnection
                         ) -> QueryResult<()>
                             where
                             A: SqliteAggregateFunction<(#(#arg_name,)*)>
@@ -206,7 +206,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                         /// this SQL function can be used on SQLite. The implementation must be
                         /// deterministic (returns the same result given the same arguments).
                         pub fn register_impl<A, #arg_name>(
-                            conn: &SqliteConnection
+                            conn: &mut SqliteConnection
                         ) -> QueryResult<()>
                             where
                             A: SqliteAggregateFunction<#arg_name>
@@ -259,7 +259,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 /// the function is nondeterministic, call
                 /// `register_nondeterministic_impl` instead.
                 pub fn register_impl<F, Ret, #(#arg_name,)*>(
-                    conn: &SqliteConnection,
+                    conn: &mut SqliteConnection,
                     f: F,
                 ) -> QueryResult<()>
                 where
@@ -285,7 +285,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 /// `random`). If your function is deterministic, you should call
                 /// `register_impl` instead.
                 pub fn register_nondeterministic_impl<F, Ret, #(#arg_name,)*>(
-                    conn: &SqliteConnection,
+                    conn: &mut SqliteConnection,
                     mut f: F,
                 ) -> QueryResult<()>
                 where

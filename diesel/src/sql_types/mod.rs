@@ -418,7 +418,7 @@ pub trait HasSqlType<ST>: TypeMetadata {
     ///
     /// This method may use `lookup` to do dynamic runtime lookup. Implementors
     /// of this method should not do dynamic lookup unless absolutely necessary
-    fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata;
+    fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata;
 }
 
 /// Information about how a backend stores metadata about given SQL types

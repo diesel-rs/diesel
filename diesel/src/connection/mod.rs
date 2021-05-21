@@ -24,22 +24,23 @@ pub trait SimpleConnection {
     ///
     /// This function is used to execute migrations,
     /// which may contain more than one SQL statement.
-    fn batch_execute(&self, query: &str) -> QueryResult<()>;
+    fn batch_execute(&mut self, query: &str) -> QueryResult<()>;
 }
 
 /// A connection to a database
-pub trait Connection: SimpleConnection + Send {
+pub trait Connection: SimpleConnection + Sized + Send {
     /// The backend this type connects to
     type Backend: Backend;
+
+    #[doc(hidden)]
+    type TransactionManager: TransactionManager<Self>;
 
     /// Establishes a new connection to the database
     ///
     /// The argument to this method and the method's behavior varies by backend.
     /// See the documentation for that backend's connection class
     /// for details about what it accepts and how it behaves.
-    fn establish(database_url: &str) -> ConnectionResult<Self>
-    where
-        Self: Sized;
+    fn establish(database_url: &str) -> ConnectionResult<Self>;
 
     /// Executes the given function inside of a database transaction
     ///
@@ -69,24 +70,24 @@ pub trait Connection: SimpleConnection + Send {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let conn = establish_connection();
-    /// conn.transaction::<_, Error, _>(|| {
+    /// #     let conn = &mut establish_connection();
+    /// conn.transaction::<_, Error, _>(|conn| {
     ///     diesel::insert_into(users)
     ///         .values(name.eq("Ruby"))
-    ///         .execute(&conn)?;
+    ///         .execute(conn)?;
     ///
-    ///     let all_names = users.select(name).load::<String>(&conn)?;
+    ///     let all_names = users.select(name).load::<String>(conn)?;
     ///     assert_eq!(vec!["Sean", "Tess", "Ruby"], all_names);
     ///
     ///     Ok(())
     /// })?;
     ///
-    /// conn.transaction::<(), _, _>(|| {
+    /// conn.transaction::<(), _, _>(|conn| {
     ///     diesel::insert_into(users)
     ///         .values(name.eq("Pascal"))
-    ///         .execute(&conn)?;
+    ///         .execute(conn)?;
     ///
-    ///     let all_names = users.select(name).load::<String>(&conn)?;
+    ///     let all_names = users.select(name).load::<String>(conn)?;
     ///     assert_eq!(vec!["Sean", "Tess", "Ruby", "Pascal"], all_names);
     ///
     ///     // If we want to roll back the transaction, but don't have an
@@ -94,26 +95,24 @@ pub trait Connection: SimpleConnection + Send {
     ///     Err(Error::RollbackTransaction)
     /// });
     ///
-    /// let all_names = users.select(name).load::<String>(&conn)?;
+    /// let all_names = users.select(name).load::<String>(conn)?;
     /// assert_eq!(vec!["Sean", "Tess", "Ruby"], all_names);
     /// #     Ok(())
     /// # }
     /// ```
-    fn transaction<T, E, F>(&self, f: F) -> Result<T, E>
+    fn transaction<T, E, F>(&mut self, f: F) -> Result<T, E>
     where
-        Self: Sized,
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut Self) -> Result<T, E>,
         E: From<Error>,
     {
-        let transaction_manager = self.transaction_manager();
-        transaction_manager.begin_transaction(self)?;
-        match f() {
+        Self::TransactionManager::begin_transaction(self)?;
+        match f(&mut *self) {
             Ok(value) => {
-                transaction_manager.commit_transaction(self)?;
+                Self::TransactionManager::commit_transaction(self)?;
                 Ok(value)
             }
             Err(e) => {
-                transaction_manager.rollback_transaction(self)?;
+                Self::TransactionManager::rollback_transaction(self)?;
                 Err(e)
             }
         }
@@ -121,13 +120,9 @@ pub trait Connection: SimpleConnection + Send {
 
     /// Creates a transaction that will never be committed. This is useful for
     /// tests. Panics if called while inside of a transaction.
-    fn begin_test_transaction(&self) -> QueryResult<()>
-    where
-        Self: Sized,
-    {
-        let transaction_manager = self.transaction_manager();
-        assert_eq!(transaction_manager.get_transaction_depth(), 0);
-        transaction_manager.begin_transaction(self)
+    fn begin_test_transaction(&mut self) -> QueryResult<()> {
+        assert_eq!(Self::TransactionManager::get_transaction_depth(self), 0);
+        Self::TransactionManager::begin_transaction(self)
     }
 
     /// Executes the given function inside a transaction, but does not commit
@@ -145,45 +140,43 @@ pub trait Connection: SimpleConnection + Send {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let conn = establish_connection();
-    /// conn.test_transaction::<_, Error, _>(|| {
+    /// #     let conn = &mut establish_connection();
+    /// conn.test_transaction::<_, Error, _>(|conn| {
     ///     diesel::insert_into(users)
     ///         .values(name.eq("Ruby"))
-    ///         .execute(&conn)?;
+    ///         .execute(conn)?;
     ///
-    ///     let all_names = users.select(name).load::<String>(&conn)?;
+    ///     let all_names = users.select(name).load::<String>(conn)?;
     ///     assert_eq!(vec!["Sean", "Tess", "Ruby"], all_names);
     ///
     ///     Ok(())
     /// });
     ///
     /// // Even though we returned `Ok`, the transaction wasn't committed.
-    /// let all_names = users.select(name).load::<String>(&conn)?;
+    /// let all_names = users.select(name).load::<String>(conn)?;
     /// assert_eq!(vec!["Sean", "Tess"], all_names);
     /// #     Ok(())
     /// # }
     /// ```
-    fn test_transaction<T, E, F>(&self, f: F) -> T
+    fn test_transaction<T, E, F>(&mut self, f: F) -> T
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut Self) -> Result<T, E>,
         E: Debug,
-        Self: Sized,
     {
         let mut user_result = None;
-        let _ = self.transaction::<(), _, _>(|| {
-            user_result = f().ok();
+        let _ = self.transaction::<(), _, _>(|conn| {
+            user_result = f(conn).ok();
             Err(Error::RollbackTransaction)
         });
         user_result.expect("Transaction did not succeed")
     }
 
     #[doc(hidden)]
-    fn execute(&self, query: &str) -> QueryResult<usize>;
+    fn execute(&mut self, query: &str) -> QueryResult<usize>;
 
     #[doc(hidden)]
-    fn load<T, U, ST>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U, ST>(&mut self, source: T) -> QueryResult<Vec<U>>
     where
-        Self: Sized,
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         T::SqlType: CompatibleType<U, Self::Backend, SqlType = ST>,
@@ -191,15 +184,14 @@ pub trait Connection: SimpleConnection + Send {
         Self::Backend: QueryMetadata<T::SqlType>;
 
     #[doc(hidden)]
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
-        Self: Sized,
         T: QueryFragment<Self::Backend> + QueryId;
 
     #[doc(hidden)]
-    fn transaction_manager(&self) -> &dyn TransactionManager<Self>
-    where
-        Self: Sized;
+    fn transaction_state(
+        &mut self,
+    ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData;
 }
 
 /// A variant of the [`Connection`](trait.Connection.html) trait that is
@@ -210,7 +202,7 @@ pub trait Connection: SimpleConnection + Send {
 /// this trait won't help you much. Normally you should only
 /// need to use this trait if you are interacting with a connection
 /// passed to a [`Migration`](../migration/trait.Migration.html)
-pub trait BoxableConnection<DB: Backend>: Connection<Backend = DB> + std::any::Any {
+pub trait BoxableConnection<DB: Backend>: SimpleConnection + std::any::Any {
     #[doc(hidden)]
     fn as_any(&self) -> &dyn std::any::Any;
 }

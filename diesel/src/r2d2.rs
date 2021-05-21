@@ -77,26 +77,26 @@ impl ::std::error::Error for Error {}
 /// A trait indicating a connection could be used inside a r2d2 pool
 pub trait R2D2Connection: Connection {
     /// Check if a connection is still valid
-    fn ping(&self) -> QueryResult<()>;
+    fn ping(&mut self) -> QueryResult<()>;
 }
 
 #[cfg(feature = "postgres")]
 impl R2D2Connection for crate::pg::PgConnection {
-    fn ping(&self) -> QueryResult<()> {
+    fn ping(&mut self) -> QueryResult<()> {
         self.execute("SELECT 1").map(|_| ())
     }
 }
 
 #[cfg(feature = "mysql")]
 impl R2D2Connection for crate::mysql::MysqlConnection {
-    fn ping(&self) -> QueryResult<()> {
+    fn ping(&mut self) -> QueryResult<()> {
         self.execute("SELECT 1").map(|_| ())
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl R2D2Connection for crate::sqlite::SqliteConnection {
-    fn ping(&self) -> QueryResult<()> {
+    fn ping(&mut self) -> QueryResult<()> {
         self.execute("SELECT 1").map(|_| ())
     }
 }
@@ -126,8 +126,8 @@ where
     M: ManageConnection,
     M::Connection: R2D2Connection + Send + 'static,
 {
-    fn batch_execute(&self, query: &str) -> QueryResult<()> {
-        (&**self).batch_execute(query)
+    fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
+        (&mut **self).batch_execute(query)
     }
 }
 
@@ -137,6 +137,8 @@ where
     M::Connection: Connection + R2D2Connection + Send + 'static,
 {
     type Backend = <M::Connection as Connection>::Backend;
+    type TransactionManager =
+        PoolTransactionManager<<M::Connection as Connection>::TransactionManager>;
 
     fn establish(_: &str) -> ConnectionResult<Self> {
         Err(ConnectionError::BadConnection(String::from(
@@ -144,11 +146,11 @@ where
         )))
     }
 
-    fn execute(&self, query: &str) -> QueryResult<usize> {
-        (&**self).execute(query)
+    fn execute(&mut self, query: &str) -> QueryResult<usize> {
+        (&mut **self).execute(query)
     }
 
-    fn load<T, U, ST>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U, ST>(&mut self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
@@ -156,44 +158,53 @@ where
         U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        (&**self).load(source)
+        (&mut **self).load(source)
     }
 
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        (&**self).execute_returning_count(source)
+        (&mut **self).execute_returning_count(source)
     }
 
-    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
-        self
+    fn transaction_state(
+        &mut self,
+    ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
+        (&mut **self).transaction_state()
+    }
+
+    fn begin_test_transaction(&mut self) -> QueryResult<()> {
+        (&mut **self).begin_test_transaction()
     }
 }
 
-impl<M> TransactionManager<PooledConnection<M>> for PooledConnection<M>
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub struct PoolTransactionManager<T>(std::marker::PhantomData<T>);
+
+impl<M, T> TransactionManager<PooledConnection<M>> for PoolTransactionManager<T>
 where
     M: ManageConnection,
-    M::Connection: Connection + R2D2Connection,
+    M::Connection: Connection<TransactionManager = T> + R2D2Connection,
+    T: TransactionManager<M::Connection>,
 {
-    fn begin_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
-        let conn = &**self;
-        conn.transaction_manager().begin_transaction(conn)
+    type TransactionStateData = T::TransactionStateData;
+
+    fn begin_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
+        T::begin_transaction(&mut **conn)
     }
 
-    fn rollback_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
-        let conn = &**self;
-        conn.transaction_manager().rollback_transaction(conn)
+    fn rollback_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
+        T::begin_transaction(&mut **conn)
     }
 
-    fn commit_transaction(&self, _conn: &PooledConnection<M>) -> QueryResult<()> {
-        let conn = &**self;
-        conn.transaction_manager().commit_transaction(conn)
+    fn commit_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
+        T::commit_transaction(&mut **conn)
     }
 
-    fn get_transaction_depth(&self) -> u32 {
-        let conn = &**self;
-        conn.transaction_manager().get_transaction_depth()
+    fn get_transaction_depth(conn: &mut PooledConnection<M>) -> u32 {
+        T::get_transaction_depth(&mut **conn)
     }
 }
 
@@ -203,8 +214,8 @@ where
     M::Connection: crate::migration::MigrationConnection,
     Self: Connection,
 {
-    fn setup(&self) -> QueryResult<usize> {
-        (&**self).setup()
+    fn setup(&mut self) -> QueryResult<usize> {
+        (&mut **self).setup()
     }
 }
 
@@ -215,8 +226,8 @@ where
     M::Connection: crate::query_dsl::UpdateAndFetchResults<Changes, Output>,
     Self: Connection,
 {
-    fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
-        (&**self).update_and_fetch(changeset)
+    fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
+        (&mut **self).update_and_fetch(changeset)
     }
 }
 
@@ -282,9 +293,9 @@ mod tests {
             .test_on_check_out(true)
             .build(manager)
             .unwrap();
-        let conn = pool.get().unwrap();
+        let mut conn = pool.get().unwrap();
 
         let query = select("foo".into_sql::<Text>());
-        assert_eq!("foo", query.get_result::<String>(&conn).unwrap());
+        assert_eq!("foo", query.get_result::<String>(&mut conn).unwrap());
     }
 }

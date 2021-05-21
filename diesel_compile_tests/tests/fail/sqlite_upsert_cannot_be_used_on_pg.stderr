@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `diesel::query_builder::insert_statement::Replace: QueryFragment<Pg>` is not satisfied
   --> $DIR/sqlite_upsert_cannot_be_used_on_pg.rs:21:10
    |
-21 |         .execute(&connection);
+21 |         .execute(&mut connection);
    |          ^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::insert_statement::Replace`
    |
    = help: the following implementations were found:

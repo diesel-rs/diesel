@@ -16,9 +16,9 @@ table! {
 }
 
 fn main() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     // Sanity check, no error
-    users::table.filter(exists(posts::table.select(posts::id))).execute(&conn).unwrap();
+    users::table.filter(exists(posts::table.select(posts::id))).execute(&mut conn).unwrap();
 
     users::table.filter(exists(true));
     users::table.filter(exists(users::id));

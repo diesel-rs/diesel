@@ -1,7 +1,7 @@
 error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == Pg`
  --> $DIR/array_only_usable_with_pg.rs:8:25
   |
-8 |     select(array((1,))).get_result::<Vec<i32>>(&connection);
+8 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
   |                         ^^^^^^^^^^ expected struct `Sqlite`, found struct `Pg`
   |
   = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, Vec<i32>>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`
@@ -9,7 +9,7 @@ error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Conn
 error[E0277]: the trait bound `Sqlite: HasSqlType<Array<diesel::sql_types::Integer>>` is not satisfied
  --> $DIR/array_only_usable_with_pg.rs:8:25
   |
-8 |     select(array((1,))).get_result::<Vec<i32>>(&connection);
+8 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
   |                         ^^^^^^^^^^ the trait `HasSqlType<Array<diesel::sql_types::Integer>>` is not implemented for `Sqlite`
   |
   = help: the following implementations were found:
@@ -24,7 +24,7 @@ error[E0277]: the trait bound `Sqlite: HasSqlType<Array<diesel::sql_types::Integ
 error[E0271]: type mismatch resolving `<diesel::MysqlConnection as diesel::Connection>::Backend == Pg`
   --> $DIR/array_only_usable_with_pg.rs:11:25
    |
-11 |     select(array((1,))).get_result::<Vec<i32>>(&connection);
+11 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
    |                         ^^^^^^^^^^ expected struct `Mysql`, found struct `Pg`
    |
    = note: required because of the requirements on the impl of `LoadQuery<diesel::MysqlConnection, Vec<i32>>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`
@@ -32,7 +32,7 @@ error[E0271]: type mismatch resolving `<diesel::MysqlConnection as diesel::Conne
 error[E0277]: the trait bound `Mysql: HasSqlType<Array<diesel::sql_types::Integer>>` is not satisfied
   --> $DIR/array_only_usable_with_pg.rs:11:25
    |
-11 |     select(array((1,))).get_result::<Vec<i32>>(&connection);
+11 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
    |                         ^^^^^^^^^^ the trait `HasSqlType<Array<diesel::sql_types::Integer>>` is not implemented for `Mysql`
    |
    = help: the following implementations were found:

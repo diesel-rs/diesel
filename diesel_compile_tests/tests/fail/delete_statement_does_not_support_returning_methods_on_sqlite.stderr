@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `Sqlite: SupportsReturningClause` is not satisfied
   --> $DIR/delete_statement_does_not_support_returning_methods_on_sqlite.rs:17:10
    |
-17 |         .get_result(&connection);
+17 |         .get_result(&mut connection);
    |          ^^^^^^^^^^ the trait `SupportsReturningClause` is not implemented for `Sqlite`
    |
    = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::query_builder::returning_clause::ReturningClause<(columns::id, columns::name)>`
@@ -12,7 +12,7 @@ error[E0277]: the trait bound `Sqlite: SupportsReturningClause` is not satisfied
 error[E0277]: the trait bound `Sqlite: SupportsReturningClause` is not satisfied
   --> $DIR/delete_statement_does_not_support_returning_methods_on_sqlite.rs:21:10
    |
-21 |         .get_result(&connection);
+21 |         .get_result(&mut connection);
    |          ^^^^^^^^^^ the trait `SupportsReturningClause` is not implemented for `Sqlite`
    |
    = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::query_builder::returning_clause::ReturningClause<columns::name>`

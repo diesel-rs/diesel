@@ -67,7 +67,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
     /// #     use self::users::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// connection.execute("CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
     ///     hair_color VARCHAR(255) NOT NULL DEFAULT 'Green'
@@ -75,9 +75,9 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     ///
     /// insert_into(users)
     ///     .default_values()
-    ///     .execute(&connection)
+    ///     .execute(connection)
     ///     .unwrap();
-    /// let inserted_user = users.first(&connection)?;
+    /// let inserted_user = users.first(connection)?;
     /// let expected_data = (String::from("Sean"), String::from("Green"));
     ///
     /// assert_eq!(expected_data, inserted_user);
@@ -213,8 +213,8 @@ where
     T: Copy,
     Op: Copy,
 {
-    fn execute(query: Self, conn: &C) -> QueryResult<usize> {
-        conn.transaction(|| {
+    fn execute(query: Self, conn: &mut C) -> QueryResult<usize> {
+        conn.transaction(|conn| {
             let mut result = 0;
             for record in query.records.records {
                 result += InsertStatement::new(
@@ -295,8 +295,8 @@ where
     T: Copy,
     Op: Copy,
 {
-    fn execute(query: Self, conn: &C) -> QueryResult<usize> {
-        conn.transaction(|| {
+    fn execute(query: Self, conn: &mut C) -> QueryResult<usize> {
+        conn.transaction(|conn| {
             let mut result = 0;
             for value in query.records.values {
                 result +=
@@ -403,11 +403,11 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let inserted_names = diesel::insert_into(users)
     ///     .values(&vec![name.eq("Timmy"), name.eq("Jimmy")])
     ///     .returning(name)
-    ///     .get_results(&connection);
+    ///     .get_results(connection);
     /// assert_eq!(Ok(vec!["Timmy".to_string(), "Jimmy".to_string()]), inserted_names);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]

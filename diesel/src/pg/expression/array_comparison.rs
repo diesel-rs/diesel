@@ -18,12 +18,12 @@ use crate::sql_types::{Array, SqlType};
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
 /// let sean = (1, "Sean".to_string());
 /// let jim = (3, "Jim".to_string());
 /// let data = users.filter(name.eq(any(vec!["Sean", "Jim"])));
-/// assert_eq!(Ok(vec![sean, jim]), data.load(&connection));
+/// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
 /// # }
 /// ```
 pub fn any<ST, T>(vals: T) -> Any<T::Expression>
@@ -46,11 +46,11 @@ where
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
 /// let tess = (2, "Tess".to_string());
 /// let data = users.filter(name.ne(all(vec!["Sean", "Jim"])));
-/// assert_eq!(Ok(vec![tess]), data.load(&connection));
+/// assert_eq!(Ok(vec![tess]), data.load(connection));
 /// # }
 /// ```
 pub fn all<ST, T>(vals: T) -> All<T::Expression>

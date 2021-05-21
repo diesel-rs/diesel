@@ -29,7 +29,7 @@ use crate::Table;
 /// * The `Output` generic parameter represents the type of the response.
 pub trait UpdateAndFetchResults<Changes, Output>: Connection {
     /// See the traits documentation.
-    fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output>;
+    fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output>;
 }
 
 #[cfg(feature = "postgres")]
@@ -44,7 +44,7 @@ where
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
-    fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
+    fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
         crate::update(changeset).set(changeset).get_result(self)
     }
 }
@@ -64,7 +64,7 @@ where
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
-    fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
+    fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
         crate::update(changeset).set(changeset).execute(self)?;
         Changes::table().find(changeset.id()).get_result(self)
     }
@@ -85,7 +85,7 @@ where
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
 {
-    fn update_and_fetch(&self, changeset: Changes) -> QueryResult<Output> {
+    fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
         crate::update(changeset).set(changeset).execute(self)?;
         Changes::table().find(changeset.id()).get_result(self)
     }
@@ -125,9 +125,9 @@ where
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use self::animals::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let form = AnimalForm { id: 2, name: "Super scary" };
-/// let changed_animal = form.save_changes(&connection)?;
+/// let changed_animal = form.save_changes(connection)?;
 /// let expected_animal = Animal {
 ///     id: 2,
 ///     species: String::from("spider"),
@@ -140,7 +140,7 @@ where
 /// ```
 pub trait SaveChangesDsl<Conn> {
     /// See the trait documentation.
-    fn save_changes<T>(self, connection: &Conn) -> QueryResult<T>
+    fn save_changes<T>(self, connection: &mut Conn) -> QueryResult<T>
     where
         Self: Sized,
         Conn: UpdateAndFetchResults<Self, T>,

@@ -1,7 +1,7 @@
 error[E0277]: the trait bound `i32: FromSql<diesel::sql_types::Text, _>` is not satisfied
   --> $DIR/select_carries_correct_result_type_info.rs:19:27
    |
-19 |     let ids = select_name.load::<i32>(&connection);
+19 |     let ids = select_name.load::<i32>(&mut connection);
    |                           ^^^^ the trait `FromSql<diesel::sql_types::Text, _>` is not implemented for `i32`
    |
    = help: the following implementations were found:
@@ -16,7 +16,7 @@ error[E0277]: the trait bound `i32: FromSql<diesel::sql_types::Text, _>` is not 
 error[E0277]: the trait bound `*const str: FromSql<diesel::sql_types::Integer, _>` is not satisfied
   --> $DIR/select_carries_correct_result_type_info.rs:20:27
    |
-20 |     let names = select_id.load::<String>(&connection);
+20 |     let names = select_id.load::<String>(&mut connection);
    |                           ^^^^ the trait `FromSql<diesel::sql_types::Integer, _>` is not implemented for `*const str`
    |
    = help: the following implementations were found:

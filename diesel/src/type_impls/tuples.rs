@@ -35,7 +35,7 @@ macro_rules! tuple_impls {
                 $(__DB: HasSqlType<$T>),+,
                 __DB: Backend,
             {
-                fn metadata(_: &__DB::MetadataLookup) -> __DB::TypeMetadata {
+                fn metadata(_: &mut __DB::MetadataLookup) -> __DB::TypeMetadata {
                     unreachable!("Tuples should never implement `ToSql` directly");
                 }
             }
@@ -303,7 +303,7 @@ macro_rules! tuple_impls {
             where __DB: Backend,
                  $(__DB: QueryMetadata<$T>,)*
             {
-                fn row_metadata(lookup: &Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
+                fn row_metadata(lookup: &mut Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
                     $(
                         <__DB as QueryMetadata<$T>>::row_metadata(lookup, row);
                     )*
@@ -314,7 +314,7 @@ macro_rules! tuple_impls {
             where __DB: Backend,
                   $(__DB: QueryMetadata<$T>,)*
             {
-                fn row_metadata(lookup: &Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
+                fn row_metadata(lookup: &mut Self::MetadataLookup, row: &mut Vec<Option<__DB::TypeMetadata>>) {
                     $(
                         <__DB as QueryMetadata<$T>>::row_metadata(lookup, row);
                     )*

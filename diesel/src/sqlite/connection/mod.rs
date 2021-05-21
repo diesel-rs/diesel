@@ -36,7 +36,7 @@ use crate::sqlite::Sqlite;
 pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: RawConnection,
-    transaction_manager: AnsiTransactionManager,
+    transaction_state: AnsiTransactionManager,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -45,13 +45,14 @@ pub struct SqliteConnection {
 unsafe impl Send for SqliteConnection {}
 
 impl SimpleConnection for SqliteConnection {
-    fn batch_execute(&self, query: &str) -> QueryResult<()> {
+    fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
         self.raw_connection.exec(query)
     }
 }
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
+    type TransactionManager = AnsiTransactionManager;
 
     /// Establish a connection to the database specified by `database_url`.
     ///
@@ -66,7 +67,7 @@ impl Connection for SqliteConnection {
         let conn = Self {
             statement_cache: StatementCache::new(),
             raw_connection,
-            transaction_manager: AnsiTransactionManager::new(),
+            transaction_state: AnsiTransactionManager::default(),
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
@@ -74,13 +75,13 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn execute(&self, query: &str) -> QueryResult<usize> {
+    fn execute(&mut self, query: &str) -> QueryResult<usize> {
         self.batch_execute(query)?;
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
     #[doc(hidden)]
-    fn load<T, U, ST>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<T, U, ST>(&mut self, source: T) -> QueryResult<Vec<U>>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
@@ -95,19 +96,23 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let mut statement = self.prepare_query(source)?;
-        let mut statement_use = StatementUse::new(&mut statement, false);
-        statement_use.run()?;
+        {
+            let mut statement = self.prepare_query(source)?;
+            let mut statement_use = StatementUse::new(&mut statement, false);
+            statement_use.run()?;
+        }
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
-    #[doc(hidden)]
-    fn transaction_manager(&self) -> &dyn TransactionManager<Self> {
-        &self.transaction_manager
+    fn transaction_state(&mut self) -> &mut AnsiTransactionManager
+    where
+        Self: Sized,
+    {
+        &mut self.transaction_state
     }
 }
 
@@ -126,16 +131,16 @@ impl SqliteConnection {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
-    /// conn.immediate_transaction(|| {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.immediate_transaction(|conn| {
     ///     // Do stuff in a transaction
     ///     Ok(())
     /// })
     /// # }
     /// ```
-    pub fn immediate_transaction<T, E, F>(&self, f: F) -> Result<T, E>
+    pub fn immediate_transaction<T, E, F>(&mut self, f: F) -> Result<T, E>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut Self) -> Result<T, E>,
         E: From<Error>,
     {
         self.transaction_sql(f, "BEGIN IMMEDIATE")
@@ -155,49 +160,47 @@ impl SqliteConnection {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
-    /// conn.exclusive_transaction(|| {
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    /// conn.exclusive_transaction(|conn| {
     ///     // Do stuff in a transaction
     ///     Ok(())
     /// })
     /// # }
     /// ```
-    pub fn exclusive_transaction<T, E, F>(&self, f: F) -> Result<T, E>
+    pub fn exclusive_transaction<T, E, F>(&mut self, f: F) -> Result<T, E>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut Self) -> Result<T, E>,
         E: From<Error>,
     {
         self.transaction_sql(f, "BEGIN EXCLUSIVE")
     }
 
-    fn transaction_sql<T, E, F>(&self, f: F, sql: &str) -> Result<T, E>
+    fn transaction_sql<T, E, F>(&mut self, f: F, sql: &str) -> Result<T, E>
     where
-        F: FnOnce() -> Result<T, E>,
+        F: FnOnce(&mut Self) -> Result<T, E>,
         E: From<Error>,
     {
-        let transaction_manager = &self.transaction_manager;
-
-        transaction_manager.begin_transaction_sql(self, sql)?;
-        match f() {
+        AnsiTransactionManager::begin_transaction_sql(&mut *self, sql)?;
+        match f(&mut *self) {
             Ok(value) => {
-                transaction_manager.commit_transaction(self)?;
+                AnsiTransactionManager::commit_transaction(&mut *self)?;
                 Ok(value)
             }
             Err(e) => {
-                transaction_manager.rollback_transaction(self)?;
+                AnsiTransactionManager::rollback_transaction(&mut *self)?;
                 Err(e)
             }
         }
     }
 
     fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
-        &self,
+        &mut self,
         source: &T,
     ) -> QueryResult<MaybeCached<Statement>> {
         let mut statement = self.cached_prepared_statement(source)?;
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
-        source.collect_binds(&mut bind_collector, &())?;
+        source.collect_binds(&mut bind_collector, &mut ())?;
         let metadata = bind_collector.metadata;
         let binds = bind_collector.binds;
         for (tpe, value) in metadata.into_iter().zip(binds) {
@@ -208,17 +211,17 @@ impl SqliteConnection {
     }
 
     fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(
-        &self,
+        &mut self,
         source: &T,
     ) -> QueryResult<MaybeCached<Statement>> {
-        self.statement_cache.cached_statement(source, &[], |sql| {
-            Statement::prepare(&self.raw_connection, sql)
-        })
+        let raw_connection = &self.raw_connection;
+        let cache = &mut self.statement_cache;
+        cache.cached_statement(source, &[], |sql| Statement::prepare(raw_connection, sql))
     }
 
     #[doc(hidden)]
     pub fn register_sql_function<ArgsSqlType, RetSqlType, Args, Ret, F>(
-        &self,
+        &mut self,
         fn_name: &str,
         deterministic: bool,
         mut f: F,
@@ -239,7 +242,7 @@ impl SqliteConnection {
 
     #[doc(hidden)]
     pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
-        &self,
+        &mut self,
         fn_name: &str,
     ) -> QueryResult<()>
     where
@@ -278,7 +281,7 @@ impl SqliteConnection {
     /// # }
     /// #
     /// # fn run_test() -> QueryResult<()> {
-    /// #     let conn = SqliteConnection::establish(":memory:").unwrap();
+    /// #     let mut conn = SqliteConnection::establish(":memory:").unwrap();
     /// // sqlite NOCASE only works for ASCII characters,
     /// // this collation allows handling UTF-8 (barring locale differences)
     /// conn.register_collation("RUSTNOCASE", |rhs, lhs| {
@@ -286,7 +289,7 @@ impl SqliteConnection {
     /// })
     /// # }
     /// ```
-    pub fn register_collation<F>(&self, collation_name: &str, collation: F) -> QueryResult<()>
+    pub fn register_collation<F>(&mut self, collation_name: &str, collation: F) -> QueryResult<()>
     where
         F: Fn(&str, &str) -> std::cmp::Ordering + Send + 'static + std::panic::UnwindSafe,
     {
@@ -326,50 +329,50 @@ mod tests {
 
     #[test]
     fn prepared_statements_are_cached_when_run() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let query = crate::select(1.into_sql::<Integer>());
 
-        assert_eq!(Ok(1), query.get_result(&connection));
-        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok(1), query.get_result(connection));
+        assert_eq!(Ok(1), query.get_result(connection));
         assert_eq!(1, connection.statement_cache.len());
     }
 
     #[test]
     fn sql_literal_nodes_are_not_cached() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let query = crate::select(sql::<Integer>("1"));
 
-        assert_eq!(Ok(1), query.get_result(&connection));
+        assert_eq!(Ok(1), query.get_result(connection));
         assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_containing_sql_literal_nodes_are_not_cached() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let one_as_expr = 1.into_sql::<Integer>();
         let query = crate::select(one_as_expr.eq(sql::<Integer>("1")));
 
-        assert_eq!(Ok(true), query.get_result(&connection));
+        assert_eq!(Ok(true), query.get_result(connection));
         assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_containing_in_with_vec_are_not_cached() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let one_as_expr = 1.into_sql::<Integer>();
         let query = crate::select(one_as_expr.eq_any(vec![1, 2, 3]));
 
-        assert_eq!(Ok(true), query.get_result(&connection));
+        assert_eq!(Ok(true), query.get_result(connection));
         assert_eq!(0, connection.statement_cache.len());
     }
 
     #[test]
     fn queries_containing_in_with_subselect_are_cached() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let one_as_expr = 1.into_sql::<Integer>();
         let query = crate::select(one_as_expr.eq_any(crate::select(one_as_expr)));
 
-        assert_eq!(Ok(true), query.get_result(&connection));
+        assert_eq!(Ok(true), query.get_result(connection));
         assert_eq!(1, connection.statement_cache.len());
     }
 
@@ -378,8 +381,8 @@ mod tests {
 
     #[test]
     fn register_custom_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        fun_case::register_impl(&connection, |x: String| {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        fun_case::register_impl(connection, |x: String| {
             x.chars()
                 .enumerate()
                 .map(|(i, c)| {
@@ -394,7 +397,7 @@ mod tests {
         .unwrap();
 
         let mapped_string = crate::select(fun_case("foobar"))
-            .get_result::<String>(&connection)
+            .get_result::<String>(connection)
             .unwrap();
         assert_eq!("fOoBaR", mapped_string);
     }
@@ -403,10 +406,10 @@ mod tests {
 
     #[test]
     fn register_multiarg_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
-        my_add::register_impl(&connection, |x: i32, y: i32| x + y).unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        my_add::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
 
-        let added = crate::select(my_add(1, 2)).get_result::<i32>(&connection);
+        let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
         assert_eq!(Ok(3), added);
     }
 
@@ -414,16 +417,16 @@ mod tests {
 
     #[test]
     fn register_nondeterministic_function() {
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let mut y = 0;
-        add_counter::register_nondeterministic_impl(&connection, move |x: i32| {
+        add_counter::register_nondeterministic_impl(connection, move |x: i32| {
             y += 1;
             x + y
         })
         .unwrap();
 
         let added = crate::select((add_counter(1), add_counter(1), add_counter(1)))
-            .get_result::<(i32, i32, i32)>(&connection);
+            .get_result::<(i32, i32, i32)>(connection);
         assert_eq!(Ok((2, 3, 4)), added);
     }
 
@@ -462,7 +465,7 @@ mod tests {
     fn register_aggregate_function() {
         use self::my_sum_example::dsl::*;
 
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         connection
             .execute(
                 "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
@@ -472,11 +475,11 @@ mod tests {
             .execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
             .unwrap();
 
-        my_sum::register_impl::<MySum, _>(&connection).unwrap();
+        my_sum::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<i32>(&connection);
+            .get_result::<i32>(connection);
         assert_eq!(Ok(6), result);
     }
 
@@ -484,18 +487,18 @@ mod tests {
     fn register_aggregate_function_returns_finalize_default_on_empty_set() {
         use self::my_sum_example::dsl::*;
 
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         connection
             .execute(
                 "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
             )
             .unwrap();
 
-        my_sum::register_impl::<MySum, _>(&connection).unwrap();
+        my_sum::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
-            .get_result::<i32>(&connection);
+            .get_result::<i32>(connection);
         assert_eq!(Ok(0), result);
     }
 
@@ -546,7 +549,7 @@ mod tests {
     fn register_aggregate_multiarg_function() {
         use self::range_max_example::dsl::*;
 
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         connection
             .execute(
                 r#"CREATE TABLE range_max_example (
@@ -559,10 +562,10 @@ mod tests {
             .unwrap();
         connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)").unwrap();
 
-        range_max::register_impl::<RangeMax<i32>, _, _, _>(&connection).unwrap();
+        range_max::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
         let result = range_max_example
             .select(range_max(value1, value2, value3))
-            .get_result::<Option<i32>>(&connection)
+            .get_result::<Option<i32>>(connection)
             .unwrap();
         assert_eq!(Some(3), result);
     }
@@ -578,7 +581,7 @@ mod tests {
     fn register_collation_function() {
         use self::my_collation_example::dsl::*;
 
-        let connection = SqliteConnection::establish(":memory:").unwrap();
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
 
         connection
             .register_collation("RUSTNOCASE", |rhs, lhs| {
@@ -598,7 +601,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("foo"))
             .select(value)
-            .load::<String>(&connection);
+            .load::<String>(connection);
         assert_eq!(
             Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
             result.as_ref().map(|vec| vec.as_ref())
@@ -607,7 +610,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("FOO"))
             .select(value)
-            .load::<String>(&connection);
+            .load::<String>(connection);
         assert_eq!(
             Ok(&["foo".to_owned(), "FOo".to_owned()][..]),
             result.as_ref().map(|vec| vec.as_ref())
@@ -616,7 +619,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("f00"))
             .select(value)
-            .load::<String>(&connection);
+            .load::<String>(connection);
         assert_eq!(
             Ok(&["f00".to_owned()][..]),
             result.as_ref().map(|vec| vec.as_ref())
@@ -625,7 +628,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("F00"))
             .select(value)
-            .load::<String>(&connection);
+            .load::<String>(connection);
         assert_eq!(
             Ok(&["f00".to_owned()][..]),
             result.as_ref().map(|vec| vec.as_ref())
@@ -634,7 +637,7 @@ mod tests {
         let result = my_collation_example
             .filter(value.eq("oof"))
             .select(value)
-            .load::<String>(&connection);
+            .load::<String>(connection);
         assert_eq!(Ok(&[][..]), result.as_ref().map(|vec| vec.as_ref()));
     }
 }
