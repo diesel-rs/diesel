@@ -3,9 +3,12 @@ use crate::query_builder::*;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::result::QueryResult;
 
+
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxxxxxxxxx
 pub struct NoDistinctClause;
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxxxxxxxxxx
 pub struct DistinctClause;
 
 impl<DB: Backend> QueryFragment<DB> for NoDistinctClause {

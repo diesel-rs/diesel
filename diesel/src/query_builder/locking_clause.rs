@@ -3,6 +3,7 @@ use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxxxxxxx
 pub struct NoLockingClause;
 
 impl<DB: Backend> QueryFragment<DB> for NoLockingClause {
@@ -12,6 +13,7 @@ impl<DB: Backend> QueryFragment<DB> for NoLockingClause {
 }
 
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxxxx
 pub struct LockingClause<LockMode = ForUpdate, Modifier = NoModifier> {
     pub(crate) lock_mode: LockMode,
     modifier: Modifier,
@@ -38,24 +40,30 @@ impl<DB: Backend, L: QueryFragment<DB>, M: QueryFragment<DB>> QueryFragment<DB>
 // `LockMode` parameters
 // All the different types of row locks that can be acquired.
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxxxx
 pub struct ForUpdate;
-
+///xxxxx
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct ForNoKeyUpdate;
-
+///xxxxx
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct ForShare;
 
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxxx
 pub struct ForKeyShare;
 
 // Modifiers
 // To be used in conjunction with a lock mode.
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxx
 pub struct NoModifier;
 
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxx
 pub struct SkipLocked;
 
+
 #[derive(Debug, Clone, Copy, QueryId)]
+///xxxxx
 pub struct NoWait;

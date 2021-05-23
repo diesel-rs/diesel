@@ -21,7 +21,8 @@ mod group_by_clause;
 mod insert_statement;
 pub(crate) mod limit_clause;
 pub(crate) mod limit_offset_clause;
-pub(crate) mod locking_clause;
+///xxxxxx
+pub mod locking_clause;
 #[doc(hidden)]
 pub mod nodes;
 pub(crate) mod offset_clause;
