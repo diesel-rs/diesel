@@ -62,8 +62,6 @@ fn main() {
     }
 }
 
-// https://github.com/rust-lang-nursery/rust-clippy/issues/2927#issuecomment-405705595
-#[allow(clippy::similar_names)]
 fn run_migration_command(
     matches: &ArgMatches,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
