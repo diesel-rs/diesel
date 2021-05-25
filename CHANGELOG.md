@@ -62,6 +62,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Add support for HAVING clauses.
 
+* Added support for SQL functions without arguments for SQLite.
+
 ### Removed
 
 * All previously deprecated items have been removed.
