@@ -241,6 +241,21 @@ impl SqliteConnection {
     }
 
     #[doc(hidden)]
+    pub fn register_noarg_sql_function<RetSqlType, Ret, F>(
+        &self,
+        fn_name: &str,
+        deterministic: bool,
+        f: F,
+    ) -> QueryResult<()>
+    where
+        F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
+        Ret: ToSql<RetSqlType, Sqlite>,
+        Sqlite: HasSqlType<RetSqlType>,
+    {
+        functions::register_noargs(&self.raw_connection, fn_name, deterministic, f)
+    }
+
+    #[doc(hidden)]
     pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
         &mut self,
         fn_name: &str,
@@ -411,6 +426,26 @@ mod tests {
 
         let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
         assert_eq!(Ok(3), added);
+    }
+
+    sql_function!(fn answer() -> Integer);
+
+    #[test]
+    fn register_noarg_function() {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        answer::register_impl(&connection, || 42).unwrap();
+
+        let answer = crate::select(answer()).get_result::<i32>(connection);
+        assert_eq!(Ok(42), answer);
+    }
+
+    #[test]
+    fn register_nondeterministic_noarg_function() {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        answer::register_nondeterministic_impl(&connection, || 42).unwrap();
+
+        let answer = crate::select(answer()).get_result::<i32>(connection);
+        assert_eq!(Ok(42), answer);
     }
 
     sql_function!(fn add_counter(x: Integer) -> Integer);
