@@ -199,8 +199,7 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
         use self::users::dsl::*;
         let target = users
             .left_outer_join(posts::table)
-            .filter(hair_color.eq("black"))
-            .order(name.desc());
+            .filter(hair_color.eq("black"));
         target.load::<(User, Option<Post>)>(&mut conn).unwrap()
     })
 }
@@ -216,7 +215,6 @@ pub fn bench_medium_complex_query_boxed(b: &mut Bencher, size: usize) {
         let target = users
             .left_outer_join(posts::table)
             .filter(hair_color.eq("black"))
-            .order(name.desc())
             .into_boxed();
         target.load::<(User, Option<Post>)>(&mut conn).unwrap()
     })
