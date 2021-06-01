@@ -22,6 +22,7 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
+use crate::row::Row;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
 use crate::sqlite::Sqlite;
@@ -48,6 +49,11 @@ impl SimpleConnection for SqliteConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
         self.raw_connection.exec(query)
     }
+}
+
+impl<'a> IterableConnection<'a> for SqliteConnection {
+    type Cursor = StatementIterator<'a, 'a, (), ()>;
+    type Row = self::sqlite_value::SqliteRow<'a, 'a, 'a>;
 }
 
 impl Connection for SqliteConnection {
@@ -81,18 +87,23 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn load<T, U, ST>(&mut self, source: T) -> QueryResult<Vec<U>>
+    fn load<'a, T, ST>(
+        &mut self,
+        source: T,
+    ) -> QueryResult<<Self as IterableConnection<'a>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        T::SqlType: crate::query_dsl::load_dsl::CompatibleType<U, Sqlite, SqlType = ST>,
-        U: FromSqlRow<ST, Sqlite>,
         Self::Backend: QueryMetadata<T::SqlType>,
+        <Self as IterableConnection<'a>>::Cursor:
+            Iterator<Item = QueryResult<&'a <Self as IterableConnection<'a>>::Row>>,
+        for<'b> <Self as IterableConnection<'a>>::Row: Row<'b, Self::Backend>,
     {
-        let mut statement = self.prepare_query(&source.as_query())?;
-        let statement_use = StatementUse::new(&mut statement, true);
-        let iter = StatementIterator::<_, U>::new(statement_use);
-        iter.collect()
+        todo!()
+        // let mut statement = self.prepare_query(&source.as_query())?;
+        // let statement_use = StatementUse::new(&mut statement, true);
+        // let iter = StatementIterator::<_, U>::new(statement_use);
+        // iter.collect()
     }
 
     #[doc(hidden)]

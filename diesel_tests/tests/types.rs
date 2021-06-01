@@ -1241,10 +1241,11 @@ fn third_party_crates_can_add_new_types() {
     assert_eq!(70_000, query_single_value::<MyInt, i32>("70000"));
 }
 
-fn query_single_value<T, U: FromSqlRow<T, TestBackend>>(sql_str: &str) -> U
+fn query_single_value<T, U>(sql_str: &str) -> U
 where
+    U: FromSqlRow<T, TestBackend> + 'static,
     TestBackend: HasSqlType<T>,
-    T: QueryId + SingleValue + SqlType,
+    T: QueryId + SingleValue + SqlType + 'static,
 {
     use diesel::dsl::sql;
     let connection = &mut connection();

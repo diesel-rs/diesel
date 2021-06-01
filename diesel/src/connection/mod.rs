@@ -6,10 +6,8 @@ mod transaction_manager;
 use std::fmt::Debug;
 
 use crate::backend::Backend;
-use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
-use crate::query_dsl::load_dsl::CompatibleType;
 use crate::result::*;
 
 #[doc(hidden)]
@@ -27,8 +25,16 @@ pub trait SimpleConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()>;
 }
 
+pub trait IterableConnection<'a, DB: Backend> {
+    type Cursor: Iterator<Item = QueryResult<Self::Row>>;
+    type Row: crate::row::Row<'a, DB>;
+}
+
 /// A connection to a database
-pub trait Connection: SimpleConnection + Sized + Send {
+pub trait Connection: SimpleConnection + Sized + Send
+where
+    Self: for<'a> IterableConnection<'a, <Self as Connection>::Backend>,
+{
     /// The backend this type connects to
     type Backend: Backend;
 
@@ -177,12 +183,13 @@ pub trait Connection: SimpleConnection + Sized + Send {
     fn execute(&mut self, query: &str) -> QueryResult<usize>;
 
     #[doc(hidden)]
-    fn load<T, U, ST>(&mut self, source: T) -> QueryResult<Vec<U>>
+    fn load<'a, T>(
+        &'a mut self,
+        source: T,
+    ) -> QueryResult<<Self as IterableConnection<'a, Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        T::SqlType: CompatibleType<U, Self::Backend, SqlType = ST>,
-        U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>;
 
     #[doc(hidden)]

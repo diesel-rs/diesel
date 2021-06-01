@@ -1,4 +1,4 @@
-mod cursor;
+pub(crate) mod cursor;
 pub mod raw;
 #[doc(hidden)]
 pub mod result;
@@ -13,15 +13,12 @@ use self::raw::RawConnection;
 use self::result::PgResult;
 use self::stmt::Statement;
 use crate::connection::*;
-use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
 use crate::pg::{Pg, TransactionBuilder};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
-use crate::query_dsl::load_dsl::CompatibleType;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
-use crate::result::Error::DeserializationError;
 use crate::result::*;
 
 /// The connection string expected by `PgConnection::establish`
@@ -44,6 +41,11 @@ impl SimpleConnection for PgConnection {
         PgResult::new(inner_result?)?;
         Ok(())
     }
+}
+
+impl<'a> IterableConnection<'a, Pg> for PgConnection {
+    type Cursor = Cursor<'a>;
+    type Row = self::row::PgRow<'a>;
 }
 
 impl Connection for PgConnection {
@@ -70,21 +72,20 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn load<T, U, ST>(&mut self, source: T) -> QueryResult<Vec<U>>
+    fn load<'a, T>(
+        &'a mut self,
+        source: T,
+    ) -> QueryResult<<Self as IterableConnection<'a, Pg>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        T::SqlType: CompatibleType<U, Self::Backend, SqlType = ST>,
-        U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         self.with_prepared_query(&source.as_query(), |stmt, params, conn| {
             let result = stmt.execute(conn, &params)?;
-            let cursor = Cursor::new(&result);
+            let cursor = Cursor::new(result);
 
-            cursor
-                .map(|row| U::build_from_row(&row).map_err(DeserializationError))
-                .collect::<QueryResult<Vec<_>>>()
+            Ok(cursor)
         })
     }
 
@@ -140,13 +141,13 @@ impl PgConnection {
         TransactionBuilder::new(self)
     }
 
-    fn with_prepared_query<T: QueryFragment<Pg> + QueryId, R>(
-        &mut self,
-        source: &T,
+    fn with_prepared_query<'a, T: QueryFragment<Pg> + QueryId, R>(
+        &'a mut self,
+        source: &'_ T,
         f: impl FnOnce(
             MaybeCached<Statement>,
             Vec<Option<Vec<u8>>>,
-            &mut RawConnection,
+            &'a mut RawConnection,
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();

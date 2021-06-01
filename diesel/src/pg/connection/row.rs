@@ -1,15 +1,17 @@
 use super::result::PgResult;
 use crate::pg::{Pg, PgValue};
 use crate::row::*;
+use std::rc::Rc;
 
 #[derive(Clone)]
+#[allow(missing_debug_implementations)]
 pub struct PgRow<'a> {
-    db_result: &'a PgResult,
+    db_result: Rc<PgResult<'a>>,
     row_idx: usize,
 }
 
 impl<'a> PgRow<'a> {
-    pub fn new(db_result: &'a PgResult, row_idx: usize) -> Self {
+    pub(crate) fn new(db_result: Rc<PgResult<'a>>, row_idx: usize) -> Self {
         PgRow { db_result, row_idx }
     }
 }
@@ -28,7 +30,7 @@ impl<'a> Row<'a, Pg> for PgRow<'a> {
     {
         let idx = self.idx(idx)?;
         Some(PgField {
-            db_result: self.db_result,
+            db_result: self.db_result.clone(),
             row_idx: self.row_idx,
             col_idx: idx,
         })
@@ -55,18 +57,19 @@ impl<'a, 'b> RowIndex<&'a str> for PgRow<'b> {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct PgField<'a> {
-    db_result: &'a PgResult,
+    db_result: Rc<PgResult<'a>>,
     row_idx: usize,
     col_idx: usize,
 }
 
-impl<'a> Field<'a, Pg> for PgField<'a> {
-    fn field_name(&self) -> Option<&'a str> {
+impl<'a> Field<Pg> for PgField<'a> {
+    fn field_name(&self) -> Option<&str> {
         self.db_result.column_name(self.col_idx)
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'a, Pg>> {
+    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Pg>> {
         let raw = self.db_result.get(self.row_idx, self.col_idx)?;
         let type_oid = self.db_result.column_type(self.col_idx);
 

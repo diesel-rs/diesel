@@ -44,7 +44,7 @@ ipnetwork = ">=0.12.2, <0.19.0"
 quickcheck = "0.9"
 
 [features]
-default = ["with-deprecated", "32-column-tables"]
+default = ["postgres"]
 extras = ["chrono", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]

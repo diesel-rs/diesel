@@ -1404,7 +1404,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     where
         Self: LoadQuery<Conn, U>,
     {
-        self.internal_load(conn)
+        self.internal_load(conn)?.collect()
     }
 
     /// Runs the command, and returns the affected row.
@@ -1456,7 +1456,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     where
         Self: LoadQuery<Conn, U>,
     {
-        first_or_not_found(self.load(conn))
+        first_or_not_found(self.internal_load(conn))
     }
 
     /// Runs the command, returning an `Vec` with the affected rows.

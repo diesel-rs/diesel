@@ -95,7 +95,7 @@
 // For the `specialization` feature.
 #![cfg_attr(feature = "unstable", allow(incomplete_features))]
 // Built-in Lints
-#![deny(warnings)]
+//#![deny(warnings)]
 #![warn(
     missing_debug_implementations,
     missing_copy_implementations,

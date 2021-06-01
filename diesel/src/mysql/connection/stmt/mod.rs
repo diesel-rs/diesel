@@ -1,6 +1,6 @@
 extern crate mysqlclient_sys as ffi;
 
-mod iterator;
+pub mod iterator;
 mod metadata;
 
 use std::ffi::CStr;

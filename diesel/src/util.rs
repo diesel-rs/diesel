@@ -9,3 +9,7 @@ pub trait TupleAppend<T> {
 pub trait TupleSize {
     const SIZE: usize;
 }
+
+mod once_cell;
+
+pub(crate) use self::once_cell::OnceCell;

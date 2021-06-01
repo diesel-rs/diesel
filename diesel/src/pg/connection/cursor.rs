@@ -1,18 +1,22 @@
+use std::rc::Rc;
+
 use super::result::PgResult;
 use super::row::PgRow;
 
-/// The type returned by various [`Connection`] methods.
+/// The type returned by various [`Conn
+/// ection`] methods.
 /// Acts as an iterator over `T`.
+#[allow(missing_debug_implementations)]
 pub struct Cursor<'a> {
     current_row: usize,
-    db_result: &'a PgResult,
+    db_result: Rc<PgResult<'a>>,
 }
 
 impl<'a> Cursor<'a> {
-    pub(super) fn new(db_result: &'a PgResult) -> Self {
+    pub(super) fn new(db_result: PgResult<'a>) -> Self {
         Cursor {
             current_row: 0,
-            db_result,
+            db_result: Rc::new(db_result),
         }
     }
 }
@@ -24,13 +28,13 @@ impl<'a> ExactSizeIterator for Cursor<'a> {
 }
 
 impl<'a> Iterator for Cursor<'a> {
-    type Item = PgRow<'a>;
+    type Item = crate::QueryResult<PgRow<'a>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_row < self.db_result.num_rows() {
-            let row = self.db_result.get_row(self.current_row);
+            let row = self.db_result.clone().get_row(self.current_row);
             self.current_row += 1;
-            Some(row)
+            Some(Ok(row))
         } else {
             None
         }
@@ -44,5 +48,12 @@ impl<'a> Iterator for Cursor<'a> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         let len = self.len();
         (len, Some(len))
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.len()
     }
 }
