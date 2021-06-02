@@ -8,13 +8,10 @@ use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
 use crate::connection::*;
-use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
-use crate::query_dsl::load_dsl::CompatibleType;
 use crate::result::*;
-use crate::row::Row;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
@@ -34,12 +31,12 @@ impl SimpleConnection for MysqlConnection {
     }
 }
 
-impl<'a> IterableConnection<'a> for MysqlConnection {
+impl<'a> IterableConnection<'a, Mysql> for MysqlConnection {
     type Cursor = self::stmt::iterator::StatementIterator<'a>;
     type Row = self::stmt::iterator::MysqlRow<'a>;
 }
 
-/*impl Connection for MysqlConnection {
+impl Connection for MysqlConnection {
     type Backend = Mysql;
     type TransactionManager = AnsiTransactionManager;
 
@@ -67,27 +64,20 @@ impl<'a> IterableConnection<'a> for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn load<'a, T, ST>(
+    fn load<'a, T>(
         &'a mut self,
         source: T,
-    ) -> QueryResult<<Self as IterableConnection<'a>>::Cursor>
+    ) -> QueryResult<<Self as IterableConnection<'a, Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: QueryMetadata<T::SqlType>,
-        Self: IterableConnection<'a>,
-        <Self as IterableConnection<'a>>::Cursor:
-            Iterator<Item = QueryResult<&'a <Self as IterableConnection<'a>>::Row>>,
-        for<'b> <Self as IterableConnection<'a>>::Row: Row<'b, Self::Backend>,
     {
-        todo!()
-        // use crate::result::Error::DeserializationError;
-
-        // let mut stmt = self.prepare_query(&source.as_query())?;
-        // let mut metadata = Vec::new();
-        // Mysql::row_metadata(&mut (), &mut metadata);
-        // let results = unsafe { stmt.results(metadata)? };
-        // results.map(|row| U::build_from_row(&row).map_err(DeserializationError))
+        let mut stmt = self.prepare_query(&source.as_query())?;
+        let mut metadata = Vec::new();
+        Mysql::row_metadata(&mut (), &mut metadata);
+        let results = unsafe { stmt.results(metadata)? };
+        Ok(results)
     }
 
     #[doc(hidden)]
@@ -135,7 +125,7 @@ impl MysqlConnection {
         self.execute("SET character_set_results = 'utf8mb4'")?;
         Ok(())
     }
-}*/
+}
 
 #[cfg(test)]
 mod tests {

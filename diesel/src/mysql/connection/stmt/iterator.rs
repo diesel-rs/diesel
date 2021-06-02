@@ -1,60 +1,104 @@
-use super::{metadata::MysqlFieldMetadata, BindData, Binds, Statement, StatementMetadata};
+use std::marker::PhantomData;
+use std::rc::Rc;
+
+use super::{Binds, Statement, StatementMetadata};
+use super::metadata::MysqlFieldMetadata;
 use crate::mysql::{Mysql, MysqlType};
 use crate::result::QueryResult;
 use crate::row::*;
 
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,
-    output_binds: Binds,
-    metadata: StatementMetadata,
+    output_binds: Rc<Binds>,
+    metadata: Rc<StatementMetadata>,
+    types: Vec<Option<MysqlType>>,
+    size: usize,
+    fetched_rows: usize,
 }
 
-#[allow(clippy::should_implement_trait)] // don't neet `Iterator` here
 impl<'a> StatementIterator<'a> {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(stmt: &'a mut Statement, types: Vec<Option<MysqlType>>) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
 
-        let mut output_binds = Binds::from_output_types(types, &metadata);
+        let mut output_binds = Binds::from_output_types(&types, &metadata);
 
         stmt.execute_statement(&mut output_binds)?;
+        let size = unsafe { stmt.result_size() }?;
 
         Ok(StatementIterator {
+            metadata: Rc::new(metadata),
+            output_binds: Rc::new(output_binds),
+            fetched_rows: 0,
+            size,
             stmt,
-            output_binds,
-            metadata,
+            types,
         })
     }
+}
 
-    pub fn map<F, T>(mut self, mut f: F) -> QueryResult<Vec<T>>
-    where
-        F: FnMut(MysqlRow) -> QueryResult<T>,
-    {
-        let mut results = Vec::new();
-        while let Some(row) = self.next() {
-            results.push(f(row?)?);
+impl<'a> Iterator for StatementIterator<'a> {
+    type Item = QueryResult<MysqlRow<'a>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // check if we own the only instance of the bind buffer
+        // if that's the case we can reuse the underlying allocations
+        // if that's not the case, allocate a new buffer
+        let res = if let Some(binds) = Rc::get_mut(&mut self.output_binds) {
+            self.stmt
+                .populate_row_buffers(binds)
+                .map(|o| o.map(|()| self.output_binds.clone()))
+        } else {
+            // The shared bind buffer is in use by someone else,
+            // we allocate a new buffer here
+            let mut output_binds = Binds::from_output_types(&self.types, &self.metadata);
+            self.stmt
+                .populate_row_buffers(&mut output_binds)
+                .map(|o| o.map(|()| Rc::new(output_binds)))
+        };
+
+        match res {
+            Ok(Some(binds)) => {
+                self.fetched_rows += 1;
+                Some(Ok(MysqlRow {
+                    col_idx: 0,
+                    binds,
+                    metadata: self.metadata.clone(),
+                    _marker: Default::default(),
+                }))
+            }
+            Ok(None) => None,
+            Err(e) => {
+                self.fetched_rows += 1;
+                Some(Err(e))
+            }
         }
-        Ok(results)
     }
 
-    fn next(&mut self) -> Option<QueryResult<MysqlRow>> {
-        match self.stmt.populate_row_buffers(&mut self.output_binds) {
-            Ok(Some(())) => Some(Ok(MysqlRow {
-                col_idx: 0,
-                binds: &mut self.output_binds,
-                metadata: &self.metadata,
-            })),
-            Ok(None) => None,
-            Err(e) => Some(Err(e)),
-        }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len(), Some(self.len()))
+    }
+
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.len()
+    }
+}
+
+impl<'a> ExactSizeIterator for StatementIterator<'a> {
+    fn len(&self) -> usize {
+        self.size - self.fetched_rows
     }
 }
 
 #[derive(Clone)]
 pub struct MysqlRow<'a> {
     col_idx: usize,
-    binds: &'a Binds,
-    metadata: &'a StatementMetadata,
+    binds: Rc<Binds>,
+    metadata: Rc<StatementMetadata>,
+    _marker: PhantomData<&'a mut (Binds, StatementMetadata)>,
 }
 
 impl<'a> Row<'a, Mysql> for MysqlRow<'a> {
@@ -71,8 +115,10 @@ impl<'a> Row<'a, Mysql> for MysqlRow<'a> {
     {
         let idx = self.idx(idx)?;
         Some(MysqlField {
-            bind: &self.binds[idx],
-            metadata: &self.metadata.fields()[idx],
+            bind: self.binds.clone(),
+            metadata: self.metadata.clone(),
+            idx,
+            _marker: Default::default(),
         })
     }
 
@@ -103,20 +149,22 @@ impl<'a, 'b> RowIndex<&'a str> for MysqlRow<'b> {
 }
 
 pub struct MysqlField<'a> {
-    bind: &'a BindData,
-    metadata: &'a MysqlFieldMetadata<'a>,
+    bind: Rc<Binds>,
+    metadata: Rc<StatementMetadata>,
+    idx: usize,
+    _marker: PhantomData<&'a (Binds, StatementMetadata)>
 }
 
-impl<'a> Field<'a, Mysql> for MysqlField<'a> {
-    fn field_name(&self) -> Option<&'a str> {
-        self.metadata.field_name()
+impl<'a> Field<Mysql> for MysqlField<'a> {
+    fn field_name(&self) -> Option<&str> {
+        self.metadata.fields()[self.idx].field_name()
     }
 
     fn is_null(&self) -> bool {
-        self.bind.is_null()
+        (*self.bind)[self.idx].is_null()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'a, Mysql>> {
-        self.bind.value()
+    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Mysql>> {
+        self.bind[self.idx].value()
     }
 }

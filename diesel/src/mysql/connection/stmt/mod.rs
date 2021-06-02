@@ -3,6 +3,7 @@ extern crate mysqlclient_sys as ffi;
 pub mod iterator;
 mod metadata;
 
+use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::os::raw as libc;
 use std::ptr::NonNull;
@@ -10,7 +11,7 @@ use std::ptr::NonNull;
 use self::iterator::*;
 use super::bind::{BindData, Binds};
 use crate::mysql::MysqlType;
-use crate::result::{DatabaseErrorKind, QueryResult};
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
 pub use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 
@@ -80,10 +81,17 @@ impl Statement {
     /// have a return value. After calling this function, `execute` can never
     /// be called on this statement.
     pub unsafe fn results(
-        &mut self,
+        self,
         types: Vec<Option<MysqlType>>,
     ) -> QueryResult<StatementIterator> {
         StatementIterator::new(self, types)
+    }
+
+    /// This function should be called after `execute` only
+    /// otherwise it's not guranteed to return a valid result
+    pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
+        let size = ffi::mysql_stmt_num_rows(self.stmt.as_ptr());
+        usize::try_from(size).map_err(|e| Error::DeserializationError(Box::new(e)))
     }
 
     fn last_error_message(&self) -> String {
