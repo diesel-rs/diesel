@@ -325,7 +325,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.48.0
+          toolchain: 1.51.0
           profile: minimal
           components: clippy, rustfmt
           override: true
@@ -389,13 +389,13 @@ jobs:
           args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
 
   minimal_rust_version:
-    name: Check Minimal supported rust version (1.48.0)
+    name: Check Minimal supported rust version (1.51.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.48.0
+          toolchain: 1.51.0
           profile: minimal
           override: true
       - name: Cache cargo registry
@@ -413,7 +413,7 @@ jobs:
         run: |
           RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
 
-      - name: Check building with rust 1.48.0
+      - name: Check building with rust 1.51.0
         uses: actions-rs/cargo@v1
         with:
           command: check

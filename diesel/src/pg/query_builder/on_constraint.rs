@@ -51,8 +51,15 @@ pub struct OnConstraint<'a> {
     constraint_name: &'a str,
 }
 
+impl<'a> QueryId for OnConstraint<'a> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
 impl<'a> QueryFragment<Pg> for ConflictTarget<OnConstraint<'a>> {
     fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
         out.push_sql(" ON CONSTRAINT ");
         out.push_identifier(self.0.constraint_name)?;
         Ok(())

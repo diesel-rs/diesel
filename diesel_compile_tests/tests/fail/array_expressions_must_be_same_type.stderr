@@ -186,7 +186,7 @@ error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
              <() as QueryId>
              <(A, B) as QueryId>
              <(A, B, C) as QueryId>
-           and 193 others
+           and 208 others
    = note: required because of the requirements on the impl of `QueryId` for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)`
    = note: 3 redundant requirements hidden
    = note: required because of the requirements on the impl of `QueryId` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`

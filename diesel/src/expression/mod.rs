@@ -205,6 +205,8 @@ where
     type Expression: Expression<SqlType = T>;
 
     /// Perform the conversion
+    #[allow(clippy::wrong_self_convention)]
+    // That's public API we cannot change it to appease clippy
     fn as_expression(self) -> Self::Expression;
 }
 
@@ -840,5 +842,8 @@ pub trait AsExpressionList<ST> {
     type Expression;
 
     /// Perform the conversion
+    // That's public API, we cannot change
+    // that to appease clippy
+    #[allow(clippy::wrong_self_convention)]
     fn as_expression_list(self) -> Self::Expression;
 }

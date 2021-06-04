@@ -33,13 +33,13 @@ fn migration_literals_from_path(
 
     migrations.sort_by_key(DirEntry::path);
 
-    migrations
+    Ok(migrations
         .into_iter()
         .map(|e| migration_literal_from_path(&e.path()))
-        .collect()
+        .collect())
 }
 
-fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<dyn Error>> {
+fn migration_literal_from_path(path: &Path) -> proc_macro2::TokenStream {
     let name = path
         .file_name()
         .unwrap_or_else(|| panic!("Can't get file name from path `{:?}`", path))
@@ -58,10 +58,10 @@ fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, 
     let metadata = TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default();
     let run_in_transaction = metadata.run_in_transaction;
 
-    Ok(quote!(diesel_migrations::EmbeddedMigration::new(
+    quote!(diesel_migrations::EmbeddedMigration::new(
         include_str!(#up_sql_path),
         include_str!(#down_sql_path),
         diesel_migrations::EmbeddedName::new(#name),
         diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction)
-    )))
+    ))
 }

@@ -11,11 +11,7 @@ macro_rules! no_arg_sql_function_body_except_to_sql {
         #[allow(non_camel_case_types)]
         #[doc=$docs]
         #[derive(
-            Debug,
-            Clone,
-            Copy,
-            $crate::query_builder::QueryId,
-            $crate::expression::ValidGrouping
+            Debug, Clone, Copy, $crate::query_builder::QueryId, $crate::expression::ValidGrouping,
         )]
         pub struct $type_name;
 

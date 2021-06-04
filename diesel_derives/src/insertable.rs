@@ -7,7 +7,17 @@ use meta::path_to_string;
 use model::*;
 use util::*;
 
+use crate::meta::MetaItem;
+
 pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
+    let treat_none_as_default_value = MetaItem::with_name(&item.attrs, "diesel")
+        .map(|meta| {
+            meta.warn_if_other_options(&["treat_none_as_default_value"]);
+            meta.required_nested_item("treat_none_as_default_value")
+                .map(|m| m.expect_bool_value())
+        })
+        .unwrap_or(Ok(true))?;
+
     let model = Model::from_item(&item)?;
 
     if model.fields().is_empty() {
@@ -46,14 +56,44 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 ref_field_assign.push(field_expr_embed(field, Some(quote!(&))));
             }
             (None, false) => {
-                direct_field_ty.push(field_ty(field, table_name, None));
-                direct_field_assign.push(field_expr(field, table_name, None));
-                ref_field_ty.push(field_ty(field, table_name, Some(quote!(&'insert))));
-                ref_field_assign.push(field_expr(field, table_name, Some(quote!(&))));
+                direct_field_ty.push(field_ty(
+                    field,
+                    table_name,
+                    None,
+                    treat_none_as_default_value,
+                ));
+                direct_field_assign.push(field_expr(
+                    field,
+                    table_name,
+                    None,
+                    treat_none_as_default_value,
+                ));
+                ref_field_ty.push(field_ty(
+                    field,
+                    table_name,
+                    Some(quote!(&'insert)),
+                    treat_none_as_default_value,
+                ));
+                ref_field_assign.push(field_expr(
+                    field,
+                    table_name,
+                    Some(quote!(&)),
+                    treat_none_as_default_value,
+                ));
             }
             (Some(ty), false) => {
-                direct_field_ty.push(field_ty_serialize_as(field, table_name, &ty));
-                direct_field_assign.push(field_expr_serialize_as(field, table_name, &ty));
+                direct_field_ty.push(field_ty_serialize_as(
+                    field,
+                    table_name,
+                    &ty,
+                    treat_none_as_default_value,
+                ));
+                direct_field_assign.push(field_expr_serialize_as(
+                    field,
+                    table_name,
+                    &ty,
+                    treat_none_as_default_value,
+                ));
 
                 generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of Insertable for borrowed structs
             }
@@ -124,27 +164,50 @@ fn field_expr_embed(field: &Field, lifetime: Option<proc_macro2::TokenStream>) -
     parse_quote!(#lifetime self#field_access)
 }
 
-fn field_ty_serialize_as(field: &Field, table_name: &syn::Path, ty: &syn::Type) -> syn::Type {
-    let inner_ty = inner_of_option_ty(&ty);
+fn field_ty_serialize_as(
+    field: &Field,
+    table_name: &syn::Path,
+    ty: &syn::Type,
+    treat_none_as_default_value: bool,
+) -> syn::Type {
     let column_name = field.column_name_ident();
 
-    parse_quote!(
-        std::option::Option<diesel::dsl::Eq<
-            #table_name::#column_name,
-            #inner_ty,
-        >>
-    )
+    if treat_none_as_default_value {
+        let inner_ty = inner_of_option_ty(&ty);
+        parse_quote!(
+            std::option::Option<diesel::dsl::Eq<
+                #table_name::#column_name,
+                #inner_ty,
+            >>
+        )
+    } else {
+        parse_quote!(
+            diesel::dsl::Eq<
+                #table_name::#column_name,
+                #ty,
+            >
+        )
+    }
 }
 
-fn field_expr_serialize_as(field: &Field, table_name: &syn::Path, ty: &syn::Type) -> syn::Expr {
+fn field_expr_serialize_as(
+    field: &Field,
+    table_name: &syn::Path,
+    ty: &syn::Type,
+    treat_none_as_default_value: bool,
+) -> syn::Expr {
     let field_access = field.name.access();
     let column_name = field.column_name_ident();
     let column: syn::Expr = parse_quote!(#table_name::#column_name);
 
-    if is_option_ty(&ty) {
-        parse_quote!(self#field_access.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x))))
+    if treat_none_as_default_value {
+        if is_option_ty(&ty) {
+            parse_quote!(self#field_access.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x))))
+        } else {
+            parse_quote!(std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self#field_access))))
+        }
     } else {
-        parse_quote!(std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self#field_access))))
+        parse_quote!(#column.eq(::std::convert::Into::<#ty>::into(self#field_access)))
     }
 }
 
@@ -152,33 +215,50 @@ fn field_ty(
     field: &Field,
     table_name: &syn::Path,
     lifetime: Option<proc_macro2::TokenStream>,
+    treat_none_as_default_value: bool,
 ) -> syn::Type {
-    let inner_ty = inner_of_option_ty(&field.ty);
     let column_name = field.column_name_ident();
 
-    parse_quote!(
-        std::option::Option<diesel::dsl::Eq<
-            #table_name::#column_name,
+    if treat_none_as_default_value {
+        let inner_ty = inner_of_option_ty(&field.ty);
+        parse_quote!(
+            std::option::Option<diesel::dsl::Eq<
+                #table_name::#column_name,
             #lifetime #inner_ty,
-        >>
-    )
+            >>
+        )
+    } else {
+        let inner_ty = &field.ty;
+        parse_quote!(
+            diesel::dsl::Eq<
+                #table_name::#column_name,
+            #lifetime #inner_ty,
+            >
+        )
+    }
 }
 
 fn field_expr(
     field: &Field,
     table_name: &syn::Path,
     lifetime: Option<proc_macro2::TokenStream>,
+    treat_none_as_default_value: bool,
 ) -> syn::Expr {
     let field_access = field.name.access();
     let column_name = field.column_name_ident();
     let column: syn::Expr = parse_quote!(#table_name::#column_name);
-    if is_option_ty(&field.ty) {
-        if lifetime.is_some() {
-            parse_quote!(self#field_access.as_ref().map(|x| #column.eq(x)))
+
+    if treat_none_as_default_value {
+        if is_option_ty(&field.ty) {
+            if lifetime.is_some() {
+                parse_quote!(self#field_access.as_ref().map(|x| #column.eq(x)))
+            } else {
+                parse_quote!(self#field_access.map(|x| #column.eq(x)))
+            }
         } else {
-            parse_quote!(self#field_access.map(|x| #column.eq(x)))
+            parse_quote!(std::option::Option::Some(#column.eq(#lifetime self#field_access)))
         }
     } else {
-        parse_quote!(std::option::Option::Some(#column.eq(#lifetime self#field_access)))
+        parse_quote!(#column.eq(#lifetime self#field_access))
     }
 }

@@ -96,6 +96,9 @@ impl_selectable_expression!(NotIn<T, U>);
 pub trait AsInExpression<T: SqlType + TypedExpressionType> {
     type InExpression: MaybeEmpty + Expression<SqlType = T>;
 
+    #[allow(clippy::wrong_self_convention)]
+    // That's a public api, we cannot just change it to
+    // appease clippy
     fn as_in_expression(self) -> Self::InExpression;
 }
 

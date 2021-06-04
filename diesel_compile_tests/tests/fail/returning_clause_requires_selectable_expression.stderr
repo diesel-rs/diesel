@@ -23,7 +23,7 @@ error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<
              <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
              <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
              <non_users::columns::noname as SelectableExpression<non_users::table>>
-   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`
+   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`
 
 error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<users::table>` is not satisfied
   --> $DIR/returning_clause_requires_selectable_expression.rs:35:20

@@ -273,6 +273,93 @@ mod tests {
         assert_eq!(0, connection.statement_cache.len());
     }
 
+    table! {
+        users {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+
+    #[test]
+    fn inserts_from_select_are_cached() {
+        let connection = &mut connection();
+        connection.begin_test_transaction().unwrap();
+
+        crate::sql_query(
+            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+        )
+        .execute(connection)
+        .unwrap();
+
+        let query = users::table.filter(users::id.eq(42));
+        let insert = query
+            .insert_into(users::table)
+            .into_columns((users::id, users::name));
+        assert_eq!(true, insert.execute(connection).is_ok());
+        assert_eq!(1, connection.statement_cache.len());
+
+        let query = users::table.filter(users::id.eq(42)).into_boxed();
+        let insert = query
+            .insert_into(users::table)
+            .into_columns((users::id, users::name));
+        assert_eq!(true, dbg!(insert.execute(connection)).is_ok());
+        assert_eq!(2, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn single_inserts_are_cached() {
+        let connection = &mut connection();
+        connection.begin_test_transaction().unwrap();
+
+        crate::sql_query(
+            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+        )
+        .execute(connection)
+        .unwrap();
+
+        let insert =
+            crate::insert_into(users::table).values((users::id.eq(42), users::name.eq("Foo")));
+
+        assert_eq!(true, insert.execute(connection).is_ok());
+        assert_eq!(1, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn dynamic_batch_inserts_are_not_cached() {
+        let connection = &mut connection();
+        connection.begin_test_transaction().unwrap();
+
+        crate::sql_query(
+            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+        )
+        .execute(connection)
+        .unwrap();
+
+        let insert = crate::insert_into(users::table)
+            .values(vec![(users::id.eq(42), users::name.eq("Foo"))]);
+
+        assert_eq!(true, insert.execute(connection).is_ok());
+        assert_eq!(0, connection.statement_cache.len());
+    }
+
+    #[test]
+    fn static_batch_inserts_are_cached() {
+        let connection = &mut connection();
+        connection.begin_test_transaction().unwrap();
+
+        crate::sql_query(
+            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+        )
+        .execute(connection)
+        .unwrap();
+
+        let insert =
+            crate::insert_into(users::table).values([(users::id.eq(42), users::name.eq("Foo"))]);
+
+        assert_eq!(true, insert.execute(connection).is_ok());
+        assert_eq!(1, connection.statement_cache.len());
+    }
+
     fn connection() -> PgConnection {
         crate::test_helpers::pg_connection_no_transaction()
     }

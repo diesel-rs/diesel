@@ -84,9 +84,9 @@ pub fn file_names(path: &Path) -> Result<Vec<String>, std::io::Error> {
         .collect::<Result<Vec<_>, _>>()
 }
 
-pub fn migrations_directories<'a>(
-    path: &'a Path,
-) -> Result<impl Iterator<Item = Result<DirEntry, std::io::Error>> + 'a, std::io::Error> {
+pub fn migrations_directories(
+    path: &'_ Path,
+) -> Result<impl Iterator<Item = Result<DirEntry, std::io::Error>> + '_, std::io::Error> {
     Ok(path.read_dir()?.into_iter().filter_map(|entry_res| {
         entry_res
             .and_then(|entry| {

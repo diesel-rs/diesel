@@ -1,5 +1,4 @@
-use crate::insertable::{BatchInsert, OwnedBatchInsert};
-use crate::query_builder::insert_statement::InsertFromSelect;
+use crate::query_builder::insert_statement::{BatchInsert, InsertFromSelect};
 #[cfg(feature = "sqlite")]
 use crate::query_builder::where_clause::{BoxedWhereClause, WhereClause};
 #[cfg(any(feature = "sqlite", feature = "postgres"))]
@@ -77,15 +76,9 @@ impl<Inner, Tab> IntoConflictValueClause for ValuesClause<Inner, Tab> {
     }
 }
 
-impl<'a, Inner, Tab> IntoConflictValueClause for BatchInsert<'a, Inner, Tab> {
-    type ValueClause = Self;
-
-    fn into_value_clause(self) -> Self::ValueClause {
-        self
-    }
-}
-
-impl<Inner, Tab> IntoConflictValueClause for OwnedBatchInsert<Inner, Tab> {
+impl<V, Tab, QId, const STATIC_QUERY_ID: bool> IntoConflictValueClause
+    for BatchInsert<V, Tab, QId, STATIC_QUERY_ID>
+{
     type ValueClause = Self;
 
     fn into_value_clause(self) -> Self::ValueClause {

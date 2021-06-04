@@ -1,15 +1,12 @@
-use std::marker::PhantomData;
-
 use crate::backend::{Backend, SupportsDefaultKeyword};
 use crate::expression::grouped::Grouped;
 use crate::expression::{AppearsOnTable, Expression};
 use crate::query_builder::{
-    AstPass, InsertStatement, QueryFragment, UndecoratedInsertRecord, ValuesClause,
+    AstPass, BatchInsert, InsertStatement, QueryFragment, QueryId, UndecoratedInsertRecord,
+    ValuesClause,
 };
 use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
-#[cfg(feature = "sqlite")]
-use crate::sqlite::Sqlite;
 
 /// Represents that a structure can be used to insert a new row into the
 /// database. This is automatically implemented for `&[T]` and `&Vec<T>` for
@@ -96,27 +93,19 @@ where
     }
 }
 
-impl<'a, T, Tab, DB> CanInsertInSingleQuery<DB> for BatchInsert<'a, T, Tab>
-where
-    DB: Backend + SupportsDefaultKeyword,
-{
-    fn rows_to_insert(&self) -> Option<usize> {
-        Some(self.records.len())
-    }
-}
-
-impl<T, Table, DB> CanInsertInSingleQuery<DB> for OwnedBatchInsert<T, Table>
-where
-    DB: Backend + SupportsDefaultKeyword,
-{
-    fn rows_to_insert(&self) -> Option<usize> {
-        Some(self.values.len())
-    }
-}
-
 impl<T, U, DB> CanInsertInSingleQuery<DB> for ColumnInsertValue<T, U>
 where
     DB: Backend,
+{
+    fn rows_to_insert(&self) -> Option<usize> {
+        Some(1)
+    }
+}
+
+impl<V, DB> CanInsertInSingleQuery<DB> for DefaultableColumnInsertValue<V>
+where
+    DB: Backend,
+    V: CanInsertInSingleQuery<DB>,
 {
     fn rows_to_insert(&self) -> Option<usize> {
         Some(1)
@@ -127,20 +116,39 @@ pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
     fn column_names(&self, out: AstPass<DB>) -> QueryResult<()>;
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
-pub enum ColumnInsertValue<Col, Expr> {
-    Expression(Col, Expr),
-    Default,
+pub struct ColumnInsertValue<Col, Expr> {
+    col: Col,
+    expr: Expr,
 }
 
-impl<Col, Expr> Default for ColumnInsertValue<Col, Expr> {
-    fn default() -> Self {
-        ColumnInsertValue::Default
+impl<Col, Expr> ColumnInsertValue<Col, Expr> {
+    pub(crate) fn new(col: Col, expr: Expr) -> Self {
+        Self { col, expr }
     }
 }
 
-impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr>
+#[derive(Debug, Copy, Clone)]
+#[doc(hidden)]
+pub enum DefaultableColumnInsertValue<T> {
+    Expression(T),
+    Default,
+}
+
+impl<T> QueryId for DefaultableColumnInsertValue<T> {
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<T> Default for DefaultableColumnInsertValue<T> {
+    fn default() -> Self {
+        DefaultableColumnInsertValue::Default
+    }
+}
+
+impl<Col, Expr, DB> InsertValues<Col::Table, DB>
+    for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     DB: Backend + SupportsDefaultKeyword,
     Col: Column,
@@ -153,14 +161,28 @@ where
     }
 }
 
-impl<Col, Expr, DB> QueryFragment<DB> for ColumnInsertValue<Col, Expr>
+impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr>
+where
+    DB: Backend,
+    Col: Column,
+    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
+    Self: QueryFragment<DB>,
+{
+    fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+        out.push_identifier(Col::NAME)?;
+        Ok(())
+    }
+}
+
+impl<Expr, DB> QueryFragment<DB> for DefaultableColumnInsertValue<Expr>
 where
     DB: Backend + SupportsDefaultKeyword,
     Expr: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        if let ColumnInsertValue::Expression(_, ref value) = *self {
-            value.walk_ast(out.reborrow())?;
+        out.unsafe_to_cache_prepared();
+        if let Self::Expression(ref inner) = *self {
+            inner.walk_ast(out.reborrow())?;
         } else {
             out.push_sql("DEFAULT");
         }
@@ -168,15 +190,26 @@ where
     }
 }
 
+impl<Col, Expr, DB> QueryFragment<DB> for ColumnInsertValue<Col, Expr>
+where
+    DB: Backend,
+    Expr: QueryFragment<DB>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        self.expr.walk_ast(pass)
+    }
+}
+
 #[cfg(feature = "sqlite")]
-impl<Col, Expr> InsertValues<Col::Table, Sqlite> for ColumnInsertValue<Col, Expr>
+impl<Col, Expr> InsertValues<Col::Table, crate::sqlite::Sqlite>
+    for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     Col: Column,
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
-    Self: QueryFragment<Sqlite>,
+    Self: QueryFragment<crate::sqlite::Sqlite>,
 {
-    fn column_names(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
-        if let ColumnInsertValue::Expression(..) = *self {
+    fn column_names(&self, mut out: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
+        if let Self::Expression(..) = *self {
             out.push_identifier(Col::NAME)?;
         }
         Ok(())
@@ -184,13 +217,14 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-impl<Col, Expr> QueryFragment<Sqlite> for ColumnInsertValue<Col, Expr>
+impl<Col, Expr> QueryFragment<crate::sqlite::Sqlite>
+    for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
-    Expr: QueryFragment<Sqlite>,
+    Expr: QueryFragment<crate::sqlite::Sqlite>,
 {
-    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
-        if let ColumnInsertValue::Expression(_, ref value) = *self {
-            value.walk_ast(out.reborrow())?;
+    fn walk_ast(&self, mut out: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
+        if let Self::Expression(ref inner) = *self {
+            inner.walk_ast(out.reborrow())?;
         }
         Ok(())
     }
@@ -200,13 +234,10 @@ impl<'a, T, Tab> Insertable<Tab> for &'a [T]
 where
     &'a T: UndecoratedInsertRecord<Tab>,
 {
-    type Values = BatchInsert<'a, T, Tab>;
+    type Values = BatchInsert<&'a [T], Tab, (), false>;
 
     fn values(self) -> Self::Values {
-        BatchInsert {
-            records: self,
-            _marker: PhantomData,
-        }
+        BatchInsert::new(self)
     }
 }
 
@@ -225,25 +256,52 @@ impl<T, Tab> Insertable<Tab> for Vec<T>
 where
     T: Insertable<Tab> + UndecoratedInsertRecord<Tab>,
 {
-    type Values = OwnedBatchInsert<T::Values, Tab>;
+    type Values = BatchInsert<Vec<T>, Tab, (), false>;
 
     fn values(self) -> Self::Values {
-        OwnedBatchInsert {
-            values: self.into_iter().map(Insertable::values).collect(),
-            _marker: PhantomData,
-        }
+        BatchInsert::new(self)
     }
 }
 
-impl<T, Tab> Insertable<Tab> for Option<T>
-where
-    T: Insertable<Tab>,
-    T::Values: Default,
-{
-    type Values = T::Values;
+impl<T, Tab, const N: usize> Insertable<Tab> for [T; N] {
+    type Values = BatchInsert<[T; N], Tab, [T; N], true>;
 
     fn values(self) -> Self::Values {
-        self.map(Insertable::values).unwrap_or_default()
+        BatchInsert::new(self)
+    }
+}
+
+impl<'a, T, Tab, const N: usize> Insertable<Tab> for &'a [T; N] {
+    // We can reuse the query id for [T; N] here as this
+    // compiles down to the same query
+    type Values = BatchInsert<&'a [T; N], Tab, [T; N], true>;
+
+    fn values(self) -> Self::Values {
+        BatchInsert::new(self)
+    }
+}
+
+impl<T, Tab, const N: usize> Insertable<Tab> for Box<[T; N]> {
+    // We can reuse the query id for [T; N] here as this
+    // compiles down to the same query
+    type Values = BatchInsert<Box<[T; N]>, Tab, [T; N], true>;
+
+    fn values(self) -> Self::Values {
+        BatchInsert::new(self)
+    }
+}
+
+impl<T, V, Tab> Insertable<Tab> for Option<T>
+where
+    T: Insertable<Tab, Values = ValuesClause<V, Tab>>,
+{
+    type Values = ValuesClause<DefaultableColumnInsertValue<V>, Tab>;
+
+    fn values(self) -> Self::Values {
+        ValuesClause::new(
+            self.map(|v| DefaultableColumnInsertValue::Expression(Insertable::values(v).values))
+                .unwrap_or_default(),
+        )
     }
 }
 
@@ -277,58 +335,5 @@ where
 
     fn values(self) -> Self::Values {
         self.0.values()
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct BatchInsert<'a, T: 'a, Tab> {
-    pub records: &'a [T],
-    _marker: PhantomData<Tab>,
-}
-
-impl<'a, T, Tab, Inner, DB> QueryFragment<DB> for BatchInsert<'a, T, Tab>
-where
-    DB: Backend + SupportsDefaultKeyword,
-    &'a T: Insertable<Tab, Values = ValuesClause<Inner, Tab>>,
-    ValuesClause<Inner, Tab>: QueryFragment<DB>,
-    Inner: QueryFragment<DB>,
-{
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        let mut records = self.records.iter().map(Insertable::values);
-        if let Some(record) = records.next() {
-            record.walk_ast(out.reborrow())?;
-        }
-        for record in records {
-            out.push_sql(", (");
-            record.values.walk_ast(out.reborrow())?;
-            out.push_sql(")");
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug)]
-pub struct OwnedBatchInsert<V, Tab> {
-    pub values: Vec<V>,
-    _marker: PhantomData<Tab>,
-}
-
-impl<Tab, DB, Inner> QueryFragment<DB> for OwnedBatchInsert<ValuesClause<Inner, Tab>, Tab>
-where
-    DB: Backend + SupportsDefaultKeyword,
-    ValuesClause<Inner, Tab>: QueryFragment<DB>,
-    Inner: QueryFragment<DB>,
-{
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        let mut values = self.values.iter();
-        if let Some(value) = values.next() {
-            value.walk_ast(out.reborrow())?;
-        }
-        for value in values {
-            out.push_sql(", (");
-            value.values.walk_ast(out.reborrow())?;
-            out.push_sql(")");
-        }
-        Ok(())
     }
 }

@@ -60,8 +60,8 @@ where
     }
 }
 
-impl<'a, DB> Into<BoxedWhereClause<'a, DB>> for NoWhereClause {
-    fn into(self) -> BoxedWhereClause<'a, DB> {
+impl<'a, DB> From<NoWhereClause> for BoxedWhereClause<'a, DB> {
+    fn from(_: NoWhereClause) -> Self {
         BoxedWhereClause::None
     }
 }
@@ -110,13 +110,13 @@ where
     }
 }
 
-impl<'a, DB, Predicate> Into<BoxedWhereClause<'a, DB>> for WhereClause<Predicate>
+impl<'a, DB, Predicate> From<WhereClause<Predicate>> for BoxedWhereClause<'a, DB>
 where
     DB: Backend,
     Predicate: QueryFragment<DB> + Send + 'a,
 {
-    fn into(self) -> BoxedWhereClause<'a, DB> {
-        BoxedWhereClause::Where(Box::new(self.0))
+    fn from(where_clause: WhereClause<Predicate>) -> Self {
+        BoxedWhereClause::Where(Box::new(where_clause.0))
     }
 }
 

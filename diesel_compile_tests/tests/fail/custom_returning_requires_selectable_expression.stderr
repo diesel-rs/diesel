@@ -25,7 +25,7 @@ error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::ta
              <bad::columns::age as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
              <bad::columns::age as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
-   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
 
 error[E0277]: the trait bound `users::table: AppearsInFromClause<bad::table>` is not satisfied
   --> $DIR/custom_returning_requires_selectable_expression.rs:33:53
@@ -39,4 +39,4 @@ error[E0277]: the trait bound `users::table: AppearsInFromClause<bad::table>` is
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
-   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`

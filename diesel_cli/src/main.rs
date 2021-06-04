@@ -85,10 +85,7 @@ fn run_migration_command(
                 // in the cli. This is because arguments with default
                 // values conflict even if not used.
                 // See https://github.com/clap-rs/clap/issues/1605
-                let number = match args.value_of("REVERT_NUMBER") {
-                    None => "1",
-                    Some(number) => number,
-                };
+                let number = args.value_of("REVERT_NUMBER").unwrap_or("1");
                 for _ in 0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected.") {
                         match call_with_conn!(
                             database_url,
@@ -152,7 +149,7 @@ fn run_migration_command(
     Ok(())
 }
 
-fn generate_sql_migration(path: &PathBuf) {
+fn generate_sql_migration(path: &Path) {
     use std::io::Write;
 
     let migration_dir_relative =
@@ -431,10 +428,7 @@ fn redo_migrations<Conn, DB>(
             // in the cli. This is because arguments with default
             // values conflict even if not used.
             // See https://github.com/clap-rs/clap/issues/1605
-            let number = match args.value_of("REDO_NUMBER") {
-                None => "1",
-                Some(number) => number,
-            };
+            let number = args.value_of("REDO_NUMBER").unwrap_or("1");
 
             (0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected."))
                 .filter_map(|_|{

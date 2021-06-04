@@ -4,7 +4,7 @@ error[E0599]: no method named `returning` found for struct `DeleteStatement<user
 23 |     query.returning(name);
    |           ^^^^^^^^^ private field, not a method
 
-error[E0599]: no method named `returning` found for struct `InsertStatement<users::table, ValuesClause<(ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<columns::id>>` in the current scope
+error[E0599]: no method named `returning` found for struct `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<columns::id>>` in the current scope
   --> $DIR/returning_cannot_be_called_twice.rs:28:11
    |
 28 |     query.returning(name);

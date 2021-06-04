@@ -51,6 +51,7 @@ pub struct User {
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
 #[table_name = "users"]
+#[diesel(treat_none_as_default_value = "false")]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
@@ -149,23 +150,51 @@ fn connection() -> TestConnection {
     conn
 }
 
-fn insert_users(
-    size: usize,
+fn insert_users<F: Fn(usize) -> Option<&'static str>, const N: usize>(
     conn: &mut TestConnection,
-    hair_color_init: impl Fn(usize) -> Option<&'static str>,
+    hair_color_init: F,
 ) {
-    let data: Vec<_> = (0..size)
-        .map(|i| NewUser::new(&format!("User {}", i), hair_color_init(i)))
-        .collect();
-    insert_into(users::table)
-        .values(&data)
-        .execute(conn)
-        .unwrap();
+    const DUMMY_USER: NewUser = NewUser {
+        name: String::new(),
+        hair_color: None,
+    };
+
+    // There are stackoverflows on windows otherwise
+    if N > 1_000 {
+        let mut data = Box::new([DUMMY_USER; N]);
+
+        for (idx, user) in data.iter_mut().enumerate() {
+            *user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
+        }
+
+        insert_into(users::table)
+            .values(data)
+            .execute(conn)
+            .unwrap();
+    } else {
+        let mut data = [DUMMY_USER; N];
+
+        for (idx, user) in data.iter_mut().enumerate() {
+            *user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
+        }
+
+        insert_into(users::table)
+            .values(data)
+            .execute(conn)
+            .unwrap();
+    }
 }
 
 pub fn bench_trivial_query(b: &mut Bencher, size: usize) {
     let mut conn = connection();
-    insert_users(size, &mut conn, |_| None);
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, |_| None),
+        10 => insert_users::<_, 10>(&mut conn, |_| None),
+        100 => insert_users::<_, 100>(&mut conn, |_| None),
+        1_000 => insert_users::<_, 1_000>(&mut conn, |_| None),
+        10_000 => insert_users::<_, 10_000>(&mut conn, |_| None),
+        _ => unimplemented!(),
+    }
 
     b.iter(|| users::table.load::<User>(&mut conn).unwrap())
 }
@@ -173,14 +202,27 @@ pub fn bench_trivial_query(b: &mut Bencher, size: usize) {
 pub fn bench_trivial_query_boxed(b: &mut Bencher, size: usize) {
     let mut conn = connection();
 
-    insert_users(size, &mut conn, |_| None);
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, |_| None),
+        10 => insert_users::<_, 10>(&mut conn, |_| None),
+        100 => insert_users::<_, 100>(&mut conn, |_| None),
+        1_000 => insert_users::<_, 1_000>(&mut conn, |_| None),
+        10_000 => insert_users::<_, 10_000>(&mut conn, |_| None),
+        _ => unimplemented!(),
+    }
     b.iter(|| users::table.into_boxed().load::<User>(&mut conn).unwrap())
 }
 
 pub fn bench_trivial_query_raw(b: &mut Bencher, size: usize) {
     let mut conn = connection();
-    insert_users(size, &mut conn, |_| None);
-
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, |_| None),
+        10 => insert_users::<_, 10>(&mut conn, |_| None),
+        100 => insert_users::<_, 100>(&mut conn, |_| None),
+        1_000 => insert_users::<_, 1_000>(&mut conn, |_| None),
+        10_000 => insert_users::<_, 10_000>(&mut conn, |_| None),
+        _ => unimplemented!(),
+    }
     b.iter(|| {
         diesel::sql_query("SELECT id, name, hair_color FROM users")
             .load::<User>(&mut conn)
@@ -190,10 +232,15 @@ pub fn bench_trivial_query_raw(b: &mut Bencher, size: usize) {
 
 pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
     let mut conn = connection();
-
-    insert_users(size, &mut conn, |i| {
-        Some(if i % 2 == 0 { "black" } else { "brown" })
-    });
+    let hair_color_callback = |i| Some(if i % 2 == 0 { "black" } else { "brown" });
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, hair_color_callback),
+        10 => insert_users::<_, 10>(&mut conn, hair_color_callback),
+        100 => insert_users::<_, 100>(&mut conn, hair_color_callback),
+        1_000 => insert_users::<_, 1_000>(&mut conn, hair_color_callback),
+        10_000 => insert_users::<_, 10_000>(&mut conn, hair_color_callback),
+        _ => unimplemented!(),
+    }
 
     b.iter(|| {
         use self::users::dsl::*;
@@ -206,9 +253,15 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
 
 pub fn bench_medium_complex_query_boxed(b: &mut Bencher, size: usize) {
     let mut conn = connection();
-    insert_users(size, &mut conn, |i| {
-        Some(if i % 2 == 0 { "black" } else { "brown" })
-    });
+    let hair_color_callback = |i| Some(if i % 2 == 0 { "black" } else { "brown" });
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, hair_color_callback),
+        10 => insert_users::<_, 10>(&mut conn, hair_color_callback),
+        100 => insert_users::<_, 100>(&mut conn, hair_color_callback),
+        1_000 => insert_users::<_, 1_000>(&mut conn, hair_color_callback),
+        10_000 => insert_users::<_, 10_000>(&mut conn, hair_color_callback),
+        _ => unimplemented!(),
+    }
 
     b.iter(|| {
         use self::users::dsl::*;
@@ -222,9 +275,16 @@ pub fn bench_medium_complex_query_boxed(b: &mut Bencher, size: usize) {
 
 pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize) {
     let mut conn = connection();
-    insert_users(size, &mut conn, |i| {
-        Some(if i % 2 == 0 { "black" } else { "brown" })
-    });
+
+    let hair_color_callback = |i| Some(if i % 2 == 0 { "black" } else { "brown" });
+    match size {
+        1 => insert_users::<_, 1>(&mut conn, hair_color_callback),
+        10 => insert_users::<_, 10>(&mut conn, hair_color_callback),
+        100 => insert_users::<_, 100>(&mut conn, hair_color_callback),
+        1_000 => insert_users::<_, 1_000>(&mut conn, hair_color_callback),
+        10_000 => insert_users::<_, 10_000>(&mut conn, hair_color_callback),
+        _ => unimplemented!(),
+    }
 
     b.iter(|| {
         diesel::sql_query(
@@ -237,9 +297,27 @@ pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize
 }
 
 pub fn bench_insert(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
+    let conn = &mut connection();
 
-    b.iter(|| insert_users(size, &mut conn, |_| Some("hair_color")))
+    #[inline(always)]
+    fn hair_color_callback(_: usize) -> Option<&'static str> {
+        Some("hair_color")
+    }
+
+    let insert: fn(&mut TestConnection) = match size {
+        1 => |conn| insert_users::<_, 1>(conn, hair_color_callback),
+        10 => |conn| insert_users::<_, 10>(conn, hair_color_callback),
+        25 => |conn| insert_users::<_, 25>(conn, hair_color_callback),
+        50 => |conn| insert_users::<_, 50>(conn, hair_color_callback),
+        100 => |conn| insert_users::<_, 100>(conn, hair_color_callback),
+        _ => unimplemented!(),
+    };
+    let insert = &insert;
+
+    b.iter(|| {
+        let insert = insert;
+        insert(conn)
+    })
 }
 
 pub fn loading_associations_sequentially(b: &mut Bencher) {
@@ -251,7 +329,8 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
 
     // SETUP A TON OF DATA
     let mut conn = connection();
-    insert_users(USER_NUMBER, &mut conn, |i| {
+
+    insert_users::<_, USER_NUMBER>(&mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" })
     });
 

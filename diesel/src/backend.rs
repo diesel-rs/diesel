@@ -61,6 +61,9 @@ pub trait HasRawValue<'a> {
 }
 
 /// A trait indicating that the provided raw value uses a binary representation internally
+// That's a false positive, `HasRawValue<'a>` is essentially
+// a reference wrapper
+#[allow(clippy::wrong_self_convention)]
 pub trait BinaryRawValue<'a>: HasRawValue<'a> {
     /// Get the underlying binary representation of the raw value
     fn as_bytes(value: Self::RawValue) -> &'a [u8];

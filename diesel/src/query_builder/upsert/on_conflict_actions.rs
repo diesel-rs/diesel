@@ -5,7 +5,7 @@ use crate::query_source::*;
 use crate::result::QueryResult;
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct DoNothing;
 
 impl<DB> QueryFragment<DB> for DoNothing
@@ -19,7 +19,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct DoUpdate<T> {
     changeset: T,
 }
@@ -48,7 +48,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct Excluded<T>(T);
 
 impl<T> Excluded<T> {

@@ -18,6 +18,9 @@ pub trait AsChangeset {
     type Changeset;
 
     /// Convert `self` into the actual update statement being executed
+    // This method is part of our public API
+    // we won't change it to just appease clippy
+    #[allow(clippy::wrong_self_convention)]
     fn as_changeset(self) -> Self::Changeset;
 }
 
@@ -62,7 +65,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct Assign<Col, Expr> {
     _column: Col,
     expr: Expr,
