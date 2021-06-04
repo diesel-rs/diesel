@@ -4,6 +4,12 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## [1.4.7] - 2021-06-03
+
+### Fixed
+
+* Updated 'libsqlite3-sys' to 0.22
+
 ## [1.4.6] - 2021-03-05
 
 ### Fixed
