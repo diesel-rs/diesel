@@ -1,0 +1,940 @@
+warning: missing documentation for macro
+    --> diesel/src/macros/mod.rs:1227:1
+     |
+1227 | macro_rules! allow_columns_to_appear_in_same_group_by_clause {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     |
+note: lint level defined here
+    --> diesel/src/lib.rs:104:5
+     |
+104  |     missing_docs
+     |     ^^^^^^^^^^^^
+
+   Compiling diesel_tests v0.1.0 (/home/weiznich/Dokumente/rust/diesel/diesel_tests)
+error[E0658]: use of unstable library feature 'trace_macros': `trace_macros` is not stable enough for use and is subject to change
+   --> diesel_tests/tests/group_by.rs:155:1
+    |
+155 | trace_macros!(true);
+    | ^^^^^^^^^^^^
+    |
+    = note: for more information, see https://github.com/rust-lang/rust/issues/29598
+
+error[E0658]: use of unstable library feature 'trace_macros': `trace_macros` is not stable enough for use and is subject to change
+   --> diesel_tests/tests/group_by.rs:162:1
+    |
+162 | trace_macros!(false);
+    | ^^^^^^^^^^^^
+    |
+    = note: for more information, see https://github.com/rust-lang/rust/issues/29598
+
+note: trace_macro
+   --> diesel_tests/tests/group_by.rs:156:1
+    |
+156 | / diesel::allow_columns_to_appear_in_same_group_by_clause!(
+157 | |     posts::id,
+158 | |     users::id,
+159 | |     posts::title,
+160 | |     users::name
+161 | | );
+    | |__^
+    |
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { posts :: id, users :: id, posts :: title, users :: name }`
+    = note: to `allow_columns_to_appear_in_same_group_by_clause !
+            { posts :: id, users :: id, } allow_columns_to_appear_in_same_group_by_clause
+            ! { posts :: id, posts :: title, users :: name }
+            allow_columns_to_appear_in_same_group_by_clause !
+            { users :: id, posts :: title, users :: name }`
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { posts :: id, users :: id, }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts :: id], right = [users :: id], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts :: id], right = [users :: id], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts id], right = [users id], left_tbl = [], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts id], right = [users id], left_tbl = [], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [id], right = [users id], left_tbl = [posts], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [users id], left_tbl = [posts], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [users id], left_tbl = [posts], left_path = [],
+                right_tbl = [], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [users id], left_tbl = [posts], left_path = [], right_tbl
+            = [], right_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [id], left_tbl = [posts], left_path = [], right_tbl =
+                [users], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [id], left_tbl = [posts], left_path = [], right_tbl =
+            [users], right_path = [], }`
+    = note: to `$crate :: static_cond !
+            {
+                if posts != users
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                    users :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: id >
+                    for posts :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            }`
+    = note: expanding `static_cond! { if posts != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `$crate :: static_cond !
+            (if posts != users
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                 users :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                 posts :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             } else { }) ;`
+    = note: expanding `static_cond! { if posts != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } else { } }`
+    = note: to `$crate :: static_cond !
+            (@ go posts users { }
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                 users :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                 posts :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             }) ;`
+    = note: expanding `static_cond! { @ go posts users { }
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `macro_rules ! __static_cond
+            {
+                (posts posts) => { } ; (posts users) =>
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                    users :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: id >
+                    for posts :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            } __static_cond ! (posts users) ;`
+    = note: expanding `__static_cond! { posts users }`
+    = note: to `impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for users ::
+            id { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            impl $crate :: expression :: IsContainedInGroupBy < users :: id > for posts ::
+            id { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }`
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { posts :: id, posts :: title, users :: name }`
+    = note: to `allow_columns_to_appear_in_same_group_by_clause !
+            { posts :: id, posts :: title, }
+            allow_columns_to_appear_in_same_group_by_clause !
+            { posts :: id, users :: name } allow_columns_to_appear_in_same_group_by_clause
+            ! { posts :: title, users :: name }`
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { posts :: id, posts :: title, }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts :: id], right = [posts :: title], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts :: id], right = [posts :: title], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts id], right = [posts title], left_tbl = [], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts id], right = [posts title], left_tbl = [], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [id], right = [posts title], left_tbl = [posts], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [posts title], left_tbl = [posts], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [posts title], left_tbl = [posts], left_path = [],
+                right_tbl = [], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [posts title], left_tbl = [posts], left_path = [],
+            right_tbl = [], right_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [title], left_tbl = [posts], left_path = [],
+                right_tbl = [posts], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [title], left_tbl = [posts], left_path = [], right_tbl =
+            [posts], right_path = [], }`
+    = note: to `$crate :: static_cond !
+            {
+                if posts != posts
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                    posts :: title
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                    for posts :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            }`
+    = note: expanding `static_cond! { if posts != posts
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `$crate :: static_cond !
+            (if posts != posts
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                 posts :: title
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                 for posts :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             } else { }) ;`
+    = note: expanding `static_cond! { if posts != posts
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } else { } }`
+    = note: to `$crate :: static_cond !
+            (@ go posts posts { }
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                 posts :: title
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                 for posts :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             }) ;`
+    = note: expanding `static_cond! { @ go posts posts { }
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `macro_rules ! __static_cond
+            {
+                (posts posts) => { } ; (posts posts) =>
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                    posts :: title
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                    for posts :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            } __static_cond ! (posts posts) ;`
+    = note: expanding `__static_cond! { posts posts }`
+    = note: to ``
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { posts :: id, users :: name }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts :: id], right = [users :: name], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts :: id], right = [users :: name], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts id], right = [users name], left_tbl = [], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts id], right = [users name], left_tbl = [], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [id], right = [users name], left_tbl = [posts], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [users name], left_tbl = [posts], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [users name], left_tbl = [posts], left_path = [],
+                right_tbl = [], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [users name], left_tbl = [posts], left_path = [],
+            right_tbl = [], right_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [name], left_tbl = [posts], left_path = [], right_tbl
+                = [users], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [name], left_tbl = [posts], left_path = [], right_tbl =
+            [users], right_path = [], }`
+    = note: to `$crate :: static_cond !
+            {
+                if posts != users
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                    users :: name
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: name >
+                    for posts :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            }`
+    = note: expanding `static_cond! { if posts != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `$crate :: static_cond !
+            (if posts != users
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                 users :: name
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                 posts :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             } else { }) ;`
+    = note: expanding `static_cond! { if posts != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } else { } }`
+    = note: to `$crate :: static_cond !
+            (@ go posts users { }
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                 users :: name
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                 posts :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             }) ;`
+    = note: expanding `static_cond! { @ go posts users { }
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `macro_rules ! __static_cond
+            {
+                (posts posts) => { } ; (posts users) =>
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for
+                    users :: name
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: name >
+                    for posts :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            } __static_cond ! (posts users) ;`
+    = note: expanding `__static_cond! { posts users }`
+    = note: to `impl $crate :: expression :: IsContainedInGroupBy < posts :: id > for users ::
+            name
+            { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            impl $crate :: expression :: IsContainedInGroupBy < users :: name > for posts
+            :: id
+            { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }`
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { posts :: title, users :: name }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts :: title], right = [users :: name], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts :: title], right = [users :: name], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts title], right = [users name], left_tbl = [], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts title], right = [users name], left_tbl = [], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [title], right = [users name], left_tbl = [posts], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [title], right = [users name], left_tbl = [posts], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [title], right = [users name], left_tbl = [posts], left_path = [],
+                right_tbl = [], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [title], right = [users name], left_tbl = [posts], left_path = [],
+            right_tbl = [], right_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [title], right = [name], left_tbl = [posts], left_path = [],
+                right_tbl = [users], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [title], right = [name], left_tbl = [posts], left_path = [], right_tbl
+            = [users], right_path = [], }`
+    = note: to `$crate :: static_cond !
+            {
+                if posts != users
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                    for users :: name
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: name >
+                    for posts :: title
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            }`
+    = note: expanding `static_cond! { if posts != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `$crate :: static_cond !
+            (if posts != users
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                 users :: name
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                 posts :: title
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             } else { }) ;`
+    = note: expanding `static_cond! { if posts != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } else { } }`
+    = note: to `$crate :: static_cond !
+            (@ go posts users { }
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                 users :: name
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                 posts :: title
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             }) ;`
+    = note: expanding `static_cond! { @ go posts users { }
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `macro_rules ! __static_cond
+            {
+                (posts posts) => { } ; (posts users) =>
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                    for users :: name
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: name >
+                    for posts :: title
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            } __static_cond ! (posts users) ;`
+    = note: expanding `__static_cond! { posts users }`
+    = note: to `impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for users
+            :: name
+            { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            impl $crate :: expression :: IsContainedInGroupBy < users :: name > for posts
+            :: title
+            { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }`
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { users :: id, posts :: title, users :: name }`
+    = note: to `allow_columns_to_appear_in_same_group_by_clause !
+            { users :: id, posts :: title, }
+            allow_columns_to_appear_in_same_group_by_clause !
+            { users :: id, users :: name } allow_columns_to_appear_in_same_group_by_clause
+            ! { posts :: title, users :: name }`
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { users :: id, posts :: title, }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [users :: id], right = [posts :: title], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [users :: id], right = [posts :: title], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [users id], right = [posts title], left_tbl = [], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [users id], right = [posts title], left_tbl = [], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [id], right = [posts title], left_tbl = [users], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [posts title], left_tbl = [users], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [posts title], left_tbl = [users], left_path = [],
+                right_tbl = [], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [posts title], left_tbl = [users], left_path = [],
+            right_tbl = [], right_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [title], left_tbl = [users], left_path = [],
+                right_tbl = [posts], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [title], left_tbl = [users], left_path = [], right_tbl =
+            [posts], right_path = [], }`
+    = note: to `$crate :: static_cond !
+            {
+                if users != posts
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                    posts :: title
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                    for users :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            }`
+    = note: expanding `static_cond! { if users != posts
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `$crate :: static_cond !
+            (if users != posts
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                 posts :: title
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                 for users :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             } else { }) ;`
+    = note: expanding `static_cond! { if users != posts
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } else { } }`
+    = note: to `$crate :: static_cond !
+            (@ go users posts { }
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                 posts :: title
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                 for users :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             }) ;`
+    = note: expanding `static_cond! { @ go users posts { }
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `macro_rules ! __static_cond
+            {
+                (users users) => { } ; (users posts) =>
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                    posts :: title
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                    for users :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            } __static_cond ! (users posts) ;`
+    = note: expanding `__static_cond! { users posts }`
+    = note: to `impl $crate :: expression :: IsContainedInGroupBy < users :: id > for posts ::
+            title
+            { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for users
+            :: id
+            { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }`
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { users :: id, users :: name }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [users :: id], right = [users :: name], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [users :: id], right = [users :: name], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [users id], right = [users name], left_tbl = [], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [users id], right = [users name], left_tbl = [], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [id], right = [users name], left_tbl = [users], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [users name], left_tbl = [users], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [users name], left_tbl = [users], left_path = [],
+                right_tbl = [], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [users name], left_tbl = [users], left_path = [],
+            right_tbl = [], right_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [id], right = [name], left_tbl = [users], left_path = [], right_tbl
+                = [users], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [id], right = [name], left_tbl = [users], left_path = [], right_tbl =
+            [users], right_path = [], }`
+    = note: to `$crate :: static_cond !
+            {
+                if users != users
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                    users :: name
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: name >
+                    for users :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            }`
+    = note: expanding `static_cond! { if users != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `$crate :: static_cond !
+            (if users != users
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                 users :: name
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                 users :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             } else { }) ;`
+    = note: expanding `static_cond! { if users != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } else { } }`
+    = note: to `$crate :: static_cond !
+            (@ go users users { }
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                 users :: name
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                 users :: id
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             }) ;`
+    = note: expanding `static_cond! { @ go users users { }
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                users :: id
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `macro_rules ! __static_cond
+            {
+                (users users) => { } ; (users users) =>
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < users :: id > for
+                    users :: name
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: name >
+                    for users :: id
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            } __static_cond ! (users users) ;`
+    = note: expanding `__static_cond! { users users }`
+    = note: to ``
+    = note: expanding `allow_columns_to_appear_in_same_group_by_clause! { posts :: title, users :: name }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts :: title], right = [users :: name], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts :: title], right = [users :: name], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [posts title], right = [users name], left_tbl = [], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [posts title], right = [users name], left_tbl = [], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            { left = [title], right = [users name], left_tbl = [posts], left_path = [], }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [title], right = [users name], left_tbl = [posts], left_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [title], right = [users name], left_tbl = [posts], left_path = [],
+                right_tbl = [], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [title], right = [users name], left_tbl = [posts], left_path = [],
+            right_tbl = [], right_path = [], }`
+    = note: to `__diesel_impl_allow_in_same_group_by_clause !
+            {
+                left = [title], right = [name], left_tbl = [posts], left_path = [],
+                right_tbl = [users], right_path = [],
+            }`
+    = note: expanding `__diesel_impl_allow_in_same_group_by_clause! { left = [title], right = [name], left_tbl = [posts], left_path = [], right_tbl
+            = [users], right_path = [], }`
+    = note: to `$crate :: static_cond !
+            {
+                if posts != users
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                    for users :: name
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: name >
+                    for posts :: title
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            }`
+    = note: expanding `static_cond! { if posts != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `$crate :: static_cond !
+            (if posts != users
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                 users :: name
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                 posts :: title
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             } else { }) ;`
+    = note: expanding `static_cond! { if posts != users
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } else { } }`
+    = note: to `$crate :: static_cond !
+            (@ go posts users { }
+             {
+                 impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                 users :: name
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 } impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                 posts :: title
+                 {
+                     type Output = $crate :: expression :: is_contained_in_group_by :: No
+                     ;
+                 }
+             }) ;`
+    = note: expanding `static_cond! { @ go posts users { }
+            {
+                impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for
+                users :: name
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+                impl $crate :: expression :: IsContainedInGroupBy < users :: name > for
+                posts :: title
+                { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            } }`
+    = note: to `macro_rules ! __static_cond
+            {
+                (posts posts) => { } ; (posts users) =>
+                {
+                    impl $crate :: expression :: IsContainedInGroupBy < posts :: title >
+                    for users :: name
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    } impl $crate :: expression :: IsContainedInGroupBy < users :: name >
+                    for posts :: title
+                    {
+                        type Output = $crate :: expression :: is_contained_in_group_by ::
+                        No ;
+                    }
+                }
+            } __static_cond ! (posts users) ;`
+    = note: expanding `__static_cond! { posts users }`
+    = note: to `impl $crate :: expression :: IsContainedInGroupBy < posts :: title > for users
+            :: name
+            { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }
+            impl $crate :: expression :: IsContainedInGroupBy < users :: name > for posts
+            :: title
+            { type Output = $crate :: expression :: is_contained_in_group_by :: No ; }`
+
+error[E0119]: conflicting implementations of trait `diesel::expression::IsContainedInGroupBy<schema::posts::columns::title>` for type `schema::users::columns::name`:
+   --> diesel_tests/tests/group_by.rs:156:1
+    |
+156 | / diesel::allow_columns_to_appear_in_same_group_by_clause!(
+157 | |     posts::id,
+158 | |     users::id,
+159 | |     posts::title,
+160 | |     users::name
+161 | | );
+    | |  ^
+    | |  |
+    | |__first implementation here
+    |    conflicting implementation for `schema::users::columns::name`
+    |
+    = note: this error originates in a macro outside of the current crate (in Nightly builds, run with -Z external-macro-backtrace for more info)
+
+error[E0119]: conflicting implementations of trait `diesel::expression::IsContainedInGroupBy<schema::users::columns::name>` for type `schema::posts::columns::title`:
+   --> diesel_tests/tests/group_by.rs:156:1
+    |
+156 | / diesel::allow_columns_to_appear_in_same_group_by_clause!(
+157 | |     posts::id,
+158 | |     users::id,
+159 | |     posts::title,
+160 | |     users::name
+161 | | );
+    | |  ^
+    | |  |
+    | |__first implementation here
+    |    conflicting implementation for `schema::posts::columns::title`
+    |
+    = note: this error originates in a macro outside of the current crate (in Nightly builds, run with -Z external-macro-backtrace for more info)
+
+error: aborting due to 4 previous errors
+
+Some errors have detailed explanations: E0119, E0658.
+For more information about an error, try `rustc --explain E0119`.
+error: could not compile `diesel_tests`.
+
+To learn more, run the command again with --verbose.
