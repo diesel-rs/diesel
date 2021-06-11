@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 use super::{Binds, Statement, StatementMetadata};
-use super::metadata::MysqlFieldMetadata;
 use crate::mysql::{Mysql, MysqlType};
 use crate::result::QueryResult;
 use crate::row::*;
@@ -152,7 +151,7 @@ pub struct MysqlField<'a> {
     bind: Rc<Binds>,
     metadata: Rc<StatementMetadata>,
     idx: usize,
-    _marker: PhantomData<&'a (Binds, StatementMetadata)>
+    _marker: PhantomData<&'a (Binds, StatementMetadata)>,
 }
 
 impl<'a> Field<Mysql> for MysqlField<'a> {

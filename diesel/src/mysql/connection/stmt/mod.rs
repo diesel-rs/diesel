@@ -9,7 +9,7 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 
 use self::iterator::*;
-use super::bind::{BindData, Binds};
+use super::bind::Binds;
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
@@ -80,10 +80,10 @@ impl Statement {
     /// This function should be called instead of `execute` for queries which
     /// have a return value. After calling this function, `execute` can never
     /// be called on this statement.
-    pub unsafe fn results(
-        self,
+    pub unsafe fn results<'a>(
+        &'a mut self,
         types: Vec<Option<MysqlType>>,
-    ) -> QueryResult<StatementIterator> {
+    ) -> QueryResult<StatementIterator<'a>> {
         StatementIterator::new(self, types)
     }
 
