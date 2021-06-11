@@ -23,7 +23,7 @@ jobs:
       matrix:
         rust: ["stable", "beta", "nightly"]
           #        backend: ["postgres", "sqlite", "mysql"]
-        backend: ["postgres"]
+        backend: ["postgres", "mysql"]
         os: [ubuntu-20.04, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
