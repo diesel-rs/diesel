@@ -372,7 +372,6 @@ macro_rules! impl_from_sql_row {
             $(
                 $T: FromSqlRow<$ST, __DB> + StaticallySizedRow<$ST, __DB>,
             )*
-
         {
 
             #[allow(non_snake_case, unused_variables, unused_mut)]

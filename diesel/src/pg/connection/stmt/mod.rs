@@ -22,6 +22,7 @@ impl Statement {
         conn: &PgConnection,
         param_data: &Vec<Option<Vec<u8>>>,
     ) -> QueryResult<PgResult> {
+        
         let params_pointer = param_data
             .iter()
             .map(|data| {

@@ -78,7 +78,7 @@ impl Connection for PgConnection {
         let (query, params) = self.prepare_query(&source.as_query())?;
         let result = query.execute(self, &params)?;
         let cursor = Cursor::new(&result);
-
+        
         cursor
             .map(|row| U::build_from_row(&row).map_err(DeserializationError))
             .collect::<QueryResult<Vec<_>>>()
