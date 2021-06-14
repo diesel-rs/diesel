@@ -408,6 +408,7 @@ where
         use crate::row::Field;
 
         let field = row.get(0).ok_or(crate::result::UnexpectedEndOfRow)?;
+        // println!("field:{}", field.value());
         T::from_nullable_sql(field.value())
     }
 }
@@ -428,7 +429,7 @@ where
     type Row = Self;
 
     fn build(row: Self::Row) -> Self {
-        row
+        row;
     }
 }*/
 

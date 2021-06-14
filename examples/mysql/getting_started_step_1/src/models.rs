@@ -7,3 +7,10 @@ pub struct Post {
     pub body: String,
     pub published: bool,
 }
+
+#[derive(Queryable)]
+pub struct Company {
+    pub company_id: i32,
+    pub company_code: String,
+    pub company_name: String,    
+}

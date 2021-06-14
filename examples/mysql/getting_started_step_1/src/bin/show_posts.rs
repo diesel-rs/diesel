@@ -4,6 +4,7 @@ use diesel_demo_step_1_mysql::*;
 
 fn main() {
     use self::schema::posts::dsl::*;
+    use self::schema::companys::dsl::*;
 
     let connection = establish_connection();
     let results = posts
@@ -18,4 +19,16 @@ fn main() {
         println!("-----------\n");
         println!("{}", post.body);
     }
+
+    // let results = companys
+    //     .filter(company_code.eq("O0000001"))        
+    //     .load::<Company>(&connection)
+    //     .expect("Error loading posts");
+
+    // println!("Displaying {} posts", results.len());
+    // for company in results {
+    //     println!("{}", company.company_code);
+    //     println!("-----------\n");
+    //     println!("{}", company.company_name);
+    // }
 }
