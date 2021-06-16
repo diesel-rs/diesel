@@ -142,6 +142,11 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         }
     };
 
+    let is_supported_on_sqlite = cfg!(feature = "sqlite")
+        && type_args.is_empty()
+        && is_sqlite_type(&return_type)
+        && arg_type.iter().all(|a| is_sqlite_type(a));
+
     if is_aggregate {
         tokens = quote! {
             #tokens
@@ -152,7 +157,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 type IsAggregate = diesel::expression::is_aggregate::Yes;
             }
         };
-        if cfg!(feature = "sqlite") && type_args.is_empty() {
+        if is_supported_on_sqlite {
             tokens = quote! {
                 #tokens
 
@@ -242,7 +247,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
             }
         };
 
-        if cfg!(feature = "sqlite") && type_args.is_empty() && !arg_name.is_empty() {
+        if is_supported_on_sqlite && !arg_name.is_empty() {
             tokens = quote! {
                 #tokens
 
@@ -303,11 +308,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
             };
         }
 
-        if cfg!(feature = "sqlite")
-            && type_args.is_empty()
-            && arg_name.is_empty()
-            && is_sqlite_type(&return_type)
-        {
+        if is_supported_on_sqlite && arg_name.is_empty() {
             tokens = quote! {
                 #tokens
 
@@ -454,6 +455,26 @@ impl ToTokens for StrictFnArg {
 }
 
 fn is_sqlite_type(ty: &syn::Type) -> bool {
+    let last_segment = if let syn::Type::Path(tp) = ty {
+        if let Some(segment) = tp.path.segments.last() {
+            segment
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    };
+
+    let ident = last_segment.ident.to_string();
+    if ident == "Nullable" {
+        if let syn::PathArguments::AngleBracketed(ref ab) = last_segment.arguments {
+            if let Some(syn::GenericArgument::Type(ty)) = ab.args.first() {
+                return is_sqlite_type(&ty);
+            }
+        }
+        return false;
+    }
+
     [
         "BigInt",
         "Binary",
@@ -468,5 +489,5 @@ fn is_sqlite_type(ty: &syn::Type) -> bool {
         "Time",
         "Timestamp",
     ]
-    .contains(&quote!(#ty).to_string().as_str())
+    .contains(&ident.as_str())
 }
