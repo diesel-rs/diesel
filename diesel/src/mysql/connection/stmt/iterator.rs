@@ -6,6 +6,7 @@ use crate::mysql::{Mysql, MysqlType};
 use crate::result::QueryResult;
 use crate::row::*;
 
+#[allow(missing_debug_implementations)]
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,
     output_binds: Rc<Binds>,
@@ -93,6 +94,7 @@ impl<'a> ExactSizeIterator for StatementIterator<'a> {
 }
 
 #[derive(Clone)]
+#[allow(missing_debug_implementations)]
 pub struct MysqlRow<'a> {
     col_idx: usize,
     binds: Rc<Binds>,
@@ -147,6 +149,7 @@ impl<'a, 'b> RowIndex<&'a str> for MysqlRow<'b> {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct MysqlField<'a> {
     bind: Rc<Binds>,
     metadata: Rc<StatementMetadata>,

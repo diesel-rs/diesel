@@ -25,8 +25,17 @@ pub trait SimpleConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()>;
 }
 
+/// This trait describes which cursor type is used by a given connection
+/// implementation. This trait is only useful in combination with [`Connection`].
+///
+/// Implementation wise this is a workaround for GAT types
 pub trait IterableConnection<'a, DB: Backend> {
+    /// The cursor type returned by [`Connection::load`]
+    ///
+    /// Users should handle this as opaque type that implements [`Iterator`]
     type Cursor: Iterator<Item = QueryResult<Self::Row>>;
+    /// The row type used as [`Iterator::Item`] for the iterator implementation
+    /// of [`IterableConnection::Cursor`]
     type Row: crate::row::Row<'a, DB>;
 }
 

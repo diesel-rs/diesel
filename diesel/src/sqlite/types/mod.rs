@@ -15,7 +15,7 @@ use crate::sql_types;
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
 impl FromSql<sql_types::VarChar, Sqlite> for *const str {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         let text = value.read_text();
         Ok(text as *const _)
     }
@@ -27,44 +27,44 @@ impl FromSql<sql_types::VarChar, Sqlite> for *const str {
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
 impl FromSql<sql_types::Binary, Sqlite> for *const [u8] {
-    fn from_sql(bytes: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: &'_ SqliteValue) -> deserialize::Result<Self> {
         let bytes = bytes.read_blob();
         Ok(bytes as *const _)
     }
 }
 
 impl FromSql<sql_types::SmallInt, Sqlite> for i16 {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         Ok(value.read_integer() as i16)
     }
 }
 
 impl FromSql<sql_types::Integer, Sqlite> for i32 {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         Ok(value.read_integer())
     }
 }
 
 impl FromSql<sql_types::Bool, Sqlite> for bool {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         Ok(value.read_integer() != 0)
     }
 }
 
 impl FromSql<sql_types::BigInt, Sqlite> for i64 {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         Ok(value.read_long())
     }
 }
 
 impl FromSql<sql_types::Float, Sqlite> for f32 {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         Ok(value.read_double() as f32)
     }
 }
 
 impl FromSql<sql_types::Double, Sqlite> for f64 {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         Ok(value.read_double())
     }
 }

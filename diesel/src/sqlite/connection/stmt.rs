@@ -1,17 +1,16 @@
 extern crate libsqlite3_sys as ffi;
 
-use std::ffi::{CStr, CString};
-use std::io::{stderr, Write};
-use std::os::raw as libc;
-use std::ptr::{self, NonNull};
-
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
-use super::sqlite_value::SqliteRow;
 use super::SqliteValue;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::SqliteType;
+use crate::util::OnceCell;
+use std::ffi::{CStr, CString};
+use std::io::{stderr, Write};
+use std::os::raw as libc;
+use std::ptr::{self, NonNull};
 
 pub struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,
@@ -117,36 +116,25 @@ impl Drop for Statement {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct StatementUse<'a: 'b, 'b> {
     statement: &'a mut Statement,
-    column_names: Vec<&'b str>,
-    should_init_column_names: bool,
+    column_names: OnceCell<Vec<&'b str>>,
 }
 
 impl<'a, 'b> StatementUse<'a, 'b> {
-    pub(in crate::sqlite::connection) fn new(
-        statement: &'a mut Statement,
-        should_init_column_names: bool,
-    ) -> Self {
+    pub(in crate::sqlite::connection) fn new(statement: &'a mut Statement) -> Self {
         StatementUse {
             statement,
-            // Init with empty vector because column names
-            // can change till the first call to `step()`
-            column_names: Vec::new(),
-            should_init_column_names,
+            column_names: OnceCell::new(),
         }
     }
 
-    pub(in crate::sqlite::connection) fn run(&mut self) -> QueryResult<()> {
+    pub(in crate::sqlite::connection) fn run(self) -> QueryResult<()> {
         self.step().map(|_| ())
     }
 
-    pub(in crate::sqlite::connection) fn step<'c>(
-        &'c mut self,
-    ) -> QueryResult<Option<SqliteRow<'a, 'b, 'c>>>
-    where
-        'b: 'c,
-    {
+    pub(in crate::sqlite::connection) fn step<'c>(self) -> QueryResult<Option<Self>> {
         let res = unsafe {
             match ffi::sqlite3_step(self.statement.inner_statement.as_ptr()) {
                 ffi::SQLITE_DONE => Ok(None),
@@ -154,13 +142,7 @@ impl<'a, 'b> StatementUse<'a, 'b> {
                 _ => Err(last_error(self.statement.raw_connection())),
             }
         }?;
-        if self.should_init_column_names {
-            self.column_names = (0..self.column_count())
-                .map(|idx| unsafe { self.column_name(idx) })
-                .collect();
-            self.should_init_column_names = false;
-        }
-        Ok(res.map(move |()| SqliteRow::new(self)))
+        Ok(res.map(move |()| self))
     }
 
     // The returned string pointer is valid until either the prepared statement is
@@ -197,27 +179,33 @@ impl<'a, 'b> StatementUse<'a, 'b> {
     }
 
     pub(in crate::sqlite::connection) fn index_for_column_name(
-        &self,
+        &mut self,
         field_name: &str,
     ) -> Option<usize> {
-        self.column_names
-            .iter()
-            .enumerate()
-            .find(|(_, name)| name == &&field_name)
-            .map(|(idx, _)| idx)
+        (0..self.column_count())
+            .find(|idx| self.field_name(*idx) == Some(field_name))
+            .map(|v| v as usize)
     }
 
-    pub(in crate::sqlite::connection) fn field_name<'c>(&'c self, idx: i32) -> Option<&'c str>
+    pub(in crate::sqlite::connection) fn field_name<'c>(&'c mut self, idx: i32) -> Option<&'c str>
     where
         'b: 'c,
     {
-        self.column_names.get(idx as usize).copied()
+        if let Some(column_names) = self.column_names.get() {
+            return column_names.get(idx as usize).copied();
+        }
+        let values = (0..self.column_count())
+            .map(|idx| unsafe { self.column_name(idx) })
+            .collect::<Vec<_>>();
+        let ret = values.get(idx as usize).copied();
+        let _ = self.column_names.set(values);
+        ret
     }
 
     pub(in crate::sqlite::connection) fn value<'c>(
-        &'c self,
+        &self,
         idx: i32,
-    ) -> Option<super::SqliteValue<'c>>
+    ) -> Option<&'a super::SqliteValue>
     where
         'b: 'c,
     {

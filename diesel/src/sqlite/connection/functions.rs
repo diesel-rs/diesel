@@ -174,8 +174,8 @@ struct FunctionArgument<'a> {
     p: PhantomData<&'a ()>,
 }
 
-impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
-    fn field_name(&self) -> Option<&'a str> {
+impl<'a> Field<Sqlite> for FunctionArgument<'a> {
+    fn field_name(&self) -> Option<&str> {
         None
     }
 
@@ -183,7 +183,7 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
         self.value().is_none()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'a, Sqlite>> {
+    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Sqlite>> {
         unsafe { SqliteValue::new(self.arg) }
     }
 }

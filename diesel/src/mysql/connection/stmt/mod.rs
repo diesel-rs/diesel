@@ -1,6 +1,6 @@
 extern crate mysqlclient_sys as ffi;
 
-pub mod iterator;
+pub(super) mod iterator;
 mod metadata;
 
 use std::convert::TryFrom;
@@ -15,7 +15,7 @@ use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
 pub use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 
-#[allow(dead_code)]
+#[allow(dead_code, missing_debug_implementations)]
 // https://github.com/rust-lang/rust/issues/81658
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,

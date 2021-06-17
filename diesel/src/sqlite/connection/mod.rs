@@ -3,6 +3,7 @@ extern crate libsqlite3_sys as ffi;
 mod functions;
 #[doc(hidden)]
 pub mod raw;
+mod row;
 mod serialized_value;
 mod sqlite_value;
 mod statement_iterator;
@@ -22,7 +23,6 @@ use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
-use crate::row::Row;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
 use crate::sqlite::Sqlite;
@@ -35,7 +35,11 @@ use crate::sqlite::Sqlite;
 /// - Special identifiers (`:memory:`)
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
+    // Both statement_cache and current_statement needs to be before raw_connection
+    // otherwise we will get errors about open statements before closing the
+    // connection itself
     statement_cache: StatementCache<Sqlite, Statement>,
+    current_statement: Option<Statement>,
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
 }
@@ -51,9 +55,9 @@ impl SimpleConnection for SqliteConnection {
     }
 }
 
-impl<'a> IterableConnection<'a> for SqliteConnection {
-    type Cursor = StatementIterator<'a, 'a, (), ()>;
-    type Row = self::sqlite_value::SqliteRow<'a, 'a, 'a>;
+impl<'a> IterableConnection<'a, Sqlite> for SqliteConnection {
+    type Cursor = StatementIterator<'a, 'a>;
+    type Row = self::row::SqliteRow<'a, 'a>;
 }
 
 impl Connection for SqliteConnection {
@@ -74,6 +78,7 @@ impl Connection for SqliteConnection {
             statement_cache: StatementCache::new(),
             raw_connection,
             transaction_state: AnsiTransactionManager::default(),
+            current_statement: None,
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
@@ -87,23 +92,28 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn load<'a, T, ST>(
-        &mut self,
+    fn load<'a, T>(
+        &'a mut self,
         source: T,
-    ) -> QueryResult<<Self as IterableConnection<'a>>::Cursor>
+    ) -> QueryResult<<Self as IterableConnection<'a, Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: QueryMetadata<T::SqlType>,
-        <Self as IterableConnection<'a>>::Cursor:
-            Iterator<Item = QueryResult<&'a <Self as IterableConnection<'a>>::Row>>,
-        for<'b> <Self as IterableConnection<'a>>::Row: Row<'b, Self::Backend>,
     {
-        todo!()
-        // let mut statement = self.prepare_query(&source.as_query())?;
-        // let statement_use = StatementUse::new(&mut statement, true);
-        // let iter = StatementIterator::<_, U>::new(statement_use);
-        // iter.collect()
+        self.with_prepared_query(&source.as_query(), |stmt, current_statement| {
+            let statement = match stmt {
+                MaybeCached::CannotCache(stmt) => {
+                    *current_statement = Some(stmt);
+                    current_statement
+                        .as_mut()
+                        .expect("We set it literally above")
+                }
+                MaybeCached::Cached(stmt) => stmt,
+            };
+            let statement_use = StatementUse::new(statement);
+            Ok(StatementIterator::new(statement_use))
+        })
     }
 
     #[doc(hidden)]
@@ -111,11 +121,11 @@ impl Connection for SqliteConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        {
-            let mut statement = self.prepare_query(source)?;
-            let mut statement_use = StatementUse::new(&mut statement, false);
-            statement_use.run()?;
-        }
+        self.with_prepared_query(source, |mut stmt, _| {
+            let statement_use = StatementUse::new(&mut stmt);
+            statement_use.run()
+        })?;
+
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
@@ -204,11 +214,15 @@ impl SqliteConnection {
         }
     }
 
-    fn prepare_query<T: QueryFragment<Sqlite> + QueryId>(
-        &mut self,
-        source: &T,
-    ) -> QueryResult<MaybeCached<Statement>> {
-        let mut statement = self.cached_prepared_statement(source)?;
+    fn with_prepared_query<'a, T: QueryFragment<Sqlite> + QueryId, R>(
+        &'a mut self,
+        source: &'_ T,
+        f: impl FnOnce(MaybeCached<'a, Statement>, &'a mut Option<Statement>) -> QueryResult<R>,
+    ) -> QueryResult<R> {
+        let raw_connection = &self.raw_connection;
+        let cache = &mut self.statement_cache;
+        let mut statement =
+            cache.cached_statement(source, &[], |sql| Statement::prepare(raw_connection, sql))?;
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
         source.collect_binds(&mut bind_collector, &mut ())?;
@@ -218,16 +232,7 @@ impl SqliteConnection {
             statement.bind(tpe, value)?;
         }
 
-        Ok(statement)
-    }
-
-    fn cached_prepared_statement<T: QueryFragment<Sqlite> + QueryId>(
-        &mut self,
-        source: &T,
-    ) -> QueryResult<MaybeCached<Statement>> {
-        let raw_connection = &self.raw_connection;
-        let cache = &mut self.statement_cache;
-        cache.cached_statement(source, &[], |sql| Statement::prepare(raw_connection, sql))
+        f(statement, &mut self.current_statement)
     }
 
     #[doc(hidden)]

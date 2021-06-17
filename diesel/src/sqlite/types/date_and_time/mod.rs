@@ -15,7 +15,7 @@ mod chrono;
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
 impl FromSql<sql_types::Date, Sqlite> for *const str {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         FromSql::<sql_types::Text, Sqlite>::from_sql(value)
     }
 }
@@ -38,7 +38,7 @@ impl ToSql<sql_types::Date, Sqlite> for String {
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
 impl FromSql<sql_types::Time, Sqlite> for *const str {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         FromSql::<sql_types::Text, Sqlite>::from_sql(value)
     }
 }
@@ -61,7 +61,7 @@ impl ToSql<sql_types::Time, Sqlite> for String {
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
 impl FromSql<sql_types::Timestamp, Sqlite> for *const str {
-    fn from_sql(value: SqliteValue<'_>) -> deserialize::Result<Self> {
+    fn from_sql(value: &'_ SqliteValue) -> deserialize::Result<Self> {
         FromSql::<sql_types::Text, Sqlite>::from_sql(value)
     }
 }

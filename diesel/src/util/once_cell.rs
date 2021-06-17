@@ -89,12 +89,12 @@ impl<T> OnceCell<T> {
         self.get().unwrap()
     }
 
-    fn get(&self) -> Option<&T> {
+    pub(crate) fn get(&self) -> Option<&T> {
         // SAFETY: Safe due to `inner`'s invariant
         unsafe { &*self.inner.get() }.as_ref()
     }
 
-    fn set(&self, value: T) -> Result<(), T> {
+    pub(crate) fn set(&self, value: T) -> Result<(), T> {
         // SAFETY: Safe because we cannot have overlapping mutable borrows
         let slot = unsafe { &*self.inner.get() };
         if slot.is_some() {
