@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        backend: ["postgres", "mysql"] #, "sqlite", "mysql"]
+        backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
