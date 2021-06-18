@@ -36,10 +36,11 @@ impl<'a: 'b, 'b> Iterator for StatementIterator<'a, 'b> {
             NotStarted(stmt) => match stmt.step() {
                 Err(e) => Some(Err(e)),
                 Ok(None) => None,
-                Ok(Some(row)) => {
-                    let inner = Rc::new(RefCell::new(PrivateSqliteRow::Direct(row)));
+                Ok(Some(stmt)) => {
+                    let field_count = stmt.column_count() as usize;
+                    let inner = Rc::new(RefCell::new(PrivateSqliteRow::Direct(stmt)));
                     self.inner = Started(inner.clone());
-                    Some(Ok(SqliteRow { inner }))
+                    Some(Ok(SqliteRow { inner, field_count }))
                 }
             },
             Started(mut last_row) => {
@@ -59,9 +60,13 @@ impl<'a: 'b, 'b> Iterator for StatementIterator<'a, 'b> {
                             Err(e) => Some(Err(e)),
                             Ok(None) => None,
                             Ok(Some(stmt)) => {
+                                let field_count = stmt.column_count() as usize;
                                 (*last_row_ref.get_mut()) = PrivateSqliteRow::Direct(stmt);
                                 self.inner = Started(last_row.clone());
-                                Some(Ok(SqliteRow { inner: last_row }))
+                                Some(Ok(SqliteRow {
+                                    inner: last_row,
+                                    field_count,
+                                }))
                             }
                         }
                     } else {
@@ -82,10 +87,14 @@ impl<'a: 'b, 'b> Iterator for StatementIterator<'a, 'b> {
                             Err(e) => Some(Err(e)),
                             Ok(None) => None,
                             Ok(Some(stmt)) => {
+                                let field_count = stmt.column_count() as usize;
                                 let last_row =
                                     Rc::new(RefCell::new(PrivateSqliteRow::Direct(stmt)));
                                 self.inner = Started(last_row.clone());
-                                Some(Ok(SqliteRow { inner: last_row }))
+                                Some(Ok(SqliteRow {
+                                    inner: last_row,
+                                    field_count,
+                                }))
                             }
                         }
                     } else {

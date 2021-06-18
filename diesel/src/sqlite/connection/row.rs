@@ -6,10 +6,12 @@ use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
 use crate::row::{Field, PartialRow, Row, RowIndex};
 use crate::sqlite::Sqlite;
+use crate::util::OnceCell;
 
 #[allow(missing_debug_implementations)]
 pub struct SqliteRow<'a, 'b> {
     pub(super) inner: Rc<RefCell<PrivateSqliteRow<'a, 'b>>>,
+    pub(super) field_count: usize,
 }
 
 pub(super) enum PrivateSqliteRow<'a, 'b> {
@@ -63,11 +65,7 @@ impl<'a, 'b> Row<'b, Sqlite> for SqliteRow<'a, 'b> {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
-        match &*self.inner.borrow() {
-            PrivateSqliteRow::Direct(stmt) => stmt.column_count() as usize,
-            PrivateSqliteRow::Duplicated { values, .. } => values.len(),
-            PrivateSqliteRow::TemporaryEmpty => unreachable!(),
-        }
+        self.field_count
     }
 
     fn get<I>(&self, idx: I) -> Option<Self::Field>
@@ -78,6 +76,7 @@ impl<'a, 'b> Row<'b, Sqlite> for SqliteRow<'a, 'b> {
         Some(SqliteField {
             row: SqliteRow {
                 inner: self.inner.clone(),
+                field_count: self.field_count,
             },
             col_idx: i32::try_from(idx).ok()?,
         })
@@ -89,15 +88,12 @@ impl<'a, 'b> Row<'b, Sqlite> for SqliteRow<'a, 'b> {
 }
 
 impl<'a: 'b, 'b> RowIndex<usize> for SqliteRow<'a, 'b> {
+    #[inline]
     fn idx(&self, idx: usize) -> Option<usize> {
-        match &*self.inner.borrow() {
-            PrivateSqliteRow::Duplicated { .. } | PrivateSqliteRow::Direct(_)
-                if idx < self.field_count() =>
-            {
-                Some(idx)
-            }
-            PrivateSqliteRow::Direct(_) | PrivateSqliteRow::Duplicated { .. } => None,
-            PrivateSqliteRow::TemporaryEmpty => unreachable!(),
+        if idx < self.field_count {
+            Some(idx)
+        } else {
+            None
         }
     }
 }
