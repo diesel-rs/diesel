@@ -616,7 +616,7 @@ macro_rules! __diesel_table_impl {
         },)+],
     ) => {
         $($meta)*
-        #[allow(unused_imports)]
+        #[allow(unused_imports, dead_code)]
         pub mod $table_name {
             pub use self::columns::*;
             $($imports)*

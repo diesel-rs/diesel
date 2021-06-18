@@ -221,9 +221,7 @@ pub fn build_cli() -> App<'static, 'static> {
         )        
         .arg(
             Arg::with_name("generate-custom-type-definitions")
-                .long("generate-custom-type-definitions")
-                .takes_value(true)
-                .possible_values(&["true", "false"])
+                .long("no-generate-missing-sql-type-definitions")
                 .help("Generate SQL type definitions for types not provided by diesel"),
         );
 

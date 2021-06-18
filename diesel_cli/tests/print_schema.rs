@@ -173,19 +173,10 @@ fn schema_file_is_relative_to_project_root() {
 
 #[test]
 #[cfg(feature = "postgres")]
-fn schema_file_contains_custom_types() {
-    test_print_schema(
-        "schema_file_contains_custom_types",
-        vec!["--generate-custom-type-definitions", "true"],
-    )
-}
-
-#[test]
-#[cfg(feature = "postgres")]
 fn print_schema_disabling_custom_type_works() {
     test_print_schema(
         "print_schema_disabling_custom_type_works",
-        vec!["--generate-custom-type-definitions", "false"],
+        vec!["--no-generate-missing-sql-type-definitions"],
     )
 }
 
