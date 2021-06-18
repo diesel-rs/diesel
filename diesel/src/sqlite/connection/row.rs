@@ -79,6 +79,7 @@ impl<'a, 'b> Row<'b, Sqlite> for SqliteRow<'a, 'b> {
                 field_count: self.field_count,
             },
             col_idx: i32::try_from(idx).ok()?,
+            field_name: OnceCell::new(),
         })
     }
 
@@ -116,12 +117,23 @@ impl<'a: 'b, 'b, 'd> RowIndex<&'d str> for SqliteRow<'a, 'b> {
 pub struct SqliteField<'a, 'b> {
     row: SqliteRow<'a, 'b>,
     col_idx: i32,
+    field_name: OnceCell<Option<String>>,
 }
 
 impl<'a: 'b, 'b> Field<Sqlite> for SqliteField<'a, 'b> {
     fn field_name(&self) -> Option<&str> {
-        todo!()
-        //        self.stmt.field_name(self.col_idx)
+        self.field_name
+            .get_or_init(|| match &mut *self.row.inner.borrow_mut() {
+                PrivateSqliteRow::Direct(stmt) => {
+                    stmt.field_name(self.col_idx).map(|s| s.to_owned())
+                }
+                PrivateSqliteRow::Duplicated { column_names, .. } => column_names
+                    .get(self.col_idx as usize)
+                    .and_then(|n| n.clone()),
+                PrivateSqliteRow::TemporaryEmpty => unreachable!(),
+            })
+            .as_ref()
+            .map(|s| s as &str)
     }
 
     fn is_null(&self) -> bool {
