@@ -16,12 +16,11 @@ use std::convert::Into;
 use std::fmt;
 use std::marker::PhantomData;
 
-use crate::connection::{SimpleConnection, TransactionManager};
-use crate::deserialize::FromSqlRow;
+use crate::backend::Backend;
+use crate::connection::{IterableConnection, SimpleConnection, TransactionManager};
 use crate::expression::QueryMetadata;
 use crate::prelude::*;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
-use crate::query_dsl::load_dsl::CompatibleType;
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -131,6 +130,16 @@ where
     }
 }
 
+impl<'a, DB, M> IterableConnection<'a, DB> for PooledConnection<M>
+where
+    M: ManageConnection,
+    M::Connection: Connection<Backend = DB>,
+    DB: Backend,
+{
+    type Cursor = <M::Connection as IterableConnection<'a, DB>>::Cursor;
+    type Row = <M::Connection as IterableConnection<'a, DB>>::Row;
+}
+
 impl<M> Connection for PooledConnection<M>
 where
     M: ManageConnection,
@@ -150,12 +159,13 @@ where
         (&mut **self).execute(query)
     }
 
-    fn load<T, U, ST>(&mut self, source: T) -> QueryResult<Vec<U>>
+    fn load<'a, T>(
+        &'a mut self,
+        source: T,
+    ) -> QueryResult<<Self as IterableConnection<'a, Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        T::SqlType: CompatibleType<U, Self::Backend, SqlType = ST>,
-        U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         (&mut **self).load(source)
