@@ -56,6 +56,7 @@ fn transaction_is_rolled_back_when_returned_an_error() {
 }
 
 #[test]
+#[cfg(feature = "sqlite")]
 fn transaction_rollback_returns_error() {
     let connection = &mut connection_without_transaction();
     let test_name = "transaction_rollback_returns_error";
