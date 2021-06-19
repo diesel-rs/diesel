@@ -56,6 +56,33 @@ fn transaction_is_rolled_back_when_returned_an_error() {
 }
 
 #[test]
+fn transaction_rollback_returns_error() {
+    let connection = &mut connection_without_transaction();
+    let test_name = "transaction_rollback_returns_error";
+    setup_test_table(connection, test_name);
+
+    // Create a transaction that will fail to rollback.
+    let r = connection.transaction::<usize, _, _>(|connection| {
+        connection
+            .execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+            .unwrap();
+
+        // This rollback would succeed, and cause any rollback later to fail.
+        connection.execute("ROLLBACK").unwrap();
+
+        // Return any error to trigger a rollback that fails in this case.
+        Err(Error::NotFound)
+    });
+
+    // Verify that the transaction failed with `RollbackError`.
+    assert!(r.is_err());
+    assert!(matches!(r.unwrap_err(), Error::RollbackError(_)));
+
+    assert_eq!(0, count_test_table(connection, test_name));
+    drop_test_table(connection, test_name);
+}
+
+#[test]
 fn transactions_can_be_nested() {
     let connection = &mut connection_without_transaction();
     const TEST_NAME: &'static str = "transactions_can_be_nested";
