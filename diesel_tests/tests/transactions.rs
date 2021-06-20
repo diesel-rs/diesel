@@ -55,6 +55,17 @@ fn transaction_is_rolled_back_when_returned_an_error() {
     drop_test_table(connection, test_name);
 }
 
+// This test uses a SQLite3 fact to generate a rollback error,
+// so that we can verify `Error::RollbackError`. Reference:
+// https://www.sqlite.org/lang_transaction.html
+//
+// The same trick cannot be used for PostgreSQL as it generates
+// warning, but not error if a rollback is called twice. Reference:
+// https://www.postgresql.org/docs/9.4/sql-rollback.html
+//
+// The same trick seems to work for MySQL as well based on the
+// test result, but I cannot find a document support yet. Hence
+// this test is marked for "sqlite" only as this moment. FIXME.
 #[test]
 #[cfg(feature = "sqlite")]
 fn transaction_rollback_returns_error() {
