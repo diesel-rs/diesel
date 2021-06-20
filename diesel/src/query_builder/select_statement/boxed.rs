@@ -378,7 +378,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB> CombineDsl for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, DB, GB> CombineDsl for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
     Self: Query,
 {

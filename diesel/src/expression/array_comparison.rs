@@ -120,7 +120,8 @@ pub trait MaybeEmpty {
     fn is_empty(&self) -> bool;
 }
 
-impl<ST, S, F, W, O, L, Of, G, LC> AsInExpression<ST> for SelectStatement<S, F, W, O, L, Of, G, LC>
+impl<ST, F, S, D, W, O, LOf, G, H, LC> AsInExpression<ST>
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     ST: SqlType + TypedExpressionType,
     Subselect<Self, ST>: Expression<SqlType = ST>,
