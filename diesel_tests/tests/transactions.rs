@@ -55,6 +55,45 @@ fn transaction_is_rolled_back_when_returned_an_error() {
     drop_test_table(connection, test_name);
 }
 
+// This test uses a SQLite3 fact to generate a rollback error,
+// so that we can verify `Error::RollbackError`. Reference:
+// https://www.sqlite.org/lang_transaction.html
+//
+// The same trick cannot be used for PostgreSQL as it generates
+// warning, but not error if a rollback is called twice. Reference:
+// https://www.postgresql.org/docs/9.4/sql-rollback.html
+//
+// The same trick seems to work for MySQL as well based on the
+// test result, but I cannot find a document support yet. Hence
+// this test is marked for "sqlite" only as this moment. FIXME.
+#[test]
+#[cfg(feature = "sqlite")]
+fn transaction_rollback_returns_error() {
+    let connection = &mut connection_without_transaction();
+    let test_name = "transaction_rollback_returns_error";
+    setup_test_table(connection, test_name);
+
+    // Create a transaction that will fail to rollback.
+    let r = connection.transaction::<usize, _, _>(|connection| {
+        connection
+            .execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+            .unwrap();
+
+        // This rollback would succeed, and cause any rollback later to fail.
+        connection.execute("ROLLBACK").unwrap();
+
+        // Return any error to trigger a rollback that fails in this case.
+        Err(Error::NotFound)
+    });
+
+    // Verify that the transaction failed with `RollbackError`.
+    assert!(r.is_err());
+    assert!(matches!(r.unwrap_err(), Error::RollbackError(_)));
+
+    assert_eq!(0, count_test_table(connection, test_name));
+    drop_test_table(connection, test_name);
+}
+
 #[test]
 fn transactions_can_be_nested() {
     let connection = &mut connection_without_transaction();

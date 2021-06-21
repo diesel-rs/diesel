@@ -62,6 +62,12 @@ pub enum Error {
     /// by PostgreSQL.
     SerializationError(Box<dyn StdError + Send + Sync>),
 
+    /// An error occurred during the rollback of a transaction.
+    ///
+    /// An example of when this error would be returned is if a rollback has
+    /// already be called on the current transaction.
+    RollbackError(Box<Error>),
+
     /// Roll back the current transaction.
     ///
     /// You can return this variant inside of a transaction when you want to
@@ -283,6 +289,7 @@ impl Display for Error {
             Error::QueryBuilderError(ref e) => e.fmt(f),
             Error::DeserializationError(ref e) => e.fmt(f),
             Error::SerializationError(ref e) => e.fmt(f),
+            Error::RollbackError(ref e) => e.fmt(f),
             Error::RollbackTransaction => write!(f, "The current transaction was aborted"),
             Error::AlreadyInTransaction => write!(
                 f,
