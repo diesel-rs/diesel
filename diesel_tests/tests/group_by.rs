@@ -184,3 +184,69 @@ fn check_group_by_multiple_tables() {
 
     assert!(source.execute(conn).is_ok());
 }
+
+#[test]
+fn check_filter_with_group_by_subselect() {
+    let subselect = posts::table
+        .group_by(posts::user_id)
+        .select(diesel::dsl::min(posts::id));
+
+    // get one example post for each user (for users with a post)
+    let source = posts::table
+        .filter(posts::id.nullable().eq_any(subselect))
+        .select((posts::user_id, posts::title));
+
+    let mut expected_sql = "SELECT `posts`.`user_id`, `posts`.`title` \
+                            FROM `posts` \
+                            WHERE (\
+                              `posts`.`id` IN (\
+                              SELECT min(`posts`.`id`) \
+                              FROM `posts` \
+                              GROUP BY `posts`.`user_id`)) \
+                            -- binds: []"
+        .to_string();
+
+    if cfg!(feature = "postgres") {
+        expected_sql = expected_sql.replace('`', "\"");
+    }
+
+    assert_eq!(expected_sql, debug_query(&source).to_string());
+
+    let conn = &mut connection();
+
+    assert!(source.execute(conn).is_ok());
+}
+
+#[test]
+fn check_filter_with_boxed_group_by_subselect() {
+    // this query is identical to `check_filter_with_group_by_subselect`, but the subselect also calls `into_boxed`
+    let subselect = posts::table
+        .group_by(posts::user_id)
+        .select(diesel::dsl::min(posts::id))
+        .into_boxed();
+
+    // get one example post for each user (for users with a post)
+    let source = posts::table
+        .filter(posts::id.nullable().eq_any(subselect))
+        .select((posts::user_id, posts::title));
+
+    let mut expected_sql = "SELECT `posts`.`user_id`, `posts`.`title` \
+                            FROM `posts` \
+                            WHERE (\
+                              `posts`.`id` IN (\
+                              SELECT min(`posts`.`id`) \
+                              FROM `posts` \
+                              GROUP BY `posts`.`user_id`)) \
+                            -- binds: []"
+        .to_string();
+
+    if cfg!(feature = "postgres") {
+        expected_sql = expected_sql.replace('`', "\"");
+    }
+
+    assert_eq!(expected_sql, debug_query(&source).to_string());
+
+    let conn = &mut connection();
+
+    assert!(source.execute(conn).is_ok());
+}

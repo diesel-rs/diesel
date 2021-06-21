@@ -5,4 +5,4 @@ error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_build
    |                                                           ^^^^^^^^ the trait `AsInExpression<diesel::sql_types::Integer>` is not implemented for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
    |
    = help: the following implementations were found:
-             <SelectStatement<S, F, W, O, L, Of, G, LC> as AsInExpression<ST>>
+             <SelectStatement<F, S, D, W, O, LOf, G, H, LC> as AsInExpression<ST>>

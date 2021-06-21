@@ -145,8 +145,8 @@ where
     }
 }
 
-impl<ST, S, F, W, O, L, Of, G, FU> AsArrayExpression<ST>
-    for SelectStatement<S, F, W, O, L, Of, G, FU>
+impl<ST, F, S, D, W, O, LOf, G, H, LC> AsArrayExpression<ST>
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     Self: SelectQuery<SqlType = ST>,
 {
@@ -157,7 +157,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB> AsArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, DB, GB> AsArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
     Self: SelectQuery<SqlType = ST>,
 {
