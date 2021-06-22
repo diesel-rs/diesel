@@ -189,6 +189,15 @@ fn print_schema_default_is_to_generate_custom_types() {
     )
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_specifying_schema_name_with_custom_type() {
+    test_print_schema(
+        "print_schema_specifying_schema_name_with_custom_type",
+        vec!["--with-docs", "--schema", "custom_schema"],
+    )
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

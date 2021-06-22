@@ -4,7 +4,7 @@ use std::error::Error;
 use diesel::backend::Backend;
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::dsl::*;
-use diesel::expression::{is_aggregate, QueryMetadata, ValidGrouping};
+use diesel::expression::{is_aggregate, MixedAggregates, QueryMetadata, ValidGrouping};
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
@@ -24,7 +24,16 @@ pub trait UsesInformationSchema: Backend {
         + QueryId
         + QueryFragment<Self>;
 
+    type TypeSchema: SelectableExpression<
+            self::information_schema::columns::table,
+            SqlType = sql_types::Nullable<sql_types::Text>,
+        > + ValidGrouping<()>
+        + QueryId
+        + QueryFragment<Self>;
+
     fn type_column() -> Self::TypeColumn;
+    fn type_schema() -> Self::TypeSchema;
+
     fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
         C: Connection<Backend = Self>,
@@ -34,9 +43,14 @@ pub trait UsesInformationSchema: Backend {
 #[cfg(feature = "postgres")]
 impl UsesInformationSchema for Pg {
     type TypeColumn = self::information_schema::columns::udt_name;
+    type TypeSchema = diesel::dsl::Nullable<self::information_schema::columns::udt_schema>;
 
     fn type_column() -> Self::TypeColumn {
         self::information_schema::columns::udt_name
+    }
+
+    fn type_schema() -> Self::TypeSchema {
+        self::information_schema::columns::udt_schema.nullable()
     }
 
     fn default_schema<C>(_conn: &mut C) -> QueryResult<String> {
@@ -50,9 +64,14 @@ sql_function!(fn database() -> VarChar);
 #[cfg(feature = "mysql")]
 impl UsesInformationSchema for Mysql {
     type TypeColumn = self::information_schema::columns::column_type;
+    type TypeSchema = diesel::dsl::AsExprOf<Option<String>, sql_types::Nullable<sql_types::Text>>;
 
     fn type_column() -> Self::TypeColumn {
         self::information_schema::columns::column_type
+    }
+
+    fn type_schema() -> Self::TypeSchema {
+        None.into_sql()
     }
 
     fn default_schema<C>(conn: &mut C) -> QueryResult<String>
@@ -85,6 +104,7 @@ mod information_schema {
             __is_nullable -> VarChar,
             ordinal_position -> BigInt,
             udt_name -> VarChar,
+            udt_schema -> VarChar,
             column_type -> VarChar,
         }
     }
@@ -135,11 +155,17 @@ where
         SqlTypeOf<(
             columns::column_name,
             <Conn::Backend as UsesInformationSchema>::TypeColumn,
+            <Conn::Backend as UsesInformationSchema>::TypeSchema,
             columns::__is_nullable,
         )>,
         Conn::Backend,
     >,
+    is_aggregate::No: MixedAggregates<
+        <<Conn::Backend as UsesInformationSchema>::TypeSchema as ValidGrouping<()>>::IsAggregate,
+        Output = is_aggregate::No,
+    >,
     String: FromSql<sql_types::Text, Conn::Backend>,
+    Option<String>: FromSql<sql_types::Nullable<sql_types::Text>, Conn::Backend>,
     Order<
         Filter<
             Filter<
@@ -148,6 +174,7 @@ where
                     (
                         columns::column_name,
                         <Conn::Backend as UsesInformationSchema>::TypeColumn,
+                        <Conn::Backend as UsesInformationSchema>::TypeSchema,
                         columns::__is_nullable,
                     ),
                 >,
@@ -165,6 +192,7 @@ where
                     (
                         columns::column_name,
                         <Conn::Backend as UsesInformationSchema>::TypeColumn,
+                        <Conn::Backend as UsesInformationSchema>::TypeSchema,
                         columns::__is_nullable,
                     ),
                 >,
@@ -174,7 +202,12 @@ where
         >,
         columns::column_name,
     >: QueryFragment<Conn::Backend>,
-    Conn::Backend: QueryMetadata<(sql_types::Text, sql_types::Text, sql_types::Text)>,
+    Conn::Backend: QueryMetadata<(
+        sql_types::Text,
+        sql_types::Text,
+        sql_types::Nullable<sql_types::Text>,
+        sql_types::Text,
+    )>,
 {
     use self::information_schema::columns::dsl::*;
 
@@ -184,8 +217,9 @@ where
     };
 
     let type_column = Conn::Backend::type_column();
+    let type_schema = Conn::Backend::type_schema();
     let query = columns
-        .select((column_name, type_column, __is_nullable))
+        .select((column_name, type_column, type_schema, __is_nullable))
         .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name));
     match column_sorting {
@@ -512,10 +546,11 @@ mod tests {
 
         let table_1 = TableName::new("table_1", "test_schema");
         let table_2 = TableName::new("table_2", "test_schema");
-        let id = ColumnInformation::new("id", "int4", false);
-        let text_col = ColumnInformation::new("text_col", "varchar", true);
-        let not_null = ColumnInformation::new("not_null", "text", false);
-        let array_col = ColumnInformation::new("array_col", "_varchar", false);
+        let pg_catalog = Some(String::from("pg_catalog"));
+        let id = ColumnInformation::new("id", "int4", pg_catalog.clone(), false);
+        let text_col = ColumnInformation::new("text_col", "varchar", pg_catalog.clone(), true);
+        let not_null = ColumnInformation::new("not_null", "text", pg_catalog.clone(), false);
+        let array_col = ColumnInformation::new("array_col", "_varchar", pg_catalog.clone(), false);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
             get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)

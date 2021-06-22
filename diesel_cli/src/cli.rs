@@ -218,7 +218,7 @@ pub fn build_cli() -> App<'static, 'static> {
                 .multiple(true)
                 .number_of_values(1)
                 .help("A list of types to import for every table, separated by commas."),
-        )        
+        )
         .arg(
             Arg::with_name("generate-custom-type-definitions")
                 .long("no-generate-missing-sql-type-definitions")

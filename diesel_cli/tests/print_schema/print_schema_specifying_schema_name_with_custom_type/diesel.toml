@@ -1,0 +1,4 @@
+[print_schema]
+file = "src/schema.rs"
+with_docs = true
+schema = "custom_schema"

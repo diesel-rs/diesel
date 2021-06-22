@@ -92,6 +92,7 @@ pub fn determine_column_type(
     let unsigned = determine_unsigned(&attr.type_name);
 
     Ok(ColumnType {
+        schema: None,
         sql_name: tpe.trim().to_lowercase(),
         rust_name: tpe.trim().to_camel_case(),
         is_array: false,
