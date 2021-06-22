@@ -1,3 +1,2 @@
 [print_schema]
 file = "src/schema.rs"
-import_types = ["diesel::sql_types::*", "crate::model::exports::*"]
