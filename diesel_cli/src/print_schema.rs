@@ -10,7 +10,7 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
 use std::io::Write as IoWrite;
 
-const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.";
+const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
 type Regex = RegexWrapper<::regex::Regex>;
 
@@ -173,7 +173,6 @@ pub fn output_schema(
     let mut out = String::new();
     writeln!(out, "{}", SCHEMA_HEADER)?;
 
-    writeln!(out)?;
     let backend = Backend::for_url(database_url);
 
     let custom_types = if config.generate_missing_sql_type_definitions() {
