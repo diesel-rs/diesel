@@ -13,9 +13,9 @@ const SQLITE_DATE_FORMAT: &str = "%F";
 
 impl FromSql<Date, Sqlite> for NaiveDate {
     fn from_sql(value: backend::RawValue<Sqlite>) -> deserialize::Result<Self> {
-        let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
-        let text = unsafe { &*text_ptr };
-        Self::parse_from_str(text, SQLITE_DATE_FORMAT).map_err(Into::into)
+        value
+            .parse_string(|s| Self::parse_from_str(s, SQLITE_DATE_FORMAT))
+            .map_err(Into::into)
     }
 }
 
@@ -28,21 +28,21 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 
 impl FromSql<Time, Sqlite> for NaiveTime {
     fn from_sql(value: backend::RawValue<Sqlite>) -> deserialize::Result<Self> {
-        let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
-        let text = unsafe { &*text_ptr };
-        let valid_time_formats = &[
-            // Most likely
-            "%T%.f", // All other valid formats in order of documentation
-            "%R", "%RZ", "%T%.fZ", "%R%:z", "%T%.f%:z",
-        ];
+        value.parse_string(|text| {
+            let valid_time_formats = &[
+                // Most likely
+                "%T%.f", // All other valid formats in order of documentation
+                "%R", "%RZ", "%T%.fZ", "%R%:z", "%T%.f%:z",
+            ];
 
-        for format in valid_time_formats {
-            if let Ok(time) = Self::parse_from_str(text, format) {
-                return Ok(time);
+            for format in valid_time_formats {
+                if let Ok(time) = Self::parse_from_str(text, format) {
+                    return Ok(time);
+                }
             }
-        }
 
-        Err(format!("Invalid time {}", text).into())
+            Err(format!("Invalid time {}", text).into())
+        })
     }
 }
 
@@ -55,44 +55,43 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
     fn from_sql(value: backend::RawValue<Sqlite>) -> deserialize::Result<Self> {
-        let text_ptr = <*const str as FromSql<Date, Sqlite>>::from_sql(value)?;
-        let text = unsafe { &*text_ptr };
+        value.parse_string(|text| {
+            let sqlite_datetime_formats = &[
+                // Most likely format
+                "%F %T%.f",
+                // Other formats in order of appearance in docs
+                "%F %R",
+                "%F %RZ",
+                "%F %R%:z",
+                "%F %T%.fZ",
+                "%F %T%.f%:z",
+                "%FT%R",
+                "%FT%RZ",
+                "%FT%R%:z",
+                "%FT%T%.f",
+                "%FT%T%.fZ",
+                "%FT%T%.f%:z",
+            ];
 
-        let sqlite_datetime_formats = &[
-            // Most likely format
-            "%F %T%.f",
-            // Other formats in order of appearance in docs
-            "%F %R",
-            "%F %RZ",
-            "%F %R%:z",
-            "%F %T%.fZ",
-            "%F %T%.f%:z",
-            "%FT%R",
-            "%FT%RZ",
-            "%FT%R%:z",
-            "%FT%T%.f",
-            "%FT%T%.fZ",
-            "%FT%T%.f%:z",
-        ];
-
-        for format in sqlite_datetime_formats {
-            if let Ok(dt) = Self::parse_from_str(text, format) {
-                return Ok(dt);
+            for format in sqlite_datetime_formats {
+                if let Ok(dt) = Self::parse_from_str(text, format) {
+                    return Ok(dt);
+                }
             }
-        }
 
-        if let Ok(julian_days) = text.parse::<f64>() {
-            let epoch_in_julian_days = 2_440_587.5;
-            let seconds_in_day = 86400.0;
-            let timestamp = (julian_days - epoch_in_julian_days) * seconds_in_day;
-            let seconds = timestamp as i64;
-            let nanos = (timestamp.fract() * 1E9) as u32;
-            if let Some(timestamp) = Self::from_timestamp_opt(seconds, nanos) {
-                return Ok(timestamp);
+            if let Ok(julian_days) = text.parse::<f64>() {
+                let epoch_in_julian_days = 2_440_587.5;
+                let seconds_in_day = 86400.0;
+                let timestamp = (julian_days - epoch_in_julian_days) * seconds_in_day;
+                let seconds = timestamp as i64;
+                let nanos = (timestamp.fract() * 1E9) as u32;
+                if let Some(timestamp) = Self::from_timestamp_opt(seconds, nanos) {
+                    return Ok(timestamp);
+                }
             }
-        }
 
-        Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {}", text).into())
+        })
     }
 }
 

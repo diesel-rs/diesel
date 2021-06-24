@@ -38,6 +38,25 @@ pub enum SqliteType {
     Long,
 }
 
+impl SqliteType {
+    pub(super) fn from_raw_sqlite(tpe: i32) -> Option<SqliteType> {
+        use libsqlite3_sys as ffi;
+
+        match tpe {
+            ffi::SQLITE_TEXT => Some(SqliteType::Text),
+            ffi::SQLITE_INTEGER => Some(SqliteType::Long),
+            ffi::SQLITE_FLOAT => Some(SqliteType::Double),
+            ffi::SQLITE_BLOB => Some(SqliteType::Binary),
+            ffi::SQLITE_NULL => None,
+            _ => unreachable!(
+                "Sqlite's documentation state that this case ({}) is not reachable. \
+                 If you ever see this error message please open an issue at \
+                 https://github.com/diesel-rs/diesel."
+            ),
+        }
+    }
+}
+
 impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
     type BindCollector = RawBytesBindCollector<Sqlite>;
@@ -45,7 +64,7 @@ impl Backend for Sqlite {
 }
 
 impl<'a> HasRawValue<'a> for Sqlite {
-    type RawValue = &'a SqliteValue;
+    type RawValue = SqliteValue<'a, 'a>;
 }
 
 impl TypeMetadata for Sqlite {

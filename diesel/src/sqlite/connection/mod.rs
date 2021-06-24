@@ -56,8 +56,8 @@ impl SimpleConnection for SqliteConnection {
 }
 
 impl<'a> IterableConnection<'a, Sqlite> for SqliteConnection {
-    type Cursor = StatementIterator<'a, 'a>;
-    type Row = self::row::SqliteRow<'a, 'a>;
+    type Cursor = StatementIterator<'a>;
+    type Row = self::row::SqliteRow<'a>;
 }
 
 impl Connection for SqliteConnection {

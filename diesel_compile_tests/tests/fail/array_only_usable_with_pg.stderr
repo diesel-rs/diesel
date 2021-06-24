@@ -6,40 +6,10 @@ error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Conn
   |
   = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, Vec<i32>>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`
 
-error[E0277]: the trait bound `Sqlite: HasSqlType<Array<diesel::sql_types::Integer>>` is not satisfied
- --> $DIR/array_only_usable_with_pg.rs:8:25
-  |
-8 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
-  |                         ^^^^^^^^^^ the trait `HasSqlType<Array<diesel::sql_types::Integer>>` is not implemented for `Sqlite`
-  |
-  = help: the following implementations were found:
-            <Sqlite as HasSqlType<BigInt>>
-            <Sqlite as HasSqlType<Bool>>
-            <Sqlite as HasSqlType<diesel::sql_types::Binary>>
-            <Sqlite as HasSqlType<diesel::sql_types::Date>>
-          and 8 others
-  = note: required because of the requirements on the impl of `QueryMetadata<Array<diesel::sql_types::Integer>>` for `Sqlite`
-  = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, Vec<i32>>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`
-
 error[E0271]: type mismatch resolving `<diesel::MysqlConnection as diesel::Connection>::Backend == Pg`
   --> $DIR/array_only_usable_with_pg.rs:11:25
    |
 11 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
    |                         ^^^^^^^^^^ expected struct `Mysql`, found struct `Pg`
    |
-   = note: required because of the requirements on the impl of `LoadQuery<diesel::MysqlConnection, Vec<i32>>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`
-
-error[E0277]: the trait bound `Mysql: HasSqlType<Array<diesel::sql_types::Integer>>` is not satisfied
-  --> $DIR/array_only_usable_with_pg.rs:11:25
-   |
-11 |     select(array((1,))).get_result::<Vec<i32>>(&mut connection);
-   |                         ^^^^^^^^^^ the trait `HasSqlType<Array<diesel::sql_types::Integer>>` is not implemented for `Mysql`
-   |
-   = help: the following implementations were found:
-             <Mysql as HasSqlType<BigInt>>
-             <Mysql as HasSqlType<Bool>>
-             <Mysql as HasSqlType<Datetime>>
-             <Mysql as HasSqlType<Json>>
-           and 15 others
-   = note: required because of the requirements on the impl of `QueryMetadata<Array<diesel::sql_types::Integer>>` for `Mysql`
    = note: required because of the requirements on the impl of `LoadQuery<diesel::MysqlConnection, Vec<i32>>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>,), diesel::sql_types::Integer>>>`

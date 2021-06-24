@@ -34,7 +34,7 @@ pub trait Row<'a, DB: Backend>: RowIndex<usize> + for<'b> RowIndex<&'b str> + Si
     ///
     /// * Crates implementing custom backends should provide their own type
     ///   meeting the required trait bounds
-    type Field: Field<DB>;
+    type Field: Field<'a, DB>;
 
     /// Return type of `PartialRow`
     ///
@@ -63,7 +63,7 @@ pub trait Row<'a, DB: Backend>: RowIndex<usize> + for<'b> RowIndex<&'b str> + Si
 ///
 /// This trait allows retrieving information on the name of the colum and on the value of the
 /// field.
-pub trait Field<DB: Backend> {
+pub trait Field<'a, DB: Backend> {
     /// The name of the current field
     ///
     /// Returns `None` if it's an unnamed field
@@ -71,7 +71,9 @@ pub trait Field<DB: Backend> {
 
     /// Get the value representing the current field in the raw representation
     /// as it is transmitted by the database
-    fn value<'a>(&'a self) -> Option<backend::RawValue<'a, DB>>;
+    fn value<'b>(&'b self) -> Option<backend::RawValue<'b, DB>>
+    where
+        'a: 'b;
 
     /// Checks whether this field is null or not.
     fn is_null(&self) -> bool {

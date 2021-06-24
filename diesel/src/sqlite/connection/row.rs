@@ -9,13 +9,13 @@ use crate::sqlite::Sqlite;
 use crate::util::OnceCell;
 
 #[allow(missing_debug_implementations)]
-pub struct SqliteRow<'a, 'b> {
-    pub(super) inner: Rc<RefCell<PrivateSqliteRow<'a, 'b>>>,
+pub struct SqliteRow<'a> {
+    pub(super) inner: Rc<RefCell<PrivateSqliteRow<'a>>>,
     pub(super) field_count: usize,
 }
 
-pub(super) enum PrivateSqliteRow<'a, 'b> {
-    Direct(StatementUse<'a, 'b>),
+pub(super) enum PrivateSqliteRow<'a> {
+    Direct(StatementUse<'a>),
     Duplicated {
         values: Vec<Option<OwnedSqliteValue>>,
         column_names: Rc<Vec<Option<String>>>,
@@ -23,7 +23,7 @@ pub(super) enum PrivateSqliteRow<'a, 'b> {
     TemporaryEmpty,
 }
 
-impl<'a, 'b> PrivateSqliteRow<'a, 'b> {
+impl<'a> PrivateSqliteRow<'a> {
     pub(super) fn duplicate(&mut self, column_names: &mut Option<Rc<Vec<Option<String>>>>) -> Self {
         match self {
             PrivateSqliteRow::Direct(stmt) => {
@@ -40,7 +40,7 @@ impl<'a, 'b> PrivateSqliteRow<'a, 'b> {
                 };
                 PrivateSqliteRow::Duplicated {
                     values: (0..stmt.column_count())
-                        .map(|idx| stmt.value(idx).map(|v| v.duplicate()))
+                        .map(|idx| stmt.copy_value(idx))
                         .collect(),
                     column_names,
                 }
@@ -60,8 +60,8 @@ impl<'a, 'b> PrivateSqliteRow<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Row<'b, Sqlite> for SqliteRow<'a, 'b> {
-    type Field = SqliteField<'a, 'b>;
+impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
+    type Field = SqliteField<'a>;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
@@ -88,18 +88,19 @@ impl<'a, 'b> Row<'b, Sqlite> for SqliteRow<'a, 'b> {
     }
 }
 
-impl<'a: 'b, 'b> RowIndex<usize> for SqliteRow<'a, 'b> {
-    #[inline]
+impl<'a> RowIndex<usize> for SqliteRow<'a> {
+    #[inline(always)]
     fn idx(&self, idx: usize) -> Option<usize> {
-        if idx < self.field_count {
-            Some(idx)
-        } else {
-            None
-        }
+        Some(idx)
+        // if idx < self.field_count {
+        //     Some(idx)
+        // } else {
+        //     None
+        // }
     }
 }
 
-impl<'a: 'b, 'b, 'd> RowIndex<&'d str> for SqliteRow<'a, 'b> {
+impl<'a, 'd> RowIndex<&'d str> for SqliteRow<'a> {
     fn idx(&self, field_name: &'d str) -> Option<usize> {
         match &mut *self.inner.borrow_mut() {
             PrivateSqliteRow::Direct(stmt) => stmt.index_for_column_name(field_name),
@@ -107,20 +108,27 @@ impl<'a: 'b, 'b, 'd> RowIndex<&'d str> for SqliteRow<'a, 'b> {
                 .iter()
                 .position(|n| n.as_ref().map(|s| s as &str) == Some(field_name)),
             PrivateSqliteRow::TemporaryEmpty => {
-                unreachable!()
+                // This cannot happen as this is only a temproray state
+                // used inside of `StatementIterator::next()`
+                unreachable!(
+                    "You've reached an impossible internal state. \
+                     If you ever see this error message please open \
+                     an issue at https://github.com/diesel-rs/diesel \
+                     providing example code how to trigger this error."
+                )
             }
         }
     }
 }
 
 #[allow(missing_debug_implementations)]
-pub struct SqliteField<'a, 'b> {
-    row: SqliteRow<'a, 'b>,
-    col_idx: i32,
+pub struct SqliteField<'a> {
+    pub(super) row: SqliteRow<'a>,
+    pub(super) col_idx: i32,
     field_name: OnceCell<Option<String>>,
 }
 
-impl<'a: 'b, 'b> Field<Sqlite> for SqliteField<'a, 'b> {
+impl<'a> Field<'a, Sqlite> for SqliteField<'a> {
     fn field_name(&self) -> Option<&str> {
         self.field_name
             .get_or_init(|| match &mut *self.row.inner.borrow_mut() {
@@ -130,7 +138,16 @@ impl<'a: 'b, 'b> Field<Sqlite> for SqliteField<'a, 'b> {
                 PrivateSqliteRow::Duplicated { column_names, .. } => column_names
                     .get(self.col_idx as usize)
                     .and_then(|n| n.clone()),
-                PrivateSqliteRow::TemporaryEmpty => unreachable!(),
+                PrivateSqliteRow::TemporaryEmpty => {
+                    // This cannot happen as this is only a temproray state
+                    // used inside of `StatementIterator::next()`
+                    unreachable!(
+                        "You've reached an impossible internal state. \
+                         If you ever see this error message please open \
+                         an issue at https://github.com/diesel-rs/diesel \
+                         providing example code how to trigger this error."
+                    )
+                }
             })
             .as_ref()
             .map(|s| s as &str)
@@ -140,16 +157,10 @@ impl<'a: 'b, 'b> Field<Sqlite> for SqliteField<'a, 'b> {
         self.value().is_none()
     }
 
-    fn value<'d>(&'d self) -> Option<crate::backend::RawValue<'d, Sqlite>> {
-        match &*self.row.inner.borrow() {
-            PrivateSqliteRow::Direct(stmt) => stmt.value(self.col_idx),
-            PrivateSqliteRow::Duplicated { values, .. } => {
-                values.get(self.col_idx as usize).and_then(|v| {
-                    v.as_ref()
-                        .and_then(|v| unsafe { SqliteValue::new(v.value.as_ptr()) })
-                })
-            }
-            PrivateSqliteRow::TemporaryEmpty => unreachable!(),
-        }
+    fn value<'d>(&'d self) -> Option<crate::backend::RawValue<'d, Sqlite>>
+    where
+        'a: 'd,
+    {
+        SqliteValue::new(self.row.inner.borrow(), self.col_idx)
     }
 }

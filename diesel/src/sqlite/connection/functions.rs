@@ -2,7 +2,7 @@ extern crate libsqlite3_sys as ffi;
 
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
-use super::{Sqlite, SqliteAggregateFunction, SqliteValue};
+use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::{Field, PartialRow, Row, RowIndex};
@@ -174,7 +174,7 @@ struct FunctionArgument<'a> {
     p: PhantomData<&'a ()>,
 }
 
-impl<'a> Field<Sqlite> for FunctionArgument<'a> {
+impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
     fn field_name(&self) -> Option<&str> {
         None
     }
@@ -183,7 +183,11 @@ impl<'a> Field<Sqlite> for FunctionArgument<'a> {
         self.value().is_none()
     }
 
-    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Sqlite>> {
-        unsafe { SqliteValue::new(self.arg) }
+    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Sqlite>>
+    where
+        'a: 'b,
+    {
+        todo!()
+        //        unsafe { SqliteValue::new(self.arg) }
     }
 }

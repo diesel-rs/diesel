@@ -2,11 +2,12 @@ extern crate libsqlite3_sys as ffi;
 
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
-use super::SqliteValue;
+use super::sqlite_value::OwnedSqliteValue;
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::SqliteType;
 use crate::util::OnceCell;
+use core::slice;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
@@ -117,12 +118,12 @@ impl Drop for Statement {
 }
 
 #[allow(missing_debug_implementations)]
-pub struct StatementUse<'a: 'b, 'b> {
+pub struct StatementUse<'a> {
     statement: &'a mut Statement,
-    column_names: OnceCell<Vec<&'b str>>,
+    column_names: OnceCell<Vec<*const str>>,
 }
 
-impl<'a, 'b> StatementUse<'a, 'b> {
+impl<'a> StatementUse<'a> {
     pub(in crate::sqlite::connection) fn new(statement: &'a mut Statement) -> Self {
         StatementUse {
             statement,
@@ -152,10 +153,7 @@ impl<'a, 'b> StatementUse<'a, 'b> {
     // on the same column.
     //
     // https://sqlite.org/c3ref/column_name.html
-    //
-    // As result of this requirements: Never use that function outside of `ColumnInformation`
-    // and never use `ColumnInformation` outside of `StatementUse`
-    unsafe fn column_name(&mut self, idx: i32) -> &'b str {
+    unsafe fn column_name(&mut self, idx: i32) -> *const str {
         let name = {
             let column_name =
                 ffi::sqlite3_column_name(self.statement.inner_statement.as_ptr(), idx);
@@ -171,52 +169,77 @@ impl<'a, 'b> StatementUse<'a, 'b> {
              If you see this error message something has gone \
              horribliy wrong. Please open an issue at the \
              diesel repository.",
-        )
+        ) as *const str
     }
 
-    pub(in crate::sqlite::connection) fn column_count(&self) -> i32 {
+    pub(super) fn column_count(&self) -> i32 {
         unsafe { ffi::sqlite3_column_count(self.statement.inner_statement.as_ptr()) }
     }
 
-    pub(in crate::sqlite::connection) fn index_for_column_name(
-        &mut self,
-        field_name: &str,
-    ) -> Option<usize> {
+    pub(super) fn index_for_column_name(&mut self, field_name: &str) -> Option<usize> {
         (0..self.column_count())
             .find(|idx| self.field_name(*idx) == Some(field_name))
             .map(|v| v as usize)
     }
 
-    pub(in crate::sqlite::connection) fn field_name<'c>(&'c mut self, idx: i32) -> Option<&'c str>
-    where
-        'b: 'c,
-    {
+    pub(super) fn field_name<'c>(&'c mut self, idx: i32) -> Option<&'c str> {
         if let Some(column_names) = self.column_names.get() {
-            return column_names.get(idx as usize).copied();
+            return column_names
+                .get(idx as usize)
+                .and_then(|c| unsafe { c.as_ref() });
         }
         let values = (0..self.column_count())
             .map(|idx| unsafe { self.column_name(idx) })
             .collect::<Vec<_>>();
         let ret = values.get(idx as usize).copied();
         let _ = self.column_names.set(values);
-        ret
+        ret.and_then(|p| unsafe { p.as_ref() })
     }
 
-    pub(in crate::sqlite::connection) fn value<'c>(
-        &self,
-        idx: i32,
-    ) -> Option<&'a super::SqliteValue>
-    where
-        'b: 'c,
-    {
+    pub(super) fn column_type(&self, idx: i32) -> Option<SqliteType> {
+        let tpe = unsafe { ffi::sqlite3_column_type(self.statement.inner_statement.as_ptr(), idx) };
+        SqliteType::from_raw_sqlite(tpe)
+    }
+
+    pub(super) fn read_column_as_str(&self, idx: i32) -> &str {
         unsafe {
-            let ptr = ffi::sqlite3_column_value(self.statement.inner_statement.as_ptr(), idx);
-            SqliteValue::new(ptr)
+            let ptr = ffi::sqlite3_column_text(self.statement.inner_statement.as_ptr(), idx);
+            let len = ffi::sqlite3_column_bytes(self.statement.inner_statement.as_ptr(), idx);
+            let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
+            // The string is guaranteed to be utf8 according to
+            // https://www.sqlite.org/c3ref/value_blob.html
+            std::str::from_utf8_unchecked(bytes)
         }
+    }
+
+    pub(super) fn read_column_as_blob(&self, idx: i32) -> &[u8] {
+        unsafe {
+            let ptr = ffi::sqlite3_column_blob(self.statement.inner_statement.as_ptr(), idx);
+            let len = ffi::sqlite3_column_bytes(self.statement.inner_statement.as_ptr(), idx);
+            slice::from_raw_parts(ptr as *const u8, len as usize)
+        }
+    }
+
+    pub(super) fn read_column_as_integer(&self, idx: i32) -> i32 {
+        unsafe { ffi::sqlite3_column_int(self.statement.inner_statement.as_ptr(), idx) }
+    }
+
+    pub(super) fn read_column_as_long(&self, idx: i32) -> i64 {
+        unsafe { ffi::sqlite3_column_int64(self.statement.inner_statement.as_ptr(), idx) }
+    }
+
+    pub(super) fn read_column_as_double(&self, idx: i32) -> f64 {
+        unsafe { ffi::sqlite3_column_double(self.statement.inner_statement.as_ptr(), idx) }
+    }
+
+    pub(super) fn copy_value(&self, idx: i32) -> Option<OwnedSqliteValue> {
+        let ptr =
+            unsafe { ffi::sqlite3_column_value(self.statement.inner_statement.as_ptr(), idx) };
+        OwnedSqliteValue::copy_from_ptr(ptr)
     }
 }
 
-impl<'a, 'b> Drop for StatementUse<'a, 'b> {
+impl<'a> Drop for StatementUse<'a> {
     fn drop(&mut self) {
         self.statement.reset();
     }
