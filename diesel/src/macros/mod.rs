@@ -13,6 +13,22 @@ pub(crate) mod prelude {
 
 #[macro_export]
 #[doc(hidden)]
+macro_rules! __diesel_fix_sql_type_import {
+    ($(use $($import:tt)::+;)*) => {
+        $(
+            $crate::__diesel_fix_sql_type_import!(@expand_import: $($import)::+);
+        )*
+    };
+    (@expand_import: super:: $($Type:tt)+) => {
+        use super::super::$($Type)+;
+    };
+    (@expand_import: $($Type:tt)+) => {
+        use $($Type)+;
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
 macro_rules! __diesel_column {
     (
         table = $table:ident,
@@ -616,10 +632,10 @@ macro_rules! __diesel_table_impl {
         },)+],
     ) => {
         $($meta)*
+        #[allow(unused_imports, dead_code)]
         pub mod $table_name {
-            #![allow(dead_code)]
-            $($imports)*
             pub use self::columns::*;
+            $($imports)*
 
             /// Re-exports all of the columns of this table, as well as the
             /// table struct renamed to the module name. This is meant to be
@@ -797,7 +813,7 @@ macro_rules! __diesel_table_impl {
             /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
-                $($imports)*
+                $crate::__diesel_fix_sql_type_import!($($imports)*);
 
                 #[allow(non_camel_case_types, dead_code)]
                 #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]

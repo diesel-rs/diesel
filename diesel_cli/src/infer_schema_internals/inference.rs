@@ -105,13 +105,17 @@ fn get_column_information(
 
 fn determine_column_type(
     attr: &ColumnInformation,
-    conn: &InferConnection,
+    conn: &mut InferConnection,
 ) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
     match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => super::sqlite::determine_column_type(attr),
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(_) => super::pg::determine_column_type(attr),
+        InferConnection::Pg(ref mut conn) => {
+            use crate::infer_schema_internals::information_schema::UsesInformationSchema;
+
+            super::pg::determine_column_type(attr, diesel::pg::Pg::default_schema(conn)?)
+        }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(_) => super::mysql::determine_column_type(attr),
     }
@@ -206,7 +210,7 @@ pub fn load_table_data(
     let column_data = get_column_information(&mut connection, &name, column_sorting)?
         .into_iter()
         .map(|c| {
-            let ty = determine_column_type(&c, &connection)?;
+            let ty = determine_column_type(&c, &mut connection)?;
             let rust_name = rust_name_for_sql_name(&c.column_name);
 
             Ok(ColumnDefinition {

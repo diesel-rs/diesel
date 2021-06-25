@@ -16,7 +16,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
-enum Backend {
+pub enum Backend {
     #[cfg(feature = "postgres")]
     Pg,
     #[cfg(feature = "sqlite")]
@@ -26,7 +26,7 @@ enum Backend {
 }
 
 impl Backend {
-    fn for_url(database_url: &str) -> Self {
+    pub fn for_url(database_url: &str) -> Self {
         match database_url {
             _ if database_url.starts_with("postgres://")
                 || database_url.starts_with("postgresql://") =>

@@ -172,7 +172,9 @@ pub fn determine_column_type(
     };
 
     Ok(ColumnType {
-        rust_name: path,
+        schema: None,
+        rust_name: path.clone(),
+        sql_name: path,
         is_array: false,
         is_nullable: attr.nullable,
         is_unsigned: false,

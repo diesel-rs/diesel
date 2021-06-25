@@ -64,6 +64,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for SQL functions without arguments for SQLite.
 
+* Diesel CLI will now generate SQL type definitions for SQL types that are not supported by diesel out of the box. It's possible to disable this behavior via the `generate_missing_sql_type_definitions` config option.
+
 ### Removed
 
 * All previously deprecated items have been removed.
