@@ -38,6 +38,7 @@ struct User {
     updated_at: NaiveDateTime,
 }
 
+
 pub fn insert_default_values(conn: &MysqlConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
@@ -383,7 +384,6 @@ pub fn explicit_returning(conn: &MysqlConnection) -> QueryResult<i32> {
 
     conn.transaction::<_, Error, _>(|| {
         insert_into(users).values(name.eq("Ruby")).execute(conn)?;
-
         users.select(id).order(id.desc()).first(conn)
     })
 }

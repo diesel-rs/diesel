@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use chrono::NaiveDateTime;
 
 #[derive(Queryable)]
 pub struct Post {
@@ -8,9 +9,14 @@ pub struct Post {
     pub published: bool,
 }
 
-#[derive(Queryable)]
+#[allow(non_snake_case)]
+#[derive(Debug, Clone, Queryable)]
 pub struct Company {
-    pub company_id: i32,
-    pub company_code: String,
-    pub company_name: String,    
+    pub CompanyID: i32,
+    pub CompanyCode: String,
+    pub CompanyName: String,
+    pub CompanyNameCN: String,
+    pub DateCreated: NaiveDateTime,
+    // pub CreditAmount: f64,
+    // pub IsHeadOffice: bool,
 }

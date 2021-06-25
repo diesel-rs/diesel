@@ -7,10 +7,14 @@ diesel::table! {
     }
 }
 
-diesel::table!{
-    companys(company_id){
-        company_id -> Integer,
-        company_code -> Varchar,
-        company_name -> Varchar,
+diesel::table! {    
+    company (CompanyID) {
+        CompanyID -> Integer,
+        CompanyCode -> VarChar,       
+        CompanyName -> VarChar,
+        CompanyNameCN -> VarChar,
+        DateCreated -> Timestamp,
+        // CreditAmount -> Double,
+        // IsHeadOffice -> Bool,
     }
 }
