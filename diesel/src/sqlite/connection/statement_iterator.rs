@@ -88,9 +88,23 @@ impl<'a> Iterator for StatementIterator<'a> {
                     // a user stored the row in some long time container before calling next another time
                     // In this case we copy out the current values into a temporary store and advance
                     // the statement iterator internally afterwards
-                    if let PrivateSqliteRow::Direct(stmt) =
-                        last_row.replace_with(|inner| inner.duplicate(&mut self.column_names))
-                    {
+                    let last_row = {
+                        let mut last_row = match last_row.try_borrow_mut() {
+                            Ok(o) => o,
+                            Err(_e) => {
+                                self.inner = Started(last_row.clone());
+                                return Some(Err(crate::result::Error::DeserializationError(
+                                    "Failed to reborrow row. Try to release any `SqliteValue` \
+                                     that exists at this point"
+                                        .into(),
+                                )));
+                            }
+                        };
+                        let last_row = &mut *last_row;
+                        let duplicated = last_row.duplicate(&mut self.column_names);
+                        std::mem::replace(last_row, duplicated)
+                    };
+                    if let PrivateSqliteRow::Direct(stmt) = last_row {
                         match stmt.step() {
                             Err(e) => Some(Err(e)),
                             Ok(None) => None,

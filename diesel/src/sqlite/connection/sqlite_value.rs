@@ -23,6 +23,7 @@ pub struct SqliteValue<'a, 'b> {
     col_idx: i32,
 }
 
+#[repr(transparent)]
 pub struct OwnedSqliteValue {
     pub(super) value: NonNull<ffi::sqlite3_value>,
 }
