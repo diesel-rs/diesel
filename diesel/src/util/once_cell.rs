@@ -13,9 +13,8 @@ use std::cell::UnsafeCell;
 /// # Examples
 ///
 /// ```
-/// #![feature(once_cell)]
 ///
-/// use std::lazy::OnceCell;
+/// use crate::lazy::OnceCell;
 ///
 /// let cell = OnceCell::new();
 /// assert!(cell.get().is_none());
@@ -60,9 +59,8 @@ impl<T> OnceCell<T> {
     /// # Examples
     ///
     /// ```
-    /// #![feature(once_cell)]
     ///
-    /// use std::lazy::OnceCell;
+    /// use crate::lazy::OnceCell;
     ///
     /// let cell = OnceCell::new();
     /// assert_eq!(cell.get_or_try_init(|| Err(())), Err(()));

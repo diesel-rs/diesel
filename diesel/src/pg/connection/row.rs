@@ -64,12 +64,15 @@ pub struct PgField<'a> {
     col_idx: usize,
 }
 
-impl<'a> Field<Pg> for PgField<'a> {
+impl<'a> Field<'a, Pg> for PgField<'a> {
     fn field_name(&self) -> Option<&str> {
         self.db_result.column_name(self.col_idx)
     }
 
-    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Pg>> {
+    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Pg>>
+    where
+        'a: 'b,
+    {
         let raw = self.db_result.get(self.row_idx, self.col_idx)?;
         let type_oid = self.db_result.column_type(self.col_idx);
 

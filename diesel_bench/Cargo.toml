@@ -8,6 +8,13 @@ autobenches = false
 
 [workspace]
 
+[workspace.profile.bench]
+opt-level = 3
+debug = true
+lto = true
+incremental = false
+codegen-units = 1
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -42,7 +49,7 @@ bench = true
 harness = false
 
 [features]
-default = []
+default = ["sqlite"]
 postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]

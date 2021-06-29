@@ -157,7 +157,7 @@ pub struct MysqlField<'a> {
     _marker: PhantomData<&'a (Binds, StatementMetadata)>,
 }
 
-impl<'a> Field<Mysql> for MysqlField<'a> {
+impl<'a> Field<'a, Mysql> for MysqlField<'a> {
     fn field_name(&self) -> Option<&str> {
         self.metadata.fields()[self.idx].field_name()
     }
@@ -166,7 +166,10 @@ impl<'a> Field<Mysql> for MysqlField<'a> {
         (*self.bind)[self.idx].is_null()
     }
 
-    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Mysql>> {
+    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Mysql>>
+    where
+        'a: 'b,
+    {
         self.bind[self.idx].value()
     }
 }
