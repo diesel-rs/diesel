@@ -1,10 +1,10 @@
-use std::cell::RefCell;
+use std::cell::{Ref, RefCell};
 use std::convert::TryFrom;
 use std::rc::Rc;
 
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
-use crate::row::{Field, PartialRow, Row, RowIndex};
+use crate::row::{Field, PartialRow, Row, RowFieldHelper, RowIndex};
 use crate::sqlite::Sqlite;
 use crate::util::OnceCell;
 
@@ -18,19 +18,19 @@ pub(super) enum PrivateSqliteRow<'a> {
     Direct(StatementUse<'a>),
     Duplicated {
         values: Vec<Option<OwnedSqliteValue>>,
-        column_names: Rc<Vec<Option<String>>>,
+        column_names: Rc<[Option<String>]>,
     },
     TemporaryEmpty,
 }
 
 impl<'a> PrivateSqliteRow<'a> {
-    pub(super) fn duplicate(&mut self, column_names: &mut Option<Rc<Vec<Option<String>>>>) -> Self {
+    pub(super) fn duplicate(&mut self, column_names: &mut Option<Rc<[Option<String>]>>) -> Self {
         match self {
             PrivateSqliteRow::Direct(stmt) => {
                 let column_names = if let Some(column_names) = column_names {
                     column_names.clone()
                 } else {
-                    let c = Rc::new(
+                    let c: Rc<[Option<String>]> = Rc::from(
                         (0..stmt.column_count())
                             .map(|idx| stmt.field_name(idx).map(|s| s.to_owned()))
                             .collect::<Vec<_>>(),
@@ -60,24 +60,25 @@ impl<'a> PrivateSqliteRow<'a> {
     }
 }
 
-impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
+impl<'a, 'b> RowFieldHelper<'a, Sqlite> for SqliteRow<'b> {
     type Field = SqliteField<'a>;
+}
+
+impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.field_count
     }
 
-    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, Sqlite>>::Field>
     where
+        'a: 'b,
         Self: RowIndex<I>,
     {
         let idx = self.idx(idx)?;
         Some(SqliteField {
-            row: SqliteRow {
-                inner: self.inner.clone(),
-                field_count: self.field_count,
-            },
+            row: self.inner.borrow(),
             col_idx: i32::try_from(idx).ok()?,
             field_name: OnceCell::new(),
         })
@@ -89,14 +90,12 @@ impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
 }
 
 impl<'a> RowIndex<usize> for SqliteRow<'a> {
-    #[inline(always)]
     fn idx(&self, idx: usize) -> Option<usize> {
-        Some(idx)
-        // if idx < self.field_count {
-        //     Some(idx)
-        // } else {
-        //     None
-        // }
+        if idx < self.field_count {
+            Some(idx)
+        } else {
+            None
+        }
     }
 }
 
@@ -123,7 +122,7 @@ impl<'a, 'd> RowIndex<&'d str> for SqliteRow<'a> {
 
 #[allow(missing_debug_implementations)]
 pub struct SqliteField<'a> {
-    pub(super) row: SqliteRow<'a>,
+    pub(super) row: Ref<'a, PrivateSqliteRow<'a>>,
     pub(super) col_idx: i32,
     field_name: OnceCell<Option<String>>,
 }
@@ -131,9 +130,20 @@ pub struct SqliteField<'a> {
 impl<'a> Field<'a, Sqlite> for SqliteField<'a> {
     fn field_name(&self) -> Option<&str> {
         self.field_name
-            .get_or_init(|| match &mut *self.row.inner.borrow_mut() {
+            .get_or_init(|| match &*self.row {
                 PrivateSqliteRow::Direct(stmt) => {
-                    stmt.field_name(self.col_idx).map(|s| s.to_owned())
+                    let column_name = unsafe {
+                        // This is safe due to the fact that we
+                        // move the column name to an allocation
+                        // on rust side as soon as possible
+                        //
+                        // We cannot index into a non existing column here, because
+                        // we checked that before even constructing the corresponding
+                        // field
+                        let column_name = stmt.column_name(self.col_idx);
+                        (&*column_name).to_owned()
+                    };
+                    Some(column_name)
                 }
                 PrivateSqliteRow::Duplicated { column_names, .. } => column_names
                     .get(self.col_idx as usize)
@@ -161,7 +171,7 @@ impl<'a> Field<'a, Sqlite> for SqliteField<'a> {
     where
         'a: 'd,
     {
-        SqliteValue::new(self.row.inner.borrow(), self.col_idx)
+        SqliteValue::new(Ref::clone(&self.row), self.col_idx)
     }
 }
 
@@ -237,6 +247,8 @@ fn fun_with_row_iters() {
 
     assert!(row_iter.next().unwrap().is_err());
     std::mem::drop(first_values);
+    assert!(row_iter.next().unwrap().is_err());
+    std::mem::drop(first_fields);
 
     let second_row = row_iter.next().unwrap().unwrap();
     let second_fields = (second_row.get(0).unwrap(), second_row.get(1).unwrap());
@@ -244,8 +256,13 @@ fn fun_with_row_iters() {
 
     assert!(row_iter.next().unwrap().is_err());
     std::mem::drop(second_values);
+    assert!(row_iter.next().unwrap().is_err());
+    std::mem::drop(second_fields);
 
     assert!(row_iter.next().is_none());
+
+    let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
+    let second_fields = (second_row.get(0).unwrap(), second_row.get(1).unwrap());
 
     let first_values = (first_fields.0.value(), first_fields.1.value());
     let second_values = (second_fields.0.value(), second_fields.1.value());

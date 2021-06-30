@@ -6,7 +6,7 @@ use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
-use crate::row::{Field, PartialRow, Row, RowIndex};
+use crate::row::{Field, PartialRow, Row, RowFieldHelper, RowIndex};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
@@ -139,9 +139,9 @@ impl<'a> Drop for FunctionRow<'a> {
                 DerefMut::deref_mut(RefCell::get_mut(args))
             {
                 if let Some(inner) = Rc::get_mut(column_names) {
-                    // an empty Vector does not allocate according to the documentation
-                    // so this prevents leaking memory
-                    std::mem::drop(std::mem::replace(inner, Vec::new()));
+                    // According the https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop
+                    // it's fine to just drop the values here
+                    unsafe { std::ptr::drop_in_place(inner as *mut _) }
                 }
             }
         }
@@ -180,7 +180,7 @@ impl<'a> FunctionRow<'a> {
             args: Rc::new(RefCell::new(ManuallyDrop::new(
                 PrivateSqliteRow::Duplicated {
                     values: args,
-                    column_names: Rc::new(vec![None; lenghts]),
+                    column_names: Rc::from(vec![None; lenghts]),
                 },
             ))),
             marker: PhantomData,
@@ -188,21 +188,25 @@ impl<'a> FunctionRow<'a> {
     }
 }
 
-impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
+impl<'a, 'b> RowFieldHelper<'a, Sqlite> for FunctionRow<'b> {
     type Field = FunctionArgument<'a>;
+}
+
+impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.field_count
     }
 
-    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, Sqlite>>::Field>
     where
+        'a: 'b,
         Self: crate::row::RowIndex<I>,
     {
         let idx = self.idx(idx)?;
         Some(FunctionArgument {
-            args: self.args.clone(),
+            args: self.args.borrow(),
             col_idx: idx as i32,
         })
     }
@@ -229,7 +233,7 @@ impl<'a, 'b> RowIndex<&'a str> for FunctionRow<'b> {
 }
 
 struct FunctionArgument<'a> {
-    args: Rc<RefCell<ManuallyDrop<PrivateSqliteRow<'a>>>>,
+    args: Ref<'a, ManuallyDrop<PrivateSqliteRow<'a>>>,
     col_idx: i32,
 }
 
@@ -247,7 +251,7 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
         'a: 'b,
     {
         SqliteValue::new(
-            Ref::map(self.args.borrow(), |drop| std::ops::Deref::deref(drop)),
+            Ref::map(Ref::clone(&self.args), |drop| std::ops::Deref::deref(drop)),
             self.col_idx,
         )
     }

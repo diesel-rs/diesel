@@ -1,3 +1,4 @@
+use std::cell::{Ref, RefCell};
 use std::marker::PhantomData;
 use std::rc::Rc;
 
@@ -9,30 +10,28 @@ use crate::row::*;
 #[allow(missing_debug_implementations)]
 pub struct StatementIterator<'a> {
     stmt: &'a mut Statement,
-    output_binds: Rc<Binds>,
+    last_row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
-    types: Vec<Option<MysqlType>>,
     size: usize,
     fetched_rows: usize,
 }
 
 impl<'a> StatementIterator<'a> {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(stmt: &'a mut Statement, types: Vec<Option<MysqlType>>) -> QueryResult<Self> {
+    pub fn new(stmt: &'a mut Statement, types: &[Option<MysqlType>]) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
 
-        let mut output_binds = Binds::from_output_types(&types, &metadata);
+        let mut output_binds = Binds::from_output_types(types, &metadata);
 
         stmt.execute_statement(&mut output_binds)?;
         let size = unsafe { stmt.result_size() }?;
 
         Ok(StatementIterator {
             metadata: Rc::new(metadata),
-            output_binds: Rc::new(output_binds),
+            last_row: Rc::new(RefCell::new(PrivateMysqlRow::Direct(output_binds))),
             fetched_rows: 0,
             size,
             stmt,
-            types,
         })
     }
 }
@@ -43,28 +42,66 @@ impl<'a> Iterator for StatementIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         // check if we own the only instance of the bind buffer
         // if that's the case we can reuse the underlying allocations
-        // if that's not the case, allocate a new buffer
-        let res = if let Some(binds) = Rc::get_mut(&mut self.output_binds) {
-            self.stmt
-                .populate_row_buffers(binds)
-                .map(|o| o.map(|()| self.output_binds.clone()))
+        // if that's not the case, we need to copy the output bind buffers
+        // to somewhere else
+        let res = if let Some(binds) = Rc::get_mut(&mut self.last_row) {
+            if let PrivateMysqlRow::Direct(ref mut binds) = RefCell::get_mut(binds) {
+                self.stmt.populate_row_buffers(binds)
+            } else {
+                // any other state than `PrivateMysqlRow::Direct` is invalid here
+                // and should not happen. If this ever happens this is a logic error
+                // in the code above
+                unreachable!(
+                    "You've reached an impossible internal state. \
+                     If you ever see this error message please open \
+                     an issue at https://github.com/diesel-rs/diesel \
+                     providing example code how to trigger this error."
+                )
+            }
         } else {
             // The shared bind buffer is in use by someone else,
-            // we allocate a new buffer here
-            let mut output_binds = Binds::from_output_types(&self.types, &self.metadata);
-            self.stmt
-                .populate_row_buffers(&mut output_binds)
-                .map(|o| o.map(|()| Rc::new(output_binds)))
+            // this means we copy out the values and replace the used reference
+            // by the copied values. After this we can advance the statment
+            // another step
+            let mut last_row = {
+                let mut last_row = match self.last_row.try_borrow_mut() {
+                    Ok(o) => o,
+                    Err(_e) => {
+                        return Some(Err(crate::result::Error::DeserializationError(
+                            "Failed to reborrow row. Try to release any `MysqlField` or `MysqlValue` \
+                             that exists at this point"
+                                .into(),
+                        )));
+                    }
+                };
+                let last_row = &mut *last_row;
+                let duplicated = last_row.duplicate();
+                std::mem::replace(last_row, duplicated)
+            };
+            let res = if let PrivateMysqlRow::Direct(ref mut binds) = last_row {
+                self.stmt.populate_row_buffers(binds)
+            } else {
+                // any other state than `PrivateMysqlRow::Direct` is invalid here
+                // and should not happen. If this ever happens this is a logic error
+                // in the code above
+                unreachable!(
+                    "You've reached an impossible internal state. \
+                     If you ever see this error message please open \
+                     an issue at https://github.com/diesel-rs/diesel \
+                     providing example code how to trigger this error."
+                )
+            };
+            self.last_row = Rc::new(RefCell::new(last_row));
+            res
         };
 
         match res {
-            Ok(Some(binds)) => {
+            Ok(Some(())) => {
                 self.fetched_rows += 1;
                 Some(Ok(MysqlRow {
-                    col_idx: 0,
-                    binds,
                     metadata: self.metadata.clone(),
                     _marker: Default::default(),
+                    row: self.last_row.clone(),
                 }))
             }
             Ok(None) => None,
@@ -96,30 +133,45 @@ impl<'a> ExactSizeIterator for StatementIterator<'a> {
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
 pub struct MysqlRow<'a> {
-    col_idx: usize,
-    binds: Rc<Binds>,
+    row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
     _marker: PhantomData<&'a mut (Binds, StatementMetadata)>,
 }
 
-impl<'a> Row<'a, Mysql> for MysqlRow<'a> {
+enum PrivateMysqlRow {
+    Direct(Binds),
+    Copied(Binds),
+}
+
+impl PrivateMysqlRow {
+    fn duplicate(&self) -> Self {
+        match self {
+            Self::Copied(b) | Self::Direct(b) => Self::Copied(b.clone()),
+        }
+    }
+}
+
+impl<'a, 'b> RowFieldHelper<'a, Mysql> for MysqlRow<'b> {
     type Field = MysqlField<'a>;
+}
+
+impl<'a> Row<'a, Mysql> for MysqlRow<'a> {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
-        self.binds.len()
+        self.metadata.fields().len()
     }
 
-    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, Mysql>>::Field>
     where
+        'a: 'b,
         Self: RowIndex<I>,
     {
         let idx = self.idx(idx)?;
         Some(MysqlField {
-            bind: self.binds.clone(),
+            binds: self.row.borrow(),
             metadata: self.metadata.clone(),
             idx,
-            _marker: Default::default(),
         })
     }
 
@@ -151,10 +203,9 @@ impl<'a, 'b> RowIndex<&'a str> for MysqlRow<'b> {
 
 #[allow(missing_debug_implementations)]
 pub struct MysqlField<'a> {
-    bind: Rc<Binds>,
+    binds: Ref<'a, PrivateMysqlRow>,
     metadata: Rc<StatementMetadata>,
     idx: usize,
-    _marker: PhantomData<&'a (Binds, StatementMetadata)>,
 }
 
 impl<'a> Field<'a, Mysql> for MysqlField<'a> {
@@ -163,13 +214,162 @@ impl<'a> Field<'a, Mysql> for MysqlField<'a> {
     }
 
     fn is_null(&self) -> bool {
-        (*self.bind)[self.idx].is_null()
+        match &*self.binds {
+            PrivateMysqlRow::Copied(b) | PrivateMysqlRow::Direct(b) => b[self.idx].is_null(),
+        }
     }
 
     fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Mysql>>
     where
         'a: 'b,
     {
-        self.bind[self.idx].value()
+        match &*self.binds {
+            PrivateMysqlRow::Copied(b) | PrivateMysqlRow::Direct(b) => b[self.idx].value(),
+        }
     }
+}
+
+#[test]
+fn fun_with_row_iters() {
+    crate::table! {
+        #[allow(unused_parens)]
+        users(id) {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+
+    use crate::deserialize::{FromSql, FromSqlRow};
+    use crate::prelude::*;
+    use crate::row::{Field, Row};
+    use crate::sql_types;
+
+    let conn = &mut crate::test_helpers::connection();
+
+    crate::sql_query(
+        "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+    )
+    .execute(conn)
+    .unwrap();
+    crate::sql_query("DELETE FROM users;")
+        .execute(conn)
+        .unwrap();
+
+    crate::insert_into(users::table)
+        .values(vec![
+            (users::id.eq(1), users::name.eq("Sean")),
+            (users::id.eq(2), users::name.eq("Tess")),
+        ])
+        .execute(conn)
+        .unwrap();
+
+    let query = users::table.select((users::id, users::name));
+
+    let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
+
+    {
+        let row_iter = conn.load(&query).unwrap();
+        for (row, expected) in row_iter.zip(&expected) {
+            let row = row.unwrap();
+
+            let deserialized = <(i32, String) as FromSqlRow<
+                (sql_types::Integer, sql_types::Text),
+                _,
+            >>::build_from_row(&row)
+            .unwrap();
+
+            assert_eq!(&deserialized, expected);
+        }
+    }
+    dbg!();
+
+    {
+        let collected_rows = conn.load(&query).unwrap().collect::<Vec<_>>();
+        assert_eq!(collected_rows.len(), 2);
+        for (row, expected) in collected_rows.iter().zip(&expected) {
+            let deserialized = row
+                .as_ref()
+                .map(|row| {
+                    <(i32, String) as FromSqlRow<
+                            (sql_types::Integer, sql_types::Text),
+                        _,
+                        >>::build_from_row(row).unwrap()
+                })
+                .unwrap();
+            assert_eq!(&deserialized, expected);
+        }
+    }
+
+    let mut row_iter = conn.load(&query).unwrap();
+
+    let first_row = row_iter.next().unwrap().unwrap();
+    let first_fields = (
+        Row::get(&first_row, 0).unwrap(),
+        Row::get(&first_row, 1).unwrap(),
+    );
+    let first_values = (first_fields.0.value(), first_fields.1.value());
+
+    assert!(row_iter.next().unwrap().is_err());
+    std::mem::drop(first_values);
+    assert!(row_iter.next().unwrap().is_err());
+    std::mem::drop(first_fields);
+
+    let second_row = row_iter.next().unwrap().unwrap();
+    let second_fields = (
+        Row::get(&second_row, 0).unwrap(),
+        Row::get(&second_row, 1).unwrap(),
+    );
+    let second_values = (second_fields.0.value(), second_fields.1.value());
+
+    assert!(row_iter.next().unwrap().is_err());
+    std::mem::drop(second_values);
+    assert!(row_iter.next().unwrap().is_err());
+    std::mem::drop(second_fields);
+
+    assert!(row_iter.next().is_none());
+
+    let first_fields = (
+        Row::get(&first_row, 0).unwrap(),
+        Row::get(&first_row, 1).unwrap(),
+    );
+    let second_fields = (
+        Row::get(&second_row, 0).unwrap(),
+        Row::get(&second_row, 1).unwrap(),
+    );
+
+    let first_values = (first_fields.0.value(), first_fields.1.value());
+    let second_values = (second_fields.0.value(), second_fields.1.value());
+
+    assert_eq!(
+        <i32 as FromSql<sql_types::Integer, Mysql>>::from_nullable_sql(first_values.0).unwrap(),
+        expected[0].0
+    );
+    assert_eq!(
+        <String as FromSql<sql_types::Text, Mysql>>::from_nullable_sql(first_values.1).unwrap(),
+        expected[0].1
+    );
+
+    assert_eq!(
+        <i32 as FromSql<sql_types::Integer, Mysql>>::from_nullable_sql(second_values.0).unwrap(),
+        expected[1].0
+    );
+    assert_eq!(
+        <String as FromSql<sql_types::Text, Mysql>>::from_nullable_sql(second_values.1).unwrap(),
+        expected[1].1
+    );
+
+    let first_fields = (
+        Row::get(&first_row, 0).unwrap(),
+        Row::get(&first_row, 1).unwrap(),
+    );
+    let first_values = (first_fields.0.value(), first_fields.1.value());
+
+    assert_eq!(
+        <i32 as FromSql<sql_types::Integer, Mysql>>::from_nullable_sql(first_values.0).unwrap(),
+        expected[0].0
+    );
+    assert_eq!(
+        <String as FromSql<sql_types::Text, Mysql>>::from_nullable_sql(first_values.1).unwrap(),
+        expected[0].1
+    );
 }

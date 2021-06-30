@@ -11,7 +11,7 @@ use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 use crate::result::*;
 
 #[doc(hidden)]
-pub use self::statement_cache::{MaybeCached, StatementCache, StatementCacheKey};
+pub use self::statement_cache::{MaybeCached, PrepareForCache, StatementCache, StatementCacheKey};
 pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
 
 /// Perform simple operations on a backend.

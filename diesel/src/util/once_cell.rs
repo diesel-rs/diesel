@@ -12,9 +12,9 @@ use std::cell::UnsafeCell;
 ///
 /// # Examples
 ///
-/// ```
+/// ```ignore
 ///
-/// use crate::lazy::OnceCell;
+/// use crate::util::OnceCell;
 ///
 /// let cell = OnceCell::new();
 /// assert!(cell.get().is_none());
@@ -25,7 +25,7 @@ use std::cell::UnsafeCell;
 /// assert_eq!(value, "Hello, World!");
 /// assert!(cell.get().is_some());
 /// ```
-pub struct OnceCell<T> {
+pub(crate) struct OnceCell<T> {
     // Invariant: written to at most once.
     inner: UnsafeCell<Option<T>>,
 }
@@ -38,7 +38,7 @@ impl<T> Default for OnceCell<T> {
 
 impl<T> OnceCell<T> {
     /// Creates a new empty cell.
-    pub const fn new() -> OnceCell<T> {
+    pub(crate) const fn new() -> OnceCell<T> {
         OnceCell {
             inner: UnsafeCell::new(None),
         }
@@ -58,9 +58,9 @@ impl<T> OnceCell<T> {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     ///
-    /// use crate::lazy::OnceCell;
+    /// use crate::util::OnceCell;
     ///
     /// let cell = OnceCell::new();
     /// assert_eq!(cell.get_or_try_init(|| Err(())), Err(()));
@@ -71,7 +71,7 @@ impl<T> OnceCell<T> {
     /// assert_eq!(value, Ok(&92));
     /// assert_eq!(cell.get(), Some(&92))
     /// ```
-    pub fn get_or_init<F>(&self, f: F) -> &T
+    pub(crate) fn get_or_init<F>(&self, f: F) -> &T
     where
         F: FnOnce() -> T,
     {

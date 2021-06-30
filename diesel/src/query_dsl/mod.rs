@@ -52,6 +52,7 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
+use self::load_dsl::LoadQueryRet;
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
@@ -1307,12 +1308,10 @@ pub trait RunQueryDsl<Conn>: Sized {
         methods::ExecuteDsl::execute(self, conn)
     }
 
-    /// Executes the given query, returning a `Vec` with the returned rows.
+    /// Executes the given query, returning a [`Vec`] with the returned rows.
     ///
-    /// When using the query builder,
-    /// the return type can be
-    /// a tuple of the values,
-    /// or a struct which implements [`Queryable`].
+    /// When using the query builder, the return type can be
+    /// a tuple of the values, or a struct which implements [`Queryable`].
     ///
     /// When this method is called on [`sql_query`],
     /// the return type can only be a struct which implements [`QueryableByName`]
@@ -1405,6 +1404,114 @@ pub trait RunQueryDsl<Conn>: Sized {
         Self: LoadQuery<Conn, U>,
     {
         self.internal_load(conn)?.collect()
+    }
+
+    /// Executes the given query, returning a [`Iterator`] with the returned rows.
+    ///
+    /// **You should normally prefer to use [`RunQueryDsl::load`] instead**. This method
+    /// is provided for situations where the result needs to be collected into a different
+    /// container than a [`Vec`]
+    ///
+    /// When using the query builder, the return type can be
+    /// a tuple of the values, or a struct which implements [`Queryable`].
+    ///
+    /// When this method is called on [`sql_query`],
+    /// the return type can only be a struct which implements [`QueryableByName`]
+    ///
+    /// For insert, update, and delete operations where only a count of affected is needed,
+    /// [`execute`] should be used instead.
+    ///
+    /// [`Queryable`]: crate::deserialize::Queryable
+    /// [`QueryableByName`]: crate::deserialize::QueryableByName
+    /// [`execute`]: crate::query_dsl::RunQueryDsl::execute()
+    /// [`sql_query`]: crate::sql_query()
+    ///
+    /// # Examples
+    ///
+    /// ## Returning a single field
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::insert_into;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// let data = users.select(name)
+    ///     .load_iter::<String>(connection)?
+    ///     .collect::<QueryResult<Vec<_>>>()?;
+    /// assert_eq!(vec!["Sean", "Tess"], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    ///
+    /// ## Returning a tuple
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::insert_into;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// let data = users
+    ///     .load_iter::<(i32, String)>(connection)?
+    ///     .collect::<QueryResult<Vec<_>>>()?;
+    /// let expected_data = vec![
+    ///     (1, String::from("Sean")),
+    ///     (2, String::from("Tess")),
+    /// ];
+    /// assert_eq!(expected_data, data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    ///
+    /// ## Returning a struct
+    ///
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// #[derive(Queryable, PartialEq, Debug)]
+    /// struct User {
+    ///     id: i32,
+    ///     name: String,
+    /// }
+    ///
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use diesel::insert_into;
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// let data = users
+    ///     .load_iter::<User>(connection)?
+    ///     .collect::<QueryResult<Vec<_>>>()?;
+    /// let expected_data = vec![
+    ///     User { id: 1, name: String::from("Sean") },
+    ///     User { id: 2, name: String::from("Tess") },
+    /// ];
+    /// assert_eq!(expected_data, data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn load_iter<'a, U>(
+        self,
+        conn: &'a mut Conn,
+    ) -> QueryResult<<Self as LoadQueryRet<'a, Conn, U>>::Ret>
+    where
+        Self: LoadQuery<Conn, U>,
+    {
+        self.internal_load(conn)
     }
 
     /// Runs the command, and returns the affected row.

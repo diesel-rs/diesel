@@ -9,17 +9,27 @@ use crate::deserialize::{self, FromSql};
 use crate::serialize::{self, Output, ToSql};
 use crate::sql_types;
 
-impl FromSql<sql_types::VarChar, Sqlite> for String {
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `String`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+impl FromSql<sql_types::VarChar, Sqlite> for *const str {
     fn from_sql(value: SqliteValue<'_, '_>) -> deserialize::Result<Self> {
         let text = value.read_text();
-        Ok(text)
+        Ok(text as *const _)
     }
 }
 
-impl FromSql<sql_types::Binary, Sqlite> for Vec<u8> {
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
+impl FromSql<sql_types::Binary, Sqlite> for *const [u8] {
     fn from_sql(bytes: SqliteValue<'_, '_>) -> deserialize::Result<Self> {
         let bytes = bytes.read_blob();
-        Ok(bytes)
+        Ok(bytes as *const _)
     }
 }
 

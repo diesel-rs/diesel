@@ -82,7 +82,7 @@ impl Statement {
     /// be called on this statement.
     pub unsafe fn results<'a>(
         &'a mut self,
-        types: Vec<Option<MysqlType>>,
+        types: &[Option<MysqlType>],
     ) -> QueryResult<StatementIterator<'a>> {
         StatementIterator::new(self, types)
     }

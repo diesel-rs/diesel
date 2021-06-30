@@ -16,16 +16,20 @@ impl<'a> PgRow<'a> {
     }
 }
 
-impl<'a> Row<'a, Pg> for PgRow<'a> {
+impl<'a, 'b> RowFieldHelper<'a, Pg> for PgRow<'b> {
     type Field = PgField<'a>;
+}
+
+impl<'a> Row<'a, Pg> for PgRow<'a> {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.db_result.column_count()
     }
 
-    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, Pg>>::Field>
     where
+        'a: 'b,
         Self: RowIndex<I>,
     {
         let idx = self.idx(idx)?;

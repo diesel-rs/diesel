@@ -8,7 +8,7 @@ use crate::result::QueryResult;
 #[allow(missing_debug_implementations)]
 pub struct StatementIterator<'a> {
     inner: PrivateStatementIterator<'a>,
-    column_names: Option<Rc<Vec<Option<String>>>>,
+    column_names: Option<Rc<[Option<String>]>>,
     field_count: usize,
 }
 
@@ -32,7 +32,7 @@ impl<'a> Iterator for StatementIterator<'a> {
     type Item = QueryResult<SqliteRow<'a>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        use PrivateStatementIterator::*;
+        use PrivateStatementIterator::{NotStarted, Started, TemporaryEmpty};
 
         match std::mem::replace(&mut self.inner, TemporaryEmpty) {
             NotStarted(stmt) => match stmt.step() {
@@ -94,7 +94,7 @@ impl<'a> Iterator for StatementIterator<'a> {
                             Err(_e) => {
                                 self.inner = Started(last_row.clone());
                                 return Some(Err(crate::result::Error::DeserializationError(
-                                    "Failed to reborrow row. Try to release any `SqliteValue` \
+                                    "Failed to reborrow row. Try to release any `SqliteField` or `SqliteValue` \
                                      that exists at this point"
                                         .into(),
                                 )));

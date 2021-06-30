@@ -91,6 +91,7 @@ impl Connection for SqliteConnection {
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
+    //#[tracing::instrument(skip(self, source))]
     #[doc(hidden)]
     fn load<'a, T>(
         &'a mut self,
@@ -214,6 +215,7 @@ impl SqliteConnection {
         }
     }
 
+    //#[tracing::instrument(skip(self, source, f))]
     fn with_prepared_query<'a, T: QueryFragment<Sqlite> + QueryId, R>(
         &'a mut self,
         source: &'_ T,
@@ -221,8 +223,9 @@ impl SqliteConnection {
     ) -> QueryResult<R> {
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
-        let mut statement =
-            cache.cached_statement(source, &[], |sql| Statement::prepare(raw_connection, sql))?;
+        let mut statement = cache.cached_statement(source, &[], |sql, is_cached| {
+            Statement::prepare(raw_connection, sql, is_cached)
+        })?;
 
         let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
         source.collect_binds(&mut bind_collector, &mut ())?;

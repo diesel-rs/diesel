@@ -21,12 +21,9 @@ pub trait RowIndex<I> {
     fn idx(&self, idx: I) -> Option<usize>;
 }
 
-/// Represents a single database row.
-///
-/// This trait is used as an argument to [`FromSqlRow`].
-///
-/// [`FromSqlRow`]: crate::deserialize::FromSqlRow
-pub trait Row<'a, DB: Backend>: RowIndex<usize> + for<'b> RowIndex<&'b str> + Sized {
+/// A helper trait to indicate the life time bound for a field returned
+/// by [`Row::get`]
+pub trait RowFieldHelper<'a, DB: Backend> {
     /// Field type returned by a `Row` implementation
     ///
     /// * Crates using existing backend should not concern themself with the
@@ -35,7 +32,16 @@ pub trait Row<'a, DB: Backend>: RowIndex<usize> + for<'b> RowIndex<&'b str> + Si
     /// * Crates implementing custom backends should provide their own type
     ///   meeting the required trait bounds
     type Field: Field<'a, DB>;
+}
 
+/// Represents a single database row.
+///
+/// This trait is used as an argument to [`FromSqlRow`].
+///
+/// [`FromSqlRow`]: crate::deserialize::FromSqlRow
+pub trait Row<'a, DB: Backend>:
+    RowIndex<usize> + for<'b> RowIndex<&'b str> + for<'b> RowFieldHelper<'b, DB> + Sized
+{
     /// Return type of `PartialRow`
     ///
     /// For all implementations, beside of the `Row` implementation on `PartialRow` itself
@@ -49,9 +55,24 @@ pub trait Row<'a, DB: Backend>: RowIndex<usize> + for<'b> RowIndex<&'b str> + Si
     /// Get the field with the provided index from the row.
     ///
     /// Returns `None` if there is no matching field for the given index
-    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, DB>>::Field>
     where
+        'a: 'b,
         Self: RowIndex<I>;
+
+    /// Get a deserialized value with the provided index from the row.
+    ///
+    /// Returns `None` if there is no matching field for the given index
+    /// Returns `Some(Err(…)` if there is an error during deserialization
+    /// Returns `Some(T)` if deserialization is successful
+    fn get_value<ST, T, I>(&self, idx: I) -> Option<crate::deserialize::Result<T>>
+    where
+        Self: RowIndex<I>,
+        T: FromSql<ST, DB>,
+    {
+        let field = self.get(idx)?;
+        Some(<T as FromSql<ST, DB>>::from_nullable_sql(field.value()))
+    }
 
     /// Returns a wrapping row that allows only to access fields, where the index is part of
     /// the provided range.
@@ -111,20 +132,28 @@ impl<'a, R> PartialRow<'a, R> {
     }
 }
 
+impl<'a, 'b, DB, R> RowFieldHelper<'a, DB> for PartialRow<'b, R>
+where
+    DB: Backend,
+    R: RowFieldHelper<'a, DB>,
+{
+    type Field = R::Field;
+}
+
 impl<'a, 'b, DB, R> Row<'a, DB> for PartialRow<'b, R>
 where
     DB: Backend,
     R: Row<'a, DB>,
 {
-    type Field = R::Field;
     type InnerPartialRow = R;
 
     fn field_count(&self) -> usize {
         self.range.len()
     }
 
-    fn get<I>(&self, idx: I) -> Option<Self::Field>
+    fn get<'c, I>(&'c self, idx: I) -> Option<<Self as RowFieldHelper<'c, DB>>::Field>
     where
+        'a: 'c,
         Self: RowIndex<I>,
     {
         let idx = self.idx(idx)?;

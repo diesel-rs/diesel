@@ -88,7 +88,7 @@ impl Connection for MysqlConnection {
                 MaybeCached::Cached(stmt) => stmt,
             };
 
-            let results = unsafe { stmt.results(metadata)? };
+            let results = unsafe { stmt.results(&metadata)? };
             Ok(results)
         })
     }
@@ -121,7 +121,7 @@ impl MysqlConnection {
         let cache = &mut self.statement_cache;
         let conn = &mut self.raw_connection;
 
-        let mut stmt = cache.cached_statement(source, &[], |sql| conn.prepare(sql))?;
+        let mut stmt = cache.cached_statement(source, &[], |sql, _| conn.prepare(sql))?;
         let mut bind_collector = RawBytesBindCollector::new();
         source.collect_binds(&mut bind_collector, &mut ())?;
         let binds = bind_collector
