@@ -203,11 +203,11 @@ where
         columns::column_name,
     >: QueryFragment<Conn::Backend>,
     Conn::Backend: QueryMetadata<(
-        sql_types::Text,
-        sql_types::Text,
-        sql_types::Nullable<sql_types::Text>,
-        sql_types::Text,
-    )> + 'static,
+            sql_types::Text,
+            sql_types::Text,
+            sql_types::Nullable<sql_types::Text>,
+            sql_types::Text,
+        )> + 'static,
 {
     use self::information_schema::columns::dsl::*;
 

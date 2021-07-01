@@ -1,5 +1,4 @@
 use crate::schema::*;
-use diesel::deserialize::FromSqlRow;
 use diesel::prelude::*;
 use std::borrow::Cow;
 
