@@ -8,11 +8,6 @@ use crate::sqlite::SqliteType;
 
 use super::row::PrivateSqliteRow;
 
-extern "C" {
-    pub fn sqlite3_value_free(value: *mut ffi::sqlite3_value);
-    pub fn sqlite3_value_dup(value: *const ffi::sqlite3_value) -> *mut ffi::sqlite3_value;
-}
-
 /// Raw sqlite value as received from the database
 ///
 /// Use existing `FromSql` implementations to convert this into
@@ -40,7 +35,7 @@ pub struct OwnedSqliteValue {
 
 impl Drop for OwnedSqliteValue {
     fn drop(&mut self) {
-        unsafe { sqlite3_value_free(self.value.as_ptr()) }
+        unsafe { ffi::sqlite3_value_free(self.value.as_ptr()) }
     }
 }
 
@@ -107,7 +102,6 @@ impl<'a, 'b> SqliteValue<'a, 'b> {
         unsafe { ffi::sqlite3_value_double(self.value.as_ptr()) }
     }
 
-    //#[tracing::instrument(skip(self))]
     /// Get the type of the value as returned by sqlite
     pub fn value_type(&self) -> Option<SqliteType> {
         let tpe = unsafe { ffi::sqlite3_value_type(self.value.as_ptr()) };
@@ -132,7 +126,7 @@ impl OwnedSqliteValue {
         if ffi::SQLITE_NULL == tpe {
             return None;
         }
-        let value = unsafe { sqlite3_value_dup(ptr.as_ptr()) };
+        let value = unsafe { ffi::sqlite3_value_dup(ptr.as_ptr()) };
         Some(Self {
             value: NonNull::new(value)?,
         })
@@ -140,7 +134,7 @@ impl OwnedSqliteValue {
 
     pub(super) fn duplicate(&self) -> OwnedSqliteValue {
         // self.value is a `NonNull` ptr so this cannot be null
-        let value = unsafe { sqlite3_value_dup(self.value.as_ptr()) };
+        let value = unsafe { ffi::sqlite3_value_dup(self.value.as_ptr()) };
         let value = NonNull::new(value).expect(
             "Sqlite documentation states this returns only null if value is null \
                  or OOM. If you ever see this panic message please open an issue at \

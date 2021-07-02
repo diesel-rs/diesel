@@ -91,7 +91,6 @@ impl Connection for SqliteConnection {
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
-    //#[tracing::instrument(skip(self, source))]
     #[doc(hidden)]
     fn load<'a, T>(
         &'a mut self,
@@ -215,7 +214,6 @@ impl SqliteConnection {
         }
     }
 
-    //#[tracing::instrument(skip(self, source, f))]
     fn with_prepared_query<'a, T: QueryFragment<Sqlite> + QueryId, R>(
         &'a mut self,
         source: &'_ T,

@@ -18,19 +18,6 @@ pub struct Statement {
     bind_index: libc::c_int,
 }
 
-const SQLITE_PREPARE_PERSISTENT: libc::c_uint = 0x01;
-
-extern "C" {
-    fn sqlite3_prepare_v3(
-        db: *mut ffi::sqlite3,
-        zSql: *const libc::c_char,
-        nByte: libc::c_int,
-        flags: libc::c_uint,
-        ppStmt: *mut *mut ffi::sqlite3_stmt,
-        pzTail: *mut *const libc::c_char,
-    ) -> libc::c_int;
-}
-
 impl Statement {
     pub fn prepare(
         raw_connection: &RawConnection,
@@ -40,12 +27,12 @@ impl Statement {
         let mut stmt = ptr::null_mut();
         let mut unused_portion = ptr::null();
         let prepare_result = unsafe {
-            sqlite3_prepare_v3(
+            ffi::sqlite3_prepare_v3(
                 raw_connection.internal_connection.as_ptr(),
                 CString::new(sql)?.as_ptr(),
                 sql.len() as libc::c_int,
                 if matches!(is_cached, PrepareForCache::Yes) {
-                    SQLITE_PREPARE_PERSISTENT
+                    ffi::SQLITE_PREPARE_PERSISTENT as u32
                 } else {
                     0
                 },
