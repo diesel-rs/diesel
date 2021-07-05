@@ -284,7 +284,6 @@ fn fun_with_row_iters() {
             assert_eq!(&deserialized, expected);
         }
     }
-    dbg!();
 
     {
         let collected_rows = conn.load(&query).unwrap().collect::<Vec<_>>();
