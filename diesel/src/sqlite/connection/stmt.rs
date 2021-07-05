@@ -3,7 +3,7 @@ extern crate libsqlite3_sys as ffi;
 use super::raw::RawConnection;
 use super::serialized_value::SerializedValue;
 use super::sqlite_value::OwnedSqliteValue;
-use crate::connection::PrepareForCache;
+use crate::connection::{MaybeCached, PrepareForCache};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::SqliteType;
@@ -128,12 +128,12 @@ impl Drop for Statement {
 
 #[allow(missing_debug_implementations)]
 pub struct StatementUse<'a> {
-    statement: &'a mut Statement,
+    statement: MaybeCached<'a, Statement>,
     column_names: OnceCell<Vec<*const str>>,
 }
 
 impl<'a> StatementUse<'a> {
-    pub(in crate::sqlite::connection) fn new(statement: &'a mut Statement) -> Self {
+    pub(in crate::sqlite::connection) fn new(statement: MaybeCached<'a, Statement>) -> Self {
         StatementUse {
             statement,
             column_names: OnceCell::new(),

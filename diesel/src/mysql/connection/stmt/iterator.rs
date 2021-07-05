@@ -3,13 +3,14 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 use super::{Binds, Statement, StatementMetadata};
+use crate::connection::MaybeCached;
 use crate::mysql::{Mysql, MysqlType};
 use crate::result::QueryResult;
 use crate::row::*;
 
 #[allow(missing_debug_implementations)]
 pub struct StatementIterator<'a> {
-    stmt: &'a mut Statement,
+    stmt: MaybeCached<'a, Statement>,
     last_row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
     size: usize,
@@ -17,8 +18,10 @@ pub struct StatementIterator<'a> {
 }
 
 impl<'a> StatementIterator<'a> {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(stmt: &'a mut Statement, types: &[Option<MysqlType>]) -> QueryResult<Self> {
+    pub fn from_stmt(
+        mut stmt: MaybeCached<'a, Statement>,
+        types: &[Option<MysqlType>],
+    ) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
 
         let mut output_binds = Binds::from_output_types(types, &metadata);

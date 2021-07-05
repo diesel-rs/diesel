@@ -715,7 +715,7 @@ mod tests {
             )
             .unwrap();
 
-        conn.with_prepared_query(&crate::sql_query(
+        let mut stmt = conn.prepared_query(&crate::sql_query(
             "SELECT
                     tiny_int, small_int, medium_int, int_col,
                     big_int, unsigned_int, zero_fill_int,
@@ -726,367 +726,365 @@ mod tests {
                     ST_AsText(polygon_col), ST_AsText(multipoint_col), ST_AsText(multilinestring_col),
                     ST_AsText(multipolygon_col), ST_AsText(geometry_collection), json_col
                  FROM all_mysql_types",
-        ), |mut stmt, _| {
+        )).unwrap();
 
-            let metadata = stmt.metadata().unwrap();
-            let mut output_binds =
-                Binds::from_output_types(&vec![None; metadata.fields().len()], &metadata);
-            stmt.execute_statement(&mut output_binds).unwrap();
-            stmt.populate_row_buffers(&mut output_binds).unwrap();
+        let metadata = stmt.metadata().unwrap();
+        let mut output_binds =
+            Binds::from_output_types(&vec![None; metadata.fields().len()], &metadata);
+        stmt.execute_statement(&mut output_binds).unwrap();
+        stmt.populate_row_buffers(&mut output_binds).unwrap();
 
-            let results: Vec<(BindData, &_)> = output_binds
-                .data
-                .into_iter()
-                .zip(metadata.fields())
-                .collect::<Vec<_>>();
+        let results: Vec<(BindData, &_)> = output_binds
+            .data
+            .into_iter()
+            .zip(metadata.fields())
+            .collect::<Vec<_>>();
 
-            let tiny_int_col = &results[0].0;
-            assert_eq!(tiny_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_TINY);
-            assert!(tiny_int_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!tiny_int_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert!(matches!(to_value::<TinyInt, i8>(tiny_int_col), Ok(0)));
+        let tiny_int_col = &results[0].0;
+        assert_eq!(tiny_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_TINY);
+        assert!(tiny_int_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!tiny_int_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert!(matches!(to_value::<TinyInt, i8>(tiny_int_col), Ok(0)));
 
-            let small_int_col = &results[1].0;
-            assert_eq!(small_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_SHORT);
-            assert!(small_int_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!small_int_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert!(matches!(to_value::<SmallInt, i16>(small_int_col), Ok(1)));
+        let small_int_col = &results[1].0;
+        assert_eq!(small_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_SHORT);
+        assert!(small_int_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!small_int_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert!(matches!(to_value::<SmallInt, i16>(small_int_col), Ok(1)));
 
-            let medium_int_col = &results[2].0;
-            assert_eq!(medium_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_INT24);
-            assert!(medium_int_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!medium_int_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert!(matches!(to_value::<Integer, i32>(medium_int_col), Ok(2)));
+        let medium_int_col = &results[2].0;
+        assert_eq!(medium_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_INT24);
+        assert!(medium_int_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!medium_int_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert!(matches!(to_value::<Integer, i32>(medium_int_col), Ok(2)));
 
-            let int_col = &results[3].0;
-            assert_eq!(int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG);
-            assert!(int_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!int_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert!(matches!(to_value::<Integer, i32>(int_col), Ok(3)));
+        let int_col = &results[3].0;
+        assert_eq!(int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG);
+        assert!(int_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!int_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert!(matches!(to_value::<Integer, i32>(int_col), Ok(3)));
 
-            let big_int_col = &results[4].0;
-            assert_eq!(big_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONGLONG);
-            assert!(big_int_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!big_int_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert!(matches!(to_value::<TinyInt, i8>(big_int_col), Ok(-5)));
+        let big_int_col = &results[4].0;
+        assert_eq!(big_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONGLONG);
+        assert!(big_int_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!big_int_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert!(matches!(to_value::<TinyInt, i8>(big_int_col), Ok(-5)));
 
-            let unsigned_int_col = &results[5].0;
-            assert_eq!(unsigned_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG);
-            assert!(unsigned_int_col.flags.contains(Flags::NUM_FLAG));
-            assert!(unsigned_int_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert!(matches!(
-                to_value::<Unsigned<Integer>, u32>(unsigned_int_col),
-                Ok(42)
-            ));
+        let unsigned_int_col = &results[5].0;
+        assert_eq!(unsigned_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG);
+        assert!(unsigned_int_col.flags.contains(Flags::NUM_FLAG));
+        assert!(unsigned_int_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert!(matches!(
+            to_value::<Unsigned<Integer>, u32>(unsigned_int_col),
+            Ok(42)
+        ));
 
-            let zero_fill_int_col = &results[6].0;
-            assert_eq!(
-                zero_fill_int_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_LONG
-            );
-            assert!(zero_fill_int_col.flags.contains(Flags::NUM_FLAG));
-            assert!(zero_fill_int_col.flags.contains(Flags::ZEROFILL_FLAG));
-            assert!(matches!(to_value::<Integer, i32>(zero_fill_int_col), Ok(1)));
+        let zero_fill_int_col = &results[6].0;
+        assert_eq!(
+            zero_fill_int_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_LONG
+        );
+        assert!(zero_fill_int_col.flags.contains(Flags::NUM_FLAG));
+        assert!(zero_fill_int_col.flags.contains(Flags::ZEROFILL_FLAG));
+        assert!(matches!(to_value::<Integer, i32>(zero_fill_int_col), Ok(1)));
 
-            let numeric_col = &results[7].0;
-            assert_eq!(
-                numeric_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL
-            );
-            assert!(numeric_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!numeric_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert_eq!(
-                to_value::<Numeric, bigdecimal::BigDecimal>(numeric_col).unwrap(),
-                bigdecimal::BigDecimal::from_f32(-999.999).unwrap()
-            );
+        let numeric_col = &results[7].0;
+        assert_eq!(
+            numeric_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL
+        );
+        assert!(numeric_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!numeric_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(
+            to_value::<Numeric, bigdecimal::BigDecimal>(numeric_col).unwrap(),
+            bigdecimal::BigDecimal::from_f32(-999.999).unwrap()
+        );
 
-            let decimal_col = &results[8].0;
-            assert_eq!(
-                decimal_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL
-            );
-            assert!(decimal_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!decimal_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert_eq!(
-                to_value::<Numeric, bigdecimal::BigDecimal>(decimal_col).unwrap(),
-                bigdecimal::BigDecimal::from_f32(3.14).unwrap()
-            );
+        let decimal_col = &results[8].0;
+        assert_eq!(
+            decimal_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_NEWDECIMAL
+        );
+        assert!(decimal_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!decimal_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(
+            to_value::<Numeric, bigdecimal::BigDecimal>(decimal_col).unwrap(),
+            bigdecimal::BigDecimal::from_f32(3.14).unwrap()
+        );
 
-            let float_col = &results[9].0;
-            assert_eq!(float_col.tpe, ffi::enum_field_types::MYSQL_TYPE_FLOAT);
-            assert!(float_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!float_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert_eq!(to_value::<Float, f32>(float_col).unwrap(), 1.23);
+        let float_col = &results[9].0;
+        assert_eq!(float_col.tpe, ffi::enum_field_types::MYSQL_TYPE_FLOAT);
+        assert!(float_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!float_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(to_value::<Float, f32>(float_col).unwrap(), 1.23);
 
-            let double_col = &results[10].0;
-            assert_eq!(double_col.tpe, ffi::enum_field_types::MYSQL_TYPE_DOUBLE);
-            assert!(double_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!double_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert_eq!(to_value::<Double, f64>(double_col).unwrap(), 4.5678);
+        let double_col = &results[10].0;
+        assert_eq!(double_col.tpe, ffi::enum_field_types::MYSQL_TYPE_DOUBLE);
+        assert!(double_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!double_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert_eq!(to_value::<Double, f64>(double_col).unwrap(), 4.5678);
 
-            let bit_col = &results[11].0;
-            assert_eq!(bit_col.tpe, ffi::enum_field_types::MYSQL_TYPE_BIT);
-            assert!(!bit_col.flags.contains(Flags::NUM_FLAG));
-            assert!(bit_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert!(!bit_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Blob, Vec<u8>>(bit_col).unwrap(), vec![170]);
+        let bit_col = &results[11].0;
+        assert_eq!(bit_col.tpe, ffi::enum_field_types::MYSQL_TYPE_BIT);
+        assert!(!bit_col.flags.contains(Flags::NUM_FLAG));
+        assert!(bit_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert!(!bit_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Blob, Vec<u8>>(bit_col).unwrap(), vec![170]);
 
-            let date_col = &results[12].0;
-            assert_eq!(date_col.tpe, ffi::enum_field_types::MYSQL_TYPE_DATE);
-            assert!(!date_col.flags.contains(Flags::NUM_FLAG));
-            assert_eq!(
-                to_value::<Date, chrono::NaiveDate>(date_col).unwrap(),
-                chrono::NaiveDate::from_ymd_opt(1000, 1, 1).unwrap(),
-            );
+        let date_col = &results[12].0;
+        assert_eq!(date_col.tpe, ffi::enum_field_types::MYSQL_TYPE_DATE);
+        assert!(!date_col.flags.contains(Flags::NUM_FLAG));
+        assert_eq!(
+            to_value::<Date, chrono::NaiveDate>(date_col).unwrap(),
+            chrono::NaiveDate::from_ymd_opt(1000, 1, 1).unwrap(),
+        );
 
-            let date_time_col = &results[13].0;
-            assert_eq!(
-                date_time_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_DATETIME
-            );
-            assert!(!date_time_col.flags.contains(Flags::NUM_FLAG));
-            assert_eq!(
-                to_value::<Datetime, chrono::NaiveDateTime>(date_time_col).unwrap(),
-                chrono::NaiveDateTime::parse_from_str("9999-12-31 12:34:45", "%Y-%m-%d %H:%M:%S")
-                    .unwrap()
-            );
+        let date_time_col = &results[13].0;
+        assert_eq!(
+            date_time_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_DATETIME
+        );
+        assert!(!date_time_col.flags.contains(Flags::NUM_FLAG));
+        assert_eq!(
+            to_value::<Datetime, chrono::NaiveDateTime>(date_time_col).unwrap(),
+            chrono::NaiveDateTime::parse_from_str("9999-12-31 12:34:45", "%Y-%m-%d %H:%M:%S")
+                .unwrap()
+        );
 
-            let timestamp_col = &results[14].0;
-            assert_eq!(
-                timestamp_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_TIMESTAMP
-            );
-            assert!(!timestamp_col.flags.contains(Flags::NUM_FLAG));
-            assert_eq!(
-                to_value::<Datetime, chrono::NaiveDateTime>(timestamp_col).unwrap(),
-                chrono::NaiveDateTime::parse_from_str("2020-01-01 10:10:10", "%Y-%m-%d %H:%M:%S")
-                    .unwrap()
-            );
+        let timestamp_col = &results[14].0;
+        assert_eq!(
+            timestamp_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_TIMESTAMP
+        );
+        assert!(!timestamp_col.flags.contains(Flags::NUM_FLAG));
+        assert_eq!(
+            to_value::<Datetime, chrono::NaiveDateTime>(timestamp_col).unwrap(),
+            chrono::NaiveDateTime::parse_from_str("2020-01-01 10:10:10", "%Y-%m-%d %H:%M:%S")
+                .unwrap()
+        );
 
-            let time_col = &results[15].0;
-            assert_eq!(time_col.tpe, ffi::enum_field_types::MYSQL_TYPE_TIME);
-            assert!(!time_col.flags.contains(Flags::NUM_FLAG));
-            assert_eq!(
-                to_value::<Time, chrono::NaiveTime>(time_col).unwrap(),
-                chrono::NaiveTime::from_hms(23, 01, 01)
-            );
+        let time_col = &results[15].0;
+        assert_eq!(time_col.tpe, ffi::enum_field_types::MYSQL_TYPE_TIME);
+        assert!(!time_col.flags.contains(Flags::NUM_FLAG));
+        assert_eq!(
+            to_value::<Time, chrono::NaiveTime>(time_col).unwrap(),
+            chrono::NaiveTime::from_hms(23, 01, 01)
+        );
 
-            let year_col = &results[16].0;
-            assert_eq!(year_col.tpe, ffi::enum_field_types::MYSQL_TYPE_YEAR);
-            assert!(year_col.flags.contains(Flags::NUM_FLAG));
-            assert!(year_col.flags.contains(Flags::UNSIGNED_FLAG));
-            assert!(matches!(to_value::<SmallInt, i16>(year_col), Ok(2020)));
+        let year_col = &results[16].0;
+        assert_eq!(year_col.tpe, ffi::enum_field_types::MYSQL_TYPE_YEAR);
+        assert!(year_col.flags.contains(Flags::NUM_FLAG));
+        assert!(year_col.flags.contains(Flags::UNSIGNED_FLAG));
+        assert!(matches!(to_value::<SmallInt, i16>(year_col), Ok(2020)));
 
-            let char_col = &results[17].0;
-            assert_eq!(char_col.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
-            assert!(!char_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!char_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!char_col.flags.contains(Flags::SET_FLAG));
-            assert!(!char_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!char_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Text, String>(char_col).unwrap(), "abc");
+        let char_col = &results[17].0;
+        assert_eq!(char_col.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
+        assert!(!char_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!char_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!char_col.flags.contains(Flags::SET_FLAG));
+        assert!(!char_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!char_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Text, String>(char_col).unwrap(), "abc");
 
-            let varchar_col = &results[18].0;
-            assert_eq!(
-                varchar_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_VAR_STRING
-            );
-            assert!(!varchar_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!varchar_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!varchar_col.flags.contains(Flags::SET_FLAG));
-            assert!(!varchar_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!varchar_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Text, String>(varchar_col).unwrap(), "foo");
+        let varchar_col = &results[18].0;
+        assert_eq!(
+            varchar_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_VAR_STRING
+        );
+        assert!(!varchar_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!varchar_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!varchar_col.flags.contains(Flags::SET_FLAG));
+        assert!(!varchar_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!varchar_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Text, String>(varchar_col).unwrap(), "foo");
 
-            let binary_col = &results[19].0;
-            assert_eq!(binary_col.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
-            assert!(!binary_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!binary_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!binary_col.flags.contains(Flags::SET_FLAG));
-            assert!(!binary_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(binary_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(
-                to_value::<Blob, Vec<u8>>(binary_col).unwrap(),
-                b"a \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
-            );
+        let binary_col = &results[19].0;
+        assert_eq!(binary_col.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
+        assert!(!binary_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!binary_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!binary_col.flags.contains(Flags::SET_FLAG));
+        assert!(!binary_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(binary_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(
+            to_value::<Blob, Vec<u8>>(binary_col).unwrap(),
+            b"a \0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+        );
 
-            let varbinary_col = &results[20].0;
-            assert_eq!(
-                varbinary_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_VAR_STRING
-            );
-            assert!(!varbinary_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!varbinary_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!varbinary_col.flags.contains(Flags::SET_FLAG));
-            assert!(!varbinary_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(varbinary_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Blob, Vec<u8>>(varbinary_col).unwrap(), b"a ");
+        let varbinary_col = &results[20].0;
+        assert_eq!(
+            varbinary_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_VAR_STRING
+        );
+        assert!(!varbinary_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!varbinary_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!varbinary_col.flags.contains(Flags::SET_FLAG));
+        assert!(!varbinary_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(varbinary_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Blob, Vec<u8>>(varbinary_col).unwrap(), b"a ");
 
-            let blob_col = &results[21].0;
-            assert_eq!(blob_col.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
-            assert!(!blob_col.flags.contains(Flags::NUM_FLAG));
-            assert!(blob_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!blob_col.flags.contains(Flags::SET_FLAG));
-            assert!(!blob_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(blob_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Blob, Vec<u8>>(blob_col).unwrap(), b"binary");
+        let blob_col = &results[21].0;
+        assert_eq!(blob_col.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
+        assert!(!blob_col.flags.contains(Flags::NUM_FLAG));
+        assert!(blob_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!blob_col.flags.contains(Flags::SET_FLAG));
+        assert!(!blob_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(blob_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Blob, Vec<u8>>(blob_col).unwrap(), b"binary");
 
-            let text_col = &results[22].0;
-            assert_eq!(text_col.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
-            assert!(!text_col.flags.contains(Flags::NUM_FLAG));
-            assert!(text_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!text_col.flags.contains(Flags::SET_FLAG));
-            assert!(!text_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!text_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(
-                to_value::<Text, String>(text_col).unwrap(),
-                "some text whatever"
-            );
+        let text_col = &results[22].0;
+        assert_eq!(text_col.tpe, ffi::enum_field_types::MYSQL_TYPE_BLOB);
+        assert!(!text_col.flags.contains(Flags::NUM_FLAG));
+        assert!(text_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!text_col.flags.contains(Flags::SET_FLAG));
+        assert!(!text_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!text_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(
+            to_value::<Text, String>(text_col).unwrap(),
+            "some text whatever"
+        );
 
-            let enum_col = &results[23].0;
-            assert_eq!(enum_col.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
-            assert!(!enum_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!enum_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!enum_col.flags.contains(Flags::SET_FLAG));
-            assert!(enum_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!enum_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Text, String>(enum_col).unwrap(), "red");
+        let enum_col = &results[23].0;
+        assert_eq!(enum_col.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
+        assert!(!enum_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!enum_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!enum_col.flags.contains(Flags::SET_FLAG));
+        assert!(enum_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!enum_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Text, String>(enum_col).unwrap(), "red");
 
-            let set_col = &results[24].0;
-            assert_eq!(set_col.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
-            assert!(!set_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!set_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(set_col.flags.contains(Flags::SET_FLAG));
-            assert!(!set_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!set_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Text, String>(set_col).unwrap(), "one");
+        let set_col = &results[24].0;
+        assert_eq!(set_col.tpe, ffi::enum_field_types::MYSQL_TYPE_STRING);
+        assert!(!set_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!set_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(set_col.flags.contains(Flags::SET_FLAG));
+        assert!(!set_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!set_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Text, String>(set_col).unwrap(), "one");
 
-            let geom = &results[25].0;
-            assert_eq!(geom.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB);
-            assert!(!geom.flags.contains(Flags::NUM_FLAG));
-            assert!(!geom.flags.contains(Flags::BLOB_FLAG));
-            assert!(!geom.flags.contains(Flags::SET_FLAG));
-            assert!(!geom.flags.contains(Flags::ENUM_FLAG));
-            assert!(!geom.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Text, String>(geom).unwrap(), "POINT(1 1)");
+        let geom = &results[25].0;
+        assert_eq!(geom.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB);
+        assert!(!geom.flags.contains(Flags::NUM_FLAG));
+        assert!(!geom.flags.contains(Flags::BLOB_FLAG));
+        assert!(!geom.flags.contains(Flags::SET_FLAG));
+        assert!(!geom.flags.contains(Flags::ENUM_FLAG));
+        assert!(!geom.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Text, String>(geom).unwrap(), "POINT(1 1)");
 
-            let point_col = &results[26].0;
-            assert_eq!(point_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB);
-            assert!(!point_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!point_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!point_col.flags.contains(Flags::SET_FLAG));
-            assert!(!point_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!point_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(to_value::<Text, String>(point_col).unwrap(), "POINT(1 1)");
+        let point_col = &results[26].0;
+        assert_eq!(point_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB);
+        assert!(!point_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!point_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!point_col.flags.contains(Flags::SET_FLAG));
+        assert!(!point_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!point_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(to_value::<Text, String>(point_col).unwrap(), "POINT(1 1)");
 
-            let linestring_col = &results[27].0;
-            assert_eq!(
-                linestring_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB
-            );
-            assert!(!linestring_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!linestring_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!linestring_col.flags.contains(Flags::SET_FLAG));
-            assert!(!linestring_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!linestring_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(
-                to_value::<Text, String>(linestring_col).unwrap(),
-                "LINESTRING(0 0,1 1,2 2)"
-            );
+        let linestring_col = &results[27].0;
+        assert_eq!(
+            linestring_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB
+        );
+        assert!(!linestring_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!linestring_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!linestring_col.flags.contains(Flags::SET_FLAG));
+        assert!(!linestring_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!linestring_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(
+            to_value::<Text, String>(linestring_col).unwrap(),
+            "LINESTRING(0 0,1 1,2 2)"
+        );
 
-            let polygon_col = &results[28].0;
-            assert_eq!(polygon_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB);
-            assert!(!polygon_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!polygon_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!polygon_col.flags.contains(Flags::SET_FLAG));
-            assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(
-                to_value::<Text, String>(polygon_col).unwrap(),
-                "POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))"
-            );
+        let polygon_col = &results[28].0;
+        assert_eq!(polygon_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB);
+        assert!(!polygon_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!polygon_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!polygon_col.flags.contains(Flags::SET_FLAG));
+        assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(
+            to_value::<Text, String>(polygon_col).unwrap(),
+            "POLYGON((0 0,10 0,10 10,0 10,0 0),(5 5,7 5,7 7,5 7,5 5))"
+        );
 
-            let multipoint_col = &results[29].0;
-            assert_eq!(
-                multipoint_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB
-            );
-            assert!(!multipoint_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!multipoint_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!multipoint_col.flags.contains(Flags::SET_FLAG));
-            assert!(!multipoint_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!multipoint_col.flags.contains(Flags::BINARY_FLAG));
-            // older mysql and mariadb versions get back another encoding here
-            // we test for both as there seems to be no clear pattern when one or
-            // the other is returned
-            let multipoint_res = to_value::<Text, String>(multipoint_col).unwrap();
-            assert!(
-                multipoint_res == "MULTIPOINT((0 0),(10 10),(10 20),(20 20))"
-                    || multipoint_res == "MULTIPOINT(0 0,10 10,10 20,20 20)"
-            );
+        let multipoint_col = &results[29].0;
+        assert_eq!(
+            multipoint_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB
+        );
+        assert!(!multipoint_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!multipoint_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!multipoint_col.flags.contains(Flags::SET_FLAG));
+        assert!(!multipoint_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!multipoint_col.flags.contains(Flags::BINARY_FLAG));
+        // older mysql and mariadb versions get back another encoding here
+        // we test for both as there seems to be no clear pattern when one or
+        // the other is returned
+        let multipoint_res = to_value::<Text, String>(multipoint_col).unwrap();
+        assert!(
+            multipoint_res == "MULTIPOINT((0 0),(10 10),(10 20),(20 20))"
+                || multipoint_res == "MULTIPOINT(0 0,10 10,10 20,20 20)"
+        );
 
-            let multilinestring_col = &results[30].0;
-            assert_eq!(
-                multilinestring_col.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB
-            );
-            assert!(!multilinestring_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!multilinestring_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!multilinestring_col.flags.contains(Flags::SET_FLAG));
-            assert!(!multilinestring_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!multilinestring_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(
-                to_value::<Text, String>(multilinestring_col).unwrap(),
-                "MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))"
-            );
+        let multilinestring_col = &results[30].0;
+        assert_eq!(
+            multilinestring_col.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB
+        );
+        assert!(!multilinestring_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!multilinestring_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!multilinestring_col.flags.contains(Flags::SET_FLAG));
+        assert!(!multilinestring_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!multilinestring_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(
+            to_value::<Text, String>(multilinestring_col).unwrap(),
+            "MULTILINESTRING((10 48,10 21,10 0),(16 0,16 23,16 48))"
+        );
 
-            let polygon_col = &results[31].0;
-            assert_eq!(polygon_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB);
-            assert!(!polygon_col.flags.contains(Flags::NUM_FLAG));
-            assert!(!polygon_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!polygon_col.flags.contains(Flags::SET_FLAG));
-            assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(
+        let polygon_col = &results[31].0;
+        assert_eq!(polygon_col.tpe, ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB);
+        assert!(!polygon_col.flags.contains(Flags::NUM_FLAG));
+        assert!(!polygon_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!polygon_col.flags.contains(Flags::SET_FLAG));
+        assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(
                 to_value::<Text, String>(polygon_col).unwrap(),
                 "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
             );
 
-            let geometry_collection = &results[32].0;
-            assert_eq!(
-                geometry_collection.tpe,
-                ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB
-            );
-            assert!(!geometry_collection.flags.contains(Flags::NUM_FLAG));
-            assert!(!geometry_collection.flags.contains(Flags::BLOB_FLAG));
-            assert!(!geometry_collection.flags.contains(Flags::SET_FLAG));
-            assert!(!geometry_collection.flags.contains(Flags::ENUM_FLAG));
-            assert!(!geometry_collection.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(
-                to_value::<Text, String>(geometry_collection).unwrap(),
-                "GEOMETRYCOLLECTION(POINT(1 1),LINESTRING(0 0,1 1,2 2,3 3,4 4))"
-            );
+        let geometry_collection = &results[32].0;
+        assert_eq!(
+            geometry_collection.tpe,
+            ffi::enum_field_types::MYSQL_TYPE_LONG_BLOB
+        );
+        assert!(!geometry_collection.flags.contains(Flags::NUM_FLAG));
+        assert!(!geometry_collection.flags.contains(Flags::BLOB_FLAG));
+        assert!(!geometry_collection.flags.contains(Flags::SET_FLAG));
+        assert!(!geometry_collection.flags.contains(Flags::ENUM_FLAG));
+        assert!(!geometry_collection.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(
+            to_value::<Text, String>(geometry_collection).unwrap(),
+            "GEOMETRYCOLLECTION(POINT(1 1),LINESTRING(0 0,1 1,2 2,3 3,4 4))"
+        );
 
-            let json_col = &results[33].0;
-            // mariadb >= 10.2 and mysql >=8.0 are supporting a json type
-            // from those mariadb >= 10.3 and mysql >= 8.0 are reporting
-            // json here, so we assert that we get back json
-            // mariadb 10.5 returns again blob
-            assert!(
-                json_col.tpe == ffi::enum_field_types::MYSQL_TYPE_JSON
-                    || json_col.tpe == ffi::enum_field_types::MYSQL_TYPE_BLOB
-            );
-            assert!(!json_col.flags.contains(Flags::NUM_FLAG));
-            assert!(json_col.flags.contains(Flags::BLOB_FLAG));
-            assert!(!json_col.flags.contains(Flags::SET_FLAG));
-            assert!(!json_col.flags.contains(Flags::ENUM_FLAG));
-            assert!(json_col.flags.contains(Flags::BINARY_FLAG));
-            assert_eq!(
-                to_value::<Text, String>(json_col).unwrap(),
-                "{\"key1\": \"value1\", \"key2\": \"value2\"}"
-            );
-            Ok(())
-        }).unwrap();
+        let json_col = &results[33].0;
+        // mariadb >= 10.2 and mysql >=8.0 are supporting a json type
+        // from those mariadb >= 10.3 and mysql >= 8.0 are reporting
+        // json here, so we assert that we get back json
+        // mariadb 10.5 returns again blob
+        assert!(
+            json_col.tpe == ffi::enum_field_types::MYSQL_TYPE_JSON
+                || json_col.tpe == ffi::enum_field_types::MYSQL_TYPE_BLOB
+        );
+        assert!(!json_col.flags.contains(Flags::NUM_FLAG));
+        assert!(json_col.flags.contains(Flags::BLOB_FLAG));
+        assert!(!json_col.flags.contains(Flags::SET_FLAG));
+        assert!(!json_col.flags.contains(Flags::ENUM_FLAG));
+        assert!(json_col.flags.contains(Flags::BINARY_FLAG));
+        assert_eq!(
+            to_value::<Text, String>(json_col).unwrap(),
+            "{\"key1\": \"value1\", \"key2\": \"value2\"}"
+        );
     }
 
     fn query_single_table(

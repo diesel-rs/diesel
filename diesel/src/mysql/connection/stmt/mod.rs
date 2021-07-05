@@ -8,7 +8,6 @@ use std::ffi::CStr;
 use std::os::raw as libc;
 use std::ptr::NonNull;
 
-use self::iterator::*;
 use super::bind::Binds;
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
@@ -75,16 +74,6 @@ impl Statement {
     pub fn affected_rows(&self) -> usize {
         let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.stmt.as_ptr()) };
         affected_rows as usize
-    }
-
-    /// This function should be called instead of `execute` for queries which
-    /// have a return value. After calling this function, `execute` can never
-    /// be called on this statement.
-    pub unsafe fn results<'a>(
-        &'a mut self,
-        types: &[Option<MysqlType>],
-    ) -> QueryResult<StatementIterator<'a>> {
-        StatementIterator::new(self, types)
     }
 
     /// This function should be called after `execute` only

@@ -4,6 +4,7 @@ mod stmt;
 mod url;
 
 use self::raw::RawConnection;
+use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
@@ -20,7 +21,6 @@ pub struct MysqlConnection {
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Mysql, Statement>,
-    current_statement: Option<Statement>,
 }
 
 unsafe impl Send for MysqlConnection {}
@@ -51,7 +51,6 @@ impl Connection for MysqlConnection {
             raw_connection,
             transaction_state: AnsiTransactionManager::default(),
             statement_cache: StatementCache::new(),
-            current_statement: None,
         };
         conn.set_config_options()
             .map_err(CouldntSetupConfiguration)?;
@@ -75,22 +74,12 @@ impl Connection for MysqlConnection {
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source.as_query(), |stmt, current_statement| {
-            let mut metadata = Vec::new();
-            Mysql::row_metadata(&mut (), &mut metadata);
-            let stmt = match stmt {
-                MaybeCached::CannotCache(stmt) => {
-                    *current_statement = Some(stmt);
-                    current_statement
-                        .as_mut()
-                        .expect("We set it literally above")
-                }
-                MaybeCached::Cached(stmt) => stmt,
-            };
+        let stmt = self.prepared_query(&source.as_query())?;
 
-            let results = unsafe { stmt.results(&metadata)? };
-            Ok(results)
-        })
+        let mut metadata = Vec::new();
+        Mysql::row_metadata(&mut (), &mut metadata);
+
+        StatementIterator::from_stmt(stmt, &metadata)
     }
 
     #[doc(hidden)]
@@ -98,12 +87,11 @@ impl Connection for MysqlConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        self.with_prepared_query(source, |stmt, _| {
-            unsafe {
-                stmt.execute()?;
-            }
-            Ok(stmt.affected_rows())
-        })
+        let stmt = self.prepared_query(source)?;
+        unsafe {
+            stmt.execute()?;
+        }
+        Ok(stmt.affected_rows())
     }
 
     #[doc(hidden)]
@@ -113,11 +101,10 @@ impl Connection for MysqlConnection {
 }
 
 impl MysqlConnection {
-    fn with_prepared_query<'a, T: QueryFragment<Mysql> + QueryId, R>(
+    fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
         &'a mut self,
         source: &'_ T,
-        f: impl FnOnce(MaybeCached<'a, Statement>, &'a mut Option<Statement>) -> QueryResult<R>,
-    ) -> QueryResult<R> {
+    ) -> QueryResult<MaybeCached<'a, Statement>> {
         let cache = &mut self.statement_cache;
         let conn = &mut self.raw_connection;
 
@@ -129,7 +116,7 @@ impl MysqlConnection {
             .into_iter()
             .zip(bind_collector.binds);
         stmt.bind(binds)?;
-        f(stmt, &mut self.current_statement)
+        Ok(stmt)
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {

@@ -35,11 +35,10 @@ use crate::sqlite::Sqlite;
 /// - Special identifiers (`:memory:`)
 #[allow(missing_debug_implementations)]
 pub struct SqliteConnection {
-    // Both statement_cache and current_statement needs to be before raw_connection
+    // statement_cache needs to be before raw_connection
     // otherwise we will get errors about open statements before closing the
     // connection itself
     statement_cache: StatementCache<Sqlite, Statement>,
-    current_statement: Option<Statement>,
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
 }
@@ -78,7 +77,6 @@ impl Connection for SqliteConnection {
             statement_cache: StatementCache::new(),
             raw_connection,
             transaction_state: AnsiTransactionManager::default(),
-            current_statement: None,
         };
         conn.register_diesel_sql_functions()
             .map_err(CouldntSetupConfiguration)?;
@@ -101,19 +99,10 @@ impl Connection for SqliteConnection {
         T::Query: QueryFragment<Self::Backend> + QueryId,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source.as_query(), |stmt, current_statement| {
-            let statement = match stmt {
-                MaybeCached::CannotCache(stmt) => {
-                    *current_statement = Some(stmt);
-                    current_statement
-                        .as_mut()
-                        .expect("We set it literally above")
-                }
-                MaybeCached::Cached(stmt) => stmt,
-            };
-            let statement_use = StatementUse::new(statement);
-            Ok(StatementIterator::new(statement_use))
-        })
+        let stmt = self.prepared_query(&source.as_query())?;
+
+        let statement_use = StatementUse::new(stmt);
+        Ok(StatementIterator::new(statement_use))
     }
 
     #[doc(hidden)]
@@ -121,10 +110,10 @@ impl Connection for SqliteConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        self.with_prepared_query(source, |mut stmt, _| {
-            let statement_use = StatementUse::new(&mut stmt);
-            statement_use.run()
-        })?;
+        let stmt = self.prepared_query(source)?;
+
+        let statement_use = StatementUse::new(stmt);
+        statement_use.run()?;
 
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
@@ -214,11 +203,10 @@ impl SqliteConnection {
         }
     }
 
-    fn with_prepared_query<'a, T: QueryFragment<Sqlite> + QueryId, R>(
+    fn prepared_query<'a, T: QueryFragment<Sqlite> + QueryId>(
         &'a mut self,
         source: &'_ T,
-        f: impl FnOnce(MaybeCached<'a, Statement>, &'a mut Option<Statement>) -> QueryResult<R>,
-    ) -> QueryResult<R> {
+    ) -> QueryResult<MaybeCached<'a, Statement>> {
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
         let mut statement = cache.cached_statement(source, &[], |sql, is_cached| {
@@ -233,7 +221,7 @@ impl SqliteConnection {
             statement.bind(tpe, value)?;
         }
 
-        f(statement, &mut self.current_statement)
+        Ok(statement)
     }
 
     #[doc(hidden)]
