@@ -34,7 +34,7 @@ impl<'a> Row<'a, Pg> for PgRow<'a> {
     {
         let idx = self.idx(idx)?;
         Some(PgField {
-            db_result: self.db_result.clone(),
+            db_result: &self.db_result,
             row_idx: self.row_idx,
             col_idx: idx,
         })
@@ -63,7 +63,7 @@ impl<'a, 'b> RowIndex<&'a str> for PgRow<'b> {
 
 #[allow(missing_debug_implementations)]
 pub struct PgField<'a> {
-    db_result: Rc<PgResult<'a>>,
+    db_result: &'a PgResult<'a>,
     row_idx: usize,
     col_idx: usize,
 }
