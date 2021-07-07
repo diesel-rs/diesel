@@ -113,6 +113,15 @@ where
         AstPass { internals }
     }
 
+    ///get_builder
+    pub fn get_builder(&mut self) -> Option<&mut DB::QueryBuilder> {
+        use self::AstPassInternals::*;
+        match &mut self.internals {
+            ToSql(ref mut builder1) => Some(builder1),
+            _=>None,
+        }
+    }
+
     /// Mark the current query being constructed as unsafe to store in the
     /// prepared statement cache.
     ///

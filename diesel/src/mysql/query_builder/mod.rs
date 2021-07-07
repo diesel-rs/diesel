@@ -35,7 +35,13 @@ impl QueryBuilder<Mysql> for MysqlQueryBuilder {
         self.push_sql("?");
     }
 
-    fn finish(self) -> String {
-        self.sql
+    fn finish(&self) -> &String {
+        &self.sql
+    }
+
+    fn clear(&mut self)->String{
+        let old = self.sql.clone();
+        self.sql.clear();   
+        old
     }
 }

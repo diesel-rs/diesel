@@ -86,3 +86,5 @@ pub trait SupportsOnConflictTargetDecorations {}
 pub trait SupportsDefaultKeyword {}
 /// Does this backend use the standard `SAVEPOINT` syntax?
 pub trait UsesAnsiSavepointSyntax {}
+/// Does this backend support return insert row with inserted identity? sql server use scope_identiy().
+pub trait SupportsReturningWithInsertedIdentity {}

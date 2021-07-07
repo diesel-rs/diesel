@@ -44,6 +44,19 @@ pub trait Column: Expression {
 
     /// The name of this column
     const NAME: &'static str;
+
+    ///是否为自增ID
+    const SELF_INCREASE_ID : bool;
+
+    ///判断是否为自增ID
+    fn is_self_increase_id(&self)->bool{
+        Self::SELF_INCREASE_ID        
+    }
+
+    ///获取列名
+    fn name(&self)->&'static str{
+        Self::NAME
+    }
 }
 
 /// A SQL database table. Types which implement this trait should have been

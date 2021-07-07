@@ -19,6 +19,7 @@ macro_rules! __diesel_column {
         name = $column_name:ident,
         sql_name = $sql_name:expr,
         ty = ($($Type:tt)*),
+        self_increase_id = $self_increase_id:ident,
         meta = [$($meta:tt)*],
     ) => {
         $($meta)*
@@ -105,6 +106,8 @@ macro_rules! __diesel_column {
             type Table = $table;
 
             const NAME: &'static str = $sql_name;
+
+            const SELF_INCREASE_ID : bool = $self_increase_id;
         }
 
         impl<T> $crate::EqAll<T> for $column_name where
@@ -476,7 +479,7 @@ macro_rules! __diesel_parse_columns {
     (
         tokens = [
             $(#$meta:tt)*
-            $name:ident -> $($ty:tt)::* $(<$($ty_params:tt)::*>)*,
+            $name:ident -> $($ty:tt)::* $(<$($ty_params:tt)::*>)* self_increase_id=$self_increase_id:ident,
             $($rest:tt)*
         ],
         $($args:tt)*
@@ -487,6 +490,30 @@ macro_rules! __diesel_parse_columns {
                 name = $name,
                 sql_name = stringify!($name),
                 ty = ($($ty)::* $(<$($ty_params)::*>)*),
+                self_increase_id = $self_increase_id,
+                meta = [],
+            },
+            tokens = [$($rest)*],
+            $($args)*
+        }
+    };
+
+    // No column being parsed, start a new one. Couldn't keep the `ty` separate.
+    (
+        tokens = [
+            $(#$meta:tt)*
+            $name:ident -> $ty:ty,self_increase_id=$self_increase_id:ident,
+            $($rest:tt)*
+        ],
+        $($args:tt)*
+    ) => {
+        $crate::__diesel_parse_columns! {
+            current_column = {
+                unchecked_meta = [$(#$meta)*],
+                name = $name,
+                sql_name = stringify!($name),
+                ty = ($ty),
+                self_increase_id=$self_increase_id,
                 meta = [],
             },
             tokens = [$($rest)*],
@@ -509,13 +536,13 @@ macro_rules! __diesel_parse_columns {
                 name = $name,
                 sql_name = stringify!($name),
                 ty = ($ty),
+                self_increase_id = false,
                 meta = [],
             },
             tokens = [$($rest)*],
             $($args)*
         }
     };
-
 
     // Found #[sql_name]
     (
@@ -545,6 +572,7 @@ macro_rules! __diesel_parse_columns {
             name = $name:tt,
             sql_name = $sql_name:expr,
             ty = $ty:tt,
+            self_increase_id=$self_increase_id:ident,
             meta = [$($meta:tt)*],
             $($current_column:tt)*
         },
@@ -556,6 +584,7 @@ macro_rules! __diesel_parse_columns {
                 name = $name,
                 sql_name = $sql_name,
                 ty = $ty,
+                self_increase_id=$self_increase_id,
                 meta = [$($meta)* #$new_meta],
                 $($current_column)*
             },

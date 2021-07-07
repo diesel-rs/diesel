@@ -5,4 +5,7 @@ simple_clause!(
     ReturningClause,
     " RETURNING ",
     backend_bounds = SupportsReturningClause
+    (ReturningClauseWithSelect),
+    " SELECT ",
+    backend_bounds_with_select = SupportsReturningClause
 );

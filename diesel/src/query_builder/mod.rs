@@ -101,7 +101,10 @@ pub trait QueryBuilder<DB: Backend> {
     fn push_bind_param_value_only(&mut self) {}
 
     /// Returns the constructed SQL query.
-    fn finish(self) -> String;
+    fn finish(&self) -> &String;
+
+    ///clear sql,return the cleared sql
+    fn clear(&mut self)->String;
 }
 
 /// A complete SQL query with a return type.
@@ -159,6 +162,13 @@ pub trait QueryFragment<DB: Backend> {
     ///
     /// [`AstPass`]: struct.AstPass.html
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
+
+    ///walk_ast_primary_key
+    fn walk_ast_primary_key(&self, primary_key:String, mut pass: AstPass<DB>) -> QueryResult<()>{
+        println!("primary_key:{}", primary_key);
+        pass.push_sql("");
+        Ok(())
+    }
 
     /// Converts this `QueryFragment` to its SQL representation.
     ///

@@ -45,8 +45,14 @@ impl QueryBuilder<Pg> for PgQueryBuilder {
         self.bind_idx += 1;
     }
 
-    fn finish(self) -> String {
-        self.sql
+    fn finish(&self) -> &String {
+        &self.sql
+    }
+
+    fn clear(&mut self)->String{
+        let old = self.sql.clone();
+        self.sql.clear();  
+        old 
     }
 }
 

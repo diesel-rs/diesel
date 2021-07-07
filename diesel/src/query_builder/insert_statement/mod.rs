@@ -102,7 +102,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// [`insert_into`]: ../fn.insert_into.html
     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     where
-        U: Insertable<T>,
+        U: Insertable<T>,        
     {
         InsertStatement::new(
             self.target,
@@ -175,6 +175,7 @@ impl<T, U, C, Op, Ret> InsertStatement<T, InsertFromSelect<U, C>, Op, Ret> {
     }
 }
 
+
 impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret>
 where
     DB: Backend,
@@ -183,6 +184,7 @@ where
     U: QueryFragment<DB> + CanInsertInSingleQuery<DB>,
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
+    <T as crate::query_source::Table>::PrimaryKey: crate::query_source::Column,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
@@ -199,7 +201,31 @@ where
         self.target.from_clause().walk_ast(out.reborrow())?;
         out.push_sql(" ");
         self.records.walk_ast(out.reborrow())?;
-        self.returning.walk_ast(out.reborrow())?;
+        
+        // let mut query_builder = crate::mysql::MysqlQueryBuilder::new();    
+        // let ast_pass = AstPass::<crate::mysql::Mysql>::to_sql(&mut query_builder);
+        let key = self.target.primary_key();
+        if key.is_self_increase_id() {
+            out.push_sql(";");
+            self.returning.walk_ast(out.reborrow())?;
+            out.push_sql(" FROM ");
+            self.target.from_clause().walk_ast(out.reborrow())?;       
+            out.push_sql(" WHERE ");
+            key.walk_ast(out.reborrow())?;
+            out.push_sql("=scope_identity()");          
+        }
+        else{
+            out.push_sql(";");
+            self.returning.walk_ast(out.reborrow())?;
+            out.push_sql(" FROM ");
+            self.target.from_clause().walk_ast(out.reborrow())?;
+            out.push_sql(" WHERE ");
+            key.walk_ast(out.reborrow())?;                        
+            out.push_sql(" = ");
+            self.records.walk_ast_primary_key(key.name().to_string(), out.reborrow())?;  
+  
+        }
+
         Ok(())
     }
 }
@@ -381,6 +407,7 @@ where
         self.returning(T::all_columns())
     }
 }
+
 
 impl<T, U, Op, Ret> Query for InsertStatement<T, U, Op, ReturningClause<Ret>>
 where
@@ -596,12 +623,12 @@ where
         self.values.rows_to_insert()
     }
 }
-
+ 
 impl<T, Tab, DB> QueryFragment<DB> for ValuesClause<T, Tab>
 where
     DB: Backend,
     Tab: Table,
-    T: InsertValues<Tab, DB>,
+    T: InsertValues<Tab, DB>,    
     DefaultValues: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -616,4 +643,12 @@ where
         }
         Ok(())
     }
+
+    ///walk_ast_primary_key
+    fn walk_ast_primary_key(&self, primary_key:String, mut pass: AstPass<DB>) -> QueryResult<()>{
+        self.values.col_value(primary_key, pass.reborrow())?;
+        
+        Ok(())
+    }
+
 }

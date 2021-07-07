@@ -232,7 +232,7 @@ where
     fn construct_sql<T: QueryFragment<DB>>(source: &T) -> QueryResult<String> {
         let mut query_builder = DB::QueryBuilder::default();
         source.to_sql(&mut query_builder)?;
-        Ok(query_builder.finish())
+        Ok(query_builder.finish().clone())
     }
 }
 

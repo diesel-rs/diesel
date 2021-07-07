@@ -11,8 +11,8 @@ macro_rules! simple_clause {
             $no_clause,
             $(#[doc = $($clause_doc)*])*
             $clause,
-            $sql,
-            backend_bounds =
+            $sql,      
+            backend_bounds =         
         );
     };
 
@@ -23,6 +23,32 @@ macro_rules! simple_clause {
         $clause:ident,
         $sql:expr,
         backend_bounds = $($backend_bounds:ident),*
+    ) => {
+        simple_clause!(
+            $(#[doc = $($no_clause_doc)*])*
+            $no_clause,
+            $(#[doc = $($clause_doc)*])*
+            $clause,
+            $sql,      
+            backend_bounds = $($backend_bounds)*
+            #[doc = ""]
+            (ClauseWithSelect),
+            " SELECT",
+            backend_bounds_with_select =             
+        );
+    };
+
+    (
+        $(#[doc = $($no_clause_doc:tt)*])*
+        $no_clause:ident,
+        $(#[doc = $($clause_doc:tt)*])*
+        $clause:ident,
+        $sql:expr,
+        backend_bounds = $($backend_bounds:ident),*
+        $(#[doc = $($clause_with_select_doc:tt)*])*
+        ($clause_with_select:ident),
+        $sql_with_select:expr,
+        backend_bounds_with_select = $($backend_bounds_with_select:ident),*
     ) => {
         use crate::backend::Backend;
         use crate::result::QueryResult;
@@ -48,8 +74,23 @@ macro_rules! simple_clause {
             Expr: QueryFragment<DB>,
         {
             fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-                out.push_sql($sql);
+                out.push_sql($sql_with_select);
                 self.0.walk_ast(out.reborrow())?;
+                Ok(())
+            }
+        }
+
+        $(#[doc = $($clause_with_select_doc)*])*
+        #[derive(Debug, Clone, Copy, QueryId)]
+        pub struct $clause_with_select<Expr>(pub Expr);
+
+        impl<Expr, DB> QueryFragment<DB> for $clause_with_select<Expr> where
+            DB: Backend $(+ $backend_bounds_with_select)*,
+            Expr: QueryFragment<DB>,
+        {
+            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+                out.push_sql($sql_with_select);
+                self.0.walk_ast(out.reborrow())?;                
                 Ok(())
             }
         }

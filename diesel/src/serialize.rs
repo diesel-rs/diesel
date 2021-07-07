@@ -50,6 +50,14 @@ impl<'a, T, DB: TypeMetadata> Output<'a, T, DB> {
         }
     }
 
+    /// Construct a new `Output`
+    pub fn new1(out: T) -> Self {
+        Output {
+            out,
+            metadata_lookup: None,
+        }
+    }
+
     /// Create a new `Output` with the given buffer
     pub fn with_buffer<U>(&self, new_out: U) -> Output<'a, U, DB> {
         Output {

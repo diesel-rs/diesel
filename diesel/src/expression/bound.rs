@@ -38,6 +38,21 @@ where
         pass.push_bind_param(&self.item)?;
         Ok(())
     }
+
+    fn walk_ast_primary_key(&self, _primary_key:String, mut pass: AstPass<DB>) -> QueryResult<()> {
+        use crate::result::Error::SerializationError;
+        use crate::serialize::Output;        
+        // use crate::sql_types::TypeMetadata;
+        
+        let mut to_sql_output = Output::new1(Vec::new());
+        let _is_null = self.item
+            .to_sql(&mut to_sql_output)
+            .map_err(SerializationError)?;
+        let bytes = to_sql_output.into_inner();                      
+        pass.push_sql(std::str::from_utf8(&bytes).unwrap());
+
+        Ok(())
+    }
 }
 
 impl<T: QueryId, U> QueryId for Bound<T, U> {

@@ -125,6 +125,11 @@ where
 
 pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
     fn column_names(&self, out: AstPass<DB>) -> QueryResult<()>;
+    fn col_value(&self, col_name:String, mut out: AstPass<DB>)->QueryResult<()>{
+        println!("col name:{}", col_name);
+        out.push_sql("");
+        Ok(())
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -164,6 +169,20 @@ where
         } else {
             out.push_sql("DEFAULT");
         }
+        Ok(())
+    }
+
+    ///walk_ast_primary_key
+    fn walk_ast_primary_key(&self, primary_key:String, mut pass: AstPass<DB>) -> QueryResult<()>{
+        println!("primary_key:{}", primary_key);
+        pass.push_sql("");
+
+        if let ColumnInsertValue::Expression(_, ref value) = *self {
+            value.walk_ast_primary_key(primary_key, pass.reborrow())?;
+        } else {
+            pass.push_sql("");
+        }
+
         Ok(())
     }
 }
@@ -265,7 +284,8 @@ where
     type Values = <crate::expression::operators::Eq<L, R> as Insertable<Tab>>::Values;
 
     fn values(self) -> Self::Values {
-        self.0.values()
+        let val = self.0.values();
+        val
     }
 }
 
