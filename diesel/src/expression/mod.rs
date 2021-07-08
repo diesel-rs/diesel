@@ -22,6 +22,8 @@ pub mod functions;
 #[doc(hidden)]
 pub mod array_comparison;
 #[doc(hidden)]
+pub mod assume_not_null;
+#[doc(hidden)]
 pub mod bound;
 #[doc(hidden)]
 pub mod coerce;

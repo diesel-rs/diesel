@@ -88,6 +88,10 @@ pub type Asc<Expr> = super::operators::Asc<Expr>;
 pub type Nullable<Expr> = super::nullable::Nullable<Expr>;
 
 /// The return type of
+/// [`expr.assume_not_null()`](crate::expression_methods::ExpressionMethods::assume_not_null())
+pub type AssumeNotNull<Expr> = super::assume_not_null::AssumeNotNull<Expr>;
+
+/// The return type of
 /// [`lhs.and(rhs)`](crate::expression_methods::BoolExpressionMethods::and())
 pub type And<Lhs, Rhs, ST = sql_types::Bool> =
     Grouped<super::operators::And<Lhs, AsExprOf<Rhs, ST>>>;

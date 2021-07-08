@@ -2,7 +2,7 @@ use crate::dsl;
 use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
-use crate::expression::{nullable, AsExpression, Expression};
+use crate::expression::{assume_not_null, nullable, AsExpression, Expression};
 use crate::sql_types::{SingleValue, SqlType};
 
 /// Methods present on all expressions, except tuples
@@ -433,6 +433,83 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn asc(self) -> dsl::Asc<Self> {
         Asc::new(self)
+    }
+
+    /// Converts this potentially nullable expression into one which will be **assumed**
+    /// to be not-null. This method has no impact on the generated SQL, however it will
+    /// enable you to attempt deserialization of the returned value in a non-`Option`.
+    ///
+    /// This is meant to cover for cases where you know that given the `WHERE` clause
+    /// the field returned by the database will never be `NULL`.
+    ///
+    /// This **will cause runtime errors** on `load()` if the "assume" turns out to be incorrect.  
+    /// If incorrect in `Nullable` tuples, this **will cause silent fails** (see second
+    /// example).
+    ///
+    /// # Examples
+    /// ## Normal usage
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// #
+    /// table! {
+    ///     posts {
+    ///         id -> Integer,
+    ///         user_id -> Integer,
+    ///         author_name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     use self::posts::dsl::*;
+    ///     let connection = &mut establish_connection();
+    ///
+    ///     let data = posts
+    ///         .filter(author_name.is_not_null())
+    ///         .select(author_name.assume_not_null())
+    ///         .load::<String>(connection);
+    ///     println!("{:?}", data);
+    /// }
+    /// ```
+    ///
+    /// ## Dangerous usage - use only if you're sure you know what you're doing!
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// # use schema::users;
+    /// #
+    /// table! {
+    ///     posts {
+    ///         id -> Integer,
+    ///         user_id -> Integer,
+    ///         author_name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    /// #
+    /// # joinable!(posts -> users (user_id));
+    /// # allow_tables_to_appear_in_same_query!(posts, users);
+    ///
+    /// fn main() {
+    ///     use self::posts;
+    ///     use self::users;
+    ///     let connection = &mut establish_connection();
+    ///
+    ///     let data = users::table.left_join(posts::table)
+    ///         .select((
+    ///             users::id,
+    ///             (posts::id, posts::author_name.assume_not_null()).nullable()
+    ///         ))
+    ///         .load::<(i32, Option<(i32, String)>)>(connection);
+    ///     // This will cause the `Option` to be `None` where the `left_join` succeeded but the
+    ///     // `author_name` turned out to be `NULL`, because `Option` deserialization relies
+    ///     // on encountering an unexpected `NULL` while deserializing the inner fields.
+    ///     println!("{:?}", data);
+    /// }
+    /// ```
+    fn assume_not_null(self) -> dsl::AssumeNotNull<Self> {
+        assume_not_null::AssumeNotNull::new(self)
     }
 }
 
