@@ -34,7 +34,7 @@ impl SimpleConnection for MysqlConnection {
 
 impl<'a> IterableConnection<'a, Mysql> for MysqlConnection {
     type Cursor = self::stmt::iterator::StatementIterator<'a>;
-    type Row = self::stmt::iterator::MysqlRow<'a>;
+    type Row = self::stmt::iterator::MysqlRow;
 }
 
 impl Connection for MysqlConnection {

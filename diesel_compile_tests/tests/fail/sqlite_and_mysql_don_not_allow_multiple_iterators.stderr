@@ -1,0 +1,21 @@
+error[E0499]: cannot borrow `*conn` as mutable more than once at a time
+  --> $DIR/sqlite_and_mysql_don_not_allow_multiple_iterators.rs:13:21
+   |
+12 |     let row_iter1 = conn.load(&sql_query("bar")).unwrap();
+   |                     ---- first mutable borrow occurs here
+13 |     let row_iter2 = conn.load(&sql_query("bar")).unwrap();
+   |                     ^^^^ second mutable borrow occurs here
+14 |
+15 |     let _ = row_iter1.zip(row_iter2);
+   |             --------- first borrow later used here
+
+error[E0499]: cannot borrow `*conn` as mutable more than once at a time
+  --> $DIR/sqlite_and_mysql_don_not_allow_multiple_iterators.rs:20:21
+   |
+19 |     let row_iter1 = conn.load(&sql_query("bar")).unwrap();
+   |                     ---- first mutable borrow occurs here
+20 |     let row_iter2 = conn.load(&sql_query("bar")).unwrap();
+   |                     ^^^^ second mutable borrow occurs here
+21 |
+22 |     let _ = row_iter1.zip(row_iter2);
+   |             --------- first borrow later used here

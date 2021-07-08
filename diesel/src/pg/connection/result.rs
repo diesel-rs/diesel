@@ -2,7 +2,6 @@ extern crate pq_sys;
 
 use self::pq_sys::*;
 use std::ffi::CStr;
-use std::marker::PhantomData;
 use std::num::NonZeroU32;
 use std::os::raw as libc;
 use std::rc::Rc;
@@ -18,13 +17,14 @@ use crate::util::OnceCell;
 const CLOSED_CONNECTION_MSG: &str = "server closed the connection unexpectedly\n\t\
 This probably means the server terminated abnormally\n\tbefore or while processing the request.\n";
 
-pub(crate) struct PgResult<'a> {
+pub(crate) struct PgResult {
     internal_result: RawResult,
     column_count: usize,
     row_count: usize,
+    column_name_map: OnceCell<Vec<Option<String>>>,
 }
 
-impl<'a> PgResult<'a> {
+impl PgResult {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(internal_result: RawResult) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
@@ -37,7 +37,6 @@ impl<'a> PgResult<'a> {
                     column_count,
                     row_count,
                     column_name_map: OnceCell::new(),
-                    _marker: PhantomData,
                 })
             }
             ExecStatusType::PGRES_EMPTY_QUERY => {
@@ -95,11 +94,11 @@ impl<'a> PgResult<'a> {
         self.row_count
     }
 
-    pub fn get_row(self: Rc<Self>, idx: usize) -> PgRow<'a> {
+    pub fn get_row(self: Rc<Self>, idx: usize) -> PgRow {
         PgRow::new(self, idx)
     }
 
-    pub fn get(&self, row_idx: usize, col_idx: usize) -> Option<&'a [u8]> {
+    pub fn get(&self, row_idx: usize, col_idx: usize) -> Option<&[u8]> {
         if self.is_null(row_idx, col_idx) {
             None
         } else {

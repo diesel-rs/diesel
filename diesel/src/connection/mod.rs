@@ -28,7 +28,7 @@ pub trait SimpleConnection {
 /// This trait describes which cursor type is used by a given connection
 /// implementation. This trait is only useful in combination with [`Connection`].
 ///
-/// Implementation wise this is a workaround for GAT types
+/// Implementation wise this is a workaround for GAT's
 pub trait IterableConnection<'a, DB: Backend> {
     /// The cursor type returned by [`Connection::load`]
     ///

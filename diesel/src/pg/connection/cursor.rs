@@ -6,13 +6,13 @@ use super::row::PgRow;
 /// The type returned by various [`Connection`] methods.
 /// Acts as an iterator over `T`.
 #[allow(missing_debug_implementations)]
-pub struct Cursor<'a> {
+pub struct Cursor {
     current_row: usize,
-    db_result: Rc<PgResult<'a>>,
+    db_result: Rc<PgResult>,
 }
 
-impl<'a> Cursor<'a> {
-    pub(super) fn new(db_result: PgResult<'a>) -> Self {
+impl Cursor {
+    pub(super) fn new(db_result: PgResult) -> Self {
         Cursor {
             current_row: 0,
             db_result: Rc::new(db_result),
@@ -20,14 +20,14 @@ impl<'a> Cursor<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Cursor<'a> {
+impl ExactSizeIterator for Cursor {
     fn len(&self) -> usize {
         self.db_result.num_rows() - self.current_row
     }
 }
 
-impl<'a> Iterator for Cursor<'a> {
-    type Item = crate::QueryResult<PgRow<'a>>;
+impl Iterator for Cursor {
+    type Item = crate::QueryResult<PgRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_row < self.db_result.num_rows() {
@@ -165,4 +165,24 @@ fn fun_with_row_iters() {
         <String as FromSql<sql_types::Text, Pg>>::from_nullable_sql(first_values.1).unwrap(),
         expected[0].1
     );
+
+    let row_iter1 = conn.load(&query).unwrap();
+    let row_iter2 = conn.load(&query).unwrap();
+
+    for ((row1, row2), (expected_id, expected_name)) in row_iter1.zip(row_iter2).zip(expected) {
+        let (id1, name1) = <(i32, String) as FromSqlRow<
+            (sql_types::Integer, sql_types::Text),
+            Pg,
+        >>::build_from_row(&row1.unwrap())
+        .unwrap();
+        let (id2, name2) = <(i32, String) as FromSqlRow<
+            (sql_types::Integer, sql_types::Text),
+            Pg,
+        >>::build_from_row(&row2.unwrap())
+        .unwrap();
+        assert_eq!(id1, expected_id);
+        assert_eq!(id2, expected_id);
+        assert_eq!(name1, expected_name);
+        assert_eq!(name2, expected_name);
+    }
 }

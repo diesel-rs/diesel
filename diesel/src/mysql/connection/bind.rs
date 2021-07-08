@@ -33,12 +33,7 @@ impl Binds {
         let data = metadata
             .fields()
             .iter()
-            .zip(
-                types
-                    .iter()
-                    .map(|o| o.as_ref())
-                    .chain(std::iter::repeat(None)),
-            )
+            .zip(types.iter().copied().chain(std::iter::repeat(None)))
             .map(|(field, tpe)| BindData::for_output(tpe, field))
             .collect();
 
@@ -150,7 +145,7 @@ impl BindData {
         }
     }
 
-    fn for_output(tpe: Option<&MysqlType>, metadata: &MysqlFieldMetadata) -> Self {
+    fn for_output(tpe: Option<MysqlType>, metadata: &MysqlFieldMetadata) -> Self {
         let (tpe, flags) = if let Some(tpe) = tpe {
             match (tpe, metadata.field_type()) {
                 // Those are types where we handle the conversion in diesel itself
@@ -277,7 +272,7 @@ impl BindData {
                     (metadata.field_type(), metadata.flags())
                 }
 
-                (tpe, _) => (*tpe).into(),
+                (tpe, _) => tpe.into(),
             }
         } else {
             (metadata.field_type(), metadata.flags())

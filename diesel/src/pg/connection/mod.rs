@@ -44,8 +44,8 @@ impl SimpleConnection for PgConnection {
 }
 
 impl<'a> IterableConnection<'a, Pg> for PgConnection {
-    type Cursor = Cursor<'a>;
-    type Row = self::row::PgRow<'a>;
+    type Cursor = Cursor;
+    type Row = self::row::PgRow;
 }
 
 impl Connection for PgConnection {

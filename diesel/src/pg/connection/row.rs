@@ -1,26 +1,27 @@
 use super::result::PgResult;
+use crate::pg::value::TypeOidLookup;
 use crate::pg::{Pg, PgValue};
 use crate::row::*;
 use std::rc::Rc;
 
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
-pub struct PgRow<'a> {
-    db_result: Rc<PgResult<'a>>,
+pub struct PgRow {
+    db_result: Rc<PgResult>,
     row_idx: usize,
 }
 
-impl<'a> PgRow<'a> {
-    pub(crate) fn new(db_result: Rc<PgResult<'a>>, row_idx: usize) -> Self {
+impl PgRow {
+    pub(crate) fn new(db_result: Rc<PgResult>, row_idx: usize) -> Self {
         PgRow { db_result, row_idx }
     }
 }
 
-impl<'a, 'b> RowFieldHelper<'a, Pg> for PgRow<'b> {
+impl<'a> RowFieldHelper<'a, Pg> for PgRow {
     type Field = PgField<'a>;
 }
 
-impl<'a> Row<'a, Pg> for PgRow<'a> {
+impl<'a> Row<'a, Pg> for PgRow {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
@@ -45,7 +46,7 @@ impl<'a> Row<'a, Pg> for PgRow<'a> {
     }
 }
 
-impl<'a> RowIndex<usize> for PgRow<'a> {
+impl RowIndex<usize> for PgRow {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count() {
             Some(idx)
@@ -55,7 +56,7 @@ impl<'a> RowIndex<usize> for PgRow<'a> {
     }
 }
 
-impl<'a, 'b> RowIndex<&'a str> for PgRow<'b> {
+impl<'a> RowIndex<&'a str> for PgRow {
     fn idx(&self, field_name: &'a str) -> Option<usize> {
         (0..self.field_count()).find(|idx| self.db_result.column_name(*idx) == Some(field_name))
     }
@@ -63,7 +64,7 @@ impl<'a, 'b> RowIndex<&'a str> for PgRow<'b> {
 
 #[allow(missing_debug_implementations)]
 pub struct PgField<'a> {
-    db_result: &'a PgResult<'a>,
+    db_result: &'a PgResult,
     row_idx: usize,
     col_idx: usize,
 }

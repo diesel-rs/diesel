@@ -1,5 +1,4 @@
 use std::cell::{Ref, RefCell};
-use std::marker::PhantomData;
 use std::rc::Rc;
 
 use super::{Binds, Statement, StatementMetadata};
@@ -40,7 +39,7 @@ impl<'a> StatementIterator<'a> {
 }
 
 impl<'a> Iterator for StatementIterator<'a> {
-    type Item = QueryResult<MysqlRow<'a>>;
+    type Item = QueryResult<MysqlRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // check if we own the only instance of the bind buffer
@@ -103,7 +102,6 @@ impl<'a> Iterator for StatementIterator<'a> {
                 self.fetched_rows += 1;
                 Some(Ok(MysqlRow {
                     metadata: self.metadata.clone(),
-                    _marker: Default::default(),
                     row: self.last_row.clone(),
                 }))
             }
@@ -135,10 +133,9 @@ impl<'a> ExactSizeIterator for StatementIterator<'a> {
 
 #[derive(Clone)]
 #[allow(missing_debug_implementations)]
-pub struct MysqlRow<'a> {
+pub struct MysqlRow {
     row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
-    _marker: PhantomData<&'a mut (Binds, StatementMetadata)>,
 }
 
 enum PrivateMysqlRow {
@@ -154,11 +151,11 @@ impl PrivateMysqlRow {
     }
 }
 
-impl<'a, 'b> RowFieldHelper<'a, Mysql> for MysqlRow<'b> {
+impl<'a> RowFieldHelper<'a, Mysql> for MysqlRow {
     type Field = MysqlField<'a>;
 }
 
-impl<'a> Row<'a, Mysql> for MysqlRow<'a> {
+impl<'a> Row<'a, Mysql> for MysqlRow {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
@@ -183,7 +180,7 @@ impl<'a> Row<'a, Mysql> for MysqlRow<'a> {
     }
 }
 
-impl<'a> RowIndex<usize> for MysqlRow<'a> {
+impl RowIndex<usize> for MysqlRow {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count() {
             Some(idx)
@@ -193,7 +190,7 @@ impl<'a> RowIndex<usize> for MysqlRow<'a> {
     }
 }
 
-impl<'a, 'b> RowIndex<&'a str> for MysqlRow<'b> {
+impl<'a> RowIndex<&'a str> for MysqlRow {
     fn idx(&self, idx: &'a str) -> Option<usize> {
         self.metadata
             .fields()

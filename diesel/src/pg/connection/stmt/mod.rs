@@ -21,7 +21,7 @@ impl Statement {
         &'_ self,
         raw_connection: &'a mut RawConnection,
         param_data: &'_ Vec<Option<Vec<u8>>>,
-    ) -> QueryResult<PgResult<'a>> {
+    ) -> QueryResult<PgResult> {
         let params_pointer = param_data
             .iter()
             .map(|data| {
