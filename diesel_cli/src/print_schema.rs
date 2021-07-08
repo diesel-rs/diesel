@@ -175,7 +175,7 @@ pub fn output_schema(
 
     let backend = Backend::for_url(database_url);
 
-    let custom_types = if config.generate_missing_sql_type_definitions() {
+    let custom_types_sorted = if config.generate_missing_sql_type_definitions() {
         let diesel_provided_types = match backend {
             #[cfg(feature = "postgres")]
             Backend::Pg => pg_diesel_types(),
@@ -205,7 +205,7 @@ pub fn output_schema(
         include_docs: config.with_docs,
         custom_type_defs: CustomTypeList {
             backend,
-            types: custom_types,
+            types_sorted: custom_types_sorted,
             with_docs: config.with_docs,
         },
         import_types: config.import_types(),
@@ -230,20 +230,22 @@ pub fn output_schema(
 
 struct CustomTypeList {
     backend: Backend,
-    types: Vec<ColumnType>,
+    types_sorted: Vec<ColumnType>,
     with_docs: bool,
 }
 
 impl CustomTypeList {
     #[cfg(feature = "postgres")]
-    fn contains(&self, tpe: &str) -> bool {
-        self.types.iter().any(|c| c.rust_name == tpe)
+    fn position(&self, tpe: &str) -> Option<usize> {
+        self.types_sorted
+            .binary_search_by_key(&tpe, |c| &c.rust_name)
+            .ok()
     }
 }
 
 impl Display for CustomTypeList {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if self.types.is_empty() {
+        if self.types_sorted.is_empty() {
             return Ok(());
         }
         match self.backend {
@@ -257,7 +259,7 @@ impl Display for CustomTypeList {
                 let mut out = PadAdapter::new(f);
                 writeln!(out, "pub mod sql_types {{")?;
 
-                for (idx, t) in self.types.iter().enumerate() {
+                for (idx, t) in self.types_sorted.iter().enumerate() {
                     if idx != 0 {
                         writeln!(out)?;
                     }
@@ -289,7 +291,7 @@ impl Display for CustomTypeList {
             #[cfg(feature = "sqlite")]
             Backend::Sqlite => {
                 let _ = (&f, self.with_docs);
-                for t in &self.types {
+                for t in &self.types_sorted {
                     eprintln!("Encountered unknown type for Sqlite: {}", t.sql_name);
                 }
                 unreachable!(
@@ -302,7 +304,7 @@ impl Display for CustomTypeList {
             #[cfg(feature = "mysql")]
             Backend::Mysql => {
                 let _ = (&f, self.with_docs);
-                for t in &self.types {
+                for t in &self.types_sorted {
                     eprintln!("Encountered unknown type for Mysql: {}", t.sql_name);
                 }
                 unreachable!(
@@ -411,13 +413,19 @@ impl<'a> Display for TableDefinition<'a> {
             }
 
             #[cfg(feature = "postgres")]
-            for col in &self.table.column_data {
-                if self.custom_type_defs.contains(&col.ty.rust_name) {
-                    if !has_written_import {
-                        writeln!(out, "use diesel::sql_types::*;")?;
+            {
+                let mut already_imported_custom_types: HashSet<usize> = HashSet::new();
+                for col in &self.table.column_data {
+                    if let Some(custom_type_idx) = self.custom_type_defs.position(&col.ty.rust_name)
+                    {
+                        if already_imported_custom_types.insert(custom_type_idx) {
+                            if !has_written_import {
+                                writeln!(out, "use diesel::sql_types::*;")?;
+                            }
+                            writeln!(out, "use super::sql_types::{};", col.ty.rust_name)?;
+                            has_written_import = true;
+                        }
                     }
-                    writeln!(out, "use super::sql_types::{};", col.ty.rust_name)?;
-                    has_written_import = true;
                 }
             }
             #[cfg(not(feature = "postgres"))]
