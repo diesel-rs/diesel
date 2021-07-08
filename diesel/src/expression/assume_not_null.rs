@@ -34,8 +34,6 @@ where
     }
 }
 
-/// AssumeNotNull can be used in where clauses everywhere, but can only be used in
-/// select clauses for outer joins.
 impl<T, QS> AppearsOnTable<QS> for AssumeNotNull<T>
 where
     T: AppearsOnTable<QS>,

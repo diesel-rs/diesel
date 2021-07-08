@@ -442,9 +442,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// This is meant to cover for cases where you know that given the `WHERE` clause
     /// the field returned by the database will never be `NULL`.
     ///
-    /// This **will cause runtime errors** on `load()` if the "assume" turns out to be incorrect.  
-    /// If incorrect in `Nullable` tuples, this **will cause silent fails** (see second
-    /// example).
+    /// This **will cause runtime errors** on `load()` if the "assume" turns out to be incorrect.
     ///
     /// # Examples
     /// ## Normal usage
@@ -454,26 +452,57 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # use diesel::sql_types::*;
     /// #
     /// table! {
-    ///     posts {
+    ///     animals {
     ///         id -> Integer,
-    ///         user_id -> Integer,
-    ///         author_name -> Nullable<VarChar>,
+    ///         species -> VarChar,
+    ///         legs -> Integer,
+    ///         name -> Nullable<VarChar>,
     ///     }
     /// }
     ///
     /// fn main() {
-    ///     use self::posts::dsl::*;
+    ///     use self::animals::dsl::*;
     ///     let connection = &mut establish_connection();
     ///
-    ///     let data = posts
-    ///         .filter(author_name.is_not_null())
-    ///         .select(author_name.assume_not_null())
+    ///     let result = animals
+    ///         .filter(name.is_not_null())
+    ///         .select(name.assume_not_null())
     ///         .load::<String>(connection);
-    ///     println!("{:?}", data);
+    ///     assert!(result.is_ok());
     /// }
     /// ```
     ///
-    /// ## Dangerous usage - use only if you're sure you know what you're doing!
+    /// ## Incorrect usage
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// #
+    /// table! {
+    ///     animals {
+    ///         id -> Integer,
+    ///         species -> VarChar,
+    ///         legs -> Integer,
+    ///         name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     use diesel::result::{Error, UnexpectedNullError};
+    ///     use self::animals::dsl::*;
+    ///     let connection = &mut establish_connection();
+    ///
+    ///     let result = animals
+    ///         .select(name.assume_not_null())
+    ///         .load::<String>(connection);
+    ///     assert!(matches!(
+    ///         result,
+    ///         Err(Error::DeserializationError(err)) if err.is::<UnexpectedNullError>()
+    ///     ));
+    /// }
+    /// ```
+    ///
+    /// ## Advanced usage - use only if you're sure you know what you're doing!
     /// ```rust
     /// # #![allow(dead_code)]
     /// # include!("../doctest_setup.rs");
@@ -496,13 +525,13 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     use self::users;
     ///     let connection = &mut establish_connection();
     ///
-    ///     let data = posts::table.left_join(users::table)
+    ///     let result = posts::table.left_join(users::table)
     ///         .select((users::id, posts::author_name.assume_not_null()).nullable())
     ///         .load::<Option<(i32, String)>>(connection);
     ///     // This will cause the `Option` to be `None` where the `left_join` succeeded but the
     ///     // `author_name` turned out to be `NULL`, because `Option` deserialization relies
     ///     // on encountering an unexpected `NULL` while deserializing the inner fields.
-    ///     println!("{:?}", data);
+    ///     println!("{:?}", result);
     /// }
     /// ```
     fn assume_not_null(self) -> dsl::AssumeNotNull<Self> {
