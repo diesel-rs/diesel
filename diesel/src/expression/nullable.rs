@@ -34,8 +34,6 @@ where
     }
 }
 
-/// Nullable can be used in where clauses everywhere, but can only be used in
-/// select clauses for outer joins.
 impl<T, QS> AppearsOnTable<QS> for Nullable<T>
 where
     T: AppearsOnTable<QS>,
