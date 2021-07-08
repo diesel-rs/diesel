@@ -496,12 +496,9 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     use self::users;
     ///     let connection = &mut establish_connection();
     ///
-    ///     let data = users::table.left_join(posts::table)
-    ///         .select((
-    ///             users::id,
-    ///             (posts::id, posts::author_name.assume_not_null()).nullable()
-    ///         ))
-    ///         .load::<(i32, Option<(i32, String)>)>(connection);
+    ///     let data = posts::table.left_join(users::table)
+    ///         .select((users::id, posts::author_name.assume_not_null()).nullable())
+    ///         .load::<Option<(i32, String)>>(connection);
     ///     // This will cause the `Option` to be `None` where the `left_join` succeeded but the
     ///     // `author_name` turned out to be `NULL`, because `Option` deserialization relies
     ///     // on encountering an unexpected `NULL` while deserializing the inner fields.
