@@ -79,8 +79,13 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
         'a: 'b,
     {
         let raw = self.db_result.get(self.row_idx, self.col_idx)?;
-        let type_oid = self.db_result.column_type(self.col_idx);
 
-        Some(PgValue::new(raw, type_oid))
+        Some(PgValue::new(raw, self))
+    }
+}
+
+impl<'a> TypeOidLookup for PgField<'a> {
+    fn lookup(&self) -> std::num::NonZeroU32 {
+        self.db_result.column_type(self.col_idx)
     }
 }

@@ -54,7 +54,7 @@ macro_rules! tuple_impls {
                         bytes = new_bytes;
                         $T::from_sql(PgValue::new(
                             elem_bytes,
-                            oid,
+                            &oid,
                         ))?
                     }
                 },)+);

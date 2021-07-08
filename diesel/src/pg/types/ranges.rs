@@ -69,7 +69,7 @@ where
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
-            let value = T::from_sql(PgValue::new(elem_bytes, value.get_oid()))?;
+            let value = T::from_sql(PgValue::new(elem_bytes, &value))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
                 Bound::Included(value)
@@ -80,7 +80,7 @@ where
 
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
-            let value = T::from_sql(PgValue::new(bytes, value.get_oid()))?;
+            let value = T::from_sql(PgValue::new(bytes, &value))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {
                 Bound::Included(value)

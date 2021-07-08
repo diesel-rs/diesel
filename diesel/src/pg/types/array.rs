@@ -48,7 +48,7 @@ where
                 } else {
                     let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                     bytes = new_bytes;
-                    T::from_sql(PgValue::new(elem_bytes, value.get_oid()))
+                    T::from_sql(PgValue::new(elem_bytes, &value))
                 }
             })
             .collect()
