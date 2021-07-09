@@ -221,9 +221,8 @@ where
             self.target.from_clause().walk_ast(out.reborrow())?;
             out.push_sql(" WHERE ");
             key.walk_ast(out.reborrow())?;                        
-            out.push_sql(" = ");
+            out.push_sql(" = ");            
             self.records.walk_ast_primary_key(key.name().to_string(), out.reborrow())?;  
-  
         }
 
         Ok(())

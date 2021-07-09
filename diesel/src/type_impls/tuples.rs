@@ -73,15 +73,6 @@ macro_rules! tuple_impls {
                     )+
                     Ok(())
                 }
-
-                ///walk_ast_primary_key
-                fn walk_ast_primary_key(&self, primary_key:String, mut pass: AstPass<__DB>) -> QueryResult<()>{    
-                    $(                         
-                        self.$idx.walk_ast_primary_key(primary_key.clone(), pass.reborrow())?;                           
-                    )+
-
-                    Ok(())
-                }
             }
 
             impl<$($T,)+ Tab> ColumnList for ($($T,)+)
@@ -196,8 +187,6 @@ macro_rules! tuple_impls {
                                 let mut out_new = AstPass::<__DB>::to_sql(&mut builder);
                                 self.$idx.walk_ast_primary_key(col_name.clone(), out_new.reborrow())?;
                                 key_value = builder.clear();
-
-                                // self.$idx.walk_ast_primary_key(col_name, out.reborrow())?;
                             }                    
                         )+            
 

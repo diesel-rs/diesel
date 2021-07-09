@@ -14,9 +14,10 @@ use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
 use crate::query_dsl::RunQueryDsl;
-use crate::query_source::Table;
+use crate::query_source::{Table};
 use crate::result::Error::QueryBuilderError;
 use crate::result::QueryResult;
+
 
 impl<T, U> UpdateStatement<T, U, SetNotCalled> {
     pub(crate) fn new(target: UpdateTarget<T, U>) -> Self {
@@ -195,6 +196,7 @@ where
     U: QueryFragment<DB>,
     V: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
+    // <T as crate::query_source::Table>::PrimaryKey: crate::query_source::Column,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         if self.values.is_noop()? {
@@ -209,7 +211,16 @@ where
         out.push_sql(" SET ");
         self.values.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
-        self.returning.walk_ast(out.reborrow())?;
+        
+        if !self.returning.is_noop()?
+        {            
+            out.push_sql(";");
+            self.returning.walk_ast(out.reborrow())?;
+            out.push_sql(" FROM ");
+            self.table.from_clause().walk_ast(out.reborrow())?;
+            self.where_clause.walk_ast(out.reborrow())?;            
+        }
+
         Ok(())
     }
 }
