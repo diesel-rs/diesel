@@ -57,7 +57,7 @@ macro_rules! tuple_impls {
                 type Nullable = Nullable<($($T,)*)>;
             }
 
-            impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+)             
+            impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+)
             {
                 #[allow(unused_assignments)]
                 fn walk_ast(&self, mut out: AstPass<__DB>) -> QueryResult<()> {
@@ -88,7 +88,7 @@ macro_rules! tuple_impls {
                         }
                         self.$idx.walk_ast(out.reborrow())?;
                     )+
-                                       
+                    
                     Ok(())
                 }
             }
@@ -126,16 +126,15 @@ macro_rules! tuple_impls {
 
             impl<$($T,)+ $($ST,)+ Tab> Insertable<Tab> for ($($T,)+)
             where
-                $($T: Insertable<Tab, Values = ValuesClause<$ST, Tab>>,)+              
+                $($T: Insertable<Tab, Values = ValuesClause<$ST, Tab>>,)+
             {
                 type Values = ValuesClause<($($ST,)+), Tab>;
 
                 fn values(self) -> Self::Values {
                     ValuesClause::new(($(self.$idx.values().values,)+))
-                }           
+                }
 
             }
-            
             impl<'a, $($T,)+ Tab> Insertable<Tab> for &'a ($($T,)+)
             where
                 ($(&'a $T,)+): Insertable<Tab>,
@@ -171,24 +170,23 @@ macro_rules! tuple_impls {
                 }
 
                 fn col_value(&self, col_name : String, mut out: AstPass<__DB>) -> QueryResult<()>
-                {                     
+                {
                     if let Some(mut builder) = out.get_builder()
-                    {                                                      
+                    {
                         let old_sql = builder.clear();
                         let mut key_value = "".to_owned();
 
                         $(
-                            let mut out_new = AstPass::<__DB>::to_sql(&mut builder);                                                                                               
-                            self.$idx.column_names(out_new.reborrow())?;   
+                            let mut out_new = AstPass::<__DB>::to_sql(&mut builder);
+                            self.$idx.column_names(out_new.reborrow())?;
                             let name = builder.clear();
-                            println!("column name:{} col_name:{}", name, col_name);
-                            
+                            // println!("column name:{} col_name:{}", name, col_name);
                             if name == "\"".to_owned() + &col_name + "\"" {
                                 let mut out_new = AstPass::<__DB>::to_sql(&mut builder);
                                 self.$idx.walk_ast_primary_key(col_name.clone(), out_new.reborrow())?;
                                 key_value = builder.clear();
-                            }                    
-                        )+            
+                            }
+                        )+
 
                         out.push_sql(&old_sql);
                         out.push_sql("'");
@@ -196,7 +194,7 @@ macro_rules! tuple_impls {
                         out.push_sql("'");
                     }
                     Ok(())
-                }           
+                }
             }
 
             impl<$($T,)+ QS> SelectableExpression<QS> for ($($T,)+) where
