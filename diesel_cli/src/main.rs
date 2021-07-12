@@ -1,5 +1,5 @@
 // Built-in Lints
-#![deny(warnings, missing_copy_implementations)]
+#![allow(warnings, missing_copy_implementations)]
 // Clippy lints
 #![allow(clippy::option_map_unwrap_or_else, clippy::option_map_unwrap_or)]
 #![warn(
@@ -49,6 +49,7 @@ fn main() {
     use dotenv::dotenv;
     dotenv().ok();
 
+    
     let matches = cli::build_cli().get_matches();
 
     match matches.subcommand() {

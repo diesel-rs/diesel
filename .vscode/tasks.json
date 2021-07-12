@@ -1,0 +1,25 @@
+{ 
+    "version": "2.0.0", 
+    "tasks": [
+    {
+        "label": "build",
+        "type": "shell",
+        "command": "cargo",
+        "args": [
+            "build"
+        ],
+        "problemMatcher": [
+            "$msCompile"
+        ]
+    }, 
+    {
+        "type": "cargo",
+        "subcommand": "check",
+        "problemMatcher": [
+            "$rustc"
+        ],
+        "group": "build",
+        "label": "Rust: cargo check - test_rust"
+    }
+    ] 
+}

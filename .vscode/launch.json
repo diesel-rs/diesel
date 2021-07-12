@@ -1,0 +1,73 @@
+{ 
+    "version": "0.2.0", 
+    "configurations": [ 
+        {
+                "name": "diesel_cli",
+                 "preLaunchTask": "build", 
+                "type": "cppvsdbg",
+                "request": "launch",
+                "program": "${workspaceFolder}/target/debug/diesel.exe",
+                "args": ["setup"],
+                "stopAtEntry": false,
+                "cwd": "D:/Rust/diesel/examples/sqlite/getting_started_step_1/migrations/20170124012402_create_posts/",
+                "environment": [],
+                "console":"integratedTerminal"
+        },
+        {
+                "name": "diesel_test",
+                 "preLaunchTask": "build", 
+                "type": "cppvsdbg",
+                "request": "launch",
+                "program": "${workspaceFolder}/target/debug/diesel_test.exe",
+                "args": ["setup"],
+                "stopAtEntry": false,
+                "cwd": "${workspaceFolder}",
+                "environment": [],
+                "console":"integratedTerminal"
+        },
+        { 
+            "name": "(Windows) 启动", 
+            "preLaunchTask": "build", 
+            "type": "cppvsdbg", 
+            "request": "launch", 
+            "program": "${workspaceFolder}/target/debug/${workspaceFolderBasename}.exe", 
+            "args": [], 
+            "stopAtEntry": false, 
+            "cwd": "${workspaceFolder}", 
+            "environment": [], 
+            "console":"externalTerminal"  
+        }, 
+        { 
+            "name": "(gdb) 启动", 
+            "type": "cppdbg", 
+            "request": "launch", 
+            "program": "${workspaceFolder}/target/debug/${workspaceFolderBasename}.exe", 
+            "args": [], 
+            "stopAtEntry": false, 
+            "cwd": "${workspaceFolder}", 
+            "environment": [], 
+            "externalConsole": false, 
+            "MIMode": "gdb", 
+            "miDebuggerPath": "这里填GDB所在的目录", 
+            "setupCommands": [ 
+                { 
+                    "description": "为 gdb 启用整齐打印", 
+                    "text": "-enable-pretty-printing", 
+                    "ignoreFailures": true 
+                } 
+            ] 
+        },        
+        {
+                "name": "sqlite_show_posts",
+                "preLaunchTask": "build", 
+                "type": "cppvsdbg",
+                "request": "launch",
+                "program": "${workspaceFolder}/target/debug/show_posts.exe",
+                "args": [],
+                "stopAtEntry": false,
+                "cwd": "${workspaceFolder}/",
+                "environment": [],
+                "console":"integratedTerminal"
+        }
+    ] 
+}
