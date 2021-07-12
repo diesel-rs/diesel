@@ -503,6 +503,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     ///
     /// ## Advanced usage - use only if you're sure you know what you're doing!
+    ///
+    /// This will cause the `Option` to be `None` where the `left_join` succeeded but the
+    /// `author_name` turned out to be `NULL`, due to how `Option` deserialization works.
+    /// (see [`Queryable` documentation](crate::deserialize::Queryable))
+    ///
     /// ```rust
     /// # #![allow(dead_code)]
     /// # include!("../doctest_setup.rs");
@@ -513,7 +518,7 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     posts {
     ///         id -> Integer,
     ///         user_id -> Integer,
-    ///         author_name -> Nullable<VarChar>,
+    ///         author_name -> Nullable<Text>,
     ///     }
     /// }
     /// #
@@ -525,13 +530,21 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     use self::users;
     ///     let connection = &mut establish_connection();
     ///
+    /// #   connection.execute("ALTER TABLE posts ADD COLUMN author_name Text").unwrap();
+    /// #   diesel::update(posts::table.filter(posts::user_id.eq(1)))
+    /// #       .set(posts::author_name.eq("Sean"))
+    /// #       .execute(connection);
+    ///
     ///     let result = posts::table.left_join(users::table)
-    ///         .select((users::id, posts::author_name.assume_not_null()).nullable())
-    ///         .load::<Option<(i32, String)>>(connection);
-    ///     // This will cause the `Option` to be `None` where the `left_join` succeeded but the
-    ///     // `author_name` turned out to be `NULL`, because `Option` deserialization relies
-    ///     // on encountering an unexpected `NULL` while deserializing the inner fields.
-    ///     println!("{:?}", result);
+    ///         .select((posts::id, (users::id, posts::author_name.assume_not_null()).nullable()))
+    ///         .order_by(posts::id)
+    ///         .load::<(i32, Option<(i32, String)>)>(connection);
+    ///     let expected = Ok(vec![
+    ///         (1, Some((1, "Sean".to_owned()))),
+    ///         (2, Some((1, "Sean".to_owned()))),
+    ///         (3, None),
+    ///     ]);
+    ///     assert_eq!(expected, result);
     /// }
     /// ```
     fn assume_not_null(self) -> dsl::AssumeNotNull<Self> {
