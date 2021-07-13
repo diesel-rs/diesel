@@ -31,7 +31,7 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
              <(A, B) as diesel::Expression>
              <(A, B, C) as diesel::Expression>
              <(A, B, C, D) as diesel::Expression>
-           and 109 others
+           and 110 others
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>`
    = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>>` for `SelectStatement<string_primary_key::table>`
 
@@ -46,6 +46,6 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
              <(A, B) as ValidGrouping<__GroupByClause>>
              <(A, B, C) as ValidGrouping<__GroupByClause>>
              <(A, B, C, D) as ValidGrouping<__GroupByClause>>
-           and 130 others
+           and 131 others
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>`
    = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>>` for `SelectStatement<string_primary_key::table>`

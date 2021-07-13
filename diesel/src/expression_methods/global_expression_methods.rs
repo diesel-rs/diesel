@@ -2,7 +2,7 @@ use crate::dsl;
 use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
-use crate::expression::{nullable, AsExpression, Expression};
+use crate::expression::{assume_not_null, nullable, AsExpression, Expression};
 use crate::sql_types::{SingleValue, SqlType};
 
 /// Methods present on all expressions, except tuples
@@ -433,6 +433,122 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn asc(self) -> dsl::Asc<Self> {
         Asc::new(self)
+    }
+
+    /// Converts this potentially nullable expression into one which will be **assumed**
+    /// to be not-null. This method has no impact on the generated SQL, however it will
+    /// enable you to attempt deserialization of the returned value in a non-`Option`.
+    ///
+    /// This is meant to cover for cases where you know that given the `WHERE` clause
+    /// the field returned by the database will never be `NULL`.
+    ///
+    /// This **will cause runtime errors** on `load()` if the "assume" turns out to be incorrect.
+    ///
+    /// # Examples
+    /// ## Normal usage
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// #
+    /// table! {
+    ///     animals {
+    ///         id -> Integer,
+    ///         species -> VarChar,
+    ///         legs -> Integer,
+    ///         name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     use self::animals::dsl::*;
+    ///     let connection = &mut establish_connection();
+    ///
+    ///     let result = animals
+    ///         .filter(name.is_not_null())
+    ///         .select(name.assume_not_null())
+    ///         .load::<String>(connection);
+    ///     assert!(result.is_ok());
+    /// }
+    /// ```
+    ///
+    /// ## Incorrect usage
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// #
+    /// table! {
+    ///     animals {
+    ///         id -> Integer,
+    ///         species -> VarChar,
+    ///         legs -> Integer,
+    ///         name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     use diesel::result::{Error, UnexpectedNullError};
+    ///     use self::animals::dsl::*;
+    ///     let connection = &mut establish_connection();
+    ///
+    ///     let result = animals
+    ///         .select(name.assume_not_null())
+    ///         .load::<String>(connection);
+    ///     assert!(matches!(
+    ///         result,
+    ///         Err(Error::DeserializationError(err)) if err.is::<UnexpectedNullError>()
+    ///     ));
+    /// }
+    /// ```
+    ///
+    /// ## Advanced usage - use only if you're sure you know what you're doing!
+    ///
+    /// This will cause the `Option` to be `None` where the `left_join` succeeded but the
+    /// `author_name` turned out to be `NULL`, due to how `Option` deserialization works.
+    /// (see [`Queryable` documentation](crate::deserialize::Queryable))
+    ///
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// # use schema::users;
+    /// #
+    /// table! {
+    ///     posts {
+    ///         id -> Integer,
+    ///         user_id -> Integer,
+    ///         author_name -> Nullable<Text>,
+    ///     }
+    /// }
+    /// #
+    /// # joinable!(posts -> users (user_id));
+    /// # allow_tables_to_appear_in_same_query!(posts, users);
+    ///
+    /// fn main() {
+    ///     use self::posts;
+    ///     use self::users;
+    ///     let connection = &mut establish_connection();
+    ///
+    /// #   connection.execute("ALTER TABLE posts ADD COLUMN author_name Text").unwrap();
+    /// #   diesel::update(posts::table.filter(posts::user_id.eq(1)))
+    /// #       .set(posts::author_name.eq("Sean"))
+    /// #       .execute(connection);
+    ///
+    ///     let result = posts::table.left_join(users::table)
+    ///         .select((posts::id, (users::id, posts::author_name.assume_not_null()).nullable()))
+    ///         .order_by(posts::id)
+    ///         .load::<(i32, Option<(i32, String)>)>(connection);
+    ///     let expected = Ok(vec![
+    ///         (1, Some((1, "Sean".to_owned()))),
+    ///         (2, Some((1, "Sean".to_owned()))),
+    ///         (3, None),
+    ///     ]);
+    ///     assert_eq!(expected, result);
+    /// }
+    /// ```
+    fn assume_not_null(self) -> dsl::AssumeNotNull<Self> {
+        assume_not_null::AssumeNotNull::new(self)
     }
 }
 

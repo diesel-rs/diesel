@@ -110,7 +110,7 @@ error[E0277]: the trait bound `{integer}: SelectableExpression<()>` is not satis
               <(A, B) as SelectableExpression<QS>>
               <(A, B, C) as SelectableExpression<QS>>
               <(A, B, C, D) as SelectableExpression<QS>>
-            and 129 others
+            and 131 others
     = note: required because of the requirements on the impl of `SelectableExpression<()>` for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)`
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<()>` for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>`
@@ -132,7 +132,7 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
               <(A, B) as ValidGrouping<__GroupByClause>>
               <(A, B, C) as ValidGrouping<__GroupByClause>>
               <(A, B, C, D) as ValidGrouping<__GroupByClause>>
-            and 124 others
+            and 125 others
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)`
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>`
@@ -149,7 +149,7 @@ error[E0277]: the trait bound `{integer}: SelectableExpression<()>` is not satis
              <(A, B) as SelectableExpression<QS>>
              <(A, B, C) as SelectableExpression<QS>>
              <(A, B, C, D) as SelectableExpression<QS>>
-           and 129 others
+           and 131 others
    = note: required because of the requirements on the impl of `SelectableExpression<()>` for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `SelectableExpression<()>` for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>`
@@ -168,7 +168,7 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
              <(A, B) as ValidGrouping<__GroupByClause>>
              <(A, B, C) as ValidGrouping<__GroupByClause>>
              <(A, B, C, D) as ValidGrouping<__GroupByClause>>
-           and 124 others
+           and 125 others
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>`
@@ -186,7 +186,7 @@ error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
              <() as QueryId>
              <(A, B) as QueryId>
              <(A, B, C) as QueryId>
-           and 192 others
+           and 193 others
    = note: required because of the requirements on the impl of `QueryId` for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)`
    = note: 3 redundant requirements hidden
    = note: required because of the requirements on the impl of `QueryId` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
@@ -203,7 +203,7 @@ error[E0277]: the trait bound `{integer}: QueryFragment<_>` is not satisfied
              <() as QueryFragment<DB>>
              <(A, B) as QueryFragment<__DB>>
              <(A, B, C) as QueryFragment<__DB>>
-           and 222 others
+           and 223 others
    = note: required because of the requirements on the impl of `QueryFragment<_>` for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)`
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `QueryFragment<_>` for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>`
@@ -228,7 +228,7 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
              <(A, B) as diesel::Expression>
              <(A, B, C) as diesel::Expression>
              <(A, B, C, D) as diesel::Expression>
-           and 105 others
+           and 106 others
    = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Double>` for `{integer}`
    = note: required because of the requirements on the impl of `AsExpressionList<diesel::sql_types::Double>` for `({integer}, f64)`
 

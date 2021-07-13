@@ -24,7 +24,19 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///
 /// This trait can be [derived](derive@Queryable)
 ///
+/// ## Interaction with `NULL`/`Option`
+/// [`Nullable`][crate::sql_types::Nullable] types can be queried into `Option`.
+/// This is valid for single fields, tuples, and structures with `Queryable`.
+///
+/// With tuples and structs, the process for deserializing an `Option<(A,B,C)>` is
+/// to attempt to deserialize `A`, `B` and `C`, and if either of these return an
+/// [`UnexpectedNullError`](crate::result::UnexpectedNullError), the `Option` will be
+/// deserialized as `None`.  
+/// If all succeed, the `Option` will be deserialized as `Some((a,b,c))`.
+///
 /// # Examples
+///
+/// ## Simple mapping from query to struct
 ///
 /// If we just want to map a query to our struct, we can use `derive`.
 ///
@@ -44,12 +56,94 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
-/// let first_user = users.first(connection)?;
+/// let first_user = users.order_by(id).first(connection)?;
 /// let expected = User { id: 1, name: "Sean".into() };
 /// assert_eq!(expected, first_user);
 /// #     Ok(())
 /// # }
 /// ```
+///
+/// ## Interaction with `NULL`/`Option`
+///
+/// ### Single field
+/// ```rust
+/// # include!("doctest_setup.rs");
+/// # use diesel::sql_types::*;
+/// #
+/// table! {
+///     animals {
+///         id -> Integer,
+///         species -> VarChar,
+///         legs -> Integer,
+///         name -> Nullable<VarChar>,
+///     }
+/// }
+/// #
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct Animal {
+///     id: i32,
+///     name: Option<String>,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::animals::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// let all_animals = animals.select((id, name)).order_by(id).load(connection)?;
+/// let expected = vec![Animal { id: 1, name: Some("Jack".to_owned()) }, Animal { id: 2, name: None }];
+/// assert_eq!(expected, all_animals);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// ### Multiple fields
+/// ```rust
+/// # include!("doctest_setup.rs");
+/// #
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct UserWithPost {
+///     id: i32,
+///     post: Option<Post>,
+/// }
+/// #[derive(Queryable, PartialEq, Debug)]
+/// struct Post {
+///     id: i32,
+///     title: String,
+/// }
+///
+/// # fn main() {
+/// #     run_test();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::{posts, users};
+/// #     let connection = &mut establish_connection();
+/// #     diesel::insert_into(users::table)
+/// #         .values(users::name.eq("Ruby"))
+/// #         .execute(connection)?;
+/// let all_posts = users::table
+///     .left_join(posts::table)
+///     .select((
+///         users::id,
+///         (posts::id, posts::title).nullable()
+///     ))
+///     .order_by((users::id, posts::id))
+///     .load(connection)?;
+/// let expected = vec![
+///     UserWithPost { id: 1, post: Some(Post { id: 1, title: "My first post".to_owned() }) },
+///     UserWithPost { id: 1, post: Some(Post { id: 2, title: "About Rust".to_owned() }) },
+///     UserWithPost { id: 2, post: Some(Post { id: 3, title: "My first post too".to_owned() }) },
+///     UserWithPost { id: 3, post: None },
+/// ];
+/// assert_eq!(expected, all_posts);
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// ## `deserialize_as` attribute
 ///
 /// If we want to do additional work during deserialization, we can use
 /// `deserialize_as` to use a different implementation.
@@ -102,6 +196,8 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #     Ok(())
 /// # }
 /// ```
+///
+/// ## Manual implementation
 ///
 /// Alternatively, we can implement the trait for our struct manually.
 ///
