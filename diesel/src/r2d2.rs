@@ -196,7 +196,7 @@ where
     }
 
     fn rollback_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
-        T::begin_transaction(&mut **conn)
+        T::rollback_transaction(&mut **conn)
     }
 
     fn commit_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
