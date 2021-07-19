@@ -1,6 +1,6 @@
 use crate::backend::SupportsReturningClause;
 
-simple_clause!(
+simple_clause_returning!(
     NoReturningClause,
     ReturningClause,
     " RETURNING ",

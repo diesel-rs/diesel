@@ -126,7 +126,7 @@ where
 pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
     fn column_names(&self, out: AstPass<DB>) -> QueryResult<()>;
     fn col_value(&self, col_name:String, mut out: AstPass<DB>)->QueryResult<()>{
-        println!("col name:{}", col_name);
+        let _ = col_name;
         out.push_sql("");
         Ok(())
     }
