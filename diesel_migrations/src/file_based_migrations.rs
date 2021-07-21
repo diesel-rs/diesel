@@ -86,7 +86,7 @@ impl FileBasedMigrations {
     ///
     /// This methods fails if the path passed as argument is no valid migration directory
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self, MigrationError> {
-        for dir in migrations_directories(path.as_ref()) {
+        for dir in migrations_directories(path.as_ref())? {
             let path = dir?.path();
             if !migrations_internals::valid_sql_migration_directory(&path) {
                 return Err(MigrationError::UnknownMigrationFormat(path));
@@ -134,19 +134,19 @@ fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, MigrationErro
 
 fn migrations_directories<'a>(
     path: &'a Path,
-) -> impl Iterator<Item = Result<DirEntry, MigrationError>> + 'a {
-    migrations_internals::migrations_directories(path).map(move |e| e.map_err(Into::into))
+) -> Result<impl Iterator<Item = Result<DirEntry, MigrationError>> + 'a, MigrationError> {
+    Ok(migrations_internals::migrations_directories(path)?.map(move |e| e.map_err(Into::into)))
 }
 
 fn migrations_in_directory<'a, DB: Backend>(
     path: &'a Path,
-) -> impl Iterator<Item = Result<SqlFileMigration, MigrationError>> + 'a {
-    migrations_directories(path).map(|entry| SqlFileMigration::from_path(&entry?.path()))
+) -> Result<impl Iterator<Item = Result<SqlFileMigration, MigrationError>> + 'a, MigrationError> {
+    Ok(migrations_directories(path)?.map(|entry| SqlFileMigration::from_path(&entry?.path())))
 }
 
 impl<DB: Backend> MigrationSource<DB> for FileBasedMigrations {
     fn migrations(&self) -> migration::Result<Vec<Box<dyn Migration<DB>>>> {
-        migrations_in_directory::<DB>(&self.base_path)
+        migrations_in_directory::<DB>(&self.base_path)?
             .map(|r| Ok(Box::new(r?) as Box<dyn Migration<DB>>))
             .collect()
     }
@@ -355,6 +355,7 @@ mod tests {
         fs::File::create(&file_path).unwrap();
 
         let migrations = migrations_in_directory::<Backend>(&migrations_path)
+            .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
 
@@ -372,6 +373,7 @@ mod tests {
         fs::create_dir(&dot_path).unwrap();
 
         let migrations = migrations_in_directory::<Backend>(&migrations_path)
+            .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
 
