@@ -86,26 +86,20 @@ pub fn file_names(path: &Path) -> Result<Vec<String>, std::io::Error> {
 
 pub fn migrations_directories<'a>(
     path: &'a Path,
-) -> impl Iterator<Item = Result<DirEntry, std::io::Error>> + 'a {
-    path.read_dir()
-        .into_iter()
-        .flatten()
-        .filter_map(move |entry| {
-            let entry = match entry {
-                Ok(e) => e,
-                Err(e) => return Some(Err(e)),
-            };
-            let metadata = match entry.metadata() {
-                Ok(m) => m,
-                Err(e) => return Some(Err(e)),
-            };
-            if metadata.is_file() {
-                return None;
-            }
-            if entry.file_name().to_string_lossy().starts_with('.') {
-                None
-            } else {
-                Some(Ok(entry))
-            }
-        })
+) -> Result<impl Iterator<Item = Result<DirEntry, std::io::Error>> + 'a, std::io::Error> {
+    Ok(path.read_dir()?.into_iter().filter_map(|entry_res| {
+        entry_res
+            .and_then(|entry| {
+                Ok(
+                    if entry.metadata()?.is_file()
+                        || entry.file_name().to_string_lossy().starts_with('.')
+                    {
+                        None
+                    } else {
+                        Some(entry)
+                    },
+                )
+            })
+            .transpose()
+    }))
 }

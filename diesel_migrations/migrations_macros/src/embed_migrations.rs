@@ -29,7 +29,7 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
 fn migration_literals_from_path(
     path: &Path,
 ) -> Result<Vec<proc_macro2::TokenStream>, Box<dyn Error>> {
-    let mut migrations = migrations_directories(path).collect::<Result<Vec<_>, _>>()?;
+    let mut migrations = migrations_directories(path)?.collect::<Result<Vec<_>, _>>()?;
 
     migrations.sort_by_key(DirEntry::path);
 
