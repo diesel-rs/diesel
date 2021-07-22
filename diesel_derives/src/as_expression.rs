@@ -18,13 +18,15 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let (impl_generics, ..) = item.generics.split_for_impl();
     let lifetimes = item.generics.lifetimes().collect::<Vec<_>>();
     let ty_params = item.generics.type_params().collect::<Vec<_>>();
+    let const_params = item.generics.const_params().collect::<Vec<_>>();
     let struct_ty = ty_for_foreign_derive(&item, &flags)?;
 
     let tokens = sql_types.map(|sql_type| {
         let lifetimes = &lifetimes;
         let ty_params = &ty_params;
+        let const_params = &const_params;
         let tokens = quote!(
-            impl<'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<#sql_type>
+            impl<'expr, #(#lifetimes,)* #(#ty_params,)* #(#const_params,)*> AsExpression<#sql_type>
                 for &'expr #struct_ty
             {
                 type Expression = Bound<#sql_type, Self>;
@@ -34,7 +36,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 }
             }
 
-            impl<'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<Nullable<#sql_type>>
+            impl<'expr, #(#lifetimes,)* #(#ty_params,)* #(#const_params,)*> AsExpression<Nullable<#sql_type>>
                 for &'expr #struct_ty
             {
                 type Expression = Bound<Nullable<#sql_type>, Self>;
@@ -44,7 +46,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 }
             }
 
-            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<#sql_type>
+            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)* #(#const_params,)*> AsExpression<#sql_type>
                 for &'expr2 &'expr #struct_ty
             {
                 type Expression = Bound<#sql_type, Self>;
@@ -54,7 +56,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 }
             }
 
-            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)*> AsExpression<Nullable<#sql_type>>
+            impl<'expr2, 'expr, #(#lifetimes,)* #(#ty_params,)* #(#const_params,)*> AsExpression<Nullable<#sql_type>>
                 for &'expr2 &'expr #struct_ty
             {
                 type Expression = Bound<Nullable<#sql_type>, Self>;
@@ -64,7 +66,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 }
             }
 
-            impl<#(#lifetimes,)* #(#ty_params,)* __DB> diesel::serialize::ToSql<Nullable<#sql_type>, __DB>
+            impl<#(#lifetimes,)* #(#ty_params,)* __DB,  #(#const_params,)*> diesel::serialize::ToSql<Nullable<#sql_type>, __DB>
                 for #struct_ty
             where
                 __DB: diesel::backend::Backend,
