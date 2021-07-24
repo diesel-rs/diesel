@@ -9,13 +9,6 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
         MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
     let struct_ty = ty_for_foreign_derive(&item, &flags)?;
 
-    // To prevent double issue with mutable borrow below while creating where clause
-    let initial_item = item.clone();
-
-    let lifetimes = initial_item.generics.lifetimes().collect::<Vec<_>>();
-    let ty_params = initial_item.generics.type_params().collect::<Vec<_>>();
-    let const_params = initial_item.generics.const_params().collect::<Vec<_>>();
-
     {
         let where_clause = item
             .generics
@@ -32,6 +25,10 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<TokenStream, Diagnostic> {
             .push(parse_quote!(Self: FromSql<__ST, __DB>));
     }
     let (_, _, where_clause) = item.generics.split_for_impl();
+
+    let lifetimes = item.generics.lifetimes().collect::<Vec<_>>();
+    let ty_params = item.generics.type_params().collect::<Vec<_>>();
+    let const_params = item.generics.const_params().collect::<Vec<_>>();
 
     Ok(wrap_in_dummy_mod(quote! {
         use diesel::deserialize::{self, FromSql, Queryable};
