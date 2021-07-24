@@ -15,3 +15,5 @@ mod insertable;
 mod queryable;
 mod queryable_by_name;
 mod selectable;
+
+mod as_expression;
