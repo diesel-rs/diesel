@@ -59,31 +59,3 @@ fn struct_with_sql_type() {
     assert!(data.is_err());
 }
 
-// #[test]
-// #[cfg(all(feature = "postgres", not(feature = "sqlite"), not(feature = "mysql")))]
-// fn test_generic_array_type() {
-//     #[derive(Debug, Clone, PartialEq, Queryable)]
-//     struct MySqlItem {
-//         foo: StringArray<2>,
-//         bar: i32,
-//     }
-
-//     let new_generic_array_expression = GenericArray([4.4, 4.4]);
-
-//     let conn = &mut connection();
-//     let data = select(sql::<(Array<Float8>, Integer)>("[1, 2], 2")).get_result(conn);
-//     assert_eq!(
-//         Ok(MySqlItem {
-//             foo: StringArray([29, 1]),
-//             bar: 2
-//         }),
-//         data
-//     );
-// }
-
-// ::<dyn Expression<SqlType = Array<Float8>>>
-
-// use diesel::sql_types::{Array, Float8};
-// #[derive(Debug, AsExpression, Clone, Copy, PartialEq)]
-// #[sql_type = "Array<Float8>"]
-// struct GenericArray<T, const N: usize>(pub [T; N]);
