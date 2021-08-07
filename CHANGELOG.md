@@ -289,7 +289,7 @@ fn run_migration(conn: &PgConnection) {
 ```
 to 
 ```rust
-pub const MIGRATIONS: EmbededMigrations = embed_migrations!();
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 fn run_migration(conn: &PgConnection) {
     conn.run_pending_migrations(MIGRATIONS).unwrap();
