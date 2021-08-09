@@ -12,7 +12,15 @@ The diesel cli, by default, requires [`openssl`][openssl], [`libpq`][postgres],
 you can run `cargo install diesel_cli`.
 
 > Note: Make sure that both the `bin` and `lib` directories for
-> postgres are added to your PATH
+> postgres are added to your PATH. 
+> Windows users may also need to add the following snippet to their 
+> `$HOME/.cargo/config.toml` in order for the linker to find
+> the library file correctly. 
+```
+[target.x86_64-pc-windows-msvc.pq]
+rustc-link-search = ["C:\\Program Files\\PostgreSQL\\13\\lib"]
+rustc-link-lib = ["libpq"]
+```
 
 To install the cli without these dependencies, omit the unneeded dependencies from
 the following command:
