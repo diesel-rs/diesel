@@ -5,7 +5,7 @@ use crate::query_builder::*;
 use crate::query_source::Table;
 
 /// Represents `(Columns) SELECT FROM ...` for use in an `INSERT` statement
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct InsertFromSelect<Select, Columns> {
     pub(in crate::query_builder) query: Select,
     pub(in crate::query_builder) columns: Columns,

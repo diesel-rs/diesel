@@ -131,6 +131,9 @@ impl_selectable_expression!(All<Expr>);
 pub trait AsArrayExpression<ST> {
     type Expression: Expression<SqlType = Array<ST>>;
 
+    // This method is part of the public API
+    // we won't change it to appease a clippy lint
+    #[allow(clippy::wrong_self_convention)]
     fn as_expression(self) -> Self::Expression;
 }
 

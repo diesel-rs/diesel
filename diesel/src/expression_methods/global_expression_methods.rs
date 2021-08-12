@@ -159,6 +159,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
+    // This method is part of the public API,
+    // so we cannot just change the name to appease clippy
+    // (Otherwise it's also named after the `IS NULL` sql expression
+    // so that name is really fine)
+    #[allow(clippy::wrong_self_convention)]
     fn is_null(self) -> dsl::IsNull<Self> {
         Grouped(IsNull::new(self))
     }
@@ -185,6 +190,11 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("dog", data);
     /// #     Ok(())
     /// # }
+    // This method is part of the public API,
+    // so we cannot just change the name to appease clippy
+    // (Otherwise it's also named after the `IS NOT NULL` sql expression
+    // so that name is really fine)
+    #[allow(clippy::wrong_self_convention)]
     fn is_not_null(self) -> dsl::IsNotNull<Self> {
         Grouped(IsNotNull::new(self))
     }

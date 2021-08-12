@@ -23,9 +23,9 @@ pub enum Status {
     Published { at: NaiveDateTime },
 }
 
-impl Into<Status> for Option<NaiveDateTime> {
-    fn into(self) -> Status {
-        match self {
+impl From<Option<NaiveDateTime>> for Status {
+    fn from(o: Option<NaiveDateTime>) -> Self {
+        match o {
             None => Status::Draft,
             Some(at) => Status::Published { at },
         }

@@ -13,6 +13,12 @@ pub struct OnConflictValues<Values, Target, Action> {
     action: Action,
 }
 
+impl<Values, Target, Action> QueryId for OnConflictValues<Values, Target, Action> {
+    type QueryId = ();
+
+    const HAS_STATIC_QUERY_ID: bool = false;
+}
+
 impl<Values> OnConflictValues<Values, NoConflictTarget, DoNothing> {
     pub(crate) fn do_nothing(values: Values) -> Self {
         Self::new(values, NoConflictTarget, DoNothing)

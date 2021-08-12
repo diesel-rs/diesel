@@ -539,7 +539,7 @@ where
     type Values = ValuesClause<ColumnInsertValue<T, U>, T::Table>;
 
     fn values(self) -> Self::Values {
-        ValuesClause::new(ColumnInsertValue::Expression(self.left, self.right))
+        ValuesClause::new(ColumnInsertValue::new(self.left, self.right))
     }
 }
 

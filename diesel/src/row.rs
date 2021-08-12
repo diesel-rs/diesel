@@ -182,7 +182,7 @@ pub trait NamedRow<'a, DB: Backend>: Row<'a, DB> {
     ///
     /// If two or more fields in the query have the given name, the result of
     /// this function is undefined.
-    fn get<'b, ST, T>(&self, column_name: &'b str) -> deserialize::Result<T>
+    fn get<ST, T>(&self, column_name: &str) -> deserialize::Result<T>
     where
         T: FromSql<ST, DB>;
 }

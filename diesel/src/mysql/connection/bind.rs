@@ -1,5 +1,6 @@
 use mysqlclient_sys as ffi;
 use std::mem;
+use std::mem::MaybeUninit;
 use std::ops::Index;
 use std::os::raw as libc;
 
@@ -88,7 +89,7 @@ impl Index<usize> for Binds {
 bitflags::bitflags! {
     pub(crate) struct Flags: u32 {
         const NOT_NULL_FLAG = 1;
-        const PRI_KEY_FAG = 2;
+        const PRI_KEY_FLAG = 2;
         const UNIQUE_KEY_FLAG = 4;
         const MULTIPLE_KEY_FLAG = 8;
         const BLOB_FLAG = 16;
@@ -341,19 +342,25 @@ impl BindData {
     }
 
     unsafe fn mysql_bind(&mut self) -> ffi::MYSQL_BIND {
-        let mut bind: ffi::MYSQL_BIND = mem::zeroed();
-        bind.buffer_type = self.tpe;
-        bind.buffer = self.bytes.as_mut_ptr() as *mut libc::c_void;
-        bind.buffer_length = self.bytes.capacity() as libc::c_ulong;
-        bind.length = &mut self.length;
-        bind.is_null = &mut self.is_null;
-        bind.is_unsigned = self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool;
+        use std::ptr::addr_of_mut;
+
+        let mut bind: MaybeUninit<ffi::MYSQL_BIND> = mem::MaybeUninit::zeroed();
+        let ptr = bind.as_mut_ptr();
+
+        addr_of_mut!((*ptr).buffer_type).write(self.tpe);
+        addr_of_mut!((*ptr).buffer).write(self.bytes.as_mut_ptr() as *mut libc::c_void);
+        addr_of_mut!((*ptr).buffer_length).write(self.bytes.capacity() as libc::c_ulong);
+        addr_of_mut!((*ptr).length).write(&mut self.length);
+        addr_of_mut!((*ptr).is_null).write(&mut self.is_null);
+        addr_of_mut!((*ptr).is_unsigned)
+            .write(self.flags.contains(Flags::UNSIGNED_FLAG) as ffi::my_bool);
 
         if let Some(ref mut is_truncated) = self.is_truncated {
-            bind.error = is_truncated;
+            addr_of_mut!((*ptr).error).write(is_truncated);
         }
 
-        bind
+        // That's what the mysqlclient examples are doing
+        bind.assume_init()
     }
 
     /// Resizes the byte buffer to fit the value of `self.length`, and returns

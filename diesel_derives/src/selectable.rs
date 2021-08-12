@@ -17,16 +17,9 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 
     let struct_name = &item.ident;
 
-    let field_columns_ty = model
-        .fields()
-        .iter()
-        .map(|f| field_column_ty(f, &model))
-        .collect::<Result<Vec<_>, _>>()?;
-    let field_columns_inst = model
-        .fields()
-        .iter()
-        .map(|f| field_column_inst(f, &model))
-        .collect::<Result<Vec<_>, _>>()?;
+    let field_columns_ty = model.fields().iter().map(|f| field_column_ty(f, &model));
+
+    let field_columns_inst = model.fields().iter().map(|f| field_column_inst(f, &model));
 
     Ok(wrap_in_dummy_mod(quote! {
         use diesel::expression::Selectable;
@@ -44,24 +37,24 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     }))
 }
 
-fn field_column_ty(field: &Field, model: &Model) -> Result<syn::Type, Diagnostic> {
+fn field_column_ty(field: &Field, model: &Model) -> syn::Type {
     if field.has_flag("embed") {
         let embed_ty = &field.ty;
-        Ok(parse_quote!(<#embed_ty as Selectable<__DB>>::SelectExpression))
+        parse_quote!(<#embed_ty as Selectable<__DB>>::SelectExpression)
     } else {
         let table_name = model.table_name();
         let column_name = field.column_name_ident();
-        Ok(parse_quote!(#table_name::#column_name))
+        parse_quote!(#table_name::#column_name)
     }
 }
 
-fn field_column_inst(field: &Field, model: &Model) -> Result<syn::Expr, Diagnostic> {
+fn field_column_inst(field: &Field, model: &Model) -> syn::Expr {
     if field.has_flag("embed") {
         let embed_ty = &field.ty;
-        Ok(parse_quote!(<#embed_ty as Selectable<__DB>>::construct_selection()))
+        parse_quote!(<#embed_ty as Selectable<__DB>>::construct_selection())
     } else {
         let table_name = model.table_name();
         let column_name = field.column_name_ident();
-        Ok(parse_quote!(#table_name::#column_name))
+        parse_quote!(#table_name::#column_name)
     }
 }

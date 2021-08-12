@@ -61,7 +61,7 @@ pub use self::limit_clause::{LimitClause, NoLimitClause};
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
 
-pub(crate) use self::insert_statement::ColumnList;
+pub(crate) use self::insert_statement::{BatchInsert, ColumnList};
 
 use std::error::Error;
 
@@ -271,6 +271,11 @@ pub trait AsQuery {
 
     /// Converts a type which semantically represents a SQL query into the
     /// actual query being executed. See the trait level docs for more.
+    // This method is part of our public API,
+    // so we won't change the name to just appease clippy
+    // (Also the trait is literally named `AsQuery` so
+    // naming the method similary is fine)
+    #[allow(clippy::wrong_self_convention)]
     fn as_query(self) -> Self::Query;
 }
 

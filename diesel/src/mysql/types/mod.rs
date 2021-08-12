@@ -26,6 +26,7 @@ use crate::sql_types::*;
 // version we just have our own copy here
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms)]
 pub(crate) struct MYSQL_TIME {
     pub year: libc::c_uint,
     pub month: libc::c_uint,

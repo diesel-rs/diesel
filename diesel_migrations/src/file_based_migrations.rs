@@ -132,15 +132,15 @@ fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, MigrationErro
         .ok_or_else(|| MigrationError::MigrationDirectoryNotFound(path.to_path_buf()))
 }
 
-fn migrations_directories<'a>(
-    path: &'a Path,
-) -> Result<impl Iterator<Item = Result<DirEntry, MigrationError>> + 'a, MigrationError> {
+fn migrations_directories(
+    path: &'_ Path,
+) -> Result<impl Iterator<Item = Result<DirEntry, MigrationError>> + '_, MigrationError> {
     Ok(migrations_internals::migrations_directories(path)?.map(move |e| e.map_err(Into::into)))
 }
 
-fn migrations_in_directory<'a, DB: Backend>(
-    path: &'a Path,
-) -> Result<impl Iterator<Item = Result<SqlFileMigration, MigrationError>> + 'a, MigrationError> {
+fn migrations_in_directory<DB: Backend>(
+    path: &'_ Path,
+) -> Result<impl Iterator<Item = Result<SqlFileMigration, MigrationError>> + '_, MigrationError> {
     Ok(migrations_directories(path)?.map(|entry| SqlFileMigration::from_path(&entry?.path())))
 }
 
