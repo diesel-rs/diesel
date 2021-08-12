@@ -9,6 +9,12 @@ on:
 
 name: CI Tests
 
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency.
+# This will ensure that only one commit will be running tests at a time on each PR.
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   check_and_test:
     name: Check
