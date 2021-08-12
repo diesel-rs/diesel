@@ -9,6 +9,7 @@ mod helpers;
 mod schema;
 
 mod as_changeset;
+mod as_expression;
 mod associations;
 mod identifiable;
 mod insertable;

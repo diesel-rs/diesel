@@ -181,8 +181,10 @@ impl MetaItem {
 
     pub fn ty_value(&self) -> Result<syn::Type, Diagnostic> {
         let str = self.lit_str_value()?;
-        str.parse()
-            .map_err(|_| str.span().error("Invalid Rust type"))
+        str.parse().map_err(|_| {
+            str.span()
+                .error(format!("Invalid Rust type: `{}`", str.value()))
+        })
     }
 
     pub fn expect_str_value(&self) -> String {
