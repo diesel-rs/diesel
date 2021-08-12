@@ -9,6 +9,11 @@ on:
 
 name: CI Tests
 
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency.
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   check_and_test:
     name: Check
