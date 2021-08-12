@@ -186,6 +186,7 @@ where
 {
     fn walk_ast_helper_with_value_clause(values: Self::Values, out: AstPass<DB>)
         -> QueryResult<()>;
+
     fn walk_ast_helper_without_value_clause(
         values: Self::Values,
         out: AstPass<DB>,

@@ -302,7 +302,7 @@ mod tests {
         let insert = query
             .insert_into(users::table)
             .into_columns((users::id, users::name));
-        assert_eq!(true, dbg!(insert.execute(connection)).is_ok());
+        assert_eq!(true, insert.execute(connection).is_ok());
         assert_eq!(2, connection.statement_cache.len());
     }
 

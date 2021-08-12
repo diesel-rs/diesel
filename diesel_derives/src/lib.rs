@@ -248,7 +248,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// If this attribute is not used, the type name converted to
 /// `snake_case` with an added `s` is used as table name
 /// * `#[diesel(treat_none_as_default_value = "true/false")], specifies if `None` values
-/// should be converted to `NULL` values on SQL side or treated as `DEFAULT_VALUE` primitive
+/// should be converted to `NULL` values on SQL side or treated as `DEFAULT` value primitive
 /// *Note: This option may control if your query is stored in the
 /// prepared statement cache or not*
 ///

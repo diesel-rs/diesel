@@ -322,6 +322,7 @@ impl<'a, T, Tab> UndecoratedInsertRecord<Tab> for &'a T where
 }
 
 impl<T, U> UndecoratedInsertRecord<T::Table> for ColumnInsertValue<T, U> where T: Column {}
+
 impl<T, U> UndecoratedInsertRecord<T::Table>
     for DefaultableColumnInsertValue<ColumnInsertValue<T, U>>
 where
