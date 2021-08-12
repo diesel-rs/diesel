@@ -16,13 +16,13 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
         .fields()
         .iter()
         .map(|f| {
+            let field_ty = &f.ty;
+
             if f.has_flag("embed") {
-                let field_ty = &f.ty;
                 Ok(quote!(<#field_ty as QueryableByName<__DB>>::build(
                     row,
                 )?))
             } else {
-                let field_ty = &f.ty;
                 let deserialize_ty = f.ty_for_deserialize()?;
                 let name = f.column_name_str();
                 Ok(quote!(
