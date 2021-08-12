@@ -2,6 +2,7 @@ use diesel::backend::Backend;
 use diesel::deserialize::FromSql;
 use diesel::expression::AsExpression;
 use diesel::serialize::{Output, ToSql};
+use diesel::sql_types::Text;
 use diesel::*;
 use std::convert::TryInto;
 use std::io::Write;
@@ -14,7 +15,7 @@ table! {
         bar -> Text,
     }
 }
-use diesel::sql_types::Text;
+
 #[derive(Debug, AsExpression, FromSqlRow, Clone, Copy, PartialEq)]
 #[sql_type = "Text"]
 struct StringArray<const N: usize>(pub [u8; N]);
@@ -58,4 +59,3 @@ fn struct_with_sql_type() {
         .get_result(conn);
     assert!(data.is_err());
 }
-
