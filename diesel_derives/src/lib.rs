@@ -61,6 +61,17 @@ mod valid_grouping;
 /// from the name of the corresponding column, you can annotate the field with
 /// `#[diesel(column_name = some_column_name)]`.
 ///
+/// To provide custom serialization behavior for a field, you can use
+/// `#[diesel(serialize_as = "SomeType")]`. If this attribute is present, Diesel
+/// will call `.into` on the corresponding field and serialize the instance of `SomeType`,
+/// rather than the actual field on your struct. This can be used to add custom behavior for a
+/// single field, or use types that are otherwise unsupported by Diesel.
+/// Normally, Diesel produces two implementations of the `AsChangeset` trait for your
+/// struct using this derive: one for an owned version and one for a borrowed version.
+/// Using `#[diesel(serialize_as)]` implies a conversion using `.into` which consumes the underlying value.
+/// Hence, once you use `#[diesel(serialize_as)]`, Diesel can no longer insert borrowed
+/// versions of your struct.
+///
 /// By default, any `Option` fields on the struct are skipped if their value is
 /// `None`. If you would like to assign `NULL` to the field instead, you can
 /// annotate your struct with `#[diesel(treat_none_as_null = true)]`.
@@ -86,6 +97,10 @@ mod valid_grouping;
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column name
 ///    of the current field to `some_column_name`. By default the field
 ///    name is used as column name.
+/// * `#[diesel(serialize_as = "SomeType")]`, instead of serializing the actual
+///    field type, Diesel will convert the field into `SomeType` using `.into` and
+///    serialize that instead. By default this derive will serialize directly using
+///    the actual field type.
 #[proc_macro_error]
 #[proc_macro_derive(
     AsChangeset,

@@ -219,6 +219,57 @@ fn with_explicit_column_names() {
 }
 
 #[test]
+fn with_serialize_as() {
+    #[derive(Debug, FromSqlRow, AsExpression)]
+    #[sql_type = "sql_types::Text"]
+    struct UppercaseString(pub String);
+
+    impl Into<UppercaseString> for String {
+        fn into(self) -> UppercaseString {
+            UppercaseString(self.to_uppercase())
+        }
+    }
+
+    impl<DB> serialize::ToSql<sql_types::Text, DB> for UppercaseString
+    where
+        DB: backend::Backend,
+        String: serialize::ToSql<sql_types::Text, DB>,
+    {
+        fn to_sql<W: std::io::Write>(
+            &self,
+            out: &mut serialize::Output<W, DB>,
+        ) -> serialize::Result {
+            self.0.to_sql(out)
+        }
+    }
+
+    #[derive(AsChangeset)]
+    struct User {
+        #[diesel(serialize_as = UppercaseString)]
+        name: String,
+        #[diesel(serialize_as = UppercaseString)]
+        hair_color: Option<String>,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    update(users::table.find(1))
+        .set(User {
+            name: String::from("Jim"),
+            hair_color: Some(String::from("blue")),
+        })
+        .execute(connection)
+        .unwrap();
+
+    let expected = vec![
+        (1, String::from("JIM"), Some(String::from("BLUE"))),
+        (2, String::from("Tess"), Some(String::from("brown"))),
+    ];
+    let actual = users::table.order(users::id).load(connection);
+    assert_eq!(Ok(expected), actual);
+}
+
+#[test]
 fn tuple_struct() {
     #[derive(AsChangeset)]
     #[diesel(table_name = users)]

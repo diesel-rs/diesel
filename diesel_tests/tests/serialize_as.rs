@@ -31,8 +31,16 @@ struct InsertableUser {
     name: String,
 }
 
+#[derive(Clone, Debug, AsChangeset, Identifiable)]
+#[diesel(table_name = users)]
+struct ChangeUser {
+    id: i32,
+    #[diesel(serialize_as = UppercaseString)]
+    name: String,
+}
+
 #[test]
-fn serialization_can_be_customized() {
+fn insert_serialization_can_be_customized() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
 
@@ -47,6 +55,34 @@ fn serialization_can_be_customized() {
 
     assert_eq!(
         Ok("THOMAS".to_string()),
+        users.select(name).first(connection)
+    );
+}
+
+#[test]
+fn update_serialization_can_be_customized() {
+    use crate::schema::users::dsl::*;
+    let connection = &mut connection();
+
+    let user = InsertableUser {
+        name: "thomas".to_string(),
+    };
+    diesel::insert_into(users)
+        .values(user)
+        .execute(connection)
+        .unwrap();
+
+    let user = ChangeUser {
+        id: users.select(id).first(connection).unwrap(),
+        name: "eizinger".to_string(),
+    };
+    diesel::update(&user)
+        .set(user.clone())
+        .execute(connection)
+        .unwrap();
+
+    assert_eq!(
+        Ok("EIZINGER".to_string()),
         users.select(name).first(connection)
     );
 }
