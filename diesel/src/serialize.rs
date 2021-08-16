@@ -134,7 +134,7 @@ where
 /// implementation, rather than writing to `out` directly. (For example, if you
 /// are implementing this for an enum, which is represented as an integer in the
 /// database, you should use `i32::to_sql(x, out)` instead of writing to `out`
-/// yourself.
+/// yourself.)
 ///
 /// Any types which implement this trait should also [`#[derive(AsExpression)]`].
 ///
