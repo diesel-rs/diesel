@@ -125,6 +125,9 @@ pub enum DatabaseErrorKind {
     CheckViolation,
 
     /// The connection to the server was unexpectedly closed.
+    ///
+    /// This error is only detected for PostgreSQL and is emitted on a best-effort basis
+    /// and may be missed.
     ClosedConnection,
 
     #[doc(hidden)]
