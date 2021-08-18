@@ -10,6 +10,10 @@ use super::raw::RawResult;
 use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 
+// Message after a database connection has been unexpectedly closed.
+const CLOSED_CONNECTION_MSG: &str = "server closed the connection unexpectedly\n\t\
+This probably means the server terminated abnormally\n\tbefore or while processing the request.\n";
+
 pub struct PgResult {
     internal_result: RawResult,
     column_count: usize,
@@ -38,7 +42,7 @@ impl PgResult {
                 ))
             }
             _ => {
-                let error_kind =
+                let mut error_kind =
                     match get_result_field(internal_result.as_ptr(), ResultField::SqlState) {
                         Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
                         Some(error_codes::FOREIGN_KEY_VIOLATION) => {
@@ -57,6 +61,9 @@ impl PgResult {
                         _ => DatabaseErrorKind::Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
+                if error_information.message() == CLOSED_CONNECTION_MSG {
+                    error_kind = DatabaseErrorKind::ClosedConnection;
+                }
                 Err(Error::DatabaseError(error_kind, error_information))
             }
         }

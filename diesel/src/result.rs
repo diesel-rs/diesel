@@ -124,6 +124,12 @@ pub enum DatabaseErrorKind {
     /// A check constraint was violated.
     CheckViolation,
 
+    /// The connection to the server was unexpectedly closed.
+    ///
+    /// This error is only detected for PostgreSQL and is emitted on a best-effort basis
+    /// and may be missed.
+    ClosedConnection,
+
     #[doc(hidden)]
     Unknown, // Match against _ instead, more variants may be added in the future
 }
