@@ -124,6 +124,9 @@ pub enum DatabaseErrorKind {
     /// A check constraint was violated.
     CheckViolation,
 
+    /// The connection to the server was unexpectedly closed.
+    ClosedConnection,
+
     #[doc(hidden)]
     Unknown, // Match against _ instead, more variants may be added in the future
 }
