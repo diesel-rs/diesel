@@ -175,7 +175,12 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `#[table_name]` attribute for derive macros can now refer to any path and is no
   longer limited to identifiers from the current scope.
 
-* Interacting with a database requires a mutable connection. 
+* Interacting with a database requires a mutable connection.
+
+* `eq_any()` now emits a `= ANY()` expression for the postgresql backend instead of `IN()`
+* `ne_all()` now emits a `!= ALL()` expression for the postgresql backend instead of `NOT IN()`
+* The sqlite backend now uses a single batch insert statement if there are now default values present 
+  in the values clause
 
 ### Fixed
 
@@ -230,6 +235,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `diesel::pg::upsert` has been deprecated to support upsert queries on more than one backend.
   Please use `diesel::upsert` instead.
+  
+* `diesel::dsl::any` and `diesel::dsl::all` are now deprecated in 
+   favour of `ExpressionMethods::eq_any()` and `ExpressionMethods::ne_all()`
 
 ### Upgrade Notes
 

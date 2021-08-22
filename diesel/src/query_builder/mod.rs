@@ -29,7 +29,7 @@ pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
 mod returning_clause;
 pub(crate) mod select_clause;
-mod select_statement;
+pub(crate) mod select_statement;
 mod sql_query;
 mod update_statement;
 pub(crate) mod upsert;
@@ -39,6 +39,10 @@ pub use self::ast_pass::AstPass;
 pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
 pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
+#[doc(hidden)]
+pub use self::insert_statement::{
+    AsValueIterator, BatchInsert, DefaultValues, InsertableQueryfragment, IsValuesClause,
+};
 #[doc(inline)]
 pub use self::insert_statement::{
     IncompleteInsertStatement, InsertStatement, UndecoratedInsertRecord, ValuesClause,
@@ -49,7 +53,7 @@ pub use self::select_clause::{
     IntoBoxedSelectClause, SelectClauseExpression, SelectClauseQueryFragment,
 };
 #[doc(hidden)]
-pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
+pub use self::select_statement::{BoxedSelectStatement, NoFromClause, SelectStatement};
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
 pub use self::update_statement::{
@@ -61,12 +65,20 @@ pub use self::limit_clause::{LimitClause, NoLimitClause};
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
 
-pub(crate) use self::insert_statement::{BatchInsert, ColumnList};
+#[doc(hidden)]
+pub use self::returning_clause::ReturningClause;
+
+pub(crate) use self::insert_statement::ColumnList;
 
 use std::error::Error;
 
 use crate::backend::Backend;
 use crate::result::QueryResult;
+
+mod private {
+    #[allow(missing_debug_implementations, missing_copy_implementations)]
+    pub struct NotSpecialized;
+}
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
@@ -146,7 +158,7 @@ pub trait SelectQuery {
 ///
 /// [`ExecuteDsl`]: crate::query_dsl::methods::ExecuteDsl
 /// [`LoadQuery`]: crate::query_dsl::methods::LoadQuery
-pub trait QueryFragment<DB: Backend> {
+pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// Walk over this `QueryFragment` for all passes.
     ///
     /// This method is where the actual behavior of an AST node is implemented.

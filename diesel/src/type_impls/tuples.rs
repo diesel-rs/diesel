@@ -8,7 +8,7 @@ use crate::expression::{
     IsContainedInGroupBy, QueryMetadata, Selectable, SelectableExpression, TypedExpressionType,
     ValidGrouping,
 };
-use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable};
+use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, InsertableOptionHelper};
 use crate::query_builder::*;
 use crate::query_dsl::load_dsl::CompatibleType;
 use crate::query_source::*;
@@ -180,6 +180,18 @@ macro_rules! tuple_impls {
                         }
                     )+
                     Ok(())
+                }
+            }
+
+            impl<__T, $($ST,)* Tab> Insertable<Tab> for InsertableOptionHelper<__T, ($($ST,)*)>
+            where
+                __T: Insertable<Tab>,
+                __T::Values: Default,
+            {
+                type Values = __T::Values;
+
+                fn values(self) -> Self::Values {
+                    self.0.map(|v| v.values()).unwrap_or_default()
                 }
             }
 

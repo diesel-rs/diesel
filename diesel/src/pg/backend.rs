@@ -97,8 +97,24 @@ impl TypeMetadata for Pg {
     type MetadataLookup = dyn PgMetadataLookup;
 }
 
-impl SupportsReturningClause for Pg {}
-impl SupportsOnConflictClause for Pg {}
-impl SupportsOnConflictTargetDecorations for Pg {}
-impl SupportsDefaultKeyword for Pg {}
-impl UsesAnsiSavepointSyntax for Pg {}
+impl SqlDialect for Pg {
+    type ReturningClause = sql_dialect::returning_clause::PgLikeReturningClause;
+
+    type OnConflictClause = PgOnConflictClaues;
+
+    type InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword;
+    type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
+    type DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause;
+
+    type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
+    type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
+    type ArrayComparision = PgStyleArrayComparision;
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct PgOnConflictClaues;
+
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for PgOnConflictClaues {}
+
+#[derive(Debug, Copy, Clone)]
+pub struct PgStyleArrayComparision;

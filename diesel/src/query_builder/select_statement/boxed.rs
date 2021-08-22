@@ -129,15 +129,17 @@ where
     }
 }
 
-impl<'a, ST, DB, GB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, (), DB, GB>
+impl<'a, ST, DB, GB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, NoFromClause, DB, GB>
 where
     DB: Backend,
+    NoFromClause: QueryFragment<DB, DB::EmptyFromClauseSyntax>,
     BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
         self.distinct.walk_ast(out.reborrow())?;
         self.select.walk_ast(out.reborrow())?;
+        self.from.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
         self.having.walk_ast(out.reborrow())?;

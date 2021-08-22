@@ -1,4 +1,3 @@
-use crate::backend::UsesAnsiSavepointSyntax;
 use crate::connection::Connection;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
@@ -65,7 +64,6 @@ impl AnsiTransactionManager {
     pub fn begin_transaction_sql<Conn>(conn: &mut Conn, sql: &str) -> QueryResult<()>
     where
         Conn: Connection<TransactionManager = Self>,
-        Conn::Backend: UsesAnsiSavepointSyntax,
     {
         use crate::result::Error::AlreadyInTransaction;
 
@@ -81,7 +79,6 @@ impl AnsiTransactionManager {
 impl<Conn> TransactionManager<Conn> for AnsiTransactionManager
 where
     Conn: Connection<TransactionManager = Self>,
-    Conn::Backend: UsesAnsiSavepointSyntax,
 {
     type TransactionStateData = Self;
 

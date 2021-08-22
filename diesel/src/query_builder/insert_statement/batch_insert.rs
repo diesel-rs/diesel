@@ -1,13 +1,14 @@
 use super::ValuesClause;
-use crate::backend::{Backend, SupportsDefaultKeyword};
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::insertable::CanInsertInSingleQuery;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::{Insertable, QueryResult};
 use std::marker::PhantomData;
 
+#[doc(hidden)]
 #[derive(Debug)]
 pub struct BatchInsert<V, Tab, QId, const STABLE_QUERY_ID: bool> {
-    pub(crate) values: V,
+    pub values: V,
     _marker: PhantomData<(QId, Tab)>,
 }
 
@@ -32,7 +33,7 @@ impl<T, Table, QId, DB, const HAS_STATIC_QUERY_ID: bool> CanInsertInSingleQuery<
     for BatchInsert<T, Table, QId, HAS_STATIC_QUERY_ID>
 where
     T: CanInsertInSingleQuery<DB>,
-    DB: Backend + SupportsDefaultKeyword,
+DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
 {
     fn rows_to_insert(&self) -> Option<usize> {
         self.values.rows_to_insert()
@@ -41,7 +42,7 @@ where
 
 impl<T, DB, const N: usize> CanInsertInSingleQuery<DB> for [T; N]
 where
-    DB: Backend + SupportsDefaultKeyword,
+DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
 {
     fn rows_to_insert(&self) -> Option<usize> {
         Some(N)
@@ -50,7 +51,7 @@ where
 
 impl<T, DB, const N: usize> CanInsertInSingleQuery<DB> for Box<[T; N]>
 where
-    DB: Backend + SupportsDefaultKeyword,
+    DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
 {
     fn rows_to_insert(&self) -> Option<usize> {
         Some(N)
@@ -59,7 +60,7 @@ where
 
 impl<T, DB> CanInsertInSingleQuery<DB> for [T]
 where
-    DB: Backend + SupportsDefaultKeyword,
+    DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>
 {
     fn rows_to_insert(&self) -> Option<usize> {
         Some(self.len())
@@ -68,13 +69,14 @@ where
 
 impl<T, DB> CanInsertInSingleQuery<DB> for Vec<T>
 where
-    DB: Backend + SupportsDefaultKeyword,
+    DB: Backend+ SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>,
 {
     fn rows_to_insert(&self) -> Option<usize> {
         Some(self.len())
     }
 }
 
+#[doc(hidden)]
 pub trait AsValueIterator<Tab> {
     type Item;
 
@@ -179,6 +181,7 @@ impl<'b, T, Tab> AsValueIterator<Tab> for &'b [T] {
 // For this case this is essentially only that `Self::Values` implement `QueryFragment`
 // This allows us to unify all that behind a single trait bound in the
 // `QueryFragment` impl below
+#[doc(hidden)]
 pub trait InsertableQueryfragment<Tab, DB>
 where
     Self: Insertable<Tab>,
@@ -214,6 +217,7 @@ where
     }
 }
 
+#[doc(hidden)]
 pub trait IsValuesClause<DB: Backend> {
     type Inner: QueryFragment<DB>;
 
@@ -232,10 +236,26 @@ where
     }
 }
 
-impl<Tab, DB, T, V, QId, const HAS_STATIC_QUERY_ID: bool> QueryFragment<DB>
+impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool> QueryFragment<DB>
     for BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
 where
-    DB: Backend + SupportsDefaultKeyword,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::BatchInsertSupport>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::BatchInsertSupport>>::walk_ast(self, pass)
+    }
+}
+
+impl<Tab, DB, T, V, QId, const HAS_STATIC_QUERY_ID: bool>
+    QueryFragment<DB, sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport>
+    for BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
+where
+    DB: Backend
+        + SqlDialect<
+            BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport,
+        >,
+    DB::InsertWithDefaultKeyword: sql_dialect::default_keyword_for_insert::SupportsDefaultKeyword,
     V: AsValueIterator<Tab, Item = T>,
     for<'a> &'a T: InsertableQueryfragment<Tab, DB>,
 {

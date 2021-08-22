@@ -1,9 +1,11 @@
-use crate::backend::{Backend, SupportsDefaultKeyword};
+use std::marker::PhantomData;
+
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::{AppearsOnTable, Expression};
 use crate::query_builder::{
-    AstPass, BatchInsert, InsertStatement, QueryFragment, QueryId, UndecoratedInsertRecord,
-    ValuesClause,
+    AstPass, BatchInsert, InsertStatement, NoFromClause, QueryFragment, QueryId,
+    UndecoratedInsertRecord, ValuesClause,
 };
 use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
@@ -119,13 +121,16 @@ pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
 #[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
 pub struct ColumnInsertValue<Col, Expr> {
-    col: Col,
     expr: Expr,
+    p: PhantomData<Col>,
 }
 
 impl<Col, Expr> ColumnInsertValue<Col, Expr> {
-    pub(crate) fn new(col: Col, expr: Expr) -> Self {
-        Self { col, expr }
+    pub(crate) fn new(expr: Expr) -> Self {
+        Self {
+            expr,
+            p: PhantomData,
+        }
     }
 }
 
@@ -150,9 +155,9 @@ impl<T> Default for DefaultableColumnInsertValue<T> {
 impl<Col, Expr, DB> InsertValues<Col::Table, DB>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
-    DB: Backend + SupportsDefaultKeyword,
+    DB: Backend + SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>,
     Col: Column,
-    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
+    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<DB>,
 {
     fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -165,7 +170,7 @@ impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr
 where
     DB: Backend,
     Col: Column,
-    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
+    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<DB>,
 {
     fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -176,7 +181,17 @@ where
 
 impl<Expr, DB> QueryFragment<DB> for DefaultableColumnInsertValue<Expr>
 where
-    DB: Backend + SupportsDefaultKeyword,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::InsertWithDefaultKeyword>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::InsertWithDefaultKeyword>>::walk_ast(self, pass)
+    }
+}
+
+impl<Expr, DB> QueryFragment<DB, sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword> for DefaultableColumnInsertValue<Expr>
+where
+    DB: Backend + SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>,
     Expr: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -205,7 +220,7 @@ impl<Col, Expr> InsertValues<Col::Table, crate::sqlite::Sqlite>
     for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     Col: Column,
-    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
+    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<crate::sqlite::Sqlite>,
 {
     fn column_names(&self, mut out: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
@@ -217,8 +232,11 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-impl<Col, Expr> QueryFragment<crate::sqlite::Sqlite>
-    for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
+impl<Col, Expr>
+    QueryFragment<
+        crate::sqlite::Sqlite,
+        crate::backend::sql_dialect::default_keyword_for_insert::DoesNotSupportDefaultKeyword,
+    > for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     Expr: QueryFragment<crate::sqlite::Sqlite>,
 {
@@ -300,15 +318,40 @@ where
     }
 }
 
-impl<T, V, Tab> Insertable<Tab> for Option<T>
+mod private {
+    // This helper exists to differentiate between
+    // Insertable implementations for tuples and for single values
+    #[allow(missing_debug_implementations)]
+    pub struct InsertableOptionHelper<T, V>(
+        pub(crate) Option<T>,
+        pub(crate) std::marker::PhantomData<V>,
+    );
+}
+
+pub(crate) use self::private::InsertableOptionHelper;
+
+impl<T, Tab, V> Insertable<Tab> for Option<T>
 where
     T: Insertable<Tab, Values = ValuesClause<V, Tab>>,
+    InsertableOptionHelper<T, V>: Insertable<Tab>,
 {
-    type Values = ValuesClause<DefaultableColumnInsertValue<V>, Tab>;
+    type Values = <InsertableOptionHelper<T, V> as Insertable<Tab>>::Values;
+
+    fn values(self) -> Self::Values {
+        InsertableOptionHelper(self, PhantomData).values()
+    }
+}
+
+impl<T, Tab, Expr, Col> Insertable<Tab> for InsertableOptionHelper<T, ColumnInsertValue<Col, Expr>>
+where
+    T: Insertable<Tab, Values = ValuesClause<ColumnInsertValue<Col, Expr>, Tab>>,
+{
+    type Values = ValuesClause<DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>, Tab>;
 
     fn values(self) -> Self::Values {
         ValuesClause::new(
-            self.map(|v| DefaultableColumnInsertValue::Expression(Insertable::values(v).values))
+            self.0
+                .map(|v| DefaultableColumnInsertValue::Expression(Insertable::values(v).values))
                 .unwrap_or_default(),
         )
     }

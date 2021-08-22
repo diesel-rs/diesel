@@ -1,4 +1,4 @@
-use crate::backend::{Backend, SupportsOnConflictClause};
+use crate::backend::{sql_dialect, Backend};
 use crate::expression::{AppearsOnTable, Expression};
 use crate::query_builder::*;
 use crate::query_source::*;
@@ -10,7 +10,18 @@ pub struct DoNothing;
 
 impl<DB> QueryFragment<DB> for DoNothing
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::OnConflictClause>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<DB, T> QueryFragment<DB, T> for DoNothing
+where
+    DB: Backend,
+    T: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql(" DO NOTHING");
@@ -32,7 +43,18 @@ impl<T> DoUpdate<T> {
 
 impl<DB, T> QueryFragment<DB> for DoUpdate<T>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::OnConflictClause>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<DB, T, SP> QueryFragment<DB, SP> for DoUpdate<T>
+where
+    DB: Backend,
+    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -59,7 +81,18 @@ impl<T> Excluded<T> {
 
 impl<DB, T> QueryFragment<DB> for Excluded<T>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::OnConflictClause>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<DB, T, SP> QueryFragment<DB, SP> for Excluded<T>
+where
+    DB: Backend,
+    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: Column,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {

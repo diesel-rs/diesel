@@ -196,19 +196,27 @@ fn check_filter_with_group_by_subselect() {
         .filter(posts::id.nullable().eq_any(subselect))
         .select((posts::user_id, posts::title));
 
-    let mut expected_sql = "SELECT `posts`.`user_id`, `posts`.`title` \
-                            FROM `posts` \
-                            WHERE (\
-                              `posts`.`id` IN (\
-                              SELECT min(`posts`.`id`) \
-                              FROM `posts` \
-                              GROUP BY `posts`.`user_id`)) \
-                            -- binds: []"
-        .to_string();
-
-    if cfg!(feature = "postgres") {
-        expected_sql = expected_sql.replace('`', "\"");
-    }
+    let expected_sql = if cfg!(feature = "postgres") {
+        "SELECT \"posts\".\"user_id\", \"posts\".\"title\" \
+         FROM \"posts\" \
+         WHERE (\
+         \"posts\".\"id\" = ANY(\
+         SELECT min(\"posts\".\"id\") \
+         FROM \"posts\" \
+         GROUP BY \"posts\".\"user_id\")) \
+         -- binds: []"
+            .to_string()
+    } else {
+        "SELECT `posts`.`user_id`, `posts`.`title` \
+         FROM `posts` \
+         WHERE (\
+         `posts`.`id` IN (\
+         SELECT min(`posts`.`id`) \
+         FROM `posts` \
+         GROUP BY `posts`.`user_id`)) \
+         -- binds: []"
+            .to_string()
+    };
 
     assert_eq!(expected_sql, debug_query(&source).to_string());
 
@@ -230,19 +238,27 @@ fn check_filter_with_boxed_group_by_subselect() {
         .filter(posts::id.nullable().eq_any(subselect))
         .select((posts::user_id, posts::title));
 
-    let mut expected_sql = "SELECT `posts`.`user_id`, `posts`.`title` \
-                            FROM `posts` \
-                            WHERE (\
-                              `posts`.`id` IN (\
-                              SELECT min(`posts`.`id`) \
-                              FROM `posts` \
-                              GROUP BY `posts`.`user_id`)) \
-                            -- binds: []"
-        .to_string();
-
-    if cfg!(feature = "postgres") {
-        expected_sql = expected_sql.replace('`', "\"");
-    }
+    let expected_sql = if cfg!(feature = "postgres") {
+        "SELECT \"posts\".\"user_id\", \"posts\".\"title\" \
+         FROM \"posts\" \
+         WHERE (\
+         \"posts\".\"id\" = ANY(\
+         SELECT min(\"posts\".\"id\") \
+         FROM \"posts\" \
+         GROUP BY \"posts\".\"user_id\")) \
+         -- binds: []"
+            .to_string()
+    } else {
+        "SELECT `posts`.`user_id`, `posts`.`title` \
+         FROM `posts` \
+         WHERE (\
+         `posts`.`id` IN (\
+         SELECT min(`posts`.`id`) \
+         FROM `posts` \
+         GROUP BY `posts`.`user_id`)) \
+         -- binds: []"
+            .to_string()
+    };
 
     assert_eq!(expected_sql, debug_query(&source).to_string());
 

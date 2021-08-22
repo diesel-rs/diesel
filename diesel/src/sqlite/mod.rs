@@ -4,7 +4,7 @@
 //! However, if you are writing code specifically to extend Diesel on
 //! SQLite, you may need to work with this module directly.
 
-mod backend;
+pub(crate) mod backend;
 mod connection;
 pub(crate) mod expression;
 mod types;

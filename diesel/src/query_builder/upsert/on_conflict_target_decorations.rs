@@ -1,4 +1,4 @@
-use crate::backend::{Backend, SupportsOnConflictClause, SupportsOnConflictTargetDecorations};
+use crate::backend::Backend;
 use crate::expression::Expression;
 use crate::query_builder::upsert::on_conflict_target::{ConflictTarget, NoConflictTarget};
 use crate::query_builder::where_clause::{NoWhereClause, WhereAnd, WhereClause};
@@ -21,8 +21,8 @@ pub trait DecoratableTarget<P> {
 
 #[derive(Debug)]
 pub struct DecoratedConflictTarget<T, U> {
-    target: T,
-    where_clause: U,
+    pub(crate) target: T,
+    pub(crate) where_clause: U,
 }
 
 impl<T, P> DecoratableTarget<P> for T
@@ -59,13 +59,10 @@ where
 
 impl<DB, T, U> QueryFragment<DB> for DecoratedConflictTarget<T, U>
 where
-    T: QueryFragment<DB>,
-    U: QueryFragment<DB>,
-    DB: Backend + SupportsOnConflictClause + SupportsOnConflictTargetDecorations,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::OnConflictClause>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        self.target.walk_ast(out.reborrow())?;
-        self.where_clause.walk_ast(out.reborrow())?;
-        Ok(())
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
     }
 }

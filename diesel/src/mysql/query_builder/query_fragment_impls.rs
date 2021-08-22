@@ -1,6 +1,6 @@
 use crate::mysql::Mysql;
 use crate::query_builder::locking_clause::{ForShare, ForUpdate, NoModifier, NoWait, SkipLocked};
-use crate::query_builder::{AstPass, QueryFragment};
+use crate::query_builder::{AstPass, DefaultValues, QueryFragment};
 use crate::result::QueryResult;
 
 impl QueryFragment<Mysql> for ForUpdate {
@@ -33,6 +33,13 @@ impl QueryFragment<Mysql> for SkipLocked {
 impl QueryFragment<Mysql> for NoWait {
     fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
         out.push_sql(" NOWAIT");
+        Ok(())
+    }
+}
+
+impl QueryFragment<Mysql, crate::mysql::backend::MysqlStyleDefaultValueClause> for DefaultValues {
+    fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
+        out.push_sql("() VALUES ()");
         Ok(())
     }
 }

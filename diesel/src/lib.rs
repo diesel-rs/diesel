@@ -91,9 +91,7 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
-#![cfg_attr(feature = "unstable", feature(specialization, trait_alias))]
-// For the `specialization` feature.
-#![cfg_attr(feature = "unstable", allow(incomplete_features))]
+#![cfg_attr(feature = "unstable", feature(trait_alias))]
 // Built-in Lints
 #![deny(warnings)]
 #![warn(
@@ -218,6 +216,12 @@ pub mod helper_types {
 
     /// Represents the return type of `.select(selection)`
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
+
+    /// Represents the return type of `diesel::select(selection)`
+    pub type BareSelect<T> = Select<
+        crate::query_builder::SelectStatement<crate::query_builder::select_statement::NoFromClause>,
+        T,
+    >;
 
     /// Represents the return type of `.filter(predicate)`
     pub type Filter<Source, Predicate> = <Source as FilterDsl<Predicate>>::Output;

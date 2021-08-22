@@ -206,6 +206,7 @@ fn filter_by_ilike() {
 }
 
 #[test]
+#[allow(deprecated)]
 #[cfg(feature = "postgres")]
 fn filter_by_any() {
     use crate::schema::users::dsl::*;
@@ -246,7 +247,7 @@ fn filter_by_in() {
     let jim = User::new(3, "Jim");
 
     let owned_names = vec!["Sean", "Tess"];
-    let borrowed_names: &[_] = &["Sean", "Jim"];
+    let borrowed_names: &[&str] = &["Sean", "Jim"];
     assert_eq!(
         vec![sean.clone(), tess],
         users
