@@ -131,7 +131,7 @@ To run rustfmt tests locally:
 
 3. Run clippy using cargo from the root of your diesel repo.
    ```
-   cargo clippy
+   cargo clippy --all
    ```
    Each PR needs to compile without warning.
 
