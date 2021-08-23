@@ -368,13 +368,11 @@ fn change_database_of_url(database_url: &str, default_database: &str) -> (String
     (database, new_url.into())
 }
 
-#[allow(clippy::needless_pass_by_value)]
 fn handle_error<E: Error, T>(error: E) -> T {
     println!("{}", error);
     ::std::process::exit(1);
 }
 
-#[allow(clippy::needless_pass_by_value)]
 pub fn handle_error_with_database_url<E: Error, T>(database_url: &str, error: E) -> T {
     eprintln!(
         "Could not connect to database via `{}`: {}",
