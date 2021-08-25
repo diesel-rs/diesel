@@ -254,7 +254,7 @@ Key points:
       where
           T: ValidGrouping<()>,
           T::IsAggregate: MixedGrouping<is_aggregate::No, Output = is_aggregate::No>,
-          is_aggreagte::No: MixedGrouping<T::IsAggregate, Output = is_aggreagte::No>,
+          is_aggregate::No: MixedGrouping<T::IsAggregate, Output = is_aggregate::No>,
 
 - With `feature = "unstable"`, `T: NonAggregate` implies the first two bounds,
   but not the third. On stable only the first bound is implied. This is a
