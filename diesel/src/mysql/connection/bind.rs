@@ -754,11 +754,12 @@ mod tests {
 
         let metadata = stmt.metadata().unwrap();
         let mut output_binds =
-            Binds::from_output_types(&vec![None; metadata.fields().len()], &metadata);
+            OutputBinds::from_output_types(&vec![None; metadata.fields().len()], &metadata);
         stmt.execute_statement(&mut output_binds).unwrap();
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 
         let results: Vec<(BindData, &_)> = output_binds
+            .0
             .data
             .into_iter()
             .zip(metadata.fields())
