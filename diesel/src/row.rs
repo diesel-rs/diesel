@@ -23,7 +23,7 @@ pub trait RowIndex<I> {
 
 /// A helper trait to indicate the life time bound for a field returned
 /// by [`Row::get`]
-pub trait RowFieldHelper<'a, DB: Backend> {
+pub trait RowGatWorkaround<'a, DB: Backend> {
     /// Field type returned by a `Row` implementation
     ///
     /// * Crates using existing backend should not concern themself with the
@@ -40,7 +40,7 @@ pub trait RowFieldHelper<'a, DB: Backend> {
 ///
 /// [`FromSqlRow`]: crate::deserialize::FromSqlRow
 pub trait Row<'a, DB: Backend>:
-    RowIndex<usize> + for<'b> RowIndex<&'b str> + for<'b> RowFieldHelper<'b, DB> + Sized
+    RowIndex<usize> + for<'b> RowIndex<&'b str> + for<'b> RowGatWorkaround<'b, DB> + Sized
 {
     /// Return type of `PartialRow`
     ///
@@ -55,7 +55,7 @@ pub trait Row<'a, DB: Backend>:
     /// Get the field with the provided index from the row.
     ///
     /// Returns `None` if there is no matching field for the given index
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, DB>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, DB>>::Field>
     where
         'a: 'b,
         Self: RowIndex<I>;
@@ -92,9 +92,7 @@ pub trait Field<'a, DB: Backend> {
 
     /// Get the value representing the current field in the raw representation
     /// as it is transmitted by the database
-    fn value<'b>(&'b self) -> Option<backend::RawValue<'b, DB>>
-    where
-        'a: 'b;
+    fn value(&self) -> Option<backend::RawValue<DB>>;
 
     /// Checks whether this field is null or not.
     fn is_null(&self) -> bool {
@@ -132,10 +130,10 @@ impl<'a, R> PartialRow<'a, R> {
     }
 }
 
-impl<'a, 'b, DB, R> RowFieldHelper<'a, DB> for PartialRow<'b, R>
+impl<'a, 'b, DB, R> RowGatWorkaround<'a, DB> for PartialRow<'b, R>
 where
     DB: Backend,
-    R: RowFieldHelper<'a, DB>,
+    R: RowGatWorkaround<'a, DB>,
 {
     type Field = R::Field;
 }
@@ -151,7 +149,7 @@ where
         self.range.len()
     }
 
-    fn get<'c, I>(&'c self, idx: I) -> Option<<Self as RowFieldHelper<'c, DB>>::Field>
+    fn get<'c, I>(&'c self, idx: I) -> Option<<Self as RowGatWorkaround<'c, DB>>::Field>
     where
         'a: 'c,
         Self: RowIndex<I>,

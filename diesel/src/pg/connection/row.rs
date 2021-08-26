@@ -17,7 +17,7 @@ impl PgRow {
     }
 }
 
-impl<'a> RowFieldHelper<'a, Pg> for PgRow {
+impl<'a> RowGatWorkaround<'a, Pg> for PgRow {
     type Field = PgField<'a>;
 }
 
@@ -28,7 +28,7 @@ impl<'a> Row<'a, Pg> for PgRow {
         self.db_result.column_count()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, Pg>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Pg>>::Field>
     where
         'a: 'b,
         Self: RowIndex<I>,
@@ -74,10 +74,7 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
         self.db_result.column_name(self.col_idx)
     }
 
-    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Pg>>
-    where
-        'a: 'b,
-    {
+    fn value(&self) -> Option<crate::backend::RawValue<Pg>> {
         let raw = self.db_result.get(self.row_idx, self.col_idx)?;
 
         Some(PgValue::new(raw, self))

@@ -29,7 +29,7 @@ pub trait SimpleConnection {
 /// implementation. This trait is only useful in combination with [`Connection`].
 ///
 /// Implementation wise this is a workaround for GAT's
-pub trait IterableConnection<'a, DB: Backend> {
+pub trait ConnectionGatWorkaround<'a, DB: Backend> {
     /// The cursor type returned by [`Connection::load`]
     ///
     /// Users should handle this as opaque type that implements [`Iterator`]
@@ -42,7 +42,7 @@ pub trait IterableConnection<'a, DB: Backend> {
 /// A connection to a database
 pub trait Connection: SimpleConnection + Sized + Send
 where
-    Self: for<'a> IterableConnection<'a, <Self as Connection>::Backend>,
+    Self: for<'a> ConnectionGatWorkaround<'a, <Self as Connection>::Backend>,
 {
     /// The backend this type connects to
     type Backend: Backend;
@@ -195,7 +195,7 @@ where
     fn load<'a, T>(
         &'a mut self,
         source: T,
-    ) -> QueryResult<<Self as IterableConnection<'a, Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,

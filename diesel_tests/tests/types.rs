@@ -1245,7 +1245,7 @@ fn query_single_value<T, U>(sql_str: &str) -> U
 where
     U: FromSqlRow<T, TestBackend> + 'static,
     TestBackend: HasSqlType<T>,
-    T: QueryId + SingleValue + SqlType + 'static,
+    T: QueryId + SingleValue + SqlType,
 {
     use diesel::dsl::sql;
     let connection = &mut connection();

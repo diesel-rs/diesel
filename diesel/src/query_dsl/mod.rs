@@ -18,7 +18,7 @@ use crate::expression::Expression;
 use crate::helper_types::*;
 use crate::query_builder::locking_clause as lock;
 use crate::query_source::{joins, Table};
-use crate::result::{first_or_not_found, QueryResult};
+use crate::result::QueryResult;
 
 mod belonging_to_dsl;
 #[doc(hidden)]
@@ -52,7 +52,7 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
 pub use self::load_dsl::LoadQuery;
-use self::load_dsl::LoadQueryRet;
+use self::load_dsl::LoadQueryGatWorkaround;
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
@@ -1507,7 +1507,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     fn load_iter<'a, U>(
         self,
         conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryRet<'a, Conn, U>>::Ret>
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, Conn, U>>::Ret>
     where
         Self: LoadQuery<Conn, U>,
     {
@@ -1563,7 +1563,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     where
         Self: LoadQuery<Conn, U>,
     {
-        first_or_not_found(self.internal_load(conn))
+        match self.internal_load(conn)?.next() {
+            Some(v) => v,
+            None => Err(crate::result::Error::NotFound),
+        }
     }
 
     /// Runs the command, returning an `Vec` with the affected rows.

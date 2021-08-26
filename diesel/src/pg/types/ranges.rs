@@ -23,7 +23,7 @@ bitflags! {
     }
 }
 
-impl<ST, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
+impl<ST: 'static, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -31,7 +31,7 @@ impl<ST, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
     }
 }
 
-impl<'a, ST, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
+impl<'a, ST: 'static, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -39,7 +39,7 @@ impl<'a, ST, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
     }
 }
 
-impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
+impl<ST: 'static, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -47,7 +47,7 @@ impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
     }
 }
 
-impl<'a, ST, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
+impl<'a, ST: 'static, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -158,6 +158,7 @@ where
 
 impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
+    ST: 'static,
     (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {

@@ -16,11 +16,10 @@ pub(crate) struct Statement {
 }
 
 impl Statement {
-    #[allow(clippy::ptr_arg)]
-    pub fn execute<'a>(
-        &'_ self,
-        raw_connection: &'a mut RawConnection,
-        param_data: &'_ Vec<Option<Vec<u8>>>,
+    pub fn execute(
+        &self,
+        raw_connection: &mut RawConnection,
+        param_data: &[Option<Vec<u8>>],
     ) -> QueryResult<PgResult> {
         let params_pointer = param_data
             .iter()
@@ -48,7 +47,6 @@ impl Statement {
         PgResult::new(internal_res?)
     }
 
-    #[allow(clippy::ptr_arg)]
     pub fn prepare(
         raw_connection: &mut RawConnection,
         sql: &str,

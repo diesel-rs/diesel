@@ -20,7 +20,7 @@ use std::collections::Bound;
 
 pub fn test_type_round_trips<ST, T>(value: T) -> bool
 where
-    ST: QueryId + SqlType + TypedExpressionType + SingleValue + 'static,
+    ST: QueryId + SqlType + TypedExpressionType + SingleValue,
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
     T: AsExpression<ST>
         + FromSqlRow<ST, <TestConnection as Connection>::Backend>

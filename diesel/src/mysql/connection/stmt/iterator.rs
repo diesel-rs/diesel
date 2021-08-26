@@ -1,7 +1,7 @@
 use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
-use super::{Binds, Statement, StatementMetadata};
+use super::{OutputBinds, Statement, StatementMetadata};
 use crate::connection::MaybeCached;
 use crate::mysql::{Mysql, MysqlType};
 use crate::result::QueryResult;
@@ -12,8 +12,7 @@ pub struct StatementIterator<'a> {
     stmt: MaybeCached<'a, Statement>,
     last_row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
-    size: usize,
-    fetched_rows: usize,
+    len: usize,
 }
 
 impl<'a> StatementIterator<'a> {
@@ -23,7 +22,7 @@ impl<'a> StatementIterator<'a> {
     ) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
 
-        let mut output_binds = Binds::from_output_types(types, &metadata);
+        let mut output_binds = OutputBinds::from_output_types(types, &metadata);
 
         stmt.execute_statement(&mut output_binds)?;
         let size = unsafe { stmt.result_size() }?;
@@ -31,8 +30,7 @@ impl<'a> StatementIterator<'a> {
         Ok(StatementIterator {
             metadata: Rc::new(metadata),
             last_row: Rc::new(RefCell::new(PrivateMysqlRow::Direct(output_binds))),
-            fetched_rows: 0,
-            size,
+            len: size,
             stmt,
         })
     }
@@ -99,7 +97,7 @@ impl<'a> Iterator for StatementIterator<'a> {
 
         match res {
             Ok(Some(())) => {
-                self.fetched_rows += 1;
+                self.len = self.len.saturating_sub(1);
                 Some(Ok(MysqlRow {
                     metadata: self.metadata.clone(),
                     row: self.last_row.clone(),
@@ -107,7 +105,7 @@ impl<'a> Iterator for StatementIterator<'a> {
             }
             Ok(None) => None,
             Err(e) => {
-                self.fetched_rows += 1;
+                self.len = self.len.saturating_sub(1);
                 Some(Err(e))
             }
         }
@@ -127,7 +125,7 @@ impl<'a> Iterator for StatementIterator<'a> {
 
 impl<'a> ExactSizeIterator for StatementIterator<'a> {
     fn len(&self) -> usize {
-        self.size - self.fetched_rows
+        self.len
     }
 }
 
@@ -139,8 +137,8 @@ pub struct MysqlRow {
 }
 
 enum PrivateMysqlRow {
-    Direct(Binds),
-    Copied(Binds),
+    Direct(OutputBinds),
+    Copied(OutputBinds),
 }
 
 impl PrivateMysqlRow {
@@ -151,7 +149,7 @@ impl PrivateMysqlRow {
     }
 }
 
-impl<'a> RowFieldHelper<'a, Mysql> for MysqlRow {
+impl<'a> RowGatWorkaround<'a, Mysql> for MysqlRow {
     type Field = MysqlField<'a>;
 }
 
@@ -162,7 +160,7 @@ impl<'a> Row<'a, Mysql> for MysqlRow {
         self.metadata.fields().len()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, Mysql>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Mysql>>::Field>
     where
         'a: 'b,
         Self: RowIndex<I>,
@@ -219,10 +217,7 @@ impl<'a> Field<'a, Mysql> for MysqlField<'a> {
         }
     }
 
-    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Mysql>>
-    where
-        'a: 'b,
-    {
+    fn value(&self) -> Option<crate::backend::RawValue<Mysql>> {
         match &*self.binds {
             PrivateMysqlRow::Copied(b) | PrivateMysqlRow::Direct(b) => b[self.idx].value(),
         }

@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
-use crate::row::{Field, PartialRow, Row, RowFieldHelper, RowIndex};
+use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
 use crate::sqlite::Sqlite;
 use crate::util::OnceCell;
 
@@ -60,7 +60,7 @@ impl<'a> PrivateSqliteRow<'a> {
     }
 }
 
-impl<'a, 'b> RowFieldHelper<'a, Sqlite> for SqliteRow<'b> {
+impl<'a, 'b> RowGatWorkaround<'a, Sqlite> for SqliteRow<'b> {
     type Field = SqliteField<'a>;
 }
 
@@ -71,7 +71,7 @@ impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
         self.field_count
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, Sqlite>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Sqlite>>::Field>
     where
         'a: 'b,
         Self: RowIndex<I>,
@@ -167,10 +167,7 @@ impl<'a> Field<'a, Sqlite> for SqliteField<'a> {
         self.value().is_none()
     }
 
-    fn value<'d>(&'d self) -> Option<crate::backend::RawValue<'d, Sqlite>>
-    where
-        'a: 'd,
-    {
+    fn value(&self) -> Option<crate::backend::RawValue<Sqlite>> {
         SqliteValue::new(Ref::clone(&self.row), self.col_idx)
     }
 }

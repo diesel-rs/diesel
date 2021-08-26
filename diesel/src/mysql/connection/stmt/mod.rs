@@ -8,7 +8,7 @@ use std::ffi::CStr;
 use std::os::raw as libc;
 use std::ptr::NonNull;
 
-use super::bind::Binds;
+use super::bind::{OutputBinds, PreparedStatementBinds};
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
@@ -18,7 +18,7 @@ pub use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 // https://github.com/rust-lang/rust/issues/81658
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,
-    input_binds: Option<Binds>,
+    input_binds: Option<PreparedStatementBinds>,
 }
 
 impl Statement {
@@ -44,11 +44,14 @@ impl Statement {
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
-        let input_binds = Binds::from_input_data(binds)?;
+        let input_binds = PreparedStatementBinds::from_input_data(binds)?;
         self.input_bind(input_binds)
     }
 
-    pub(super) fn input_bind(&mut self, mut input_binds: Binds) -> QueryResult<()> {
+    pub(super) fn input_bind(
+        &mut self,
+        mut input_binds: PreparedStatementBinds,
+    ) -> QueryResult<()> {
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called
@@ -150,7 +153,7 @@ impl Statement {
         }
     }
 
-    pub(super) fn execute_statement(&mut self, binds: &mut Binds) -> QueryResult<()> {
+    pub(super) fn execute_statement(&mut self, binds: &mut OutputBinds) -> QueryResult<()> {
         unsafe {
             binds.with_mysql_binds(|bind_ptr| self.bind_result(bind_ptr))?;
             self.execute()?;
@@ -158,7 +161,7 @@ impl Statement {
         Ok(())
     }
 
-    pub(super) fn populate_row_buffers(&self, binds: &mut Binds) -> QueryResult<Option<()>> {
+    pub(super) fn populate_row_buffers(&self, binds: &mut OutputBinds) -> QueryResult<Option<()>> {
         let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.stmt.as_ptr()) };
         match next_row_result as libc::c_uint {
             ffi::MYSQL_NO_DATA => Ok(None),

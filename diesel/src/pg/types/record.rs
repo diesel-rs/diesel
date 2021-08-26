@@ -147,6 +147,7 @@ where
 impl<T> Expression for PgTuple<T>
 where
     T: Expression,
+    T::SqlType: 'static,
 {
     type SqlType = Record<T::SqlType>;
 }

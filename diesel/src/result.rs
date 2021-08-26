@@ -360,15 +360,6 @@ fn error_impls_send() {
     let x: &Send = &err;
 }
 
-pub(crate) fn first_or_not_found<T>(
-    records: QueryResult<impl Iterator<Item = QueryResult<T>>>,
-) -> QueryResult<T> {
-    match records?.next() {
-        Some(r) => r,
-        None => Err(Error::NotFound),
-    }
-}
-
 /// An unexpected `NULL` was encountered during deserialization
 #[derive(Debug, Clone, Copy)]
 pub struct UnexpectedNullError;

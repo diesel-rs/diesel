@@ -54,7 +54,7 @@ impl SimpleConnection for SqliteConnection {
     }
 }
 
-impl<'a> IterableConnection<'a, Sqlite> for SqliteConnection {
+impl<'a> ConnectionGatWorkaround<'a, Sqlite> for SqliteConnection {
     type Cursor = StatementIterator<'a>;
     type Row = self::row::SqliteRow<'a>;
 }
@@ -93,7 +93,7 @@ impl Connection for SqliteConnection {
     fn load<'a, T>(
         &'a mut self,
         source: T,
-    ) -> QueryResult<<Self as IterableConnection<'a, Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,

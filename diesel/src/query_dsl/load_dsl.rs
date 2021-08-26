@@ -1,6 +1,6 @@
 use super::RunQueryDsl;
 use crate::backend::Backend;
-use crate::connection::{Connection, IterableConnection};
+use crate::connection::{Connection, ConnectionGatWorkaround};
 use crate::deserialize::FromSqlRow;
 use crate::expression::{select_by::SelectBy, Expression, QueryMetadata, Selectable};
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
@@ -15,16 +15,16 @@ use crate::result::QueryResult;
 /// [`RunQueryDsl`]: crate::RunQueryDsl
 pub trait LoadQuery<Conn, U>: RunQueryDsl<Conn>
 where
-    for<'a> Self: LoadQueryRet<'a, Conn, U>,
+    for<'a> Self: LoadQueryGatWorkaround<'a, Conn, U>,
 {
     /// Load this query
     fn internal_load<'a>(
         self,
         conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryRet<'a, Conn, U>>::Ret>;
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, Conn, U>>::Ret>;
 }
 
-pub trait LoadQueryRet<'a, Conn, U> {
+pub trait LoadQueryGatWorkaround<'a, Conn, U> {
     type Ret: Iterator<Item = QueryResult<U>>;
 }
 
@@ -69,7 +69,7 @@ pub struct LoadIter<'a, U, C, ST, DB> {
     _marker: std::marker::PhantomData<&'a (ST, U, DB)>,
 }
 
-impl<'a, Conn, T, U, DB> LoadQueryRet<'a, Conn, U> for T
+impl<'a, Conn, T, U, DB> LoadQueryGatWorkaround<'a, Conn, U> for T
 where
     Conn: Connection<Backend = DB>,
     T: AsQuery + RunQueryDsl<Conn>,
@@ -82,7 +82,7 @@ where
     type Ret = LoadIter<
         'a,
         U,
-        <Conn as IterableConnection<'a, DB>>::Cursor,
+        <Conn as ConnectionGatWorkaround<'a, DB>>::Cursor,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
         DB,
     >;
@@ -101,7 +101,7 @@ where
     fn internal_load<'a>(
         self,
         conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryRet<'a, Conn, U>>::Ret> {
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, Conn, U>>::Ret> {
         Ok(LoadIter {
             cursor: conn.load(self)?,
             _marker: Default::default(),

@@ -11,12 +11,23 @@ use crate::mysql::types::MYSQL_TIME;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
-#[derive(Clone)]
-pub struct Binds {
+pub struct PreparedStatementBinds(Binds);
+
+pub struct OutputBinds(Binds);
+
+impl Clone for OutputBinds {
+    fn clone(&self) -> Self {
+        Self(Binds {
+            data: self.0.data.clone(),
+        })
+    }
+}
+
+struct Binds {
     data: Vec<BindData>,
 }
 
-impl Binds {
+impl PreparedStatementBinds {
     pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
@@ -26,9 +37,18 @@ impl Binds {
             .map(BindData::for_input)
             .collect::<Vec<_>>();
 
-        Ok(Binds { data })
+        Ok(Self(Binds { data }))
     }
 
+    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
+    {
+        self.0.with_mysql_binds(f)
+    }
+}
+
+impl OutputBinds {
     pub fn from_output_types(types: &[Option<MysqlType>], metadata: &StatementMetadata) -> Self {
         let data = metadata
             .fields()
@@ -37,23 +57,11 @@ impl Binds {
             .map(|(field, tpe)| BindData::for_output(tpe, field))
             .collect();
 
-        Binds { data }
-    }
-
-    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
-    where
-        F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
-    {
-        let mut binds = self
-            .data
-            .iter_mut()
-            .map(|x| unsafe { x.mysql_bind() })
-            .collect::<Vec<_>>();
-        f(binds.as_mut_ptr())
+        Self(Binds { data })
     }
 
     pub fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
-        for (i, data) in self.data.iter_mut().enumerate() {
+        for (i, data) in self.0.data.iter_mut().enumerate() {
             data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers
             // at the end of this function
@@ -70,16 +78,37 @@ impl Binds {
     }
 
     pub fn update_buffer_lengths(&mut self) {
-        for data in &mut self.data {
+        for data in &mut self.0.data {
             data.update_buffer_length();
         }
     }
+
+    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
+    {
+        self.0.with_mysql_binds(f)
+    }
 }
 
-impl Index<usize> for Binds {
+impl Binds {
+    fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
+    {
+        let mut binds = self
+            .data
+            .iter_mut()
+            .map(|x| unsafe { x.mysql_bind() })
+            .collect::<Vec<_>>();
+        f(binds.as_mut_ptr())
+    }
+}
+
+impl Index<usize> for OutputBinds {
     type Output = BindData;
     fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index]
+        &self.0.data[index]
     }
 }
 
@@ -1091,12 +1120,12 @@ mod tests {
 
         let bind = BindData::for_test_output(bind_tpe.into());
 
-        let mut binds = Binds { data: vec![bind] };
+        let mut binds = OutputBinds(Binds { data: vec![bind] });
 
         stmt.execute_statement(&mut binds).unwrap();
         stmt.populate_row_buffers(&mut binds).unwrap();
 
-        binds.data.remove(0)
+        binds.0.data.remove(0)
     }
 
     fn input_bind(
@@ -1130,9 +1159,9 @@ mod tests {
             is_truncated: None,
         };
 
-        let binds = Binds {
+        let binds = PreparedStatementBinds(Binds {
             data: vec![id_bind, field_bind],
-        };
+        });
         stmt.input_bind(binds).unwrap();
         stmt.did_an_error_occur().unwrap();
         unsafe {

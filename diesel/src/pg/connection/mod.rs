@@ -43,7 +43,7 @@ impl SimpleConnection for PgConnection {
     }
 }
 
-impl<'a> IterableConnection<'a, Pg> for PgConnection {
+impl<'a> ConnectionGatWorkaround<'a, Pg> for PgConnection {
     type Cursor = Cursor;
     type Row = self::row::PgRow;
 }
@@ -75,7 +75,7 @@ impl Connection for PgConnection {
     fn load<'a, T>(
         &'a mut self,
         source: T,
-    ) -> QueryResult<<Self as IterableConnection<'a, Pg>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, Pg>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,

@@ -6,7 +6,7 @@ use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
-use crate::row::{Field, PartialRow, Row, RowFieldHelper, RowIndex};
+use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
@@ -188,7 +188,7 @@ impl<'a> FunctionRow<'a> {
     }
 }
 
-impl<'a, 'b> RowFieldHelper<'a, Sqlite> for FunctionRow<'b> {
+impl<'a, 'b> RowGatWorkaround<'a, Sqlite> for FunctionRow<'b> {
     type Field = FunctionArgument<'a>;
 }
 
@@ -199,7 +199,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         self.field_count
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldHelper<'b, Sqlite>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Sqlite>>::Field>
     where
         'a: 'b,
         Self: crate::row::RowIndex<I>,
@@ -246,10 +246,7 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
         self.value().is_none()
     }
 
-    fn value<'b>(&'b self) -> Option<crate::backend::RawValue<'b, Sqlite>>
-    where
-        'a: 'b,
-    {
+    fn value(&self) -> Option<crate::backend::RawValue<Sqlite>> {
         SqliteValue::new(
             Ref::map(Ref::clone(&self.args), |drop| std::ops::Deref::deref(drop)),
             self.col_idx,

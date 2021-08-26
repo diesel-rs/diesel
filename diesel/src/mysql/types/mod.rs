@@ -55,7 +55,7 @@ impl FromSql<TinyInt, Mysql> for i8 {
 
 /// Represents the MySQL unsigned type.
 #[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
-pub struct Unsigned<ST>(ST);
+pub struct Unsigned<ST: 'static>(ST);
 
 impl<T> Add for Unsigned<T>
 where
