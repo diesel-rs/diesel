@@ -1504,10 +1504,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'a, U>(
+    fn load_iter<U>(
         self,
-        conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, Conn, U>>::Ret>
+        conn: &mut Conn,
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<Conn, U>>::Ret>
     where
         Self: LoadQuery<Conn, U>,
     {

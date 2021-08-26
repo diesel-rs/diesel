@@ -90,10 +90,10 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn load<'a, T>(
-        &'a mut self,
+    fn load<T>(
+        &mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,

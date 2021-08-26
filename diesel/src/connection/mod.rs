@@ -35,7 +35,7 @@ pub trait ConnectionGatWorkaround<'a, DB: Backend> {
     /// Users should handle this as opaque type that implements [`Iterator`]
     type Cursor: Iterator<Item = QueryResult<Self::Row>>;
     /// The row type used as [`Iterator::Item`] for the iterator implementation
-    /// of [`IterableConnection::Cursor`]
+    /// of [`ConnectionGatWorkaround::Cursor`]
     type Row: crate::row::Row<'a, DB>;
 }
 
@@ -192,10 +192,10 @@ where
     fn execute(&mut self, query: &str) -> QueryResult<usize>;
 
     #[doc(hidden)]
-    fn load<'a, T>(
-        &'a mut self,
+    fn load<T>(
+        &mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,

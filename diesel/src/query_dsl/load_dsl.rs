@@ -18,10 +18,10 @@ where
     for<'a> Self: LoadQueryGatWorkaround<'a, Conn, U>,
 {
     /// Load this query
-    fn internal_load<'a>(
+    fn internal_load(
         self,
-        conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, Conn, U>>::Ret>;
+        conn: &mut Conn,
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<Conn, U>>::Ret>;
 }
 
 pub trait LoadQueryGatWorkaround<'a, Conn, U> {
@@ -98,10 +98,10 @@ where
     U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
-    fn internal_load<'a>(
+    fn internal_load(
         self,
-        conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, Conn, U>>::Ret> {
+        conn: &mut Conn,
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<Conn, U>>::Ret> {
         Ok(LoadIter {
             cursor: conn.load(self)?,
             _marker: Default::default(),

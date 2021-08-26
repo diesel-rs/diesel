@@ -72,10 +72,7 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn load<'a, T>(
-        &'a mut self,
-        source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, Pg>>::Cursor>
+    fn load<T>(&mut self, source: T) -> QueryResult<<Self as ConnectionGatWorkaround<Pg>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
