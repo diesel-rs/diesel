@@ -12,7 +12,6 @@ use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 use crate::util::OnceCell;
 
-
 // Message after a database connection has been unexpectedly closed.
 const CLOSED_CONNECTION_MSG: &str = "server closed the connection unexpectedly\n\t\
 This probably means the server terminated abnormally\n\tbefore or while processing the request.\n";
