@@ -61,20 +61,13 @@ pub trait Row<'a, DB: Backend>:
         Self: RowIndex<I>;
 
     /// Get a deserialized value with the provided index from the row.
-    ///
-    /// * Returns `Ok(T)` if deserialization is successful
-    /// * Returns `Err(Error::DeserializationError)` if there is an error during deserialization
-    /// * Returns `Err(Error::NotFound)` if the row does not contain a value at this position
-    /// use [`result.optional()`](crate::result::OptionalExtension) to convert the result to
-    /// `QueryResult<Option<T>>` for explicit access to the `None` values
-    fn get_value<ST, T, I>(&self, idx: I) -> crate::result::QueryResult<T>
+    fn get_value<ST, T, I>(&self, idx: I) -> crate::deserialize::Result<T>
     where
         Self: RowIndex<I>,
         T: FromSql<ST, DB>,
     {
-        let field = self.get(idx).ok_or(crate::result::Error::NotFound)?;
+        let field = self.get(idx).ok_or(crate::result::UnexpectedEndOfRow)?;
         <T as FromSql<ST, DB>>::from_nullable_sql(field.value())
-            .map_err(crate::result::Error::DeserializationError)
     }
 
     /// Returns a wrapping row that allows only to access fields, where the index is part of
