@@ -13,8 +13,6 @@ members = [
     "examples/mysql/getting_started_step_1",
     "examples/mysql/getting_started_step_2",
     "examples/mysql/getting_started_step_3",
-    # Dependency on out-dated bcrypt
-    #"examples/postgres/advanced-blog-cli",
     "examples/postgres/all_about_inserts",
     "examples/postgres/all_about_updates",
     "examples/postgres/getting_started_step_1",
@@ -24,6 +22,10 @@ members = [
     "examples/sqlite/getting_started_step_1",
     "examples/sqlite/getting_started_step_2",
     "examples/sqlite/getting_started_step_3",
+]
+exclude = [
+    # Dependency on out-dated bcrypt; doesn't build on 1.4.x
+    "examples/postgres/advanced-blog-cli",
 ]
 
 [replace]

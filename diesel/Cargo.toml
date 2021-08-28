@@ -12,7 +12,7 @@ keywords = ["orm", "database", "blockchain", "sql"]
 categories = ["database"]
 
 [dependencies]
-byteorder = "1.0"
+byteorder = { version = ">=1.0, <1.4" }
 diesel_derives = "~1.4.0"
 chrono = { version = "0.4", optional = true }
 libc = { version = "0.2.0", optional = true }
