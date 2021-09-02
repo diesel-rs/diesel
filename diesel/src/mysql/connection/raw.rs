@@ -65,7 +65,7 @@ impl RawConnection {
                     .map(CStr::as_ptr)
                     .unwrap_or_else(|| ptr::null_mut()),
                 client_flags
-                    .unwrap_or(CapabilityFlags::empty())
+                    .unwrap_or_else(CapabilityFlags::empty)
                     .bits()
                     .into(),
             )
