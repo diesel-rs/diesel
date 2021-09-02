@@ -64,7 +64,10 @@ impl RawConnection {
                 unix_socket
                     .map(CStr::as_ptr)
                     .unwrap_or_else(|| ptr::null_mut()),
-                client_flags.unwrap_or(CapabilityFlags::empty()).bits(),
+                client_flags
+                    .unwrap_or(CapabilityFlags::empty())
+                    .bits()
+                    .into(),
             )
         };
 
