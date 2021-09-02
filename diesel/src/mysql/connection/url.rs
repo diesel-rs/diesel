@@ -8,6 +8,36 @@ use std::ffi::{CStr, CString};
 
 use crate::result::{ConnectionError, ConnectionResult};
 
+bitflags::bitflags! {
+    pub struct CapabilityFlags: u32 {
+        const CLIENT_LONG_PASSWORD = 0x00000001;
+        const CLIENT_FOUND_ROWS = 0x00000002;
+        const CLIENT_LONG_FLAG = 0x00000004;
+        const CLIENT_CONNECT_WITH_DB = 0x00000008;
+        const CLIENT_NO_SCHEMA = 0x00000010;
+        const CLIENT_COMPRESS = 0x00000020;
+        const CLIENT_ODBC = 0x00000040;
+        const CLIENT_LOCAL_FILES = 0x00000080;
+        const CLIENT_IGNORE_SPACE = 0x00000100;
+        const CLIENT_PROTOCOL_41 = 0x00000200;
+        const CLIENT_INTERACTIVE = 0x00000400;
+        const CLIENT_SSL = 0x00000800;
+        const CLIENT_IGNORE_SIGPIPE = 0x00001000;
+        const CLIENT_TRANSACTIONS = 0x00002000;
+        const CLIENT_RESERVED = 0x00004000;
+        const CLIENT_SECURE_CONNECTION = 0x00008000;
+        const CLIENT_MULTI_STATEMENTS = 0x00010000;
+        const CLIENT_MULTI_RESULTS = 0x00020000;
+        const CLIENT_PS_MULTI_RESULTS = 0x00040000;
+        const CLIENT_PLUGIN_AUTH = 0x00080000;
+        const CLIENT_CONNECT_ATTRS = 0x00100000;
+        const CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA = 0x00200000;
+        const CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS = 0x00400000;
+        const CLIENT_SESSION_TRACK = 0x00800000;
+        const CLIENT_DEPRECATE_EOF = 0x01000000;
+    }
+}
+
 pub struct ConnectionOptions {
     host: Option<CString>,
     user: CString,
@@ -15,6 +45,7 @@ pub struct ConnectionOptions {
     database: Option<CString>,
     port: Option<u16>,
     unix_socket: Option<CString>,
+    client_flags: Option<CapabilityFlags>,
 }
 
 impl ConnectionOptions {
@@ -59,6 +90,9 @@ impl ConnectionOptions {
             Some(segment) => Some(CString::new(segment.as_bytes())?),
         };
 
+        // this is not present in the database_url, using a default value
+        let client_flags = Some(CapabilityFlags::CLIENT_FOUND_ROWS);
+
         Ok(ConnectionOptions {
             host: host,
             user: user,
@@ -66,6 +100,7 @@ impl ConnectionOptions {
             database: database,
             port: url.port(),
             unix_socket: unix_socket,
+            client_flags: client_flags,
         })
     }
 
@@ -91,6 +126,10 @@ impl ConnectionOptions {
 
     pub fn unix_socket(&self) -> Option<&CStr> {
         self.unix_socket.as_deref()
+    }
+
+    pub fn client_flags(&self) -> Option<CapabilityFlags> {
+        self.client_flags
     }
 }
 
