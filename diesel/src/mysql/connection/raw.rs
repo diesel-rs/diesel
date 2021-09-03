@@ -6,7 +6,7 @@ use std::ptr::{self, NonNull};
 use std::sync::Once;
 
 use super::stmt::Statement;
-use super::url::{CapabilityFlags, ConnectionOptions};
+use super::url::ConnectionOptions;
 use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
 pub struct RawConnection(NonNull<ffi::MYSQL>);
@@ -64,10 +64,7 @@ impl RawConnection {
                 unix_socket
                     .map(CStr::as_ptr)
                     .unwrap_or_else(|| ptr::null_mut()),
-                client_flags
-                    .unwrap_or_else(CapabilityFlags::empty)
-                    .bits()
-                    .into(),
+                client_flags.bits().into(),
             )
         };
 

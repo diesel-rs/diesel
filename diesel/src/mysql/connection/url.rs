@@ -45,7 +45,7 @@ pub struct ConnectionOptions {
     database: Option<CString>,
     port: Option<u16>,
     unix_socket: Option<CString>,
-    client_flags: Option<CapabilityFlags>,
+    client_flags: CapabilityFlags,
 }
 
 impl ConnectionOptions {
@@ -91,7 +91,7 @@ impl ConnectionOptions {
         };
 
         // this is not present in the database_url, using a default value
-        let client_flags = Some(CapabilityFlags::CLIENT_FOUND_ROWS);
+        let client_flags = CapabilityFlags::CLIENT_FOUND_ROWS;
 
         Ok(ConnectionOptions {
             host: host,
@@ -128,7 +128,7 @@ impl ConnectionOptions {
         self.unix_socket.as_deref()
     }
 
-    pub fn client_flags(&self) -> Option<CapabilityFlags> {
+    pub fn client_flags(&self) -> CapabilityFlags {
         self.client_flags
     }
 }
