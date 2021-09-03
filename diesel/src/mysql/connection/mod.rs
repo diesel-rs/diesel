@@ -162,4 +162,23 @@ mod tests {
         assert!(connection.execute("SELECT 1").is_ok());
         assert!(connection.execute("SELECT 1").is_ok());
     }
+
+    #[test]
+    fn check_client_found_rows_flag() {
+        let conn = &mut crate::test_helpers::connection();
+        conn.execute("DROP TABLE IF EXISTS update_test CASCADE")
+            .unwrap();
+
+        conn.execute("CREATE TABLE update_test(id INTEGER PRIMARY KEY, num INTEGER NOT NULL)")
+            .unwrap();
+
+        conn.execute("INSERT INTO update_test(id, num) VALUES (1, 5)")
+            .unwrap();
+
+        let output = conn
+            .execute("UPDATE update_test SET num = 5 WHERE id = 1")
+            .unwrap();
+
+        assert_eq!(output, 1);
+    }
 }
