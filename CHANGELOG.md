@@ -175,7 +175,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The `#[table_name]` attribute for derive macros can now refer to any path and is no
   longer limited to identifiers from the current scope.
 
-* Interacting with a database requires a mutable connection. 
+* Interacting with a database requires a mutable connection.
+
+* The MySQL connection is using the CLIENT_FOUND_ROWS from now on. This means that updating rows without changing any values will return the number of matched rows (like most other SQL servers do), as opposed to the number of changed rows.
 
 ### Fixed
 
