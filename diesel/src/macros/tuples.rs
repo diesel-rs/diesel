@@ -600,8 +600,7 @@ macro_rules! __diesel_for_each_tuple {
                 (31) -> AF, SAF, TAF,
             }
         }
-
-        #[cfg(feature = "64-column-tables")]
+        #[cfg(feature = "33-column-tables")]
         $callback! {
             33 {
                 (0) -> A, SA, TA,
@@ -638,6 +637,9 @@ macro_rules! __diesel_for_each_tuple {
                 (31) -> AF, SAF, TAF,
                 (32) -> AG, SAG, TAG,
             }
+        }
+        #[cfg(feature = "34-column-tables")]
+        $callback! {
             34 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -674,6 +676,9 @@ macro_rules! __diesel_for_each_tuple {
                 (32) -> AG, SAG, TAG,
                 (33) -> AH, SAH, TAH,
             }
+        }
+        #[cfg(feature = "35-column-tables")]
+        $callback! {
             35 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -711,6 +716,9 @@ macro_rules! __diesel_for_each_tuple {
                 (33) -> AH, SAH, TAH,
                 (34) -> AI, SAI, TAI,
             }
+        }
+        #[cfg(feature = "36-column-tables")]
+        $callback! {
             36 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -749,6 +757,9 @@ macro_rules! __diesel_for_each_tuple {
                 (34) -> AI, SAI, TAI,
                 (35) -> AJ, SAJ, TAJ,
             }
+        }
+        #[cfg(feature = "37-column-tables")]
+        $callback! {
             37 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -788,6 +799,9 @@ macro_rules! __diesel_for_each_tuple {
                 (35) -> AJ, SAJ, TAJ,
                 (36) -> AK, SAK, TAK,
             }
+        }
+        #[cfg(feature = "38-column-tables")]
+        $callback! {
             38 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -828,6 +842,9 @@ macro_rules! __diesel_for_each_tuple {
                 (36) -> AK, SAK, TAK,
                 (37) -> AL, SAL, TAL,
             }
+        }
+        #[cfg(feature = "39-column-tables")]
+        $callback! {
             39 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -869,6 +886,9 @@ macro_rules! __diesel_for_each_tuple {
                 (37) -> AL, SAL, TAL,
                 (38) -> AM, SAM, TAM,
             }
+        }
+        #[cfg(feature = "40-column-tables")]
+        $callback! {
             40 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -911,6 +931,9 @@ macro_rules! __diesel_for_each_tuple {
                 (38) -> AM, SAM, TAM,
                 (39) -> AN, SAN, TAN,
             }
+        }
+        #[cfg(feature = "41-column-tables")]
+        $callback! {
             41 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -954,6 +977,9 @@ macro_rules! __diesel_for_each_tuple {
                 (39) -> AN, SAN, TAN,
                 (40) -> AO, SAO, TAO,
             }
+        }
+        #[cfg(feature = "42-column-tables")]
+        $callback! {
             42 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -998,6 +1024,9 @@ macro_rules! __diesel_for_each_tuple {
                 (40) -> AO, SAO, TAO,
                 (41) -> AP, SAP, TAP,
             }
+        }
+        #[cfg(feature = "43-column-tables")]
+        $callback! {
             43 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1043,6 +1072,9 @@ macro_rules! __diesel_for_each_tuple {
                 (41) -> AP, SAP, TAP,
                 (42) -> AQ, SAQ, TAQ,
             }
+        }
+        #[cfg(feature = "44-column-tables")]
+        $callback! {
             44 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1089,6 +1121,9 @@ macro_rules! __diesel_for_each_tuple {
                 (42) -> AQ, SAQ, TAQ,
                 (43) -> AR, SAR, TAR,
             }
+        }
+        #[cfg(feature = "45-column-tables")]
+        $callback! {
             45 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1136,6 +1171,9 @@ macro_rules! __diesel_for_each_tuple {
                 (43) -> AR, SAR, TAR,
                 (44) -> AS, SAS, TAS,
             }
+        }
+        #[cfg(feature = "46-column-tables")]
+        $callback! {
             46 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1184,6 +1222,9 @@ macro_rules! __diesel_for_each_tuple {
                 (44) -> AS, SAS, TAS,
                 (45) -> AT, SAT, TAT,
             }
+        }
+        #[cfg(feature = "47-column-tables")]
+        $callback! {
             47 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1233,6 +1274,9 @@ macro_rules! __diesel_for_each_tuple {
                 (45) -> AT, SAT, TAT,
                 (46) -> AU, SAU, TAU,
             }
+        }
+        #[cfg(feature = "48-column-tables")]
+        $callback! {
             48 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1283,6 +1327,9 @@ macro_rules! __diesel_for_each_tuple {
                 (46) -> AU, SAU, TAU,
                 (47) -> AV, SAV, TAV,
             }
+        }
+        #[cfg(feature = "49-column-tables")]
+        $callback! {
             49 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1334,6 +1381,9 @@ macro_rules! __diesel_for_each_tuple {
                 (47) -> AV, SAV, TAV,
                 (48) -> AW, SAW, TAW,
             }
+        }
+        #[cfg(feature = "50-column-tables")]
+        $callback! {
             50 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1386,6 +1436,9 @@ macro_rules! __diesel_for_each_tuple {
                 (48) -> AW, SAW, TAW,
                 (49) -> AX, SAX, TAX,
             }
+        }
+        #[cfg(feature = "51-column-tables")]
+        $callback! {
             51 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1439,6 +1492,9 @@ macro_rules! __diesel_for_each_tuple {
                 (49) -> AX, SAX, TAX,
                 (50) -> AY, SAY, TAY,
             }
+        }
+        #[cfg(feature = "52-column-tables")]
+        $callback! {
             52 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1493,6 +1549,9 @@ macro_rules! __diesel_for_each_tuple {
                 (50) -> AY, SAY, TAY,
                 (51) -> AZ, SAZ, TAZ,
             }
+        }
+        #[cfg(feature = "53-column-tables")]
+        $callback! {
             53 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1548,6 +1607,9 @@ macro_rules! __diesel_for_each_tuple {
                 (51) -> AZ, SAZ, TAZ,
                 (52) -> BA, SBA, TBA,
             }
+        }
+        #[cfg(feature = "54-column-tables")]
+        $callback! {
             54 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1604,6 +1666,9 @@ macro_rules! __diesel_for_each_tuple {
                 (52) -> BA, SBA, TBA,
                 (53) -> BB, SBB, TBB,
             }
+        }
+        #[cfg(feature = "55-column-tables")]
+        $callback! {
             55 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1661,6 +1726,9 @@ macro_rules! __diesel_for_each_tuple {
                 (53) -> BB, SBB, TBB,
                 (54) -> BC, SBC, TBC,
             }
+        }
+        #[cfg(feature = "56-column-tables")]
+        $callback! {
             56 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1719,6 +1787,9 @@ macro_rules! __diesel_for_each_tuple {
                 (54) -> BC, SBC, TBC,
                 (55) -> BD, SBD, TBD,
             }
+        }
+        #[cfg(feature = "57-column-tables")]
+        $callback! {
             57 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1778,6 +1849,9 @@ macro_rules! __diesel_for_each_tuple {
                 (55) -> BD, SBD, TBD,
                 (56) -> BE, SBE, TBE,
             }
+        }
+        #[cfg(feature = "58-column-tables")]
+        $callback! {
             58 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1838,6 +1912,9 @@ macro_rules! __diesel_for_each_tuple {
                 (56) -> BE, SBE, TBE,
                 (57) -> BF, SBF, TBF,
             }
+        }
+        #[cfg(feature = "59-column-tables")]
+        $callback! {
             59 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1899,6 +1976,9 @@ macro_rules! __diesel_for_each_tuple {
                 (57) -> BF, SBF, TBF,
                 (58) -> BG, SBG, TBG,
             }
+        }
+        #[cfg(feature = "60-column-tables")]
+        $callback! {
             60 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -1961,6 +2041,9 @@ macro_rules! __diesel_for_each_tuple {
                 (58) -> BG, SBG, TBG,
                 (59) -> BH, SBH, TBH,
             }
+        }
+        #[cfg(feature = "61-column-tables")]
+        $callback! {
             61 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2024,6 +2107,9 @@ macro_rules! __diesel_for_each_tuple {
                 (59) -> BH, SBH, TBH,
                 (60) -> BI, SBI, TBI,
             }
+        }
+        #[cfg(feature = "62-column-tables")]
+        $callback! {
             62 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2088,6 +2174,9 @@ macro_rules! __diesel_for_each_tuple {
                 (60) -> BI, SBI, TBI,
                 (61) -> BJ, SBJ, TBJ,
             }
+        }
+        #[cfg(feature = "63-column-tables")]
+        $callback! {
             63 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2153,6 +2242,9 @@ macro_rules! __diesel_for_each_tuple {
                 (61) -> BJ, SBJ, TBJ,
                 (62) -> BK, SBK, TBK,
             }
+        }
+        #[cfg(feature = "64-column-tables")]
+        $callback! {
             64 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2220,8 +2312,7 @@ macro_rules! __diesel_for_each_tuple {
                 (63) -> BL, SBL, TBL,
             }
         }
-
-        #[cfg(feature = "128-column-tables")]
+        #[cfg(feature = "65-column-tables")]
         $callback! {
             65 {
                 (0) -> A, SA, TA,
@@ -2290,6 +2381,9 @@ macro_rules! __diesel_for_each_tuple {
                 (63) -> BL, SBL, TBL,
                 (64) -> BM, SBM, TBM,
             }
+        }
+        #[cfg(feature = "66-column-tables")]
+        $callback! {
             66 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2358,6 +2452,9 @@ macro_rules! __diesel_for_each_tuple {
                 (64) -> BM, SBM, TBM,
                 (65) -> BN, SBN, TBN,
             }
+        }
+        #[cfg(feature = "67-column-tables")]
+        $callback! {
             67 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2427,6 +2524,9 @@ macro_rules! __diesel_for_each_tuple {
                 (65) -> BN, SBN, TBN,
                 (66) -> BO, SBO, TBO,
             }
+        }
+        #[cfg(feature = "68-column-tables")]
+        $callback! {
             68 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2497,6 +2597,9 @@ macro_rules! __diesel_for_each_tuple {
                 (66) -> BO, SBO, TBO,
                 (67) -> BP, SBP, TBP,
             }
+        }
+        #[cfg(feature = "69-column-tables")]
+        $callback! {
             69 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2568,6 +2671,9 @@ macro_rules! __diesel_for_each_tuple {
                 (67) -> BP, SBP, TBP,
                 (68) -> BQ, SBQ, TBQ,
             }
+        }
+        #[cfg(feature = "70-column-tables")]
+        $callback! {
             70 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2640,6 +2746,9 @@ macro_rules! __diesel_for_each_tuple {
                 (68) -> BQ, SBQ, TBQ,
                 (69) -> BR, SBR, TBR,
             }
+        }
+        #[cfg(feature = "71-column-tables")]
+        $callback! {
             71 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2713,6 +2822,9 @@ macro_rules! __diesel_for_each_tuple {
                 (69) -> BR, SBR, TBR,
                 (70) -> BS, SBS, TBS,
             }
+        }
+        #[cfg(feature = "72-column-tables")]
+        $callback! {
             72 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2787,6 +2899,9 @@ macro_rules! __diesel_for_each_tuple {
                 (70) -> BS, SBS, TBS,
                 (71) -> BT, SBT, TBT,
             }
+        }
+        #[cfg(feature = "73-column-tables")]
+        $callback! {
             73 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2862,6 +2977,9 @@ macro_rules! __diesel_for_each_tuple {
                 (71) -> BT, SBT, TBT,
                 (72) -> BU, SBU, TBU,
             }
+        }
+        #[cfg(feature = "74-column-tables")]
+        $callback! {
             74 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -2938,6 +3056,9 @@ macro_rules! __diesel_for_each_tuple {
                 (72) -> BU, SBU, TBU,
                 (73) -> BV, SBV, TBV,
             }
+        }
+        #[cfg(feature = "75-column-tables")]
+        $callback! {
             75 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3015,6 +3136,9 @@ macro_rules! __diesel_for_each_tuple {
                 (73) -> BV, SBV, TBV,
                 (74) -> BW, SBW, TBW,
             }
+        }
+        #[cfg(feature = "76-column-tables")]
+        $callback! {
             76 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3093,6 +3217,9 @@ macro_rules! __diesel_for_each_tuple {
                 (74) -> BW, SBW, TBW,
                 (75) -> BX, SBX, TBX,
             }
+        }
+        #[cfg(feature = "77-column-tables")]
+        $callback! {
             77 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3172,6 +3299,9 @@ macro_rules! __diesel_for_each_tuple {
                 (75) -> BX, SBX, TBX,
                 (76) -> BY, SBY, TBY,
             }
+        }
+        #[cfg(feature = "78-column-tables")]
+        $callback! {
             78 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3252,6 +3382,9 @@ macro_rules! __diesel_for_each_tuple {
                 (76) -> BY, SBY, TBY,
                 (77) -> BZ, SBZ, TBZ,
             }
+        }
+        #[cfg(feature = "79-column-tables")]
+        $callback! {
             79 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3333,6 +3466,9 @@ macro_rules! __diesel_for_each_tuple {
                 (77) -> BZ, SBZ, TBZ,
                 (78) -> CA, SCA, TCA,
             }
+        }
+        #[cfg(feature = "80-column-tables")]
+        $callback! {
             80 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3415,6 +3551,9 @@ macro_rules! __diesel_for_each_tuple {
                 (78) -> CA, SCA, TCA,
                 (79) -> CB, SCB, TCB,
             }
+        }
+        #[cfg(feature = "81-column-tables")]
+        $callback! {
             81 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3498,6 +3637,9 @@ macro_rules! __diesel_for_each_tuple {
                 (79) -> CB, SCB, TCB,
                 (80) -> CC, SCC, TCC,
             }
+        }
+        #[cfg(feature = "82-column-tables")]
+        $callback! {
             82 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3582,6 +3724,9 @@ macro_rules! __diesel_for_each_tuple {
                 (80) -> CC, SCC, TCC,
                 (81) -> CD, SCD, TCD,
             }
+        }
+        #[cfg(feature = "83-column-tables")]
+        $callback! {
             83 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3667,6 +3812,9 @@ macro_rules! __diesel_for_each_tuple {
                 (81) -> CD, SCD, TCD,
                 (82) -> CE, SCE, TCE,
             }
+        }
+        #[cfg(feature = "84-column-tables")]
+        $callback! {
             84 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3753,6 +3901,9 @@ macro_rules! __diesel_for_each_tuple {
                 (82) -> CE, SCE, TCE,
                 (83) -> CF, SCF, TCF,
             }
+        }
+        #[cfg(feature = "85-column-tables")]
+        $callback! {
             85 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3840,6 +3991,9 @@ macro_rules! __diesel_for_each_tuple {
                 (83) -> CF, SCF, TCF,
                 (84) -> CG, SCG, TCG,
             }
+        }
+        #[cfg(feature = "86-column-tables")]
+        $callback! {
             86 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -3928,6 +4082,9 @@ macro_rules! __diesel_for_each_tuple {
                 (84) -> CG, SCG, TCG,
                 (85) -> CH, SCH, TCH,
             }
+        }
+        #[cfg(feature = "87-column-tables")]
+        $callback! {
             87 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4017,6 +4174,9 @@ macro_rules! __diesel_for_each_tuple {
                 (85) -> CH, SCH, TCH,
                 (86) -> CI, SCI, TCI,
             }
+        }
+        #[cfg(feature = "88-column-tables")]
+        $callback! {
             88 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4107,6 +4267,9 @@ macro_rules! __diesel_for_each_tuple {
                 (86) -> CI, SCI, TCI,
                 (87) -> CJ, SCJ, TCJ,
             }
+        }
+        #[cfg(feature = "89-column-tables")]
+        $callback! {
             89 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4198,6 +4361,9 @@ macro_rules! __diesel_for_each_tuple {
                 (87) -> CJ, SCJ, TCJ,
                 (88) -> CK, SCK, TCK,
             }
+        }
+        #[cfg(feature = "90-column-tables")]
+        $callback! {
             90 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4290,6 +4456,9 @@ macro_rules! __diesel_for_each_tuple {
                 (88) -> CK, SCK, TCK,
                 (89) -> CL, SCL, TCL,
             }
+        }
+        #[cfg(feature = "91-column-tables")]
+        $callback! {
             91 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4383,6 +4552,9 @@ macro_rules! __diesel_for_each_tuple {
                 (89) -> CL, SCL, TCL,
                 (90) -> CM, SCM, TCM,
             }
+        }
+        #[cfg(feature = "92-column-tables")]
+        $callback! {
             92 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4477,6 +4649,9 @@ macro_rules! __diesel_for_each_tuple {
                 (90) -> CM, SCM, TCM,
                 (91) -> CN, SCN, TCN,
             }
+        }
+        #[cfg(feature = "93-column-tables")]
+        $callback! {
             93 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4572,6 +4747,9 @@ macro_rules! __diesel_for_each_tuple {
                 (91) -> CN, SCN, TCN,
                 (92) -> CO, SCO, TCO,
             }
+        }
+        #[cfg(feature = "94-column-tables")]
+        $callback! {
             94 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4668,6 +4846,9 @@ macro_rules! __diesel_for_each_tuple {
                 (92) -> CO, SCO, TCO,
                 (93) -> CP, SCP, TCP,
             }
+        }
+        #[cfg(feature = "95-column-tables")]
+        $callback! {
             95 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4765,6 +4946,9 @@ macro_rules! __diesel_for_each_tuple {
                 (93) -> CP, SCP, TCP,
                 (94) -> CQ, SCQ, TCQ,
             }
+        }
+        #[cfg(feature = "96-column-tables")]
+        $callback! {
             96 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4863,6 +5047,9 @@ macro_rules! __diesel_for_each_tuple {
                 (94) -> CQ, SCQ, TCQ,
                 (95) -> CR, SCR, TCR,
             }
+        }
+        #[cfg(feature = "97-column-tables")]
+        $callback! {
             97 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -4962,6 +5149,9 @@ macro_rules! __diesel_for_each_tuple {
                 (95) -> CR, SCR, TCR,
                 (96) -> CS, SCS, TCS,
             }
+        }
+        #[cfg(feature = "98-column-tables")]
+        $callback! {
             98 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5062,6 +5252,9 @@ macro_rules! __diesel_for_each_tuple {
                 (96) -> CS, SCS, TCS,
                 (97) -> CT, SCT, TCT,
             }
+        }
+        #[cfg(feature = "99-column-tables")]
+        $callback! {
             99 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5163,6 +5356,9 @@ macro_rules! __diesel_for_each_tuple {
                 (97) -> CT, SCT, TCT,
                 (98) -> CU, SCU, TCU,
             }
+        }
+        #[cfg(feature = "100-column-tables")]
+        $callback! {
             100 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5265,6 +5461,9 @@ macro_rules! __diesel_for_each_tuple {
                 (98) -> CU, SCU, TCU,
                 (99) -> CV, SCV, TCV,
             }
+        }
+        #[cfg(feature = "101-column-tables")]
+        $callback! {
             101 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5368,6 +5567,9 @@ macro_rules! __diesel_for_each_tuple {
                 (99) -> CV, SCV, TCV,
                 (100) -> CW, SCW, TCW,
             }
+        }
+        #[cfg(feature = "102-column-tables")]
+        $callback! {
             102 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5472,6 +5674,9 @@ macro_rules! __diesel_for_each_tuple {
                 (100) -> CW, SCW, TCW,
                 (101) -> CX, SCX, TCX,
             }
+        }
+        #[cfg(feature = "103-column-tables")]
+        $callback! {
             103 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5577,6 +5782,9 @@ macro_rules! __diesel_for_each_tuple {
                 (101) -> CX, SCX, TCX,
                 (102) -> CY, SCY, TCY,
             }
+        }
+        #[cfg(feature = "104-column-tables")]
+        $callback! {
             104 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5683,6 +5891,9 @@ macro_rules! __diesel_for_each_tuple {
                 (102) -> CY, SCY, TCY,
                 (103) -> CZ, SCZ, TCZ,
             }
+        }
+        #[cfg(feature = "105-column-tables")]
+        $callback! {
             105 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5790,6 +6001,9 @@ macro_rules! __diesel_for_each_tuple {
                 (103) -> CZ, SCZ, TCZ,
                 (104) -> DA, SDA, TDA,
             }
+        }
+        #[cfg(feature = "106-column-tables")]
+        $callback! {
             106 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -5898,6 +6112,9 @@ macro_rules! __diesel_for_each_tuple {
                 (104) -> DA, SDA, TDA,
                 (105) -> DB, SDB, TDB,
             }
+        }
+        #[cfg(feature = "107-column-tables")]
+        $callback! {
             107 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6007,6 +6224,9 @@ macro_rules! __diesel_for_each_tuple {
                 (105) -> DB, SDB, TDB,
                 (106) -> DC, SDC, TDC,
             }
+        }
+        #[cfg(feature = "108-column-tables")]
+        $callback! {
             108 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6117,6 +6337,9 @@ macro_rules! __diesel_for_each_tuple {
                 (106) -> DC, SDC, TDC,
                 (107) -> DD, SDD, TDD,
             }
+        }
+        #[cfg(feature = "109-column-tables")]
+        $callback! {
             109 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6228,6 +6451,9 @@ macro_rules! __diesel_for_each_tuple {
                 (107) -> DD, SDD, TDD,
                 (108) -> DE, SDE, TDE,
             }
+        }
+        #[cfg(feature = "110-column-tables")]
+        $callback! {
             110 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6340,6 +6566,10 @@ macro_rules! __diesel_for_each_tuple {
                 (108) -> DE, SDE, TDE,
                 (109) -> DF, SDF, TDF,
             }
+        
+        }
+        #[cfg(feature = "111-column-tables")]
+        $callback! {
             111 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6453,6 +6683,9 @@ macro_rules! __diesel_for_each_tuple {
                 (109) -> DF, SDF, TDF,
                 (110) -> DG, SDG, TDG,
             }
+        }
+        #[cfg(feature = "112-column-tables")]
+        $callback! {
             112 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6567,6 +6800,9 @@ macro_rules! __diesel_for_each_tuple {
                 (110) -> DG, SDG, TDG,
                 (111) -> DH, SDH, TDH,
             }
+        }
+        #[cfg(feature = "113-column-tables")]
+        $callback! {
             113 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6682,6 +6918,9 @@ macro_rules! __diesel_for_each_tuple {
                 (111) -> DH, SDH, TDH,
                 (112) -> DI, SDI, TDI,
             }
+        }
+        #[cfg(feature = "114-column-tables")]
+        $callback! {
             114 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6798,6 +7037,9 @@ macro_rules! __diesel_for_each_tuple {
                 (112) -> DI, SDI, TDI,
                 (113) -> DJ, SDJ, TDJ,
             }
+        }
+        #[cfg(feature = "115-column-tables")]
+        $callback! {
             115 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -6915,6 +7157,9 @@ macro_rules! __diesel_for_each_tuple {
                 (113) -> DJ, SDJ, TDJ,
                 (114) -> DK, SDK, TDK,
             }
+        }
+        #[cfg(feature = "116-column-tables")]
+        $callback! {
             116 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -7033,6 +7278,9 @@ macro_rules! __diesel_for_each_tuple {
                 (114) -> DK, SDK, TDK,
                 (115) -> DL, SDL, TDL,
             }
+        }
+        #[cfg(feature = "117-column-tables")]
+        $callback! {
             117 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -7152,6 +7400,9 @@ macro_rules! __diesel_for_each_tuple {
                 (115) -> DL, SDL, TDL,
                 (116) -> DM, SDM, TDM,
             }
+        }
+        #[cfg(feature = "118-column-tables")]
+        $callback! {
             118 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -7272,6 +7523,9 @@ macro_rules! __diesel_for_each_tuple {
                 (116) -> DM, SDM, TDM,
                 (117) -> DN, SDN, TDN,
             }
+        }
+        #[cfg(feature = "119-column-tables")]
+        $callback! {
             119 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -7393,6 +7647,9 @@ macro_rules! __diesel_for_each_tuple {
                 (117) -> DN, SDN, TDN,
                 (118) -> DO, SDO, TDO,
             }
+        }
+        #[cfg(feature = "120-column-tables")]
+        $callback! {
             120 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -7514,7 +7771,10 @@ macro_rules! __diesel_for_each_tuple {
                 (117) -> DN, SDN, TDN,
                 (118) -> DO, SDO, TDO,
                 (119) -> DP, SDP, TDP,
-            }
+            }        
+        }
+        #[cfg(feature = "121-column-tables")]
+        $callback! {
             121 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -7638,6 +7898,9 @@ macro_rules! __diesel_for_each_tuple {
                 (119) -> DP, SDP, TDP,
                 (120) -> DQ, SDQ, TDQ,
             }
+        }
+        #[cfg(feature = "122-column-tables")]
+        $callback! {
             122 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -7762,6 +8025,9 @@ macro_rules! __diesel_for_each_tuple {
                 (120) -> DQ, SDQ, TDQ,
                 (121) -> DR, SDR, TDR,
             }
+        }
+        #[cfg(feature = "123-column-tables")]
+        $callback! {
             123 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -7887,6 +8153,9 @@ macro_rules! __diesel_for_each_tuple {
                 (121) -> DR, SDR, TDR,
                 (122) -> DS, SDS, TDS,
             }
+        }
+        #[cfg(feature = "124-column-tables")]
+        $callback! {
             124 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -8013,6 +8282,9 @@ macro_rules! __diesel_for_each_tuple {
                 (122) -> DS, SDS, TDS,
                 (123) -> DT, SDT, TDT,
             }
+        }
+        #[cfg(feature = "125-column-tables")]
+        $callback! {
             125 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -8140,6 +8412,9 @@ macro_rules! __diesel_for_each_tuple {
                 (123) -> DT, SDT, TDT,
                 (124) -> DU, SDU, TDU,
             }
+        }
+        #[cfg(feature = "126-column-tables")]
+        $callback! {
             126 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -8268,6 +8543,9 @@ macro_rules! __diesel_for_each_tuple {
                 (124) -> DU, SDU, TDU,
                 (125) -> DV, SDV, TDV,
             }
+        }
+        #[cfg(feature = "127-column-tables")]
+        $callback! {
             127 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,
@@ -8397,6 +8675,9 @@ macro_rules! __diesel_for_each_tuple {
                 (125) -> DV, SDV, TDV,
                 (126) -> DW, SDW, TDW,
             }
+        }
+        #[cfg(feature = "128-column-tables")]
+        $callback! {
             128 {
                 (0) -> A, SA, TA,
                 (1) -> B, SB, TB,

@@ -16,6 +16,8 @@ mod schema {
             hair_color -> Nullable<Text>,
             created_at -> Timestamp,
             updated_at -> Timestamp,
+            
+            
         }
     }
 }
@@ -36,6 +38,7 @@ struct User {
     hair_color: Option<String>,
     created_at: NaiveDateTime,
     updated_at: NaiveDateTime,
+    
 }
 
 

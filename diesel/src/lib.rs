@@ -128,6 +128,8 @@
     clippy::used_underscore_binding
 )]
 
+#![recursion_limit="256"]
+
 #[cfg(feature = "postgres")]
 #[macro_use]
 extern crate bitflags;
