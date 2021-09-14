@@ -7,6 +7,7 @@ use crate::expression::*;
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{is_nullable, HasSqlType, Nullable, SingleValue, SqlType};
+use crate::row::Field;
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
@@ -43,6 +44,15 @@ where
             None => Ok(None),
         }
     }
+
+    fn from_nullable_sql_field<'a>(field: &dyn Field<'a, DB>) ->  deserialize::Result<Self> {
+        let bytes = field.value();
+        match bytes {
+            Some(bytes) => T::from_sql(bytes).map(Some),
+            None => Ok(None),
+        }
+    }
+
 }
 
 impl<T, ST, DB> ToSql<Nullable<ST>, DB> for Option<T>

@@ -108,6 +108,10 @@ macro_rules! __diesel_column {
             const NAME: &'static str = $sql_name;
 
             const SELF_INCREASE_ID : bool = $self_increase_id;
+
+            fn sql_type(&self)->String{
+                "sql type invalid".to_string()
+            }
         }
 
         impl<T> $crate::EqAll<T> for $column_name where

@@ -57,6 +57,10 @@ pub trait Column: Expression {
     fn name(&self)->&'static str{
         Self::NAME
     }
+    
+    ///获取列类型
+    fn sql_type(&self)->String;
+
 }
 
 /// A SQL database table. Types which implement this trait should have been

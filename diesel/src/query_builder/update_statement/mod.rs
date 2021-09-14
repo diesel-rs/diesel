@@ -196,7 +196,6 @@ where
     U: QueryFragment<DB>,
     V: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
-    // <T as crate::query_source::Table>::PrimaryKey: crate::query_source::Column,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         if self.values.is_noop()? {

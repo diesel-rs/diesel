@@ -4,7 +4,7 @@ use std::error::Error;
 use std::result;
 
 use crate::backend::{self, Backend};
-use crate::row::{NamedRow, Row};
+use crate::row::{NamedRow, Row, Field};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
 
 /// A specialized result type representing the result of deserializing
@@ -326,9 +326,37 @@ pub trait FromSql<A, DB: Backend>: Sized {
     fn from_nullable_sql(bytes: Option<backend::RawValue<DB>>) -> Result<Self> {
         match bytes {
             Some(bytes) => Self::from_sql(bytes),
-            None => Err(Box::new(crate::result::UnexpectedNullError)),
+            None => {
+                println!("from_nullable_sql");
+                Err(Box::new(crate::result::UnexpectedNullError))}
         }
     }
+
+    /// A specialized variant of `from_sql` for handling null values.
+    ///
+    /// The default implementation returns an `UnexpectedNullError` for
+    /// an encountered null value and calls `Self::from_sql` otherwise
+    ///
+    /// If your custom type supports null values you need to provide a
+    /// custom implementation.
+    #[inline(always)]
+    fn from_nullable_sql_field<'a>(field: &dyn Field<'a, DB>) -> Result<Self> {
+        let bytes = field.value();
+        match bytes {
+            Some(bytes) => {
+                Self::from_sql(bytes)
+            },
+            None => {
+                if let Some(field_name) = field.field_name(){
+                    println!("field: {} value is None, but field is not Option<Type>", field_name);
+                }
+                else{
+                    println!("field:(none name) value is None, but field is not Option<Type>");
+                }
+                Err(Box::new(crate::result::UnexpectedNullError))}
+        }
+    }
+
 }
 
 /// Deserialize a database row into a rust data structure
@@ -405,11 +433,9 @@ where
     ST: SingleValue,
 {
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
-        use crate::row::Field;
-
         let field = row.get(0).ok_or(crate::result::UnexpectedEndOfRow)?;
-        // println!("field:{}", field.value());
-        T::from_nullable_sql(field.value())
+
+        T::from_nullable_sql_field(&field)
     }
 }
 

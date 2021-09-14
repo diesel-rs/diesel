@@ -93,7 +93,7 @@ use crate::sql_types::{HasSqlType, SingleValue, SqlType};
 /// implementing this directly.
 pub trait Expression {
     /// The type that this expression represents in SQL
-    type SqlType: TypedExpressionType;
+    type SqlType: TypedExpressionType;    
 }
 
 /// Marker trait for possible types of [`Expression::SqlType`]
@@ -143,6 +143,8 @@ pub mod expression_types {
 
 impl<T: Expression + ?Sized> Expression for Box<T> {
     type SqlType = T::SqlType;
+    
+
 }
 
 impl<'a, T: Expression + ?Sized> Expression for &'a T {

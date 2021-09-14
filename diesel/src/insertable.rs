@@ -124,6 +124,11 @@ where
 }
 
 pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
+    ///判断是否为自增ID
+    fn is_self_increase_id(&self)->bool{
+        false       
+    }
+
     fn column_names(&self, out: AstPass<DB>) -> QueryResult<()>;
     fn col_value(&self, col_name:String, mut out: AstPass<DB>)->QueryResult<()>{
         let _ = col_name;
@@ -145,24 +150,55 @@ impl<Col, Expr> Default for ColumnInsertValue<Col, Expr> {
     }
 }
 
-impl<Col, Expr, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr>
+impl<Col, Expr:crate::query_builder::QueryFragment<DB>, DB> InsertValues<Col::Table, DB> for ColumnInsertValue<Col, Expr>
 where
     DB: Backend + SupportsDefaultKeyword,
     Col: Column,
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
     Self: QueryFragment<DB>,
-{
+{    
+
+    ///判断是否为自增ID
+    fn is_self_increase_id(&self)->bool{
+        if let ColumnInsertValue::Expression(col, _) = self {
+            col.is_self_increase_id()
+        }
+        else{
+            false
+        }
+    }
+
     fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_identifier(Col::NAME)?;
         Ok(())
     }
+
+    fn col_value(&self, col_name:String, mut out: AstPass<DB>)->QueryResult<()>{
+
+        if let ColumnInsertValue::Expression(_col, ref value) = self {
+            value.walk_ast_primary_key(col_name, out.reborrow())?;
+        }
+        Ok(())
+    }
+
 }
 
 impl<Col, Expr, DB> QueryFragment<DB> for ColumnInsertValue<Col, Expr>
 where
+    Col: Column,
     DB: Backend + SupportsDefaultKeyword,
     Expr: QueryFragment<DB>,
 {
+    ///判断是否为自增ID
+    fn is_self_increase_id1(&self)->bool{
+        if let ColumnInsertValue::Expression(col, _) = self {
+            col.is_self_increase_id()
+        }
+        else{
+            false
+        }
+    }
+
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         if let ColumnInsertValue::Expression(_, ref value) = *self {
             value.walk_ast(out.reborrow())?;
@@ -174,15 +210,14 @@ where
 
     ///walk_ast_primary_key
     fn walk_ast_primary_key(&self, primary_key:String, mut pass: AstPass<DB>) -> QueryResult<()>{
-        println!("primary_key:{}", primary_key);
-        pass.push_sql("");
 
-        if let ColumnInsertValue::Expression(_, ref value) = *self {
-            value.walk_ast_primary_key(primary_key, pass.reborrow())?;
-        } else {
-            pass.push_sql("");
+        if primary_key == Col::NAME{
+            if let ColumnInsertValue::Expression(_, ref value) = *self {
+                value.walk_ast_primary_key(primary_key, pass.reborrow())?;
+            } else {
+                pass.push_sql("");
+            }
         }
-
         Ok(())
     }
 }
@@ -194,6 +229,7 @@ where
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
     Self: QueryFragment<Sqlite>,
 {
+
     fn column_names(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
         if let ColumnInsertValue::Expression(..) = *self {
             out.push_identifier(Col::NAME)?;

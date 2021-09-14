@@ -652,7 +652,6 @@ where
 
     ///walk_ast_primary_key
     fn walk_ast_primary_key(&self, primary_key:String, mut pass: AstPass<DB>) -> QueryResult<()>{
-        println!("key2 name:{}", primary_key);
         self.values.col_value(primary_key, pass.reborrow())?;
         
         Ok(())

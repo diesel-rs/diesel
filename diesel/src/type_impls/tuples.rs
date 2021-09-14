@@ -64,11 +64,14 @@ macro_rules! tuple_impls {
                     let mut needs_comma = false;
                     $(
                         if !self.$idx.is_noop()? {
-                            if needs_comma {
-                                out.push_sql(", ");
+
+                            if !self.$idx.is_self_increase_id1(){
+                                if needs_comma {
+                                    out.push_sql(", ");
+                                }
+                                self.$idx.walk_ast(out.reborrow())?;
+                                needs_comma = true;
                             }
-                            self.$idx.walk_ast(out.reborrow())?;
-                            needs_comma = true;
                         }
                     )+
                     Ok(())
@@ -159,11 +162,14 @@ macro_rules! tuple_impls {
                     $(
                         let noop_element = self.$idx.is_noop()?;
                         if !noop_element {
-                            if needs_comma {
-                                out.push_sql(", ");
+                            
+                            if !self.$idx.is_self_increase_id(){                                
+                                if needs_comma {
+                                    out.push_sql(", ");
+                                }
+                                self.$idx.column_names(out.reborrow())?;
+                                needs_comma = true;
                             }
-                            self.$idx.column_names(out.reborrow())?;
-                            needs_comma = true;
                         }
                     )+
                     Ok(())
@@ -171,28 +177,30 @@ macro_rules! tuple_impls {
 
                 fn col_value(&self, col_name : String, mut out: AstPass<__DB>) -> QueryResult<()>
                 {
-                    if let Some(mut builder) = out.get_builder()
-                    {
-                        let old_sql = builder.clear();
-                        let mut key_value = "".to_owned();
+                    // if let Some(mut builder) = out.get_builder()
+                    // {
+                    //     let old_sql = builder.clear();
+                    //     let mut key_value = "".to_owned();
+                        
+                    //     $(                            
+                    //         let mut out_new = AstPass::<__DB>::to_sql(&mut builder);
+                    //         self.$idx.column_names(out_new.reborrow())?;
+                    //         let name = builder.clear();
+                    //         // println!("column name:{} col_name:{}", name, col_name);
+                    //         if name == "\"".to_owned() + &col_name + "\"" {
+                    //             let mut out_new = AstPass::<__DB>::to_sql(&mut builder);
+                    //             self.$idx.walk_ast_primary_key(col_name.clone(), out_new.reborrow())?;
+                    //             key_value = builder.clear();
+                    //         }
+                    //     )+
 
-                        $(
-                            let mut out_new = AstPass::<__DB>::to_sql(&mut builder);
-                            self.$idx.column_names(out_new.reborrow())?;
-                            let name = builder.clear();
-                            // println!("column name:{} col_name:{}", name, col_name);
-                            if name == "\"".to_owned() + &col_name + "\"" {
-                                let mut out_new = AstPass::<__DB>::to_sql(&mut builder);
-                                self.$idx.walk_ast_primary_key(col_name.clone(), out_new.reborrow())?;
-                                key_value = builder.clear();
-                            }
-                        )+
+                    //     out.push_sql(&old_sql);
+                    //     out.push_sql(&key_value);
+                    // }
 
-                        out.push_sql(&old_sql);
-                        out.push_sql("'");
-                        out.push_sql(&key_value);
-                        out.push_sql("'");
-                    }
+                    $(
+                        self.$idx.walk_ast_primary_key(col_name.clone(), out.reborrow())?;
+                    )+
                     Ok(())
                 }
             }

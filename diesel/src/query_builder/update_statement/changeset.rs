@@ -74,6 +74,11 @@ where
     T: Column,
     U: QueryFragment<DB>,
 {
+    ///判断是否为自增ID
+    fn is_self_increase_id1(&self)->bool{        
+        self._column.is_self_increase_id()
+    }
+
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_identifier(T::NAME)?;
         out.push_sql(" = ");

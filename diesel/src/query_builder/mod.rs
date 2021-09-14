@@ -165,9 +165,14 @@ pub trait QueryFragment<DB: Backend> {
 
     ///walk_ast_primary_key
     fn walk_ast_primary_key(&self, primary_key:String, mut pass: AstPass<DB>) -> QueryResult<()>{
-        println!("primary_key:{}", primary_key);
+        let _ = primary_key;
         pass.push_sql("");
         Ok(())
+    }
+    
+    ///判断是否为自增ID
+    fn is_self_increase_id1(&self)->bool{
+        false       
     }
 
     /// Converts this `QueryFragment` to its SQL representation.
