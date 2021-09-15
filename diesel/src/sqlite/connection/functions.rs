@@ -154,7 +154,7 @@ impl<'a> FunctionRow<'a> {
         let args = unsafe {
             Vec::from_raw_parts(
                 // This cast is safe because:
-                // * Casting from a pointer to an arry to a pointer to the first array
+                // * Casting from a pointer to an array to a pointer to the first array
                 // element is safe
                 // * Casting from a raw pointer to `NonNull<T>` is safe,
                 // because `NonNull` is #[repr(transparent)]
