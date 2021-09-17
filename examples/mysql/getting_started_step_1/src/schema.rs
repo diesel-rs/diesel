@@ -1,5 +1,5 @@
 diesel::table! {
-    posts (id, title) {
+    posts (id) {
         id -> Integer,
         title -> Varchar,
         body -> Text,
