@@ -20,6 +20,15 @@ fn main() {
         println!("{}", post.body);
     }
 
+    let post = Post{
+                id : 1,
+                title : "test".to_string(),
+                body : "body".to_string(),
+                published : true,
+     };
+    diesel::insert_into(posts).values(post).execute(&connection).expect("insert error");
+    
+
     let results = company
         .filter(CompanyID.eq(1))              
         .load::<Company>(&connection)

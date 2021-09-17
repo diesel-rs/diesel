@@ -1,7 +1,10 @@
 use diesel::prelude::*;
 use chrono::NaiveDateTime;
+use crate::schema::posts;
 
-#[derive(Queryable)]
+#[derive(Identifiable, Debug, Clone, Queryable, Insertable,AsChangeset, PartialEq,Default)]
+#[primary_key(id, title)]
+#[table_name="posts"]
 pub struct Post {
     pub id: i32,
     pub title: String,
@@ -10,7 +13,7 @@ pub struct Post {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Clone, Queryable)]
+#[derive(Debug, Clone, Queryable)] 
 pub struct Company {
     pub CompanyID: i32,
     pub CompanyCode: String,
