@@ -2,14 +2,13 @@
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 // Clippy lints
 #![allow(
-    clippy::option_map_unwrap_or_else,
-    clippy::option_map_unwrap_or,
+    clippy::map_unwrap_or,
     clippy::match_same_arms,
     clippy::type_complexity,
     clippy::needless_doctest_main
 )]
 #![warn(
-    clippy::option_unwrap_used,
+    clippy::unwrap_used,
     clippy::print_stdout,
     clippy::wrong_pub_self_convention,
     clippy::mut_mut,
@@ -43,23 +42,49 @@ use proc_macro::TokenStream;
 /// # Examples
 ///
 /// ```rust
-/// use diesel_migrations::{embed_migrations, EmbededMigrations, MigrationHarness};
+/// use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 /// # use std::error::Error;
 /// # include!("../../../diesel/src/doctest_setup.rs");
 /// #
 /// # #[cfg(feature = "postgres")]
-/// pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/postgresql");
+/// # fn migration_connection() -> diesel::PgConnection {
+/// #    let connection_url = database_url_from_env("PG_DATABASE_URL");
+/// #    let mut conn = diesel::PgConnection::establish(&connection_url).unwrap();
+/// #    conn.begin_test_transaction().unwrap();
+/// #    conn
+/// # }
+/// #
+/// # #[cfg(feature = "sqlite")]
+/// # fn migration_connection() -> diesel::SqliteConnection {
+/// #    let connection_url = database_url_from_env("SQLITE_DATABASE_URL");
+/// #    let mut conn = diesel::SqliteConnection::establish(&connection_url).unwrap();
+/// #    conn.begin_test_transaction().unwrap();
+/// #    conn
+/// # }
+/// #
+/// # #[cfg(feature = "mysql")]
+/// # fn migration_connection() -> diesel::MysqlConnection {
+/// #    let connection_url = database_url_from_env("MYSQL_DATABASE_URL");
+/// #    let mut conn = diesel::MysqlConnection::establish(&connection_url).unwrap();
+/// #    conn
+/// # }
+/// #
+/// #
+/// # #[cfg(feature = "postgres")]
+/// pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/postgresql");
 /// # #[cfg(all(feature = "mysql", not(feature = "postgres")))]
-/// # pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/mysql");
+/// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/mysql");
 /// # #[cfg(all(feature = "sqlite", not(any(feature = "postgres", feature = "mysql"))))]
-/// # pub const MIGRATIONS: EmbededMigrations = embed_migrations!("../../migrations/sqlite");
+/// # pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("../../migrations/sqlite");
 ///
 /// # fn main() {
-/// #     run_migrations().unwrap();
+/// #     let connection = &mut migration_connection();
+/// #     run_migrations(connection).unwrap();
 /// # }
 ///
-/// fn run_migrations() -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-///     let connection = establish_connection();
+/// fn run_migrations(connection: &mut impl MigrationHarness<DB>) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+/// #   #[cfg(feature = "mysql")]
+/// #   connection.revert_all_migrations(MIGRATIONS)?;
 ///
 ///     // This will run the necessary migrations.
 ///     //
@@ -75,5 +100,5 @@ pub fn embed_migrations(input: TokenStream) -> TokenStream {
     embed_migrations::expand(input.to_string())
         .to_string()
         .parse()
-        .unwrap()
+        .expect("Failed create embedded migrations instance")
 }

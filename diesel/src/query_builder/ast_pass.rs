@@ -46,7 +46,7 @@ where
     #[doc(hidden)]
     pub fn collect_binds(
         collector: &'a mut DB::BindCollector,
-        metadata_lookup: &'a DB::MetadataLookup,
+        metadata_lookup: &'a mut DB::MetadataLookup,
     ) -> Self {
         AstPass {
             internals: AstPassInternals::CollectBinds {
@@ -92,23 +92,24 @@ where
     // Clippy is wrong, this cannot be expressed with pointer casting
     #[allow(clippy::transmute_ptr_to_ptr)]
     pub fn reborrow(&mut self) -> AstPass<DB> {
-        use self::AstPassInternals::*;
         let internals = match self.internals {
-            ToSql(ref mut builder) => ToSql(&mut **builder),
-            CollectBinds {
+            AstPassInternals::ToSql(ref mut builder) => AstPassInternals::ToSql(&mut **builder),
+            AstPassInternals::CollectBinds {
                 ref mut collector,
-                metadata_lookup,
-            } => CollectBinds {
+                ref mut metadata_lookup,
+            } => AstPassInternals::CollectBinds {
                 collector: &mut **collector,
-                metadata_lookup: &*metadata_lookup,
+                metadata_lookup: &mut **metadata_lookup,
             },
-            IsSafeToCachePrepared(ref mut result) => IsSafeToCachePrepared(&mut **result),
-            DebugBinds(ref mut f) => {
+            AstPassInternals::IsSafeToCachePrepared(ref mut result) => {
+                AstPassInternals::IsSafeToCachePrepared(&mut **result)
+            }
+            AstPassInternals::DebugBinds(ref mut f) => {
                 // Safe because the lifetime is always being shortened.
                 let f_with_shorter_lifetime = unsafe { mem::transmute(&mut **f) };
-                DebugBinds(f_with_shorter_lifetime)
+                AstPassInternals::DebugBinds(f_with_shorter_lifetime)
             }
-            IsNoop(ref mut result) => IsNoop(&mut **result),
+            AstPassInternals::IsNoop(ref mut result) => AstPassInternals::IsNoop(&mut **result),
         };
         AstPass { internals }
     }
@@ -203,17 +204,16 @@ where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
     {
-        use self::AstPassInternals::*;
         match self.internals {
-            ToSql(ref mut out) => out.push_bind_param(),
-            CollectBinds {
+            AstPassInternals::ToSql(ref mut out) => out.push_bind_param(),
+            AstPassInternals::CollectBinds {
                 ref mut collector,
-                metadata_lookup,
+                ref mut metadata_lookup,
             } => collector.push_bound_value(bind, metadata_lookup)?,
-            DebugBinds(ref mut f) => {
+            AstPassInternals::DebugBinds(ref mut f) => {
                 f.entry(bind);
             }
-            IsNoop(ref mut result) => **result = false,
+            AstPassInternals::IsNoop(ref mut result) => **result = false,
             _ => {}
         }
         Ok(())
@@ -225,10 +225,11 @@ where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
     {
-        use self::AstPassInternals::*;
         match self.internals {
-            CollectBinds { .. } | DebugBinds(..) => self.push_bind_param(bind)?,
-            ToSql(ref mut out) => {
+            AstPassInternals::CollectBinds { .. } | AstPassInternals::DebugBinds(..) => {
+                self.push_bind_param(bind)?
+            }
+            AstPassInternals::ToSql(ref mut out) => {
                 out.push_bind_param_value_only();
             }
             _ => {}
@@ -252,7 +253,7 @@ where
     ToSql(&'a mut DB::QueryBuilder),
     CollectBinds {
         collector: &'a mut DB::BindCollector,
-        metadata_lookup: &'a DB::MetadataLookup,
+        metadata_lookup: &'a mut DB::MetadataLookup,
     },
     IsSafeToCachePrepared(&'a mut bool),
     DebugBinds(&'a mut fmt::DebugList<'a, 'a>),

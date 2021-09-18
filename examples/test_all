@@ -1,6 +1,12 @@
 #!/bin/sh
 set -e
 
+SCRIPT=$(readlink -f $0)
+SCRIPTPATH=`dirname $SCRIPT`
+
+cd $SCRIPTPATH
+
 for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
-  (cd $dir && ./test_all)
+    echo $dir
+    (cd $dir && ./test_all)
 done

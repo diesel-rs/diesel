@@ -1,6 +1,10 @@
 #!/bin/sh
 set -e
 
+SCRIPTPATH=`dirname $0`
+
+cd $SCRIPTPATH
+
 set -a
 if [ -f ../../.env ]; then . ../../.env; fi
 DATABASE_URL=${MYSQL_EXAMPLE_DATABASE_URL}
@@ -9,9 +13,11 @@ if [ -z "$BACKEND" ]; then
 fi
 set +a
 
-for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
-  cd $dir
-  ../../../bin/diesel database reset
-  cargo build
-  cd ..
-done
+if [ -z "${BACKEND##*mysql*}" ]; then
+  for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
+    cd $dir
+    ../../../bin/diesel database reset
+    cargo build
+    cd ..
+  done
+fi

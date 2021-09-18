@@ -110,7 +110,8 @@ Thank you! We'll try to respond as quickly as possible.
 
 5. Now, try running the test suite to confirm everything works for you locally
    by executing `bin/test`. (Initially, this will take a while to compile
-   everything.)
+   everything.) In addition, if you want to compile and test a crate separately, 
+   you can refer to the commands in `bin/test`.
 
 [rustup]: https://rustup.rs/
 
@@ -130,7 +131,7 @@ To run rustfmt tests locally:
 
 3. Run clippy using cargo from the root of your diesel repo.
    ```
-   cargo clippy
+   cargo clippy --all
    ```
    Each PR needs to compile without warning.
 

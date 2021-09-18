@@ -56,6 +56,18 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added the error position for PostgreSQL errors
 
+* Added ability to create custom collation functions in SQLite.
+
+* Added support for SQLite's `IS` and `IS NOT`.
+
+* Add support for HAVING clauses.
+
+* Added support for SQL functions without arguments for SQLite.
+
+* Diesel CLI will now generate SQL type definitions for SQL types that are not supported by diesel out of the box. It's possible to disable this behavior via the `generate_missing_sql_type_definitions` config option.
+
+* Added an option to `#[derive(Insertable)]` that let you insert `NULL` values instead of `DEFAULT` values for `Option<T>` 
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -87,7 +99,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   you are implementing `HasSqlType` for `Mysql` manually, you may need to adjust
   your implementation to fully use the new unsigned variants in `MysqlType`
 
-* The minimal officially supported rustc version is now 1.48.0
+* The minimal officially supported rustc version is now 1.51.0
 
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
   from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
@@ -160,6 +172,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   be compatible with the rewrite, but code calling into `diesel_migrations` requires an update.
   See the [migration guide](#2-0-0-upgrade-migrations) for details.
 
+* The `#[table_name]` attribute for derive macros can now refer to any path and is no
+  longer limited to identifiers from the current scope.
+
+* Interacting with a database requires a mutable connection. 
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
@@ -203,6 +220,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Queries containing a `distinct on` clause check now on compile time that a compatible order clause was set.
 
+* Implementations of custom SQLite SQL functions now check for panics
+
 ### Deprecated
 
 * `diesel_(prefix|postfix|infix)_operator!` have been deprecated. These macros
@@ -235,7 +254,7 @@ Key points:
       where
           T: ValidGrouping<()>,
           T::IsAggregate: MixedGrouping<is_aggregate::No, Output = is_aggregate::No>,
-          is_aggreagte::No: MixedGrouping<T::IsAggregate, Output = is_aggreagte::No>,
+          is_aggregate::No: MixedGrouping<T::IsAggregate, Output = is_aggregate::No>,
 
 - With `feature = "unstable"`, `T: NonAggregate` implies the first two bounds,
   but not the third. On stable only the first bound is implied. This is a
@@ -272,7 +291,7 @@ fn run_migration(conn: &PgConnection) {
 ```
 to 
 ```rust
-pub const MIGRATIONS: EmbededMigrations = embed_migrations!();
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
 fn run_migration(conn: &PgConnection) {
     conn.run_pending_migrations(MIGRATIONS).unwrap();

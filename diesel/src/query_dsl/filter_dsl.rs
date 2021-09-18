@@ -8,7 +8,7 @@ use crate::query_source::*;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `filter` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait FilterDsl<Predicate> {
     /// The type returned by `.filter`.
     type Output;
@@ -35,7 +35,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `find` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait FindDsl<PK> {
     /// The type returned by `.find`.
     type Output;
@@ -63,7 +63,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `or_filter` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait OrFilterDsl<Predicate> {
     /// The type returned by `.filter`.
     type Output;

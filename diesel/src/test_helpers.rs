@@ -27,7 +27,7 @@ cfg_if! {
         pub type TestConnection = MysqlConnection;
 
         pub fn connection() -> TestConnection {
-            let conn = connection_no_transaction();
+            let mut conn = connection_no_transaction();
             conn.begin_test_transaction().unwrap();
             conn
         }
@@ -53,7 +53,7 @@ cfg_if! {
 
 #[cfg(feature = "postgres")]
 pub fn pg_connection() -> PgConnection {
-    let conn = pg_connection_no_transaction();
+    let mut conn = pg_connection_no_transaction();
     conn.begin_test_transaction().unwrap();
     conn
 }

@@ -7,9 +7,9 @@ use crate::query_source::{Column, QuerySource};
 use crate::result::QueryResult;
 
 /// Types which can be passed to
-/// [`update.set`](struct.UpdateStatement.html#method.set).
+/// [`update.set`](UpdateStatement::set()).
 ///
-/// This trait can be [derived](derive.AsChangeset.html)
+/// This trait can be [derived](derive@AsChangeset)
 pub trait AsChangeset {
     /// The table which `Self::Changeset` will be updating
     type Target: QuerySource;
@@ -18,6 +18,9 @@ pub trait AsChangeset {
     type Changeset;
 
     /// Convert `self` into the actual update statement being executed
+    // This method is part of our public API
+    // we won't change it to just appease clippy
+    #[allow(clippy::wrong_self_convention)]
     fn as_changeset(self) -> Self::Changeset;
 }
 
@@ -62,7 +65,7 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct Assign<Col, Expr> {
     _column: Col,
     expr: Expr,

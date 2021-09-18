@@ -1,6 +1,9 @@
-use std::fmt::{self, Debug, Display};
+use std::fmt::{self, Debug};
 use std::marker::PhantomData;
 use std::mem;
+
+#[cfg(not(feature = "sqlite"))]
+use std::fmt::{Display};
 
 use super::{AstPass, QueryBuilder, QueryFragment};
 use crate::backend::Backend;
@@ -14,7 +17,7 @@ use crate::backend::Backend;
 ///
 /// See [`debug_query`] for usage examples.
 ///
-/// [`debug_query`]: ../fn.debug_query.html
+/// [`debug_query`]: crate::query_builder::debug_query()
 pub struct DebugQuery<'a, T: 'a, DB> {
     pub(crate) query: &'a T,
     _marker: PhantomData<DB>,
@@ -29,6 +32,7 @@ impl<'a, T, DB> DebugQuery<'a, T, DB> {
     }
 }
 
+#[cfg(not(feature = "sqlite"))]
 impl<'a, T, DB> Display for DebugQuery<'a, T, DB>
 where
     DB: Backend,
@@ -43,6 +47,7 @@ where
     }
 }
 
+#[cfg(not(feature = "sqlite"))]
 impl<'a, T, DB> Debug for DebugQuery<'a, T, DB>
 where
     DB: Backend,

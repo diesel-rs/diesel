@@ -1,6 +1,7 @@
 use crate::backend::Backend;
 use crate::expression::subselect::Subselect;
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression, ValidGrouping};
+use crate::helper_types::exists;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::Bool;
@@ -19,16 +20,16 @@ use crate::sql_types::Bool;
 /// #     use schema::users::dsl::*;
 /// #     use diesel::select;
 /// #     use diesel::dsl::exists;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let sean_exists = select(exists(users.filter(name.eq("Sean"))))
-///     .get_result(&connection);
+///     .get_result(connection);
 /// let jim_exists = select(exists(users.filter(name.eq("Jim"))))
-///     .get_result(&connection);
+///     .get_result(connection);
 /// assert_eq!(Ok(true), sean_exists);
 /// assert_eq!(Ok(false), jim_exists);
 /// # }
 /// ```
-pub fn exists<T>(query: T) -> Exists<T> {
+pub fn exists<T>(query: T) -> exists<T> {
     Exists(Subselect::new(query))
 }
 

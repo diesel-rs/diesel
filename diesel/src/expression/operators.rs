@@ -192,7 +192,7 @@ macro_rules! __diesel_operator_to_sql {
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// diesel::infix_operator!(MyEq, " = ");
 ///
 /// use diesel::expression::AsExpression;
@@ -208,7 +208,7 @@ macro_rules! __diesel_operator_to_sql {
 ///
 /// let users_with_name = users.select(id).filter(my_eq(name, "Sean"));
 ///
-/// assert_eq!(Ok(1), users_with_name.first(&connection));
+/// assert_eq!(Ok(1), users_with_name.first(connection));
 /// # }
 /// ```
 #[macro_export]
@@ -365,7 +365,6 @@ macro_rules! diesel_infix_operator {
 /// a single argument rather than two. The operator SQL will be placed after
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
-/// [`infix_operator!`]: macro.infix_operator.html
 #[macro_export]
 macro_rules! postfix_operator {
     ($name:ident, $operator:expr) => {
@@ -420,7 +419,6 @@ macro_rules! diesel_postfix_operator {
 /// a single argument rather than two. The operator SQL will be placed before
 /// the single argument. See [`infix_operator!`] for example usage.
 ///
-/// [`infix_operator!`]: macro.infix_operator.html
 #[macro_export]
 macro_rules! prefix_operator {
     ($name:ident, $operator:expr) => {
@@ -541,7 +539,7 @@ where
     type Values = ValuesClause<ColumnInsertValue<T, U>, T::Table>;
 
     fn values(self) -> Self::Values {
-        ValuesClause::new(ColumnInsertValue::Expression(self.left, self.right))
+        ValuesClause::new(ColumnInsertValue::new(self.left, self.right))
     }
 }
 

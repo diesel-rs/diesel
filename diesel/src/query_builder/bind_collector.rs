@@ -12,13 +12,13 @@ use crate::sql_types::{HasSqlType, TypeMetadata};
 /// are adding support for a new backend to Diesel. Plugins which are extending
 /// the query builder will use [`AstPass::push_bind_param`] instead.
 ///
-/// [`AstPass::push_bind_param`]: ../struct.AstPass.html#method.push_bind_param
+/// [`AstPass::push_bind_param`]: crate::query_builder::AstPass::push_bind_param()
 pub trait BindCollector<DB: Backend> {
     /// Serializes the given bind value, and collects the result.
     fn push_bound_value<T, U>(
         &mut self,
         bind: &U,
-        metadata_lookup: &DB::MetadataLookup,
+        metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
@@ -57,7 +57,7 @@ impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB>
     fn push_bound_value<T, U>(
         &mut self,
         bind: &U,
-        metadata_lookup: &DB::MetadataLookup,
+        metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()>
     where
         DB: HasSqlType<T>,

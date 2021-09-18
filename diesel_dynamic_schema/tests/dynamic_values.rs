@@ -69,10 +69,10 @@ impl FromSql<Any, diesel::mysql::Mysql> for MyDynamicValue {
 
 #[test]
 fn dynamic_query() {
-    let connection = super::establish_connection();
-    crate::create_user_table(&connection);
+    let connection = &mut super::establish_connection();
+    crate::create_user_table(connection);
     sql_query("INSERT INTO users (name, hair_color) VALUES ('Sean', 'black'), ('Tess', 'black')")
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     let users = diesel_dynamic_schema::table("users");
@@ -87,7 +87,7 @@ fn dynamic_query() {
     select.add_field(hair_color);
 
     let actual_data: Vec<DynamicRow<NamedField<MyDynamicValue>>> =
-        users.select(select).load(&connection).unwrap();
+        users.select(select).load(connection).unwrap();
 
     assert_eq!(
         actual_data[0]["name"],
@@ -141,7 +141,7 @@ fn dynamic_query() {
     select.add_field(hair_color);
 
     let actual_data: Vec<DynamicRow<MyDynamicValue>> =
-        users.select(select).load(&connection).unwrap();
+        users.select(select).load(connection).unwrap();
 
     assert_eq!(actual_data[0][1], MyDynamicValue::String("Sean".into()));
     assert_eq!(actual_data[1][1], MyDynamicValue::String("Tess".into()));
@@ -153,10 +153,10 @@ fn dynamic_query() {
 fn mixed_value_query() {
     use diesel::dsl::sql;
 
-    let connection = crate::establish_connection();
-    crate::create_user_table(&connection);
+    let connection = &mut crate::establish_connection();
+    crate::create_user_table(connection);
     sql_query("INSERT INTO users (id, name, hair_color) VALUES (42, 'Sean', 'black'), (43, 'Tess', 'black')")
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     let users = diesel_dynamic_schema::table("users");
@@ -164,7 +164,7 @@ fn mixed_value_query() {
 
     let (id, row) = users
         .select((id, sql::<Untyped>("name, hair_color")))
-        .first::<(i32, DynamicRow<NamedField<MyDynamicValue>>)>(&connection)
+        .first::<(i32, DynamicRow<NamedField<MyDynamicValue>>)>(connection)
         .unwrap();
 
     assert_eq!(id, 42);
@@ -176,17 +176,17 @@ fn mixed_value_query() {
 fn nullable_dynamic_value() {
     use diesel::dsl::sql;
 
-    let connection = crate::establish_connection();
-    crate::create_user_table(&connection);
+    let connection = &mut crate::establish_connection();
+    crate::create_user_table(connection);
     sql_query("INSERT INTO users (name, hair_color) VALUES ('Sean', 'dark'), ('Tess', NULL)")
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     let users = diesel_dynamic_schema::table("users");
 
     let result = users
         .select(sql::<Untyped>("hair_color"))
-        .load::<DynamicRow<Option<MyDynamicValue>>>(&connection)
+        .load::<DynamicRow<Option<MyDynamicValue>>>(connection)
         .unwrap();
 
     assert_eq!(result[0][0], Some(MyDynamicValue::String("dark".into())));
@@ -194,7 +194,7 @@ fn nullable_dynamic_value() {
 
     let result = users
         .select(sql::<Untyped>("hair_color"))
-        .load::<DynamicRow<NamedField<Option<MyDynamicValue>>>>(&connection)
+        .load::<DynamicRow<NamedField<Option<MyDynamicValue>>>>(connection)
         .unwrap();
 
     assert_eq!(

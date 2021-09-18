@@ -70,10 +70,10 @@ pub trait BelongsTo<Parent> {
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let connection = establish_connection();
-/// let users = users::table.load::<User>(&connection)?;
+/// #     let connection = &mut establish_connection();
+/// let users = users::table.load::<User>(connection)?;
 /// let posts = Post::belonging_to(&users)
-///     .load::<Post>(&connection)?
+///     .load::<Post>(connection)?
 ///     .grouped_by(&users);
 /// let data = users.into_iter().zip(posts).collect::<Vec<_>>();
 ///
@@ -100,7 +100,7 @@ pub trait BelongsTo<Parent> {
 ///
 /// See [the module documentation] for more examples
 ///
-/// [the module documentation]: index.html
+/// [the module documentation]: super
 pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
     /// See the trait documentation.
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Self::Item>>;

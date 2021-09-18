@@ -19,7 +19,6 @@
 //! to automatically generate these macro calls
 //! (by connecting to your database and querying its schema).
 //!
-//! [`table!`]: macro.table.html
 //!
 //! ## Getting started
 //!
@@ -32,7 +31,7 @@
 //! and avoid anything which has a generic name.
 //! Files which use Diesel are expected to have `use diesel::prelude::*;`.
 //!
-//! [`update`]: fn.update.html
+//! [`update`]: update()
 //!
 //! ## Constructing a query
 //!
@@ -61,7 +60,6 @@
 //!   with [the `sql_function!` macro][`sql_function!`].
 //!
 //! [`std::ops`]: //doc.rust-lang.org/stable/std/ops/index.html
-//! [`sql_function!`]: macro.sql_function.html
 //!
 //! ## Serializing and Deserializing
 //!
@@ -82,10 +80,10 @@
 //! go to the "Implementors" section,
 //! and find the Rust type you want to use.
 //!
-//! [`Queryable`]: deserialize/trait.Queryable.html
-//! [`diesel::sql_types::Integer`]: sql_types/struct.Integer.html
-//! [`ToSql`]: serialize/trait.ToSql.html
-//! [`FromSql`]: deserialize/trait.FromSql.html
+//! [`Queryable`]: deserialize::Queryable
+//! [`diesel::sql_types::Integer`]: sql_types::Integer
+//! [`ToSql`]: serialize::ToSql
+//! [`FromSql`]: deserialize::FromSql
 //!
 //! ## Getting help
 //!
@@ -107,15 +105,13 @@
 #![allow(
     clippy::match_same_arms,
     clippy::needless_doctest_main,
-    clippy::option_map_unwrap_or_else,
-    clippy::option_map_unwrap_or,
+    clippy::map_unwrap_or,
     clippy::redundant_field_names,
     clippy::type_complexity
 )]
 #![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
 #![warn(
-    clippy::option_unwrap_used,
-    clippy::result_unwrap_used,
+    clippy::unwrap_used,
     clippy::print_stdout,
     clippy::wrong_pub_self_convention,
     clippy::mut_mut,
@@ -128,7 +124,7 @@
     clippy::used_underscore_binding
 )]
 
-#![recursion_limit="256"]
+#![recursion_limit="4096"]
 
 #[cfg(feature = "postgres")]
 #[macro_use]
@@ -312,6 +308,9 @@ pub mod helper_types {
     /// Represents the return type of `.group_by(expr)`
     pub type GroupBy<Source, Expr> = <Source as GroupByDsl<Expr>>::Output;
 
+    /// Represents the return type of `.having(predicate)`
+    pub type Having<Source, Predicate> = <Source as HavingDsl<Predicate>>::Output;
+
     /// Represents the return type of `.union(rhs)`
     pub type Union<Source, Rhs> = CombinationClause<
         combination_clause::Union,
@@ -388,7 +387,7 @@ pub mod prelude {
     pub use crate::deserialize::{Queryable, QueryableByName};
     #[doc(inline)]
     pub use crate::expression::{
-        AppearsOnTable, BoxableExpression, Expression, IntoSql, SelectableExpression,
+        AppearsOnTable, BoxableExpression, Expression, IntoSql, Selectable, SelectableExpression,
     };
 
     #[doc(inline)]
@@ -412,6 +411,8 @@ pub mod prelude {
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+
+    pub use crate::expression::SelectableHelper;
 
     #[cfg(feature = "mysql")]
     #[doc(inline)]

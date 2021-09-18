@@ -13,6 +13,22 @@ pub(crate) mod prelude {
 
 #[macro_export]
 #[doc(hidden)]
+macro_rules! __diesel_fix_sql_type_import {
+    ($(use $($import:tt)::+;)*) => {
+        $(
+            $crate::__diesel_fix_sql_type_import!(@expand_import: $($import)::+);
+        )*
+    };
+    (@expand_import: super:: $($Type:tt)+) => {
+        use super::super::$($Type)+;
+    };
+    (@expand_import: $($Type:tt)+) => {
+        use $($Type)+;
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
 macro_rules! __diesel_column {
     (
         table = $table:ident,
@@ -281,7 +297,7 @@ macro_rules! __diesel_column {
 /// `all_columns`. The SQL type is needed for things like [returning boxed
 /// queries][boxed_queries].
 ///
-/// [boxed_queries]: query_dsl/trait.QueryDsl.html#method.into_boxed
+/// [boxed_queries]: crate::query_dsl::QueryDsl::into_boxed()
 ///
 /// `BoxedQuery`
 /// ----------
@@ -649,10 +665,10 @@ macro_rules! __diesel_table_impl {
         },)+],
     ) => {
         $($meta)*
+        #[allow(unused_imports, dead_code)]
         pub mod $table_name {
-            #![allow(dead_code)]
-            $($imports)*
             pub use self::columns::*;
+            $($imports)*
 
             /// Re-exports all of the columns of this table, as well as the
             /// table struct renamed to the module name. This is meant to be
@@ -830,7 +846,7 @@ macro_rules! __diesel_table_impl {
             /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
-                $($imports)*
+                $crate::__diesel_fix_sql_type_import!($($imports)*);
 
                 #[allow(non_camel_case_types, dead_code)]
                 #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]
@@ -1025,13 +1041,13 @@ macro_rules! __diesel_table_query_source_impl {
 ///
 /// * `child_table` is the Table with the Foreign key.
 ///
-/// So given the Table decaration from [Associations docs](associations/index.html)
+/// So given the Table decaration from [Associations docs](crate::associations)
 ///
 /// * The parent table would be `User`
 /// * The child table would be `Post`
 /// * and the Foreign key would be `Post.user_id`
 ///
-/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](prelude/trait.JoinOnDsl.html)
+/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](crate::prelude::JoinOnDsl)
 /// the following on clause is generated implicitly:
 /// ```sql
 /// post JOIN users ON posts.user_id = users.id

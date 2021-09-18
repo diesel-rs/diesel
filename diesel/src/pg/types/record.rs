@@ -99,13 +99,18 @@ macro_rules! tuple_impls {
             $(Pg: HasSqlType<$ST>),+
         {
             fn write_tuple<_W: Write>(&self, out: &mut Output<_W, Pg>) -> serialize::Result {
-                let mut buffer = out.with_buffer(Vec::new());
+                let mut buffer = Vec::new();
                 out.write_i32::<NetworkEndian>($Tuple)?;
 
                 $(
                     let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid()?;
                     out.write_u32::<NetworkEndian>(oid)?;
-                    let is_null = self.$idx.to_sql(&mut buffer)?;
+                    let is_null = {
+                        let mut temp_buffer = Output::new(buffer, out.metadata_lookup());
+                        let is_null = self.$idx.to_sql(&mut temp_buffer)?;
+                        buffer = temp_buffer.into_inner();
+                        is_null
+                    };
 
                     if let IsNull::No = is_null {
                         out.write_i32::<NetworkEndian>(buffer.len() as i32)?;
@@ -170,14 +175,14 @@ mod tests {
 
     #[test]
     fn record_deserializes_correctly() {
-        let conn = pg_connection();
+        let conn = &mut pg_connection();
 
         let tup =
-            sql::<Record<(Integer, Text)>>("SELECT (1, 'hi')").get_result::<(i32, String)>(&conn);
+            sql::<Record<(Integer, Text)>>("SELECT (1, 'hi')").get_result::<(i32, String)>(conn);
         assert_eq!(Ok((1, String::from("hi"))), tup);
 
         let tup = sql::<Record<(Record<(Integer, Text)>, Integer)>>("SELECT ((2, 'bye'), 3)")
-            .get_result::<((i32, String), i32)>(&conn);
+            .get_result::<((i32, String), i32)>(conn);
         assert_eq!(Ok(((2, String::from("bye")), 3)), tup);
 
         let tup = sql::<
@@ -186,20 +191,20 @@ mod tests {
                 Nullable<Integer>,
             )>,
         >("SELECT ((4, NULL), NULL)")
-        .get_result::<((Option<i32>, Option<String>), Option<i32>)>(&conn);
+        .get_result::<((Option<i32>, Option<String>), Option<i32>)>(conn);
         assert_eq!(Ok(((Some(4), None), None)), tup);
     }
 
     #[test]
     fn record_kinda_sorta_not_really_serializes_correctly() {
-        let conn = pg_connection();
+        let conn = &mut pg_connection();
 
         let tup = sql::<Record<(Integer, Text)>>("(1, 'hi')");
-        let res = crate::select(tup.eq((1, "hi"))).get_result(&conn);
+        let res = crate::select(tup.eq((1, "hi"))).get_result(conn);
         assert_eq!(Ok(true), res);
 
         let tup = sql::<Record<(Record<(Integer, Text)>, Integer)>>("((2, 'bye'::text), 3)");
-        let res = crate::select(tup.eq(((2, "bye"), 3))).get_result(&conn);
+        let res = crate::select(tup.eq(((2, "bye"), 3))).get_result(conn);
         assert_eq!(Ok(true), res);
 
         let tup = sql::<
@@ -209,7 +214,7 @@ mod tests {
             )>,
         >("((4, NULL::text), NULL::int4)");
         let res = crate::select(tup.is_not_distinct_from(((Some(4), None::<&str>), None::<i32>)))
-            .get_result(&conn);
+            .get_result(conn);
         assert_eq!(Ok(true), res);
     }
 
@@ -229,13 +234,13 @@ mod tests {
             }
         }
 
-        let conn = pg_connection();
+        let conn = &mut pg_connection();
 
         crate::sql_query("CREATE TYPE my_type AS (i int4, t text)")
-            .execute(&conn)
+            .execute(conn)
             .unwrap();
         let sql = sql::<Bool>("(1, 'hi')::my_type = ").bind::<MyType, _>(MyStruct(1, "hi"));
-        let res = crate::select(sql).get_result(&conn);
+        let res = crate::select(sql).get_result(conn);
         assert_eq!(Ok(true), res);
     }
 }

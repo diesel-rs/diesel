@@ -35,10 +35,10 @@ pub enum Error {
     /// does not treat 0 rows as an error. If you would like to allow either 0
     /// or 1 rows, call [`optional`] on the result.
     ///
-    /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
-    /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
-    /// [`load`]: ../query_dsl/trait.RunQueryDsl.html#method.load
-    /// [`optional`]: trait.OptionalExtension.html#tymethod.optional
+    /// [`get_result`]: crate::query_dsl::RunQueryDsl::get_result()
+    /// [`first`]: crate::query_dsl::RunQueryDsl::first()
+    /// [`load`]: crate::query_dsl::RunQueryDsl::load()
+    /// [`optional`]: OptionalExtension::optional
     NotFound,
 
     /// The query could not be constructed
@@ -62,6 +62,12 @@ pub enum Error {
     /// by PostgreSQL.
     SerializationError(Box<dyn StdError + Send + Sync>),
 
+    /// An error occurred during the rollback of a transaction.
+    ///
+    /// An example of when this error would be returned is if a rollback has
+    /// already be called on the current transaction.
+    RollbackError(Box<Error>),
+
     /// Roll back the current transaction.
     ///
     /// You can return this variant inside of a transaction when you want to
@@ -82,6 +88,7 @@ pub enum Error {
 /// identify errors which are commonly recovered from programmatically. This enum
 /// is not intended to be exhaustively matched, and new variants may be added in
 /// the future without a major version bump.
+#[non_exhaustive]
 pub enum DatabaseErrorKind {
     /// A unique constraint was violated.
     UniqueViolation,
@@ -117,8 +124,14 @@ pub enum DatabaseErrorKind {
     /// A check constraint was violated.
     CheckViolation,
 
+    /// The connection to the server was unexpectedly closed.
+    ///
+    /// This error is only detected for PostgreSQL and is emitted on a best-effort basis
+    /// and may be missed.
+    ClosedConnection,
+
     #[doc(hidden)]
-    __Unknown, // Match against _ instead, more variants may be added in the future
+    Unknown, // Match against _ instead, more variants may be added in the future
 }
 
 /// Information about an error that was returned by the database.
@@ -194,7 +207,7 @@ impl DatabaseErrorInformation for String {
 
 /// Errors which can occur during [`Connection::establish`]
 ///
-/// [`Connection::establish`]: ../connection/trait.Connection.html#tymethod.establish
+/// [`Connection::establish`]: crate::connection::Connection::establish
 #[derive(Debug, PartialEq)]
 #[non_exhaustive]
 pub enum ConnectionError {
@@ -226,7 +239,7 @@ pub type QueryResult<T> = Result<T, Error>;
 /// is otherwise a direct mapping to `Result`.
 pub type ConnectionResult<T> = Result<T, ConnectionError>;
 
-/// See the [method documentation](#tymethod.optional).
+/// See the [method documentation](OptionalExtension::optional).
 pub trait OptionalExtension<T> {
     /// Converts a `QueryResult<T>` into a `QueryResult<Option<T>>`.
     ///
@@ -234,8 +247,8 @@ pub trait OptionalExtension<T> {
     /// row as an error (e.g. the return value of [`get_result`] or [`first`]). This method will
     /// handle that error, and give you back an `Option<T>` instead.
     ///
-    /// [`get_result`]: ../query_dsl/trait.RunQueryDsl.html#method.get_result
-    /// [`first`]: ../query_dsl/trait.RunQueryDsl.html#method.first
+    /// [`get_result`]: crate::query_dsl::RunQueryDsl::get_result()
+    /// [`first`]: crate::query_dsl::RunQueryDsl::first()
     ///
     /// # Example
     ///
@@ -282,6 +295,7 @@ impl Display for Error {
             Error::QueryBuilderError(ref e) => e.fmt(f),
             Error::DeserializationError(ref e) => e.fmt(f),
             Error::SerializationError(ref e) => e.fmt(f),
+            Error::RollbackError(ref e) => e.fmt(f),
             Error::RollbackTransaction => write!(f, "The current transaction was aborted"),
             Error::AlreadyInTransaction => write!(
                 f,

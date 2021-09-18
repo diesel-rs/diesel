@@ -46,7 +46,6 @@ pub trait SelectClauseQueryFragment<QS, DB: Backend> {
     /// This method will contain the behavior required for all possible AST
     /// passes. See [`AstPass`] for more details.
     ///
-    /// [`AstPass`]: struct.AstPass.html
     fn walk_ast(&self, source: &QS, pass: AstPass<DB>) -> QueryResult<()>;
 }
 

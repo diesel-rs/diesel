@@ -48,7 +48,7 @@ fn sqlite_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
                     for diesel::sqlite::Sqlite
                 #where_clause
                 {
-                    fn metadata(_: &()) -> diesel::sqlite::SqliteType {
+                    fn metadata(_: &mut ()) -> diesel::sqlite::SqliteType {
                         diesel::sqlite::SqliteType::#ty
                     }
                 }
@@ -72,7 +72,7 @@ fn mysql_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
                     for diesel::mysql::Mysql
                 #where_clause
                 {
-                    fn metadata(_: &()) -> diesel::mysql::MysqlType {
+                    fn metadata(_: &mut ()) -> diesel::mysql::MysqlType {
                         diesel::mysql::MysqlType::#ty
                     }
                 }
@@ -105,17 +105,17 @@ fn pg_tokens(item: &syn::DeriveInput) -> Option<proc_macro2::TokenStream> {
 
             let metadata_fn = match ty {
                 PgType::Fixed { oid, array_oid } => quote!(
-                    fn metadata(_: &Self::MetadataLookup) -> PgTypeMetadata {
+                    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
                         PgTypeMetadata::new(#oid, #array_oid)
                     }
                 ),
                 PgType::Lookup(type_name, Some(type_schema)) => quote!(
-                    fn metadata(lookup: &Self::MetadataLookup) -> PgTypeMetadata {
+                    fn metadata(lookup: &mut Self::MetadataLookup) -> PgTypeMetadata {
                         lookup.lookup_type(#type_name, Some(#type_schema))
                     }
                 ),
                 PgType::Lookup(type_name, None) => quote!(
-                    fn metadata(lookup: &Self::MetadataLookup) -> PgTypeMetadata {
+                    fn metadata(lookup: &mut Self::MetadataLookup) -> PgTypeMetadata {
                         lookup.lookup_type(#type_name, None)
                     }
                 ),

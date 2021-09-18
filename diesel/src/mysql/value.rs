@@ -49,24 +49,29 @@ impl<'a> MysqlValue<'a> {
     /// Returns the numeric representation of this value, based on the type code.
     /// Returns an error if the type code is not numeric.
     pub(crate) fn numeric_value(&self) -> deserialize::Result<NumericRepresentation> {
-        use self::NumericRepresentation::*;
         use std::convert::TryInto;
 
         Ok(match self.tpe {
-            MysqlType::UnsignedTiny | MysqlType::Tiny => Tiny(self.raw[0] as i8),
+            MysqlType::UnsignedTiny | MysqlType::Tiny => {
+                NumericRepresentation::Tiny(self.raw[0] as i8)
+            }
             MysqlType::UnsignedShort | MysqlType::Short => {
-                Small(i16::from_ne_bytes(self.raw.try_into()?))
+                NumericRepresentation::Small(i16::from_ne_bytes(self.raw.try_into()?))
             }
             MysqlType::UnsignedLong | MysqlType::Long => {
-                Medium(i32::from_ne_bytes(self.raw.try_into()?))
+                NumericRepresentation::Medium(i32::from_ne_bytes(self.raw.try_into()?))
             }
             MysqlType::UnsignedLongLong | MysqlType::LongLong => {
-                Big(i64::from_ne_bytes(self.raw.try_into()?))
+                NumericRepresentation::Big(i64::from_ne_bytes(self.raw.try_into()?))
             }
-            MysqlType::Float => Float(f32::from_ne_bytes(self.raw.try_into()?)),
-            MysqlType::Double => Double(f64::from_ne_bytes(self.raw.try_into()?)),
+            MysqlType::Float => {
+                NumericRepresentation::Float(f32::from_ne_bytes(self.raw.try_into()?))
+            }
+            MysqlType::Double => {
+                NumericRepresentation::Double(f64::from_ne_bytes(self.raw.try_into()?))
+            }
 
-            MysqlType::Numeric => Decimal(self.raw),
+            MysqlType::Numeric => NumericRepresentation::Decimal(self.raw),
             _ => return Err(self.invalid_type_code("number")),
         })
     }

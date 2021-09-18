@@ -1,12 +1,12 @@
+mod batch_insert;
 mod column_list;
 mod insert_from_select;
 
+pub(crate) use self::batch_insert::BatchInsert;
 pub(crate) use self::column_list::ColumnList;
 pub(crate) use self::insert_from_select::InsertFromSelect;
 
 use std::any::*;
-#[cfg(feature = "sqlite")]
-use std::fmt::{self, Debug, Display};
 use std::marker::PhantomData;
 
 use super::returning_clause::*;
@@ -18,24 +18,23 @@ use crate::insertable::*;
 #[cfg(feature = "mysql")]
 use crate::mysql::Mysql;
 use crate::query_builder::*;
-#[cfg(feature = "sqlite")]
-use crate::query_dsl::methods::ExecuteDsl;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
 #[cfg(feature = "sqlite")]
 use crate::sqlite::Sqlite;
+
 #[cfg(feature = "sqlite")]
-use crate::Connection;
+mod insert_with_default_for_sqlite;
 
 /// The structure returned by [`insert_into`].
 ///
 /// The provided methods [`values`] and [`default_values`] will insert
 /// data into the targeted table.
 ///
-/// [`insert_into`]: ../fn.insert_into.html
-/// [`values`]: #method.values
-/// [`default_values`]: #method.default_values
+/// [`insert_into`]: crate::insert_into()
+/// [`values`]: IncompleteInsertStatement::values()
+/// [`default_values`]: IncompleteInsertStatement::default_values()
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct IncompleteInsertStatement<T, Op> {
@@ -67,7 +66,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use diesel::insert_into;
     /// #     use self::users::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// connection.execute("CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
     ///     hair_color VARCHAR(255) NOT NULL DEFAULT 'Green'
@@ -75,9 +74,9 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     ///
     /// insert_into(users)
     ///     .default_values()
-    ///     .execute(&connection)
+    ///     .execute(connection)
     ///     .unwrap();
-    /// let inserted_user = users.first(&connection)?;
+    /// let inserted_user = users.first(connection)?;
     /// let expected_data = (String::from("Sean"), String::from("Green"));
     ///
     /// assert_eq!(expected_data, inserted_user);
@@ -85,8 +84,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// # }
     /// ```
     pub fn default_values(self) -> InsertStatement<T, DefaultValues, Op> {
-        static STATIC_DEFAULT_VALUES: &DefaultValues = &DefaultValues;
-        self.values(STATIC_DEFAULT_VALUES)
+        self.values(DefaultValues)
     }
 
     /// Inserts the given values into the table passed to `insert_into`.
@@ -99,7 +97,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     /// "overflow evaluating requirement" as a result of calling this method,
     /// you may need an `&` in front of the argument to this method.
     ///
-    /// [`insert_into`]: ../fn.insert_into.html
+    /// [`insert_into`]: crate::insert_into()
     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
     where
         U: Insertable<T>,        
@@ -113,7 +111,7 @@ impl<T, Op> IncompleteInsertStatement<T, Op> {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// A fully constructed insert statement.
 ///
@@ -157,7 +155,7 @@ impl<T, U, C, Op, Ret> InsertStatement<T, InsertFromSelect<U, C>, Op, Ret> {
     ///
     /// See the documentation for [`insert_into`] for usage examples.
     ///
-    /// [`insert_into`]: ../fn.insert_into.html
+    /// [`insert_into`]: crate::insert_into()
     pub fn into_columns<C2>(
         self,
         columns: C2,
@@ -187,8 +185,6 @@ where
     <T as crate::query_source::Table>::PrimaryKey: crate::query_source::Column,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.unsafe_to_cache_prepared();
-
         if self.records.rows_to_insert() == Some(0) {
             out.push_sql("SELECT 1 FROM ");
             self.target.from_clause().walk_ast(out.reborrow())?;
@@ -236,171 +232,6 @@ where
     }
 }
 
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op, C> ExecuteDsl<C, Sqlite> for InsertStatement<T, BatchInsert<'a, U, T>, Op>
-where
-    C: Connection<Backend = Sqlite>,
-    &'a U: Insertable<T>,
-    InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>: QueryFragment<Sqlite>,
-    T: Copy,
-    Op: Copy,
-{
-    fn execute(query: Self, conn: &C) -> QueryResult<usize> {
-        conn.transaction(|| {
-            let mut result = 0;
-            for record in query.records.records {
-                result += InsertStatement::new(
-                    query.target,
-                    record.values(),
-                    query.operator,
-                    query.returning,
-                )
-                .execute(conn)?;
-            }
-            Ok(result)
-        })
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op> Display for DebugQuery<'a, InsertStatement<T, BatchInsert<'a, U, T>, Op>, Sqlite>
-where
-    &'a U: Insertable<T>,
-    for<'b> DebugQuery<'b, InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>, Sqlite>:
-        Display,
-    T: Copy,
-    Op: Copy,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "BEGIN;")?;
-        for record in self.query.records.records {
-            let stmt = InsertStatement::new(
-                self.query.target,
-                record.values(),
-                self.query.operator,
-                self.query.returning,
-            );
-
-            writeln!(f, "{}", crate::debug_query::<Sqlite, _>(&stmt))?;
-        }
-        writeln!(f, "COMMIT;")?;
-        Ok(())
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op> Debug for DebugQuery<'a, InsertStatement<T, BatchInsert<'a, U, T>, Op>, Sqlite>
-where
-    &'a U: Insertable<T>,
-    for<'b> DebugQuery<'b, InsertStatement<T, <&'a U as Insertable<T>>::Values, Op>, Sqlite>:
-        Display,
-    T: Copy,
-    Op: Copy,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut statements = Vec::with_capacity(self.query.records.records.len() + 2);
-        statements.push("BEGIN".into());
-        for record in self.query.records.records {
-            let stmt = InsertStatement::new(
-                self.query.target,
-                record.values(),
-                self.query.operator,
-                self.query.returning,
-            );
-            statements.push(format!("{}", crate::debug_query::<Sqlite, _>(&stmt)));
-        }
-        statements.push("COMMIT".into());
-
-        f.debug_struct("Query")
-            .field("sql", &statements)
-            .field("binds", &[] as &[i32; 0])
-            .finish()
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<T, U, Op, C> ExecuteDsl<C, Sqlite>
-    for InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>
-where
-    C: Connection<Backend = Sqlite>,
-    InsertStatement<T, ValuesClause<U, T>, Op>: QueryFragment<Sqlite>,
-    T: Copy,
-    Op: Copy,
-{
-    fn execute(query: Self, conn: &C) -> QueryResult<usize> {
-        conn.transaction(|| {
-            let mut result = 0;
-            for value in query.records.values {
-                result +=
-                    InsertStatement::new(query.target, value, query.operator, query.returning)
-                        .execute(conn)?;
-            }
-            Ok(result)
-        })
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op> Display
-    for DebugQuery<'a, InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>, Sqlite>
-where
-    for<'b> DebugQuery<'b, InsertStatement<T, &'b ValuesClause<U, T>, Op>, Sqlite>: Display,
-    T: Copy,
-    Op: Copy,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "BEGIN;")?;
-        for value in &self.query.records.values {
-            let stmt = InsertStatement::new(
-                self.query.target,
-                value,
-                self.query.operator,
-                self.query.returning,
-            );
-
-            writeln!(f, "{}", crate::debug_query::<Sqlite, _>(&stmt))?;
-        }
-        writeln!(f, "COMMIT;")?;
-        Ok(())
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<'a, T, U, Op> Debug
-    for DebugQuery<'a, InsertStatement<T, OwnedBatchInsert<ValuesClause<U, T>, T>, Op>, Sqlite>
-where
-    for<'b> DebugQuery<'b, InsertStatement<T, &'b ValuesClause<U, T>, Op>, Sqlite>: Display,
-    T: Copy,
-    Op: Copy,
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let mut statements = Vec::with_capacity(self.query.records.values.len() + 2);
-        statements.push("BEGIN".into());
-
-        for value in &self.query.records.values {
-            let stmt = InsertStatement::new(
-                self.query.target,
-                value,
-                self.query.operator,
-                self.query.returning,
-            );
-            statements.push(format!("{}", crate::debug_query::<Sqlite, _>(&stmt)));
-        }
-        statements.push("COMMIT".into());
-
-        f.debug_struct("Query")
-            .field("sql", &statements)
-            .field("binds", &[] as &[i32; 0])
-            .finish()
-    }
-}
-
-impl<T, U, Op, Ret> QueryId for InsertStatement<T, U, Op, Ret> {
-    type QueryId = ();
-
-    const HAS_STATIC_QUERY_ID: bool = false;
-}
-
 impl<T, U, Op> AsQuery for InsertStatement<T, U, Op, NoReturningClause>
 where
     T: Table,
@@ -436,11 +267,11 @@ impl<T, U, Op> InsertStatement<T, U, Op> {
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let inserted_names = diesel::insert_into(users)
     ///     .values(&vec![name.eq("Timmy"), name.eq("Jimmy")])
     ///     .returning(name)
-    ///     .get_results(&connection);
+    ///     .get_results(connection);
     /// assert_eq!(Ok(vec!["Timmy".to_string(), "Jimmy".to_string()]), inserted_names);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]
@@ -490,7 +321,7 @@ impl QueryFragment<Mysql> for InsertOrIgnore {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
 pub struct Replace;
 
@@ -525,15 +356,19 @@ impl<'a, T, Tab> UndecoratedInsertRecord<Tab> for &'a T where
 
 impl<T, U> UndecoratedInsertRecord<T::Table> for ColumnInsertValue<T, U> where T: Column {}
 
-impl<T, Table> UndecoratedInsertRecord<Table> for [T] where T: UndecoratedInsertRecord<Table> {}
-
-impl<'a, T, Table> UndecoratedInsertRecord<Table> for BatchInsert<'a, T, Table> where
-    T: UndecoratedInsertRecord<Table>
+impl<T, U> UndecoratedInsertRecord<T::Table>
+    for DefaultableColumnInsertValue<ColumnInsertValue<T, U>>
+where
+    T: Column,
 {
 }
 
-impl<T, Table> UndecoratedInsertRecord<Table> for OwnedBatchInsert<T, Table> where
-    T: UndecoratedInsertRecord<Table>
+impl<T, Table> UndecoratedInsertRecord<Table> for [T] where T: UndecoratedInsertRecord<Table> {}
+
+impl<T, Table, QId, const STATIC_QUERY_ID: bool> UndecoratedInsertRecord<Table>
+    for BatchInsert<T, Table, QId, STATIC_QUERY_ID>
+where
+    T: UndecoratedInsertRecord<Table>,
 {
 }
 
@@ -558,13 +393,21 @@ impl<T, Table> UndecoratedInsertRecord<Table> for ValuesClause<T, Table> where
 {
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]
 pub struct DefaultValues;
 
 impl<DB: Backend> CanInsertInSingleQuery<DB> for DefaultValues {
     fn rows_to_insert(&self) -> Option<usize> {
         Some(1)
+    }
+}
+
+impl<Tab> Insertable<Tab> for DefaultValues {
+    type Values = DefaultValues;
+
+    fn values(self) -> Self::Values {
+        self
     }
 }
 
@@ -599,7 +442,7 @@ where
 }
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct ValuesClause<T, Tab> {
     pub values: T,
     _marker: PhantomData<Tab>,

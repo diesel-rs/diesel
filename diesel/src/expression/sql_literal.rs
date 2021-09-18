@@ -11,7 +11,7 @@ use crate::sql_types::{DieselNumericOps, SqlType};
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`sql()`] function.
 ///
-/// [`sql()`]: ../dsl/fn.sql.html
+/// [`sql()`]: crate::dsl::sql()
 pub struct SqlLiteral<ST, T = ()> {
     sql: String,
     inner: T,
@@ -55,16 +55,16 @@ where
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::{Integer, Text, Bool};
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let seans_id = users
     ///     .select(id)
     ///     .filter(sql::<Bool>("name = ").bind::<Text, _>("Sean"))
-    ///     .get_result(&connection);
+    ///     .get_result(connection);
     /// assert_eq!(Ok(1), seans_id);
     ///
     /// let tess_id = sql::<Integer>("SELECT id FROM users WHERE name = ")
     ///     .bind::<Text, _>("Tess")
-    ///     .get_result(&connection);
+    ///     .get_result(connection);
     /// assert_eq!(Ok(2), tess_id);
     /// # }
     /// ```
@@ -85,9 +85,9 @@ where
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::{Integer, Text, Bool};
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
@@ -96,7 +96,7 @@ where
     ///         .sql(" AND name <> ")
     ///         .bind::<Text, _>("Ryan")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }
@@ -113,7 +113,7 @@ where
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](../fn.sql_query.html) instead.
+    /// [`sql_query`](crate::sql_query()) instead.
     ///
     /// # Safety
     ///
@@ -137,16 +137,16 @@ where
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::Bool;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
     ///         sql::<Bool>("id > 1")
     ///         .sql(" AND name <> 'Ryan'")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }
@@ -207,7 +207,7 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 ///
 /// This function is intended for use when you need a small bit of raw SQL in
 /// your query. If you want to write the entire query using raw SQL, use
-/// [`sql_query`](../fn.sql_query.html) instead.
+/// [`sql_query`](crate::sql_query()) instead.
 ///
 /// Query parameters can be bound into the literal SQL using [`SqlLiteral::bind()`].
 ///
@@ -230,8 +230,8 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::sql_types::Bool;
 /// use diesel::dsl::sql;
-/// #     let connection = establish_connection();
-/// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(&connection)?;
+/// #     let connection = &mut establish_connection();
+/// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(connection)?;
 /// let expected = (1, String::from("Sean"));
 /// assert_eq!(expected, user);
 /// #     Ok(())
@@ -241,10 +241,10 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 /// #     use crate::schema::users::dsl::*;
 /// #     use diesel::dsl::sql;
 /// #     use diesel::sql_types::{Bool, Integer, Text};
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// #     diesel::insert_into(users)
 /// #         .values(name.eq("Ryan"))
-/// #         .execute(&connection).unwrap();
+/// #         .execute(connection).unwrap();
 /// let query = users
 ///     .select(name)
 ///     .filter(
@@ -253,13 +253,13 @@ impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
 ///         .sql(" AND name <> ")
 ///         .bind::<Text, _>("Ryan")
 ///     )
-///     .get_results(&connection);
+///     .get_results(connection);
 /// let expected = vec!["Tess".to_string()];
 /// assert_eq!(Ok(expected), query);
 /// #     Ok(())
 /// # }
 /// ```
-/// [`SqlLiteral::bind()`]: ../expression/struct.SqlLiteral.html#method.bind
+/// [`SqlLiteral::bind()`]: crate::expression::SqlLiteral::bind()
 pub fn sql<ST>(sql: &str) -> SqlLiteral<ST>
 where
     ST: TypedExpressionType,
@@ -271,7 +271,6 @@ where
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`SqlLiteral::bind()`] method when binding a value to a fragment of SQL.
 ///
-/// [`SqlLiteral::bind()`]: ./struct.SqlLiteral.html#method.bind
 pub struct UncheckedBind<Query, Value> {
     query: Query,
     value: Value,
@@ -289,7 +288,7 @@ where
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](../fn.sql_query.html) instead.
+    /// [`sql_query`](crate::sql_query()) instead.
     ///
     /// # Safety
     ///
@@ -313,9 +312,9 @@ where
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
     /// #     use diesel::sql_types::{Integer, Bool};
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
@@ -323,7 +322,7 @@ where
     ///         .bind::<Integer,_>(1)
     ///         .sql(" AND name <> 'Ryan'")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }

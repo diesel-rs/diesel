@@ -26,8 +26,8 @@ pub struct MigrationVersion<'a>(Cow<'a, str>);
 
 impl<'a> MigrationVersion<'a> {
     /// Convert the current migration version into
-    /// a owned variant with static life time
-    pub fn into_owned(&self) -> MigrationVersion<'static> {
+    /// an owned variant with static life time
+    pub fn as_owned(&self) -> MigrationVersion<'static> {
         MigrationVersion(Cow::Owned(self.0.as_ref().to_owned()))
     }
 }
@@ -94,10 +94,10 @@ pub trait MigrationName: Display {
 /// Represents a migration that interacts with diesel
 pub trait Migration<DB: Backend> {
     /// Apply this migration
-    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()>;
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()>;
 
     /// Revert this migration
-    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()>;
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()>;
 
     /// Get a the attached metadata for this migration
     fn metadata(&self) -> &dyn MigrationMetadata;
@@ -120,8 +120,11 @@ pub trait Migration<DB: Backend> {
 /// returning the old a value corresponding
 /// to the old uncustomized behaviour
 pub trait MigrationMetadata {
-    /// Whether the current migration be executed in a migration
-    /// or not
+    /// Whether the current migration is executed in a transaction or not
+    ///
+    /// By default each migration is executed in a own transaction, but
+    /// certain operations (like creating an index on an existing column)
+    /// requires running the migration without transaction.
     ///
     /// By default this function returns true
     fn run_in_transaction(&self) -> bool {
@@ -138,11 +141,11 @@ pub trait MigrationSource<DB: Backend> {
 }
 
 impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
-    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).run(conn)
     }
 
-    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).revert(conn)
     }
 
@@ -156,11 +159,11 @@ impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
 }
 
 impl<'a, DB: Backend> Migration<DB> for &'a dyn Migration<DB> {
-    fn run(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).run(conn)
     }
 
-    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> Result<()> {
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
         (&**self).revert(conn)
     }
 
@@ -192,12 +195,12 @@ pub trait MigrationConnection: Connection {
     ///      }
     /// }
     /// ```
-    fn setup(&self) -> QueryResult<usize>;
+    fn setup(&mut self) -> QueryResult<usize>;
 }
 
 #[cfg(feature = "postgres")]
 impl MigrationConnection for crate::pg::PgConnection {
-    fn setup(&self) -> QueryResult<usize> {
+    fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }
@@ -205,7 +208,7 @@ impl MigrationConnection for crate::pg::PgConnection {
 
 #[cfg(feature = "mysql")]
 impl MigrationConnection for crate::mysql::MysqlConnection {
-    fn setup(&self) -> QueryResult<usize> {
+    fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }
@@ -213,7 +216,7 @@ impl MigrationConnection for crate::mysql::MysqlConnection {
 
 #[cfg(feature = "sqlite")]
 impl MigrationConnection for crate::sqlite::SqliteConnection {
-    fn setup(&self) -> QueryResult<usize> {
+    fn setup(&mut self) -> QueryResult<usize> {
         use crate::RunQueryDsl;
         crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
     }

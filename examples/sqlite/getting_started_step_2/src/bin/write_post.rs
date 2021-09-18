@@ -2,7 +2,7 @@ use diesel_demo_step_2_sqlite::*;
 use std::io::{stdin, Read};
 
 fn main() {
-    let connection = establish_connection();
+    let connection = &mut establish_connection();
 
     println!("What would you like your title to be?");
     let mut title = String::new();
@@ -15,7 +15,7 @@ fn main() {
     let mut body = String::new();
     stdin().read_to_string(&mut body).unwrap();
 
-    let _ = create_post(&connection, title, &body);
+    let _ = create_post(connection, title, &body);
     println!("\nSaved draft {}", title);
 }
 

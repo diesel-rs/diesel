@@ -22,14 +22,14 @@ pub struct User {
 pub struct NewUser(#[column_name = "name"] String);
 
 fn main() {
-    let connection = SqliteConnection::establish(":memory:").unwrap();
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
-        .get_result::<User>(&connection);
+        .get_result::<User>(&mut connection);
 
     insert_into(users::table)
         .values(&NewUser("Hello".into()))
         .returning(users::name)
-        .get_result::<String>(&connection);
+        .get_result::<String>(&mut connection);
 }

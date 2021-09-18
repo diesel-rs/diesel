@@ -18,12 +18,12 @@ use crate::sql_types::{Array, SqlType};
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
 /// let sean = (1, "Sean".to_string());
 /// let jim = (3, "Jim".to_string());
 /// let data = users.filter(name.eq(any(vec!["Sean", "Jim"])));
-/// assert_eq!(Ok(vec![sean, jim]), data.load(&connection));
+/// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
 /// # }
 /// ```
 pub fn any<ST, T>(vals: T) -> Any<T::Expression>
@@ -46,11 +46,11 @@ where
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
 /// let tess = (2, "Tess".to_string());
 /// let data = users.filter(name.ne(all(vec!["Sean", "Jim"])));
-/// assert_eq!(Ok(vec![tess]), data.load(&connection));
+/// assert_eq!(Ok(vec![tess]), data.load(connection));
 /// # }
 /// ```
 pub fn all<ST, T>(vals: T) -> All<T::Expression>
@@ -131,6 +131,9 @@ impl_selectable_expression!(All<Expr>);
 pub trait AsArrayExpression<ST> {
     type Expression: Expression<SqlType = Array<ST>>;
 
+    // This method is part of the public API
+    // we won't change it to appease a clippy lint
+    #[allow(clippy::wrong_self_convention)]
     fn as_expression(self) -> Self::Expression;
 }
 
@@ -145,8 +148,8 @@ where
     }
 }
 
-impl<ST, S, F, W, O, L, Of, G, FU> AsArrayExpression<ST>
-    for SelectStatement<S, F, W, O, L, Of, G, FU>
+impl<ST, F, S, D, W, O, LOf, G, H, LC> AsArrayExpression<ST>
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     Self: SelectQuery<SqlType = ST>,
 {
@@ -157,7 +160,7 @@ where
     }
 }
 
-impl<'a, ST, QS, DB> AsArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, DB, GB> AsArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
     Self: SelectQuery<SqlType = ST>,
 {

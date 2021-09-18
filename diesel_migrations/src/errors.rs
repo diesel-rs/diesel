@@ -43,9 +43,10 @@ impl fmt::Display for MigrationError {
                  <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql."
             ),
             MigrationError::IoError(ref error) => write!(f, "{}", error),
-            MigrationError::UnknownMigrationVersion(_) => write!(
+            MigrationError::UnknownMigrationVersion(ref version) => write!(
                 f,
-                "Unable to find migration version to revert in the migrations directory."
+                "Unable to find migration version {} to revert in the migrations directory.",
+                version
             ),
             MigrationError::NoMigrationRun => write!(
                 f,
@@ -101,13 +102,11 @@ impl fmt::Display for RunMigrationsError {
             RunMigrationsError::QueryError(v, err) => {
                 write!(f, "Failed to run {} with: {}", v, err)
             }
-            RunMigrationsError::EmptyMigration(v) => {
-                write!(
-                    f,
-                    "Failed to run {} with: Attempted to run an empty migration.",
-                    v
-                )
-            }
+            RunMigrationsError::EmptyMigration(v) => write!(
+                f,
+                "Failed to run {} with: Attempted to run an empty migration.",
+                v
+            ),
         }
     }
 }

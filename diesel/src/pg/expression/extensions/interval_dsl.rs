@@ -23,7 +23,7 @@ use crate::data_types::PgInterval;
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
-/// #     let connection = connection_no_data();
+/// #     let connection = &mut connection_no_data();
 /// #     connection.execute("CREATE TABLE users (id serial primary key, name
 /// #        varchar not null, created_at timestamp not null)").unwrap();
 /// connection.execute("INSERT INTO users (name, created_at) VALUES
@@ -33,7 +33,7 @@ use crate::data_types::PgInterval;
 /// let mut data: Vec<String> = users
 ///     .select(name)
 ///     .filter(created_at.gt(now - 7.minutes()))
-///     .load(&connection).unwrap();
+///     .load(connection).unwrap();
 /// assert_eq!(2, data.len());
 /// assert_eq!("Sean".to_string(), data[0]);
 /// assert_eq!("Tess".to_string(), data[1]);
@@ -54,7 +54,7 @@ use crate::data_types::PgInterval;
 /// #
 /// # fn main() {
 /// #     use self::users::dsl::*;
-/// #     let connection = connection_no_data();
+/// #     let connection = &mut connection_no_data();
 /// #     connection.execute("CREATE TABLE users (id serial primary key, name
 /// #        varchar not null, created_at timestamp not null)").unwrap();
 /// connection.execute("INSERT INTO users (name, created_at) VALUES
@@ -64,7 +64,7 @@ use crate::data_types::PgInterval;
 /// let mut data: Vec<String> = users
 ///     .select(name)
 ///     .filter(created_at.gt(now - 7.days()))
-///     .load(&connection).unwrap();
+///     .load(connection).unwrap();
 /// assert_eq!(2, data.len());
 /// assert_eq!("Sean".to_string(), data[0]);
 /// assert_eq!("Tess".to_string(), data[1]);
@@ -237,42 +237,30 @@ mod tests {
     extern crate dotenv;
     extern crate quickcheck;
 
-    use self::dotenv::dotenv;
     use self::quickcheck::quickcheck;
 
     use super::*;
     use crate::data_types::PgInterval;
     use crate::dsl::sql;
     use crate::prelude::*;
+    use crate::test_helpers::*;
     use crate::{select, sql_types};
-
-    thread_local! {
-        static CONN: PgConnection = {
-            dotenv().ok();
-
-            let connection_url = ::std::env::var("PG_DATABASE_URL")
-                .or_else(|_| ::std::env::var("DATABASE_URL"))
-                .expect("DATABASE_URL must be set in order to run tests");
-            PgConnection::establish(&connection_url).unwrap()
-        }
-    }
 
     macro_rules! test_fn {
         ($tpe:ty, $test_name:ident, $units:ident) => {
             fn $test_name(val: $tpe) -> bool {
-                CONN.with(|connection| {
-                    let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
-                    let query = select(sql::<sql_types::Interval>(&sql_str));
-                    let val = val.$units();
-                    query
-                        .get_result::<PgInterval>(connection)
-                        .map(|res| {
-                            val.months == res.months
-                                && val.days == res.days
-                                && val.microseconds - res.microseconds.abs() <= 1
-                        })
-                        .unwrap_or(false)
-                })
+                let conn = &mut pg_connection();
+                let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
+                let query = select(sql::<sql_types::Interval>(&sql_str));
+                let val = val.$units();
+                query
+                    .get_result::<PgInterval>(conn)
+                    .map(|res| {
+                        val.months == res.months
+                            && val.days == res.days
+                            && val.microseconds - res.microseconds.abs() <= 1
+                    })
+                    .unwrap_or(false)
             }
 
             quickcheck($test_name as fn($tpe) -> bool);

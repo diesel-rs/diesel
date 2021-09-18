@@ -86,7 +86,7 @@ impl FileBasedMigrations {
     ///
     /// This methods fails if the path passed as argument is no valid migration directory
     pub fn from_path(path: impl AsRef<Path>) -> Result<Self, MigrationError> {
-        for dir in migrations_directories(path.as_ref()) {
+        for dir in migrations_directories(path.as_ref())? {
             let path = dir?.path();
             if !migrations_internals::valid_sql_migration_directory(&path) {
                 return Err(MigrationError::UnknownMigrationFormat(path));
@@ -132,21 +132,21 @@ fn search_for_migrations_directory(path: &Path) -> Result<PathBuf, MigrationErro
         .ok_or_else(|| MigrationError::MigrationDirectoryNotFound(path.to_path_buf()))
 }
 
-fn migrations_directories<'a>(
-    path: &'a Path,
-) -> impl Iterator<Item = Result<DirEntry, MigrationError>> + 'a {
-    migrations_internals::migrations_directories(path).map(move |e| e.map_err(Into::into))
+fn migrations_directories(
+    path: &'_ Path,
+) -> Result<impl Iterator<Item = Result<DirEntry, MigrationError>> + '_, MigrationError> {
+    Ok(migrations_internals::migrations_directories(path)?.map(move |e| e.map_err(Into::into)))
 }
 
-fn migrations_in_directory<'a, DB: Backend>(
-    path: &'a Path,
-) -> impl Iterator<Item = Result<SqlFileMigration, MigrationError>> + 'a {
-    migrations_directories(path).map(|entry| SqlFileMigration::from_path(&entry?.path()))
+fn migrations_in_directory<DB: Backend>(
+    path: &'_ Path,
+) -> Result<impl Iterator<Item = Result<SqlFileMigration, MigrationError>> + '_, MigrationError> {
+    Ok(migrations_directories(path)?.map(|entry| SqlFileMigration::from_path(&entry?.path())))
 }
 
 impl<DB: Backend> MigrationSource<DB> for FileBasedMigrations {
     fn migrations(&self) -> migration::Result<Vec<Box<dyn Migration<DB>>>> {
-        migrations_in_directory::<DB>(&self.base_path)
+        migrations_in_directory::<DB>(&self.base_path)?
             .map(|r| Ok(Box::new(r?) as Box<dyn Migration<DB>>))
             .collect()
     }
@@ -176,7 +176,7 @@ impl SqlFileMigration {
 }
 
 impl<DB: Backend> Migration<DB> for SqlFileMigration {
-    fn run(&self, conn: &dyn BoxableConnection<DB>) -> migration::Result<()> {
+    fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> migration::Result<()> {
         Ok(run_sql_from_file(
             conn,
             &self.base_path.join("up.sql"),
@@ -184,7 +184,7 @@ impl<DB: Backend> Migration<DB> for SqlFileMigration {
         )?)
     }
 
-    fn revert(&self, conn: &dyn BoxableConnection<DB>) -> migration::Result<()> {
+    fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> migration::Result<()> {
         Ok(run_sql_from_file(
             conn,
             &self.base_path.join("down.sql"),
@@ -211,7 +211,7 @@ impl Clone for DieselMigrationName {
     fn clone(&self) -> Self {
         Self {
             name: self.name.clone(),
-            version: self.version.into_owned(),
+            version: self.version.as_owned(),
         }
     }
 }
@@ -237,7 +237,7 @@ impl DieselMigrationName {
 
 impl MigrationName for DieselMigrationName {
     fn version(&self) -> MigrationVersion {
-        self.version.into_owned()
+        self.version.as_owned()
     }
 }
 
@@ -265,7 +265,7 @@ impl MigrationMetadata for TomlMetadataWrapper {
 }
 
 fn run_sql_from_file<DB: Backend>(
-    conn: &dyn BoxableConnection<DB>,
+    conn: &mut dyn BoxableConnection<DB>,
     path: &Path,
     name: &DieselMigrationName,
 ) -> Result<(), RunMigrationsError> {
@@ -355,6 +355,7 @@ mod tests {
         fs::File::create(&file_path).unwrap();
 
         let migrations = migrations_in_directory::<Backend>(&migrations_path)
+            .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
 
@@ -372,6 +373,7 @@ mod tests {
         fs::create_dir(&dot_path).unwrap();
 
         let migrations = migrations_in_directory::<Backend>(&migrations_path)
+            .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
 

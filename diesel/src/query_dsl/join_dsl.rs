@@ -47,7 +47,7 @@ where
 /// Specify the `ON` clause for a join statement. This will override
 /// any implicit `ON` clause that would come from [`joinable!`]
 ///
-/// [`joinable!`]: ../macro.joinable.html
+/// [`joinable!`]: crate::joinable!
 ///
 /// # Example
 ///
@@ -56,14 +56,14 @@ where
 /// # use schema::{users, posts};
 /// #
 /// # fn main() {
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let data = users::table
 ///     .left_join(posts::table.on(
 ///         users::id.eq(posts::user_id).and(
 ///             posts::title.eq("My first post"))
 ///     ))
 ///     .select((users::name, posts::title.nullable()))
-///     .load(&connection);
+///     .load(connection);
 /// let expected = vec![
 ///     ("Sean".to_string(), Some("My first post".to_string())),
 ///     ("Tess".to_string(), None),

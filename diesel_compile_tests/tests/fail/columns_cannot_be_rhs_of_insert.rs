@@ -13,10 +13,10 @@ table! {
 
 fn main() {
     use self::users::dsl::*;
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     insert_into(users)
         .values(&name.eq(hair_color))
-        .execute(&conn)
+        .execute(&mut conn)
         .unwrap();
 }

@@ -149,7 +149,7 @@ impl Statement {
             1792 => DatabaseErrorKind::ReadOnlyTransaction,
             1048 | 1364 => DatabaseErrorKind::NotNullViolation,
             3819 => DatabaseErrorKind::CheckViolation,
-            _ => DatabaseErrorKind::__Unknown,
+            _ => DatabaseErrorKind::Unknown,
         }
     }
 

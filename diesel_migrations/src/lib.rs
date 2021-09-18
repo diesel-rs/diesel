@@ -1,11 +1,7 @@
 // Built-in Lints
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
-#![allow(
-    clippy::needless_pass_by_value,
-    clippy::option_map_unwrap_or_else,
-    clippy::option_map_unwrap_or
-)]
+#![allow(clippy::needless_pass_by_value, clippy::map_unwrap_or)]
 #![warn(
     missing_docs,
     clippy::wrong_pub_self_convention,
@@ -36,21 +32,21 @@
 //!
 //! Migrations can either be run with the CLI or embedded into the compiled application
 //! and executed with code, for example right after establishing a database connection.
-//! For more information, consult the [`embed_migrations!`](macro.embed_migrations.html) macro.
+//! For more information, consult the [`embed_migrations!`] macro.
 //!
 
-mod embeded_migrations;
+mod embedded_migrations;
 mod errors;
 mod file_based_migrations;
 mod migration_harness;
 
-pub use crate::embeded_migrations::EmbededMigrations;
+pub use crate::embedded_migrations::EmbeddedMigrations;
 pub use crate::file_based_migrations::FileBasedMigrations;
 pub use crate::migration_harness::{HarnessWithOutput, MigrationHarness};
 pub use migrations_macros::embed_migrations;
 
 #[doc(hidden)]
-pub use crate::embeded_migrations::EmbededMigration;
+pub use crate::embedded_migrations::{EmbeddedMigration, EmbeddedName};
 #[doc(hidden)]
 pub use crate::errors::MigrationError;
 #[doc(hidden)]

@@ -37,8 +37,8 @@ pub mod sql_types {
     ///
     /// - [`u32`]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "26", array_oid = "1018")]
@@ -59,11 +59,22 @@ pub mod sql_types {
     /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
     /// - [`chrono::DateTime`] with `feature = "chrono"`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [`PgTimestamp`]: ../../data_types/struct.PgTimestamp.html
-    /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
-    /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
+    #[cfg_attr(
+        feature = "chrono",
+        doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
+    )]
+    #[cfg_attr(feature = "chrono", doc = " [`chrono::DateTime`]: chrono::DateTime")]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
+    )]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "1184", array_oid = "1185")]
     pub struct Timestamptz;
@@ -83,9 +94,9 @@ pub mod sql_types {
     ///
     /// - [`Vec<T>`][Vec] for any `T` which implements `ToSql<ST>`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [Vec]: std::vec::Vec
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     pub struct Array<ST>(ST);
@@ -102,9 +113,9 @@ pub mod sql_types {
     ///
     /// - [`(Bound<T>, Bound<T>)`][bound] for any `T` which implements `FromSql<ST>`.
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [bound]: https://doc.rust-lang.org/std/collections/enum.Bound.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [bound]: std::collections::Bound
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     pub struct Range<ST>(ST);
 
@@ -132,8 +143,8 @@ pub mod sql_types {
     ///
     /// - Any tuple which can be deserialized from each of the elements.
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     ///
     /// ### Caveats about serialization
     ///
@@ -157,7 +168,7 @@ pub mod sql_types {
     /// You can implement `ToSql` for named composite types. See [`WriteTuple`]
     /// for details.
     ///
-    /// [`WriteTuple`]: ../../../serialize/trait.WriteTuple.html
+    /// [`WriteTuple`]: super::super::super::serialize::WriteTuple
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2249", array_oid = "2287")]
     pub struct Record<ST>(ST);
@@ -172,7 +183,6 @@ pub mod sql_types {
     pub type BigSerial = crate::sql_types::BigInt;
 
     /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
-    /// (uuid <=0.6) or `feature = "uuidv07"` (uuid = 0.7)
     ///
     /// ### [`ToSql`] impls
     ///
@@ -182,8 +192,8 @@ pub mod sql_types {
     ///
     /// - [`uuid::Uuid`][Uuid]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2950", array_oid = "2951")]
@@ -225,9 +235,16 @@ pub mod sql_types {
     ///
     /// - [`serde_json::Value`]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [`serde_json::Value`]: ../../../../serde_json/value/enum.Value.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    #[cfg_attr(
+        feature = "serde_json",
+        doc = "[`serde_json::Value`]: serde_json::value::Value"
+    )]
+    #[cfg_attr(
+        not(feature = "serde_json"),
+        doc = "[`serde_json::Value`]: https://docs.rs/serde_json/1.0.64/serde_json/value/enum.Value.html"
+    )]
     ///
     /// # Examples
     ///
@@ -247,12 +264,12 @@ pub mod sql_types {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// #     use diesel::insert_into;
     /// #     use self::contacts::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").execute(&connection)?;
+    /// #     )").execute(connection)?;
     /// let santas_address: serde_json::Value = serde_json::from_str(r#"{
     ///     "street": "Article Circle Expressway 1",
     ///     "city": "North Pole",
@@ -262,7 +279,7 @@ pub mod sql_types {
     /// let inserted_address = insert_into(contacts)
     ///     .values((name.eq("Claus"), address.eq(&santas_address)))
     ///     .returning(address)
-    ///     .get_result::<serde_json::Value>(&connection)?;
+    ///     .get_result::<serde_json::Value>(connection)?;
     /// assert_eq!(santas_address, inserted_address);
     /// #     Ok(())
     /// # }
@@ -283,9 +300,9 @@ pub mod sql_types {
     ///
     /// - [`Cents` (also aliased as `PgMoney`)][PgMoney]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [PgMoney]: ../../data_types/struct.PgMoney.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [PgMoney]: crate::data_types::PgMoney
     ///
     /// # Examples
     ///
@@ -304,7 +321,7 @@ pub mod sql_types {
     /// # fn main() {
     /// #     use diesel::insert_into;
     /// #     use self::items::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     connection.execute("CREATE TABLE items (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
@@ -313,7 +330,7 @@ pub mod sql_types {
     /// let inserted_price = insert_into(items)
     ///     .values((name.eq("Shiny Thing"), price.eq(Cents(123_456))))
     ///     .returning(price)
-    ///     .get_result(&connection);
+    ///     .get_result(connection);
     /// assert_eq!(Ok(Cents(123_456)), inserted_price);
     /// # }
     /// ```
@@ -331,8 +348,8 @@ pub mod sql_types {
     ///
     /// - `[u8; 6]`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
     ///
     /// # Examples
     ///
@@ -348,15 +365,15 @@ pub mod sql_types {
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// #     use diesel::insert_into;
     /// #     use self::devices::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE devices (
     /// #         id SERIAL PRIMARY KEY,
     /// #         macaddr MACADDR NOT NULL
-    /// #     )").execute(&connection)?;
+    /// #     )").execute(connection)?;
     /// let inserted_macaddr = insert_into(devices)
     ///     .values(macaddr.eq([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03]))
     ///     .returning(macaddr)
-    ///     .get_result::<[u8; 6]>(&connection)?;
+    ///     .get_result::<[u8; 6]>(connection)?;
     /// assert_eq!([0x08, 0x00, 0x2b, 0x01, 0x02, 0x03], inserted_macaddr);
     /// #     Ok(())
     /// # }
@@ -379,9 +396,13 @@ pub mod sql_types {
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
+    #[cfg_attr(
+        not(feature = "ipnetwork"),
+        doc = " [IpNetwork]: https://docs.rs/ipnetwork/*/ipnetwork/enum.IpNetwork.html"
+    )]
     ///
     /// # Examples
     ///
@@ -401,16 +422,16 @@ pub mod sql_types {
     ///
     /// #     use diesel::insert_into;
     /// #     use self::clients::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE clients (
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address INET NOT NULL
-    /// #     )").execute(&connection)?;
+    /// #     )").execute(connection)?;
     /// let addr = "10.1.9.32/32".parse::<IpNetwork>()?;
     /// let inserted_address = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
-    ///     .get_result(&connection)?;
+    ///     .get_result(connection)?;
     /// assert_eq!(addr, inserted_address);
     /// #     Ok(())
     /// # }
@@ -432,9 +453,13 @@ pub mod sql_types {
     ///
     /// - [`ipnetwork::IpNetwork`][IpNetwork]
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [IpNetwork]: ../../../../ipnetwork/enum.IpNetwork.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
+    #[cfg_attr(
+        not(feature = "ipnetwork"),
+        doc = " [IpNetwork]: https://docs.rs/ipnetwork/*/ipnetwork/enum.IpNetwork.html"
+    )]
     ///
     /// # Examples
     ///
@@ -454,16 +479,16 @@ pub mod sql_types {
     ///
     /// #     use diesel::insert_into;
     /// #     use self::clients::dsl::*;
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     diesel::sql_query("CREATE TABLE clients (
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address CIDR NOT NULL
-    /// #     )").execute(&connection)?;
+    /// #     )").execute(connection)?;
     /// let addr = "10.1.9.32/32".parse::<IpNetwork>()?;
     /// let inserted_addr = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
-    ///     .get_result(&connection)?;
+    ///     .get_result(connection)?;
     /// assert_eq!(addr, inserted_addr);
     /// #     Ok(())
     /// # }

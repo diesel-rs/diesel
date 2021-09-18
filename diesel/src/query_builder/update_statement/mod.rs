@@ -31,7 +31,7 @@ impl<T, U> UpdateStatement<T, U, SetNotCalled> {
 
     /// Provides the `SET` clause of the `UPDATE` statement.
     ///
-    /// See [`update`](../fn.update.html) for usage examples, or [the update
+    /// See [`update`](crate::update()) for usage examples, or [the update
     /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
     /// set of examples.
     pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
@@ -53,7 +53,7 @@ impl<T, U> UpdateStatement<T, U, SetNotCalled> {
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Represents a complete `UPDATE` statement.
 ///
-/// See [`update`](../fn.update.html) for usage examples, or [the update
+/// See [`update`](crate::update()) for usage examples, or [the update
 /// guide](https://diesel.rs/guides/all-about-updates/) for a more exhaustive
 /// set of examples.
 pub struct UpdateStatement<T, U, V = SetNotCalled, Ret = NoReturningClause> {
@@ -82,15 +82,15 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let updated_rows = diesel::update(users)
     ///     .set(name.eq("Jim"))
     ///     .filter(name.eq("Sean"))
-    ///     .execute(&connection);
+    ///     .execute(connection);
     /// assert_eq!(Ok(1), updated_rows);
     ///
     /// let expected_names = vec!["Jim".to_string(), "Tess".to_string()];
-    /// let names = users.select(name).order(id).load(&connection);
+    /// let names = users.select(name).order(id).load(connection);
     ///
     /// assert_eq!(Ok(expected_names), names);
     /// # }
@@ -125,7 +125,7 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use std::collections::HashMap;
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     let mut params = HashMap::new();
     /// #     params.insert("tess_has_been_a_jerk", false);
     /// let mut query = diesel::update(users)
@@ -136,11 +136,11 @@ impl<T, U, V, Ret> UpdateStatement<T, U, V, Ret> {
     ///     query = query.filter(name.ne("Tess"));
     /// }
     ///
-    /// let updated_rows = query.execute(&connection)?;
+    /// let updated_rows = query.execute(connection)?;
     /// assert_eq!(1, updated_rows);
     ///
     /// let expected_names = vec!["Jerk", "Tess"];
-    /// let names = users.select(name).order(id).load::<String>(&connection)?;
+    /// let names = users.select(name).order(id).load::<String>(connection)?;
     ///
     /// assert_eq!(expected_names, names);
     /// #     Ok(())
@@ -269,11 +269,11 @@ impl<T, U, V> UpdateStatement<T, U, V, NoReturningClause> {
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let updated_name = diesel::update(users.filter(id.eq(1)))
     ///     .set(name.eq("Dean"))
     ///     .returning(name)
-    ///     .get_result(&connection);
+    ///     .get_result(connection);
     /// assert_eq!(Ok("Dean".to_string()), updated_name);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]

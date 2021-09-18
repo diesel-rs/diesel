@@ -1,15 +1,21 @@
 #!/bin/sh
 set -e
 
+SCRIPTPATH=`dirname $0`
+
 export DATABASE_URL="/tmp/test_examples.db"
 
 if [ -z "$BACKEND" ]; then
     export BACKEND="sqlite"
 fi
 
-for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
-  cd $dir
-  ../../../bin/diesel database reset
-  cargo build
-  cd ..
-done
+cd $SCRIPTPATH
+
+if [ -z "${BACKEND##*sqlite*}" ]; then
+  for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
+    cd $dir
+    ../../../bin/diesel database reset
+    cargo build
+    cd ..
+  done
+fi

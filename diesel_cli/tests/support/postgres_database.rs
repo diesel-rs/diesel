@@ -14,7 +14,7 @@ impl Database {
 
     pub fn create(self) -> Self {
         let (database, postgres_url) = self.split_url();
-        let conn = PgConnection::establish(&postgres_url).unwrap();
+        let mut conn = PgConnection::establish(&postgres_url).unwrap();
         conn.execute(&format!(r#"CREATE DATABASE "{}""#, database))
             .unwrap();
         self
@@ -32,7 +32,7 @@ impl Database {
              WHERE table_name = '{}')",
             table
         )))
-        .get_result(&self.conn())
+        .get_result(&mut self.conn())
         .unwrap()
     }
 
@@ -58,7 +58,7 @@ impl Database {
 impl Drop for Database {
     fn drop(&mut self) {
         let (database, postgres_url) = self.split_url();
-        let conn = try_drop!(
+        let mut conn = try_drop!(
             PgConnection::establish(&postgres_url),
             "Couldn't connect to database"
         );

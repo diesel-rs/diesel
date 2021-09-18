@@ -1,20 +1,20 @@
 simple_clause!(NoOrderClause, OrderClause, " ORDER BY ");
 
-impl<'a, DB, Expr> Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>> for OrderClause<Expr>
+impl<'a, DB, Expr> From<OrderClause<Expr>> for Option<Box<dyn QueryFragment<DB> + Send + 'a>>
 where
     DB: Backend,
     Expr: QueryFragment<DB> + Send + 'a,
 {
-    fn into(self) -> Option<Box<dyn QueryFragment<DB> + Send + 'a>> {
-        Some(Box::new(self.0))
+    fn from(order: OrderClause<Expr>) -> Self {
+        Some(Box::new(order.0))
     }
 }
 
-impl<'a, DB> Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>> for NoOrderClause
+impl<'a, DB> From<NoOrderClause> for Option<Box<dyn QueryFragment<DB> + Send + 'a>>
 where
     DB: Backend,
 {
-    fn into(self) -> Option<Box<dyn QueryFragment<DB> + Send + 'a>> {
+    fn from(_: NoOrderClause) -> Self {
         None
     }
 }

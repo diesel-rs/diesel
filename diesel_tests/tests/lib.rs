@@ -29,6 +29,7 @@ mod filter;
 mod filter_operators;
 mod find;
 mod group_by;
+mod having;
 mod insert;
 mod insert_from_select;
 mod internal_details;
@@ -42,6 +43,7 @@ mod schema;
 mod schema_dsl;
 mod schema_inference;
 mod select;
+mod select_by;
 mod serialize_as;
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 mod transactions;

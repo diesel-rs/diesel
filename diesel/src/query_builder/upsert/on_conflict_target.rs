@@ -8,7 +8,7 @@ use crate::result::QueryResult;
 pub trait OnConflictTarget<Table> {}
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoConflictTarget;
 
 impl<DB> QueryFragment<DB> for NoConflictTarget
@@ -23,7 +23,7 @@ where
 impl<Table> OnConflictTarget<Table> for NoConflictTarget {}
 
 #[doc(hidden)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct ConflictTarget<T>(pub T);
 
 impl<DB, T> QueryFragment<DB> for ConflictTarget<T>

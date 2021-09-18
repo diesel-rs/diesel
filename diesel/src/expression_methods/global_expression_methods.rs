@@ -2,7 +2,7 @@ use crate::dsl;
 use crate::expression::array_comparison::{AsInExpression, In, NotIn};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::*;
-use crate::expression::{nullable, AsExpression, Expression};
+use crate::expression::{assume_not_null, nullable, AsExpression, Expression};
 use crate::sql_types::{SingleValue, SqlType};
 
 /// Methods present on all expressions, except tuples
@@ -16,11 +16,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let data = users.select(id).filter(name.eq("Sean"));
-    /// assert_eq!(Ok(1), data.first(&connection));
+    /// assert_eq!(Ok(1), data.first(connection));
     /// # }
     /// ```
+    #[doc(alias = "=")]
     fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
     where
         Self::SqlType: SqlType,
@@ -38,11 +39,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let data = users.select(id).filter(name.ne("Sean"));
-    /// assert_eq!(Ok(2), data.first(&connection));
+    /// assert_eq!(Ok(2), data.first(connection));
     /// # }
     /// ```
+    #[doc(alias = "<>")]
     fn ne<T>(self, other: T) -> dsl::NotEq<Self, T>
     where
         Self::SqlType: SqlType,
@@ -70,25 +72,26 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # fn main() {
     /// #     use schema::users;
     /// #     use schema::posts;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
     /// let data = users::table.select(users::id).filter(users::name.eq_any(vec!["Sean", "Jim"]));
-    /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
+    /// assert_eq!(Ok(vec![1, 3]), data.load(connection));
     ///
     /// // Calling `eq_any` with an empty array is the same as doing `WHERE 1=0`
     /// let data = users::table.select(users::id).filter(users::name.eq_any(Vec::<String>::new()));
-    /// assert_eq!(Ok(vec![]), data.load::<i32>(&connection));
+    /// assert_eq!(Ok(vec![]), data.load::<i32>(connection));
     ///
     /// // Calling `eq_any` with a subquery is the same as using
     /// // `WHERE {column} IN {subquery}`.
     ///
     /// let subquery = users::table.filter(users::name.eq("Sean")).select(users::id).into_boxed();
     /// let data = posts::table.select(posts::id).filter(posts::user_id.eq_any(subquery));
-    /// assert_eq!(Ok(vec![1, 2]), data.load::<i32>(&connection));
+    /// assert_eq!(Ok(vec![1, 2]), data.load::<i32>(connection));
     ///
     /// # }
     /// ```
+    #[doc(alias = "in")]
     fn eq_any<T>(self, values: T) -> dsl::EqAny<Self, T>
     where
         Self::SqlType: SqlType,
@@ -111,20 +114,21 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     connection.execute("INSERT INTO users (name) VALUES
     /// #         ('Jim')").unwrap();
     /// let data = users.select(id).filter(name.ne_all(vec!["Sean", "Jim"]));
-    /// assert_eq!(Ok(vec![2]), data.load(&connection));
+    /// assert_eq!(Ok(vec![2]), data.load(connection));
     ///
     /// let data = users.select(id).filter(name.ne_all(vec!["Tess"]));
-    /// assert_eq!(Ok(vec![1, 3]), data.load(&connection));
+    /// assert_eq!(Ok(vec![1, 3]), data.load(connection));
     ///
     /// // Calling `ne_any` with an empty array is the same as doing `WHERE 1=1`
     /// let data = users.select(id).filter(name.ne_all(Vec::<String>::new()));
-    /// assert_eq!(Ok(vec![1, 2, 3]), data.load(&connection));
+    /// assert_eq!(Ok(vec![1, 2, 3]), data.load(connection));
     /// # }
     /// ```
+    #[doc(alias = "in")]
     fn ne_all<T>(self, values: T) -> dsl::NeAny<Self, T>
     where
         Self::SqlType: SqlType,
@@ -146,15 +150,20 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(name.is_null())
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(connection)?;
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
+    // This method is part of the public API,
+    // so we cannot just change the name to appease clippy
+    // (Otherwise it's also named after the `IS NULL` sql expression
+    // so that name is really fine)
+    #[allow(clippy::wrong_self_convention)]
     fn is_null(self) -> dsl::IsNull<Self> {
         Grouped(IsNull::new(self))
     }
@@ -172,15 +181,20 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(name.is_not_null())
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(connection)?;
     /// assert_eq!("dog", data);
     /// #     Ok(())
     /// # }
+    // This method is part of the public API,
+    // so we cannot just change the name to appease clippy
+    // (Otherwise it's also named after the `IS NOT NULL` sql expression
+    // so that name is really fine)
+    #[allow(clippy::wrong_self_convention)]
     fn is_not_null(self) -> dsl::IsNotNull<Self> {
         Grouped(IsNotNull::new(self))
     }
@@ -198,15 +212,16 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let data = users
     ///     .select(name)
     ///     .filter(id.gt(1))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(connection)?;
     /// assert_eq!("Tess", data);
     /// #     Ok(())
     /// # }
     /// ```
+    #[doc(alias = ">")]
     fn gt<T>(self, other: T) -> dsl::Gt<Self, T>
     where
         Self::SqlType: SqlType,
@@ -228,15 +243,16 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let data = users
     ///     .select(name)
     ///     .filter(id.ge(2))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(connection)?;
     /// assert_eq!("Tess", data);
     /// #     Ok(())
     /// # }
     /// ```
+    #[doc(alias = ">=")]
     fn ge<T>(self, other: T) -> dsl::GtEq<Self, T>
     where
         Self::SqlType: SqlType,
@@ -258,15 +274,16 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let data = users
     ///     .select(name)
     ///     .filter(id.lt(2))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(connection)?;
     /// assert_eq!("Sean", data);
     /// #     Ok(())
     /// # }
     /// ```
+    #[doc(alias = "<")]
     fn lt<T>(self, other: T) -> dsl::Lt<Self, T>
     where
         Self::SqlType: SqlType,
@@ -288,14 +305,15 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let data = users
     ///     .select(name)
     ///     .filter(id.le(2))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(connection)?;
     /// assert_eq!("Sean", data);
     /// #     Ok(())
     /// # }
+    #[doc(alias = "<=")]
     fn le<T>(self, other: T) -> dsl::LtEq<Self, T>
     where
         Self::SqlType: SqlType,
@@ -314,12 +332,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(legs.between(2, 6))
-    ///     .first(&connection);
+    ///     .first(connection);
     /// #
     /// assert_eq!(Ok("dog".to_string()), data);
     /// # }
@@ -350,12 +368,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let data = animals
     ///     .select(species)
     ///     .filter(legs.not_between(2, 6))
-    ///     .first::<String>(&connection)?;
+    ///     .first::<String>(connection)?;
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
@@ -385,12 +403,12 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let names = users
     ///     .select(name)
     ///     .order(name.desc())
-    ///     .load::<String>(&connection)?;
+    ///     .load::<String>(connection)?;
     /// assert_eq!(vec!["Tess", "Sean"], names);
     /// #     Ok(())
     /// # }
@@ -425,6 +443,122 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn asc(self) -> dsl::Asc<Self> {
         Asc::new(self)
+    }
+
+    /// Converts this potentially nullable expression into one which will be **assumed**
+    /// to be not-null. This method has no impact on the generated SQL, however it will
+    /// enable you to attempt deserialization of the returned value in a non-`Option`.
+    ///
+    /// This is meant to cover for cases where you know that given the `WHERE` clause
+    /// the field returned by the database will never be `NULL`.
+    ///
+    /// This **will cause runtime errors** on `load()` if the "assume" turns out to be incorrect.
+    ///
+    /// # Examples
+    /// ## Normal usage
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// #
+    /// table! {
+    ///     animals {
+    ///         id -> Integer,
+    ///         species -> VarChar,
+    ///         legs -> Integer,
+    ///         name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     use self::animals::dsl::*;
+    ///     let connection = &mut establish_connection();
+    ///
+    ///     let result = animals
+    ///         .filter(name.is_not_null())
+    ///         .select(name.assume_not_null())
+    ///         .load::<String>(connection);
+    ///     assert!(result.is_ok());
+    /// }
+    /// ```
+    ///
+    /// ## Incorrect usage
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// #
+    /// table! {
+    ///     animals {
+    ///         id -> Integer,
+    ///         species -> VarChar,
+    ///         legs -> Integer,
+    ///         name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    ///
+    /// fn main() {
+    ///     use diesel::result::{Error, UnexpectedNullError};
+    ///     use self::animals::dsl::*;
+    ///     let connection = &mut establish_connection();
+    ///
+    ///     let result = animals
+    ///         .select(name.assume_not_null())
+    ///         .load::<String>(connection);
+    ///     assert!(matches!(
+    ///         result,
+    ///         Err(Error::DeserializationError(err)) if err.is::<UnexpectedNullError>()
+    ///     ));
+    /// }
+    /// ```
+    ///
+    /// ## Advanced usage - use only if you're sure you know what you're doing!
+    ///
+    /// This will cause the `Option` to be `None` where the `left_join` succeeded but the
+    /// `author_name` turned out to be `NULL`, due to how `Option` deserialization works.
+    /// (see [`Queryable` documentation](crate::deserialize::Queryable))
+    ///
+    /// ```rust
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// # use schema::users;
+    /// #
+    /// table! {
+    ///     posts {
+    ///         id -> Integer,
+    ///         user_id -> Integer,
+    ///         author_name -> Nullable<Text>,
+    ///     }
+    /// }
+    /// #
+    /// # joinable!(posts -> users (user_id));
+    /// # allow_tables_to_appear_in_same_query!(posts, users);
+    ///
+    /// fn main() {
+    ///     use self::posts;
+    ///     use self::users;
+    ///     let connection = &mut establish_connection();
+    ///
+    /// #   connection.execute("ALTER TABLE posts ADD COLUMN author_name Text").unwrap();
+    /// #   diesel::update(posts::table.filter(posts::user_id.eq(1)))
+    /// #       .set(posts::author_name.eq("Sean"))
+    /// #       .execute(connection);
+    ///
+    ///     let result = posts::table.left_join(users::table)
+    ///         .select((posts::id, (users::id, posts::author_name.assume_not_null()).nullable()))
+    ///         .order_by(posts::id)
+    ///         .load::<(i32, Option<(i32, String)>)>(connection);
+    ///     let expected = Ok(vec![
+    ///         (1, Some((1, "Sean".to_owned()))),
+    ///         (2, Some((1, "Sean".to_owned()))),
+    ///         (3, None),
+    ///     ]);
+    ///     assert_eq!(expected, result);
+    /// }
+    /// ```
+    fn assume_not_null(self) -> dsl::AssumeNotNull<Self> {
+        assume_not_null::AssumeNotNull::new(self)
     }
 }
 
@@ -462,12 +596,12 @@ pub trait NullableExpressionMethods: Expression + Sized {
     /// fn main() {
     ///     use self::users::dsl::*;
     ///     use self::posts::dsl::{posts, author_name};
-    ///     let connection = establish_connection();
+    ///     let connection = &mut establish_connection();
     ///
     ///     let data = users.inner_join(posts)
     ///         .filter(name.nullable().eq(author_name))
     ///         .select(name)
-    ///         .load::<String>(&connection);
+    ///         .load::<String>(connection);
     ///     println!("{:?}", data);
     /// }
     /// ```

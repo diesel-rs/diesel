@@ -10,6 +10,10 @@ use super::raw::RawResult;
 use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 
+// Message after a database connection has been unexpectedly closed.
+const CLOSED_CONNECTION_MSG: &str = "server closed the connection unexpectedly\n\t\
+This probably means the server terminated abnormally\n\tbefore or while processing the request.\n";
+
 pub struct PgResult {
     internal_result: RawResult,
     column_count: usize,
@@ -19,11 +23,9 @@ pub struct PgResult {
 impl PgResult {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(internal_result: RawResult) -> QueryResult<Self> {
-        use self::ExecStatusType::*;
-
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
-            PGRES_COMMAND_OK | PGRES_TUPLES_OK => {
+            ExecStatusType::PGRES_COMMAND_OK | ExecStatusType::PGRES_TUPLES_OK => {
                 let column_count = unsafe { PQnfields(internal_result.as_ptr()) as usize };
                 let row_count = unsafe { PQntuples(internal_result.as_ptr()) as usize };
                 Ok(PgResult {
@@ -32,15 +34,15 @@ impl PgResult {
                     row_count,
                 })
             }
-            PGRES_EMPTY_QUERY => {
+            ExecStatusType::PGRES_EMPTY_QUERY => {
                 let error_message = "Received an empty query".to_string();
                 Err(Error::DatabaseError(
-                    DatabaseErrorKind::__Unknown,
+                    DatabaseErrorKind::Unknown,
                     Box::new(error_message),
                 ))
             }
             _ => {
-                let error_kind =
+                let mut error_kind =
                     match get_result_field(internal_result.as_ptr(), ResultField::SqlState) {
                         Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
                         Some(error_codes::FOREIGN_KEY_VIOLATION) => {
@@ -56,9 +58,12 @@ impl PgResult {
                             DatabaseErrorKind::NotNullViolation
                         }
                         Some(error_codes::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
-                        _ => DatabaseErrorKind::__Unknown,
+                        _ => DatabaseErrorKind::Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
+                if error_information.message() == CLOSED_CONNECTION_MSG {
+                    error_kind = DatabaseErrorKind::ClosedConnection;
+                }
                 Err(Error::DatabaseError(error_kind, error_information))
             }
         }

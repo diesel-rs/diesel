@@ -19,8 +19,8 @@ fn named_struct_definition() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let conn = &mut connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(conn);
     assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
 }
 
@@ -30,9 +30,23 @@ fn tuple_struct() {
     #[table_name = "my_structs"]
     struct MyStruct(#[column_name = "foo"] i32, #[column_name = "bar"] i32);
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let conn = &mut connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(conn);
     assert_eq!(Ok(MyStruct(1, 2)), data);
+}
+
+#[test]
+fn struct_with_path_in_name() {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, QueryableByName)]
+    #[table_name = "self::my_structs"]
+    struct MyStruct {
+        foo: i32,
+        bar: i32,
+    }
+
+    let conn = &mut connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(conn);
+    assert_eq!(Ok(MyStruct { foo: 1, bar: 2 }), data);
 }
 
 // FIXME: Test usage with renamed columns
@@ -47,9 +61,28 @@ fn struct_with_no_table() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let conn = &mut connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(conn);
     assert_eq!(Ok(MyStructNamedSoYouCantInferIt { foo: 1, bar: 2 }), data);
+}
+
+#[test]
+fn struct_with_non_ident_column_name() {
+    #[derive(Debug, Clone, PartialEq, Eq, QueryableByName)]
+    struct QueryPlan {
+        #[sql_type = "diesel::sql_types::Text"]
+        #[column_name = "QUERY PLAN"]
+        qp: String,
+    }
+
+    let conn = &mut connection();
+    let data = sql_query("SELECT 'some plan' AS \"QUERY PLAN\"").get_result(conn);
+    assert_eq!(
+        Ok(QueryPlan {
+            qp: "some plan".to_string()
+        }),
+        data
+    );
 }
 
 #[test]
@@ -68,8 +101,8 @@ fn embedded_struct() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let conn = &mut connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(conn);
     assert_eq!(
         Ok(A {
             foo: 1,
@@ -95,8 +128,8 @@ fn embedded_option() {
         bar: i32,
     }
 
-    let conn = connection();
-    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(&conn);
+    let conn = &mut connection();
+    let data = sql_query("SELECT 1 AS foo, 2 AS bar").get_result(conn);
     assert_eq!(
         Ok(A {
             foo: 1,
@@ -104,6 +137,6 @@ fn embedded_option() {
         }),
         data
     );
-    let data = sql_query("SELECT 1 AS foo, NULL AS bar").get_result(&conn);
+    let data = sql_query("SELECT 1 AS foo, NULL AS bar").get_result(conn);
     assert_eq!(Ok(A { foo: 1, b: None }), data);
 }

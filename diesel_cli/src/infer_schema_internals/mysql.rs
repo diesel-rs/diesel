@@ -38,7 +38,7 @@ mod information_schema {
 /// Even though this is using `information_schema`, MySQL needs non-ANSI columns
 /// in order to do this.
 pub fn load_foreign_key_constraints(
-    connection: &MysqlConnection,
+    connection: &mut MysqlConnection,
     schema_name: Option<&str>,
 ) -> QueryResult<Vec<ForeignKeyConstraint>> {
     use self::information_schema::key_column_usage as kcu;
@@ -92,6 +92,8 @@ pub fn determine_column_type(
     let unsigned = determine_unsigned(&attr.type_name);
 
     Ok(ColumnType {
+        schema: None,
+        sql_name: tpe.trim().to_lowercase(),
         rust_name: tpe.trim().to_camel_case(),
         is_array: false,
         is_nullable: attr.nullable,

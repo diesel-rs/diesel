@@ -11,7 +11,7 @@ use crate::query_source::Table;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `group_by` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait GroupByDsl<Expr: Expression> {
     /// The type returned by `.group_by`
     type Output;

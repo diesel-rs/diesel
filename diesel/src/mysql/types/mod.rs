@@ -26,6 +26,7 @@ use crate::sql_types::*;
 // version we just have our own copy here
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms)]
 pub(crate) struct MYSQL_TIME {
     pub year: libc::c_uint,
     pub month: libc::c_uint,
@@ -154,25 +155,25 @@ impl FromSql<Bool, Mysql> for bool {
 }
 
 impl HasSqlType<Unsigned<TinyInt>> for Mysql {
-    fn metadata(_lookup: &()) -> MysqlType {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedTiny
     }
 }
 
 impl HasSqlType<Unsigned<SmallInt>> for Mysql {
-    fn metadata(_lookup: &()) -> MysqlType {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedShort
     }
 }
 
 impl HasSqlType<Unsigned<Integer>> for Mysql {
-    fn metadata(_lookup: &()) -> MysqlType {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedLong
     }
 }
 
 impl HasSqlType<Unsigned<BigInt>> for Mysql {
-    fn metadata(_lookup: &()) -> MysqlType {
+    fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedLongLong
     }
 }
@@ -187,9 +188,16 @@ impl HasSqlType<Unsigned<BigInt>> for Mysql {
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 ///
-/// [`ToSql`]: ../../serialize/trait.ToSql.html
-/// [`FromSql`]: ../../deserialize/trait.FromSql.html
-/// [`chrono::NaiveDateTime`]: ../../../chrono/naive/struct.NaiveDateTime.html
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+#[cfg_attr(
+    feature = "chrono",
+    doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "chrono"),
+    doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
+)]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[mysql_type = "DateTime"]
 pub struct Datetime;

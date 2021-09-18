@@ -8,9 +8,9 @@ use std::borrow::Borrow;
 use crate::column::Column;
 use crate::dummy_expression::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 /// A database table.
-/// This type is created by the [`table`](fn.table.html) function.
+/// This type is created by the [`table`](crate::table()) function.
 pub struct Table<T, U = T> {
     name: T,
     schema: Option<U>,

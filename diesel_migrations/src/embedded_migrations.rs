@@ -10,18 +10,18 @@ use diesel::migration::{Migration, MigrationName, MigrationSource, MigrationVers
 /// This source can be create via the [`embed_migrations!`](crate::embed_migrations!)
 /// at compile time.
 #[allow(missing_copy_implementations)]
-pub struct EmbededMigrations {
-    migrations: &'static [EmbededMigration],
+pub struct EmbeddedMigrations {
+    migrations: &'static [EmbeddedMigration],
 }
 
-impl EmbededMigrations {
+impl EmbeddedMigrations {
     #[doc(hidden)]
-    pub const fn new(migrations: &'static [EmbededMigration]) -> Self {
+    pub const fn new(migrations: &'static [EmbeddedMigration]) -> Self {
         Self { migrations }
     }
 }
 
-impl<DB: Backend> MigrationSource<DB> for EmbededMigrations {
+impl<DB: Backend> MigrationSource<DB> for EmbeddedMigrations {
     fn migrations(&self) -> Result<Vec<Box<dyn Migration<DB>>>> {
         Ok(self
             .migrations
@@ -32,14 +32,14 @@ impl<DB: Backend> MigrationSource<DB> for EmbededMigrations {
 }
 
 #[doc(hidden)]
-pub struct EmbededMigration {
+pub struct EmbeddedMigration {
     up: &'static str,
     down: &'static str,
     name: EmbeddedName,
     metadata: TomlMetadataWrapper,
 }
 
-impl EmbededMigration {
+impl EmbeddedMigration {
     #[doc(hidden)]
     pub const fn new(
         up: &'static str,
@@ -63,6 +63,7 @@ pub struct EmbeddedName {
 }
 
 impl EmbeddedName {
+    #[doc(hidden)]
     pub const fn new(name: &'static str) -> Self {
         Self { name }
     }
@@ -84,8 +85,8 @@ impl Display for EmbeddedName {
     }
 }
 
-impl<'a, DB: Backend> Migration<DB> for &'a EmbededMigration {
-    fn run(&self, conn: &dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
+impl<'a, DB: Backend> Migration<DB> for &'a EmbeddedMigration {
+    fn run(&self, conn: &mut dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
         Ok(conn.batch_execute(self.up).map_err(|e| {
             let name = DieselMigrationName::from_name(self.name.name)
                 .expect("We have a vaild name here, we checked this in `embed_migration!`");
@@ -93,7 +94,7 @@ impl<'a, DB: Backend> Migration<DB> for &'a EmbededMigration {
         })?)
     }
 
-    fn revert(&self, conn: &dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
+    fn revert(&self, conn: &mut dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
         Ok(conn.batch_execute(self.down).map_err(|e| {
             let name = DieselMigrationName::from_name(self.name.name)
                 .expect("We have a vaild name here, we checked this in `embed_migration!`");

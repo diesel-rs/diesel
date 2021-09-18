@@ -10,8 +10,9 @@ diesel = { version = "2.0.0", path = "../../../diesel", features = ["sqlite"] }
 dotenv = "0.15"
 
 [[bin]]
-name = "show_posts"
+name = "show_posts_sqlite"
 doc = false
+path = "src/bin/show_posts.rs"
 
 [lib]
 doc = false

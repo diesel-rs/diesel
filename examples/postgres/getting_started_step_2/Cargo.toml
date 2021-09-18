@@ -9,12 +9,14 @@ diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres"] 
 dotenv = "0.15"
 
 [[bin]]
-name = "show_posts"
+name = "show_posts2_postgres"
 doc = false
+path = "src/bin/show_posts.rs"
 
 [[bin]]
-name = "write_post"
+name = "write_post2_postgres"
 doc = false
+path = "src/bin/write_post.rs"
 
 [lib]
 doc = false

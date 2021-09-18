@@ -9,6 +9,12 @@ on:
 
 name: CI Tests
 
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency.
+# This will ensure that only one commit will be running tests at a time on each PR.
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
 jobs:
   check_and_test:
     name: Check
@@ -199,7 +205,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras"
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras r2d2"
 
       - name: Test diesel (with-deprecated)
         uses: actions-rs/cargo@v1
@@ -296,7 +302,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2020-05-01
+          toolchain: nightly-2021-04-01
           profile: minimal
           override: true
       - name: Cache cargo registry
@@ -325,7 +331,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.40.0
+          toolchain: 1.51.0
           profile: minimal
           components: clippy, rustfmt
           override: true
@@ -341,6 +347,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+
+      - name: Remove potential newer clippy.toml from dependencies
+        run: |
+          cargo update
+          cargo fetch
+          find ~/.cargo/registry -iname "*clippy.toml" -delete
 
       - name: Run clippy
         uses: actions-rs/cargo@v1
@@ -383,13 +395,13 @@ jobs:
           args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
 
   minimal_rust_version:
-    name: Check Minimal supported rust version (1.48.0)
+    name: Check Minimal supported rust version (1.51.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.48.0
+          toolchain: 1.51.0
           profile: minimal
           override: true
       - name: Cache cargo registry
@@ -407,8 +419,10 @@ jobs:
         run: |
           RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
 
-      - name: Check building with rust 1.48.0
+      - name: Check building with rust 1.51.0
         uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --all
+          # This example pulls generic-array v0.14.1 that cannot compile with rustc 1.40.0.
+          # We could exclude it as it won't affect our MSRV.
+          args: --all --exclude=advanced-blog-cli

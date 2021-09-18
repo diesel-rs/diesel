@@ -18,10 +18,6 @@ use diesel::query_builder::{QueryFragment, QueryId};
 #[cfg(feature = "postgres")]
 use std::collections::Bound;
 
-thread_local! {
-    static CONN: TestConnection = connection_without_transaction();
-}
-
 pub fn test_type_round_trips<ST, T>(value: T) -> bool
 where
     ST: QueryId + SqlType + TypedExpressionType + SingleValue,
@@ -36,26 +32,25 @@ where
         + QueryFragment<<TestConnection as Connection>::Backend>
         + QueryId,
 {
-    CONN.with(|connection| {
-        let query = select(value.clone().into_sql::<ST>());
-        let result = query.get_result::<T>(connection);
-        match result {
-            Ok(res) => {
-                if value != res {
-                    println!("{:?}, {:?}", value, res);
-                    false
-                } else {
-                    true
-                }
-            }
-            Err(Error::DatabaseError(_, ref e))
-                if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" =>
-            {
+    let connection = &mut connection_without_transaction();
+    let query = select(value.clone().into_sql::<ST>());
+    let result = query.get_result::<T>(connection);
+    match result {
+        Ok(res) => {
+            if value != res {
+                println!("{:?}, {:?}", value, res);
+                false
+            } else {
                 true
             }
-            Err(e) => panic!("Query failed: {:?}", e),
         }
-    })
+        Err(Error::DatabaseError(_, ref e))
+            if e.message() == "invalid byte sequence for encoding \"UTF8\": 0x00" =>
+        {
+            true
+        }
+        Err(e) => panic!("Query failed: {:?}", e),
+    }
 }
 
 pub fn id<A>(a: A) -> A {

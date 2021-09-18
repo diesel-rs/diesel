@@ -1,14 +1,13 @@
+// Built-in Lints
 #![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 // Clippy lints
 #![allow(
-    clippy::option_map_unwrap_or_else,
-    clippy::option_map_unwrap_or,
+    clippy::map_unwrap_or,
     clippy::match_same_arms,
     clippy::type_complexity
 )]
 #![warn(
-    clippy::option_unwrap_used,
-    clippy::result_unwrap_used,
+    clippy::unwrap_used,
     clippy::print_stdout,
     clippy::wrong_pub_self_convention,
     clippy::mut_mut,
@@ -85,28 +84,22 @@ pub fn file_names(path: &Path) -> Result<Vec<String>, std::io::Error> {
         .collect::<Result<Vec<_>, _>>()
 }
 
-pub fn migrations_directories<'a>(
-    path: &'a Path,
-) -> impl Iterator<Item = Result<DirEntry, std::io::Error>> + 'a {
-    path.read_dir()
-        .into_iter()
-        .flat_map(|read_dir| read_dir)
-        .filter_map(move |entry| {
-            let entry = match entry {
-                Ok(e) => e,
-                Err(e) => return Some(Err(e)),
-            };
-            let metadata = match entry.metadata() {
-                Ok(m) => m,
-                Err(e) => return Some(Err(e)),
-            };
-            if metadata.is_file() {
-                return None;
-            }
-            if entry.file_name().to_string_lossy().starts_with('.') {
-                None
-            } else {
-                Some(Ok(entry))
-            }
-        })
+pub fn migrations_directories(
+    path: &'_ Path,
+) -> Result<impl Iterator<Item = Result<DirEntry, std::io::Error>> + '_, std::io::Error> {
+    Ok(path.read_dir()?.into_iter().filter_map(|entry_res| {
+        entry_res
+            .and_then(|entry| {
+                Ok(
+                    if entry.metadata()?.is_file()
+                        || entry.file_name().to_string_lossy().starts_with('.')
+                    {
+                        None
+                    } else {
+                        Some(entry)
+                    },
+                )
+            })
+            .transpose()
+    }))
 }

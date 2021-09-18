@@ -25,8 +25,8 @@ struct Stuff {
 fn main() {
     use self::stuff::dsl::*;
 
-    let conn = PgConnection::establish("").unwrap();
+    let mut conn = PgConnection::establish("").unwrap();
 
     let _ = stuff.filter(name.eq(any(more_stuff::names)))
-        .load(&conn);
+        .load(&mut conn);
 }

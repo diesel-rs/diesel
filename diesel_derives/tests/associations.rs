@@ -63,6 +63,73 @@ fn simple_belongs_to() {
 }
 
 #[test]
+fn table_in_different_module() {
+    mod schema {
+        table! {
+            users {
+                id -> Integer,
+                name -> Text,
+            }
+        }
+
+        table! {
+            posts {
+                id -> Integer,
+                user_id -> Integer,
+                title -> Text,
+            }
+        }
+
+        allow_tables_to_appear_in_same_query!(users, posts);
+
+        joinable!(posts -> users(user_id));
+    }
+
+    #[derive(Identifiable)]
+    #[table_name = "schema::users"]
+    pub struct User {
+        id: i32,
+    }
+
+    #[derive(Associations, Identifiable)]
+    #[table_name = "schema::posts"]
+    #[belongs_to(User)]
+    pub struct Post {
+        id: i32,
+        user_id: i32,
+    }
+
+    let _can_join_tables = schema::posts::table
+        .inner_join(schema::users::table)
+        .select((schema::users::id, schema::users::name, schema::posts::id))
+        .filter(
+            schema::posts::id
+                .eq(1)
+                .and(schema::posts::user_id.eq(2))
+                .and(schema::posts::title.eq("Bar")),
+        );
+
+    let _can_reverse_join_tables = schema::users::table
+        .inner_join(schema::posts::table)
+        .select((
+            schema::posts::id,
+            schema::posts::user_id,
+            schema::posts::title,
+        ))
+        .filter(schema::users::id.eq(1).and(schema::users::name.eq("Sean")));
+
+    let t = User { id: 42 };
+
+    let belong_to = Post::belonging_to(&t);
+    let filter = schema::posts::table.filter(schema::posts::user_id.eq(42));
+
+    assert_eq!(
+        debug_query::<Backend, _>(&belong_to).to_string(),
+        debug_query::<Backend, _>(&filter).to_string()
+    );
+}
+
+#[test]
 fn custom_foreign_key() {
     table! {
         users {

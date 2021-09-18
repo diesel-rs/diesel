@@ -16,7 +16,7 @@ pub struct NewUser(#[column_name = "name"] String);
 fn main() {
     use self::users::dsl::*;
 
-    let connection = PgConnection::establish("").unwrap();
+    let mut connection = PgConnection::establish("").unwrap();
 
     let query = delete(users.filter(name.eq("Bill")))
         .returning(id);

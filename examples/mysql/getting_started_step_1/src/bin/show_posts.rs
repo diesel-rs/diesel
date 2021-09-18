@@ -6,12 +6,22 @@ fn main() {
     use self::schema::posts::dsl::*;
     use self::schema::company::dsl::*;
 
-    let connection = establish_connection();
+    let connection = &mut establish_connection();
     let results = posts
         .filter(published.eq(true))
         .limit(5)
-        .load::<Post>(&connection)
+        .load::<Post>(connection)
         .expect("Error loading posts");
+
+    let post = Post{
+        id : 1,
+        title : "test".to_string(),
+        body : "body".to_string(),
+        published : true,
+    };
+
+    diesel::insert_into(posts).values(post).execute(connection).expect("insert error");
+        
 
     println!("Displaying {} posts", results.len());
     for post in results {
@@ -26,12 +36,12 @@ fn main() {
                 body : "body".to_string(),
                 published : true,
      };
-    diesel::insert_into(posts).values(post).execute(&connection).expect("insert error");
+    diesel::insert_into(posts).values(post).execute(connection).expect("insert error");
     
 
     let results = company
         .filter(CompanyID.eq(1))              
-        .load::<Company>(&connection)
+        .load::<Company>(connection)
         .expect("Error loading company");
 
     println!("Displaying {} company", results.len());

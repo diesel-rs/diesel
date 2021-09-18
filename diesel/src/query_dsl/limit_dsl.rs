@@ -6,7 +6,7 @@ use crate::query_source::Table;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `limit` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait LimitDsl {
     /// The type returned by `.limit`
     type Output;

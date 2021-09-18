@@ -29,11 +29,11 @@
 //! # }
 //! #
 //! # fn run_test() -> QueryResult<()> {
-//! #     let connection = establish_connection();
+//! #     let connection = &mut establish_connection();
 //! #     use self::users::dsl::*;
-//! let user = users.find(2).get_result::<User>(&connection)?;
+//! let user = users.find(2).get_result::<User>(connection)?;
 //! let users_post = Post::belonging_to(&user)
-//!     .first(&connection)?;
+//!     .first(connection)?;
 //! let expected = Post { id: 3, user_id: 2, title: "My first post too".into() };
 //! assert_eq!(expected, users_post);
 //! #     Ok(())
@@ -76,7 +76,6 @@
 //! # fn main() {}
 //! ```
 //!
-//! [`Identifiable`]: trait.Identifiable.html
 //!
 //! By default, Diesel assumes that your foreign keys will follow the convention `table_name_id`.
 //! If your foreign key has a different name,
@@ -93,7 +92,7 @@
 //! You can load the children for one or more parents using
 //! [`belonging_to`]
 //!
-//! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [`belonging_to`]: crate::query_dsl::BelongingToDsl::belonging_to
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
@@ -116,11 +115,11 @@
 //! #
 //! # fn main() {
 //! #   use self::users::dsl::*;
-//! #   let connection = establish_connection();
+//! #   let connection = &mut establish_connection();
 //! #
-//! let user = users.find(1).first::<User>(&connection).expect("Error loading user");
+//! let user = users.find(1).first::<User>(connection).expect("Error loading user");
 //! let post_list = Post::belonging_to(&user)
-//!     .load::<Post>(&connection)
+//!     .load::<Post>(connection)
 //!     .expect("Error loading posts");
 //! let expected = vec![
 //!     Post { id: 1, user_id: 1, title: "My first post".to_string() },
@@ -146,8 +145,8 @@
 //! [`belonging_to`] can be used to load the data, but we'll also need to group it
 //! with its parents. For this we use an additional method [`grouped_by`].
 //!
-//! [`grouped_by`]: trait.GroupedBy.html#tymethod.grouped_by
-//! [`belonging_to`]: ../query_dsl/trait.BelongingToDsl.html#tymethod.belonging_to
+//! [`grouped_by`]: GroupedBy::grouped_by
+//! [`belonging_to`]: crate::query_dsl::BelongingToDsl::belonging_to
 //!
 //! ```rust
 //! # include!("../doctest_setup.rs");
@@ -173,21 +172,21 @@
 //! # }
 //! #
 //! # fn run_test() -> QueryResult<()> {
-//! #     let connection = establish_connection();
+//! #     let connection = &mut establish_connection();
 //! #     use self::users::dsl::*;
 //! #     use self::posts::dsl::{posts, title};
-//! let sean = users.filter(name.eq("Sean")).first::<User>(&connection)?;
-//! let tess = users.filter(name.eq("Tess")).first::<User>(&connection)?;
+//! let sean = users.filter(name.eq("Sean")).first::<User>(connection)?;
+//! let tess = users.filter(name.eq("Tess")).first::<User>(connection)?;
 //!
 //! let seans_posts = Post::belonging_to(&sean)
 //!     .select(title)
-//!     .load::<String>(&connection)?;
+//!     .load::<String>(connection)?;
 //! assert_eq!(vec!["My first post", "About Rust"], seans_posts);
 //!
 //! // A vec or slice can be passed as well
 //! let more_posts = Post::belonging_to(&vec![sean, tess])
 //!     .select(title)
-//!     .load::<String>(&connection)?;
+//!     .load::<String>(connection)?;
 //! assert_eq!(vec!["My first post", "About Rust", "My first post too"], more_posts);
 //! #     Ok(())
 //! # }
@@ -227,10 +226,10 @@
 //! # }
 //! #
 //! # fn run_test() -> QueryResult<()> {
-//! #     let connection = establish_connection();
-//! let users = users::table.load::<User>(&connection)?;
+//! #     let connection = &mut establish_connection();
+//! let users = users::table.load::<User>(connection)?;
 //! let posts = Post::belonging_to(&users)
-//!     .load::<Post>(&connection)?
+//!     .load::<Post>(connection)?
 //!     .grouped_by(&users);
 //! let data = users.into_iter().zip(posts).collect::<Vec<_>>();
 //!
@@ -291,15 +290,15 @@
 //! # }
 //! #
 //! # fn main() {
-//! #   let connection = establish_connection();
+//! #   let connection = &mut establish_connection();
 //! #
-//! let users: Vec<User> = users::table.load::<User>(&connection)
+//! let users: Vec<User> = users::table.load::<User>(connection)
 //!     .expect("error loading users");
 //! let posts: Vec<Post> = Post::belonging_to(&users)
-//!     .load::<Post>(&connection)
+//!     .load::<Post>(connection)
 //!     .expect("error loading posts");
 //! let comments: Vec<Comment> = Comment::belonging_to(&posts)
-//!     .load::<Comment>(&connection)
+//!     .load::<Comment>(connection)
 //!     .expect("Error loading comments");
 //! let grouped_comments: Vec<Vec<Comment>> = comments.grouped_by(&posts);
 //! let posts_and_comments: Vec<Vec<(Post, Vec<Comment>)>> = posts
@@ -386,7 +385,7 @@ impl<'a, T: HasTable> HasTable for &'a T {
 /// `update(YourStruct::table().find(&your_struct.primary_key())`).
 ///
 /// This trait is usually implemented on a reference to a struct,
-/// not on the struct itself. It can be [derived](derive.Identifiable.html).
+/// not on the struct itself. It can be [derived](derive@Identifiable).
 ///
 pub trait Identifiable: HasTable {
     /// The type of this struct's identifier.

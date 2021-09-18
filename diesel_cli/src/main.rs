@@ -1,7 +1,7 @@
 // Built-in Lints
-#![allow(warnings, missing_copy_implementations)]
+#![deny(warnings, missing_copy_implementations)]
 // Clippy lints
-#![allow(clippy::option_map_unwrap_or_else, clippy::option_map_unwrap_or)]
+#![allow(clippy::map_unwrap_or)]
 #![warn(
     clippy::if_not_else,
     clippy::items_after_statements,
@@ -49,7 +49,6 @@ fn main() {
     use dotenv::dotenv;
     dotenv().ok();
 
-    
     let matches = cli::build_cli().get_matches();
 
     match matches.subcommand() {
@@ -63,8 +62,6 @@ fn main() {
     }
 }
 
-// https://github.com/rust-lang-nursery/rust-clippy/issues/2927#issuecomment-405705595
-#[allow(clippy::similar_names)]
 fn run_migration_command(
     matches: &ArgMatches,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
@@ -88,10 +85,7 @@ fn run_migration_command(
                 // in the cli. This is because arguments with default
                 // values conflict even if not used.
                 // See https://github.com/clap-rs/clap/issues/1605
-                let number = match args.value_of("REVERT_NUMBER") {
-                    None => "1",
-                    Some(number) => number,
-                };
+                let number = args.value_of("REVERT_NUMBER").unwrap_or("1");
                 for _ in 0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected.") {
                         match call_with_conn!(
                             database_url,
@@ -155,7 +149,7 @@ fn run_migration_command(
     Ok(())
 }
 
-fn generate_sql_migration(path: &PathBuf) {
+fn generate_sql_migration(path: &Path) {
     use std::io::Write;
 
     let migration_dir_relative =
@@ -199,46 +193,46 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
 }
 
 fn run_migrations_with_output<Conn, DB>(
-    conn: &Conn,
+    conn: &mut Conn,
     migrations: FileBasedMigrations,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
 where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
-    HarnessWithOutput::to_stdout(conn)
+    HarnessWithOutput::write_to_stdout(conn)
         .run_pending_migrations(migrations)
         .map(|_| ())
 }
 
 fn revert_all_migrations_with_output<Conn, DB>(
-    conn: &Conn,
+    conn: &mut Conn,
     migrations: FileBasedMigrations,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
 where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
-    HarnessWithOutput::to_stdout(conn)
+    HarnessWithOutput::write_to_stdout(conn)
         .revert_all_migrations(migrations)
         .map(|_| ())
 }
 
 fn revert_migration_with_output<Conn, DB>(
-    conn: &Conn,
+    conn: &mut Conn,
     migrations: FileBasedMigrations,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
 where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
-    HarnessWithOutput::to_stdout(conn)
+    HarnessWithOutput::write_to_stdout(conn)
         .revert_last_migration(migrations)
         .map(|_| ())
 }
 
 fn list_migrations<Conn, DB>(
-    conn: &Conn,
+    conn: &mut Conn,
     migrations: FileBasedMigrations,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
 where
@@ -417,14 +411,15 @@ fn search_for_directory_containing_file(path: &Path, file: &str) -> DatabaseResu
 /// if the `--number` argument is used.
 /// Migrations are performed in a transaction. If either part fails,
 /// the transaction is not committed.
-fn redo_migrations<Conn, DB>(conn: &Conn, migrations_dir: FileBasedMigrations, args: &ArgMatches)
-where
+fn redo_migrations<Conn, DB>(
+    conn: &mut Conn,
+    migrations_dir: FileBasedMigrations,
+    args: &ArgMatches,
+) where
     DB: Backend,
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
 {
-    let harness = HarnessWithOutput::to_stdout(conn);
-
-    let migrations_inner = || -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    let migrations_inner = |harness: &mut HarnessWithOutput<Conn, _>| -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
         let reverted_versions = if args.is_present("REDO_ALL") {
             harness.revert_all_migrations(migrations_dir.clone())?
         } else {
@@ -433,10 +428,7 @@ where
             // in the cli. This is because arguments with default
             // values conflict even if not used.
             // See https://github.com/clap-rs/clap/issues/1605
-            let number = match args.value_of("REDO_NUMBER") {
-                None => "1",
-                Some(number) => number,
-            };
+            let number = args.value_of("REDO_NUMBER").unwrap_or("1");
 
             (0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected."))
                 .filter_map(|_|{
@@ -449,7 +441,7 @@ where
                                 // If n is larger then the actual number of migrations,
                                 // just stop reverting them
                                 Some(MigrationError::NoMigrationRun) => None,
-                                _ => return Some(Err(e)),
+                                _ => Some(Err(e)),
                             }
                         }
                         Err(e) => {
@@ -462,7 +454,7 @@ where
 
         let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)?
             .into_iter()
-            .map(|m| (m.name().version().into_owned(), m))
+            .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
 
         let migrations = reverted_versions
@@ -470,7 +462,7 @@ where
             .map(|v| {
                 migrations
                     .remove(&v)
-                    .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.into_owned()))
+                    .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.as_owned()))
             })
             .collect::<Result<Vec<_>, _>>()?;
 
@@ -480,10 +472,11 @@ where
     };
 
     if should_redo_migration_in_transaction(conn) {
-        conn.transaction(migrations_inner)
+        conn.transaction(|conn| migrations_inner(&mut HarnessWithOutput::write_to_stdout(conn)))
             .unwrap_or_else(handle_error);
     } else {
-        migrations_inner().unwrap_or_else(handle_error);
+        migrations_inner(&mut HarnessWithOutput::write_to_stdout(conn))
+            .unwrap_or_else(handle_error);
     }
 }
 
@@ -561,6 +554,10 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
     if let Some(types) = matches.values_of("import-types") {
         let types = types.map(String::from).collect();
         config.import_types = Some(types);
+    }
+
+    if matches.is_present("generate-custom-type-definitions") {
+        config.generate_missing_sql_type_definitions = Some(false);
     }
 
     run_print_schema(&database_url, &config, &mut stdout())?;

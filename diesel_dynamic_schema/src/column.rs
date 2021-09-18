@@ -8,9 +8,9 @@ use diesel::query_builder::*;
 use std::borrow::Borrow;
 use std::marker::PhantomData;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 /// A database table column.
-/// This type is created by the [`column`](struct.Table.html#method.column) function.
+/// This type is created by the [`column`](crate::Table::column()) function.
 pub struct Column<T, U, ST> {
     table: T,
     name: U,

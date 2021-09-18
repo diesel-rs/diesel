@@ -24,3 +24,7 @@ pub use self::text_expression_methods::TextExpressionMethods;
 #[cfg(feature = "postgres")]
 #[doc(inline)]
 pub use crate::pg::expression::expression_methods::*;
+
+#[cfg(feature = "sqlite")]
+#[doc(inline)]
+pub use crate::sqlite::expression::expression_methods::*;

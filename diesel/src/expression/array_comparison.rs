@@ -96,6 +96,9 @@ impl_selectable_expression!(NotIn<T, U>);
 pub trait AsInExpression<T: SqlType + TypedExpressionType> {
     type InExpression: MaybeEmpty + Expression<SqlType = T>;
 
+    #[allow(clippy::wrong_self_convention)]
+    // That's a public api, we cannot just change it to
+    // appease clippy
     fn as_in_expression(self) -> Self::InExpression;
 }
 
@@ -120,7 +123,8 @@ pub trait MaybeEmpty {
     fn is_empty(&self) -> bool;
 }
 
-impl<ST, S, F, W, O, L, Of, G, LC> AsInExpression<ST> for SelectStatement<S, F, W, O, L, Of, G, LC>
+impl<ST, F, S, D, W, O, LOf, G, H, LC> AsInExpression<ST>
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     ST: SqlType + TypedExpressionType,
     Subselect<Self, ST>: Expression<SqlType = ST>,
@@ -133,10 +137,10 @@ where
     }
 }
 
-impl<'a, ST, QS, DB> AsInExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB>
+impl<'a, ST, QS, DB, GB> AsInExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
     ST: SqlType + TypedExpressionType,
-    Subselect<BoxedSelectStatement<'a, ST, QS, DB>, ST>: Expression<SqlType = ST>,
+    Subselect<BoxedSelectStatement<'a, ST, QS, DB, GB>, ST>: Expression<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;
 

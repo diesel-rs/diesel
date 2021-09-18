@@ -17,14 +17,12 @@ pub struct RawConnection {
 
 impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
-        use self::ConnStatusType::*;
-
         let connection_string = CString::new(database_url)?;
         let connection_ptr = unsafe { PQconnectdb(connection_string.as_ptr()) };
         let connection_status = unsafe { PQstatus(connection_ptr) };
 
         match connection_status {
-            CONNECTION_OK => {
+            ConnStatusType::CONNECTION_OK => {
                 let connection_ptr = unsafe { NonNull::new_unchecked(connection_ptr) };
                 Ok(RawConnection {
                     internal_connection: connection_ptr,

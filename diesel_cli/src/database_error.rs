@@ -65,7 +65,7 @@ impl fmt::Display for DatabaseError {
             ConnectionError(ref error) => f.write_str(&error
                 .source()
                 .map(ToString::to_string)
-                                                      .unwrap_or_else(|| error.to_string())),
+                .unwrap_or_else(|| error.to_string())),
             MigrationError(ref error) => {
                 write!(f, "Failed to run migrations: {}", error)
             }
@@ -75,9 +75,9 @@ impl fmt::Display for DatabaseError {
 
 impl PartialEq for DatabaseError {
     fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (&ProjectRootNotFound(_), &ProjectRootNotFound(_)) => true,
-            _ => false,
-        }
+        matches!(
+            (self, other),
+            (&ProjectRootNotFound(_), &ProjectRootNotFound(_))
+        )
     }
 }

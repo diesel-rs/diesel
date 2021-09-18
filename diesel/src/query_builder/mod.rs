@@ -18,6 +18,7 @@ mod distinct_clause;
 #[doc(hidden)]
 pub mod functions;
 mod group_by_clause;
+mod having_clause;
 mod insert_statement;
 #[doc(hidden)]
 pub mod limit_clause;
@@ -64,7 +65,7 @@ pub use self::limit_clause::{LimitClause, NoLimitClause};
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
 
-pub(crate) use self::insert_statement::ColumnList;
+pub(crate) use self::insert_statement::{BatchInsert, ColumnList};
 
 use std::error::Error;
 
@@ -83,7 +84,6 @@ pub type BuildQueryResult = Result<(), Box<dyn Error + Send + Sync>>;
 /// the query builder with new capabilities will interact with [`AstPass`]
 /// instead.
 ///
-/// [`AstPass`]: struct.AstPass.html
 pub trait QueryBuilder<DB: Backend> {
     /// Add `sql` to the end of the query being constructed.
     fn push_sql(&mut self, sql: &str);
@@ -117,7 +117,7 @@ pub trait QueryBuilder<DB: Backend> {
 /// query. For example, an `INSERT` statement without a `RETURNING` clause will
 /// not implement this trait, but can still be executed.
 ///
-/// [`Expression`]: ../expression/trait.Expression.html
+/// [`Expression`]: crate::expression::Expression
 pub trait Query {
     /// The SQL type that this query represents.
     ///
@@ -151,8 +151,8 @@ pub trait SelectQuery {
 /// represent a `WHERE` clause). Implementations of [`ExecuteDsl`] and
 /// [`LoadQuery`] will generally require that this trait be implemented.
 ///
-/// [`ExecuteDsl`]: ../query_dsl/methods/trait.ExecuteDsl.html
-/// [`LoadQuery`]: ../query_dsl/methods/trait.LoadQuery.html
+/// [`ExecuteDsl`]: crate::query_dsl::methods::ExecuteDsl
+/// [`LoadQuery`]: crate::query_dsl::methods::LoadQuery
 pub trait QueryFragment<DB: Backend> {
     /// Walk over this `QueryFragment` for all passes.
     ///
@@ -160,7 +160,6 @@ pub trait QueryFragment<DB: Backend> {
     /// This method will contain the behavior required for all possible AST
     /// passes. See [`AstPass`] for more details.
     ///
-    /// [`AstPass`]: struct.AstPass.html
     fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
 
     ///walk_ast_primary_key
@@ -191,7 +190,7 @@ pub trait QueryFragment<DB: Backend> {
     fn collect_binds(
         &self,
         out: &mut DB::BindCollector,
-        metadata_lookup: &DB::MetadataLookup,
+        metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()> {
         self.walk_ast(AstPass::collect_binds(out, metadata_lookup))
     }
@@ -291,6 +290,11 @@ pub trait AsQuery {
 
     /// Converts a type which semantically represents a SQL query into the
     /// actual query being executed. See the trait level docs for more.
+    // This method is part of our public API,
+    // so we won't change the name to just appease clippy
+    // (Also the trait is literally named `AsQuery` so
+    // naming the method similary is fine)
+    #[allow(clippy::wrong_self_convention)]
     fn as_query(self) -> Self::Query;
 }
 

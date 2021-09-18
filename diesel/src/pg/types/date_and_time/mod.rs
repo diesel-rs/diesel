@@ -59,8 +59,8 @@ impl PgInterval {
     /// how many months are in "40 days" without knowing a precise date.
     pub fn new(microseconds: i64, days: i32, months: i32) -> Self {
         PgInterval {
-            days,
             microseconds,
+            days,
             months,
         }
     }

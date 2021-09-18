@@ -37,7 +37,7 @@ If you run into problems, Diesel has a very active Gitter room.
 You can come ask for help at
 [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel).
 For help with longer questions and discussion about the future of Diesel,
-visit our [discourse](https://discourse.diesel.rs/) forum.
+open a discussion on [GitHub Discussions](https://github.com/diesel-rs/diesel/discussions).
 
 ## Code of conduct
 

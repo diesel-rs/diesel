@@ -25,8 +25,8 @@ sql_function! {
     /// #
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
-    /// assert_eq!(Ok(Some(8)), animals.select(max(legs)).first(&connection));
+    /// #     let connection = &mut establish_connection();
+    /// assert_eq!(Ok(Some(8)), animals.select(max(legs)).first(connection));
     /// # }
     #[aggregate]
     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
@@ -44,8 +44,8 @@ sql_function! {
     /// #
     /// # fn main() {
     /// #     use schema::animals::dsl::*;
-    /// #     let connection = establish_connection();
-    /// assert_eq!(Ok(Some(4)), animals.select(min(legs)).first(&connection));
+    /// #     let connection = &mut establish_connection();
+    /// assert_eq!(Ok(Some(4)), animals.select(min(legs)).first(connection));
     /// # }
     #[aggregate]
     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
