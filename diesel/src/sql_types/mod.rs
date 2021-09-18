@@ -35,9 +35,9 @@ pub use self::ord::SqlOrd;
 ///
 /// [bool]: https://doc.rust-lang.org/nightly/std/primitive.bool.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "16", array_oid = "1000")]
-#[sqlite_type = "Integer"]
-#[mysql_type = "Tiny"]
+#[cfg_attr(feature = "postgres", postgres(oid = "16", array_oid = "1000"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Integer")]
+#[cfg_attr(feature = "mysql", mysql_type = "Tiny")]
 pub struct Bool;
 
 /// The tiny integer SQL type.
@@ -56,7 +56,7 @@ pub struct Bool;
 ///
 /// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[mysql_type = "Tiny"]
+#[cfg_attr(feature = "mysql", mysql_type = "Tiny")]
 pub struct TinyInt;
 #[doc(hidden)]
 pub type Tinyint = TinyInt;
@@ -73,9 +73,9 @@ pub type Tinyint = TinyInt;
 ///
 /// [i16]: https://doc.rust-lang.org/nightly/std/primitive.i16.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "21", array_oid = "1005")]
-#[sqlite_type = "SmallInt"]
-#[mysql_type = "Short"]
+#[cfg_attr(feature = "postgres", postgres(oid = "21", array_oid = "1005"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "SmallInt")]
+#[cfg_attr(feature = "mysql", mysql_type = "Short")]
 pub struct SmallInt;
 #[doc(hidden)]
 pub type Int2 = SmallInt;
@@ -94,9 +94,9 @@ pub type Smallint = SmallInt;
 ///
 /// [i32]: https://doc.rust-lang.org/nightly/std/primitive.i32.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "23", array_oid = "1007")]
-#[sqlite_type = "Integer"]
-#[mysql_type = "Long"]
+#[cfg_attr(feature = "postgres", postgres(oid = "23", array_oid = "1007"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Integer")]
+#[cfg_attr(feature = "mysql", mysql_type = "Long")]
 pub struct Integer;
 #[doc(hidden)]
 pub type Int4 = Integer;
@@ -113,9 +113,9 @@ pub type Int4 = Integer;
 ///
 /// [i64]: https://doc.rust-lang.org/nightly/std/primitive.i64.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "20", array_oid = "1016")]
-#[sqlite_type = "Long"]
-#[mysql_type = "LongLong"]
+#[cfg_attr(feature = "postgres", postgres(oid = "20", array_oid = "1016"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Long")]
+#[cfg_attr(feature = "mysql", mysql_type = "LongLong")]
 pub struct BigInt;
 #[doc(hidden)]
 pub type Int8 = BigInt;
@@ -134,9 +134,9 @@ pub type Bigint = BigInt;
 ///
 /// [f32]: https://doc.rust-lang.org/nightly/std/primitive.f32.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "700", array_oid = "1021")]
-#[sqlite_type = "Float"]
-#[mysql_type = "Float"]
+#[cfg_attr(feature = "postgres", postgres(oid = "700", array_oid = "1021"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Float")]
+#[cfg_attr(feature = "mysql", mysql_type = "Float")]
 pub struct Float;
 #[doc(hidden)]
 pub type Float4 = Float;
@@ -153,9 +153,9 @@ pub type Float4 = Float;
 ///
 /// [f64]: https://doc.rust-lang.org/nightly/std/primitive.f64.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "701", array_oid = "1022")]
-#[sqlite_type = "Double"]
-#[mysql_type = "Double"]
+#[cfg_attr(feature = "postgres", postgres(oid = "701", array_oid = "1022"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Double")]
+#[cfg_attr(feature = "mysql", mysql_type = "Double")]
 pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
@@ -175,9 +175,9 @@ pub type Float8 = Double;
 ///
 /// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1700", array_oid = "1231")]
-#[mysql_type = "String"]
-#[sqlite_type = "Double"]
+#[cfg_attr(feature = "postgres", postgres(oid = "1700", array_oid = "1231"))]
+#[cfg_attr(feature = "mysql", mysql_type = "String")]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Double")]
 pub struct Numeric;
 
 /// Alias for `Numeric`
@@ -203,9 +203,9 @@ pub type Decimal = Numeric;
 /// [String]: https://doc.rust-lang.org/nightly/std/string/struct.String.html
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "25", array_oid = "1009")]
-#[sqlite_type = "Text"]
-#[mysql_type = "String"]
+#[cfg_attr(feature = "postgres", postgres(oid = "25", array_oid = "1009"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Text")]
+#[cfg_attr(feature = "mysql", mysql_type = "String")]
 pub struct Text;
 
 /// The SQL `VARCHAR` type
@@ -246,9 +246,9 @@ pub type Longtext = Text;
 /// [Vec]: https://doc.rust-lang.org/nightly/std/vec/struct.Vec.html
 /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "17", array_oid = "1001")]
-#[sqlite_type = "Binary"]
-#[mysql_type = "Blob"]
+#[cfg_attr(feature = "postgres", postgres(oid = "17", array_oid = "1001"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Binary")]
+#[cfg_attr(feature = "mysql", mysql_type = "Blob")]
 pub struct Binary;
 
 #[doc(hidden)]
@@ -276,9 +276,9 @@ pub type Bit = Binary;
 ///
 /// [NaiveDate]: /chrono/naive/date/struct.NaiveDate.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1082", array_oid = "1182")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Date"]
+#[cfg_attr(feature = "postgres", postgres(oid = "1082", array_oid = "1182"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Text")]
+#[cfg_attr(feature = "mysql", mysql_type = "Date")]
 pub struct Date;
 
 /// The interval SQL type.
@@ -296,7 +296,7 @@ pub struct Date;
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1186", array_oid = "1187")]
+#[cfg_attr(feature = "postgres", postgres(oid = "1186", array_oid = "1187"))]
 pub struct Interval;
 
 /// The time SQL type.
@@ -311,9 +311,9 @@ pub struct Interval;
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1083", array_oid = "1183")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Time"]
+#[cfg_attr(feature = "postgres", postgres(oid = "1083", array_oid = "1183"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Text")]
+#[cfg_attr(feature = "mysql", mysql_type = "Time")]
 pub struct Time;
 
 /// The timestamp SQL type.
@@ -334,9 +334,9 @@ pub struct Time;
 /// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1114", array_oid = "1115")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Timestamp"]
+#[cfg_attr(feature = "postgres", postgres(oid = "1114", array_oid = "1115"))]
+#[cfg_attr(feature = "sqlite", sqlite_type = "Text")]
+#[cfg_attr(feature = "mysql", mysql_type = "Timestamp")]
 pub struct Timestamp;
 
 /// The nullable SQL type.

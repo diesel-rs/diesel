@@ -202,10 +202,6 @@ where
 }
 
 #[cfg(feature = "sqlite")]
-#[deprecated(
-    since = "1.2.0",
-    note = "Use `<&'a [U] as Insertable<T>>::Values` instead"
-)]
 impl<'a, T, U, Op> ExecuteDsl<SqliteConnection> for InsertStatement<T, &'a [U], Op>
 where
     &'a U: Insertable<T>,
