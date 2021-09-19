@@ -4,6 +4,13 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+
+## [1.4.8] - 2021-09-20
+
+### Fixed
+
+* Fixed a incompatibly between `diesel` and `diesel_migrations` when building both crates with cargos new `resolver = "2"` enabled. This change ensures compatibility with the upcomming 2021 rust edition.
+
 ## [1.4.7] - 2021-06-08
 
 ### Fixed
@@ -1656,3 +1663,5 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
 [1.4.5]: https://github.com/diesel-rs/diesel/compare/v1.4.4...v1.4.5
 [1.4.6]: https://github.com/diesel-rs/diesel/compare/v1.4.5...v1.4.6
+[1.4.7]: https://github.com/diesel-rs/diesel/compare/v1.4.6...v1.4.7
+[1.4.8]: https://github.com/diesel-rs/diesel/compare/v1.4.7...v1.4.8
