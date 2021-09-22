@@ -1,0 +1,110 @@
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: unexpected end of input, expected parentheses
+ --> $DIR/deprecated_postgres_type.rs:6:3
+  |
+6 | #[postgres]
+  |   ^^^^^^^^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: expected `oid` and `array_oid` attribute or `name` attribute
+  --> $DIR/deprecated_postgres_type.rs:10:11
+   |
+10 | #[postgres()]
+   |           ^^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: expected parentheses
+  --> $DIR/deprecated_postgres_type.rs:14:12
+   |
+14 | #[postgres = "foo"]
+   |            ^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: unexpected end of input, expected `=`
+  --> $DIR/deprecated_postgres_type.rs:18:12
+   |
+18 | #[postgres(type_name)]
+   |            ^^^^^^^^^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: expected `=`
+  --> $DIR/deprecated_postgres_type.rs:22:21
+   |
+22 | #[postgres(type_name())]
+   |                     ^^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: expected string literal
+  --> $DIR/deprecated_postgres_type.rs:26:24
+   |
+26 | #[postgres(type_name = 1)]
+   |                        ^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: unexpected `oid` when `name` is present
+  --> $DIR/deprecated_postgres_type.rs:30:37
+   |
+30 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
+   |                                     ^^^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: unexpected `array_oid` when `name` is present
+  --> $DIR/deprecated_postgres_type.rs:34:43
+   |
+34 | #[postgres(type_name = "foo", array_oid = "3")]
+   |                                           ^^^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: expected `oid` and `array_oid` attribute or `name` attribute
+  --> $DIR/deprecated_postgres_type.rs:38:11
+   |
+38 | #[postgres(oid = "2")]
+   |           ^^^^^^^^^^^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: expected string literal
+  --> $DIR/deprecated_postgres_type.rs:42:18
+   |
+42 | #[postgres(oid = 1, array_oid = "1")]
+   |                  ^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: expected string literal
+  --> $DIR/deprecated_postgres_type.rs:46:35
+   |
+46 | #[postgres(oid = "1", array_oid = 1)]
+   |                                   ^
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+warning: #[postgres] attribute form is deprecated
+  = help: use `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` format instead
+
+error: unknown attribute
+  --> $DIR/deprecated_postgres_type.rs:54:12
+   |
+54 | #[postgres(what)]
+   |            ^^^^

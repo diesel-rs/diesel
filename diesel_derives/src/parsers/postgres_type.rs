@@ -50,6 +50,18 @@ impl Parse for PostgresType {
             }
         }
 
+        Self::validate_and_build(input, oid, array_oid, name, schema)
+    }
+}
+
+impl PostgresType {
+    pub fn validate_and_build(
+        input: ParseStream,
+        oid: Option<LitInt>,
+        array_oid: Option<LitInt>,
+        name: Option<LitStr>,
+        schema: Option<LitStr>,
+    ) -> Result<Self> {
         if let Some(name) = name {
             if oid.is_some() {
                 abort!(oid, "unexpected `oid` when `name` is present");

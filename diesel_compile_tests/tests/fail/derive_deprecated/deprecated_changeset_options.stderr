@@ -1,0 +1,47 @@
+warning: #[changeset_options] attribute form is deprecated
+  = help: use `#[diesel(treat_none_as_null = true)]` format instead
+
+warning: #[changeset_options] attribute form is deprecated
+  = help: use `#[diesel(treat_none_as_null = true)]` format instead
+
+error: unexpected end of input, expected parentheses
+  --> $DIR/deprecated_changeset_options.rs:21:3
+   |
+21 | #[changeset_options]
+   |   ^^^^^^^^^^^^^^^^^
+
+warning: #[changeset_options] attribute form is deprecated
+  = help: use `#[diesel(treat_none_as_null = true)]` format instead
+
+error: unexpected end of input, expected identifier
+  --> $DIR/deprecated_changeset_options.rs:29:20
+   |
+29 | #[changeset_options()]
+   |                    ^^
+
+warning: #[changeset_options] attribute form is deprecated
+  = help: use `#[diesel(treat_none_as_null = true)]` format instead
+
+error: expected `treat_none_as_null`
+  --> $DIR/deprecated_changeset_options.rs:37:21
+   |
+37 | #[changeset_options(what)]
+   |                     ^^^^
+
+warning: #[changeset_options] attribute form is deprecated
+  = help: use `#[diesel(treat_none_as_null = true)]` format instead
+
+error: unexpected end of input, expected `=`
+  --> $DIR/deprecated_changeset_options.rs:45:21
+   |
+45 | #[changeset_options(treat_none_as_null)]
+   |                     ^^^^^^^^^^^^^^^^^^
+
+warning: #[changeset_options] attribute form is deprecated
+  = help: use `#[diesel(treat_none_as_null = true)]` format instead
+
+error: expected boolean literal
+  --> $DIR/deprecated_changeset_options.rs:53:42
+   |
+53 | #[changeset_options(treat_none_as_null = "what")]
+   |                                          ^^^^^^

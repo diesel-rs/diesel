@@ -29,6 +29,7 @@ extern crate proc_macro_error;
 use proc_macro::TokenStream;
 
 mod attrs;
+mod deprecated;
 mod field;
 mod model;
 mod parsers;

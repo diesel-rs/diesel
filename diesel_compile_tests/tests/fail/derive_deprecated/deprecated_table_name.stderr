@@ -1,0 +1,44 @@
+warning: #[table_name] attribute form is deprecated
+  = help: use `#[diesel(table_name = users)]` format instead
+
+warning: #[table_name] attribute form is deprecated
+  = help: use `#[diesel(table_name = users)]` format instead
+
+error: unexpected end of input, expected `=`
+  --> $DIR/deprecated_table_name.rs:12:3
+   |
+12 | #[table_name]
+   |   ^^^^^^^^^^
+
+warning: #[table_name] attribute form is deprecated
+  = help: use `#[diesel(table_name = users)]` format instead
+
+error: expected `=`
+  --> $DIR/deprecated_table_name.rs:19:13
+   |
+19 | #[table_name()]
+   |             ^^
+
+warning: #[table_name] attribute form is deprecated
+  = help: use `#[diesel(table_name = users)]` format instead
+
+error: expected string literal
+  --> $DIR/deprecated_table_name.rs:25:16
+   |
+25 | #[table_name = 1]
+   |                ^
+
+warning: #[table_name] attribute form is deprecated
+  = help: use `#[diesel(table_name = users)]` format instead
+
+error: expected identifier
+  --> $DIR/deprecated_table_name.rs:32:16
+   |
+32 | #[table_name = "1"]
+   |                ^^^
+
+error[E0433]: failed to resolve: use of undeclared crate or module `users`
+ --> $DIR/deprecated_table_name.rs:5:16
+  |
+5 | #[table_name = "users"]
+  |                ^^^^^^^ use of undeclared crate or module `users`

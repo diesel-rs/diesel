@@ -1,9 +1,10 @@
-use proc_macro_error::{emit_warning, ResultExt};
-use syn::parse::{Parse, ParseStream, Result};
+use proc_macro_error::ResultExt;
+use syn::parse::{Parse, ParseStream, Parser, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parenthesized, parse, Attribute, Ident, LitBool, Path, Type};
+use syn::{parenthesized, Attribute, Ident, LitBool, Path, Type};
 
+use deprecated::ParseDeprecated;
 use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use util::{parse_eq, parse_paren, unknown_attribute};
 
@@ -84,7 +85,7 @@ impl Parse for StructAttr {
     }
 }
 
-pub fn parse_attributes<T: Parse>(attrs: &[Attribute]) -> Vec<T> {
+pub fn parse_attributes<T: Parse + ParseDeprecated>(attrs: &[Attribute]) -> Vec<T> {
     attrs
         .iter()
         .flat_map(|attr| {
@@ -92,28 +93,24 @@ pub fn parse_attributes<T: Parse>(attrs: &[Attribute]) -> Vec<T> {
                 attr.parse_args_with(Punctuated::<T, Comma>::parse_terminated)
                     .unwrap_or_abort()
             } else {
-                parse_old_attribute(attr)
+                let mut p = Punctuated::new();
+                let Attribute { path, tokens, .. } = attr;
+                let ident = path.get_ident().map(|f| f.to_string());
+
+                if let "sql_type" | "column_name" | "table_name" | "changeset_options"
+                | "primary_key" | "belongs_to" | "sqlite_type" | "mysql_type" | "postgres" =
+                    ident.as_deref().unwrap_or_default()
+                {
+                    let ts = quote!(#path #tokens).into();
+                    let value = Parser::parse(T::parse_deprecated, ts).unwrap_or_abort();
+
+                    if let Some(value) = value {
+                        p.push_value(value);
+                    }
+                }
+
+                p
             }
         })
         .collect()
-}
-
-fn parse_old_attribute<T: Parse>(attr: &Attribute) -> Punctuated<T, Comma> {
-    attr.path
-        .get_ident()
-        .and_then(|ident| match &*ident.to_string() {
-            "table_name" | "primary_key" | "column_name" | "sql_type" | "changeset_options" => {
-                emit_warning!(ident, "#[{}] attribute form is deprecated", ident);
-
-                let Attribute { path, tokens, .. } = attr;
-
-                Some(parse::<T>(quote! { #path #tokens }.into()).unwrap_or_abort())
-            }
-            _ => None,
-        })
-        .map_or(Punctuated::new(), |attr| {
-            let mut p = Punctuated::new();
-            p.push_value(attr);
-            p
-        })
 }

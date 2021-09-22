@@ -1,0 +1,37 @@
+warning: #[mysql_type] attribute form is deprecated
+  = help: use `#[diesel(mysql_type(name = "TypeName"))]` format instead
+
+error: unexpected end of input, expected `=`
+ --> $DIR/deprecated_mysql_type.rs:6:3
+  |
+6 | #[mysql_type]
+  |   ^^^^^^^^^^
+
+warning: #[mysql_type] attribute form is deprecated
+  = help: use `#[diesel(mysql_type(name = "TypeName"))]` format instead
+
+error: expected `=`
+  --> $DIR/deprecated_mysql_type.rs:10:13
+   |
+10 | #[mysql_type()]
+   |             ^^
+
+warning: #[mysql_type] attribute form is deprecated
+  = help: use `#[diesel(mysql_type(name = "TypeName"))]` format instead
+
+error: expected string literal
+  --> $DIR/deprecated_mysql_type.rs:14:16
+   |
+14 | #[mysql_type = 1]
+   |                ^
+
+warning: #[mysql_type] attribute form is deprecated
+  = help: use `#[diesel(mysql_type(name = "TypeName"))]` format instead
+
+error[E0599]: no variant or associated item named `foo` found for enum `MysqlType` in the current scope
+  --> $DIR/deprecated_mysql_type.rs:17:10
+   |
+17 | #[derive(SqlType)]
+   |          ^^^^^^^ variant or associated item not found in `MysqlType`
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
