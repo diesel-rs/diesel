@@ -158,6 +158,49 @@ where
 
         Ok(MaybeCached::Cached(cached_result))
     }
+
+    pub fn statement_is_cached<T>(
+        &mut self,
+        source: &T,
+        bind_types: &[DB::TypeMetadata],        
+    ) -> Option<MaybeCached<Statement>>
+    where
+        T: QueryFragment<DB> + QueryId,
+    {
+        use std::collections::hash_map::Entry::{Occupied, Vacant};
+
+        let cache_key = StatementCacheKey::for_source(source, bind_types).unwrap();
+        let cached_result = match self.cache.entry(cache_key) {
+            Occupied(entry) => Some(MaybeCached::Cached(entry.into_mut())),
+            Vacant(_entry) => {
+                None
+            }
+        };
+        cached_result
+    }
+
+    pub fn cached_statement1<T>(
+        &mut self,
+        source: &T,
+        bind_types: &[DB::TypeMetadata],
+        stmt: Statement,
+    ) -> QueryResult<MaybeCached<Statement>>
+    where
+        T: QueryFragment<DB> + QueryId,
+    {
+        use std::collections::hash_map::Entry::{Occupied, Vacant};
+
+        let cache_key = StatementCacheKey::for_source(source, bind_types)?;
+        let cached_result = match self.cache.entry(cache_key) {
+            Occupied(entry) => entry.into_mut(),
+            Vacant(entry) => {
+                entry.insert(stmt)
+            }
+        };
+
+        Ok(MaybeCached::Cached(cached_result))
+    }    
+
 }
 
 #[doc(hidden)]
