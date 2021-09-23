@@ -293,7 +293,7 @@ where
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OwnedBatchInsert<V, Tab> {
     pub(crate) values: Vec<V>,
     _marker: PhantomData<Tab>,
