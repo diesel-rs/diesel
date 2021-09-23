@@ -50,6 +50,7 @@ macro_rules! __diesel_column {
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
             DB: $crate::backend::Backend,
             <$table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
+            $column_name : $crate::query_source::Column,
         {
             #[allow(non_snake_case)]
             fn walk_ast(&self, mut __out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
@@ -57,7 +58,7 @@ macro_rules! __diesel_column {
                 $table.from_clause().walk_ast(__out.reborrow())?;
                 __out.push_sql(".");
                 __out.push_identifier($sql_name)
-            }
+            }           
         }
 
         impl $crate::SelectableExpression<$table> for $column_name {

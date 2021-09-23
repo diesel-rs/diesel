@@ -151,8 +151,8 @@ macro_rules! tuple_impls {
                 fn values(self) -> Self::Values {
                     ValuesClause::new(($(self.$idx.values().values,)+))
                 }
-
             }
+
             impl<'a, $($T,)+ Tab> Insertable<Tab> for &'a ($($T,)+)
             where
                 ($(&'a $T,)+): Insertable<Tab>,
@@ -162,7 +162,6 @@ macro_rules! tuple_impls {
                 fn values(self) -> Self::Values {
                     ($(&self.$idx,)+).values()
                 }
-
             }
 
             #[allow(unused_assignments)]

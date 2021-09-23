@@ -220,20 +220,53 @@ where
     DB: Backend + SupportsDefaultKeyword,
     Col: Column,
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
+    Expr: QueryFragment<DB>,    
     Self: QueryFragment<DB>,
 {
+    ///判断是否为自增ID
+    fn is_self_increase_id(&self)->bool{
+        if let Self::Expression(ref inner) = *self{            
+            return inner.col.is_self_increase_id();
+        }
+        else{
+            return false;
+        }
+    }
+
     fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_identifier(Col::NAME)?;
         Ok(())
     }
+
+    fn col_value(&self, col_name:String, mut out: AstPass<DB>)->QueryResult<()>{
+        if let Self::Expression(ref inner) = *self{            
+            inner.expr.walk_ast_primary_key(col_name, out.reborrow())?;
+        }
+        
+        Ok(())
+    }
+
 }
 
 #[cfg(not(feature = "sqlite"))]
-impl<Expr, DB> QueryFragment<DB> for DefaultableColumnInsertValue<Expr>
+impl<Col, Expr, DB> QueryFragment<DB> for DefaultableColumnInsertValue<ColumnInsertValue<Col, Expr>>
 where
     DB: Backend + SupportsDefaultKeyword,
+    Col: Column,
+    Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<()>,
+    ColumnInsertValue<Col, Expr>: QueryFragment<DB>,
     Expr: QueryFragment<DB>,
 {
+    ///判断是否为自增ID
+    fn is_self_increase_id1(&self)->bool{
+        if let Self::Expression(ref inner) = *self{            
+            return inner.col.is_self_increase_id();
+        }
+        else{
+            return false;
+        }
+    }
+
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         if let Self::Expression(ref inner) = *self {
@@ -241,6 +274,18 @@ where
         } else {
             out.push_sql("DEFAULT");
         }
+        Ok(())
+    }
+
+    ///walk_ast_primary_key
+    fn walk_ast_primary_key(&self, primary_key:String, mut pass: AstPass<DB>) -> QueryResult<()>{
+
+        if primary_key == Col::NAME{
+            if let Self::Expression(ref inner) = *self{            
+                inner.expr.walk_ast_primary_key(primary_key, pass.reborrow())?; 
+            }
+        }
+        
         Ok(())
     }
 }
