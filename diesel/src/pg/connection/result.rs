@@ -64,10 +64,7 @@ impl PgResult {
                         | Some(error_codes::SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION) => {
                             DatabaseErrorKind::ClosedConnection
                         }
-                        e => {
-                            eprintln!("Unknown error code: {:?}", e);
-                            DatabaseErrorKind::Unknown
-                        }
+                        _ => DatabaseErrorKind::Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
                 // NOTE: Ideally, we'd remove this check, in favor of matching
