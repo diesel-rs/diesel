@@ -117,7 +117,7 @@ where
     }
 
     fn has_broken(&self, _conn: &mut T) -> bool {
-        false
+        std::thread::panicking()
     }
 }
 
