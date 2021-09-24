@@ -343,6 +343,17 @@ mod tests {
     }
 
     #[test]
+    fn wait_a_looooong_time() {
+        let connection = &mut connection();
+
+        crate::sql_query(
+            "SELECT pg_sleep(100.0);",
+        )
+        .execute(connection)
+        .unwrap();
+    }
+
+    #[test]
     fn static_batch_inserts_are_cached() {
         let connection = &mut connection();
         connection.begin_test_transaction().unwrap();

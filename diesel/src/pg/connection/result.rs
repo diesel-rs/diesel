@@ -58,9 +58,20 @@ impl PgResult {
                             DatabaseErrorKind::NotNullViolation
                         }
                         Some(error_codes::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
-                        _ => DatabaseErrorKind::Unknown,
+                        Some(error_codes::CONNECTION_EXCEPTION)
+                            | Some(error_codes::CONNECTION_FAILURE)
+                            | Some(error_codes::SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION)
+                            | Some(error_codes::SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION) => {
+                            DatabaseErrorKind::ClosedConnection
+                        }
+                        e => {
+                            eprintln!("Unknown error code: {:?}", e);
+                            DatabaseErrorKind::Unknown
+                        }
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
+                // TODO: I'd like to remove this check, but it appears to be
+                // happening in cases where the return code is "None".
                 if error_information.message() == CLOSED_CONNECTION_MSG {
                     error_kind = DatabaseErrorKind::ClosedConnection;
                 }
@@ -207,13 +218,17 @@ fn get_result_field<'a>(res: *mut PGresult, field: ResultField) -> Option<&'a st
 
 mod error_codes {
     //! These error codes are documented at
-    //! <https://www.postgresql.org/docs/9.5/static/errcodes-appendix.html>
+    //! <https://www.postgresql.org/docs/current/errcodes-appendix.html>
     //!
     //! They are not exposed programmatically through libpq.
-    pub const UNIQUE_VIOLATION: &str = "23505";
+    pub const CONNECTION_EXCEPTION: &str  = "08000";
+    pub const CONNECTION_FAILURE: &str    = "08006";
+    pub const SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: &str    = "08001";
+    pub const SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: &str    = "08004";
+    pub const NOT_NULL_VIOLATION: &str    = "23502";
     pub const FOREIGN_KEY_VIOLATION: &str = "23503";
-    pub const SERIALIZATION_FAILURE: &str = "40001";
+    pub const UNIQUE_VIOLATION: &str      = "23505";
+    pub const CHECK_VIOLATION: &str       = "23514";
     pub const READ_ONLY_TRANSACTION: &str = "25006";
-    pub const NOT_NULL_VIOLATION: &str = "23502";
-    pub const CHECK_VIOLATION: &str = "23514";
+    pub const SERIALIZATION_FAILURE: &str = "40001";
 }
