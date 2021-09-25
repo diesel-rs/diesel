@@ -192,16 +192,14 @@ where
             return Ok(());
         }
 
+        
         self.operator.walk_ast(out.reborrow())?;
         out.push_sql(" INTO ");
         self.target.from_clause().walk_ast(out.reborrow())?;
         out.push_sql(" ");
         self.records.walk_ast(out.reborrow())?;
         
-        // let mut query_builder = crate::mysql::MysqlQueryBuilder::new();    
-        // let ast_pass = AstPass::<crate::mysql::Mysql>::to_sql(&mut query_builder);
         let key = self.target.primary_key();
-
         if key.is_self_increase_id() {
             out.push_sql(";");            
             if !self.returning.is_noop()?
