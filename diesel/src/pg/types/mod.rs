@@ -99,7 +99,7 @@ pub mod sql_types {
     /// [Vec]: std::vec::Vec
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    pub struct Array<ST>(ST);
+    pub struct Array<ST: 'static>(ST);
 
     /// The `Range` SQL type.
     ///
@@ -117,7 +117,7 @@ pub mod sql_types {
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [bound]: std::collections::Bound
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-    pub struct Range<ST>(ST);
+    pub struct Range<ST: 'static>(ST);
 
     #[doc(hidden)]
     pub type Int4range = Range<crate::sql_types::Int4>;
@@ -171,7 +171,7 @@ pub mod sql_types {
     /// [`WriteTuple`]: super::super::super::serialize::WriteTuple
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "2249", array_oid = "2287")]
-    pub struct Record<ST>(ST);
+    pub struct Record<ST: 'static>(ST);
 
     /// Alias for `SmallInt`
     pub type SmallSerial = crate::sql_types::SmallInt;

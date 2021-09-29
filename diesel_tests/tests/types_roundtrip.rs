@@ -26,7 +26,8 @@ where
         + FromSqlRow<ST, <TestConnection as Connection>::Backend>
         + PartialEq
         + Clone
-        + ::std::fmt::Debug,
+        + ::std::fmt::Debug
+        + 'static,
     <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType = ST>
         + NonAggregate
         + QueryFragment<<TestConnection as Connection>::Backend>

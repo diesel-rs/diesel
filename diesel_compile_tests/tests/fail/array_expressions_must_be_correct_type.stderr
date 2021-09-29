@@ -66,18 +66,18 @@ error[E0277]: the trait bound `f64: QueryId` is not satisfied
   = note: required because of the requirements on the impl of `QueryId` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
   = note: required because of the requirements on the impl of `LoadQuery<_, Vec<i32>>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
 
-error[E0277]: the trait bound `f64: QueryFragment<_>` is not satisfied
+error[E0277]: the trait bound `f64: QueryFragment<Pg>` is not satisfied
  --> $DIR/array_expressions_must_be_correct_type.rs:9:33
   |
 9 |     select(array((1f64, 3f64))).get_result::<Vec<i32>>(&mut connection);
-  |                                 ^^^^^^^^^^ the trait `QueryFragment<_>` is not implemented for `f64`
+  |                                 ^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `f64`
   |
-  = note: required because of the requirements on the impl of `QueryFragment<_>` for `(f64, f64)`
+  = note: required because of the requirements on the impl of `QueryFragment<Pg>` for `(f64, f64)`
   = note: 2 redundant requirements hidden
-  = note: required because of the requirements on the impl of `QueryFragment<_>` for `diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>`
-  = note: required because of the requirements on the impl of `SelectClauseQueryFragment<(), _>` for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>`
+  = note: required because of the requirements on the impl of `QueryFragment<Pg>` for `diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>`
+  = note: required because of the requirements on the impl of `SelectClauseQueryFragment<(), Pg>` for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>`
   = note: 1 redundant requirements hidden
-  = note: required because of the requirements on the impl of `QueryFragment<_>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
+  = note: required because of the requirements on the impl of `QueryFragment<Pg>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
   = note: required because of the requirements on the impl of `LoadQuery<_, Vec<i32>>` for `SelectStatement<(), diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`
 
 error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied

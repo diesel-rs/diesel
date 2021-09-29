@@ -603,27 +603,3 @@ error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Conn
     |          ^^^^ expected struct `Sqlite`, found struct `Pg`
     |
     = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, UserWithPostCount>` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::SelectClause<SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
-
-error[E0277]: the trait bound `Sqlite: HasSqlType<SelectBy<UserWithPostCount, Pg>>` is not satisfied
-   --> $DIR/selectable.rs:210:10
-    |
-210 |         .load(&mut conn)
-    |          ^^^^ the trait `HasSqlType<SelectBy<UserWithPostCount, Pg>>` is not implemented for `Sqlite`
-    |
-    = help: the following implementations were found:
-              <Sqlite as HasSqlType<BigInt>>
-              <Sqlite as HasSqlType<Bool>>
-              <Sqlite as HasSqlType<diesel::sql_types::Binary>>
-              <Sqlite as HasSqlType<diesel::sql_types::Date>>
-            and 8 others
-    = note: required because of the requirements on the impl of `QueryMetadata<SelectBy<UserWithPostCount, Pg>>` for `Sqlite`
-    = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, UserWithPostCount>` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::SelectClause<SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
-
-error[E0277]: the trait bound `SelectBy<UserWithPostCount, Pg>: SingleValue` is not satisfied
-   --> $DIR/selectable.rs:210:10
-    |
-210 |         .load(&mut conn)
-    |          ^^^^ the trait `SingleValue` is not implemented for `SelectBy<UserWithPostCount, Pg>`
-    |
-    = note: required because of the requirements on the impl of `QueryMetadata<SelectBy<UserWithPostCount, Pg>>` for `Sqlite`
-    = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, UserWithPostCount>` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::SelectClause<SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`

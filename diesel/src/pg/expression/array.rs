@@ -58,6 +58,7 @@ where
 
 impl<T, ST> Expression for ArrayLiteral<T, ST>
 where
+    ST: 'static,
     T: Expression,
 {
     type SqlType = sql_types::Array<ST>;

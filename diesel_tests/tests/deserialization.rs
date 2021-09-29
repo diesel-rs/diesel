@@ -1,5 +1,5 @@
 use crate::schema::*;
-use diesel::*;
+use diesel::prelude::*;
 use std::borrow::Cow;
 
 #[derive(Queryable, PartialEq, Debug, Selectable)]

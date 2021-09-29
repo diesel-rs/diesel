@@ -23,7 +23,7 @@ bitflags! {
     }
 }
 
-impl<ST, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
+impl<ST: 'static, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -31,7 +31,7 @@ impl<ST, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
     }
 }
 
-impl<'a, ST, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
+impl<'a, ST: 'static, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -39,7 +39,7 @@ impl<'a, ST, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
     }
 }
 
-impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
+impl<ST: 'static, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -47,7 +47,7 @@ impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
     }
 }
 
-impl<'a, ST, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
+impl<'a, ST: 'static, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -69,7 +69,7 @@ where
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
-            let value = T::from_sql(PgValue::new(elem_bytes, value.get_oid()))?;
+            let value = T::from_sql(PgValue::new(elem_bytes, &value))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
                 Bound::Included(value)
@@ -80,7 +80,7 @@ where
 
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
-            let value = T::from_sql(PgValue::new(bytes, value.get_oid()))?;
+            let value = T::from_sql(PgValue::new(bytes, &value))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {
                 Bound::Included(value)
@@ -158,6 +158,7 @@ where
 
 impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
+    ST: 'static,
     (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {

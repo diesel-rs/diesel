@@ -203,11 +203,11 @@ where
         columns::column_name,
     >: QueryFragment<Conn::Backend>,
     Conn::Backend: QueryMetadata<(
-        sql_types::Text,
-        sql_types::Text,
-        sql_types::Nullable<sql_types::Text>,
-        sql_types::Text,
-    )>,
+            sql_types::Text,
+            sql_types::Text,
+            sql_types::Nullable<sql_types::Text>,
+            sql_types::Text,
+        )> + 'static,
 {
     use self::information_schema::columns::dsl::*;
 
@@ -252,7 +252,7 @@ where
         >,
         key_column_usage::ordinal_position,
     >: QueryFragment<Conn::Backend>,
-    Conn::Backend: QueryMetadata<sql_types::Text>,
+    Conn::Backend: QueryMetadata<sql_types::Text> + 'static,
 {
     use self::information_schema::key_column_usage::dsl::*;
     use self::information_schema::table_constraints::constraint_type;
@@ -281,7 +281,7 @@ pub fn load_table_names<'a, Conn>(
 ) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>>
 where
     Conn: Connection,
-    Conn::Backend: UsesInformationSchema,
+    Conn::Backend: UsesInformationSchema + 'static,
     String: FromSql<sql_types::Text, Conn::Backend>,
     Filter<
         Filter<

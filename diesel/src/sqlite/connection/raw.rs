@@ -91,7 +91,7 @@ impl RawConnection {
         f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut(&Self, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
+        F: FnMut(&Self, &mut [*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
             + std::panic::UnwindSafe
             + Send
             + 'static,
@@ -269,7 +269,7 @@ extern "C" fn run_custom_function<F>(
     num_args: libc::c_int,
     value_ptr: *mut *mut ffi::sqlite3_value,
 ) where
-    F: FnMut(&RawConnection, &[*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
+    F: FnMut(&RawConnection, &mut [*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
         + std::panic::UnwindSafe
         + Send
         + 'static,
@@ -278,7 +278,6 @@ extern "C" fn run_custom_function<F>(
     static NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
     static NULL_CONN_ERR: &str = "An unknown error occurred. sqlite3_context_db_handle returned a null pointer. This should never happen.";
 
-    let args = unsafe { slice::from_raw_parts(value_ptr, num_args as _) };
     let conn = match unsafe { NonNull::new(ffi::sqlite3_context_db_handle(ctx)) } {
         // We use `ManuallyDrop` here because we do not want to run the
         // Drop impl of `RawConnection` as this would close the connection
@@ -306,13 +305,16 @@ extern "C" fn run_custom_function<F>(
     // this is sound as `F` itself and the stored string is `UnwindSafe`
     let callback = std::panic::AssertUnwindSafe(&mut data_ptr.callback);
 
-    let result =
-        std::panic::catch_unwind(move || Ok((callback.0)(&*conn, args)?)).unwrap_or_else(|p| {
-            Err(SqliteCallbackError::Panic(
-                p,
-                data_ptr.function_name.clone(),
-            ))
-        });
+    let result = std::panic::catch_unwind(move || {
+        let args = unsafe { slice::from_raw_parts_mut(value_ptr, num_args as _) };
+        Ok((callback.0)(&*conn, args)?)
+    })
+    .unwrap_or_else(|p| {
+        Err(SqliteCallbackError::Panic(
+            p,
+            data_ptr.function_name.clone(),
+        ))
+    });
     match result {
         Ok(value) => value.result_of(ctx),
         Err(e) => {
@@ -342,15 +344,16 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    let args = unsafe { slice::from_raw_parts(value_ptr, num_args as _) };
-    let result =
-        std::panic::catch_unwind(move || run_aggregator_step::<A, Args, ArgsSqlType>(ctx, args))
-            .unwrap_or_else(|e| {
-                Err(SqliteCallbackError::Panic(
-                    e,
-                    format!("{}::step() paniced", std::any::type_name::<A>()),
-                ))
-            });
+    let result = std::panic::catch_unwind(move || {
+        let args = unsafe { slice::from_raw_parts_mut(value_ptr, num_args as _) };
+        run_aggregator_step::<A, Args, ArgsSqlType>(ctx, args)
+    })
+    .unwrap_or_else(|e| {
+        Err(SqliteCallbackError::Panic(
+            e,
+            format!("{}::step() paniced", std::any::type_name::<A>()),
+        ))
+    });
 
     match result {
         Ok(()) => {}
@@ -360,7 +363,7 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
 
 fn run_aggregator_step<A, Args, ArgsSqlType>(
     ctx: *mut ffi::sqlite3_context,
-    args: &[*mut ffi::sqlite3_value],
+    args: &mut [*mut ffi::sqlite3_value],
 ) -> Result<(), SqliteCallbackError>
 where
     A: SqliteAggregateFunction<Args>,

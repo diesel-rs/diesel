@@ -22,9 +22,8 @@ error[E0277]: the trait bound `*const str: FromSql<diesel::sql_types::Integer, _
    = help: the following implementations were found:
              <*const [u8] as FromSql<diesel::sql_types::Binary, DB>>
              <*const [u8] as FromSql<diesel::sql_types::Binary, Sqlite>>
-             <*const str as FromSql<diesel::sql_types::Date, Sqlite>>
              <*const str as FromSql<diesel::sql_types::Text, DB>>
-           and 3 others
+             <*const str as FromSql<diesel::sql_types::Text, Sqlite>>
    = note: required because of the requirements on the impl of `FromSql<diesel::sql_types::Integer, _>` for `std::string::String`
    = note: required because of the requirements on the impl of `Queryable<diesel::sql_types::Integer, _>` for `std::string::String`
    = note: required because of the requirements on the impl of `FromSqlRow<diesel::sql_types::Integer, _>` for `std::string::String`

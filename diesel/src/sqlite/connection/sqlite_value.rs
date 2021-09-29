@@ -1,55 +1,85 @@
 extern crate libsqlite3_sys as ffi;
 
-use std::marker::PhantomData;
+use std::cell::Ref;
 use std::ptr::NonNull;
 use std::{slice, str};
 
-use crate::row::*;
-use crate::sqlite::{Sqlite, SqliteType};
+use crate::sqlite::SqliteType;
 
-use super::stmt::StatementUse;
+use super::row::PrivateSqliteRow;
 
 /// Raw sqlite value as received from the database
 ///
 /// Use existing `FromSql` implementations to convert this into
-/// rust values:
+/// rust values
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct SqliteValue<'a> {
+pub struct SqliteValue<'a, 'b> {
+    // This field exists to ensure that nobody
+    // can modify the underlying row while we are
+    // holding a reference to some row value here
+    _row: Ref<'a, PrivateSqliteRow<'b>>,
+    // we extract the raw value pointer as part of the constructor
+    // to safe the match statements for each method
+    // Acconding to benchmarks this leads to a ~20-30% speedup
+    //
+    // This is sound as long as nobody calls `stmt.step()`
+    // while holding this value. We ensure this by including
+    // a reference to the row above.
     value: NonNull<ffi::sqlite3_value>,
-    p: PhantomData<&'a ()>,
 }
 
-pub struct SqliteRow<'a: 'b, 'b: 'c, 'c> {
-    stmt: &'c StatementUse<'a, 'b>,
+#[repr(transparent)]
+pub struct OwnedSqliteValue {
+    pub(super) value: NonNull<ffi::sqlite3_value>,
 }
 
-impl<'a> SqliteValue<'a> {
-    pub(crate) unsafe fn new(inner: *mut ffi::sqlite3_value) -> Option<Self> {
-        NonNull::new(inner)
-            .map(|value| SqliteValue {
-                value,
-                p: PhantomData,
-            })
-            .and_then(|value| {
-                // We check here that the actual value represented by the inner
-                // `sqlite3_value` is not `NULL` (is sql meaning, not ptr meaning)
-                if value.is_null() {
-                    None
-                } else {
-                    Some(value)
-                }
-            })
+impl Drop for OwnedSqliteValue {
+    fn drop(&mut self) {
+        unsafe { ffi::sqlite3_value_free(self.value.as_ptr()) }
+    }
+}
+
+impl<'a, 'b> SqliteValue<'a, 'b> {
+    pub(super) fn new(row: Ref<'a, PrivateSqliteRow<'b>>, col_idx: i32) -> Option<Self> {
+        let value = match &*row {
+            PrivateSqliteRow::Direct(stmt) => stmt.column_value(col_idx)?,
+            PrivateSqliteRow::Duplicated { values, .. } => {
+                values.get(col_idx as usize).and_then(|v| v.as_ref())?.value
+            }
+            PrivateSqliteRow::TemporaryEmpty => {
+                // This cannot happen as this is only a temproray state
+                // used inside of `StatementIterator::next()`
+                unreachable!(
+                    "You've reached an impossible internal state. \
+                     If you ever see this error message please open \
+                     an issue at https://github.com/diesel-rs/diesel \
+                     providing example code how to trigger this error."
+                )
+            }
+        };
+
+        let ret = Self { _row: row, value };
+        if ret.value_type().is_none() {
+            None
+        } else {
+            Some(ret)
+        }
     }
 
-    pub(crate) fn read_text(&self) -> &str {
-        unsafe {
+    pub(crate) fn parse_string<'c, R>(&'c self, f: impl FnOnce(&'c str) -> R) -> R {
+        let s = unsafe {
             let ptr = ffi::sqlite3_value_text(self.value.as_ptr());
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
             let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
             // The string is guaranteed to be utf8 according to
             // https://www.sqlite.org/c3ref/value_blob.html
             str::from_utf8_unchecked(bytes)
-        }
+        };
+        f(s)
+    }
+
+    pub(crate) fn read_text(&self) -> &str {
+        self.parse_string(|s| s)
     }
 
     pub(crate) fn read_blob(&self) -> &[u8] {
@@ -61,15 +91,15 @@ impl<'a> SqliteValue<'a> {
     }
 
     pub(crate) fn read_integer(&self) -> i32 {
-        unsafe { ffi::sqlite3_value_int(self.value.as_ptr()) as i32 }
+        unsafe { ffi::sqlite3_value_int(self.value.as_ptr()) }
     }
 
     pub(crate) fn read_long(&self) -> i64 {
-        unsafe { ffi::sqlite3_value_int64(self.value.as_ptr()) as i64 }
+        unsafe { ffi::sqlite3_value_int64(self.value.as_ptr()) }
     }
 
     pub(crate) fn read_double(&self) -> f64 {
-        unsafe { ffi::sqlite3_value_double(self.value.as_ptr()) as f64 }
+        unsafe { ffi::sqlite3_value_double(self.value.as_ptr()) }
     }
 
     /// Get the type of the value as returned by sqlite
@@ -81,78 +111,35 @@ impl<'a> SqliteValue<'a> {
             ffi::SQLITE_FLOAT => Some(SqliteType::Double),
             ffi::SQLITE_BLOB => Some(SqliteType::Binary),
             ffi::SQLITE_NULL => None,
-            _ => unreachable!("Sqlite docs saying this is not reachable"),
-        }
-    }
-
-    pub(crate) fn is_null(&self) -> bool {
-        self.value_type().is_none()
-    }
-}
-
-impl<'a: 'b, 'b: 'c, 'c> SqliteRow<'a, 'b, 'c> {
-    pub(crate) fn new(inner_statement: &'c StatementUse<'a, 'b>) -> Self {
-        SqliteRow {
-            stmt: inner_statement,
+            _ => unreachable!(
+                "Sqlite's documentation state that this case ({}) is not reachable. \
+                 If you ever see this error message please open an issue at \
+                 https://github.com/diesel-rs/diesel."
+            ),
         }
     }
 }
 
-impl<'a: 'b, 'b: 'c, 'c> Row<'c, Sqlite> for SqliteRow<'a, 'b, 'c> {
-    type Field = SqliteField<'a, 'b, 'c>;
-    type InnerPartialRow = Self;
-
-    fn field_count(&self) -> usize {
-        self.stmt.column_count() as usize
-    }
-
-    fn get<I>(&self, idx: I) -> Option<Self::Field>
-    where
-        Self: RowIndex<I>,
-    {
-        let idx = self.idx(idx)?;
-        Some(SqliteField {
-            stmt: &self.stmt,
-            col_idx: idx as i32,
+impl OwnedSqliteValue {
+    pub(super) fn copy_from_ptr(ptr: NonNull<ffi::sqlite3_value>) -> Option<OwnedSqliteValue> {
+        let tpe = unsafe { ffi::sqlite3_value_type(ptr.as_ptr()) };
+        if ffi::SQLITE_NULL == tpe {
+            return None;
+        }
+        let value = unsafe { ffi::sqlite3_value_dup(ptr.as_ptr()) };
+        Some(Self {
+            value: NonNull::new(value)?,
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
-        PartialRow::new(self, range)
-    }
-}
-
-impl<'a: 'b, 'b: 'c, 'c> RowIndex<usize> for SqliteRow<'a, 'b, 'c> {
-    fn idx(&self, idx: usize) -> Option<usize> {
-        if idx < self.stmt.column_count() as usize {
-            Some(idx)
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a: 'b, 'b: 'c, 'c, 'd> RowIndex<&'d str> for SqliteRow<'a, 'b, 'c> {
-    fn idx(&self, field_name: &'d str) -> Option<usize> {
-        self.stmt.index_for_column_name(field_name)
-    }
-}
-
-pub struct SqliteField<'a: 'b, 'b: 'c, 'c> {
-    stmt: &'c StatementUse<'a, 'b>,
-    col_idx: i32,
-}
-
-impl<'a: 'b, 'b: 'c, 'c> Field<'c, Sqlite> for SqliteField<'a, 'b, 'c> {
-    fn field_name(&self) -> Option<&'c str> {
-        self.stmt.field_name(self.col_idx)
-    }
-
-    fn is_null(&self) -> bool {
-        self.value().is_none()
-    }
-
-    fn value(&self) -> Option<crate::backend::RawValue<'c, Sqlite>> {
-        self.stmt.value(self.col_idx)
+    pub(super) fn duplicate(&self) -> OwnedSqliteValue {
+        // self.value is a `NonNull` ptr so this cannot be null
+        let value = unsafe { ffi::sqlite3_value_dup(self.value.as_ptr()) };
+        let value = NonNull::new(value).expect(
+            "Sqlite documentation states this returns only null if value is null \
+                 or OOM. If you ever see this panic message please open an issue at \
+                 https://github.com/diesel-rs/diesel.",
+        );
+        OwnedSqliteValue { value }
     }
 }

@@ -4,15 +4,14 @@ mod stmt;
 mod url;
 
 use self::raw::RawConnection;
+use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
 use crate::connection::*;
-use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
-use crate::query_dsl::load_dsl::CompatibleType;
 use crate::result::*;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
@@ -31,6 +30,11 @@ impl SimpleConnection for MysqlConnection {
         self.raw_connection
             .enable_multi_statements(|| self.raw_connection.execute(query))
     }
+}
+
+impl<'a> ConnectionGatWorkaround<'a, Mysql> for MysqlConnection {
+    type Cursor = self::stmt::iterator::StatementIterator<'a>;
+    type Row = self::stmt::iterator::MysqlRow;
 }
 
 impl Connection for MysqlConnection {
@@ -61,21 +65,21 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn load<T, U, ST>(&mut self, source: T) -> QueryResult<Vec<U>>
+    fn load<T>(
+        &mut self,
+        source: T,
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<Self::Backend>>::Cursor>
     where
         T: AsQuery,
         T::Query: QueryFragment<Self::Backend> + QueryId,
-        T::SqlType: CompatibleType<U, Self::Backend, SqlType = ST>,
-        U: FromSqlRow<ST, Self::Backend>,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        use crate::result::Error::DeserializationError;
+        let stmt = self.prepared_query(&source.as_query())?;
 
-        let mut stmt = self.prepare_query(&source.as_query())?;
         let mut metadata = Vec::new();
         Mysql::row_metadata(&mut (), &mut metadata);
-        let results = unsafe { stmt.results(metadata)? };
-        results.map(|row| U::build_from_row(&row).map_err(DeserializationError))
+
+        StatementIterator::from_stmt(stmt, &metadata)
     }
 
     #[doc(hidden)]
@@ -83,7 +87,7 @@ impl Connection for MysqlConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let stmt = self.prepare_query(source)?;
+        let stmt = self.prepared_query(source)?;
         unsafe {
             stmt.execute()?;
         }
@@ -97,14 +101,14 @@ impl Connection for MysqlConnection {
 }
 
 impl MysqlConnection {
-    fn prepare_query<T>(&mut self, source: &T) -> QueryResult<MaybeCached<Statement>>
-    where
-        T: QueryFragment<Mysql> + QueryId,
-    {
+    fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
+        &'a mut self,
+        source: &'_ T,
+    ) -> QueryResult<MaybeCached<'a, Statement>> {
         let cache = &mut self.statement_cache;
         let conn = &mut self.raw_connection;
 
-        let mut stmt = cache.cached_statement(source, &[], |sql| conn.prepare(sql))?;
+        let mut stmt = cache.cached_statement(source, &[], |sql, _| conn.prepare(sql))?;
         let mut bind_collector = RawBytesBindCollector::new();
         source.collect_binds(&mut bind_collector, &mut ())?;
         let binds = bind_collector

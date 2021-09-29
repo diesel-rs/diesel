@@ -8,7 +8,32 @@ use std::ops::Range;
 #[allow(missing_debug_implementations)]
 pub struct PgValue<'a> {
     raw_value: &'a [u8],
-    type_oid: NonZeroU32,
+    type_oid_lookup: &'a dyn TypeOidLookup,
+}
+
+pub(crate) trait TypeOidLookup {
+    fn lookup(&self) -> NonZeroU32;
+}
+
+impl<F> TypeOidLookup for F
+where
+    F: Fn() -> NonZeroU32,
+{
+    fn lookup(&self) -> NonZeroU32 {
+        (self)()
+    }
+}
+
+impl<'a> TypeOidLookup for PgValue<'a> {
+    fn lookup(&self) -> NonZeroU32 {
+        self.type_oid_lookup.lookup()
+    }
+}
+
+impl TypeOidLookup for NonZeroU32 {
+    fn lookup(&self) -> NonZeroU32 {
+        *self
+    }
 }
 
 impl<'a> BinaryRawValue<'a> for Pg {
@@ -20,16 +45,20 @@ impl<'a> BinaryRawValue<'a> for Pg {
 impl<'a> PgValue<'a> {
     #[cfg(test)]
     pub(crate) fn for_test(raw_value: &'a [u8]) -> Self {
+        static FAKE_OID: NonZeroU32 = unsafe {
+            // 42 != 0, so this is actually safe
+            NonZeroU32::new_unchecked(42)
+        };
         Self {
             raw_value,
-            type_oid: NonZeroU32::new(42).unwrap(),
+            type_oid_lookup: &FAKE_OID,
         }
     }
 
-    pub(crate) fn new(raw_value: &'a [u8], type_oid: NonZeroU32) -> Self {
+    pub(crate) fn new(raw_value: &'a [u8], type_oid_lookup: &'a dyn TypeOidLookup) -> Self {
         Self {
             raw_value,
-            type_oid,
+            type_oid_lookup,
         }
     }
 
@@ -40,7 +69,7 @@ impl<'a> PgValue<'a> {
 
     /// Get the type oid of this value
     pub fn get_oid(&self) -> NonZeroU32 {
-        self.type_oid
+        self.type_oid_lookup.lookup()
     }
 
     pub(crate) fn subslice(&self, range: Range<usize>) -> Self {

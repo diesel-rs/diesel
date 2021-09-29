@@ -1,24 +1,24 @@
 extern crate mysqlclient_sys as ffi;
 
-mod iterator;
+pub(super) mod iterator;
 mod metadata;
 
+use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::os::raw as libc;
 use std::ptr::NonNull;
 
-use self::iterator::*;
-use super::bind::{BindData, Binds};
+use super::bind::{OutputBinds, PreparedStatementBinds};
 use crate::mysql::MysqlType;
-use crate::result::{DatabaseErrorKind, QueryResult};
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
 pub use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 
-#[allow(dead_code)]
+#[allow(dead_code, missing_debug_implementations)]
 // https://github.com/rust-lang/rust/issues/81658
 pub struct Statement {
     stmt: NonNull<ffi::MYSQL_STMT>,
-    input_binds: Option<Binds>,
+    input_binds: Option<PreparedStatementBinds>,
 }
 
 impl Statement {
@@ -44,11 +44,14 @@ impl Statement {
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
-        let input_binds = Binds::from_input_data(binds)?;
+        let input_binds = PreparedStatementBinds::from_input_data(binds)?;
         self.input_bind(input_binds)
     }
 
-    pub(super) fn input_bind(&mut self, mut input_binds: Binds) -> QueryResult<()> {
+    pub(super) fn input_bind(
+        &mut self,
+        mut input_binds: PreparedStatementBinds,
+    ) -> QueryResult<()> {
         input_binds.with_mysql_binds(|bind_ptr| {
             // This relies on the invariant that the current value of `self.input_binds`
             // will not change without this function being called
@@ -76,14 +79,11 @@ impl Statement {
         affected_rows as usize
     }
 
-    /// This function should be called instead of `execute` for queries which
-    /// have a return value. After calling this function, `execute` can never
-    /// be called on this statement.
-    pub unsafe fn results(
-        &mut self,
-        types: Vec<Option<MysqlType>>,
-    ) -> QueryResult<StatementIterator> {
-        StatementIterator::new(self, types)
+    /// This function should be called after `execute` only
+    /// otherwise it's not guranteed to return a valid result
+    pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
+        let size = ffi::mysql_stmt_num_rows(self.stmt.as_ptr());
+        usize::try_from(size).map_err(|e| Error::DeserializationError(Box::new(e)))
     }
 
     fn last_error_message(&self) -> String {
@@ -153,7 +153,7 @@ impl Statement {
         }
     }
 
-    pub(super) fn execute_statement(&mut self, binds: &mut Binds) -> QueryResult<()> {
+    pub(super) fn execute_statement(&mut self, binds: &mut OutputBinds) -> QueryResult<()> {
         unsafe {
             binds.with_mysql_binds(|bind_ptr| self.bind_result(bind_ptr))?;
             self.execute()?;
@@ -161,7 +161,7 @@ impl Statement {
         Ok(())
     }
 
-    pub(super) fn populate_row_buffers(&self, binds: &mut Binds) -> QueryResult<Option<()>> {
+    pub(super) fn populate_row_buffers(&self, binds: &mut OutputBinds) -> QueryResult<Option<()>> {
         let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.stmt.as_ptr()) };
         match next_row_result as libc::c_uint {
             ffi::MYSQL_NO_DATA => Ok(None),

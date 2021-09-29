@@ -45,7 +45,7 @@ impl Backend for Sqlite {
 }
 
 impl<'a> HasRawValue<'a> for Sqlite {
-    type RawValue = SqliteValue<'a>;
+    type RawValue = SqliteValue<'a, 'a>;
 }
 
 impl TypeMetadata for Sqlite {

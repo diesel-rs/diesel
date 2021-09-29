@@ -611,7 +611,10 @@ pub trait RangeHelper: SqlType {
     type Inner;
 }
 
-impl<ST> RangeHelper for Range<ST> {
+impl<ST> RangeHelper for Range<ST>
+where
+    Self: 'static,
+{
     type Inner = ST;
 }
 

@@ -128,7 +128,7 @@ where
 
 impl_selectable_expression!(All<Expr>);
 
-pub trait AsArrayExpression<ST> {
+pub trait AsArrayExpression<ST: 'static> {
     type Expression: Expression<SqlType = Array<ST>>;
 
     // This method is part of the public API
@@ -139,6 +139,7 @@ pub trait AsArrayExpression<ST> {
 
 impl<ST, T> AsArrayExpression<ST> for T
 where
+    ST: 'static,
     T: AsExpression<Array<ST>>,
 {
     type Expression = <T as AsExpression<Array<ST>>>::Expression;
@@ -151,6 +152,7 @@ where
 impl<ST, F, S, D, W, O, LOf, G, H, LC> AsArrayExpression<ST>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
+    ST: 'static,
     Self: SelectQuery<SqlType = ST>,
 {
     type Expression = Subselect<Self, Array<ST>>;
@@ -162,6 +164,7 @@ where
 
 impl<'a, ST, QS, DB, GB> AsArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
+    ST: 'static,
     Self: SelectQuery<SqlType = ST>,
 {
     type Expression = Subselect<Self, Array<ST>>;

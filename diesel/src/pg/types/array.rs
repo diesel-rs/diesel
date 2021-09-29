@@ -48,7 +48,7 @@ where
                 } else {
                     let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                     bytes = new_bytes;
-                    T::from_sql(PgValue::new(elem_bytes, value.get_oid()))
+                    T::from_sql(PgValue::new(elem_bytes, &value))
                 }
             })
             .collect()
@@ -60,7 +60,7 @@ use crate::expression::AsExpression;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {
-        impl<'a, 'b, ST, T> AsExpression<$sql_type> for $ty {
+        impl<'a, 'b, ST: 'static, T> AsExpression<$sql_type> for $ty {
             type Expression = Bound<$sql_type, Self>;
 
             fn as_expression(self) -> Self::Expression {
@@ -126,6 +126,7 @@ where
 impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for [T]
 where
     [T]: ToSql<Array<ST>, Pg>,
+    ST: 'static,
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
@@ -134,6 +135,7 @@ where
 
 impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T>
 where
+    ST: 'static,
     [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
@@ -144,6 +146,7 @@ where
 
 impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T>
 where
+    ST: 'static,
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
