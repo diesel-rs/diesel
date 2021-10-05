@@ -30,12 +30,18 @@ mod chrono {
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
     #[sql_type = "Timestamp"]
-    #[cfg_attr(feature = "postgres", sql_type = "crate::sql_types::Timestamptz")]
-    #[cfg_attr(feature = "mysql", sql_type = "crate::sql_types::Datetime")]
+    #[cfg_attr(
+        feature = "postgres_backend",
+        sql_type = "crate::sql_types::Timestamptz"
+    )]
+    #[cfg_attr(feature = "mysql_backend", sql_type = "crate::sql_types::Datetime")]
     struct NaiveDateTimeProxy(NaiveDateTime);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "postgres", sql_type = "crate::sql_types::Timestamptz")]
+    #[cfg_attr(
+        feature = "postgres_backend",
+        sql_type = "crate::sql_types::Timestamptz"
+    )]
     struct DateTimeProxy<Tz: TimeZone>(DateTime<Tz>);
 }

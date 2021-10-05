@@ -15,16 +15,26 @@ use crate::sql_types::TypeMetadata;
 pub struct Pg;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Queryable)]
-pub(in crate::pg) struct InnerPgTypeMetadata {
-    pub oid: u32,
-    pub array_oid: u32,
+pub struct InnerPgTypeMetadata {
+    pub(in crate::pg) oid: u32,
+    pub(in crate::pg) array_oid: u32,
 }
 
+impl From<(u32, u32)> for InnerPgTypeMetadata {
+    fn from((oid, array_oid): (u32, u32)) -> Self {
+        Self { oid, array_oid }
+    }
+}
+
+/// This error indicates that a type lookup for a custom
+/// postgres type failed
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub(in crate::pg) struct FailedToLookupTypeError(Box<PgMetadataCacheKey<'static>>);
+pub struct FailedToLookupTypeError(Box<PgMetadataCacheKey<'static>>);
 
 impl FailedToLookupTypeError {
-    pub(crate) fn new(cache_key: PgMetadataCacheKey<'static>) -> Self {
+    /// Construct a new instance of this error type
+    /// containing information about which type lookup failed
+    pub fn new(cache_key: PgMetadataCacheKey<'static>) -> Self {
         Self(Box::new(cache_key))
     }
 }
@@ -65,6 +75,17 @@ impl PgTypeMetadata {
             oid: type_oid,
             array_oid,
         }))
+    }
+
+    /// Create a new instance of this type based on dynamically lookup informations
+    ///
+    /// This function is usfull for third party crates that may implement a custom
+    /// postgres connection type and want to bring their own lookup mechanism.
+    ///
+    /// Otherwise refer to [PgMetadataLookup] for a way to automatically
+    /// implement the corresponding lookup functionality
+    pub fn from_result(r: Result<(u32, u32), FailedToLookupTypeError>) -> Self {
+        Self(r.map(|(oid, array_oid)| InnerPgTypeMetadata { oid, array_oid }))
     }
 
     /// The [OID] of `T`

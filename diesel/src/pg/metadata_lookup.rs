@@ -109,14 +109,24 @@ fn lookup_type<T: Connection<Backend = Pg>>(
     Ok(metadata)
 }
 
+/// The key used to lookup cached type oid's inside of
+/// a [PgMetadataCache].
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
-pub(in crate::pg) struct PgMetadataCacheKey<'a> {
-    pub(crate) schema: Option<Cow<'a, str>>,
-    pub(crate) type_name: Cow<'a, str>,
+pub struct PgMetadataCacheKey<'a> {
+    pub(in crate::pg) schema: Option<Cow<'a, str>>,
+    pub(in crate::pg) type_name: Cow<'a, str>,
 }
 
 impl<'a> PgMetadataCacheKey<'a> {
-    fn into_owned(self) -> PgMetadataCacheKey<'static> {
+    /// Construct a new cache key from an optional schema name and
+    /// a type name
+    pub fn new(schema: Option<Cow<'a, str>>, type_name: Cow<'a, str>) -> Self {
+        Self { schema, type_name }
+    }
+
+    /// Convert the possibly borrowed version of this metadata cache key
+    /// into a lifetime independ owned version
+    pub fn into_owned(self) -> PgMetadataCacheKey<'static> {
         let PgMetadataCacheKey { schema, type_name } = self;
         PgMetadataCacheKey {
             schema: schema.map(|s| Cow::Owned(s.into_owned())),
@@ -141,13 +151,18 @@ impl PgMetadataCache {
     }
 
     /// Lookup the OID of a custom type
-    fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
+    pub fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
         Some(PgTypeMetadata(Ok(*self.cache.get(type_name)?)))
     }
 
     /// Store the OID of a custom type
-    fn store_type(&mut self, type_name: PgMetadataCacheKey, type_metadata: InnerPgTypeMetadata) {
-        self.cache.insert(type_name.into_owned(), type_metadata);
+    pub fn store_type(
+        &mut self,
+        type_name: PgMetadataCacheKey,
+        type_metadata: impl Into<InnerPgTypeMetadata>,
+    ) {
+        self.cache
+            .insert(type_name.into_owned(), type_metadata.into());
     }
 }
 

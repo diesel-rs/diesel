@@ -1,6 +1,6 @@
+use super::types::MysqlTime;
 use super::MysqlType;
 use crate::deserialize;
-use crate::mysql::types::MYSQL_TIME;
 use std::error::Error;
 
 /// Raw mysql value as received from the database
@@ -11,7 +11,8 @@ pub struct MysqlValue<'a> {
 }
 
 impl<'a> MysqlValue<'a> {
-    pub(crate) fn new(raw: &'a [u8], tpe: MysqlType) -> Self {
+    #[doc(hidden)]
+    pub fn new(raw: &'a [u8], tpe: MysqlType) -> Self {
         Self { raw, tpe }
     }
 
@@ -26,15 +27,15 @@ impl<'a> MysqlValue<'a> {
     }
 
     /// Checks that the type code is valid, and interprets the data as a
-    /// `MYSQL_TIME` pointer
+    /// `MysqlTime` pointer
     // We use `ptr.read_unaligned()` to read the potential unaligned ptr,
     // so clippy is clearly wrong here
     // https://github.com/rust-lang/rust-clippy/issues/2881
     #[allow(dead_code, clippy::cast_ptr_alignment)]
-    pub(crate) fn time_value(&self) -> deserialize::Result<MYSQL_TIME> {
+    pub(crate) fn time_value(&self) -> deserialize::Result<MysqlTime> {
         match self.tpe {
             MysqlType::Time | MysqlType::Date | MysqlType::DateTime | MysqlType::Timestamp => {
-                let ptr = self.raw.as_ptr() as *const MYSQL_TIME;
+                let ptr = self.raw.as_ptr() as *const MysqlTime;
                 let result = unsafe { ptr.read_unaligned() };
                 if result.neg {
                     Err("Negative dates/times are not yet supported".into())
@@ -56,10 +57,10 @@ impl<'a> MysqlValue<'a> {
                 NumericRepresentation::Tiny(self.raw[0] as i8)
             }
             MysqlType::UnsignedShort | MysqlType::Short => {
-                NumericRepresentation::Small(i16::from_ne_bytes(self.raw.try_into()?))
+                NumericRepresentation::Small(i16::from_ne_bytes((&self.raw[..2]).try_into()?))
             }
             MysqlType::UnsignedLong | MysqlType::Long => {
-                NumericRepresentation::Medium(i32::from_ne_bytes(self.raw.try_into()?))
+                NumericRepresentation::Medium(i32::from_ne_bytes((&self.raw[..4]).try_into()?))
             }
             MysqlType::UnsignedLongLong | MysqlType::LongLong => {
                 NumericRepresentation::Big(i64::from_ne_bytes(self.raw.try_into()?))

@@ -122,10 +122,6 @@
     clippy::used_underscore_binding
 )]
 
-#[cfg(feature = "postgres")]
-#[macro_use]
-extern crate bitflags;
-extern crate byteorder;
 extern crate diesel_derives;
 
 #[macro_use]
@@ -162,9 +158,9 @@ pub mod sql_types;
 pub mod migration;
 pub mod row;
 
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_backend")]
 pub mod mysql;
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
@@ -298,7 +294,7 @@ pub mod helper_types {
     pub type Distinct<Source> = <Source as DistinctDsl>::Output;
 
     /// Represents the return type of `.distinct_on(expr)`
-    #[cfg(feature = "postgres")]
+    #[cfg(feature = "postgres_backend")]
     pub type DistinctOn<Source, Expr> = <Source as DistinctOnDsl<Expr>>::Output;
 
     /// Represents the return type of `.single_value()`
