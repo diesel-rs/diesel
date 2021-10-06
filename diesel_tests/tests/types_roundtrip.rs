@@ -28,7 +28,7 @@ where
         + Clone
         + ::std::fmt::Debug
         + 'static,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType = ST>
+    <T as AsExpression<ST>>::Expression: SelectableExpression<diesel::query_builder::NoFromClause, SqlType = ST>
         + NonAggregate
         + QueryFragment<<TestConnection as Connection>::Backend>
         + QueryId,

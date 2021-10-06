@@ -358,6 +358,16 @@ mod tests {
         assert_eq!(1, connection.statement_cache.len());
     }
 
+    #[test]
+    fn queries_containing_in_with_vec_are_cached() {
+        let connection = &mut connection();
+        let one_as_expr = 1.into_sql::<Integer>();
+        let query = crate::select(one_as_expr.eq_any(vec![1, 2, 3]));
+
+        assert_eq!(Ok(true), query.get_result(connection));
+        assert_eq!(1, connection.statement_cache.len());
+    }
+
     fn connection() -> PgConnection {
         crate::test_helpers::pg_connection_no_transaction()
     }

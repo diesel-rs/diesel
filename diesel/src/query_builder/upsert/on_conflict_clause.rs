@@ -1,6 +1,7 @@
 use super::on_conflict_actions::*;
 use super::on_conflict_target::*;
-use crate::backend::{Backend, SupportsOnConflictClause};
+use crate::backend::sql_dialect;
+use crate::backend::Backend;
 use crate::insertable::*;
 use crate::query_builder::*;
 use crate::result::QueryResult;
@@ -38,7 +39,8 @@ impl<Values, Target, Action> OnConflictValues<Values, Target, Action> {
 impl<DB, Values, Target, Action> CanInsertInSingleQuery<DB>
     for OnConflictValues<Values, Target, Action>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     Values: CanInsertInSingleQuery<DB>,
 {
     fn rows_to_insert(&self) -> Option<usize> {
@@ -48,7 +50,8 @@ where
 
 impl<DB, Values, Target, Action> QueryFragment<DB> for OnConflictValues<Values, Target, Action>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     Values: QueryFragment<DB>,
     Target: QueryFragment<DB>,
     Action: QueryFragment<DB>,

@@ -701,3 +701,40 @@ fn batch_insert_is_atomic_on_sqlite() {
 
     assert_eq!(Ok(0), users.count().get_result(connection));
 }
+
+// regression test for https://github.com/diesel-rs/diesel/issues/2898
+#[test]
+fn mixed_defaultable_insert() {
+    use crate::schema::users;
+
+    #[derive(Insertable)]
+    struct User {
+        name: &'static str,
+    }
+
+    #[derive(Insertable)]
+    #[table_name = "users"]
+    struct UserHairColor {
+        hair_color: &'static str,
+    }
+
+    let conn = &mut connection();
+
+    diesel::insert_into(users::table)
+        .values((
+            &User { name: "Bob" },
+            &Some(UserHairColor {
+                hair_color: "Green",
+            }),
+        ))
+        .execute(conn)
+        .unwrap();
+
+    let actual_data = users::table
+        .select((users::name, users::hair_color))
+        .load(conn);
+
+    let expected_data = vec![("Bob".to_string(), Some("Green".to_string()))];
+
+    assert_eq!(Ok(expected_data), actual_data);
+}

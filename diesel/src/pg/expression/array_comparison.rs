@@ -26,6 +26,7 @@ use crate::sql_types::{Array, SqlType};
 /// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
 /// # }
 /// ```
+#[deprecated(since = "2.0.0", note = "Use `ExpressionMethods::eq_any` instead")]
 pub fn any<ST, T>(vals: T) -> Any<T::Expression>
 where
     T: AsArrayExpression<ST>,
@@ -53,6 +54,7 @@ where
 /// assert_eq!(Ok(vec![tess]), data.load(connection));
 /// # }
 /// ```
+#[deprecated(since = "2.0.0", note = "Use `ExpressionMethods::ne_all` instead")]
 pub fn all<ST, T>(vals: T) -> All<T::Expression>
 where
     T: AsArrayExpression<ST>,

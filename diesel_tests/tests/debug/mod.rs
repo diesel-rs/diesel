@@ -32,11 +32,6 @@ fn test_debug_output() {
 
 #[test]
 fn test_debug_batch_insert() {
-    // This test ensures that we've implemented `debug_query` for batch insert
-    // on sqlite
-    // This requires a separate impl because it's more than one sql statement that
-    // is executed
-
     use crate::schema::users::dsl::*;
 
     let values = vec![
@@ -69,32 +64,6 @@ fn test_debug_batch_insert() {
             owned_sql_debug,
             r#"Query { sql: "INSERT INTO \"users\" (\"name\", \"hair_color\") VALUES ($1, $2), ($3, $4)", binds: ["Sean", Some("black"), "Tess", None] }"#
         );
-    } else if cfg!(feature = "sqlite") {
-        assert_eq!(
-            borrowed_sql_display,
-            r#"BEGIN;
-INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: ["Sean", Some("black")]
-INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: ["Tess", None]
-COMMIT;
-"#
-        );
-        assert_eq!(
-            borrowed_sql_debug,
-            r#"Query { sql: ["BEGIN", "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: [\"Sean\", Some(\"black\")]", "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: [\"Tess\", None]", "COMMIT"], binds: [] }"#
-        );
-
-        assert_eq!(
-            owned_sql_display,
-            r#"BEGIN;
-INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: ["Sean", Some("black")]
-INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: ["Tess", None]
-COMMIT;
-"#
-        );
-        assert_eq!(
-            owned_sql_debug,
-            r#"Query { sql: ["BEGIN", "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: [\"Sean\", Some(\"black\")]", "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: [\"Tess\", None]", "COMMIT"], binds: [] }"#
-        );
     } else {
         assert_eq!(
             borrowed_sql_display,
@@ -114,6 +83,55 @@ COMMIT;
             r#"Query { sql: "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?), (?, ?)", binds: ["Sean", Some("black"), "Tess", None] }"#
         );
     }
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn test_insert_with_default() {
+    // This test ensures that we've implemented `debug_query` for batch insert
+    // containing a default value on sqlite
+    // This requires a separate impl because it's more than one sql statement that
+    // is executed
+
+    use crate::schema::users::dsl::*;
+
+    let values = vec![
+        (Some(name.eq("Sean")), hair_color.eq(Some("black"))),
+        (Some(name.eq("Tess")), hair_color.eq(None::<&str>)),
+    ];
+    let borrowed_command = insert_into(users).values(&values);
+    let borrowed_sql_display = debug_query::<TestBackend, _>(&borrowed_command).to_string();
+    let borrowed_sql_debug = format!("{:?}", debug_query::<TestBackend, _>(&borrowed_command));
+
+    let owned_command = insert_into(users).values(values);
+    let owned_sql_display = debug_query::<TestBackend, _>(&owned_command).to_string();
+    let owned_sql_debug = format!("{:?}", debug_query::<TestBackend, _>(&owned_command));
+
+    assert_eq!(
+        borrowed_sql_display,
+        r#"BEGIN;
+INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: ["Sean", Some("black")]
+INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: ["Tess", None]
+COMMIT;
+"#
+    );
+    assert_eq!(
+        borrowed_sql_debug,
+        r#"Query { sql: ["BEGIN", "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: [\"Sean\", Some(\"black\")]", "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: [\"Tess\", None]", "COMMIT"], binds: [] }"#
+    );
+
+    assert_eq!(
+        owned_sql_display,
+        r#"BEGIN;
+INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: ["Sean", Some("black")]
+INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: ["Tess", None]
+COMMIT;
+"#
+    );
+    assert_eq!(
+        owned_sql_debug,
+        r#"Query { sql: ["BEGIN", "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: [\"Sean\", Some(\"black\")]", "INSERT INTO `users` (`name`, `hair_color`) VALUES (?, ?) -- binds: [\"Tess\", None]", "COMMIT"], binds: [] }"#
+    );
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use crate::backend::{Backend, SupportsOnConflictClause};
+use crate::backend::{sql_dialect, Backend};
 use crate::expression::SqlLiteral;
 use crate::query_builder::*;
 use crate::query_source::Column;
@@ -13,7 +13,8 @@ pub struct NoConflictTarget;
 
 impl<DB> QueryFragment<DB> for NoConflictTarget
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
 {
     fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
         Ok(())
@@ -28,7 +29,18 @@ pub struct ConflictTarget<T>(pub T);
 
 impl<DB, T> QueryFragment<DB> for ConflictTarget<T>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::OnConflictClause>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<DB, T, SP> QueryFragment<DB, SP> for ConflictTarget<T>
+where
+    DB: Backend<OnConflictClause = SP>,
+    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: Column,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -41,9 +53,10 @@ where
 
 impl<T> OnConflictTarget<T::Table> for ConflictTarget<T> where T: Column {}
 
-impl<DB, ST> QueryFragment<DB> for ConflictTarget<SqlLiteral<ST>>
+impl<DB, ST, SP> QueryFragment<DB, SP> for ConflictTarget<SqlLiteral<ST>>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend<OnConflictClause = SP>,
+    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     SqlLiteral<ST>: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -55,9 +68,10 @@ where
 
 impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> {}
 
-impl<DB, T> QueryFragment<DB> for ConflictTarget<(T,)>
+impl<DB, T, SP> QueryFragment<DB, SP> for ConflictTarget<(T,)>
 where
-    DB: Backend + SupportsOnConflictClause,
+    DB: Backend<OnConflictClause = SP>,
+    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: Column,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
@@ -77,8 +91,9 @@ macro_rules! on_conflict_tuples {
         }
     )+) => {
         $(
-            impl<_DB, _T, $($T),*> QueryFragment<_DB> for ConflictTarget<(_T, $($T),*)> where
-                _DB: Backend + SupportsOnConflictClause,
+            impl<_DB, _T, _SP, $($T),*> QueryFragment<_DB, _SP> for ConflictTarget<(_T, $($T),*)> where
+                _DB: Backend<OnConflictClause = _SP>,
+                _SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
                 _T: Column,
                 $($T: Column<Table=_T::Table>,)*
             {

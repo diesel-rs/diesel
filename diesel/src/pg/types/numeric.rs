@@ -322,7 +322,6 @@ mod bigdecimal {
         }
 
         #[test]
-        #[cfg(feature = "unstable")]
         fn pg_numeric_to_bigdecimal_works() {
             let expected = BigDecimal::from_str("123.456").unwrap();
             let pg_numeric = PgNumeric::Positive {

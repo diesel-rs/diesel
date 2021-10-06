@@ -1259,7 +1259,7 @@ use std::fmt::Debug;
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<(), SqlType = T>
+    U::Expression: SelectableExpression<diesel::query_builder::NoFromClause, SqlType = T>
         + ValidGrouping<(), IsAggregate = is_aggregate::Never>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
     T: QueryId + SingleValue + SqlType,

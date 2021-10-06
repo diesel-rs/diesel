@@ -96,7 +96,7 @@ fn lookup_type<T: Connection<Backend = Pg>>(
         .inner_join(pg_namespace::table)
         .filter(pg_type::typname.eq(&cache_key.type_name))
         .select((pg_type::oid, pg_type::typarray));
-    let nspname_filter = pg_namespace::nspname.eq(crate::dsl::any(search_schema));
+    let nspname_filter = pg_namespace::nspname.eq_any(search_schema);
 
     let metadata = if search_path_has_temp_schema {
         metadata_query

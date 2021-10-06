@@ -734,7 +734,7 @@ macro_rules! __diesel_table_impl {
                 type Count = $crate::query_source::Once;
             }
 
-            impl $crate::query_source::AppearsInFromClause<table> for () {
+            impl $crate::query_source::AppearsInFromClause<table> for $crate::query_builder::NoFromClause {
                 type Count = $crate::query_source::Never;
             }
 

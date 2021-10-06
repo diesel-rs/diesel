@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression, ValidGrouping};
 use crate::helper_types::exists;
@@ -50,27 +50,22 @@ where
     type IsAggregate = <Subselect<T, Bool> as ValidGrouping<GB>>::IsAggregate;
 }
 
-#[cfg(not(feature = "unstable"))]
 impl<T, DB> QueryFragment<DB> for Exists<T>
 where
     DB: Backend,
-    T: QueryFragment<DB>,
+    Self: QueryFragment<DB, DB::ExistsSyntax>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("EXISTS (");
-        self.0.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ExistsSyntax>>::walk_ast(self, pass)
     }
 }
 
-#[cfg(feature = "unstable")]
-impl<T, DB> QueryFragment<DB> for Exists<T>
+impl<T, DB> QueryFragment<DB, sql_dialect::exists_syntax::AnsiSqlExistsSyntax> for Exists<T>
 where
-    DB: Backend,
+    DB: Backend + SqlDialect<ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax>,
     T: QueryFragment<DB>,
 {
-    default fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("EXISTS (");
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");

@@ -2,15 +2,16 @@ mod batch_insert;
 mod column_list;
 mod insert_from_select;
 
-pub(crate) use self::batch_insert::BatchInsert;
+pub use self::batch_insert::{
+    AsValueIterator, BatchInsert, InsertableQueryfragment, IsValuesClause,
+};
 pub(crate) use self::column_list::ColumnList;
 pub(crate) use self::insert_from_select::InsertFromSelect;
 
-use std::any::*;
 use std::marker::PhantomData;
 
 use super::returning_clause::*;
-use crate::backend::Backend;
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
@@ -388,20 +389,22 @@ impl<'a, Tab> Insertable<Tab> for &'a DefaultValues {
 
 impl<DB> QueryFragment<DB> for DefaultValues
 where
-    DB: Backend + Any,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::DefaultValueClauseForInsert>,
 {
-    #[cfg(feature = "mysql")]
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        // This can be less hacky once stabilization lands
-        if TypeId::of::<DB>() == TypeId::of::<crate::mysql::Mysql>() {
-            out.push_sql("() VALUES ()");
-        } else {
-            out.push_sql("DEFAULT VALUES");
-        }
-        Ok(())
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::DefaultValueClauseForInsert>>::walk_ast(self, pass)
     }
+}
 
-    #[cfg(not(feature = "mysql"))]
+impl<DB> QueryFragment<DB, sql_dialect::default_value_clause::AnsiDefaultValueClause>
+    for DefaultValues
+where
+    DB: Backend
+        + SqlDialect<
+            DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause,
+        >,
+{
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("DEFAULT VALUES");
         Ok(())

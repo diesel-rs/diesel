@@ -6,6 +6,7 @@
 
 pub(crate) mod array;
 #[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub mod array_comparison;
 pub(crate) mod expression_methods;
 pub mod extensions;
@@ -23,7 +24,9 @@ mod date_and_time;
 /// [`diesel::dsl`](crate::dsl) when compiled with the `feature =
 /// "postgres"` flag.
 pub mod dsl {
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     #[doc(inline)]
+    #[allow(deprecated)]
     pub use super::array_comparison::{all, any};
 
     #[doc(inline)]

@@ -38,6 +38,19 @@ use crate::query_source::*;
 use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
+pub struct NoFromClause;
+
+impl<DB> QueryFragment<DB, crate::backend::sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax>
+    for NoFromClause
+where
+    DB: Backend<EmptyFromClauseSyntax = crate::backend::sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax>,
+{
+    fn walk_ast(&self, _pass: AstPass<DB>) -> QueryResult<()> {
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectStatement<
@@ -158,10 +171,11 @@ where
 }
 
 impl<S, D, W, O, LOf, G, H, LC, DB> QueryFragment<DB>
-    for SelectStatement<(), S, D, W, O, LOf, G, H, LC>
+    for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
 where
     DB: Backend,
-    S: SelectClauseQueryFragment<(), DB>,
+    S: SelectClauseQueryFragment<NoFromClause, DB>,
+    NoFromClause: QueryFragment<DB, DB::EmptyFromClauseSyntax>,
     D: QueryFragment<DB>,
     W: QueryFragment<DB>,
     O: QueryFragment<DB>,
@@ -173,7 +187,8 @@ where
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
         self.distinct.walk_ast(out.reborrow())?;
-        self.select.walk_ast(&(), out.reborrow())?;
+        self.select.walk_ast(&NoFromClause, out.reborrow())?;
+        self.from.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
         self.having.walk_ast(out.reborrow())?;
