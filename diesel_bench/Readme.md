@@ -31,12 +31,13 @@ $ DATABASE_URL=your://database/url cargo bench --features "$backend"
 
 To enable other crates add the following features:
 
-* `SQLx: ` `sqlx sqlx/$backend async-std`
-* `Rustorm`: `rustorm rustorm/with-$backend rustorm_dao`
-* `Quaint`: `quaint quaint/$backend tokio quaint/serde-support serde`
-* `Postgres`: `rust-postgres`
-* `Rusqlite`: `rusqlite`
-* `Mysql`: `rust-mysql`
+* `SQLx: ` `sqlx-bench sqlx/$backend $backend`
+* `Rustorm`: `rustorm rustorm/with-$backend rustorm_dao $backend`
+* `SeaORM`: `sea-orm sea-orm/sqlx-$backend sqlx async-std criterion/async_std futures $backend`
+* `Quaint`: `quaint quaint/$backend tokio quaint/serde-support serde $backend`
+* `Postgres`: `rust-postgres $backend`
+* `Rusqlite`: `rusqlite $backend`
+* `Mysql`: `rust-mysql $backend`
 
 ## Benchmarks
 
@@ -66,8 +67,6 @@ CREATE TABLE comments (
 );
 
 ```
-
-
 
 
 #### Struct definitions
