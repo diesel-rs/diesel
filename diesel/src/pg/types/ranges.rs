@@ -10,7 +10,7 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
 
 // https://github.com/postgres/postgres/blob/113b0045e20d40f726a0a30e33214455e4f1385e/src/include/utils/rangetypes.h#L35-L43
-bitflags! {
+bitflags::bitflags! {
     struct RangeFlags: u8 {
         const EMPTY = 0x01;
         const LB_INC = 0x02;

@@ -7,7 +7,7 @@ use std::os::raw as libc;
 use super::stmt::MysqlFieldMetadata;
 use super::stmt::Statement;
 use crate::mysql::connection::stmt::StatementMetadata;
-use crate::mysql::types::MYSQL_TIME;
+use crate::mysql::types::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
@@ -624,7 +624,7 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
         t::MYSQL_TYPE_TIME
         | t::MYSQL_TYPE_DATE
         | t::MYSQL_TYPE_DATETIME
-        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<MYSQL_TIME>()),
+        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<MysqlTime>()),
         _ => None,
     }
 }

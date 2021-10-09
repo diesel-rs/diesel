@@ -9,7 +9,7 @@ use std::result;
 use crate::backend::Backend;
 use crate::sql_types::TypeMetadata;
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 pub use crate::pg::serialize::*;
 
 /// A specialized result type representing the result of serializing

@@ -11,7 +11,8 @@ pub struct PgValue<'a> {
     type_oid_lookup: &'a dyn TypeOidLookup,
 }
 
-pub(crate) trait TypeOidLookup {
+#[doc(hidden)]
+pub trait TypeOidLookup {
     fn lookup(&self) -> NonZeroU32;
 }
 
@@ -55,7 +56,8 @@ impl<'a> PgValue<'a> {
         }
     }
 
-    pub(crate) fn new(raw_value: &'a [u8], type_oid_lookup: &'a dyn TypeOidLookup) -> Self {
+    #[doc(hidden)]
+    pub fn new(raw_value: &'a [u8], type_oid_lookup: &'a dyn TypeOidLookup) -> Self {
         Self {
             raw_value,
             type_oid_lookup,

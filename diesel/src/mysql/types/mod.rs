@@ -1,6 +1,5 @@
 //! MySQL specific types
 
-#[cfg(feature = "chrono")]
 mod date_and_time;
 #[cfg(feature = "serde_json")]
 mod json;
@@ -8,9 +7,7 @@ mod numeric;
 mod primitives;
 
 use byteorder::WriteBytesExt;
-use mysqlclient_sys as ffi;
 use std::io::Write;
-use std::os::raw as libc;
 
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlType, MysqlValue};
@@ -19,26 +16,7 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::ops::*;
 use crate::sql_types::*;
 
-// A internal helper type
-// This type also exists in mysqlclient_sys
-// but the definition changed over time
-// to remain backward compatible with old mysqlclient_sys
-// version we just have our own copy here
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-#[allow(clippy::upper_case_acronyms)]
-pub(crate) struct MYSQL_TIME {
-    pub year: libc::c_uint,
-    pub month: libc::c_uint,
-    pub day: libc::c_uint,
-    pub hour: libc::c_uint,
-    pub minute: libc::c_uint,
-    pub second: libc::c_uint,
-    pub second_part: libc::c_ulong,
-    pub neg: bool,
-    pub time_type: ffi::enum_mysql_timestamp_type,
-    pub time_zone_displacement: libc::c_int,
-}
+pub use date_and_time::{MysqlTime, MysqlTimestampType};
 
 impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {

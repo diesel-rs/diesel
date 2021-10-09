@@ -121,7 +121,7 @@ pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs
 pub use super::functions::helper_types::*;
 
 #[doc(inline)]
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
