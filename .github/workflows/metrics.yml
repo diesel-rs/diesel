@@ -69,21 +69,21 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx sqlx/${{matrix.backend}} async-std sqlx/runtime-async-std-native-tls rustorm rustorm/with-${{matrix.backend}} rustorm_dao rust_postgres"
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} async-std sqlx/runtime-async-std-native-tls rustorm rustorm/with-${{matrix.backend}} rustorm_dao rust_postgres futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_std"
 
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx sqlx/${{matrix.backend}} async-std sqlx/runtime-async-std-native-tls rusqlite"
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} async-std sqlx/runtime-async-std-native-tls rusqlite futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_std"
 
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx sqlx/${{matrix.backend}} async-std sqlx/runtime-async-std-native-tls rustorm rustorm/with-${{matrix.backend}} rustorm_dao rust_mysql"
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} async-std sqlx/runtime-async-std-native-tls rustorm rustorm/with-${{matrix.backend}} rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_std"
 
       - name: Push metrics
         env:
