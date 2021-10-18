@@ -65,45 +65,29 @@ fn lookup_type<T: Connection<Backend = Pg>>(
     cache_key: &PgMetadataCacheKey<'_>,
     conn: &mut T,
 ) -> QueryResult<InnerPgTypeMetadata> {
-    let search_path: String;
-    let mut search_path_has_temp_schema = false;
+    let metadata_query = pg_type::table.select((pg_type::oid, pg_type::typarray));
 
-    let search_schema = match cache_key.schema.as_deref() {
-        Some("pg_temp") => {
-            search_path_has_temp_schema = true;
-            Vec::new()
-        }
-        Some(schema) => vec![schema],
-        None => {
-            search_path = crate::dsl::sql::<crate::sql_types::Text>("SHOW search_path")
-                .get_result::<String>(conn)?;
-
-            search_path
-                .split(',')
-                // skip the `$user` entry for now
-                .filter(|f| !f.starts_with("\"$"))
-                .map(|s| s.trim())
-                .filter(|&f| {
-                    let is_temp = f == "pg_temp";
-                    search_path_has_temp_schema |= is_temp;
-                    !is_temp
-                })
-                .collect()
-        }
-    };
-
-    let metadata_query = pg_type::table
-        .inner_join(pg_namespace::table)
-        .filter(pg_type::typname.eq(&cache_key.type_name))
-        .select((pg_type::oid, pg_type::typarray));
-    let nspname_filter = pg_namespace::nspname.eq_any(search_schema);
-
-    let metadata = if search_path_has_temp_schema {
+    let metadata = if let Some(schema) = cache_key.schema.as_deref() {
+        // We have an explicit type name and schema given here
+        // that should resolve to an unique type
         metadata_query
-            .filter(nspname_filter.or(pg_namespace::oid.eq(pg_my_temp_schema())))
+            .inner_join(pg_namespace::table)
+            .filter(pg_type::typname.eq(&cache_key.type_name))
+            .filter(pg_namespace::nspname.eq(schema))
             .first(conn)?
     } else {
-        metadata_query.filter(nspname_filter).first(conn)?
+        // We don't have a schema here. A type with the same name could exists
+        // in more than one schema at once, even in more than one schema that
+        // is in the current search path. As we don't want to reimplement
+        // postgres name resolution here we just cast the time name to a concrete type
+        // and let postgres figure out the name resolution on it's own.
+        metadata_query
+            .filter(
+                pg_type::oid.eq(crate::dsl::sql("")
+                    .bind::<crate::sql_types::Text, _>(&cache_key.type_name)
+                    .sql("::regtype::oid")),
+            )
+            .first(conn)?
     };
 
     Ok(metadata)

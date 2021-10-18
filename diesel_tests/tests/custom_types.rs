@@ -164,3 +164,49 @@ fn custom_types_in_custom_schema_round_trip() {
         .unwrap();
     assert_eq!(data, inserted);
 }
+
+#[derive(SqlType)]
+#[postgres(type_name = "ty", type_schema = "other")]
+struct OtherTy;
+
+#[derive(SqlType)]
+#[postgres(type_name = "ty", type_schema = "public")]
+struct PublicTy;
+
+#[derive(SqlType)]
+#[postgres(type_name = "ty")]
+struct InferedTy;
+
+#[test]
+fn custom_type_schema_inference() {
+    use diesel::sql_types::HasSqlType;
+
+    let conn = &mut connection();
+    conn.batch_execute(
+        "
+        CREATE SCHEMA IF NOT EXISTS other;
+        -- Clear leftovers from the previous execution
+        DROP TABLE IF EXISTS other.foo;
+        DROP TYPE IF EXISTS public.ty CASCADE;
+        DROP TYPE IF EXISTS other.ty CASCADE;
+        -- Create types on *both* schemas
+        CREATE TYPE public.ty AS (field int);
+        CREATE TYPE other.ty AS (field int);
+        -- Create a table on the other schema referencing the created type
+        CREATE TABLE other.foo (bar other.ty PRIMARY KEY);
+        -- Include both in the search path
+        SET search_path TO other, public;
+        ",
+    )
+    .unwrap();
+
+    let other_ty = <Pg as HasSqlType<OtherTy>>::metadata(conn);
+    let public_ty = <Pg as HasSqlType<PublicTy>>::metadata(conn);
+    let infered_ty = <Pg as HasSqlType<InferedTy>>::metadata(conn);
+    let _ = dbg!(other_ty.oid());
+    let _ = dbg!(public_ty.oid());
+    let _ = dbg!(infered_ty.oid());
+
+    assert_eq!(other_ty.oid().unwrap(), infered_ty.oid().unwrap());
+    assert_ne!(public_ty.oid().unwrap(), other_ty.oid().unwrap());
+}
