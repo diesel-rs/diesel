@@ -372,13 +372,13 @@ struct SerdeWrapper(serde_json::Value);
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 impl quickcheck::Arbitrary for SerdeWrapper {
-    fn arbitrary<G: quickcheck::Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         SerdeWrapper(arbitrary_serde(g, 0))
     }
 }
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
-fn arbitrary_serde<G: quickcheck::Gen>(g: &mut G, depth: usize) -> serde_json::Value {
+fn arbitrary_serde(g: &mut quickcheck::Gen, depth: usize) -> serde_json::Value {
     use rand::distributions::Alphanumeric;
     use rand::Rng;
     match g.gen_range(0, if depth > 0 { 4 } else { 6 }) {
