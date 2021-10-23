@@ -7,7 +7,7 @@ use super::PgNumeric;
 const SCALE_MASK: u16 = 0x3FFF;
 
 impl Arbitrary for PgNumeric {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut Gen) -> Self {
         let mut variant = Option::<bool>::arbitrary(g);
         let mut weight = -1;
         while weight < 0 {
@@ -37,8 +37,8 @@ impl Arbitrary for PgNumeric {
     }
 }
 
-fn gen_vec_of_appropriate_length_valid_digits<G: Gen>(
-    g: &mut G,
+fn gen_vec_of_appropriate_length_valid_digits(
+    g: &mut Gen,
     weight: u16,
     scale: u16,
 ) -> Vec<i16> {
@@ -59,7 +59,7 @@ fn gen_vec_of_appropriate_length_valid_digits<G: Gen>(
 struct Digit(i16);
 
 impl Arbitrary for Digit {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+    fn arbitrary(g: &mut Gen) -> Self {
         let mut n = -1;
         while !(0..10_000).contains(&n) {
             n = i16::arbitrary(g);

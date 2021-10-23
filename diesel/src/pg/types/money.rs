@@ -94,7 +94,7 @@ mod quickcheck_impls {
     use super::PgMoney;
 
     impl Arbitrary for PgMoney {
-        fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        fn arbitrary(g: &mut Gen) -> Self {
             PgMoney(i64::arbitrary(g))
         }
     }
