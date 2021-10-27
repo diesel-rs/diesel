@@ -5,9 +5,9 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
    |                          ^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
    |
    = help: the following implementations were found:
-             <users::table as JoinTo<BoxedSelectStatement<'a, QS, ST, DB>>>
+             <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
              <users::table as JoinTo<JoinOn<Join, On>>>
-             <users::table as JoinTo<SelectStatement<F, S, D, W, O, L, Of, G>>>
+             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
              <users::table as JoinTo<diesel::query_source::joins::Join<Left, Right, Kind>>>
    = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<posts::table, Inner>` for `users::table`
 
@@ -18,9 +18,9 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
    |                          ^^^^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
    |
    = help: the following implementations were found:
-             <users::table as JoinTo<BoxedSelectStatement<'a, QS, ST, DB>>>
+             <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
              <users::table as JoinTo<JoinOn<Join, On>>>
-             <users::table as JoinTo<SelectStatement<F, S, D, W, O, L, Of, G>>>
+             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
              <users::table as JoinTo<diesel::query_source::joins::Join<Left, Right, Kind>>>
    = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<posts::table, LeftOuter>` for `users::table`
 
@@ -31,10 +31,10 @@ error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisf
    |                                     ^^^^ the trait `JoinTo<users::table>` is not implemented for `posts::table`
    |
    = help: the following implementations were found:
-             <posts::table as JoinTo<BoxedSelectStatement<'a, QS, ST, DB>>>
+             <posts::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
              <posts::table as JoinTo<JoinOn<Join, On>>>
-             <posts::table as JoinTo<SelectStatement<F, S, D, W, O, L, Of, G>>>
+             <posts::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
              <posts::table as JoinTo<comments::table>>
              <posts::table as JoinTo<diesel::query_source::joins::Join<Left, Right, Kind>>>
    = note: required because of the requirements on the impl of `JoinTo<users::table>` for `diesel::query_source::joins::Join<posts::table, comments::table, Inner>`
-   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<SelectStatement<JoinOn<diesel::query_source::joins::Join<posts::table, comments::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<comments::columns::post_id>, diesel::expression::nullable::Nullable<posts::columns::id>>>>>, Inner>` for `users::table`
+   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<posts::table, comments::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<comments::columns::post_id>, diesel::expression::nullable::Nullable<posts::columns::id>>>>>>, Inner>` for `users::table`

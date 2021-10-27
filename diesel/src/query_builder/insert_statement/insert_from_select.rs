@@ -49,7 +49,10 @@ where
     Columns: ColumnList + Expression,
     Select: Query<SqlType = Columns::SqlType> + QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql("(");
         self.columns.walk_ast(out.reborrow())?;
         out.push_sql(") ");

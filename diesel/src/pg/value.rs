@@ -1,5 +1,3 @@
-use super::Pg;
-use crate::backend::BinaryRawValue;
 use std::num::NonZeroU32;
 use std::ops::Range;
 
@@ -34,12 +32,6 @@ impl<'a> TypeOidLookup for PgValue<'a> {
 impl TypeOidLookup for NonZeroU32 {
     fn lookup(&self) -> NonZeroU32 {
         *self
-    }
-}
-
-impl<'a> BinaryRawValue<'a> for Pg {
-    fn as_bytes(value: PgValue<'a>) -> &'a [u8] {
-        value.raw_value
     }
 }
 

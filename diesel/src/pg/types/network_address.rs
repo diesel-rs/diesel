@@ -95,7 +95,7 @@ macro_rules! impl_Sql {
         }
 
         impl ToSql<$ty, Pg> for IpNetwork {
-            fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+            fn to_sql<'a: 'b, 'b>(&self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
                 use self::ipnetwork::IpNetwork::*;
                 let net_type = $net_type;
                 match *self {
@@ -138,11 +138,14 @@ impl_Sql!(Cidr, 1);
 fn v4address_to_sql() {
     macro_rules! test_to_sql {
         ($ty:ty, $net_type:expr) => {
-            let mut bytes = Output::test();
-            let test_address =
-                IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
-            ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
-            assert_eq!(bytes, vec![PGSQL_AF_INET, 32, $net_type, 4, 127, 0, 0, 1]);
+            let mut buffer = Vec::new();
+            {
+                let mut bytes = Output::test(&mut buffer);
+                let test_address =
+                    IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
+                ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
+            }
+            assert_eq!(buffer, vec![PGSQL_AF_INET, 32, $net_type, 4, 127, 0, 0, 1]);
         };
     }
 
@@ -156,10 +159,12 @@ fn some_v4address_from_sql() {
         ($ty:tt) => {
             let input_address =
                 IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
-            let mut bytes = Output::test();
-            ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-            let output_address =
-                FromSql::<$ty, Pg>::from_sql(PgValue::for_test(bytes.as_ref())).unwrap();
+            let mut buffer = Vec::new();
+            {
+                let mut bytes = Output::test(&mut buffer);
+                ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
+            }
+            let output_address = FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
             assert_eq!(input_address, output_address);
         };
     }
@@ -172,12 +177,16 @@ fn some_v4address_from_sql() {
 fn v6address_to_sql() {
     macro_rules! test_to_sql {
         ($ty:ty, $net_type:expr) => {
-            let mut bytes = Output::test();
-            let test_address =
-                IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
-            ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
+            let mut buffer = Vec::new();
+            {
+                let mut bytes = Output::test(&mut buffer);
+                let test_address = IpNetwork::V6(
+                    Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
+                );
+                ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
+            }
             assert_eq!(
-                bytes,
+                buffer,
                 vec![
                     PGSQL_AF_INET6,
                     64,
@@ -214,10 +223,12 @@ fn some_v6address_from_sql() {
         ($ty:tt) => {
             let input_address =
                 IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
-            let mut bytes = Output::test();
-            ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-            let output_address =
-                FromSql::<$ty, Pg>::from_sql(PgValue::for_test(bytes.as_ref())).unwrap();
+            let mut buffer = Vec::new();
+            {
+                let mut bytes = Output::test(&mut buffer);
+                ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
+            }
+            let output_address = FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
             assert_eq!(input_address, output_address);
         };
     }

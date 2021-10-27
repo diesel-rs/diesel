@@ -98,7 +98,7 @@ macro_rules! tuple_impls {
             $($T: ToSql<$ST, Pg>,)+
             $(Pg: HasSqlType<$ST>),+
         {
-            fn write_tuple<_W: Write>(&self, out: &mut Output<_W, Pg>) -> serialize::Result {
+            fn write_tuple(&self, out: &mut Output<Pg>) -> serialize::Result {
                 let mut buffer = Vec::new();
                 out.write_i32::<NetworkEndian>($Tuple)?;
 
@@ -106,9 +106,8 @@ macro_rules! tuple_impls {
                     let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid()?;
                     out.write_u32::<NetworkEndian>(oid)?;
                     let is_null = {
-                        let mut temp_buffer = Output::new(buffer, out.metadata_lookup());
+                        let mut temp_buffer = Output::new(&mut buffer, out.metadata_lookup());
                         let is_null = self.$idx.to_sql(&mut temp_buffer)?;
-                        buffer = temp_buffer.into_inner();
                         is_null
                     };
 
@@ -136,7 +135,7 @@ impl<T> QueryFragment<Pg> for PgTuple<T>
 where
     T: QueryFragment<Pg>,
 {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.push_sql("(");
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");
@@ -230,7 +229,7 @@ mod tests {
         struct MyStruct<'a>(i32, &'a str);
 
         impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
-            fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+            fn to_sql<'b: 'c, 'c>(&'b self, out: &mut Output<'c, '_, Pg>) -> serialize::Result {
                 WriteTuple::<(Integer, Text)>::write_tuple(&(self.0, self.1), out)
             }
         }

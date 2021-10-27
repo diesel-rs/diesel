@@ -67,11 +67,14 @@ where
 impl<T, ST, DB> QueryFragment<DB> for ArrayLiteral<T, ST>
 where
     DB: Backend,
-    for<'a> &'a T: QueryFragment<DB>,
+    T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> crate::result::QueryResult<()> {
+    fn walk_ast<'a: 'b, 'b>(
+        &'a self,
+        mut out: AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()> {
         out.push_sql("ARRAY[");
-        QueryFragment::walk_ast(&&self.elements, out.reborrow())?;
+        QueryFragment::walk_ast(&self.elements, out.reborrow())?;
         out.push_sql("]");
         Ok(())
     }

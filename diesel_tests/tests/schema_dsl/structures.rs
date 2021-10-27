@@ -89,7 +89,10 @@ where
     DB: Backend,
     Cols: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b, 'c>(&'b self, mut out: AstPass<'_, 'c, DB>) -> QueryResult<()>
+    where
+        'b: 'c,
+    {
         out.unsafe_to_cache_prepared();
         out.push_sql("CREATE TABLE IF NOT EXISTS ");
         out.push_identifier(self.name)?;
@@ -110,7 +113,10 @@ impl<'a, DB, T> QueryFragment<DB> for Column<'a, T>
 where
     DB: Backend,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b, 'c>(&'b self, mut out: AstPass<'_, 'c, DB>) -> QueryResult<()>
+    where
+        'b: 'c,
+    {
         out.unsafe_to_cache_prepared();
         out.push_identifier(self.name)?;
         out.push_sql(" ");
@@ -130,7 +136,10 @@ where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" PRIMARY KEY");
@@ -149,7 +158,10 @@ impl<Col> QueryFragment<Sqlite> for AutoIncrement<Col>
 where
     Col: QueryFragment<Sqlite>,
 {
-    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" AUTOINCREMENT");
@@ -162,7 +174,7 @@ impl<Col> QueryFragment<Mysql> for AutoIncrement<Col>
 where
     Col: QueryFragment<Mysql>,
 {
-    fn walk_ast(&self, mut out: AstPass<Mysql>) -> QueryResult<()> {
+    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" AUTO_INCREMENT");
@@ -178,7 +190,7 @@ impl<Col> QueryId for AutoIncrement<Col> {
 
 #[cfg(feature = "postgres")]
 impl<'a> QueryFragment<Pg> for AutoIncrement<PrimaryKey<Column<'a, diesel::sql_types::Integer>>> {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast<'b: 'c, 'c>(&'b self, mut out: AstPass<'_, 'c, Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_identifier((self.0).0.name)?;
         out.push_sql(" SERIAL PRIMARY KEY");
@@ -191,7 +203,10 @@ where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.unsafe_to_cache_prepared();
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(" NOT NULL");
@@ -210,7 +225,10 @@ where
     DB: Backend,
     Col: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b, 'c>(&'b self, mut out: AstPass<'_, 'c, DB>) -> QueryResult<()>
+    where
+        'b: 'c,
+    {
         out.unsafe_to_cache_prepared();
         self.column.walk_ast(out.reborrow())?;
         out.push_sql(" DEFAULT ");

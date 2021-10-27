@@ -102,7 +102,10 @@ where
     DB: Backend,
     Inner: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.unsafe_to_cache_prepared();
         self.inner.walk_ast(out.reborrow())?;
         out.push_sql(&self.query);
@@ -229,7 +232,10 @@ where
     Query: QueryFragment<DB>,
     Value: ToSql<ST, DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         self.query.walk_ast(out.reborrow())?;
         out.push_bind_param_value_only(&self.value)?;
         Ok(())
@@ -250,7 +256,25 @@ impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, S
 pub struct BoxedSqlQuery<'f, DB: Backend, Query> {
     query: Query,
     sql: String,
-    binds: Vec<Box<dyn Fn(AstPass<DB>) -> QueryResult<()> + 'f>>,
+    binds: Vec<Box<dyn QueryFragment<DB> + 'f>>,
+}
+
+struct RawBind<ST, U> {
+    value: U,
+    p: PhantomData<ST>,
+}
+
+impl<ST, U, DB> QueryFragment<DB> for RawBind<ST, U>
+where
+    DB: Backend + HasSqlType<ST>,
+    U: ToSql<ST, DB>,
+{
+    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
+        pass.push_bind_param_value_only(&self.value)
+    }
 }
 
 impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
@@ -269,9 +293,12 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
     where
         DB: HasSqlType<BindSt>,
         Value: ToSql<BindSt, DB> + 'f,
+        BindSt: 'f,
     {
-        self.binds
-            .push(Box::new(move |mut out| out.push_bind_param_value_only(&b)));
+        self.binds.push(Box::new(RawBind {
+            value: b,
+            p: PhantomData,
+        }) as Box<_>);
         self
     }
 
@@ -289,13 +316,16 @@ where
     DB: Backend,
     Query: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.unsafe_to_cache_prepared();
         self.query.walk_ast(out.reborrow())?;
         out.push_sql(&self.sql);
 
         for b in &self.binds {
-            b(out.reborrow())?;
+            b.walk_ast(out.reborrow())?;
         }
         Ok(())
     }

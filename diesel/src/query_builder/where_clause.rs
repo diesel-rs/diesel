@@ -1,3 +1,4 @@
+use super::from_clause::AsQuerySource;
 use super::*;
 use crate::backend::Backend;
 use crate::expression::grouped::Grouped;
@@ -31,7 +32,10 @@ pub trait WhereOr<Predicate> {
 pub struct NoWhereClause;
 
 impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, _: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         Ok(())
     }
 }
@@ -75,7 +79,10 @@ where
     DB: Backend,
     Expr: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql(" WHERE ");
         self.0.walk_ast(out.reborrow())?;
         Ok(())
@@ -126,7 +133,17 @@ pub trait ValidWhereClause<QS> {}
 
 impl<QS> ValidWhereClause<QS> for NoWhereClause {}
 
-impl<QS, Expr> ValidWhereClause<QS> for WhereClause<Expr> where Expr: AppearsOnTable<QS> {}
+impl<QS, Expr> ValidWhereClause<QS> for WhereClause<Expr>
+where
+    Expr: AppearsOnTable<QS::QuerySource>,
+    QS: AsQuerySource,
+{
+}
+
+impl<Expr> ValidWhereClause<NoFromClause> for WhereClause<Expr> where
+    Expr: AppearsOnTable<NoFromClause>
+{
+}
 
 #[allow(missing_debug_implementations)] // We can't...
 pub enum BoxedWhereClause<'a, DB> {
@@ -138,7 +155,10 @@ impl<'a, DB> QueryFragment<DB> for BoxedWhereClause<'a, DB>
 where
     DB: Backend,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b, 'c>(&'b self, mut out: AstPass<'_, 'c, DB>) -> QueryResult<()>
+    where
+        'b: 'c,
+    {
         match *self {
             BoxedWhereClause::Where(ref where_clause) => {
                 out.push_sql(" WHERE ");

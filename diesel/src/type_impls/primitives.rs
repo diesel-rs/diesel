@@ -1,8 +1,9 @@
 use std::error::Error;
 use std::io::Write;
 
-use crate::backend::{self, Backend, BinaryRawValue};
+use crate::backend::{self, Backend};
 use crate::deserialize::{self, FromSql, Queryable};
+use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{
     self, BigInt, Binary, Bool, Double, Float, Integer, SingleValue, SmallInt, Text,
@@ -124,24 +125,14 @@ where
     }
 }
 
-/// The returned pointer is *only* valid for the lifetime to the argument of
-/// `from_sql`. This impl is intended for uses where you want to write a new
-/// impl in terms of `String`, but don't want to allocate. We have to return a
-/// raw pointer instead of a reference with a lifetime due to the structure of
-/// `FromSql`
-impl<DB> FromSql<sql_types::Text, DB> for *const str
+impl<DB> ToSql<sql_types::Text, DB> for str
 where
-    DB: Backend + for<'a> BinaryRawValue<'a>,
+    DB: Backend<BindCollector = RawBytesBindCollector<DB>>,
 {
-    fn from_sql(value: crate::backend::RawValue<DB>) -> deserialize::Result<Self> {
-        use std::str;
-        let string = str::from_utf8(DB::as_bytes(value))?;
-        Ok(string as *const _)
-    }
-}
-
-impl<DB: Backend> ToSql<sql_types::Text, DB> for str {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
@@ -153,7 +144,10 @@ where
     DB: Backend,
     str: ToSql<sql_types::Text, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         (self as &str).to_sql(out)
     }
 }
@@ -171,32 +165,27 @@ where
     }
 }
 
-/// The returned pointer is *only* valid for the lifetime to the argument of
-/// `from_sql`. This impl is intended for uses where you want to write a new
-/// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
-/// raw pointer instead of a reference with a lifetime due to the structure of
-/// `FromSql`
-impl<DB> FromSql<sql_types::Binary, DB> for *const [u8]
-where
-    DB: Backend + for<'a> BinaryRawValue<'a>,
-{
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
-        Ok(DB::as_bytes(bytes) as *const _)
-    }
-}
-
 impl<DB> ToSql<sql_types::Binary, DB> for Vec<u8>
 where
     DB: Backend,
     [u8]: ToSql<sql_types::Binary, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         (self as &[u8]).to_sql(out)
     }
 }
 
-impl<DB: Backend> ToSql<sql_types::Binary, DB> for [u8] {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+impl<DB> ToSql<sql_types::Binary, DB> for [u8]
+where
+    DB: Backend<BindCollector = RawBytesBindCollector<DB>>,
+{
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         out.write_all(self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
@@ -211,7 +200,10 @@ where
     DB: Backend,
     Self: fmt::Debug,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+    fn to_sql<'b, 'c, 'd>(&'b self, out: &mut Output<'c, 'd, DB>) -> serialize::Result
+    where
+        'b: 'c,
+    {
         ToSql::<ST, DB>::to_sql(&**self, out)
     }
 }

@@ -16,7 +16,7 @@ impl FromSql<sql_types::Json, Pg> for serde_json::Value {
 }
 
 impl ToSql<sql_types::Json, Pg> for serde_json::Value {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         serde_json::to_writer(out, self)
             .map(|_| IsNull::No)
             .map_err(Into::into)
@@ -34,7 +34,7 @@ impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
 }
 
 impl ToSql<sql_types::Jsonb, Pg> for serde_json::Value {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(&[1])?;
         serde_json::to_writer(out, self)
             .map(|_| IsNull::No)
@@ -44,10 +44,11 @@ impl ToSql<sql_types::Jsonb, Pg> for serde_json::Value {
 
 #[test]
 fn json_to_sql() {
-    let mut bytes = Output::test();
+    let mut buffer = Vec::new();
+    let mut bytes = Output::test(&mut buffer);
     let test_json = serde_json::Value::Bool(true);
     ToSql::<sql_types::Json, Pg>::to_sql(&test_json, &mut bytes).unwrap();
-    assert_eq!(bytes, b"true");
+    assert_eq!(buffer, b"true");
 }
 
 #[test]
@@ -77,10 +78,11 @@ fn no_json_from_sql() {
 
 #[test]
 fn jsonb_to_sql() {
-    let mut bytes = Output::test();
+    let mut buffer = Vec::new();
+    let mut bytes = Output::test(&mut buffer);
     let test_json = serde_json::Value::Bool(true);
     ToSql::<sql_types::Jsonb, Pg>::to_sql(&test_json, &mut bytes).unwrap();
-    assert_eq!(bytes, b"\x01true");
+    assert_eq!(buffer, b"\x01true");
 }
 
 #[test]

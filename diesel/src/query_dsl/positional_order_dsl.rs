@@ -44,13 +44,15 @@ impl<Source, Expr, DB> QueryFragment<DB> for PositionalOrderClause<Source, Expr>
 where
     DB: Backend,
     Source: QueryFragment<DB>,
-    Expr: Order,
-    Expr::Fragment: QueryFragment<DB>,
+    Expr: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         self.source.walk_ast(pass.reborrow())?;
         pass.push_sql(" ORDER BY ");
-        self.expr.into_fragment().walk_ast(pass)
+        self.expr.walk_ast(pass)
     }
 }
 
@@ -58,7 +60,10 @@ where
 pub struct OrderColumn(u32);
 
 impl<DB: Backend> QueryFragment<DB> for OrderColumn {
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         pass.push_sql(&self.0.to_string());
         Ok(())
     }

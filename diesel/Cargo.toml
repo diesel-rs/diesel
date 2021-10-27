@@ -13,7 +13,7 @@ categories = ["database"]
 edition = "2018"
 
 [dependencies]
-byteorder = "1.0"
+byteorder = {version = "1.0", optional = true}
 chrono = { version = "0.4.19", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
 libsqlite3-sys = { version = ">=0.8.0, <0.24.0", optional = true, features = ["bundled_bindings"] }
@@ -44,7 +44,7 @@ ipnetwork = ">=0.12.2, <0.19.0"
 quickcheck = "1.0.3"
 
 [features]
-default = ["32-column-tables", "with-deprecated"]
+default = ["with-deprecated", "32-column-tables"]
 extras = ["chrono", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]
@@ -59,8 +59,8 @@ without-deprecated = []
 with-deprecated = []
 network-address = ["ipnetwork", "libc"]
 numeric = ["num-bigint", "bigdecimal", "num-traits", "num-integer"]
-postgres_backend = ["diesel_derives/postgres", "bitflags"]
-mysql_backend = ["diesel_derives/mysql"]
+postgres_backend = ["diesel_derives/postgres", "bitflags", "byteorder"]
+mysql_backend = ["diesel_derives/mysql", "byteorder"]
 
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]

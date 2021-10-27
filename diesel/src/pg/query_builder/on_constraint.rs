@@ -59,7 +59,7 @@ impl<'a> QueryId for OnConstraint<'a> {
 }
 
 impl<'a> QueryFragment<Pg, PgOnConflictClaues> for ConflictTarget<OnConstraint<'a>> {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast<'b: 'c, 'c>(&'b self, mut out: AstPass<'_, 'c, Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql(" ON CONSTRAINT ");
         out.push_identifier(self.0.constraint_name)?;

@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::deserialize::{self, FromSql};
@@ -12,7 +11,7 @@ fn pg_epoch() -> SystemTime {
 }
 
 impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let (before_epoch, duration) = match self.duration_since(pg_epoch()) {
             Ok(duration) => (false, duration),
             Err(time_err) => (true, time_err.duration()),
@@ -22,7 +21,7 @@ impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
         } else {
             duration_to_usecs(duration) as i64
         };
-        ToSql::<sql_types::BigInt, Pg>::to_sql(&time_since_epoch, out)
+        ToSql::<sql_types::BigInt, Pg>::to_sql(&time_since_epoch, &mut out.reborrow())
     }
 }
 

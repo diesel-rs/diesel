@@ -7,9 +7,9 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-   = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<users::table>` for `diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
-   = note: required because of the requirements on the impl of `Query` for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
-   = note: required because of the requirements on the impl of `LoadQuery<_, User>` for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
+   = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
+   = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
+   = note: required because of the requirements on the impl of `LoadQuery<_, User>` for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/filter_cannot_take_comparison_for_columns_from_another_table.rs:36:10
@@ -20,16 +20,17 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), users::table, Pg>`
+   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
 
-error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>: BoxedDsl<'_, Pg>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>: BoxedDsl<'_, Pg>` is not satisfied
   --> $DIR/filter_cannot_take_comparison_for_columns_from_another_table.rs:39:10
    |
 39 |         .into_boxed::<Pg>();
-   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
+   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
    |
    = help: the following implementations were found:
-             <SelectStatement<F, S, D, W, O, LOf, G, H> as BoxedDsl<'a, DB>>
+             <SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H> as BoxedDsl<'a, DB>>
+             <SelectStatement<NoFromClause, S, D, W, O, LOf, G, H> as BoxedDsl<'a, DB>>
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/filter_cannot_take_comparison_for_columns_from_another_table.rs:43:10
@@ -40,9 +41,9 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>`
-   = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<users::table>` for `diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>`
-   = note: required because of the requirements on the impl of `Query` for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
-   = note: required because of the requirements on the impl of `LoadQuery<_, User>` for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
+   = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>`
+   = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
+   = note: required because of the requirements on the impl of `LoadQuery<_, User>` for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/filter_cannot_take_comparison_for_columns_from_another_table.rs:47:10
@@ -53,13 +54,14 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>`
-   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), users::table, Pg>`
+   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
 
-error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>: BoxedDsl<'_, Pg>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>: BoxedDsl<'_, Pg>` is not satisfied
   --> $DIR/filter_cannot_take_comparison_for_columns_from_another_table.rs:51:10
    |
 51 |         .into_boxed::<Pg>();
-   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
+   |          ^^^^^^^^^^ the trait `BoxedDsl<'_, Pg>` is not implemented for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
    |
    = help: the following implementations were found:
-             <SelectStatement<F, S, D, W, O, LOf, G, H> as BoxedDsl<'a, DB>>
+             <SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H> as BoxedDsl<'a, DB>>
+             <SelectStatement<NoFromClause, S, D, W, O, LOf, G, H> as BoxedDsl<'a, DB>>

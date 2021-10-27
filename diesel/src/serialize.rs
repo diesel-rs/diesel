@@ -3,11 +3,11 @@
 use std::error::Error;
 use std::fmt;
 use std::io::{self, Write};
-use std::ops::{Deref, DerefMut};
 use std::result;
 
-use crate::backend::Backend;
-use crate::sql_types::TypeMetadata;
+use crate::backend::{Backend, HasBindCollector};
+use crate::query_builder::bind_collector::RawBytesBindCollector;
+use crate::query_builder::BindCollector;
 
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::serialize::*;
@@ -31,26 +31,31 @@ pub enum IsNull {
 
 /// Wraps a buffer to be written by `ToSql` with additional backend specific
 /// utilities.
-pub struct Output<'a, T, DB>
+pub struct Output<'a, 'b, DB>
 where
-    DB: TypeMetadata,
+    DB: Backend,
     DB::MetadataLookup: 'a,
 {
-    out: T,
-    metadata_lookup: Option<&'a mut DB::MetadataLookup>,
+    out: <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer,
+    metadata_lookup: Option<&'b mut DB::MetadataLookup>,
 }
 
-impl<'a, T, DB: TypeMetadata> Output<'a, T, DB> {
+impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
     /// Construct a new `Output`
-    pub fn new(out: T, metadata_lookup: &'a mut DB::MetadataLookup) -> Self {
+    pub fn new(
+        out: <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer,
+        metadata_lookup: &'b mut DB::MetadataLookup,
+    ) -> Self {
         Output {
             out,
             metadata_lookup: Some(metadata_lookup),
         }
     }
 
-    /// Return the raw buffer this type is wrapping
-    pub fn into_inner(self) -> T {
+    #[cfg(feature = "sqlite")]
+    pub(crate) fn into_inner(
+        self,
+    ) -> <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer {
         self.out
     }
 
@@ -61,19 +66,64 @@ impl<'a, T, DB: TypeMetadata> Output<'a, T, DB> {
     }
 }
 
+#[cfg(feature = "sqlite")]
+impl<'a, 'b> Output<'a, 'b, crate::sqlite::Sqlite> {
+    pub(crate) fn set_small_int(&mut self, i: i16) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::SmallInt(i);
+    }
+
+    pub(crate) fn set_int(&mut self, i: i32) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::Integer(i);
+    }
+
+    pub(crate) fn set_big_int(&mut self, i: i64) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::BigInt(i);
+    }
+
+    pub(crate) fn set_float(&mut self, i: f32) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::Float(i);
+    }
+
+    pub(crate) fn set_double(&mut self, i: f64) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::Double(i);
+    }
+
+    pub(crate) fn set_borrowed_string(&mut self, s: &'a str) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::BorrowedString(s);
+    }
+
+    pub(crate) fn set_borrowed_binary(&mut self, s: &'a [u8]) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::BorrowedBinary(s);
+    }
+
+    // this can be unused depending on the enabled features
+    #[allow(dead_code)]
+    pub(crate) fn set_owned_string(&mut self, s: String) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::String(s.into_boxed_str());
+    }
+
+    // This can be unused depending on the enabled features
+    #[allow(dead_code)]
+    pub(crate) fn set_owned_binary(&mut self, b: Vec<u8>) {
+        self.out = crate::sqlite::query_builder::SqliteBindValue::Binary(b.into_boxed_slice());
+    }
+}
+
 #[cfg(test)]
-impl<DB: TypeMetadata> Output<'static, Vec<u8>, DB> {
+impl<'a, DB: Backend> Output<'a, 'static, DB> {
     /// Returns a `Output` suitable for testing `ToSql` implementations.
     /// Unsafe to use for testing types which perform dynamic metadata lookup.
-    pub fn test() -> Self {
+    pub fn test(
+        buffer: <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer,
+    ) -> Self {
         Self {
-            out: Vec::new(),
+            out: buffer,
             metadata_lookup: None,
         }
     }
 }
 
-impl<'a, T: Write, DB: TypeMetadata> Write for Output<'a, T, DB> {
+impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Write for Output<'a, 'b, DB> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.out.write(buf)
     }
@@ -91,34 +141,34 @@ impl<'a, T: Write, DB: TypeMetadata> Write for Output<'a, T, DB> {
     }
 }
 
-impl<'a, T, DB: TypeMetadata> Deref for Output<'a, T, DB> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self.out
+impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Output<'a, 'b, DB> {
+    /// Call this method whenever you pass an instance of `Output<DB>` by value.
+    ///
+    /// Effectively copies `self`, with a narrower lifetime. When passing a
+    /// reference or a mutable reference, this is normally done by rust
+    /// implicitly. This is why you can pass `&mut Foo` to multiple functions,
+    /// even though mutable references are not `Copy`. However, this is only
+    /// done implicitly for references. For structs with lifetimes it must be
+    /// done explicitly. This method matches the semantics of what Rust would do
+    /// implicitly if you were passing a mutable reference
+    pub fn reborrow<'c>(&'c mut self) -> Output<'c, 'c, DB>
+    where
+        'a: 'c,
+    {
+        Output {
+            out: RawBytesBindCollector::<DB>::reborrow_buffer(self.out),
+            metadata_lookup: match &mut self.metadata_lookup {
+                None => None,
+                Some(m) => Some(&mut **m),
+            },
+        }
     }
 }
 
-impl<'a, T, DB: TypeMetadata> DerefMut for Output<'a, T, DB> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.out
-    }
-}
-
-impl<'a, T, U, DB> PartialEq<U> for Output<'a, T, DB>
+impl<'a, 'b, DB> fmt::Debug for Output<'a, 'b, DB>
 where
-    DB: TypeMetadata,
-    T: PartialEq<U>,
-{
-    fn eq(&self, rhs: &U) -> bool {
-        self.out == *rhs
-    }
-}
-
-impl<'a, T, DB> fmt::Debug for Output<'a, T, DB>
-where
-    T: fmt::Debug,
-    DB: TypeMetadata,
+    <<DB as HasBindCollector<'a>>::BindCollector as BindCollector<'a, DB>>::Buffer: fmt::Debug,
+    DB: Backend,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.out.fmt(f)
@@ -175,14 +225,17 @@ where
 ///     DB: Backend,
 ///     i32: ToSql<Integer, DB>,
 /// {
-///     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
-///         (*self as i32).to_sql(out)
+///     fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+///         match self {
+///             MyEnum::A => 1.to_sql(out),
+///             MyEnum::B => 2.to_sql(out),
+///         }
 ///     }
 /// }
 /// ```
 pub trait ToSql<A, DB: Backend>: fmt::Debug {
     /// See the trait documentation.
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> Result;
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, DB>) -> Result;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T
@@ -190,7 +243,10 @@ where
     DB: Backend,
     T: ToSql<A, DB> + ?Sized,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> Result {
+    fn to_sql<'b, 'c, 'd>(&'b self, out: &mut Output<'c, 'd, DB>) -> Result
+    where
+        'b: 'c,
+    {
         (*self).to_sql(out)
     }
 }

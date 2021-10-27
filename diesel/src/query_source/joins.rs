@@ -10,12 +10,67 @@ use crate::result::QueryResult;
 use crate::sql_types::BoolOrNullableBool;
 use crate::util::TupleAppend;
 
-#[derive(Debug, Clone, Copy, QueryId)]
 /// A query source representing the join between two tables
-pub struct Join<Left, Right, Kind> {
-    left: Left,
-    right: Right,
+pub struct Join<Left: QuerySource, Right: QuerySource, Kind> {
+    left: FromClause<Left>,
+    right: FromClause<Right>,
     kind: Kind,
+}
+
+impl<Left, Right, Kind> Clone for Join<Left, Right, Kind>
+where
+    Left: QuerySource,
+    FromClause<Left>: Clone,
+    Right: QuerySource,
+    FromClause<Right>: Clone,
+    Kind: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            left: self.left.clone(),
+            right: self.right.clone(),
+            kind: self.kind.clone(),
+        }
+    }
+}
+
+impl<Left, Right, Kind> Copy for Join<Left, Right, Kind>
+where
+    Left: QuerySource,
+    FromClause<Left>: Copy,
+    Right: QuerySource,
+    FromClause<Right>: Copy,
+    Kind: Copy,
+{
+}
+
+impl<Left, Right, Kind> std::fmt::Debug for Join<Left, Right, Kind>
+where
+    Left: QuerySource,
+    FromClause<Left>: std::fmt::Debug,
+    Right: QuerySource,
+    FromClause<Right>: std::fmt::Debug,
+    Kind: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Join")
+            .field("left", &self.left)
+            .field("right", &self.right)
+            .field("kind", &self.kind)
+            .finish()
+    }
+}
+
+impl<Left, Right, Kind> QueryId for Join<Left, Right, Kind>
+where
+    Left: QueryId + QuerySource + 'static,
+    Right: QueryId + QuerySource + 'static,
+    Kind: QueryId,
+{
+    type QueryId = Join<Left, Right, Kind::QueryId>;
+
+    const HAS_STATIC_QUERY_ID: bool =
+        Left::HAS_STATIC_QUERY_ID && Right::HAS_STATIC_QUERY_ID && Kind::HAS_STATIC_QUERY_ID;
 }
 
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -28,12 +83,16 @@ pub struct JoinOn<Join, On> {
     on: On,
 }
 
-impl<Left, Right, Kind> Join<Left, Right, Kind> {
+impl<Left, Right, Kind> Join<Left, Right, Kind>
+where
+    Left: QuerySource,
+    Right: QuerySource,
+{
     pub fn new(left: Left, right: Right, kind: Kind) -> Self {
         Join {
-            left: left,
-            right: right,
-            kind: kind,
+            left: FromClause::new(left),
+            right: FromClause::new(right),
+            kind,
         }
     }
 
@@ -58,7 +117,9 @@ where
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self.left.append_selection(self.right.default_selection())
+        self.left
+            .source
+            .append_selection(self.right.source.default_selection())
     }
 }
 
@@ -78,7 +139,17 @@ where
 
     fn default_selection(&self) -> Self::DefaultSelection {
         self.left
-            .append_selection(self.right.default_selection().nullable())
+            .source
+            .append_selection(self.right.source.default_selection().nullable())
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct OnKeyword;
+
+impl<DB: Backend> nodes::MiddleFragment<DB> for OnKeyword {
+    fn push_sql(&self, mut pass: AstPass<DB>) {
+        pass.push_sql(" ON ");
     }
 }
 
@@ -89,14 +160,14 @@ where
     On::SqlType: BoolOrNullableBool,
     Join::DefaultSelection: SelectableExpression<Self>,
 {
-    type FromClause = Grouped<nodes::InfixNode<'static, Join::FromClause, On>>;
+    type FromClause = Grouped<nodes::InfixNode<Join::FromClause, On, OnKeyword>>;
     type DefaultSelection = Join::DefaultSelection;
 
     fn from_clause(&self) -> Self::FromClause {
         Grouped(nodes::InfixNode::new(
             self.join.from_clause(),
             self.on.clone(),
-            " ON ",
+            OnKeyword,
         ))
     }
 
@@ -114,11 +185,14 @@ where
     Right::FromClause: QueryFragment<DB>,
     Kind: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        self.left.from_clause().walk_ast(out.reborrow())?;
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
+        self.left.from_clause.walk_ast(out.reborrow())?;
         self.kind.walk_ast(out.reborrow())?;
         out.push_sql(" JOIN ");
-        self.right.from_clause().walk_ast(out.reborrow())?;
+        self.right.from_clause.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -166,6 +240,8 @@ impl<T: Table, Selection> AppendSelection<Selection> for T {
 
 impl<Left, Mid, Selection, Kind> AppendSelection<Selection> for Join<Left, Mid, Kind>
 where
+    Left: QuerySource,
+    Mid: QuerySource,
     Self: QuerySource,
     <Self as QuerySource>::DefaultSelection: TupleAppend<Selection>,
 {
@@ -192,7 +268,10 @@ where
 pub struct Inner;
 
 impl<DB: Backend> QueryFragment<DB> for Inner {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql(" INNER");
         Ok(())
     }
@@ -203,7 +282,10 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
 pub struct LeftOuter;
 
 impl<DB: Backend> QueryFragment<DB> for LeftOuter {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql(" LEFT OUTER");
         Ok(())
     }
@@ -211,9 +293,10 @@ impl<DB: Backend> QueryFragment<DB> for LeftOuter {
 
 impl<Left, Mid, Right, Kind> JoinTo<Right> for Join<Left, Mid, Kind>
 where
-    Left: JoinTo<Right>,
+    Left: JoinTo<Right> + QuerySource,
+    Mid: QuerySource,
 {
-    type FromClause = Left::FromClause;
+    type FromClause = <Left as JoinTo<Right>>::FromClause;
     type OnClause = Left::OnClause;
 
     fn join_target(rhs: Right) -> (Self::FromClause, Self::OnClause) {
@@ -235,8 +318,8 @@ where
 
 impl<T, Left, Right, Kind> AppearsInFromClause<T> for Join<Left, Right, Kind>
 where
-    Left: AppearsInFromClause<T>,
-    Right: AppearsInFromClause<T>,
+    Left: AppearsInFromClause<T> + QuerySource,
+    Right: AppearsInFromClause<T> + QuerySource,
     Left::Count: Plus<Right::Count>,
 {
     type Count = <Left::Count as Plus<Right::Count>>::Output;
@@ -316,8 +399,10 @@ pub trait ToInnerJoin {
 
 impl<Left, Right, Kind> ToInnerJoin for Join<Left, Right, Kind>
 where
-    Left: ToInnerJoin,
-    Right: ToInnerJoin,
+    Left: ToInnerJoin + QuerySource,
+    Left::InnerJoin: QuerySource,
+    Right: ToInnerJoin + QuerySource,
+    Right::InnerJoin: QuerySource,
 {
     type InnerJoin = Join<Left::InnerJoin, Right::InnerJoin, Inner>;
 }
@@ -329,11 +414,12 @@ where
     type InnerJoin = JoinOn<Join::InnerJoin, On>;
 }
 
-impl<From> ToInnerJoin for SelectStatement<From>
+impl<From> ToInnerJoin for SelectStatement<FromClause<From>>
 where
-    From: ToInnerJoin,
+    From: ToInnerJoin + QuerySource,
+    From::InnerJoin: QuerySource,
 {
-    type InnerJoin = SelectStatement<From::InnerJoin>;
+    type InnerJoin = SelectStatement<FromClause<From::InnerJoin>>;
 }
 
 impl<T: Table> ToInnerJoin for T {

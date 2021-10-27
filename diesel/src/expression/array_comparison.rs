@@ -1,12 +1,12 @@
 use crate::backend::sql_dialect;
 use crate::backend::Backend;
 use crate::backend::SqlDialect;
-use crate::expression::bound::Bound;
 use crate::expression::subselect::Subselect;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_builder::{BoxedSelectStatement, SelectStatement};
 use crate::result::QueryResult;
+use crate::serialize::ToSql;
 use crate::sql_types::Bool;
 use std::marker::PhantomData;
 
@@ -55,7 +55,10 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::ArrayComparision>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
     }
 }
@@ -68,7 +71,10 @@ where
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         if self.values.is_empty() {
             out.push_sql("1=0");
         } else {
@@ -86,7 +92,10 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::ArrayComparision>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
     }
 }
@@ -99,7 +108,10 @@ where
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         if self.values.is_empty() {
             out.push_sql("1=1");
         } else {
@@ -215,7 +227,10 @@ where
     Self: QueryFragment<DB, DB::ArrayComparision>,
     DB: Backend,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
     }
 }
@@ -224,11 +239,15 @@ impl<ST, I, DB> QueryFragment<DB, sql_dialect::array_comparision::AnsiSqlArrayCo
     for Many<ST, I>
 where
     DB: Backend
+        + HasSqlType<ST>
         + SqlDialect<ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison>,
     ST: SingleValue,
-    for<'a> Bound<ST, &'a I>: QueryFragment<DB>,
+    I: ToSql<ST, DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.unsafe_to_cache_prepared();
         let mut first = true;
         for value in &self.0 {
@@ -237,7 +256,7 @@ where
             } else {
                 out.push_sql(", ");
             }
-            Bound::new(value).walk_ast(out.reborrow())?;
+            out.push_bind_param(value)?;
         }
         Ok(())
     }

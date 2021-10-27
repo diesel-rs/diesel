@@ -2,7 +2,6 @@ extern crate libsqlite3_sys as ffi;
 
 use super::raw::RawConnection;
 use super::row::PrivateSqliteRow;
-use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
@@ -10,6 +9,7 @@ use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
+use crate::sqlite::query_builder::SqliteBindValue;
 use crate::sqlite::SqliteValue;
 use std::cell::{Ref, RefCell};
 use std::marker::PhantomData;
@@ -40,9 +40,7 @@ where
     conn.register_sql_function(fn_name, fields_needed, deterministic, move |conn, args| {
         let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
 
-        let result = f(conn, args);
-
-        process_sql_function_result::<RetSqlType, Ret>(result)
+        Ok(f(conn, args))
     })?;
     Ok(())
 }
@@ -58,10 +56,7 @@ where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    conn.register_sql_function(fn_name, 0, deterministic, move |_, _| {
-        let result = f();
-        process_sql_function_result::<RetSqlType, Ret>(result)
-    })?;
+    conn.register_sql_function(fn_name, 0, deterministic, move |_, _| Ok(f()))?;
     Ok(())
 }
 
@@ -102,26 +97,21 @@ where
 }
 
 pub(crate) fn process_sql_function_result<RetSqlType, Ret>(
-    result: Ret,
-) -> QueryResult<SerializedValue>
+    result: &'_ Ret,
+) -> QueryResult<SqliteBindValue<'_>>
 where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     let mut metadata_lookup = ();
-    let mut buf = Output::new(Vec::new(), &mut metadata_lookup);
+    let mut buf = Output::new(SqliteBindValue::Null, &mut metadata_lookup);
     let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
 
-    let bytes = if let IsNull::Yes = is_null {
-        None
+    if let IsNull::Yes = is_null {
+        Ok(SqliteBindValue::Null)
     } else {
-        Some(buf.into_inner())
-    };
-
-    Ok(SerializedValue {
-        ty: Sqlite::metadata(&mut ()),
-        data: bytes,
-    })
+        Ok(buf.into_inner())
+    }
 }
 
 struct FunctionRow<'a> {

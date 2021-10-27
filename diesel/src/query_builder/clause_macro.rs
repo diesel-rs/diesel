@@ -34,7 +34,9 @@ macro_rules! simple_clause {
         pub struct $no_clause;
 
         impl<DB: Backend> QueryFragment<DB> for $no_clause {
-            fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+            fn walk_ast<'a, 'b>(&'a self, _: AstPass<'_, 'b, DB>) -> QueryResult<()>
+            where 'a: 'b
+            {
                 Ok(())
             }
         }
@@ -47,7 +49,9 @@ macro_rules! simple_clause {
             DB: Backend $(+ $backend_bounds)*,
             Expr: QueryFragment<DB>,
         {
-            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+            fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+            where 'a: 'b
+            {
                 out.push_sql($sql);
                 self.0.walk_ast(out.reborrow())?;
                 Ok(())

@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use crate::backend::{self, Backend};
 use crate::deserialize::{self, FromSql, Queryable, QueryableByName};
 use crate::expression::bound::Bound;
@@ -51,7 +49,10 @@ where
     DB: Backend,
     ST: SqlType<IsNull = is_nullable::NotNull>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {
@@ -120,18 +121,27 @@ use crate::sql_types;
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
     type Type = sql_types::Nullable<sql_types::VarChar>;
-    let mut bytes = Output::test();
 
-    let is_null = ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap();
+    let mut buffer = Vec::new();
+    let is_null = {
+        let mut bytes = Output::test(&mut buffer);
+        ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap()
+    };
     assert_eq!(IsNull::Yes, is_null);
-    assert!(bytes.is_empty());
+    assert!(buffer.is_empty());
 
-    let is_null = ToSql::<Type, Pg>::to_sql(&Some(""), &mut bytes).unwrap();
+    let is_null = {
+        let mut bytes = Output::test(&mut buffer);
+        ToSql::<Type, Pg>::to_sql(&Some(""), &mut bytes).unwrap()
+    };
     assert_eq!(IsNull::No, is_null);
-    assert!(bytes.is_empty());
+    assert!(buffer.is_empty());
 
-    let is_null = ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap();
+    let is_null = {
+        let mut bytes = Output::test(&mut buffer);
+        ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap()
+    };
     let expectd_bytes = b"Sean".to_vec();
     assert_eq!(IsNull::No, is_null);
-    assert_eq!(bytes, expectd_bytes);
+    assert_eq!(buffer, expectd_bytes);
 }

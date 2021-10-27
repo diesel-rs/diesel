@@ -4,7 +4,6 @@ mod functions;
 #[doc(hidden)]
 pub mod raw;
 mod row;
-mod serialized_value;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
@@ -20,7 +19,6 @@ use super::SqliteAggregateFunction;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
-use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
@@ -213,11 +211,11 @@ impl SqliteConnection {
             Statement::prepare(raw_connection, sql, is_cached)
         })?;
 
-        let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
+        let mut bind_collector = crate::sqlite::query_builder::SqliteBindCollector::new();
         source.collect_binds(&mut bind_collector, &mut ())?;
-        let metadata = bind_collector.metadata;
-        let binds = bind_collector.binds;
-        for (tpe, value) in metadata.into_iter().zip(binds) {
+        let metadata = &bind_collector.metadata;
+        let binds = &bind_collector.binds;
+        for (tpe, value) in metadata.iter().zip(binds) {
             statement.bind(tpe, value)?;
         }
 

@@ -18,6 +18,8 @@ mod dsl_impls;
 pub use self::boxed::BoxedSelectStatement;
 
 use super::distinct_clause::NoDistinctClause;
+use super::from_clause::AsQuerySource;
+use super::from_clause::FromClause;
 use super::group_by_clause::*;
 use super::limit_clause::NoLimitClause;
 use super::locking_clause::NoLockingClause;
@@ -25,6 +27,7 @@ use super::offset_clause::NoOffsetClause;
 use super::order_clause::NoOrderClause;
 use super::select_clause::*;
 use super::where_clause::*;
+use super::NoFromClause;
 use super::{AstPass, Query, QueryFragment};
 use crate::backend::Backend;
 use crate::expression::subselect::ValidSubselect;
@@ -38,24 +41,11 @@ use crate::query_source::*;
 use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct NoFromClause;
-
-impl<DB> QueryFragment<DB, crate::backend::sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax>
-    for NoFromClause
-where
-    DB: Backend<EmptyFromClauseSyntax = crate::backend::sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax>,
-{
-    fn walk_ast(&self, _pass: AstPass<DB>) -> QueryResult<()> {
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Copy, QueryId)]
 #[doc(hidden)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectStatement<
     From,
-    Select = DefaultSelectClause,
+    Select = DefaultSelectClause<From>,
     Distinct = NoDistinctClause,
     Where = NoWhereClause,
     Order = NoOrderClause,
@@ -102,10 +92,11 @@ impl<F, S, D, W, O, LOf, G, H, LC> SelectStatement<F, S, D, W, O, LOf, G, H, LC>
     }
 }
 
-impl<F> SelectStatement<F> {
+impl<F: QuerySource> SelectStatement<FromClause<F>> {
     pub fn simple(from: F) -> Self {
+        let from = FromClause::new(from);
         SelectStatement::new(
-            DefaultSelectClause,
+            DefaultSelectClause::new(&from),
             from,
             NoDistinctClause,
             NoWhereClause,
@@ -143,9 +134,8 @@ impl<F, S, D, W, O, LOf, G, H, LC, DB> QueryFragment<DB>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
     DB: Backend,
-    S: SelectClauseQueryFragment<F, DB>,
-    F: QuerySource,
-    F::FromClause: QueryFragment<DB>,
+    S: QueryFragment<DB>,
+    F: QueryFragment<DB>,
     D: QueryFragment<DB>,
     W: QueryFragment<DB>,
     O: QueryFragment<DB>,
@@ -154,40 +144,13 @@ where
     H: QueryFragment<DB>,
     LC: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql("SELECT ");
         self.distinct.walk_ast(out.reborrow())?;
-        self.select.walk_ast(&self.from, out.reborrow())?;
-        out.push_sql(" FROM ");
-        self.from.from_clause().walk_ast(out.reborrow())?;
-        self.where_clause.walk_ast(out.reborrow())?;
-        self.group_by.walk_ast(out.reborrow())?;
-        self.having.walk_ast(out.reborrow())?;
-        self.order.walk_ast(out.reborrow())?;
-        self.limit_offset.walk_ast(out.reborrow())?;
-        self.locking.walk_ast(out.reborrow())?;
-        Ok(())
-    }
-}
-
-impl<S, D, W, O, LOf, G, H, LC, DB> QueryFragment<DB>
-    for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
-where
-    DB: Backend,
-    S: SelectClauseQueryFragment<NoFromClause, DB>,
-    NoFromClause: QueryFragment<DB, DB::EmptyFromClauseSyntax>,
-    D: QueryFragment<DB>,
-    W: QueryFragment<DB>,
-    O: QueryFragment<DB>,
-    LOf: QueryFragment<DB>,
-    G: QueryFragment<DB>,
-    H: QueryFragment<DB>,
-    LC: QueryFragment<DB>,
-{
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("SELECT ");
-        self.distinct.walk_ast(out.reborrow())?;
-        self.select.walk_ast(&NoFromClause, out.reborrow())?;
+        self.select.walk_ast(out.reborrow())?;
         self.from.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.group_by.walk_ast(out.reborrow())?;
@@ -200,10 +163,39 @@ where
 }
 
 impl<S, F, D, W, O, LOf, G, H, LC, QS> ValidSubselect<QS>
-    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
 where
     Self: SelectQuery,
-    W: ValidWhereClause<Join<F, QS, Inner>>,
+    F: QuerySource,
+    QS: QuerySource,
+    Join<F, QS, Inner>: QuerySource,
+    W: ValidWhereClause<FromClause<Join<F, QS, Inner>>>,
+{
+}
+
+impl<S, D, W, O, LOf, G, H, LC> ValidSubselect<NoFromClause>
+    for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+where
+    Self: SelectQuery,
+    W: ValidWhereClause<NoFromClause>,
+{
+}
+
+impl<S, F, D, W, O, LOf, G, H, LC> ValidSubselect<NoFromClause>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+where
+    Self: SelectQuery,
+    F: QuerySource,
+    W: ValidWhereClause<FromClause<F>>,
+{
+}
+
+impl<S, D, W, O, LOf, G, H, LC, QS> ValidSubselect<QS>
+    for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+where
+    Self: SelectQuery,
+    QS: QuerySource,
+    W: ValidWhereClause<NoFromClause>,
 {
 }
 
@@ -211,35 +203,37 @@ where
 /// no other query methods have been called on it
 impl<From, T> AppearsInFromClause<T> for SelectStatement<From>
 where
-    From: AppearsInFromClause<T>,
+    From: AsQuerySource,
+    From::QuerySource: AppearsInFromClause<T> + QuerySource,
 {
-    type Count = From::Count;
+    type Count = <From::QuerySource as AppearsInFromClause<T>>::Count;
 }
 
 impl<From> QuerySource for SelectStatement<From>
 where
-    From: QuerySource,
-    From::DefaultSelection: SelectableExpression<Self>,
+    From: AsQuerySource,
+    <From::QuerySource as QuerySource>::DefaultSelection: SelectableExpression<Self>,
 {
-    type FromClause = From::FromClause;
-    type DefaultSelection = From::DefaultSelection;
+    type FromClause = <From::QuerySource as QuerySource>::FromClause;
+    type DefaultSelection = <From::QuerySource as QuerySource>::DefaultSelection;
 
-    fn from_clause(&self) -> Self::FromClause {
-        self.from.from_clause()
+    fn from_clause(&self) -> <From::QuerySource as QuerySource>::FromClause {
+        self.from.as_query_source().from_clause()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self.from.default_selection()
+        self.from.as_query_source().default_selection()
     }
 }
 
 impl<From, Selection> AppendSelection<Selection> for SelectStatement<From>
 where
-    From: AppendSelection<Selection>,
+    From: AsQuerySource,
+    From::QuerySource: AppendSelection<Selection>,
 {
-    type Output = From::Output;
+    type Output = <From::QuerySource as AppendSelection<Selection>>::Output;
 
     fn append_selection(&self, selection: Selection) -> Self::Output {
-        self.from.append_selection(selection)
+        self.from.as_query_source().append_selection(selection)
     }
 }

@@ -1,9 +1,6 @@
 use diesel::backend::Backend;
 use diesel::expression::{is_aggregate, NonAggregate, ValidGrouping};
-use diesel::query_builder::{
-    AstPass, IntoBoxedSelectClause, QueryFragment, QueryId, SelectClauseExpression,
-    SelectClauseQueryFragment,
-};
+use diesel::query_builder::{AstPass, QueryFragment, QueryId};
 use diesel::sql_types::Untyped;
 use diesel::{AppearsOnTable, Expression, QueryResult, SelectableExpression};
 use std::marker::PhantomData;
@@ -56,21 +53,11 @@ impl<'a, QS, DB> Expression for DynamicSelectClause<'a, DB, QS> {
     type SqlType = Untyped;
 }
 
-impl<'a, QS, DB> SelectClauseQueryFragment<QS, DB> for DynamicSelectClause<'a, QS, DB>
-where
-    DB: Backend,
-    Self: QueryFragment<DB>,
-{
-    fn walk_ast(&self, _source: &QS, pass: AstPass<DB>) -> QueryResult<()> {
-        <Self as QueryFragment<DB>>::walk_ast(self, pass)
-    }
-}
-
 impl<'a, DB, QS> QueryFragment<DB> for DynamicSelectClause<'a, DB, QS>
 where
     DB: Backend,
 {
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b: 'c, 'c>(&'b self, mut pass: AstPass<'_, 'c, DB>) -> QueryResult<()> {
         let mut first = true;
         for s in &self.selects {
             if first {
@@ -81,19 +68,6 @@ where
             s.walk_ast(pass.reborrow())?;
         }
         Ok(())
-    }
-}
-
-impl<'a, DB, QS> IntoBoxedSelectClause<'a, DB, QS> for DynamicSelectClause<'a, DB, QS>
-where
-    QS: Send,
-    Self: 'a + QueryFragment<DB> + SelectClauseExpression<QS>,
-    DB: Backend,
-{
-    type SqlType = Untyped;
-
-    fn into_boxed(self, _source: &QS) -> Box<dyn QueryFragment<DB> + Send + 'a> {
-        Box::new(self)
     }
 }
 

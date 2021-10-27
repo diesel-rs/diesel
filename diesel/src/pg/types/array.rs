@@ -86,7 +86,7 @@ where
     Pg: HasSqlType<ST>,
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let num_dimensions = 1;
         out.write_i32::<NetworkEndian>(num_dimensions)?;
         let flags = 0;
@@ -103,9 +103,8 @@ where
 
         for elem in self.iter() {
             let is_null = {
-                let mut temp_buffer = Output::new(buffer, out.metadata_lookup());
+                let mut temp_buffer = Output::new(&mut buffer, out.metadata_lookup());
                 let is_null = elem.to_sql(&mut temp_buffer)?;
-                buffer = temp_buffer.into_inner();
                 is_null
             };
 
@@ -128,7 +127,7 @@ where
     [T]: ToSql<Array<ST>, Pg>,
     ST: 'static,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }
@@ -139,7 +138,7 @@ where
     [T]: ToSql<Array<ST>, Pg>,
     T: fmt::Debug,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         (self as &[T]).to_sql(out)
     }
 }
@@ -149,7 +148,7 @@ where
     ST: 'static,
     Vec<T>: ToSql<Array<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<Array<ST>, Pg>::to_sql(self, out)
     }
 }

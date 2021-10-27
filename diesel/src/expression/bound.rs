@@ -16,7 +16,7 @@ pub struct Bound<T, U> {
 impl<T, U> Bound<T, U> {
     pub fn new(item: U) -> Self {
         Bound {
-            item: item,
+            item,
             _marker: PhantomData,
         }
     }
@@ -34,7 +34,10 @@ where
     DB: Backend + HasSqlType<T>,
     U: ToSql<T, DB>,
 {
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         pass.push_bind_param(&self.item)?;
         Ok(())
     }

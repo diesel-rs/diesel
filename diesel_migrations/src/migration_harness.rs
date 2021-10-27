@@ -9,6 +9,7 @@ use diesel::prelude::*;
 use diesel::query_builder::{InsertStatement, ValuesClause};
 use diesel::query_dsl::methods::ExecuteDsl;
 use diesel::query_dsl::LoadQuery;
+use diesel::serialize::ToSql;
 use diesel::sql_types::Text;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -171,6 +172,7 @@ where
             __diesel_schema_migrations::table,
         >,
     >: ExecuteDsl<C>,
+    str: ToSql<Text, DB>,
 {
     fn run_migration(
         &mut self,
@@ -217,6 +219,98 @@ where
             .select(__diesel_schema_migrations::version)
             .order(__diesel_schema_migrations::version.desc())
             .load(self)?)
+    }
+
+    fn has_pending_migration<S: MigrationSource<DB>>(&mut self, source: S) -> Result<bool> {
+        self.pending_migrations(source).map(|p| !p.is_empty())
+    }
+
+    fn run_pending_migrations<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+    ) -> Result<Vec<MigrationVersion>> {
+        let pending = self.pending_migrations(source)?;
+        self.run_migrations(&pending)
+    }
+
+    fn run_migrations(
+        &mut self,
+        migrations: &[Box<dyn Migration<DB>>],
+    ) -> Result<Vec<MigrationVersion>> {
+        migrations.iter().map(|m| self.run_migration(m)).collect()
+    }
+
+    fn run_next_migration<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+    ) -> Result<MigrationVersion> {
+        let pending_migrations = self.pending_migrations(source)?;
+        let next_migration = pending_migrations
+            .first()
+            .ok_or(MigrationError::NoMigrationRun)?;
+        self.run_migration(next_migration)
+    }
+
+    fn revert_all_migrations<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+    ) -> Result<Vec<MigrationVersion>> {
+        let applied_versions = self.applied_migrations()?;
+        let mut migrations = source
+            .migrations()?
+            .into_iter()
+            .map(|m| (m.name().version().as_owned(), m))
+            .collect::<HashMap<_, _>>();
+
+        applied_versions
+            .into_iter()
+            .map(|version| {
+                let migration_to_revert = migrations
+                    .remove(&version)
+                    .ok_or(MigrationError::UnknownMigrationVersion(version))?;
+                self.revert_migration(&migration_to_revert)
+            })
+            .collect()
+    }
+
+    fn revert_last_migration<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+    ) -> Result<MigrationVersion<'static>> {
+        let applied_versions = self.applied_migrations()?;
+        let migrations = source.migrations()?;
+        let last_migration_version = applied_versions
+            .first()
+            .ok_or(MigrationError::NoMigrationRun)?;
+        let migration_to_revert = migrations
+            .iter()
+            .find(|m| m.name().version() == *last_migration_version)
+            .ok_or_else(|| {
+                MigrationError::UnknownMigrationVersion(last_migration_version.as_owned())
+            })?;
+        self.revert_migration(migration_to_revert)
+    }
+
+    fn pending_migrations<S: MigrationSource<DB>>(
+        &mut self,
+        source: S,
+    ) -> Result<Vec<Box<dyn Migration<DB>>>> {
+        let applied_versions = self.applied_migrations()?;
+        let mut migrations = source
+            .migrations()?
+            .into_iter()
+            .map(|m| (m.name().version().as_owned(), m))
+            .collect::<HashMap<_, _>>();
+
+        for applied_version in applied_versions {
+            migrations.remove(&applied_version);
+        }
+
+        let mut migrations = migrations.into_iter().map(|(_, m)| m).collect::<Vec<_>>();
+
+        migrations.sort_unstable_by(|a, b| a.name().version().cmp(&b.name().version()));
+
+        Ok(migrations)
     }
 }
 

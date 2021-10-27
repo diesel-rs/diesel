@@ -1,12 +1,10 @@
-use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
-use std::error::Error;
-use std::io::prelude::*;
-
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::expression::AsExpression;
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
+use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
+use std::error::Error;
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
@@ -79,7 +77,7 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
 }
 
 impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let sign = match *self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,
@@ -109,5 +107,49 @@ impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
         }
 
         Ok(IsNull::No)
+    }
+}
+
+impl FromSql<sql_types::Float, Pg> for f32 {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let mut bytes = value.as_bytes();
+        debug_assert!(
+            bytes.len() <= 4,
+            "Received more than 4 bytes while decoding \
+             an f32. Was a double accidentally marked as float?"
+        );
+        bytes
+            .read_f32::<NetworkEndian>()
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+}
+
+impl FromSql<sql_types::Double, Pg> for f64 {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let mut bytes = value.as_bytes();
+        debug_assert!(
+            bytes.len() <= 8,
+            "Received more than 8 bytes while decoding \
+             an f64. Was a numeric accidentally marked as double?"
+        );
+        bytes
+            .read_f64::<NetworkEndian>()
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+}
+
+impl ToSql<sql_types::Float, Pg> for f32 {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_f32::<NetworkEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+}
+
+impl ToSql<sql_types::Double, Pg> for f64 {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_f64::<NetworkEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }

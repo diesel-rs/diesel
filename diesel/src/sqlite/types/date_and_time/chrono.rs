@@ -1,13 +1,9 @@
-extern crate chrono;
-
-use self::chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use std::io::Write;
-
 use crate::backend;
 use crate::deserialize::{self, FromSql};
-use crate::serialize::{self, Output, ToSql};
-use crate::sql_types::{Date, Text, Time, Timestamp};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::{Date, Time, Timestamp};
 use crate::sqlite::Sqlite;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 const SQLITE_DATE_FORMAT: &str = "%F";
 
@@ -20,9 +16,13 @@ impl FromSql<Date, Sqlite> for NaiveDate {
 }
 
 impl ToSql<Date, Sqlite> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Sqlite>) -> serialize::Result {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         let s = self.format(SQLITE_DATE_FORMAT).to_string();
-        ToSql::<Text, Sqlite>::to_sql(&s, out)
+        out.set_owned_string(s);
+        Ok(IsNull::No)
     }
 }
 
@@ -47,9 +47,13 @@ impl FromSql<Time, Sqlite> for NaiveTime {
 }
 
 impl ToSql<Time, Sqlite> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Sqlite>) -> serialize::Result {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         let s = self.format("%T%.f").to_string();
-        ToSql::<Text, Sqlite>::to_sql(&s, out)
+        out.set_owned_string(s);
+        Ok(IsNull::No)
     }
 }
 
@@ -96,9 +100,13 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Sqlite>) -> serialize::Result {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         let s = self.format("%F %T%.f").to_string();
-        ToSql::<Text, Sqlite>::to_sql(&s, out)
+        out.set_owned_string(s);
+        Ok(IsNull::No)
     }
 }
 

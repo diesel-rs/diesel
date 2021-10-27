@@ -7,7 +7,10 @@ use crate::result::QueryResult;
 pub struct NoReturningClause;
 
 impl<DB: Backend> QueryFragment<DB> for NoReturningClause {
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, _: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         Ok(())
     }
 }
@@ -21,7 +24,10 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::ReturningClause>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         <Self as QueryFragment<DB, DB::ReturningClause>>::walk_ast(self, pass)
     }
 }
@@ -35,7 +41,10 @@ where
     >,
     Expr: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql(" RETURNING ");
         self.0.walk_ast(out.reborrow())?;
         Ok(())

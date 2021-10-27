@@ -60,7 +60,10 @@ where
     T: QueryFragment<DB>,
     DB: Backend,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         self.expr.walk_ast(pass)
     }
 }

@@ -75,7 +75,10 @@ macro_rules! tuple_impls {
 
             impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+) {
                 #[allow(unused_assignments)]
-                fn walk_ast(&self, mut out: AstPass<__DB>) -> QueryResult<()> {
+                fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()>
+                where
+                    'a: 'b
+                {
                     let mut needs_comma = false;
                     $(
                         if !self.$idx.is_noop()? {

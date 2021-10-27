@@ -2,7 +2,7 @@ use super::ValuesClause;
 use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::insertable::CanInsertInSingleQuery;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
-use crate::{Insertable, QueryResult};
+use crate::QueryResult;
 use std::marker::PhantomData;
 
 #[doc(hidden)]
@@ -76,207 +76,47 @@ where
     }
 }
 
-#[doc(hidden)]
-pub trait AsValueIterator<Tab> {
-    type Item;
-
-    // we return a boxed iterator as
-    // a plain iterator may involve lifetimes
-    // and the trait itself cannot have an attached lifetime
-    // therefor it wouldn't be possible to name the type correctly
-    // FIXME: This allocation can be removed if GAT's are stable
-    fn as_value_iter<'a>(
-        &'a self,
-    ) -> Box<dyn Iterator<Item = <&'a Self::Item as Insertable<Tab>>::Values> + 'a>
-    where
-        Self::Item: 'a,
-        &'a Self::Item: Insertable<Tab>;
-}
-
-// https://github.com/rust-lang/rust-clippy/issues/7497
-#[allow(clippy::redundant_closure)]
-impl<T, Tab, const N: usize> AsValueIterator<Tab> for [T; N] {
-    type Item = T;
-
-    fn as_value_iter<'a>(
-        &'a self,
-    ) -> Box<dyn Iterator<Item = <&'a T as Insertable<Tab>>::Values> + 'a>
-    where
-        Self::Item: 'a,
-        &'a T: Insertable<Tab>,
-    {
-        Box::new(IntoIterator::into_iter(self).map(|v| Insertable::values(v)))
-    }
-}
-
-// https://github.com/rust-lang/rust-clippy/issues/7497
-#[allow(clippy::redundant_closure)]
-impl<'b, T, Tab, const N: usize> AsValueIterator<Tab> for &'b [T; N] {
-    type Item = T;
-
-    fn as_value_iter<'a>(
-        &'a self,
-    ) -> Box<dyn Iterator<Item = <&'a Self::Item as Insertable<Tab>>::Values> + 'a>
-    where
-        Self::Item: 'a,
-        &'a T: Insertable<Tab>,
-    {
-        Box::new(IntoIterator::into_iter(*self).map(|v| Insertable::values(v)))
-    }
-}
-
-// https://github.com/rust-lang/rust-clippy/issues/7497
-#[allow(clippy::redundant_closure)]
-impl<T, Tab, const N: usize> AsValueIterator<Tab> for Box<[T; N]> {
-    type Item = T;
-
-    fn as_value_iter<'a>(
-        &'a self,
-    ) -> Box<dyn Iterator<Item = <&'a Self::Item as Insertable<Tab>>::Values> + 'a>
-    where
-        Self::Item: 'a,
-        &'a T: Insertable<Tab>,
-    {
-        Box::new(IntoIterator::into_iter(&**self).map(|v| Insertable::values(v)))
-    }
-}
-
-// https://github.com/rust-lang/rust-clippy/issues/7497
-#[allow(clippy::redundant_closure)]
-impl<T, Tab> AsValueIterator<Tab> for Vec<T> {
-    type Item = T;
-
-    fn as_value_iter<'a>(
-        &'a self,
-    ) -> Box<dyn Iterator<Item = <&'a Self::Item as Insertable<Tab>>::Values> + 'a>
-    where
-        Self::Item: 'a,
-        &'a T: Insertable<Tab>,
-    {
-        Box::new(IntoIterator::into_iter(self).map(|v| Insertable::values(v)))
-    }
-}
-
-// https://github.com/rust-lang/rust-clippy/issues/7497
-#[allow(clippy::redundant_closure)]
-impl<'b, T, Tab> AsValueIterator<Tab> for &'b [T] {
-    type Item = T;
-
-    fn as_value_iter<'a>(
-        &'a self,
-    ) -> Box<dyn Iterator<Item = <&'a Self::Item as Insertable<Tab>>::Values> + 'a>
-    where
-        Self::Item: 'a,
-        &'a T: Insertable<Tab>,
-    {
-        Box::new(IntoIterator::into_iter(*self).map(|v| Insertable::values(v)))
-    }
-}
-
-// This trait is a workaround to issues with hrtb (for<'a>) in rust
-// Rustc refuses to unify associated types pulled out of some trait
-// bound that involves a hrtb. As a workaround we create this
-// intermediate private trait and hide all "advanced" restrictions
-// behind this trait
-// For this case this is essentially only that `Self::Values` implement `QueryFragment`
-// This allows us to unify all that behind a single trait bound in the
-// `QueryFragment` impl below
-#[doc(hidden)]
-pub trait InsertableQueryfragment<Tab, DB>
-where
-    Self: Insertable<Tab>,
-    DB: Backend,
-{
-    fn walk_ast_helper_with_value_clause(values: Self::Values, out: AstPass<DB>)
-        -> QueryResult<()>;
-
-    fn walk_ast_helper_without_value_clause(
-        values: Self::Values,
-        out: AstPass<DB>,
-    ) -> QueryResult<()>;
-}
-
-impl<'a, Tab, DB, T> InsertableQueryfragment<Tab, DB> for &'a T
-where
-    Self: Insertable<Tab>,
-    <&'a T as Insertable<Tab>>::Values: QueryFragment<DB> + IsValuesClause<DB>,
-    DB: Backend,
-{
-    fn walk_ast_helper_with_value_clause(
-        values: Self::Values,
-        out: AstPass<DB>,
-    ) -> QueryResult<()> {
-        values.walk_ast(out)
-    }
-
-    fn walk_ast_helper_without_value_clause(
-        values: Self::Values,
-        out: AstPass<DB>,
-    ) -> QueryResult<()> {
-        values.values().walk_ast(out)
-    }
-}
-
-#[doc(hidden)]
-pub trait IsValuesClause<DB: Backend> {
-    type Inner: QueryFragment<DB>;
-
-    fn values(&self) -> &Self::Inner;
-}
-
-impl<Inner, Tab, DB> IsValuesClause<DB> for ValuesClause<Inner, Tab>
-where
-    DB: Backend,
-    Inner: QueryFragment<DB>,
-{
-    type Inner = Inner;
-
-    fn values(&self) -> &Self::Inner {
-        &self.values
-    }
-}
-
 impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool> QueryFragment<DB>
     for BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
 where
     DB: Backend,
     Self: QueryFragment<DB, DB::BatchInsertSupport>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         <Self as QueryFragment<DB, DB::BatchInsertSupport>>::walk_ast(self, pass)
     }
 }
 
-impl<Tab, DB, T, V, QId, const HAS_STATIC_QUERY_ID: bool>
+impl<Tab, DB, V, QId, const HAS_STATIC_QUERY_ID: bool>
     QueryFragment<DB, sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport>
-    for BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
+    for BatchInsert<Vec<ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID>
 where
     DB: Backend
         + SqlDialect<
             BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport,
         >,
     DB::InsertWithDefaultKeyword: sql_dialect::default_keyword_for_insert::SupportsDefaultKeyword,
-    V: AsValueIterator<Tab, Item = T>,
-    for<'a> &'a T: InsertableQueryfragment<Tab, DB>,
+    ValuesClause<V, Tab>: QueryFragment<DB>,
+    V: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         if !HAS_STATIC_QUERY_ID {
             out.unsafe_to_cache_prepared();
         }
 
-        let mut values = self.values.as_value_iter();
+        let mut values = self.values.iter();
         if let Some(value) = values.next() {
-            <&T as InsertableQueryfragment<Tab, DB>>::walk_ast_helper_with_value_clause(
-                value,
-                out.reborrow(),
-            )?;
+            value.walk_ast(out.reborrow())?;
         }
         for value in values {
             out.push_sql(", (");
-            <&T as InsertableQueryfragment<Tab, DB>>::walk_ast_helper_without_value_clause(
-                value,
-                out.reborrow(),
-            )?;
+            value.values.walk_ast(out.reborrow())?;
             out.push_sql(")");
         }
         Ok(())

@@ -55,7 +55,10 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::ExistsSyntax>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         <Self as QueryFragment<DB, DB::ExistsSyntax>>::walk_ast(self, pass)
     }
 }
@@ -65,7 +68,10 @@ where
     DB: Backend + SqlDialect<ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax>,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql("EXISTS (");
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");

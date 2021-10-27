@@ -1,7 +1,5 @@
 //! The MySQL backend
 
-use byteorder::NativeEndian;
-
 use super::query_builder::MysqlQueryBuilder;
 use super::MysqlValue;
 use crate::backend::*;
@@ -64,8 +62,10 @@ pub enum MysqlType {
 
 impl Backend for Mysql {
     type QueryBuilder = MysqlQueryBuilder;
+}
+
+impl<'a> HasBindCollector<'a> for Mysql {
     type BindCollector = RawBytesBindCollector<Self>;
-    type ByteOrder = NativeEndian;
 }
 
 impl<'a> HasRawValue<'a> for Mysql {

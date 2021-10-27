@@ -1247,6 +1247,8 @@ pub trait QueryDsl: Sized {
     ///     }
     /// }
     ///
+    /// allow_tables_to_appear_in_same_query!(users, posts);
+    ///
     /// # let _: Vec<(i32, Option<String>)> =
     /// posts::table.filter(
     ///    posts::by_user.eq_any(users::table.select(users::name).nullable())

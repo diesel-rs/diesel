@@ -16,7 +16,10 @@ where
     DB: Backend,
     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
 {
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, _: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         Ok(())
     }
 }
@@ -32,7 +35,10 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::OnConflictClause>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
     }
 }
@@ -43,7 +49,10 @@ where
     SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: Column,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql(" (");
         out.push_identifier(T::NAME)?;
         out.push_sql(")");
@@ -59,7 +68,10 @@ where
     SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     SqlLiteral<ST>: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql(" ");
         self.0.walk_ast(out.reborrow())?;
         Ok(())
@@ -74,7 +86,10 @@ where
     SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: Column,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         out.push_sql(" (");
         out.push_identifier(T::NAME)?;
         out.push_sql(")");
@@ -97,7 +112,9 @@ macro_rules! on_conflict_tuples {
                 _T: Column,
                 $($T: Column<Table=_T::Table>,)*
             {
-                fn walk_ast(&self, mut out: AstPass<_DB>) -> QueryResult<()> {
+                fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, _DB>) -> QueryResult<()>
+                where 'a: 'b
+                {
                     out.push_sql(" (");
                     out.push_identifier(_T::NAME)?;
                     $(

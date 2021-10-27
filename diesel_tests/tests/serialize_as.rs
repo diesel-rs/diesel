@@ -2,7 +2,6 @@ use crate::schema::*;
 use diesel::backend::Backend;
 use diesel::serialize::{Output, ToSql};
 use diesel::*;
-use std::io::Write;
 
 #[derive(Debug, FromSqlRow, AsExpression)]
 #[diesel(sql_type = sql_types::Text)]
@@ -19,7 +18,10 @@ where
     DB: Backend,
     String: ToSql<sql_types::Text, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
+    where
+        'a: 'b,
+    {
         self.0.to_sql(out)
     }
 }

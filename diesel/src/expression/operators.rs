@@ -93,7 +93,12 @@ macro_rules! __diesel_operator_body {
                 $($ty_param: $crate::query_builder::QueryFragment<$backend_ty>,)+
                 $($backend_ty_param: $crate::backend::Backend,)*
         {
-            fn walk_ast(&self, mut out: $crate::query_builder::AstPass<$backend_ty>) -> $crate::result::QueryResult<()> {
+            fn walk_ast<'a, 'b>(
+                &'a self,
+                mut out: $crate::query_builder::AstPass<'_, 'b, $backend_ty>
+            ) -> $crate::result::QueryResult<()>
+            where 'a: 'b
+            {
                 $crate::__diesel_operator_to_sql!(
                     notation = $notation,
                     operator_expr = out.push_sql($operator),
@@ -585,10 +590,13 @@ where
     R: QueryFragment<DB>,
     DB: Backend,
 {
-    fn walk_ast(
-        &self,
-        mut out: crate::query_builder::AstPass<DB>,
-    ) -> crate::result::QueryResult<()> {
+    fn walk_ast<'a, 'b>(
+        &'a self,
+        mut out: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()>
+    where
+        'a: 'b,
+    {
         // Those brackets are required because mysql is broken
         // https://github.com/diesel-rs/diesel/issues/2133#issuecomment-517432317
         out.push_sql("(");

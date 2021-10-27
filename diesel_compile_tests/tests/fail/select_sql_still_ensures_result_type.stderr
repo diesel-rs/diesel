@@ -1,16 +1,16 @@
-error[E0277]: the trait bound `*const str: FromSql<BigInt, _>` is not satisfied
+error[E0277]: the trait bound `*const str: FromSql<diesel::sql_types::BigInt, _>` is not satisfied
   --> $DIR/select_sql_still_ensures_result_type.rs:16:30
    |
 16 |     let count = select_count.get_result::<String>(&mut connection).unwrap();
-   |                              ^^^^^^^^^^ the trait `FromSql<BigInt, _>` is not implemented for `*const str`
+   |                              ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::BigInt, _>` is not implemented for `*const str`
    |
    = help: the following implementations were found:
-             <*const [u8] as FromSql<diesel::sql_types::Binary, DB>>
+             <*const [u8] as FromSql<diesel::sql_types::Binary, Pg>>
              <*const [u8] as FromSql<diesel::sql_types::Binary, Sqlite>>
-             <*const str as FromSql<diesel::sql_types::Text, DB>>
+             <*const str as FromSql<diesel::sql_types::Text, Pg>>
              <*const str as FromSql<diesel::sql_types::Text, Sqlite>>
-   = note: required because of the requirements on the impl of `FromSql<BigInt, _>` for `std::string::String`
-   = note: required because of the requirements on the impl of `Queryable<BigInt, _>` for `std::string::String`
-   = note: required because of the requirements on the impl of `FromSqlRow<BigInt, _>` for `std::string::String`
-   = note: required because of the requirements on the impl of `CompatibleType<std::string::String, _>` for `BigInt`
-   = note: required because of the requirements on the impl of `LoadQuery<_, std::string::String>` for `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<SqlLiteral<BigInt>>>`
+   = note: required because of the requirements on the impl of `FromSql<diesel::sql_types::BigInt, _>` for `std::string::String`
+   = note: required because of the requirements on the impl of `Queryable<diesel::sql_types::BigInt, _>` for `std::string::String`
+   = note: required because of the requirements on the impl of `FromSqlRow<diesel::sql_types::BigInt, _>` for `std::string::String`
+   = note: required because of the requirements on the impl of `CompatibleType<std::string::String, _>` for `diesel::sql_types::BigInt`
+   = note: required because of the requirements on the impl of `LoadQuery<_, std::string::String>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<SqlLiteral<diesel::sql_types::BigInt>>>`

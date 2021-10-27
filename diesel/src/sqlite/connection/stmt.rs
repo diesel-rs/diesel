@@ -1,11 +1,11 @@
 extern crate libsqlite3_sys as ffi;
 
 use super::raw::RawConnection;
-use super::serialized_value::SerializedValue;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::{MaybeCached, PrepareForCache};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
+use crate::sqlite::query_builder::SqliteBindValue;
 use crate::sqlite::SqliteType;
 use crate::util::OnceCell;
 use std::ffi::{CStr, CString};
@@ -49,14 +49,75 @@ impl Statement {
         })
     }
 
-    pub fn bind(&mut self, tpe: SqliteType, value: Option<Vec<u8>>) -> QueryResult<()> {
+    pub fn bind(&mut self, tpe: &SqliteType, value: &SqliteBindValue) -> QueryResult<()> {
         self.bind_index += 1;
-        let value = SerializedValue {
-            ty: tpe,
-            data: value,
+        // This unsafe block assumes the following invariants:
+        //
+        // - `stmt` points to valid memory
+        // - If `self.ty` is anything other than `Binary` or `Text`, the appropriate
+        //   number of bytes were written to `value` for an integer of the
+        //   corresponding size.
+        let result = unsafe {
+            match (tpe, value) {
+                (_, SqliteBindValue::Null) => {
+                    ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), self.bind_index)
+                }
+                (SqliteType::Binary, SqliteBindValue::BorrowedBinary(bytes)) => {
+                    ffi::sqlite3_bind_blob(
+                        self.inner_statement.as_ptr(),
+                        self.bind_index,
+                        bytes.as_ptr() as *const libc::c_void,
+                        bytes.len() as libc::c_int,
+                        ffi::SQLITE_TRANSIENT(),
+                    )
+                }
+                (SqliteType::Binary, SqliteBindValue::Binary(bytes)) => ffi::sqlite3_bind_blob(
+                    self.inner_statement.as_ptr(),
+                    self.bind_index,
+                    bytes.as_ptr() as *const libc::c_void,
+                    bytes.len() as libc::c_int,
+                    ffi::SQLITE_TRANSIENT(),
+                ),
+                (SqliteType::Text, SqliteBindValue::BorrowedString(bytes)) => {
+                    ffi::sqlite3_bind_text(
+                        self.inner_statement.as_ptr(),
+                        self.bind_index,
+                        bytes.as_ptr() as *const libc::c_char,
+                        bytes.len() as libc::c_int,
+                        ffi::SQLITE_TRANSIENT(),
+                    )
+                }
+                (SqliteType::Text, SqliteBindValue::String(bytes)) => ffi::sqlite3_bind_text(
+                    self.inner_statement.as_ptr(),
+                    self.bind_index,
+                    bytes.as_ptr() as *const libc::c_char,
+                    bytes.len() as libc::c_int,
+                    ffi::SQLITE_TRANSIENT(),
+                ),
+                (SqliteType::Float, SqliteBindValue::Float(value)) => ffi::sqlite3_bind_double(
+                    self.inner_statement.as_ptr(),
+                    self.bind_index,
+                    libc::c_double::from(*value),
+                ),
+                (SqliteType::Double, SqliteBindValue::Double(value)) => ffi::sqlite3_bind_double(
+                    self.inner_statement.as_ptr(),
+                    self.bind_index,
+                    *value as libc::c_double,
+                ),
+                (SqliteType::SmallInt, SqliteBindValue::SmallInt(value)) => ffi::sqlite3_bind_int(
+                    self.inner_statement.as_ptr(),
+                    self.bind_index,
+                    libc::c_int::from(*value),
+                ),
+                (SqliteType::Integer, SqliteBindValue::Integer(value)) => {
+                    ffi::sqlite3_bind_int(self.inner_statement.as_ptr(), self.bind_index, *value)
+                }
+                (SqliteType::Long, SqliteBindValue::BigInt(value)) => {
+                    ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), self.bind_index, *value)
+                }
+                _ => unreachable!(),
+            }
         };
-        let result = value.bind_to(self.inner_statement, self.bind_index);
-
         ensure_sqlite_ok(result, self.raw_connection())
     }
 

@@ -13,7 +13,7 @@ pub enum Language {
 }
 
 impl ToSql<crate::schema::sql_types::Language, Pg> for Language {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         match *self {
             Language::En => out.write_all(b"en")?,
             Language::Ru => out.write_all(b"ru")?,

@@ -60,10 +60,12 @@ where
 
 impl<T, U> AsQuery for Table<T, U>
 where
-    SelectStatement<Self>: Query<SqlType = expression_types::NotSelectable>,
+    T: Clone,
+    U: Clone,
+    SelectStatement<FromClause<Self>>: Query<SqlType = expression_types::NotSelectable>,
 {
     type SqlType = expression_types::NotSelectable;
-    type Query = SelectStatement<Self>;
+    type Query = SelectStatement<FromClause<Self>>;
 
     fn as_query(self) -> Self::Query {
         SelectStatement::simple(self)
@@ -92,7 +94,7 @@ where
     T: Borrow<str>,
     U: Borrow<str>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
 
         if let Some(ref schema) = self.schema {

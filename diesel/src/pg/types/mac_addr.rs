@@ -28,7 +28,7 @@ impl FromSql<MacAddr, Pg> for [u8; 6] {
 }
 
 impl ToSql<MacAddr, Pg> for [u8; 6] {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(&self[..])
             .map(|_| IsNull::No)
             .map_err(Into::into)
@@ -37,9 +37,10 @@ impl ToSql<MacAddr, Pg> for [u8; 6] {
 
 #[test]
 fn macaddr_roundtrip() {
-    let mut bytes = Output::test();
+    let mut buffer = Vec::new();
+    let mut bytes = Output::test(&mut buffer);
     let input_address = [0x52, 0x54, 0x00, 0xfb, 0xc6, 0x16];
     ToSql::<MacAddr, Pg>::to_sql(&input_address, &mut bytes).unwrap();
-    let output_address: [u8; 6] = FromSql::from_sql(PgValue::for_test(bytes.as_ref())).unwrap();
+    let output_address: [u8; 6] = FromSql::from_sql(PgValue::for_test(&buffer)).unwrap();
     assert_eq!(input_address, output_address);
 }

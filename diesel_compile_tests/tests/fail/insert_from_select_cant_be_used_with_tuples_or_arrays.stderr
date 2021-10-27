@@ -13,6 +13,6 @@ error[E0271]: type mismatch resolving `<users::table as diesel::Insertable<posts
 37 |         .values((users, users));
    |          ^^^^^^ expected struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect`, found struct `ValuesClause`
    |
-   = note: expected struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<users::table>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
+   = note: expected struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
               found struct `ValuesClause<_, posts::table>`
    = note: required because of the requirements on the impl of `diesel::Insertable<posts::table>` for `(users::table, users::table)`

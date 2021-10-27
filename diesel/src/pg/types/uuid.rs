@@ -19,7 +19,7 @@ impl FromSql<Uuid, Pg> for uuid::Uuid {
 }
 
 impl ToSql<Uuid, Pg> for uuid::Uuid {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(Into::into)
@@ -28,10 +28,11 @@ impl ToSql<Uuid, Pg> for uuid::Uuid {
 
 #[test]
 fn uuid_to_sql() {
-    let mut bytes = Output::test();
+    let mut buffer = Vec::new();
     let test_uuid = uuid::Uuid::from_fields(0xFFFF_FFFF, 0xFFFF, 0xFFFF, b"abcdef12").unwrap();
+    let mut bytes = Output::test(&mut buffer);
     ToSql::<Uuid, Pg>::to_sql(&test_uuid, &mut bytes).unwrap();
-    assert_eq!(bytes, test_uuid.as_bytes());
+    assert_eq!(buffer, test_uuid.as_bytes());
 }
 
 #[test]

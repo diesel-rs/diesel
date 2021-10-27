@@ -7,16 +7,32 @@ use crate::expression::{
 use crate::query_builder::*;
 use crate::result::QueryResult;
 
-#[derive(Debug, Default)]
-pub struct SelectBy<T, DB>(std::marker::PhantomData<(T, DB)>);
+#[derive(Debug)]
+pub struct SelectBy<T: Selectable<DB>, DB: Backend> {
+    selection: T::SelectExpression,
+    p: std::marker::PhantomData<(T, DB)>,
+}
 
-impl<T, DB> Clone for SelectBy<T, DB> {
+impl<T, DB> Clone for SelectBy<T, DB>
+where
+    DB: Backend,
+    T: Selectable<DB>,
+{
     fn clone(&self) -> Self {
-        Self(self.0)
+        Self {
+            selection: T::construct_selection(),
+            p: std::marker::PhantomData,
+        }
     }
 }
 
-impl<T, DB> Copy for SelectBy<T, DB> {}
+impl<T, DB> Copy for SelectBy<T, DB>
+where
+    T: Selectable<DB>,
+    DB: Backend,
+    T::SelectExpression: Copy,
+{
+}
 
 impl<T, E, DB> QueryId for SelectBy<T, DB>
 where
@@ -29,9 +45,16 @@ where
     const HAS_STATIC_QUERY_ID: bool = E::HAS_STATIC_QUERY_ID;
 }
 
-impl<T, DB> SelectBy<T, DB> {
+impl<T, DB> SelectBy<T, DB>
+where
+    T: Selectable<DB>,
+    DB: Backend,
+{
     pub(crate) fn new() -> Self {
-        Self(Default::default())
+        Self {
+            selection: T::construct_selection(),
+            p: std::marker::PhantomData,
+        }
     }
 }
 
@@ -79,8 +102,11 @@ where
     T::SelectExpression: QueryFragment<DB>,
     DB: Backend,
 {
-    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
-        T::construct_selection().walk_ast(out)
+    fn walk_ast<'a, 'b>(&'a self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
+        self.selection.walk_ast(out)
     }
 }
 

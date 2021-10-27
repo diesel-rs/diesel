@@ -1,8 +1,8 @@
-error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>: AsInExpression<diesel::sql_types::Integer>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>: AsInExpression<diesel::sql_types::Integer>` is not satisfied
   --> $DIR/subselect_requires_correct_type.rs:22:59
    |
 22 |     let query = posts::table.filter(posts::user_id.eq_any(subquery));
-   |                                                           ^^^^^^^^ the trait `AsInExpression<diesel::sql_types::Integer>` is not implemented for `SelectStatement<users::table, diesel::query_builder::select_clause::DefaultSelectClause, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
+   |                                                           ^^^^^^^^ the trait `AsInExpression<diesel::sql_types::Integer>` is not implemented for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
    |
    = help: the following implementations were found:
              <SelectStatement<F, S, D, W, O, LOf, G, H, LC> as AsInExpression<ST>>

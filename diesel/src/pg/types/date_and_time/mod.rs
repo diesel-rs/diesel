@@ -1,4 +1,3 @@
-use std::io::Write;
 use std::ops::Add;
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
@@ -82,7 +81,7 @@ impl PgInterval {
 }
 
 impl ToSql<sql_types::Timestamp, Pg> for PgTimestamp {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
@@ -94,7 +93,7 @@ impl FromSql<sql_types::Timestamp, Pg> for PgTimestamp {
 }
 
 impl ToSql<sql_types::Timestamptz, Pg> for PgTimestamp {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::Timestamp, Pg>::to_sql(self, out)
     }
 }
@@ -106,7 +105,7 @@ impl FromSql<sql_types::Timestamptz, Pg> for PgTimestamp {
 }
 
 impl ToSql<sql_types::Date, Pg> for PgDate {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::Integer, Pg>::to_sql(&self.0, out)
     }
 }
@@ -118,7 +117,7 @@ impl FromSql<sql_types::Date, Pg> for PgDate {
 }
 
 impl ToSql<sql_types::Time, Pg> for PgTime {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
@@ -130,7 +129,7 @@ impl FromSql<sql_types::Time, Pg> for PgTime {
 }
 
 impl ToSql<sql_types::Interval, Pg> for PgInterval {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::BigInt, Pg>::to_sql(&self.microseconds, out)?;
         ToSql::<sql_types::Integer, Pg>::to_sql(&self.days, out)?;
         ToSql::<sql_types::Integer, Pg>::to_sql(&self.months, out)?;

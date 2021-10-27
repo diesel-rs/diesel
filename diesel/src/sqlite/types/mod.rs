@@ -1,12 +1,10 @@
 mod date_and_time;
 mod numeric;
 
-use std::io::prelude::*;
-
 use super::connection::SqliteValue;
 use super::Sqlite;
 use crate::deserialize::{self, FromSql};
-use crate::serialize::{self, Output, ToSql};
+use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 
 /// The returned pointer is *only* valid for the lifetime to the argument of
@@ -70,8 +68,83 @@ impl FromSql<sql_types::Double, Sqlite> for f64 {
 }
 
 impl ToSql<sql_types::Bool, Sqlite> for bool {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Sqlite>) -> serialize::Result {
-        let int_value = if *self { 1 } else { 0 };
-        <i32 as ToSql<sql_types::Integer, Sqlite>>::to_sql(&int_value, out)
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
+        const ZERO: i32 = 0;
+        const ONE: i32 = 1;
+        let int_value = if *self { &ONE } else { &ZERO };
+        <i32 as ToSql<sql_types::Integer, Sqlite>>::to_sql(int_value, out)
+    }
+}
+
+impl ToSql<sql_types::Text, Sqlite> for str {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
+        out.set_borrowed_string(self);
+        Ok(IsNull::No)
+    }
+}
+
+impl ToSql<sql_types::Binary, Sqlite> for [u8] {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
+        out.set_borrowed_binary(self);
+        Ok(IsNull::No)
+    }
+}
+
+impl ToSql<sql_types::SmallInt, Sqlite> for i16 {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
+        out.set_small_int(*self);
+        Ok(IsNull::No)
+    }
+}
+
+impl ToSql<sql_types::Integer, Sqlite> for i32 {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
+        out.set_int(*self);
+        Ok(IsNull::No)
+    }
+}
+
+impl ToSql<sql_types::BigInt, Sqlite> for i64 {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
+        out.set_big_int(*self);
+        Ok(IsNull::No)
+    }
+}
+
+impl ToSql<sql_types::Float, Sqlite> for f32 {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
+        out.set_float(*self);
+        Ok(IsNull::No)
+    }
+}
+
+impl ToSql<sql_types::Double, Sqlite> for f64 {
+    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
+    where
+        'a: 'b,
+    {
+        out.set_double(*self);
+        Ok(IsNull::No)
     }
 }

@@ -68,6 +68,7 @@ pub trait Insertable<T> {
     /// ```
     fn insert_into(self, table: T) -> InsertStatement<T, Self::Values>
     where
+        T: Table,
         Self: Sized,
     {
         crate::insert_into(table).values(self)
@@ -184,7 +185,10 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::InsertWithDefaultKeyword>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         <Self as QueryFragment<DB, DB::InsertWithDefaultKeyword>>::walk_ast(self, pass)
     }
 }
@@ -194,7 +198,7 @@ where
     DB: Backend + SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>,
     Expr: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> where 'a: 'b {
         out.unsafe_to_cache_prepared();
         if let Self::Expression(ref inner) = *self {
             inner.walk_ast(out.reborrow())?;
@@ -210,7 +214,10 @@ where
     DB: Backend,
     Expr: QueryFragment<DB>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         self.expr.walk_ast(pass)
     }
 }
@@ -240,7 +247,13 @@ impl<Col, Expr>
 where
     Expr: QueryFragment<crate::sqlite::Sqlite>,
 {
-    fn walk_ast(&self, mut out: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(
+        &'a self,
+        mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>,
+    ) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         if let Self::Expression(ref inner) = *self {
             inner.walk_ast(out.reborrow())?;
         }
@@ -250,12 +263,13 @@ where
 
 impl<'a, T, Tab> Insertable<Tab> for &'a [T]
 where
-    &'a T: UndecoratedInsertRecord<Tab>,
+    &'a T: UndecoratedInsertRecord<Tab> + Insertable<Tab>,
 {
-    type Values = BatchInsert<&'a [T], Tab, (), false>;
+    type Values = BatchInsert<Vec<<&'a T as Insertable<Tab>>::Values>, Tab, (), false>;
 
     fn values(self) -> Self::Values {
-        BatchInsert::new(self)
+        let values = self.iter().map(Insertable::values).collect::<Vec<_>>();
+        BatchInsert::new(values)
     }
 }
 
@@ -274,10 +288,11 @@ impl<T, Tab> Insertable<Tab> for Vec<T>
 where
     T: Insertable<Tab> + UndecoratedInsertRecord<Tab>,
 {
-    type Values = BatchInsert<Vec<T>, Tab, (), false>;
+    type Values = BatchInsert<Vec<T::Values>, Tab, (), false>;
 
     fn values(self) -> Self::Values {
-        BatchInsert::new(self)
+        let values = self.into_iter().map(Insertable::values).collect::<Vec<_>>();
+        BatchInsert::new(values)
     }
 }
 
@@ -285,23 +300,28 @@ impl<T, Tab, const N: usize> Insertable<Tab> for [T; N]
 where
     T: Insertable<Tab>,
 {
-    type Values = BatchInsert<[T; N], Tab, [T::Values; N], true>;
+    type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
 
     fn values(self) -> Self::Values {
-        BatchInsert::new(self)
+        let values = std::array::IntoIter::new(self)
+            .map(Insertable::values)
+            .collect::<Vec<_>>();
+        BatchInsert::new(values)
     }
 }
 
 impl<'a, T, Tab, const N: usize> Insertable<Tab> for &'a [T; N]
 where
     T: Insertable<Tab>,
+    &'a T: Insertable<Tab>,
 {
     // We can reuse the query id for [T; N] here as this
     // compiles down to the same query
-    type Values = BatchInsert<&'a [T; N], Tab, [T::Values; N], true>;
+    type Values = BatchInsert<Vec<<&'a T as Insertable<Tab>>::Values>, Tab, [T::Values; N], true>;
 
     fn values(self) -> Self::Values {
-        BatchInsert::new(self)
+        let values = self.iter().map(Insertable::values).collect();
+        BatchInsert::new(values)
     }
 }
 
@@ -311,10 +331,12 @@ where
 {
     // We can reuse the query id for [T; N] here as this
     // compiles down to the same query
-    type Values = BatchInsert<Box<[T; N]>, Tab, [T::Values; N], true>;
+    type Values = BatchInsert<Vec<T::Values>, Tab, [T::Values; N], true>;
 
     fn values(self) -> Self::Values {
-        BatchInsert::new(self)
+        let v = Vec::from(self as Box<[T]>);
+        let values = v.into_iter().map(Insertable::values).collect::<Vec<_>>();
+        BatchInsert::new(values)
     }
 }
 

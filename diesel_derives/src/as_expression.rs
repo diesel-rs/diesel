@@ -72,7 +72,9 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                 __DB: diesel::backend::Backend,
                 Self: ToSql<#sql_type, __DB>,
             {
-                fn to_sql<W: std::io::Write>(&self, out: &mut Output<W, __DB>) -> serialize::Result {
+                fn to_sql<'__a, '__b, '__c>(&'__a self, out: &mut Output<'__b, '__c, __DB>) -> serialize::Result
+                    where '__a: '__b
+                {
                     ToSql::<#sql_type, __DB>::to_sql(self, out)
                 }
             }

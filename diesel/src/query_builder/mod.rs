@@ -15,6 +15,7 @@ pub(crate) mod combination_clause;
 mod debug_query;
 mod delete_statement;
 mod distinct_clause;
+mod from_clause;
 #[doc(hidden)]
 pub mod functions;
 mod group_by_clause;
@@ -40,20 +41,16 @@ pub use self::bind_collector::BindCollector;
 pub use self::debug_query::DebugQuery;
 pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
 #[doc(hidden)]
-pub use self::insert_statement::{
-    AsValueIterator, BatchInsert, DefaultValues, InsertableQueryfragment, IsValuesClause,
-};
+pub use self::insert_statement::{BatchInsert, DefaultValues};
 #[doc(inline)]
 pub use self::insert_statement::{
     IncompleteInsertStatement, InsertStatement, UndecoratedInsertRecord, ValuesClause,
 };
 pub use self::query_id::QueryId;
 #[doc(inline)]
-pub use self::select_clause::{
-    IntoBoxedSelectClause, SelectClauseExpression, SelectClauseQueryFragment,
-};
+pub use self::select_clause::SelectClauseExpression;
 #[doc(hidden)]
-pub use self::select_statement::{BoxedSelectStatement, NoFromClause, SelectStatement};
+pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
 pub use self::update_statement::{
@@ -61,12 +58,15 @@ pub use self::update_statement::{
 };
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
+#[doc(hidden)]
+pub use self::from_clause::{FromClause, NoFromClause};
 pub use self::limit_clause::{LimitClause, NoLimitClause};
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
-
 #[doc(hidden)]
 pub use self::returning_clause::ReturningClause;
+#[doc(hidden)]
+pub use self::select_clause::DefaultSelectClause;
 
 pub(crate) use self::insert_statement::ColumnList;
 
@@ -75,7 +75,7 @@ pub use crate::pg::query_builder::only_clause::Only;
 
 use std::error::Error;
 
-use crate::backend::Backend;
+use crate::backend::{Backend, HasBindCollector};
 use crate::result::QueryResult;
 
 mod private {
@@ -168,7 +168,7 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// This method will contain the behavior required for all possible AST
     /// passes. See [`AstPass`] for more details.
     ///
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()>;
+    fn walk_ast<'a: 'b, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>;
 
     /// Converts this `QueryFragment` to its SQL representation.
     ///
@@ -183,11 +183,14 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// itself. It is represented in SQL with a placeholder such as `?` or `$1`.
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn collect_binds(
-        &self,
-        out: &mut DB::BindCollector,
-        metadata_lookup: &mut DB::MetadataLookup,
-    ) -> QueryResult<()> {
+    fn collect_binds<'a, 'b, 'c>(
+        &'c self,
+        out: &'a mut <DB as HasBindCollector<'b>>::BindCollector,
+        metadata_lookup: &'a mut DB::MetadataLookup,
+    ) -> QueryResult<()>
+    where
+        'c: 'b,
+    {
         self.walk_ast(AstPass::collect_binds(out, metadata_lookup))
     }
 
@@ -226,7 +229,10 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
@@ -236,13 +242,19 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b, 'c>(&'b self, pass: AstPass<'_, 'c, DB>) -> QueryResult<()>
+    where
+        'b: 'c,
+    {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
 
 impl<DB: Backend> QueryFragment<DB> for () {
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, _: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         Ok(())
     }
 }
@@ -252,7 +264,10 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'a, 'b>(&'a self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+    where
+        'a: 'b,
+    {
         match *self {
             Some(ref c) => c.walk_ast(out),
             None => Ok(()),

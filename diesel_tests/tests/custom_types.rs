@@ -27,7 +27,7 @@ pub enum MyEnum {
 }
 
 impl ToSql<MyType, Pg> for MyEnum {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         match *self {
             MyEnum::Foo => out.write_all(b"foo")?,
             MyEnum::Bar => out.write_all(b"bar")?,
@@ -106,7 +106,7 @@ pub enum MyEnumInCustomSchema {
 }
 
 impl ToSql<MyTypeInCustomSchema, Pg> for MyEnumInCustomSchema {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         match *self {
             MyEnumInCustomSchema::Foo => out.write_all(b"foo")?,
             MyEnumInCustomSchema::Bar => out.write_all(b"bar")?,
@@ -158,10 +158,10 @@ fn custom_types_in_custom_schema_round_trip() {
         )
         .unwrap();
 
-    let inserted = insert_into(custom_types_with_custom_schema::table)
-        .values(&data)
-        .get_results(connection)
-        .unwrap();
+    let inserted = insert_into(custom_types_with_custom_schema::table).values(&data);
+
+    dbg!(diesel::debug_query::<diesel::pg::Pg, _>(&inserted));
+    let inserted = inserted.get_results(connection).unwrap();
     assert_eq!(data, inserted);
 }
 

@@ -8,7 +8,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(columns::id, CountStar)`
-   = note: required because of the requirements on the impl of `SelectDsl<(columns::id, CountStar)>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `SelectDsl<(columns::id, CountStar)>` for `SelectStatement<FromClause<users::table>>`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
   --> $DIR/cannot_mix_aggregate_and_non_aggregate_selects.rs:22:24
@@ -20,7 +20,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::ops::Add<columns::nullable_int_col, aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>`
-   = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::ops::Add<columns::nullable_int_col, aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::ops::Add<columns::nullable_int_col, aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>` for `SelectStatement<FromClause<users::table>>`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
   --> $DIR/cannot_mix_aggregate_and_non_aggregate_selects.rs:24:24
@@ -34,4 +34,4 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `__Derived<columns::nullable_int_col, aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `f::f<columns::nullable_int_col, aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>`
-   = note: required because of the requirements on the impl of `SelectDsl<f::f<columns::nullable_int_col, aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `SelectDsl<f::f<columns::nullable_int_col, aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>` for `SelectStatement<FromClause<users::table>>`

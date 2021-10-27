@@ -5,7 +5,6 @@ use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;
 use diesel::*;
 use std::convert::TryInto;
-use std::io::Write;
 
 use helpers::connection;
 
@@ -35,10 +34,10 @@ where
 impl<DB, const N: usize> ToSql<Text, DB> for StringArray<N>
 where
     DB: Backend,
-    String: ToSql<Text, DB>,
+    str: ToSql<Text, DB>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
-        let string = std::str::from_utf8(&self.0).unwrap().to_owned();
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        let string = std::str::from_utf8(&self.0).unwrap();
 
         string.to_sql(out)
     }

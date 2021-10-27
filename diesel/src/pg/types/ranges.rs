@@ -108,7 +108,7 @@ impl<ST, T> ToSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let mut flags = match self.0 {
             Bound::Included(_) => RangeFlags::LB_INC,
             Bound::Excluded(_) => RangeFlags::empty(),
@@ -128,9 +128,8 @@ where
         match self.0 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
                 {
-                    let mut inner_buffer = Output::new(buffer, out.metadata_lookup());
+                    let mut inner_buffer = Output::new(&mut buffer, out.metadata_lookup());
                     value.to_sql(&mut inner_buffer)?;
-                    buffer = inner_buffer.into_inner();
                 }
                 out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
                 out.write_all(&buffer)?;
@@ -142,9 +141,8 @@ where
         match self.1 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
                 {
-                    let mut inner_buffer = Output::new(buffer, out.metadata_lookup());
+                    let mut inner_buffer = Output::new(&mut buffer, out.metadata_lookup());
                     value.to_sql(&mut inner_buffer)?;
-                    buffer = inner_buffer.into_inner();
                 }
                 out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
                 out.write_all(&buffer)?;
@@ -161,7 +159,7 @@ where
     ST: 'static,
     (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<Range<ST>, Pg>::to_sql(self, out)
     }
 }

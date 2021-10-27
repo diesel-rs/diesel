@@ -6,20 +6,18 @@ mod json;
 mod numeric;
 mod primitives;
 
-use byteorder::WriteBytesExt;
-use std::io::Write;
-
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlType, MysqlValue};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
-use crate::sql_types::ops::*;
 use crate::sql_types::*;
+use crate::sql_types::{self, ops::*};
+use byteorder::{NativeEndian, WriteBytesExt};
 
 pub use date_and_time::{MysqlTime, MysqlTimestampType};
 
 impl ToSql<TinyInt, Mysql> for i8 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         out.write_i8(*self).map(|_| IsNull::No).map_err(Into::into)
     }
 }
@@ -68,8 +66,8 @@ where
 }
 
 impl ToSql<Unsigned<TinyInt>, Mysql> for u8 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        ToSql::<TinyInt, Mysql>::to_sql(&(*self as i8), out)
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        ToSql::<TinyInt, Mysql>::to_sql(&(*self as i8), &mut out.reborrow())
     }
 }
 
@@ -81,8 +79,8 @@ impl FromSql<Unsigned<TinyInt>, Mysql> for u8 {
 }
 
 impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        ToSql::<SmallInt, Mysql>::to_sql(&(*self as i16), out)
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        ToSql::<SmallInt, Mysql>::to_sql(&(*self as i16), &mut out.reborrow())
     }
 }
 
@@ -94,8 +92,8 @@ impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
 }
 
 impl ToSql<Unsigned<Integer>, Mysql> for u32 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        ToSql::<Integer, Mysql>::to_sql(&(*self as i32), out)
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        ToSql::<Integer, Mysql>::to_sql(&(*self as i32), &mut out.reborrow())
     }
 }
 
@@ -107,8 +105,8 @@ impl FromSql<Unsigned<Integer>, Mysql> for u32 {
 }
 
 impl ToSql<Unsigned<BigInt>, Mysql> for u64 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-        ToSql::<BigInt, Mysql>::to_sql(&(*self as i64), out)
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        ToSql::<BigInt, Mysql>::to_sql(&(*self as i64), &mut out.reborrow())
     }
 }
 
@@ -120,15 +118,55 @@ impl FromSql<Unsigned<BigInt>, Mysql> for u64 {
 }
 
 impl ToSql<Bool, Mysql> for bool {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let int_value = if *self { 1 } else { 0 };
-        <i32 as ToSql<Integer, Mysql>>::to_sql(&int_value, out)
+        <i32 as ToSql<Integer, Mysql>>::to_sql(&int_value, &mut out.reborrow())
     }
 }
 
 impl FromSql<Bool, Mysql> for bool {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(bytes.as_bytes().iter().any(|x| *x != 0))
+    }
+}
+
+impl ToSql<sql_types::SmallInt, Mysql> for i16 {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        out.write_i16::<NativeEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<_>)
+    }
+}
+
+impl ToSql<sql_types::Integer, Mysql> for i32 {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        out.write_i32::<NativeEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<_>)
+    }
+}
+
+impl ToSql<sql_types::BigInt, Mysql> for i64 {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        out.write_i64::<NativeEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<_>)
+    }
+}
+
+impl ToSql<sql_types::Double, Mysql> for f64 {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        out.write_f64::<NativeEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<_>)
+    }
+}
+
+impl ToSql<sql_types::Float, Mysql> for f32 {
+    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        out.write_f32::<NativeEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<_>)
     }
 }
 

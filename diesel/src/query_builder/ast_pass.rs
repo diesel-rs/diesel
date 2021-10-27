@@ -1,6 +1,6 @@
-use std::{fmt, mem};
+use std::fmt;
 
-use crate::backend::Backend;
+use crate::backend::{Backend, HasBindCollector};
 use crate::query_builder::{BindCollector, QueryBuilder};
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
@@ -21,19 +21,21 @@ use crate::sql_types::HasSqlType;
 /// you to find out what the current pass is. You should simply call the
 /// relevant methods and trust that they will be a no-op if they're not relevant
 /// to the current pass.
-pub struct AstPass<'a, DB>
+pub struct AstPass<'a, 'b, DB>
 where
     DB: Backend,
     DB::QueryBuilder: 'a,
-    DB::BindCollector: 'a,
+    <DB as HasBindCollector<'a>>::BindCollector: 'a,
     DB::MetadataLookup: 'a,
+    'b: 'a,
 {
-    internals: AstPassInternals<'a, DB>,
+    internals: AstPassInternals<'a, 'b, DB>,
 }
 
-impl<'a, DB> AstPass<'a, DB>
+impl<'a, 'b, DB> AstPass<'a, 'b, DB>
 where
     DB: Backend,
+    'b: 'a,
 {
     #[doc(hidden)]
     #[allow(clippy::wrong_self_convention)]
@@ -45,7 +47,7 @@ where
 
     #[doc(hidden)]
     pub fn collect_binds(
-        collector: &'a mut DB::BindCollector,
+        collector: &'a mut <DB as HasBindCollector<'b>>::BindCollector,
         metadata_lookup: &'a mut DB::MetadataLookup,
     ) -> Self {
         AstPass {
@@ -64,7 +66,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn debug_binds(formatter: &'a mut fmt::DebugList<'a, 'a>) -> Self {
+    pub fn debug_binds(formatter: &'a mut fmt::DebugList<'b, 'b>) -> Self {
         AstPass {
             internals: AstPassInternals::DebugBinds(formatter),
         }
@@ -89,9 +91,7 @@ where
     /// done implicitly for references. For structs with lifetimes it must be
     /// done explicitly. This method matches the semantics of what Rust would do
     /// implicitly if you were passing a mutable reference
-    // Clippy is wrong, this cannot be expressed with pointer casting
-    #[allow(clippy::transmute_ptr_to_ptr)]
-    pub fn reborrow(&mut self) -> AstPass<DB> {
+    pub fn reborrow(&'_ mut self) -> AstPass<'_, 'b, DB> {
         let internals = match self.internals {
             AstPassInternals::ToSql(ref mut builder) => AstPassInternals::ToSql(&mut **builder),
             AstPassInternals::CollectBinds {
@@ -104,11 +104,7 @@ where
             AstPassInternals::IsSafeToCachePrepared(ref mut result) => {
                 AstPassInternals::IsSafeToCachePrepared(&mut **result)
             }
-            AstPassInternals::DebugBinds(ref mut f) => {
-                // Safe because the lifetime is always being shortened.
-                let f_with_shorter_lifetime = unsafe { mem::transmute(&mut **f) };
-                AstPassInternals::DebugBinds(f_with_shorter_lifetime)
-            }
+            AstPassInternals::DebugBinds(ref mut f) => AstPassInternals::DebugBinds(&mut **f),
             AstPassInternals::IsNoop(ref mut result) => AstPassInternals::IsNoop(&mut **result),
         };
         AstPass { internals }
@@ -155,7 +151,7 @@ where
     ///     Left: QueryFragment<DB>,
     ///     Right: QueryFragment<DB>,
     /// {
-    ///     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    ///     fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
     ///         self.left.walk_ast(out.reborrow())?;
     ///         out.push_sql(" AND ");
     ///         self.right.walk_ast(out.reborrow())?;
@@ -190,7 +186,7 @@ where
     /// This method affects multiple AST passes. It should be called at the
     /// point in the query where you'd want the parameter placeholder (`$1` on
     /// PG, `?` on other backends) to be inserted.
-    pub fn push_bind_param<T, U>(&mut self, bind: &U) -> QueryResult<()>
+    pub fn push_bind_param<T, U>(&mut self, bind: &'b U) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
@@ -211,7 +207,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn push_bind_param_value_only<T, U>(&mut self, bind: &U) -> QueryResult<()>
+    pub fn push_bind_param_value_only<T, U>(&mut self, bind: &'b U) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
@@ -234,19 +230,20 @@ where
 /// usage of the methods provided rather than matching on the enum directly.
 /// This essentially mimics the capabilities that would be available if
 /// `AstPass` were a trait.
-enum AstPassInternals<'a, DB>
+enum AstPassInternals<'a, 'b, DB>
 where
     DB: Backend,
     DB::QueryBuilder: 'a,
-    DB::BindCollector: 'a,
+    <DB as HasBindCollector<'a>>::BindCollector: 'a,
     DB::MetadataLookup: 'a,
+    'b: 'a,
 {
     ToSql(&'a mut DB::QueryBuilder),
     CollectBinds {
-        collector: &'a mut DB::BindCollector,
+        collector: &'a mut <DB as HasBindCollector<'b>>::BindCollector,
         metadata_lookup: &'a mut DB::MetadataLookup,
     },
     IsSafeToCachePrepared(&'a mut bool),
-    DebugBinds(&'a mut fmt::DebugList<'a, 'a>),
+    DebugBinds(&'a mut fmt::DebugList<'b, 'b>),
     IsNoop(&'a mut bool),
 }

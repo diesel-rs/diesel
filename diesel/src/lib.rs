@@ -217,9 +217,9 @@ pub mod helper_types {
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
 
     /// Represents the return type of `diesel::select(selection)`
-    pub type BareSelect<T> = Select<
-        crate::query_builder::SelectStatement<crate::query_builder::select_statement::NoFromClause>,
-        T,
+    pub type BareSelect<T> = crate::query_builder::SelectStatement<
+        crate::query_builder::NoFromClause,
+        crate::query_builder::select_clause::SelectClause<T>,
     >;
 
     /// Represents the return type of `.filter(predicate)`
