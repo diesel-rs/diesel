@@ -81,3 +81,20 @@ fn embedded_option() {
     let data = my_structs::table.select(A::as_select()).get_result(conn);
     assert!(data.is_err());
 }
+
+#[test]
+fn named_struct_definition_with_skip() {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
+    #[table_name = "my_structs"]
+    struct MyStruct {
+        foo: i32,
+        #[diesel(skip)]
+        bar: i32,
+    }
+
+    let conn = &mut connection();
+    let data = my_structs::table
+        .select(MyStruct::as_select())
+        .get_result(conn);
+    assert!(data.is_err());
+}

@@ -91,6 +91,10 @@ impl Field {
         self.flags.has_flag(flag)
     }
 
+    pub fn has_skip_flag(&self) -> bool {
+        self.has_flag("skip")
+    }
+
     pub fn ty_for_serialize(&self) -> Result<Option<syn::Type>, Diagnostic> {
         if let Some(meta) = self.flags.nested_item("serialize_as")? {
             let ty = meta.ty_value()?;
@@ -104,7 +108,7 @@ impl Field {
     pub fn ty_for_deserialize(&self) -> Result<Option<Cow<syn::Type>>, Diagnostic> {
         match (
             self.flags.nested_item("deserialize_as")?,
-            self.has_flag("skip"),
+            self.has_skip_flag(),
         ) {
             (Some(meta), false) => Ok(Some(Cow::Owned(meta.ty_value()?))),
             (None, false) => Ok(Some(Cow::Borrowed(&self.ty))),
