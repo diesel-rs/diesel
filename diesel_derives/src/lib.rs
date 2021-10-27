@@ -413,6 +413,9 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///   Then `Type` is converted via
 ///   [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
 ///   into the field type. By default this derive will deserialize directly into the field type
+/// * `[diesel(skip)]`, instead of deserializing anything into that type, deserialization will
+///   behave as if this field wasn't here, and it will simply be set using the `Default` impl
+///   of the type of the field.
 ///
 /// # Examples
 ///

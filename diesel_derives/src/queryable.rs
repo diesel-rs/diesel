@@ -12,14 +12,22 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let field_ty = model
         .fields()
         .iter()
-        .map(Field::ty_for_deserialize)
+        .filter_map(|f| Field::ty_for_deserialize(f).transpose())
         .collect::<Result<Vec<_>, _>>()?;
     let field_ty = &field_ty;
-    let build_expr = model.fields().iter().enumerate().map(|(i, f)| {
-        let i = syn::Index::from(i);
-        f.name.assign(parse_quote!(row.#i.try_into()?))
-    });
-    let sql_type = (0..model.fields().len())
+    let build_expr = {
+        let mut non_default_field_idx = 0;
+        model.fields().iter().map(move |f| {
+            f.name.assign(if f.has_flag("skip") {
+                parse_quote!(std::default::Default::default())
+            } else {
+                let i = syn::Index::from(non_default_field_idx);
+                non_default_field_idx += 1;
+                parse_quote!(row.#i.try_into()?)
+            })
+        })
+    };
+    let sql_type = (0..field_ty.len())
         .map(|i| {
             let i = syn::Ident::new(&format!("__ST{}", i), proc_macro2::Span::call_site());
             quote!(#i)
@@ -32,7 +40,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     generics
         .params
         .push(parse_quote!(__DB: diesel::backend::Backend));
-    for id in 0..model.fields().len() {
+    for id in 0..field_ty.len() {
         let ident = syn::Ident::new(&format!("__ST{}", id), proc_macro2::Span::call_site());
         generics.params.push(parse_quote!(#ident));
     }
