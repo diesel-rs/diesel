@@ -4,7 +4,8 @@ use std::io::Write;
 use std::os::raw as libc;
 use std::{mem, slice};
 
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, FromSql, FromSqlRow};
+use crate::expression::AsExpression;
 use crate::mysql::{Mysql, MysqlValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Datetime, Time, Timestamp};
@@ -17,8 +18,12 @@ use crate::sql_types::{Date, Datetime, Time, Timestamp};
 /// [MYSQL_TIME](https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__TIME.html)
 /// struct from libmysqlclient
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, AsExpression, FromSqlRow)]
 #[non_exhaustive]
+#[sql_type = "Timestamp"]
+#[sql_type = "Time"]
+#[sql_type = "Date"]
+#[sql_type = "Datetime"]
 pub struct MysqlTime {
     /// [Year field](https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__TIME.html#af585231d3ed0bc2fa389856e61e15d4e)
     pub year: libc::c_uint,
@@ -40,6 +45,21 @@ pub struct MysqlTime {
     pub time_type: MysqlTimestampType,
     /// [Time zone displacement specified is seconds](https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__TIME.html#a07f3c8e1989c9805ba919d2120c8fed4)
     pub time_zone_displacement: libc::c_int,
+}
+
+impl PartialEq for MysqlTime {
+    fn eq(&self, other: &Self) -> bool {
+        self.year == other.year
+            && self.month == other.month
+            && self.day == other.day
+            && self.hour == other.hour
+            && self.minute == other.minute
+            && self.second == other.second
+            && self.second_part == other.second_part
+            && self.neg == other.neg
+            //&& self.time_type == other.time_type
+            && self.time_zone_displacement == other.time_zone_displacement
+    }
 }
 
 impl MysqlTime {
@@ -248,6 +268,35 @@ impl FromSql<Date, Mysql> for NaiveDate {
             mysql_time.day as u32,
         )
         .ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
+    }
+}
+
+#[cfg(feature = "quickcheck")]
+impl quickcheck::Arbitrary for MysqlTime {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        let year = u32::arbitrary(g);
+        let month = u32::arbitrary(g);
+        let day = u32::arbitrary(g);
+        let hour = u32::arbitrary(g);
+        let minute = u32::arbitrary(g);
+        let second = u32::arbitrary(g);
+        let second_part = u64::arbitrary(g);
+        let neg = bool::arbitrary(g);
+
+        let time_type = g.choose(&[-2, -1, 0, 1, 2, 3]).expect("Slice is not empty");
+
+        Self {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            second_part,
+            neg,
+            time_type: MysqlTimestampType(*time_type),
+            time_zone_displacement: 0,
+        }
     }
 }
 

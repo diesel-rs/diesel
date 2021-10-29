@@ -247,18 +247,21 @@ mod tests {
     use crate::{select, sql_types};
 
     macro_rules! test_fn {
-        ($tpe:ty, $test_name:ident, $units:ident) => {
+        ($tpe:ty, $test_name:ident, $units:ident, $max_range: expr) => {
             fn $test_name(val: $tpe) -> bool {
+                if val > $max_range || val < (-1 as $tpe) * $max_range || (val as f64).is_nan() {
+                    return true;
+                }
                 let conn = &mut pg_connection();
                 let sql_str = format!(concat!("'{} ", stringify!($units), "'::interval"), val);
                 let query = select(sql::<sql_types::Interval>(&sql_str));
-                let val = val.$units();
+                let value = val.$units();
                 query
                     .get_result::<PgInterval>(conn)
                     .map(|res| {
-                        val.months == res.months
-                            && val.days == res.days
-                            && val.microseconds - res.microseconds.abs() <= 1
+                        value.months == res.months
+                            && value.days == res.days
+                            && (value.microseconds - res.microseconds).abs() <= 1
                     })
                     .unwrap_or(false)
             }
@@ -269,40 +272,44 @@ mod tests {
 
     #[test]
     fn intervals_match_pg_values_i32() {
-        test_fn!(i32, test_microseconds, microseconds);
-        test_fn!(i32, test_milliseconds, milliseconds);
-        test_fn!(i32, test_seconds, seconds);
-        test_fn!(i32, test_minutes, minutes);
-        test_fn!(i32, test_hours, hours);
-        test_fn!(i32, test_days, days);
-        test_fn!(i32, test_weeks, weeks);
-        test_fn!(i32, test_months, months);
-        test_fn!(i32, test_years, years);
+        test_fn!(i32, test_microseconds, microseconds, i32::MAX);
+        test_fn!(i32, test_milliseconds, milliseconds, i32::MAX);
+        test_fn!(i32, test_seconds, seconds, i32::MAX);
+        test_fn!(i32, test_minutes, minutes, i32::MAX);
+        test_fn!(i32, test_hours, hours, i32::MAX);
+        test_fn!(i32, test_days, days, i32::MAX);
+        test_fn!(i32, test_weeks, weeks, i32::MAX / 7);
+        test_fn!(i32, test_months, months, i32::MAX);
+        test_fn!(i32, test_years, years, i32::MAX / 12);
     }
 
     #[test]
     fn intervals_match_pg_values_i64() {
-        test_fn!(i64, test_microseconds, microseconds);
-        test_fn!(i64, test_milliseconds, milliseconds);
-        test_fn!(i64, test_seconds, seconds);
-        test_fn!(i64, test_minutes, minutes);
-        test_fn!(i64, test_hours, hours);
-        test_fn!(i64, test_days, days);
-        test_fn!(i64, test_weeks, weeks);
-        test_fn!(i64, test_months, months);
-        test_fn!(i64, test_years, years);
+        // postgres does not really support intervals with more than i32::MAX microseconds
+        // https://www.postgresql.org/message-id/20140126025049.GL9750@momjian.us
+        test_fn!(i64, test_microseconds, microseconds, i32::MAX as i64);
+        test_fn!(i64, test_milliseconds, milliseconds, i32::MAX as i64);
+        test_fn!(i64, test_seconds, seconds, i32::MAX as i64);
+        test_fn!(i64, test_minutes, minutes, i32::MAX as i64);
+        test_fn!(i64, test_hours, hours, i32::MAX as i64);
+        test_fn!(i64, test_days, days, i32::MAX as i64);
+        test_fn!(i64, test_weeks, weeks, (i32::MAX / 7) as i64);
+        test_fn!(i64, test_months, months, i32::MAX as i64);
+        test_fn!(i64, test_years, years, (i32::MAX / 12) as i64);
     }
 
     #[test]
     fn intervals_match_pg_values_f64() {
-        test_fn!(f64, test_microseconds, microseconds);
-        test_fn!(f64, test_milliseconds, milliseconds);
-        test_fn!(f64, test_seconds, seconds);
-        test_fn!(f64, test_minutes, minutes);
-        test_fn!(f64, test_hours, hours);
-        test_fn!(f64, test_days, days);
-        test_fn!(f64, test_weeks, weeks);
-        test_fn!(f64, test_months, months);
-        test_fn!(f64, test_years, years);
+        // postgres does not really support intervals with more than i32::MAX microseconds
+        // https://www.postgresql.org/message-id/20140126025049.GL9750@momjian.us
+        test_fn!(f64, test_microseconds, microseconds, i32::MAX as f64);
+        test_fn!(f64, test_milliseconds, milliseconds, i32::MAX as f64);
+        test_fn!(f64, test_seconds, seconds, i32::MAX as f64);
+        test_fn!(f64, test_minutes, minutes, i32::MAX as f64);
+        test_fn!(f64, test_hours, hours, i32::MAX as f64);
+        test_fn!(f64, test_days, days, i32::MAX as f64);
+        test_fn!(f64, test_weeks, weeks, (i32::MAX / 7) as f64);
+        test_fn!(f64, test_months, months, i32::MAX as f64);
+        test_fn!(f64, test_years, years, (i32::MAX / 12) as f64);
     }
 }
