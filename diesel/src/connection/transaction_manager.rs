@@ -457,4 +457,274 @@ mod test {
             Err(DatabaseError(SerializationFailure, _))
         ));
     }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::*;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let result: Result<_, Error> = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_constraint_commit").execute(conn)?;
+            sql_query("CREATE TABLE deferred_constraint_commit(id INT UNIQUE INITIALLY DEFERRED)")
+                .execute(conn)?;
+            sql_query("INSERT INTO deferred_constraint_commit VALUES(1)").execute(conn)?;
+            let result =
+                sql_query("INSERT INTO deferred_constraint_commit VALUES(1)").execute(conn);
+            assert!(result.is_ok());
+            Ok(())
+        });
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::*;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let result: Result<_, Error> = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_trigger_commit").execute(conn)?;
+            sql_query("CREATE TABLE deferred_trigger_commit(id INT UNIQUE INITIALLY DEFERRED)")
+                .execute(conn)?;
+            sql_query(
+                r#"
+                    CREATE OR REPLACE FUNCTION transaction_depth_blow_up()
+                        RETURNS trigger
+                        LANGUAGE plpgsql
+                        AS $$
+                    DECLARE
+                    BEGIN
+                        IF NEW.value = 42 THEN
+                            RAISE EXCEPTION 'Transaction kaboom';
+                        END IF;
+                    RETURN NEW;
+
+                    END;$$;
+                "#,
+            )
+            .execute(conn)?;
+
+            sql_query(
+                r#"
+                    CREATE CONSTRAINT TRIGGER transaction_depth_trigger
+                        AFTER INSERT ON "deferred_trigger_commit"
+                        DEFERRABLE INITIALLY DEFERRED
+                        FOR EACH ROW
+                        EXECUTE PROCEDURE transaction_depth_blow_up()
+            "#,
+            )
+            .execute(conn)?;
+            let result = sql_query("INSERT INTO deferred_trigger_commit VALUES(42)").execute(conn);
+            assert!(result.is_ok());
+            Ok(())
+        });
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn nested_postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::*;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let result: Result<_, Error> = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_trigger_nested_commit").execute(conn)?;
+            sql_query(
+                "CREATE TABLE deferred_trigger_nested_commit(id INT UNIQUE INITIALLY DEFERRED)",
+            )
+            .execute(conn)?;
+            sql_query(
+                r#"
+                    CREATE OR REPLACE FUNCTION transaction_depth_blow_up()
+                        RETURNS trigger
+                        LANGUAGE plpgsql
+                        AS $$
+                    DECLARE
+                    BEGIN
+                        IF NEW.value = 42 THEN
+                            RAISE EXCEPTION 'Transaction kaboom';
+                        END IF;
+                    RETURN NEW;
+
+                    END;$$;
+                "#,
+            )
+            .execute(conn)?;
+
+            sql_query(
+                r#"
+                    CREATE CONSTRAINT TRIGGER transaction_depth_trigger
+                        AFTER INSERT ON "deferred_trigger_nested_commit"
+                        DEFERRABLE INITIALLY DEFERRED
+                        FOR EACH ROW
+                        EXECUTE PROCEDURE transaction_depth_blow_up()
+            "#,
+            )
+            .execute(conn)?;
+            let inner_result: Result<_, Error> = conn.build_transaction().run(|conn| {
+                let result = sql_query("INSERT INTO deferred_trigger_nested_commit VALUES(42)")
+                    .execute(conn);
+                assert!(result.is_ok());
+                Ok(())
+            });
+            assert!(inner_result.is_err());
+            Ok(())
+        });
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        assert!(result.is_ok(), "Expected success, got {:?}", result);
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn nested_postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::*;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let result: Result<_, Error> = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_constraint_nested_commit").execute(conn)?;
+            sql_query("CREATE TABLE deferred_constraint_nested_commit(id INT UNIQUE INITIALLY DEFERRED)").execute(conn)?;
+            let inner_result: Result<_, Error> = conn.build_transaction().run(|conn| {
+                assert_eq!(
+                    2,
+                    <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                        conn
+                    )
+                );
+                sql_query("INSERT INTO deferred_constraint_nested_commit VALUES(1)").execute(conn)?;
+                let result = sql_query("INSERT INTO deferred_constraint_nested_commit VALUES(1)").execute(conn);
+                assert!(result.is_ok());
+                Ok(())
+            });
+            assert!(inner_result.is_err());
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            sql_query("INSERT INTO deferred_constraint_nested_commit VALUES(1)").execute(conn)
+        });
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    #[cfg(feature = "sqlite")]
+    fn sqlite_transaction_is_rolled_back_upon_deferred_constraint_failure() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::*;
+        let conn = &mut crate::test_helpers::connection();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<SqliteConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let result: Result<_, Error> = conn.transaction(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<SqliteConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_commit").execute(conn)?;
+            sql_query("CREATE TABLE deferred_commit(id INT UNIQUE INITIALLY DEFERRED)").execute(conn)?;
+            sql_query("INSERT INTO deferred_commit VALUES(1)").execute(conn)?;
+            let result = sql_query("INSERT INTO deferred_commit VALUES(1)").execute(conn);
+            assert!(result.is_ok());
+            Ok(())
+        });
+        assert!(result.is_err());
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<SqliteConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+    }
 }
