@@ -141,7 +141,7 @@ where
                 // To mirror the behaviour above we attempt to rollback
                 // to the last savepoint if we hit such a case
                 Err(Error::DatabaseError(DatabaseErrorKind::Unknown, msg))
-                    if msg.message().starts_with("current transaction is aborted") =>
+                    if conn.is_transaction_broken() =>
                 {
                     let r = conn.batch_execute(&format!(
                         "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
@@ -170,6 +170,204 @@ mod test {
                 _ => false
             }
         }
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn postgres_transaction_is_rolled_back_upon_syntax_error() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::*;
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let _result = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            // In Postgres, a syntax error breaks the transaction block
+            let query_result = sql_query("SELECT_SYNTAX_ERROR 1").execute(conn);
+            assert!(query_result.is_err());
+            query_result
+        });
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "mysql")]
+    fn mysql_transaction_is_rolled_back_upon_syntax_error() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::*;
+        let conn = &mut crate::test_helpers::connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<MysqlConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let _result = conn.transaction(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<MysqlConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            // In MySQL, a syntax error does not break the transaction block
+            let query_result = sql_query("SELECT_SYNTAX_ERROR 1").execute(conn);
+            assert!(query_result.is_err());
+            query_result
+        });
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<MysqlConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "sqlite")]
+    fn sqlite_transaction_is_rolled_back_upon_syntax_error() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::*;
+        let conn = &mut crate::test_helpers::connection();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<SqliteConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let _result = conn.transaction(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<SqliteConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            // In Sqlite, a syntax error does not break the transaction block
+            let query_result = sql_query("SELECT_SYNTAX_ERROR 1").execute(conn);
+            assert!(query_result.is_err());
+            query_result
+        });
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<SqliteConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn nested_postgres_transaction_is_rolled_back_upon_syntax_error() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::*;
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let result = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            let result = conn.build_transaction().run(|conn| {
+                assert_eq!(
+                    2,
+                    <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                        conn
+                    )
+                );
+                sql_query("SELECT_SYNTAX_ERROR 1").execute(conn)
+            });
+            assert!(result.is_err());
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            let query_result = sql_query("SELECT 1").execute(conn);
+            assert!(query_result.is_ok());
+            query_result
+        });
+        assert!(result.is_ok());
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "mysql")]
+    fn nested_mysql_transaction_is_rolled_back_upon_syntax_error() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::*;
+        let conn = &mut crate::test_helpers::connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<MysqlConnection>>::get_transaction_depth(
+                conn
+            )
+        );
+        let result = conn.transaction(|conn| {
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<MysqlConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            let result = conn.transaction(|conn| {
+                assert_eq!(
+                    2,
+                    <AnsiTransactionManager as TransactionManager<MysqlConnection>>::get_transaction_depth(
+                        conn
+                    )
+                );
+                // In MySQL, a syntax error does not break the transaction block
+                sql_query("SELECT_SYNTAX_ERROR 1").execute(conn)
+            });
+            assert!(result.is_err());
+            assert_eq!(
+                1,
+                <AnsiTransactionManager as TransactionManager<MysqlConnection>>::get_transaction_depth(
+                    conn
+                )
+            );
+            let query_result = sql_query("SELECT 1").execute(conn);
+            assert!(query_result.is_ok());
+            query_result
+        });
+        assert!(result.is_ok());
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<MysqlConnection>>::get_transaction_depth(
+                conn
+            )
+        );
     }
 
     #[test]

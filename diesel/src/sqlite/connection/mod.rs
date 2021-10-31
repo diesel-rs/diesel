@@ -60,6 +60,12 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Sqlite> for SqliteCon
     type Row = self::row::SqliteRow<'conn, 'query>;
 }
 
+impl TransactionalConnection for SqliteConnection {
+    fn is_transaction_broken(&self) -> bool {
+        false
+    }
+}
+
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
     type TransactionManager = AnsiTransactionManager;

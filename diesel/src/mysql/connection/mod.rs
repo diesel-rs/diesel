@@ -37,6 +37,12 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Mysql> for MysqlConne
     type Row = self::stmt::iterator::MysqlRow;
 }
 
+impl TransactionalConnection for MysqlConnection {
+    fn is_transaction_broken(&self) -> bool {
+        false
+    }
+}
+
 impl Connection for MysqlConnection {
     type Backend = Mysql;
     type TransactionManager = AnsiTransactionManager;

@@ -48,6 +48,12 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection 
     type Row = self::row::PgRow;
 }
 
+impl TransactionalConnection for PgConnection {
+    fn is_transaction_broken(&self) -> bool {
+        unsafe { self.raw_connection.is_transaction_broken() }
+    }
+}
+
 impl Connection for PgConnection {
     type Backend = Pg;
     type TransactionManager = AnsiTransactionManager;

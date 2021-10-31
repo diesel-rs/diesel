@@ -98,6 +98,11 @@ impl RawConnection {
         );
         RawResult::new(ptr, self)
     }
+
+    pub unsafe fn is_transaction_broken(&self) -> bool {
+        let result = PQtransactionStatus(self.internal_connection.as_ptr());
+        result == PGTransactionStatusType::PQTRANS_INERROR
+    }
 }
 
 pub type NoticeProcessor = extern "C" fn(arg: *mut libc::c_void, message: *const libc::c_char);
