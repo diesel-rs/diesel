@@ -1,5 +1,6 @@
 //! Types related to database connections
 
+pub mod commit_error_processor;
 mod statement_cache;
 mod transaction_manager;
 
@@ -39,15 +40,8 @@ pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend> {
     type Row: crate::row::Row<'conn, DB>;
 }
 
-/// Methods necessary for the transaction manager
-pub trait TransactionalConnection {
-    /// Returns `true` is the transaction is broken
-    /// Only relevant for Postgres
-    fn is_transaction_broken(&self) -> bool;
-}
-
 /// A connection to a database
-pub trait Connection: SimpleConnection + TransactionalConnection + Sized + Send
+pub trait Connection: SimpleConnection + Sized + Send
 where
     Self: for<'a, 'b> ConnectionGatWorkaround<'a, 'b, <Self as Connection>::Backend>,
 {

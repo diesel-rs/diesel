@@ -1,5 +1,6 @@
+use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::Connection;
-use crate::result::{DatabaseErrorKind, Error, QueryResult};
+use crate::result::QueryResult;
 
 /// Manages the internal transaction state for a connection.
 ///
@@ -63,7 +64,7 @@ impl AnsiTransactionManager {
     /// Returns an error if already inside of a transaction.
     pub fn begin_transaction_sql<Conn>(conn: &mut Conn, sql: &str) -> QueryResult<()>
     where
-        Conn: Connection<TransactionManager = Self>,
+        Conn: Connection<TransactionManager = Self> + CommitErrorProcessor,
     {
         use crate::result::Error::AlreadyInTransaction;
 
@@ -78,7 +79,7 @@ impl AnsiTransactionManager {
 
 impl<Conn> TransactionManager<Conn> for AnsiTransactionManager
 where
-    Conn: Connection<TransactionManager = Self>,
+    Conn: Connection<TransactionManager = Self> + CommitErrorProcessor,
 {
     type TransactionStateData = Self;
 
@@ -114,25 +115,35 @@ where
         let transaction_depth = conn.transaction_state().transaction_depth;
         if transaction_depth <= 1 {
             match conn.batch_execute("COMMIT") {
-                // When any of these kinds of error happen on `COMMIT`, it is expected
-                // that a `ROLLBACK` would succeed, leaving the transaction in a non-broken state.
-                // If there are other such errors, it is fine to add them here.
-                e @ Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _))
-                | e @ Err(Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)) => {
-                    let r = conn.batch_execute("ROLLBACK");
-                    conn.transaction_state().change_transaction_depth(-1, r)?;
-                    e
+                Ok(()) => {
+                    let _r = conn
+                        .transaction_state()
+                        .change_transaction_depth(-1, Ok(()));
+                    Ok(())
                 }
-                result => conn
-                    .transaction_state()
-                    .change_transaction_depth(-1, result),
+                Err(error) => {
+                    let error = match conn.process_commit_error(transaction_depth, error) {
+                        CommitErrorOutcome::RollbackAndThrow(error) => {
+                            let r = conn.batch_execute("ROLLBACK");
+                            conn.transaction_state().change_transaction_depth(-1, r)?;
+                            error
+                        }
+                        CommitErrorOutcome::Throw(error) => {
+                            let _r = conn
+                                .transaction_state()
+                                .change_transaction_depth(-1, Ok(()));
+                            error
+                        }
+                    };
+                    Err(error)
+                }
             }
         } else {
             match conn.batch_execute(&format!(
                 "RELEASE SAVEPOINT diesel_savepoint_{}",
                 transaction_depth - 1,
             )) {
-                Ok(_) => conn
+                Ok(()) => conn
                     .transaction_state()
                     .change_transaction_depth(-1, Ok(())),
                 // Postgres treats error (like syntax errors, missing tables, …)
@@ -140,17 +151,21 @@ where
                 // transaction is aborted or we've done a rollback
                 // To mirror the behaviour above we attempt to rollback
                 // to the last savepoint if we hit such a case
-                Err(Error::DatabaseError(DatabaseErrorKind::Unknown, msg))
-                    if conn.is_transaction_broken() =>
-                {
-                    let r = conn.batch_execute(&format!(
-                        "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                        transaction_depth - 1
-                    ));
-                    conn.transaction_state().change_transaction_depth(-1, r)?;
-                    Err(Error::DatabaseError(DatabaseErrorKind::Unknown, msg))
-                }
-                Err(e) => panic!("{}", e),
+                Err(error) => match conn.process_commit_error(transaction_depth, error) {
+                    CommitErrorOutcome::RollbackAndThrow(error) => {
+                        let _r = conn.batch_execute(&format!(
+                            "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                            transaction_depth - 1
+                        ));
+                        let _r = conn
+                            .transaction_state()
+                            .change_transaction_depth(-1, Ok(()));
+                        Err(error)
+                    }
+                    CommitErrorOutcome::Throw(error) => {
+                        panic!("{}", error)
+                    }
+                },
             }
         }
     }

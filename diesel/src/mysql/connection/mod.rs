@@ -8,6 +8,7 @@ use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use crate::connection::commit_error_processor::CommitErrorProcessor;
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
@@ -37,11 +38,7 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Mysql> for MysqlConne
     type Row = self::stmt::iterator::MysqlRow;
 }
 
-impl TransactionalConnection for MysqlConnection {
-    fn is_transaction_broken(&self) -> bool {
-        false
-    }
-}
+impl CommitErrorProcessor for MysqlConnection {}
 
 impl Connection for MysqlConnection {
     type Backend = Mysql;

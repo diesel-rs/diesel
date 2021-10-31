@@ -9,9 +9,10 @@ use std::ffi::CString;
 use std::os::raw as libc;
 
 use self::cursor::*;
-use self::raw::RawConnection;
+use self::raw::{PgTransactionStatus, RawConnection};
 use self::result::PgResult;
 use self::stmt::Statement;
+use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
@@ -48,9 +49,33 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection 
     type Row = self::row::PgRow;
 }
 
-impl TransactionalConnection for PgConnection {
-    fn is_transaction_broken(&self) -> bool {
-        unsafe { self.raw_connection.is_transaction_broken() }
+impl CommitErrorProcessor for PgConnection {
+    fn process_commit_error(&self, transaction_depth: i32, error: Error) -> CommitErrorOutcome {
+        if matches!(
+            error,
+            Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
+        ) {
+            return CommitErrorOutcome::Throw(error);
+        }
+        if transaction_depth <= 1 {
+            match error {
+                Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
+                | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _) => {
+                    CommitErrorOutcome::RollbackAndThrow(error)
+                }
+                _ => CommitErrorOutcome::Throw(error),
+            }
+        } else {
+            let transaction_status = self.raw_connection.transaction_status();
+            match error {
+                Error::DatabaseError(DatabaseErrorKind::Unknown, _)
+                    if transaction_status == PgTransactionStatus::InError =>
+                {
+                    CommitErrorOutcome::RollbackAndThrow(error)
+                }
+                _ => CommitErrorOutcome::Throw(error),
+            }
+        }
     }
 }
 

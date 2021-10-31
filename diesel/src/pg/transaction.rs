@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::backend::Backend;
+use crate::connection::commit_error_processor::CommitErrorProcessor;
 use crate::connection::{AnsiTransactionManager, TransactionManager};
 use crate::pg::Pg;
 use crate::prelude::*;
@@ -26,7 +27,7 @@ pub struct TransactionBuilder<'a, C> {
 
 impl<'a, C> TransactionBuilder<'a, C>
 where
-    C: Connection<Backend = Pg, TransactionManager = AnsiTransactionManager>,
+    C: Connection<Backend = Pg, TransactionManager = AnsiTransactionManager> + CommitErrorProcessor,
 {
     pub(crate) fn new(connection: &'a mut C) -> Self {
         Self {
