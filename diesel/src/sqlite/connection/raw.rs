@@ -113,7 +113,7 @@ impl RawConnection {
                 Some(run_custom_function::<F>),
                 None,
                 None,
-                Some(destroy_boxed::<F>),
+                Some(destroy_boxed::<CustomFunctionUserPtr<F>>),
             )
         };
 
@@ -172,13 +172,13 @@ impl RawConnection {
                 ffi::SQLITE_UTF8,
                 callback_fn as *mut _,
                 Some(run_collation_function::<F>),
-                Some(destroy_boxed::<F>),
+                Some(destroy_boxed::<CollationUserPtr<F>>),
             )
         };
 
         let result = Self::process_sql_function_result(result);
         if result.is_err() {
-            destroy_boxed::<F>(callback_fn as *mut _);
+            destroy_boxed::<CollationUserPtr<F>>(callback_fn as *mut _);
         }
         result
     }

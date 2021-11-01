@@ -138,10 +138,10 @@ impl<'a> Drop for FunctionRow<'a> {
             if let PrivateSqliteRow::Duplicated { column_names, .. } =
                 DerefMut::deref_mut(RefCell::get_mut(args))
             {
-                if let Some(inner) = Rc::get_mut(column_names) {
+                if Rc::strong_count(column_names) == 1 {
                     // According the https://doc.rust-lang.org/std/mem/struct.ManuallyDrop.html#method.drop
                     // it's fine to just drop the values here
-                    unsafe { std::ptr::drop_in_place(inner as *mut _) }
+                    unsafe { std::ptr::drop_in_place(column_names as *mut _) }
                 }
             }
         }
