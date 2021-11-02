@@ -9,7 +9,9 @@ mod quaint_benches;
 mod rusqlite_benches;
 #[cfg(feature = "rustorm")]
 mod rust_orm_benches;
-#[cfg(feature = "sqlx")]
+#[cfg(feature = "sea-orm")]
+mod sea_orm_benches;
+#[cfg(feature = "sqlx-bench")]
 mod sqlx_benches;
 
 use criterion::{BenchmarkId, Criterion};
@@ -69,7 +71,7 @@ fn bench_trivial_query(c: &mut Criterion) {
             crate::quaint_benches::bench_trivial_query(b, *i);
         });
 
-        #[cfg(feature = "sqlx")]
+        #[cfg(feature = "sqlx-bench")]
         group.bench_with_input(
             BenchmarkId::new("sqlx_query_as_macro", size),
             size,
@@ -77,7 +79,7 @@ fn bench_trivial_query(c: &mut Criterion) {
                 crate::sqlx_benches::bench_trivial_query_query_as_macro(b, *i);
             },
         );
-        #[cfg(feature = "sqlx")]
+        #[cfg(feature = "sqlx-bench")]
         group.bench_with_input(
             BenchmarkId::new("sqlx_query_from_row", size),
             size,
@@ -115,6 +117,11 @@ fn bench_trivial_query(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("mysql_by_name", size), size, |b, i| {
             crate::mysql_benches::bench_trivial_query_by_name(b, *i);
         });
+
+        #[cfg(feature = "sea-orm")]
+        group.bench_with_input(BenchmarkId::new("sea-orm", size), size, |b, i| {
+            crate::sea_orm_benches::bench_trivial_query(b, *i);
+        });
     }
 
     group.finish();
@@ -141,7 +148,7 @@ fn bench_medium_complex_query(c: &mut Criterion) {
             crate::quaint_benches::bench_medium_complex_query(b, *i);
         });
 
-        #[cfg(feature = "sqlx")]
+        #[cfg(feature = "sqlx-bench")]
         group.bench_with_input(
             BenchmarkId::new("sqlx_query_as_macro", size),
             size,
@@ -150,7 +157,7 @@ fn bench_medium_complex_query(c: &mut Criterion) {
             },
         );
 
-        #[cfg(feature = "sqlx")]
+        #[cfg(feature = "sqlx-bench")]
         group.bench_with_input(
             BenchmarkId::new("sqlx_query_from_row", size),
             size,
@@ -191,6 +198,11 @@ fn bench_medium_complex_query(c: &mut Criterion) {
         group.bench_with_input(BenchmarkId::new("mysql_by_name", size), size, |b, i| {
             crate::mysql_benches::bench_medium_complex_query_by_name(b, *i);
         });
+
+        #[cfg(feature = "sea-orm")]
+        group.bench_with_input(BenchmarkId::new("sea-orm", size), size, |b, i| {
+            crate::sea_orm_benches::bench_medium_complex_query(b, *i);
+        });
     }
 
     group.finish();
@@ -213,7 +225,7 @@ fn bench_loading_associations_sequentially(c: &mut Criterion) {
         crate::rusqlite_benches::loading_associations_sequentially(b)
     });
 
-    #[cfg(feature = "sqlx")]
+    #[cfg(feature = "sqlx-bench")]
     group.bench_function("sqlx", |b| {
         crate::sqlx_benches::loading_associations_sequentially(b)
     });
@@ -233,6 +245,11 @@ fn bench_loading_associations_sequentially(c: &mut Criterion) {
         crate::mysql_benches::loading_associations_sequentially(b)
     });
 
+    #[cfg(feature = "sea-orm")]
+    group.bench_function("sea-orm", |b| {
+        crate::sea_orm_benches::loading_associations_sequentially(b);
+    });
+
     group.finish();
 }
 
@@ -244,7 +261,7 @@ fn bench_insert(c: &mut Criterion) {
             crate::diesel_benches::bench_insert(b, *i);
         });
 
-        #[cfg(feature = "sqlx")]
+        #[cfg(feature = "sqlx-bench")]
         group.bench_with_input(BenchmarkId::new("sqlx", size), size, |b, i| {
             crate::sqlx_benches::bench_insert(b, *i);
         });
@@ -272,6 +289,11 @@ fn bench_insert(c: &mut Criterion) {
         #[cfg(all(feature = "mysql", feature = "rust_mysql"))]
         group.bench_with_input(BenchmarkId::new("mysql", size), size, |b, i| {
             crate::mysql_benches::bench_insert(b, *i);
+        });
+
+        #[cfg(feature = "sea-orm")]
+        group.bench_with_input(BenchmarkId::new("sea-orm", size), size, |b, i| {
+            crate::sea_orm_benches::bench_insert(b, *i);
         });
     }
 

@@ -1,21 +1,27 @@
-error[E0277]: the trait bound `Sqlite: SupportsReturningClause` is not satisfied
+error[E0277]: the trait bound `ReturningClause<(columns::id, columns::name)>: QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not satisfied
   --> $DIR/insert_statement_does_not_support_returning_methods_on_sqlite.rs:29:10
    |
 29 |         .get_result::<User>(&mut connection);
-   |          ^^^^^^^^^^ the trait `SupportsReturningClause` is not implemented for `Sqlite`
+   |          ^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<(columns::id, columns::name)>`
    |
-   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::query_builder::returning_clause::ReturningClause<(columns::id, columns::name)>`
+   = help: the following implementations were found:
+             <ReturningClause<Expr> as QueryFragment<DB, PgLikeReturningClause>>
+             <ReturningClause<Expr> as QueryFragment<DB>>
+   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `ReturningClause<(columns::id, columns::name)>`
    = note: 1 redundant requirements hidden
-   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<(columns::id, columns::name)>>`
+   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<(columns::id, columns::name)>>`
    = note: required because of the requirements on the impl of `LoadQuery<SqliteConnection, User>` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>>`
 
-error[E0277]: the trait bound `Sqlite: SupportsReturningClause` is not satisfied
+error[E0277]: the trait bound `ReturningClause<columns::name>: QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not satisfied
   --> $DIR/insert_statement_does_not_support_returning_methods_on_sqlite.rs:34:10
    |
 34 |         .get_result::<String>(&mut connection);
-   |          ^^^^^^^^^^ the trait `SupportsReturningClause` is not implemented for `Sqlite`
+   |          ^^^^^^^^^^ the trait `QueryFragment<Sqlite, DoesNotSupportReturningClause>` is not implemented for `ReturningClause<columns::name>`
    |
-   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::query_builder::returning_clause::ReturningClause<columns::name>`
+   = help: the following implementations were found:
+             <ReturningClause<Expr> as QueryFragment<DB, PgLikeReturningClause>>
+             <ReturningClause<Expr> as QueryFragment<DB>>
+   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `ReturningClause<columns::name>`
    = note: 1 redundant requirements hidden
-   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<columns::name>>`
-   = note: required because of the requirements on the impl of `LoadQuery<SqliteConnection, std::string::String>` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<columns::name>>`
+   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<columns::name>>`
+   = note: required because of the requirements on the impl of `LoadQuery<SqliteConnection, std::string::String>` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<columns::name>>`

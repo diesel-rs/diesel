@@ -1,38 +1,36 @@
+use crate::backend::sql_dialect;
 use crate::backend::Backend;
+use crate::backend::SqlDialect;
+use crate::expression::bound::Bound;
 use crate::expression::subselect::Subselect;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_builder::{BoxedSelectStatement, SelectStatement};
 use crate::result::QueryResult;
 use crate::sql_types::Bool;
+use std::marker::PhantomData;
 
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct In<T, U> {
-    left: T,
-    values: U,
+    pub(crate) left: T,
+    pub(crate) values: U,
 }
 
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct NotIn<T, U> {
-    left: T,
-    values: U,
+    pub(crate) left: T,
+    pub(crate) values: U,
 }
 
 impl<T, U> In<T, U> {
     pub fn new(left: T, values: U) -> Self {
-        In {
-            left: left,
-            values: values,
-        }
+        In { left, values }
     }
 }
 
 impl<T, U> NotIn<T, U> {
     pub fn new(left: T, values: U) -> Self {
-        NotIn {
-            left: left,
-            values: values,
-        }
+        NotIn { left, values }
     }
 }
 
@@ -55,6 +53,18 @@ where
 impl<T, U, DB> QueryFragment<DB> for In<T, U>
 where
     DB: Backend,
+    Self: QueryFragment<DB, DB::ArrayComparision>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
+    }
+}
+
+impl<T, U, DB> QueryFragment<DB, sql_dialect::array_comparision::AnsiSqlArrayComparison>
+    for In<T, U>
+where
+    DB: Backend
+        + SqlDialect<ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison>,
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
@@ -74,6 +84,18 @@ where
 impl<T, U, DB> QueryFragment<DB> for NotIn<T, U>
 where
     DB: Backend,
+    Self: QueryFragment<DB, DB::ArrayComparision>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
+    }
+}
+
+impl<T, U, DB> QueryFragment<DB, sql_dialect::array_comparision::AnsiSqlArrayComparison>
+    for NotIn<T, U>
+where
+    DB: Backend
+        + SqlDialect<ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison>,
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
@@ -108,14 +130,10 @@ where
     T: AsExpression<ST>,
     ST: SqlType + TypedExpressionType,
 {
-    type InExpression = Many<T::Expression>;
+    type InExpression = Many<ST, T>;
 
     fn as_in_expression(self) -> Self::InExpression {
-        let expressions = self
-            .into_iter()
-            .map(<T as AsExpression<ST>>::as_expression)
-            .collect();
-        Many(expressions)
+        Many(self.into_iter().collect(), PhantomData)
     }
 }
 
@@ -149,37 +167,66 @@ where
     }
 }
 
-#[derive(Debug, Clone, ValidGrouping)]
-pub struct Many<T>(Vec<T>);
+#[derive(Debug, Clone)]
+pub struct Many<ST, I>(pub(crate) Vec<I>, PhantomData<ST>);
 
-impl<T: Expression> Expression for Many<T> {
-    type SqlType = T::SqlType;
+impl<ST, I, GB> ValidGrouping<GB> for Many<ST, I>
+where
+    ST: SingleValue,
+    I: AsExpression<ST>,
+    I::Expression: ValidGrouping<GB>,
+{
+    type IsAggregate = <I::Expression as ValidGrouping<GB>>::IsAggregate;
 }
 
-impl<T> MaybeEmpty for Many<T> {
+impl<ST, I> Expression for Many<ST, I>
+where
+    ST: TypedExpressionType,
+{
+    type SqlType = ST;
+}
+
+impl<ST, I> MaybeEmpty for Many<ST, I> {
     fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 }
 
-impl<T, QS> SelectableExpression<QS> for Many<T>
+impl<ST, I, QS> SelectableExpression<QS> for Many<ST, I>
 where
-    Many<T>: AppearsOnTable<QS>,
-    T: SelectableExpression<QS>,
+    Many<ST, I>: AppearsOnTable<QS>,
+    ST: SingleValue,
+    I: AsExpression<ST>,
+    <I as AsExpression<ST>>::Expression: SelectableExpression<QS>,
 {
 }
 
-impl<T, QS> AppearsOnTable<QS> for Many<T>
+impl<ST, I, QS> AppearsOnTable<QS> for Many<ST, I>
 where
-    Many<T>: Expression,
-    T: AppearsOnTable<QS>,
+    Many<ST, I>: Expression,
+    I: AsExpression<ST>,
+    ST: SingleValue,
+    <I as AsExpression<ST>>::Expression: SelectableExpression<QS>,
 {
 }
 
-impl<T, DB> QueryFragment<DB> for Many<T>
+impl<ST, I, DB> QueryFragment<DB> for Many<ST, I>
 where
+    Self: QueryFragment<DB, DB::ArrayComparision>,
     DB: Backend,
-    T: QueryFragment<DB>,
+{
+    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
+    }
+}
+
+impl<ST, I, DB> QueryFragment<DB, sql_dialect::array_comparision::AnsiSqlArrayComparison>
+    for Many<ST, I>
+where
+    DB: Backend
+        + SqlDialect<ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison>,
+    ST: SingleValue,
+    for<'a> Bound<ST, &'a I>: QueryFragment<DB>,
 {
     fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
@@ -190,13 +237,13 @@ where
             } else {
                 out.push_sql(", ");
             }
-            value.walk_ast(out.reborrow())?;
+            Bound::new(value).walk_ast(out.reborrow())?;
         }
         Ok(())
     }
 }
 
-impl<T> QueryId for Many<T> {
+impl<ST, I> QueryId for Many<ST, I> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;

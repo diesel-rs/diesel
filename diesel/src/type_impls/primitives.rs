@@ -20,7 +20,7 @@ mod foreign_impls {
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql", sql_type = "crate::sql_types::TinyInt")]
+    #[cfg_attr(feature = "mysql_backend", sql_type = "crate::sql_types::TinyInt")]
     struct I8Proxy(i8);
 
     #[derive(AsExpression, FromSqlRow)]
@@ -41,25 +41,34 @@ mod foreign_impls {
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
     #[cfg_attr(
-        feature = "mysql",
+        feature = "mysql_backend",
         sql_type = "crate::sql_types::Unsigned<crate::sql_types::TinyInt>"
     )]
     struct U8Proxy(u8);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql", sql_type = "crate::sql_types::Unsigned<SmallInt>")]
+    #[cfg_attr(
+        feature = "mysql_backend",
+        sql_type = "crate::sql_types::Unsigned<SmallInt>"
+    )]
     struct U16Proxy(u16);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql", sql_type = "crate::sql_types::Unsigned<Integer>")]
-    #[cfg_attr(feature = "postgres", sql_type = "crate::sql_types::Oid")]
+    #[cfg_attr(
+        feature = "mysql_backend",
+        sql_type = "crate::sql_types::Unsigned<Integer>"
+    )]
+    #[cfg_attr(feature = "postgres_backend", sql_type = "crate::sql_types::Oid")]
     struct U32Proxy(u32);
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "mysql", sql_type = "crate::sql_types::Unsigned<BigInt>")]
+    #[cfg_attr(
+        feature = "mysql_backend",
+        sql_type = "crate::sql_types::Unsigned<BigInt>"
+    )]
     struct U64Proxy(u64);
 
     #[derive(AsExpression, FromSqlRow)]
@@ -121,24 +130,11 @@ where
 /// impl in terms of `String`, but don't want to allocate. We have to return a
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
-#[cfg(not(feature = "unstable"))]
 impl<DB> FromSql<sql_types::Text, DB> for *const str
 where
     DB: Backend + for<'a> BinaryRawValue<'a>,
 {
     fn from_sql(value: crate::backend::RawValue<DB>) -> deserialize::Result<Self> {
-        use std::str;
-        let string = str::from_utf8(DB::as_bytes(value))?;
-        Ok(string as *const _)
-    }
-}
-
-#[cfg(feature = "unstable")]
-impl<DB> FromSql<sql_types::Text, DB> for *const str
-where
-    DB: Backend + for<'a> BinaryRawValue<'a>,
-{
-    default fn from_sql(value: crate::backend::RawValue<DB>) -> deserialize::Result<Self> {
         use std::str;
         let string = str::from_utf8(DB::as_bytes(value))?;
         Ok(string as *const _)

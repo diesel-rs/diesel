@@ -54,7 +54,7 @@ macro_rules! tuple_impls {
                         bytes = new_bytes;
                         $T::from_sql(PgValue::new(
                             elem_bytes,
-                            oid,
+                            &oid,
                         ))?
                     }
                 },)+);
@@ -147,6 +147,7 @@ where
 impl<T> Expression for PgTuple<T>
 where
     T: Expression,
+    T::SqlType: 'static,
 {
     type SqlType = Record<T::SqlType>;
 }

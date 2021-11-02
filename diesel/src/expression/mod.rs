@@ -68,7 +68,7 @@ pub mod dsl {
     #[doc(inline)]
     pub use super::sql_literal::sql;
 
-    #[cfg(feature = "postgres")]
+    #[cfg(feature = "postgres_backend")]
     pub use crate::pg::expression::dsl::*;
 
     /// The return type of [`count(expr)`](crate::dsl::count())

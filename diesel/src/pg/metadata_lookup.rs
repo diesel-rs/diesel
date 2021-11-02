@@ -65,58 +65,52 @@ fn lookup_type<T: Connection<Backend = Pg>>(
     cache_key: &PgMetadataCacheKey<'_>,
     conn: &mut T,
 ) -> QueryResult<InnerPgTypeMetadata> {
-    let search_path: String;
-    let mut search_path_has_temp_schema = false;
+    let metadata_query = pg_type::table.select((pg_type::oid, pg_type::typarray));
 
-    let search_schema = match cache_key.schema.as_deref() {
-        Some("pg_temp") => {
-            search_path_has_temp_schema = true;
-            Vec::new()
-        }
-        Some(schema) => vec![schema],
-        None => {
-            search_path = crate::dsl::sql::<crate::sql_types::Text>("SHOW search_path")
-                .get_result::<String>(conn)?;
-
-            search_path
-                .split(',')
-                // skip the `$user` entry for now
-                .filter(|f| !f.starts_with("\"$"))
-                .map(|s| s.trim())
-                .filter(|&f| {
-                    let is_temp = f == "pg_temp";
-                    search_path_has_temp_schema |= is_temp;
-                    !is_temp
-                })
-                .collect()
-        }
-    };
-
-    let metadata_query = pg_type::table
-        .inner_join(pg_namespace::table)
-        .filter(pg_type::typname.eq(&cache_key.type_name))
-        .select((pg_type::oid, pg_type::typarray));
-    let nspname_filter = pg_namespace::nspname.eq(crate::dsl::any(search_schema));
-
-    let metadata = if search_path_has_temp_schema {
+    let metadata = if let Some(schema) = cache_key.schema.as_deref() {
+        // We have an explicit type name and schema given here
+        // that should resolve to an unique type
         metadata_query
-            .filter(nspname_filter.or(pg_namespace::oid.eq(pg_my_temp_schema())))
+            .inner_join(pg_namespace::table)
+            .filter(pg_type::typname.eq(&cache_key.type_name))
+            .filter(pg_namespace::nspname.eq(schema))
             .first(conn)?
     } else {
-        metadata_query.filter(nspname_filter).first(conn)?
+        // We don't have a schema here. A type with the same name could exists
+        // in more than one schema at once, even in more than one schema that
+        // is in the current search path. As we don't want to reimplement
+        // postgres name resolution here we just cast the time name to a concrete type
+        // and let postgres figure out the name resolution on it's own.
+        metadata_query
+            .filter(
+                pg_type::oid.eq(crate::dsl::sql("")
+                    .bind::<crate::sql_types::Text, _>(&cache_key.type_name)
+                    .sql("::regtype::oid")),
+            )
+            .first(conn)?
     };
 
     Ok(metadata)
 }
 
+/// The key used to lookup cached type oid's inside of
+/// a [PgMetadataCache].
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
-pub(in crate::pg) struct PgMetadataCacheKey<'a> {
-    pub(crate) schema: Option<Cow<'a, str>>,
-    pub(crate) type_name: Cow<'a, str>,
+pub struct PgMetadataCacheKey<'a> {
+    pub(in crate::pg) schema: Option<Cow<'a, str>>,
+    pub(in crate::pg) type_name: Cow<'a, str>,
 }
 
 impl<'a> PgMetadataCacheKey<'a> {
-    fn into_owned(self) -> PgMetadataCacheKey<'static> {
+    /// Construct a new cache key from an optional schema name and
+    /// a type name
+    pub fn new(schema: Option<Cow<'a, str>>, type_name: Cow<'a, str>) -> Self {
+        Self { schema, type_name }
+    }
+
+    /// Convert the possibly borrowed version of this metadata cache key
+    /// into a lifetime independ owned version
+    pub fn into_owned(self) -> PgMetadataCacheKey<'static> {
         let PgMetadataCacheKey { schema, type_name } = self;
         PgMetadataCacheKey {
             schema: schema.map(|s| Cow::Owned(s.into_owned())),
@@ -141,13 +135,18 @@ impl PgMetadataCache {
     }
 
     /// Lookup the OID of a custom type
-    fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
+    pub fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
         Some(PgTypeMetadata(Ok(*self.cache.get(type_name)?)))
     }
 
     /// Store the OID of a custom type
-    fn store_type(&mut self, type_name: PgMetadataCacheKey, type_metadata: InnerPgTypeMetadata) {
-        self.cache.insert(type_name.into_owned(), type_metadata);
+    pub fn store_type(
+        &mut self,
+        type_name: PgMetadataCacheKey,
+        type_metadata: impl Into<InnerPgTypeMetadata>,
+    ) {
+        self.cache
+            .insert(type_name.into_owned(), type_metadata.into());
     }
 }
 

@@ -218,7 +218,7 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:172:10
@@ -235,7 +235,7 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
    --> $DIR/selectable.rs:172:10
@@ -249,7 +249,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:173:10
@@ -266,8 +266,8 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:173:10
@@ -284,8 +284,8 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
    --> $DIR/selectable.rs:173:10
@@ -299,8 +299,8 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:180:10
@@ -317,7 +317,7 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:180:10
@@ -334,7 +334,7 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
    --> $DIR/selectable.rs:180:10
@@ -348,7 +348,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:181:10
@@ -365,8 +365,8 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:181:10
@@ -383,8 +383,8 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
    --> $DIR/selectable.rs:181:10
@@ -398,8 +398,8 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:187:10
@@ -461,8 +461,8 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
    --> $DIR/selectable.rs:188:10
@@ -479,8 +479,8 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
    --> $DIR/selectable.rs:188:10
@@ -494,8 +494,8 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::returning_clause::ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `Query` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithEmbeddedPost>` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, ReturningClause<SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0599]: the function or associated item `as_select` exists for struct `UserWithoutSelectable`, but its trait bounds were not satisfied
    --> $DIR/selectable.rs:192:56
@@ -581,7 +581,7 @@ error[E0277]: the trait bound `SelectBy<Post, _>: SingleValue` is not satisfied
     |          ^^^^ the trait `SingleValue` is not implemented for `SelectBy<Post, _>`
     |
     = note: required because of the requirements on the impl of `CompatibleType<(i32, std::string::String, i32), _>` for `SelectBy<Post, _>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, (i32, std::string::String, i32)>` for `InsertStatement<posts::table, ValuesClause<ColumnInsertValue<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, posts::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<Post, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, (i32, std::string::String, i32)>` for `InsertStatement<posts::table, ValuesClause<ColumnInsertValue<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, posts::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<Post, _>>>`
 
 error[E0277]: the trait bound `(i32, std::string::String, i32): diesel::Queryable<SelectBy<Post, _>, _>` is not satisfied
    --> $DIR/selectable.rs:201:10
@@ -594,7 +594,7 @@ error[E0277]: the trait bound `(i32, std::string::String, i32): diesel::Queryabl
               <(A, B, C) as diesel::Queryable<Record<(SA, SB, SC)>, Pg>>
     = note: required because of the requirements on the impl of `FromSqlRow<SelectBy<Post, _>, _>` for `(i32, std::string::String, i32)`
     = note: required because of the requirements on the impl of `CompatibleType<(i32, std::string::String, i32), _>` for `SelectBy<Post, _>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, (i32, std::string::String, i32)>` for `InsertStatement<posts::table, ValuesClause<ColumnInsertValue<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, posts::table>, diesel::query_builder::insert_statement::Insert, diesel::query_builder::returning_clause::ReturningClause<SelectBy<Post, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<_, (i32, std::string::String, i32)>` for `InsertStatement<posts::table, ValuesClause<ColumnInsertValue<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, posts::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<Post, _>>>`
 
 error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == Pg`
    --> $DIR/selectable.rs:210:10
@@ -602,28 +602,4 @@ error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Conn
 210 |         .load(&mut conn)
     |          ^^^^ expected struct `Sqlite`, found struct `Pg`
     |
-    = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, UserWithPostCount>` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::SelectClause<SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
-
-error[E0277]: the trait bound `Sqlite: HasSqlType<SelectBy<UserWithPostCount, Pg>>` is not satisfied
-   --> $DIR/selectable.rs:210:10
-    |
-210 |         .load(&mut conn)
-    |          ^^^^ the trait `HasSqlType<SelectBy<UserWithPostCount, Pg>>` is not implemented for `Sqlite`
-    |
-    = help: the following implementations were found:
-              <Sqlite as HasSqlType<BigInt>>
-              <Sqlite as HasSqlType<Bool>>
-              <Sqlite as HasSqlType<diesel::sql_types::Binary>>
-              <Sqlite as HasSqlType<diesel::sql_types::Date>>
-            and 8 others
-    = note: required because of the requirements on the impl of `QueryMetadata<SelectBy<UserWithPostCount, Pg>>` for `Sqlite`
-    = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, UserWithPostCount>` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::SelectClause<SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
-
-error[E0277]: the trait bound `SelectBy<UserWithPostCount, Pg>: SingleValue` is not satisfied
-   --> $DIR/selectable.rs:210:10
-    |
-210 |         .load(&mut conn)
-    |          ^^^^ the trait `SingleValue` is not implemented for `SelectBy<UserWithPostCount, Pg>`
-    |
-    = note: required because of the requirements on the impl of `QueryMetadata<SelectBy<UserWithPostCount, Pg>>` for `Sqlite`
     = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, UserWithPostCount>` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>, diesel::query_builder::select_clause::SelectClause<SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`

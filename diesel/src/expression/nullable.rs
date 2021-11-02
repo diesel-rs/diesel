@@ -1,6 +1,7 @@
 use crate::backend::Backend;
 use crate::expression::TypedExpressionType;
 use crate::expression::*;
+use crate::query_builder::select_statement::NoFromClause;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
@@ -68,4 +69,4 @@ where
 {
 }
 
-impl<T> SelectableExpression<()> for Nullable<T> where Self: AppearsOnTable<()> {}
+impl<T> SelectableExpression<NoFromClause> for Nullable<T> where Self: AppearsOnTable<NoFromClause> {}

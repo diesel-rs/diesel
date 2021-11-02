@@ -1,3 +1,17 @@
+warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::eq_any` instead
+  --> $DIR/subselect_cannot_reference_random_tables.rs:35:30
+   |
+35 |         .filter(users::id.eq(any(
+   |                              ^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::eq_any` instead
+  --> $DIR/subselect_cannot_reference_random_tables.rs:26:23
+   |
+26 |     use diesel::dsl::{any, exists};
+   |                       ^^^
+
 error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
   --> $DIR/subselect_cannot_reference_random_tables.rs:32:10
    |

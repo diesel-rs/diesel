@@ -26,6 +26,7 @@ use crate::sql_types::{Array, SqlType};
 /// assert_eq!(Ok(vec![sean, jim]), data.load(connection));
 /// # }
 /// ```
+#[deprecated(since = "2.0.0", note = "Use `ExpressionMethods::eq_any` instead")]
 pub fn any<ST, T>(vals: T) -> Any<T::Expression>
 where
     T: AsArrayExpression<ST>,
@@ -53,6 +54,7 @@ where
 /// assert_eq!(Ok(vec![tess]), data.load(connection));
 /// # }
 /// ```
+#[deprecated(since = "2.0.0", note = "Use `ExpressionMethods::ne_all` instead")]
 pub fn all<ST, T>(vals: T) -> All<T::Expression>
 where
     T: AsArrayExpression<ST>,
@@ -128,7 +130,7 @@ where
 
 impl_selectable_expression!(All<Expr>);
 
-pub trait AsArrayExpression<ST> {
+pub trait AsArrayExpression<ST: 'static> {
     type Expression: Expression<SqlType = Array<ST>>;
 
     // This method is part of the public API
@@ -139,6 +141,7 @@ pub trait AsArrayExpression<ST> {
 
 impl<ST, T> AsArrayExpression<ST> for T
 where
+    ST: 'static,
     T: AsExpression<Array<ST>>,
 {
     type Expression = <T as AsExpression<Array<ST>>>::Expression;
@@ -151,6 +154,7 @@ where
 impl<ST, F, S, D, W, O, LOf, G, H, LC> AsArrayExpression<ST>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
+    ST: 'static,
     Self: SelectQuery<SqlType = ST>,
 {
     type Expression = Subselect<Self, Array<ST>>;
@@ -162,6 +166,7 @@ where
 
 impl<'a, ST, QS, DB, GB> AsArrayExpression<ST> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
+    ST: 'static,
     Self: SelectQuery<SqlType = ST>,
 {
     type Expression = Subselect<Self, Array<ST>>;

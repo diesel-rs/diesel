@@ -1241,8 +1241,9 @@ fn third_party_crates_can_add_new_types() {
     assert_eq!(70_000, query_single_value::<MyInt, i32>("70000"));
 }
 
-fn query_single_value<T, U: FromSqlRow<T, TestBackend>>(sql_str: &str) -> U
+fn query_single_value<T, U>(sql_str: &str) -> U
 where
+    U: FromSqlRow<T, TestBackend> + 'static,
     TestBackend: HasSqlType<T>,
     T: QueryId + SingleValue + SqlType,
 {
@@ -1258,7 +1259,7 @@ use std::fmt::Debug;
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<(), SqlType = T>
+    U::Expression: SelectableExpression<diesel::query_builder::NoFromClause, SqlType = T>
         + ValidGrouping<(), IsAggregate = is_aggregate::Never>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
     T: QueryId + SingleValue + SqlType,

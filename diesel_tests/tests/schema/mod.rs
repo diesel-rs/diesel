@@ -213,16 +213,44 @@ impl<'a> Drop for DropTable<'a> {
     }
 }
 
+#[cfg(feature = "sqlite")]
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/sqlite");
+
+#[cfg(feature = "postgres")]
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/postgresql");
+
+#[cfg(feature = "mysql")]
+const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
+    diesel_migrations::embed_migrations!("../migrations/mysql");
+
 pub fn connection() -> TestConnection {
     let mut result = connection_without_transaction();
-    #[cfg(feature = "sqlite")]
-    result.execute("PRAGMA foreign_keys = ON").unwrap();
     result.begin_test_transaction().unwrap();
     result
 }
 
-#[cfg(feature = "postgres")]
 pub fn connection_without_transaction() -> TestConnection {
+    use diesel_migrations::MigrationHarness;
+    use std::sync::Once;
+    static MIGRATION_GUARD: Once = Once::new();
+
+    let mut result = backend_specific_connection();
+
+    if cfg!(feature = "sqlite") {
+        result.run_pending_migrations(MIGRATIONS).unwrap();
+    } else {
+        MIGRATION_GUARD.call_once(|| {
+            result.run_pending_migrations(MIGRATIONS).unwrap();
+        });
+    }
+
+    result
+}
+
+#[cfg(feature = "postgres")]
+pub fn backend_specific_connection() -> TestConnection {
     let connection_url = dotenv::var("PG_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
@@ -236,19 +264,14 @@ pub fn connection_without_transaction() -> TestConnection {
 }
 
 #[cfg(feature = "sqlite")]
-const MIGRATIONS: diesel_migrations::EmbeddedMigrations =
-    diesel_migrations::embed_migrations!("../migrations/sqlite");
-
-#[cfg(feature = "sqlite")]
-pub fn connection_without_transaction() -> TestConnection {
-    use diesel_migrations::MigrationHarness;
-    let mut connection = SqliteConnection::establish(":memory:").unwrap();
-    connection.run_pending_migrations(MIGRATIONS).unwrap();
-    connection
+pub fn backend_specific_connection() -> TestConnection {
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
+    conn.execute("PRAGMA foreign_keys = ON").unwrap();
+    conn
 }
 
 #[cfg(feature = "mysql")]
-pub fn connection_without_transaction() -> TestConnection {
+pub fn backend_specific_connection() -> TestConnection {
     let connection_url = dotenv::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");

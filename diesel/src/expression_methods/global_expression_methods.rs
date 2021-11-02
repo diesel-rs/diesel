@@ -60,9 +60,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// in cases when a subquery is passed to the method, that
     /// query will use the cache (assuming the subquery
     /// itself is safe to cache).
-    /// On PostgreSQL, you should use
-    /// `eq(any())` instead. This method may change in the future to
-    /// automatically perform `= ANY` on PostgreSQL.
+    /// On PostgreSQL, this method automatically performs a `= ANY()`
+    /// query.
     ///
     /// # Example
     ///
@@ -103,9 +102,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// Creates a SQL `NOT IN` statement.
     ///
     /// Queries using this method will not be
-    /// placed in the prepared statement cache. On PostgreSQL, you should use
-    /// `ne(all())` instead. This method may change in the future to
-    /// automatically perform `!= ALL` on PostgreSQL.
+    /// placed in the prepared statement cache. On PostgreSQL, this
+    /// method automatically performs a `!= ALL()` query.
     ///
     /// # Example
     ///

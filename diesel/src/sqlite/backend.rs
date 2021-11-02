@@ -45,7 +45,7 @@ impl Backend for Sqlite {
 }
 
 impl<'a> HasRawValue<'a> for Sqlite {
-    type RawValue = SqliteValue<'a>;
+    type RawValue = SqliteValue<'a, 'a>;
 }
 
 impl TypeMetadata for Sqlite {
@@ -53,5 +53,25 @@ impl TypeMetadata for Sqlite {
     type MetadataLookup = ();
 }
 
-impl SupportsOnConflictClause for Sqlite {}
-impl UsesAnsiSavepointSyntax for Sqlite {}
+impl SqlDialect for Sqlite {
+    type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
+
+    type OnConflictClause = SqliteOnConflictClaues;
+
+    type InsertWithDefaultKeyword =
+        sql_dialect::default_keyword_for_insert::DoesNotSupportDefaultKeyword;
+    type BatchInsertSupport = SqliteBatchInsert;
+    type DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause;
+
+    type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
+    type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
+    type ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison;
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteOnConflictClaues;
+
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for SqliteOnConflictClaues {}
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteBatchInsert;

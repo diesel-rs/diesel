@@ -26,8 +26,9 @@ where
         + FromSqlRow<ST, <TestConnection as Connection>::Backend>
         + PartialEq
         + Clone
-        + ::std::fmt::Debug,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<(), SqlType = ST>
+        + ::std::fmt::Debug
+        + 'static,
+    <T as AsExpression<ST>>::Expression: SelectableExpression<diesel::query_builder::NoFromClause, SqlType = ST>
         + NonAggregate
         + QueryFragment<<TestConnection as Connection>::Backend>
         + QueryId,

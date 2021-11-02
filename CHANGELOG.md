@@ -177,6 +177,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Interacting with a database requires a mutable connection.
 
+* `eq_any()` now emits a `= ANY()` expression for the postgresql backend instead of `IN()`
+* `ne_all()` now emits a `!= ALL()` expression for the postgresql backend instead of `NOT IN()`
+* The sqlite backend now uses a single batch insert statement if there are now default values present 
+  in the values clause
+
 * The MySQL connection is using the CLIENT_FOUND_ROWS from now on. This means that updating rows without changing any values will return the number of matched rows (like most other SQL servers do), as opposed to the number of changed rows.
 
 ### Fixed
@@ -232,6 +237,9 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * `diesel::pg::upsert` has been deprecated to support upsert queries on more than one backend.
   Please use `diesel::upsert` instead.
+  
+* `diesel::dsl::any` and `diesel::dsl::all` are now deprecated in 
+   favour of `ExpressionMethods::eq_any()` and `ExpressionMethods::ne_all()`
 
 ### Upgrade Notes
 

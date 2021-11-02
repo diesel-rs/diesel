@@ -360,10 +360,6 @@ fn error_impls_send() {
     let x: &Send = &err;
 }
 
-pub(crate) fn first_or_not_found<T>(records: QueryResult<Vec<T>>) -> QueryResult<T> {
-    records?.into_iter().next().ok_or(Error::NotFound)
-}
-
 /// An unexpected `NULL` was encountered during deserialization
 #[derive(Debug, Clone, Copy)]
 pub struct UnexpectedNullError;

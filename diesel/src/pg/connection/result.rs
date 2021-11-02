@@ -4,20 +4,26 @@ use self::pq_sys::*;
 use std::ffi::CStr;
 use std::num::NonZeroU32;
 use std::os::raw as libc;
+use std::rc::Rc;
 use std::{slice, str};
 
 use super::raw::RawResult;
 use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
+use crate::util::OnceCell;
 
 // Message after a database connection has been unexpectedly closed.
 const CLOSED_CONNECTION_MSG: &str = "server closed the connection unexpectedly\n\t\
 This probably means the server terminated abnormally\n\tbefore or while processing the request.\n";
 
-pub struct PgResult {
+pub(crate) struct PgResult {
     internal_result: RawResult,
     column_count: usize,
     row_count: usize,
+    // We store field names as pointer
+    // as we cannot put a correct lifetime here
+    // The value is valid as long as we haven't freed `RawResult`
+    column_name_map: OnceCell<Vec<Option<*const str>>>,
 }
 
 impl PgResult {
@@ -32,6 +38,7 @@ impl PgResult {
                     internal_result,
                     column_count,
                     row_count,
+                    column_name_map: OnceCell::new(),
                 })
             }
             ExecStatusType::PGRES_EMPTY_QUERY => {
@@ -58,9 +65,22 @@ impl PgResult {
                             DatabaseErrorKind::NotNullViolation
                         }
                         Some(error_codes::CHECK_VIOLATION) => DatabaseErrorKind::CheckViolation,
+                        Some(error_codes::CONNECTION_EXCEPTION)
+                        | Some(error_codes::CONNECTION_FAILURE)
+                        | Some(error_codes::SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION)
+                        | Some(error_codes::SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION) => {
+                            DatabaseErrorKind::ClosedConnection
+                        }
                         _ => DatabaseErrorKind::Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
+                // NOTE: Ideally, we'd remove this check, in favor of matching
+                // on an error code (instead of the more brittle description
+                // string).
+                //
+                // Unfortunately, this particular error is often propagated in
+                // cases - such as network disconnect - without any accompanying
+                // "SqlState", and therefore without an error code..
                 if error_information.message() == CLOSED_CONNECTION_MSG {
                     error_kind = DatabaseErrorKind::ClosedConnection;
                 }
@@ -89,7 +109,7 @@ impl PgResult {
         self.row_count
     }
 
-    pub fn get_row(&self, idx: usize) -> PgRow {
+    pub fn get_row(self: Rc<Self>, idx: usize) -> PgRow {
         PgRow::new(self, idx)
     }
 
@@ -127,17 +147,33 @@ impl PgResult {
     }
 
     pub fn column_name(&self, col_idx: usize) -> Option<&str> {
-        unsafe {
-            let ptr = PQfname(self.internal_result.as_ptr(), col_idx as libc::c_int);
-            if ptr.is_null() {
-                None
-            } else {
-                Some(CStr::from_ptr(ptr).to_str().expect(
-                    "Expect postgres field names to be UTF-8, because we \
+        self.column_name_map
+            .get_or_init(|| {
+                (0..self.column_count)
+                    .map(|idx| unsafe {
+                        // https://www.postgresql.org/docs/13/libpq-exec.html#LIBPQ-PQFNAME
+                        // states that the returned ptr is valid till the underlying result is freed
+                        // That means we can couple the lifetime to self
+                        let ptr = PQfname(self.internal_result.as_ptr(), idx as libc::c_int);
+                        if ptr.is_null() {
+                            None
+                        } else {
+                            Some(CStr::from_ptr(ptr).to_str().expect(
+                                "Expect postgres field names to be UTF-8, because we \
                      requested UTF-8 encoding on connection setup",
-                ))
-            }
-        }
+                            ) as *const str)
+                        }
+                    })
+                    .collect()
+            })
+            .get(col_idx)
+            .and_then(|n| {
+                n.map(|n: *const str| unsafe {
+                    // The pointer is valid for the same lifetime as &self
+                    // so we can dereference it without any check
+                    &*n
+                })
+            })
     }
 
     pub fn column_count(&self) -> usize {
@@ -207,13 +243,17 @@ fn get_result_field<'a>(res: *mut PGresult, field: ResultField) -> Option<&'a st
 
 mod error_codes {
     //! These error codes are documented at
-    //! <https://www.postgresql.org/docs/9.5/static/errcodes-appendix.html>
+    //! <https://www.postgresql.org/docs/current/errcodes-appendix.html>
     //!
     //! They are not exposed programmatically through libpq.
-    pub const UNIQUE_VIOLATION: &str = "23505";
-    pub const FOREIGN_KEY_VIOLATION: &str = "23503";
-    pub const SERIALIZATION_FAILURE: &str = "40001";
-    pub const READ_ONLY_TRANSACTION: &str = "25006";
+    pub const CONNECTION_EXCEPTION: &str = "08000";
+    pub const CONNECTION_FAILURE: &str = "08006";
+    pub const SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: &str = "08001";
+    pub const SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: &str = "08004";
     pub const NOT_NULL_VIOLATION: &str = "23502";
+    pub const FOREIGN_KEY_VIOLATION: &str = "23503";
+    pub const UNIQUE_VIOLATION: &str = "23505";
     pub const CHECK_VIOLATION: &str = "23514";
+    pub const READ_ONLY_TRANSACTION: &str = "25006";
+    pub const SERIALIZATION_FAILURE: &str = "40001";
 }

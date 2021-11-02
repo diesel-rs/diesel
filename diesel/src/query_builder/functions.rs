@@ -3,7 +3,6 @@ use super::insert_statement::{Insert, InsertOrIgnore, Replace};
 use super::{
     IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery, UpdateStatement,
 };
-use crate::dsl::Select;
 use crate::expression::Expression;
 use crate::query_dsl::methods::SelectDsl;
 
@@ -458,12 +457,12 @@ pub fn insert_or_ignore_into<T>(target: T) -> IncompleteInsertStatement<T, Inser
 /// Creates a bare select statement, with no from clause. Primarily used for
 /// testing diesel itself, but likely useful for third party crates as well. The
 /// given expressions must be selectable from anywhere.
-pub fn select<T>(expression: T) -> Select<SelectStatement<()>, T>
+pub fn select<T>(expression: T) -> crate::dsl::BareSelect<T>
 where
     T: Expression,
-    SelectStatement<()>: SelectDsl<T>,
+    SelectStatement<crate::query_builder::select_statement::NoFromClause>: SelectDsl<T>,
 {
-    SelectStatement::simple(()).select(expression)
+    SelectStatement::simple(crate::query_builder::select_statement::NoFromClause).select(expression)
 }
 
 /// Creates a `REPLACE` statement.

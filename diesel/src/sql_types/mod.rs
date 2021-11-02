@@ -394,10 +394,10 @@ where
     type IsNull = is_nullable::IsNullable;
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 pub use crate::pg::types::sql_types::*;
 
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_backend")]
 pub use crate::mysql::types::*;
 
 /// Indicates that a SQL type exists for a backend.
@@ -509,7 +509,7 @@ pub use diesel_derives::SqlType;
 /// This trait is automatically implemented by [`#[derive(SqlType)]`](derive@SqlType)
 /// which sets `IsNull` to [`is_nullable::NotNull`]
 ///
-pub trait SqlType {
+pub trait SqlType: 'static {
     /// Is this type nullable?
     ///
     /// This type should always be one of the structs in the ['is_nullable`]

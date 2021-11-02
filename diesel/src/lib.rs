@@ -91,9 +91,7 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
-#![cfg_attr(feature = "unstable", feature(specialization, trait_alias))]
-// For the `specialization` feature.
-#![cfg_attr(feature = "unstable", allow(incomplete_features))]
+#![cfg_attr(feature = "unstable", feature(trait_alias))]
 // Built-in Lints
 #![deny(warnings)]
 #![warn(
@@ -124,10 +122,6 @@
     clippy::used_underscore_binding
 )]
 
-#[cfg(feature = "postgres")]
-#[macro_use]
-extern crate bitflags;
-extern crate byteorder;
 extern crate diesel_derives;
 
 #[macro_use]
@@ -164,9 +158,9 @@ pub mod sql_types;
 pub mod migration;
 pub mod row;
 
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_backend")]
 pub mod mysql;
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 pub mod pg;
 #[cfg(feature = "sqlite")]
 pub mod sqlite;
@@ -218,6 +212,12 @@ pub mod helper_types {
 
     /// Represents the return type of `.select(selection)`
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
+
+    /// Represents the return type of `diesel::select(selection)`
+    pub type BareSelect<T> = Select<
+        crate::query_builder::SelectStatement<crate::query_builder::select_statement::NoFromClause>,
+        T,
+    >;
 
     /// Represents the return type of `.filter(predicate)`
     pub type Filter<Source, Predicate> = <Source as FilterDsl<Predicate>>::Output;
@@ -294,7 +294,7 @@ pub mod helper_types {
     pub type Distinct<Source> = <Source as DistinctDsl>::Output;
 
     /// Represents the return type of `.distinct_on(expr)`
-    #[cfg(feature = "postgres")]
+    #[cfg(feature = "postgres_backend")]
     pub type DistinctOn<Source, Expr> = <Source as DistinctOnDsl<Expr>>::Output;
 
     /// Represents the return type of `.single_value()`

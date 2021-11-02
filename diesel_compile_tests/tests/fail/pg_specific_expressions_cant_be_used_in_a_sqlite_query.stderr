@@ -1,3 +1,11 @@
+warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::eq_any` instead
+  --> $DIR/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:26:37
+   |
+26 |     users.select(id).filter(name.eq(any(Vec::<String>::new())))
+   |                                     ^^^
+   |
+   = note: `#[warn(deprecated)]` on by default
+
 error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == Pg`
   --> $DIR/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:27:10
    |

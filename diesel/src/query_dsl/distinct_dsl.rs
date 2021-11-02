@@ -1,5 +1,5 @@
 use crate::dsl;
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 use crate::expression::SelectableExpression;
 use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
@@ -42,7 +42,7 @@ where
 /// to call `distinct_on` from generic code.
 ///
 /// [`QueryDsl`]: crate::QueryDsl
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 pub trait DistinctOnDsl<Selection> {
     /// The type returned by `.distinct_on`
     type Output;
@@ -51,7 +51,7 @@ pub trait DistinctOnDsl<Selection> {
     fn distinct_on(self, selection: Selection) -> dsl::DistinctOn<Self, Selection>;
 }
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,

@@ -3,15 +3,9 @@ name = "diesel_tests"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
-build = "build.rs"
 autotests = false
 autobenches = false
 edition = "2018"
-
-[build-dependencies]
-diesel = { path = "../diesel", default-features = false }
-diesel_migrations = { path = "../diesel_migrations" }
-dotenv = "0.15"
 
 [dependencies]
 assert_matches = "1.0.1"
@@ -23,8 +17,9 @@ quickcheck = "0.9"
 uuid = { version = ">=0.7.0, <0.9.0" }
 serde_json = { version=">=0.9, <2.0" }
 ipnetwork = ">=0.12.2, <0.19.0"
-bigdecimal = ">= 0.0.13, < 0.3.0"
+bigdecimal = ">= 0.0.13, < 0.4.0"
 rand = "0.7"
+libsqlite3-sys = { version = "0.23", optional = true }
 
 [features]
 default = []

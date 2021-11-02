@@ -1,5 +1,5 @@
 use diesel::backend::Backend;
-use diesel::deserialize::FromSql;
+use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::expression::AsExpression;
 use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Text;

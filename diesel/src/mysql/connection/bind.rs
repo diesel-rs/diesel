@@ -7,15 +7,27 @@ use std::os::raw as libc;
 use super::stmt::MysqlFieldMetadata;
 use super::stmt::Statement;
 use crate::mysql::connection::stmt::StatementMetadata;
-use crate::mysql::types::MYSQL_TIME;
+use crate::mysql::types::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
-pub struct Binds {
+pub struct PreparedStatementBinds(Binds);
+
+pub struct OutputBinds(Binds);
+
+impl Clone for OutputBinds {
+    fn clone(&self) -> Self {
+        Self(Binds {
+            data: self.0.data.clone(),
+        })
+    }
+}
+
+struct Binds {
     data: Vec<BindData>,
 }
 
-impl Binds {
+impl PreparedStatementBinds {
     pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
@@ -25,34 +37,31 @@ impl Binds {
             .map(BindData::for_input)
             .collect::<Vec<_>>();
 
-        Ok(Binds { data })
-    }
-
-    pub fn from_output_types(types: Vec<Option<MysqlType>>, metadata: &StatementMetadata) -> Self {
-        let data = metadata
-            .fields()
-            .iter()
-            .zip(types.into_iter().chain(std::iter::repeat(None)))
-            .map(|(field, tpe)| BindData::for_output(tpe, field))
-            .collect();
-
-        Binds { data }
+        Ok(Self(Binds { data }))
     }
 
     pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
-        let mut binds = self
-            .data
-            .iter_mut()
-            .map(|x| unsafe { x.mysql_bind() })
-            .collect::<Vec<_>>();
-        f(binds.as_mut_ptr())
+        self.0.with_mysql_binds(f)
+    }
+}
+
+impl OutputBinds {
+    pub fn from_output_types(types: &[Option<MysqlType>], metadata: &StatementMetadata) -> Self {
+        let data = metadata
+            .fields()
+            .iter()
+            .zip(types.iter().copied().chain(std::iter::repeat(None)))
+            .map(|(field, tpe)| BindData::for_output(tpe, field))
+            .collect();
+
+        Self(Binds { data })
     }
 
     pub fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
-        for (i, data) in self.data.iter_mut().enumerate() {
+        for (i, data) in self.0.data.iter_mut().enumerate() {
             data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers
             // at the end of this function
@@ -69,20 +78,37 @@ impl Binds {
     }
 
     pub fn update_buffer_lengths(&mut self) {
-        for data in &mut self.data {
+        for data in &mut self.0.data {
             data.update_buffer_length();
         }
     }
 
-    pub fn len(&self) -> usize {
-        self.data.len()
+    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
+    {
+        self.0.with_mysql_binds(f)
     }
 }
 
-impl Index<usize> for Binds {
+impl Binds {
+    fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
+    {
+        let mut binds = self
+            .data
+            .iter_mut()
+            .map(|x| unsafe { x.mysql_bind() })
+            .collect::<Vec<_>>();
+        f(binds.as_mut_ptr())
+    }
+}
+
+impl Index<usize> for OutputBinds {
     type Output = BindData;
     fn index(&self, index: usize) -> &Self::Output {
-        &self.data[index]
+        &self.0.data[index]
     }
 }
 
@@ -122,7 +148,7 @@ impl From<u32> for Flags {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BindData {
     tpe: ffi::enum_field_types,
     bytes: Vec<u8>,
@@ -598,7 +624,7 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
         t::MYSQL_TYPE_TIME
         | t::MYSQL_TYPE_DATE
         | t::MYSQL_TYPE_DATETIME
-        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<MYSQL_TIME>()),
+        | t::MYSQL_TYPE_TIMESTAMP => Some(size_of::<MysqlTime>()),
         _ => None,
     }
 }
@@ -713,9 +739,8 @@ mod tests {
             )
             .unwrap();
 
-        let mut stmt = conn
-            .prepare_query(&crate::sql_query(
-                "SELECT
+        let mut stmt = conn.prepared_query(&crate::sql_query(
+            "SELECT
                     tiny_int, small_int, medium_int, int_col,
                     big_int, unsigned_int, zero_fill_int,
                     numeric_col, decimal_col, float_col, double_col, bit_col,
@@ -725,29 +750,20 @@ mod tests {
                     ST_AsText(polygon_col), ST_AsText(multipoint_col), ST_AsText(multilinestring_col),
                     ST_AsText(multipolygon_col), ST_AsText(geometry_collection), json_col
                  FROM all_mysql_types",
-            ))
-            .unwrap();
+        )).unwrap();
 
         let metadata = stmt.metadata().unwrap();
         let mut output_binds =
-            Binds::from_output_types(vec![None; metadata.fields().len()], &metadata);
+            OutputBinds::from_output_types(&vec![None; metadata.fields().len()], &metadata);
         stmt.execute_statement(&mut output_binds).unwrap();
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 
         let results: Vec<(BindData, &_)> = output_binds
+            .0
             .data
             .into_iter()
             .zip(metadata.fields())
             .collect::<Vec<_>>();
-
-        macro_rules! matches {
-            ($expression:expr, $( $pattern:pat )|+ $( if $guard: expr )?) => {
-                match $expression {
-                    $( $pattern )|+ $( if $guard )? => true,
-                    _ => false
-                }
-            }
-        }
 
         let tiny_int_col = &results[0].0;
         assert_eq!(tiny_int_col.tpe, ffi::enum_field_types::MYSQL_TYPE_TINY);
@@ -1057,9 +1073,9 @@ mod tests {
         assert!(!polygon_col.flags.contains(Flags::ENUM_FLAG));
         assert!(!polygon_col.flags.contains(Flags::BINARY_FLAG));
         assert_eq!(
-            to_value::<Text, String>(polygon_col).unwrap(),
-            "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
-        );
+                to_value::<Text, String>(polygon_col).unwrap(),
+                "MULTIPOLYGON(((28 26,28 0,84 0,84 42,28 26),(52 18,66 23,73 9,48 6,52 18)),((59 18,67 18,67 13,59 13,59 18)))"
+            );
 
         let geometry_collection = &results[32].0;
         assert_eq!(
@@ -1105,12 +1121,12 @@ mod tests {
 
         let bind = BindData::for_test_output(bind_tpe.into());
 
-        let mut binds = Binds { data: vec![bind] };
+        let mut binds = OutputBinds(Binds { data: vec![bind] });
 
         stmt.execute_statement(&mut binds).unwrap();
         stmt.populate_row_buffers(&mut binds).unwrap();
 
-        binds.data.remove(0)
+        binds.0.data.remove(0)
     }
 
     fn input_bind(
@@ -1144,9 +1160,9 @@ mod tests {
             is_truncated: None,
         };
 
-        let binds = Binds {
+        let binds = PreparedStatementBinds(Binds {
             data: vec![id_bind, field_bind],
-        };
+        });
         stmt.input_bind(binds).unwrap();
         stmt.did_an_error_occur().unwrap();
         unsafe {

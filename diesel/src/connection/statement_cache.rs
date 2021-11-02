@@ -107,6 +107,12 @@ pub struct StatementCache<DB: Backend, Statement> {
     pub cache: HashMap<StatementCacheKey<DB>, Statement>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum PrepareForCache {
+    Yes,
+    No,
+}
+
 #[allow(clippy::len_without_is_empty, clippy::new_without_default)]
 impl<DB, Statement> StatementCache<DB, Statement>
 where
@@ -133,7 +139,7 @@ where
     ) -> QueryResult<MaybeCached<Statement>>
     where
         T: QueryFragment<DB> + QueryId,
-        F: FnOnce(&str) -> QueryResult<Statement>,
+        F: FnOnce(&str, PrepareForCache) -> QueryResult<Statement>,
     {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
@@ -141,7 +147,7 @@ where
 
         if !source.is_safe_to_cache_prepared()? {
             let sql = cache_key.sql(source)?;
-            return prepare_fn(&sql).map(MaybeCached::CannotCache);
+            return prepare_fn(&sql, PrepareForCache::No).map(MaybeCached::CannotCache);
         }
 
         let cached_result = match self.cache.entry(cache_key) {
@@ -149,7 +155,7 @@ where
             Vacant(entry) => {
                 let statement = {
                     let sql = entry.key().sql(source)?;
-                    prepare_fn(&sql)
+                    prepare_fn(&sql, PrepareForCache::Yes)
                 };
 
                 entry.insert(statement?)
