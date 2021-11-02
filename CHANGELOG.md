@@ -182,6 +182,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * The sqlite backend now uses a single batch insert statement if there are now default values present 
   in the values clause
 
+* The MySQL connection is using the CLIENT_FOUND_ROWS from now on. This means that updating rows without changing any values will return the number of matched rows (like most other SQL servers do), as opposed to the number of changed rows.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
