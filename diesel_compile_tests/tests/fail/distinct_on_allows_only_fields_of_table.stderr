@@ -1,19 +1,19 @@
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
-  --> $DIR/distinct_on_allows_only_fields_of_table.rs:23:30
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:23:30
    |
 23 |     users::table.distinct_on(posts::id).get_results(&mut connection);
    |                              ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = help: the following implementations were found:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::id as SelectableExpression<Only<posts::table>>>
              <posts::columns::id as SelectableExpression<SelectStatement<From>>>
              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<posts::table>>
+           and 2 others
    = note: required because of the requirements on the impl of `DistinctOnDsl<posts::columns::id>` for `users::table`
 
 error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text): SingleValue` is not satisfied
-  --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:18
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:25:18
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
    |                  ^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Text, diesel::sql_types::Text)`
@@ -21,22 +21,22 @@ error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `SelectStatement<posts::table>`
 
 error[E0277]: the trait bound `users::columns::name: SelectableExpression<posts::table>` is not satisfied
-  --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:30
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:25:30
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
    |
    = help: the following implementations were found:
              <users::columns::name as SelectableExpression<JoinOn<Join, On>>>
+             <users::columns::name as SelectableExpression<Only<users::table>>>
              <users::columns::name as SelectableExpression<SelectStatement<From>>>
              <users::columns::name as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
-             <users::columns::name as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
-             <users::columns::name as SelectableExpression<users::table>>
+           and 2 others
    = note: required because of the requirements on the impl of `SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
 
 error[E0277]: the trait bound `posts::table: AppearsInFromClause<users::table>` is not satisfied
-  --> $DIR/distinct_on_allows_only_fields_of_table.rs:25:18
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:25:18
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
    |                  ^^^^^^^^^^^ the trait `AppearsInFromClause<users::table>` is not implemented for `posts::table`
