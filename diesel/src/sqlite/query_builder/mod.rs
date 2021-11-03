@@ -1,5 +1,7 @@
 //! The SQLite query builder
 
+use std::fmt::Display;
+
 use super::backend::Sqlite;
 use super::SqliteType;
 use crate::query_builder::{BindCollector, QueryBuilder};
@@ -75,6 +77,22 @@ pub enum SqliteBindValue<'a> {
     Null,
 }
 
+impl Display for SqliteBindValue<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let n = match self {
+            SqliteBindValue::BorrowedString(_) | SqliteBindValue::String(_) => "Text",
+            SqliteBindValue::BorrowedBinary(_) | SqliteBindValue::Binary(_) => "Binary",
+            SqliteBindValue::SmallInt(_) => "SmallInt",
+            SqliteBindValue::Integer(_) => "Integer",
+            SqliteBindValue::BigInt(_) => "BigInt",
+            SqliteBindValue::Float(_) => "Float",
+            SqliteBindValue::Double(_) => "Double",
+            SqliteBindValue::Null => "Null",
+        };
+        f.write_str(n)
+    }
+}
+
 impl SqliteBindValue<'_> {
     pub(in crate::sqlite) fn result_of(self, ctx: &mut libsqlite3_sys::sqlite3_context) {
         use libsqlite3_sys as ffi;
@@ -143,9 +161,3 @@ impl<'a> BindCollector<'a, Sqlite> for SqliteBindCollector<'a> {
         Ok(())
     }
 }
-
-// impl<'a> Output<'a, Sqlite> {
-//     pub(in crate::sqlite) fn ref_mut<'b>(&'b mut self) -> &'b mut SqliteBindValue<'a> {
-//         &mut self.out
-//     }
-// }
