@@ -52,9 +52,9 @@ impl SimpleConnection for SqliteConnection {
     }
 }
 
-impl<'a> ConnectionGatWorkaround<'a, Sqlite> for SqliteConnection {
-    type Cursor = StatementIterator<'a>;
-    type Row = self::row::SqliteRow<'a>;
+impl<'a, 'b> ConnectionGatWorkaround<'a, 'b, Sqlite> for SqliteConnection {
+    type Cursor = StatementIterator<'a, 'b>;
+    type Row = self::row::SqliteRow<'a, 'b>;
 }
 
 impl Connection for SqliteConnection {
@@ -88,13 +88,13 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn load<T>(
-        &mut self,
+    fn load<'a, 'b, T>(
+        &'a mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, 'b, Self::Backend>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'b,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         let statement_use = self.prepared_query(source.as_query())?;
@@ -198,10 +198,10 @@ impl SqliteConnection {
         }
     }
 
-    fn prepared_query<T: QueryFragment<Sqlite> + QueryId>(
-        &mut self,
-        source: T,
-    ) -> QueryResult<StatementUse> {
+    fn prepared_query<'a, 'b, T>(&'a mut self, source: T) -> QueryResult<StatementUse<'a, 'b>>
+    where
+        T: QueryFragment<Sqlite> + QueryId + 'b,
+    {
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
         let statement = cache.cached_statement(&source, &[], |sql, is_cached| {

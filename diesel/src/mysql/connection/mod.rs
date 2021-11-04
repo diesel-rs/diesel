@@ -32,7 +32,7 @@ impl SimpleConnection for MysqlConnection {
     }
 }
 
-impl<'a> ConnectionGatWorkaround<'a, Mysql> for MysqlConnection {
+impl<'a, 'b> ConnectionGatWorkaround<'a, 'b, Mysql> for MysqlConnection {
     type Cursor = self::stmt::iterator::StatementIterator<'a>;
     type Row = self::stmt::iterator::MysqlRow;
 }
@@ -65,13 +65,13 @@ impl Connection for MysqlConnection {
     }
 
     #[doc(hidden)]
-    fn load<T>(
-        &mut self,
+    fn load<'a, 'b, T>(
+        &'a mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, 'b, Self::Backend>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'b,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         let stmt = self.prepared_query(&source.as_query())?;

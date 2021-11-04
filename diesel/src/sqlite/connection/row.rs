@@ -9,13 +9,13 @@ use crate::sqlite::Sqlite;
 use crate::util::OnceCell;
 
 #[allow(missing_debug_implementations)]
-pub struct SqliteRow<'a> {
-    pub(super) inner: Rc<RefCell<PrivateSqliteRow<'a>>>,
+pub struct SqliteRow<'a, 'b> {
+    pub(super) inner: Rc<RefCell<PrivateSqliteRow<'a, 'b>>>,
     pub(super) field_count: usize,
 }
 
-pub(super) enum PrivateSqliteRow<'a> {
-    Direct(StatementUse<'a>),
+pub(super) enum PrivateSqliteRow<'a, 'b> {
+    Direct(StatementUse<'a, 'b>),
     Duplicated {
         values: Vec<Option<OwnedSqliteValue>>,
         column_names: Rc<[Option<String>]>,
@@ -23,7 +23,7 @@ pub(super) enum PrivateSqliteRow<'a> {
     TemporaryEmpty,
 }
 
-impl<'a> PrivateSqliteRow<'a> {
+impl<'a, 'b> PrivateSqliteRow<'a, 'b> {
     pub(super) fn duplicate(&mut self, column_names: &mut Option<Rc<[Option<String>]>>) -> Self {
         match self {
             PrivateSqliteRow::Direct(stmt) => {
@@ -60,11 +60,11 @@ impl<'a> PrivateSqliteRow<'a> {
     }
 }
 
-impl<'a, 'b> RowGatWorkaround<'a, Sqlite> for SqliteRow<'b> {
-    type Field = SqliteField<'a>;
+impl<'a, 'b, 'c> RowGatWorkaround<'a, Sqlite> for SqliteRow<'b, 'c> {
+    type Field = SqliteField<'a, 'a>;
 }
 
-impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
+impl<'a, 'c> Row<'a, Sqlite> for SqliteRow<'a, 'c> {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
@@ -89,7 +89,7 @@ impl<'a> Row<'a, Sqlite> for SqliteRow<'a> {
     }
 }
 
-impl<'a> RowIndex<usize> for SqliteRow<'a> {
+impl<'a, 'b> RowIndex<usize> for SqliteRow<'a, 'b> {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count {
             Some(idx)
@@ -99,7 +99,7 @@ impl<'a> RowIndex<usize> for SqliteRow<'a> {
     }
 }
 
-impl<'a, 'd> RowIndex<&'d str> for SqliteRow<'a> {
+impl<'a, 'd, 'c> RowIndex<&'d str> for SqliteRow<'a, 'c> {
     fn idx(&self, field_name: &'d str) -> Option<usize> {
         match &mut *self.inner.borrow_mut() {
             PrivateSqliteRow::Direct(stmt) => stmt.index_for_column_name(field_name),
@@ -121,13 +121,13 @@ impl<'a, 'd> RowIndex<&'d str> for SqliteRow<'a> {
 }
 
 #[allow(missing_debug_implementations)]
-pub struct SqliteField<'a> {
-    pub(super) row: Ref<'a, PrivateSqliteRow<'a>>,
+pub struct SqliteField<'a, 'b> {
+    pub(super) row: Ref<'a, PrivateSqliteRow<'a, 'b>>,
     pub(super) col_idx: i32,
     field_name: OnceCell<Option<String>>,
 }
 
-impl<'a> Field<'a, Sqlite> for SqliteField<'a> {
+impl<'a, 'b> Field<'a, Sqlite> for SqliteField<'a, 'b> {
     fn field_name(&self) -> Option<&str> {
         self.field_name
             .get_or_init(|| match &*self.row {

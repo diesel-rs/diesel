@@ -36,10 +36,10 @@ pub trait UpdateAndFetchResults<Changes, Output>: Connection {
 use crate::pg::PgConnection;
 
 #[cfg(feature = "postgres")]
-impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for PgConnection
+impl<'b, Changes, Output> UpdateAndFetchResults<Changes, Output> for PgConnection
 where
     Changes: Copy + AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
-    Update<Changes, Changes>: LoadQuery<PgConnection, Output>,
+    Update<Changes, Changes>: LoadQuery<'b, PgConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
@@ -53,13 +53,13 @@ where
 use crate::sqlite::SqliteConnection;
 
 #[cfg(feature = "sqlite")]
-impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for SqliteConnection
+impl<'b, Changes, Output> UpdateAndFetchResults<Changes, Output> for SqliteConnection
 where
     Changes: Copy + Identifiable,
     Changes: AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
     Changes::Table: FindDsl<Changes::Id>,
     Update<Changes, Changes>: ExecuteDsl<SqliteConnection>,
-    Find<Changes::Table, Changes::Id>: LoadQuery<SqliteConnection, Output>,
+    Find<Changes::Table, Changes::Id>: LoadQuery<'b, SqliteConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,
@@ -74,13 +74,13 @@ where
 use crate::mysql::MysqlConnection;
 
 #[cfg(feature = "mysql")]
-impl<Changes, Output> UpdateAndFetchResults<Changes, Output> for MysqlConnection
+impl<'b, Changes, Output> UpdateAndFetchResults<Changes, Output> for MysqlConnection
 where
     Changes: Copy + Identifiable,
     Changes: AsChangeset<Target = <Changes as HasTable>::Table> + IntoUpdateTarget,
     Changes::Table: FindDsl<Changes::Id>,
     Update<Changes, Changes>: ExecuteDsl<MysqlConnection>,
-    Find<Changes::Table, Changes::Id>: LoadQuery<MysqlConnection, Output>,
+    Find<Changes::Table, Changes::Id>: LoadQuery<'b, MysqlConnection, Output>,
     <Changes::Table as Table>::AllColumns: ValidGrouping<()>,
     <<Changes::Table as Table>::AllColumns as ValidGrouping<()>>::IsAggregate:
         MixedAggregates<is_aggregate::No, Output = is_aggregate::No>,

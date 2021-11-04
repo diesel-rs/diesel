@@ -13,18 +13,18 @@ use crate::result::QueryResult;
 /// to call `load` from generic code.
 ///
 /// [`RunQueryDsl`]: crate::RunQueryDsl
-pub trait LoadQuery<Conn, U>: RunQueryDsl<Conn>
+pub trait LoadQuery<'b, Conn, U>: RunQueryDsl<Conn>
 where
-    for<'a> Self: LoadQueryGatWorkaround<'a, Conn, U>,
+    for<'a> Self: LoadQueryGatWorkaround<'a, 'b, Conn, U>,
 {
     /// Load this query
-    fn internal_load(
+    fn internal_load<'a>(
         self,
-        conn: &mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<Conn, U>>::Ret>;
+        conn: &'a mut Conn,
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, 'b, Conn, U>>::Ret>;
 }
 
-pub trait LoadQueryGatWorkaround<'a, Conn, U> {
+pub trait LoadQueryGatWorkaround<'a, 'b, Conn, U> {
     type Ret: Iterator<Item = QueryResult<U>>;
 }
 
@@ -69,7 +69,7 @@ pub struct LoadIter<'a, U, C, ST, DB> {
     _marker: std::marker::PhantomData<&'a (ST, U, DB)>,
 }
 
-impl<'a, Conn, T, U, DB> LoadQueryGatWorkaround<'a, Conn, U> for T
+impl<'a, 'b, Conn, T, U, DB> LoadQueryGatWorkaround<'a, 'b, Conn, U> for T
 where
     Conn: Connection<Backend = DB>,
     T: AsQuery + RunQueryDsl<Conn>,
@@ -82,26 +82,26 @@ where
     type Ret = LoadIter<
         'a,
         U,
-        <Conn as ConnectionGatWorkaround<'a, DB>>::Cursor,
+        <Conn as ConnectionGatWorkaround<'a, 'b, DB>>::Cursor,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
         DB,
     >;
 }
 
-impl<Conn, T, U, DB> LoadQuery<Conn, U> for T
+impl<'b, Conn, T, U, DB> LoadQuery<'b, Conn, U> for T
 where
     Conn: Connection<Backend = DB>,
     T: AsQuery + RunQueryDsl<Conn>,
-    T::Query: QueryFragment<DB> + QueryId,
+    T::Query: QueryFragment<DB> + QueryId + 'b,
     T::SqlType: CompatibleType<U, DB>,
     DB: Backend + QueryMetadata<T::SqlType> + 'static,
     U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
-    fn internal_load(
+    fn internal_load<'a>(
         self,
-        conn: &mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<Conn, U>>::Ret> {
+        conn: &'a mut Conn,
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, 'b, Conn, U>>::Ret> {
         Ok(LoadIter {
             cursor: conn.load(self)?,
             _marker: Default::default(),

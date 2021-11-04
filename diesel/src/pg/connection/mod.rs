@@ -43,7 +43,7 @@ impl SimpleConnection for PgConnection {
     }
 }
 
-impl<'a> ConnectionGatWorkaround<'a, Pg> for PgConnection {
+impl<'a, 'b> ConnectionGatWorkaround<'a, 'b, Pg> for PgConnection {
     type Cursor = Cursor;
     type Row = self::row::PgRow;
 }
@@ -72,10 +72,13 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn load<T>(&mut self, source: T) -> QueryResult<<Self as ConnectionGatWorkaround<Pg>>::Cursor>
+    fn load<'a, 'b, T>(
+        &'a mut self,
+        source: T,
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, 'b, Pg>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'b,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         self.with_prepared_query(&source.as_query(), |stmt, params, conn| {

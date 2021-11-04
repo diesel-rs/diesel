@@ -1,0 +1,11 @@
+error[E0505]: cannot move out of `buf` because it is borrowed
+  --> $DIR/ensure_sqlite_cannot_access_memory_of_droped_bind.rs:16:24
+   |
+10 |         let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
+   |                                     ---- borrow of `buf` occurs here
+...
+16 |         std::mem::drop(buf);
+   |                        ^^^ move out of `buf` occurs here
+17 |
+18 |         assert_eq!(iter.next().is_some(), true);
+   |                    ---- borrow later used here

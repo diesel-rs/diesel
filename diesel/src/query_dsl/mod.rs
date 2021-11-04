@@ -1400,9 +1400,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load<U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    fn load<'b, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'b, Conn, U>,
     {
         self.internal_load(conn)?.collect()
     }
@@ -1507,10 +1507,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'a, U>(self, conn: &'a mut Conn) -> QueryResult<LoadIter<'a, Self, Conn, U>>
+    fn load_iter<'a, 'b:'a, U>(self, conn: &'a mut Conn) -> QueryResult<LoadIter<'a, 'b, Self, Conn, U>>
     where
         U: 'a,
-        Self: LoadQuery<Conn, U> + 'a,
+        Self: LoadQuery<'b, Conn, U> + 'a,
     {
         self.internal_load(conn)
     }

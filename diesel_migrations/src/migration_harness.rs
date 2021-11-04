@@ -154,14 +154,14 @@ pub trait MigrationHarness<DB: Backend> {
     fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>>;
 }
 
-impl<C, DB> MigrationHarness<DB> for C
+impl<'b, C, DB> MigrationHarness<DB> for C
 where
     DB: Backend,
     C: Connection<Backend = DB> + MigrationConnection + 'static,
     dsl::Order<
         dsl::Select<__diesel_schema_migrations::table, __diesel_schema_migrations::version>,
         dsl::Desc<__diesel_schema_migrations::version>,
-    >: LoadQuery<C, MigrationVersion<'static>>,
+    >: LoadQuery<'b, C, MigrationVersion<'static>>,
     for<'a> InsertStatement<
         __diesel_schema_migrations::table,
         ValuesClause<

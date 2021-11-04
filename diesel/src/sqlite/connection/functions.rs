@@ -117,7 +117,7 @@ where
 struct FunctionRow<'a> {
     // we use `ManuallyDrop` to prevent dropping the content of the internal vector
     // as this buffer is owned by sqlite not by diesel
-    args: Rc<RefCell<ManuallyDrop<PrivateSqliteRow<'a>>>>,
+    args: Rc<RefCell<ManuallyDrop<PrivateSqliteRow<'a, 'static>>>>,
     field_count: usize,
     marker: PhantomData<&'a ffi::sqlite3_value>,
 }
@@ -223,7 +223,7 @@ impl<'a, 'b> RowIndex<&'a str> for FunctionRow<'b> {
 }
 
 struct FunctionArgument<'a> {
-    args: Ref<'a, ManuallyDrop<PrivateSqliteRow<'a>>>,
+    args: Ref<'a, ManuallyDrop<PrivateSqliteRow<'a, 'static>>>,
     col_idx: i32,
 }
 

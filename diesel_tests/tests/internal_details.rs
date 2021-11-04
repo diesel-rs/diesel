@@ -62,8 +62,6 @@ fn ensure_sqlite_does_not_access_dropped_buffers() {
 
     let mut iter = Connection::load(connection, query).unwrap();
 
-    std::mem::drop(buf);
-
     assert_eq!(iter.next().is_some(), true);
     assert_eq!(iter.next().is_none(), true);
 }

@@ -130,14 +130,14 @@ where
     }
 }
 
-impl<'a, DB, M> ConnectionGatWorkaround<'a, DB> for PooledConnection<M>
+impl<'a, 'b, DB, M> ConnectionGatWorkaround<'a, 'b, DB> for PooledConnection<M>
 where
     M: ManageConnection,
     M::Connection: Connection<Backend = DB>,
     DB: Backend,
 {
-    type Cursor = <M::Connection as ConnectionGatWorkaround<'a, DB>>::Cursor;
-    type Row = <M::Connection as ConnectionGatWorkaround<'a, DB>>::Row;
+    type Cursor = <M::Connection as ConnectionGatWorkaround<'a, 'b, DB>>::Cursor;
+    type Row = <M::Connection as ConnectionGatWorkaround<'a, 'b, DB>>::Row;
 }
 
 impl<M> Connection for PooledConnection<M>
@@ -159,13 +159,13 @@ where
         (&mut **self).execute(query)
     }
 
-    fn load<T>(
-        &mut self,
+    fn load<'a, 'b, T>(
+        &'a mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, 'b, Self::Backend>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'b,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         (&mut **self).load(source)

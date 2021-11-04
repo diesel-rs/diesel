@@ -188,92 +188,59 @@ impl Drop for Statement {
 }
 
 #[allow(missing_debug_implementations)]
-pub struct StatementUse<'a> {
+pub struct StatementUse<'a, 'b> {
     statement: MaybeCached<'a, Statement>,
     column_names: OnceCell<Vec<*const str>>,
-    binds_to_free: Vec<i32>,
-    owned_strings_to_free: Vec<&'static mut str>,
-    owned_slices_to_free: Vec<&'static mut [u8]>,
-    query: NonNull<libc::c_void>,
-    drop_query: Box<dyn Fn(*mut libc::c_void)>,
+    // we need to store the query here to ensure noone does
+    // drop it till the end ot the statement
+    // We use a boxed queryfragment here just to erase the
+    // generic type
+    _query: Box<dyn QueryFragment<Sqlite> + 'b>,
+    binds_to_free: Vec<(i32, Option<SqliteBindValue<'static>>)>,
 }
 
-impl<'a> StatementUse<'a> {
+impl<'a, 'b> StatementUse<'a, 'b> {
     pub(super) fn bind<T>(mut statement: MaybeCached<'a, Statement>, query: T) -> QueryResult<Self>
     where
-        T: QueryFragment<Sqlite> + QueryId,
+        T: QueryFragment<Sqlite> + QueryId + 'b,
     {
         let mut bind_collector = SqliteBindCollector::new();
         query.collect_binds(&mut bind_collector, &mut ())?;
 
         let SqliteBindCollector { metadata, binds } = bind_collector;
-        let mut owned_strings_to_free = Vec::new();
-        let mut owned_slices_to_free = Vec::new();
         let mut binds_to_free = Vec::new();
 
         for (idx, (bind, tpe)) in binds.into_iter().zip(metadata).enumerate() {
             // Sqlite starts to count by 1
             let bind_idx = idx as i32 + 1;
+
             // It's safe to call bind here as:
             // * The type and value matches
             // * We ensure that corresponding buffers lives long enough below
             // * The statement is not used yet by `step` or anything else
-            unsafe {
-                statement.bind(tpe, &bind, bind_idx)?;
-            }
+            unsafe { statement.bind(tpe, &bind, bind_idx)? };
 
+            // We want to unbind the buffers later to ensure
+            // that sqlite does not access uninitilized memory
             match bind {
-                SqliteBindValue::String(s) => {
-                    // We leak owned strings here
-                    // so that they we can be sure that
-                    // the buffer remains at its location
-                    // till we unbind it from sqlite.
-                    // For the unbinding we need to know the
-                    // bind index_number, so we collect that here
-                    //
-                    // At that point we need to free the memory there,
-                    // so we collect the corresponding pointer here
-                    binds_to_free.push(bind_idx);
-                    let ptr = Box::leak(s);
-                    owned_strings_to_free.push(ptr);
+                SqliteBindValue::BorrowedString(_) | SqliteBindValue::BorrowedBinary(_) => {
+                    binds_to_free.push((bind_idx, None));
                 }
                 SqliteBindValue::Binary(b) => {
-                    // Same as for Strings
-                    binds_to_free.push(bind_idx);
-                    let ptr = Box::leak(b);
-                    owned_slices_to_free.push(ptr);
+                    binds_to_free.push((bind_idx, Some(SqliteBindValue::Binary(b))));
                 }
-                SqliteBindValue::BorrowedString(_) | SqliteBindValue::BorrowedBinary(_) => {
-                    // We want to unbind the buffers later to ensure
-                    // that sqlite does not access uninitilized memory
-                    binds_to_free.push(bind_idx);
+                SqliteBindValue::String(b) => {
+                    binds_to_free.push((bind_idx, Some(SqliteBindValue::String(b))));
                 }
-                _ => {}
+                _ => (),
             }
         }
-        let query = Box::new(query);
-        let query_ptr = Box::leak(query) as *mut T as *mut libc::c_void;
-        let query_ptr = unsafe {
-            // This is safe because we got the ptr from the box above.
-            NonNull::new_unchecked(query_ptr)
-        };
-
-        // we provide a callback to free the query data here
-        // to prevent poluting the signature of `StatementUse` with
-        // the generic type of the query
-        let free_query = Box::new(|ptr: *mut libc::c_void| {
-            let b = unsafe { Box::from_raw(ptr as *mut T) };
-            std::mem::drop(b);
-        }) as Box<dyn Fn(*mut libc::c_void)>;
 
         Ok(Self {
             statement,
             column_names: OnceCell::new(),
             binds_to_free,
-            owned_strings_to_free,
-            owned_slices_to_free,
-            query: query_ptr,
-            drop_query: free_query,
+            _query: Box::new(query) as Box<_>,
         })
     }
 
@@ -353,49 +320,20 @@ impl<'a> StatementUse<'a> {
     }
 }
 
-impl<'a> Drop for StatementUse<'a> {
+impl<'a, 'b> Drop for StatementUse<'a, 'b> {
     fn drop(&mut self) {
         // First reset the statement, otherwise the bind calls
         // below will fails
         self.statement.reset();
 
         // Reset the binds that may point to memory that will be/needs to be freed
-        for idx in &self.binds_to_free {
+        for (idx, _buffer) in std::mem::take(&mut self.binds_to_free) {
             unsafe {
                 // It's always safe to bind null values
                 self.statement
-                    .bind(SqliteType::Text, &SqliteBindValue::Null, *idx)
+                    .bind(SqliteType::Text, &SqliteBindValue::Null, idx)
                     .expect("Binding nulls shouldn't ever fail");
             }
         }
-
-        // After we rebound all string/binary values we can free the corresponding memory
-        for string_to_free in std::mem::replace(&mut self.owned_strings_to_free, Vec::new()) {
-            let len = string_to_free.len();
-            let ptr = string_to_free.as_mut_ptr();
-            let s = unsafe {
-                // This is sound because:
-                // * ptr points to a string
-                // * len is the lenght of the string (as returned by the string itself above)
-                // * len == capacity, as `.into_boxed_str()` shrinks the allocation
-                String::from_raw_parts(ptr, len, len)
-            };
-            std::mem::drop(s);
-        }
-        for slice_to_free in std::mem::replace(&mut self.owned_slices_to_free, Vec::new()) {
-            let len = slice_to_free.len();
-            let ptr = slice_to_free.as_mut_ptr();
-            let v = unsafe {
-                // This is sound because:
-                // * ptr points to a Vec<u8>
-                // * len is the lenght of the Vec<u8> (as returned by the slice itself above)
-                // * len == capacity, as `.into_boxed_slice()` shrinks the allocation
-                Vec::from_raw_parts(ptr, len, len)
-            };
-            std::mem::drop(v);
-        }
-
-        // drop the query
-        (self.drop_query)(self.query.as_ptr())
     }
 }
