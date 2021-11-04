@@ -4,4 +4,4 @@ error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Conn
 14 |     users::table.into_boxed::<Pg>().load::<(i32,)>(&mut connection);
    |                                     ^^^^ expected struct `Sqlite`, found struct `Pg`
    |
-   = note: required because of the requirements on the impl of `LoadQuery<diesel::SqliteConnection, (i32,)>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer,), FromClause<users::table>, Pg>`
+   = note: required because of the requirements on the impl of `LoadQuery<'_, diesel::SqliteConnection, (i32,)>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer,), FromClause<users::table>, Pg>`

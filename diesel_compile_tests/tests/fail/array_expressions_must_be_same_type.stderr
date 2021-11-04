@@ -175,6 +175,23 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
    = note: required because of the requirements on the impl of `Query` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
    = note: required because of the requirements on the impl of `LoadQuery<_, Vec<f64>>` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
 
+error[E0277]: the trait bound `{integer}: QueryFragment<Pg>` is not satisfied
+  --> $DIR/array_expressions_must_be_same_type.rs:12:30
+   |
+12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
+   |                              ^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `{integer}`
+   |
+   = help: the following implementations were found:
+             <&'a T as QueryFragment<DB>>
+             <() as QueryFragment<DB>>
+             <(A, B) as QueryFragment<__DB>>
+             <(A, B, C) as QueryFragment<__DB>>
+           and 246 others
+   = note: required because of the requirements on the impl of `QueryFragment<Pg>` for `({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>)`
+   = note: 3 redundant requirements hidden
+   = note: required because of the requirements on the impl of `QueryFragment<Pg>` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
+   = note: required because of the requirements on the impl of `LoadQuery<_, Vec<f64>>` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::expression::bound::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
+
 error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:12:30
    |
