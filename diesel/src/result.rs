@@ -176,7 +176,7 @@ pub trait DatabaseErrorInformation {
 }
 
 impl fmt::Debug for dyn DatabaseErrorInformation + Send + Sync {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Debug::fmt(&self.message(), f)
     }
 }
@@ -287,7 +287,7 @@ impl From<NulError> for Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::InvalidCString(ref nul_err) => write!(f, "{}", nul_err),
             Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
@@ -318,7 +318,7 @@ impl StdError for Error {
 }
 
 impl Display for ConnectionError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             ConnectionError::InvalidCString(ref nul_err) => nul_err.fmt(f),
             ConnectionError::BadConnection(ref s) => write!(f, "{}", s),
@@ -365,7 +365,7 @@ fn error_impls_send() {
 pub struct UnexpectedNullError;
 
 impl fmt::Display for UnexpectedNullError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Unexpected null for non-null column")
     }
 }
@@ -377,7 +377,7 @@ impl StdError for UnexpectedNullError {}
 pub struct UnexpectedEndOfRow;
 
 impl fmt::Display for UnexpectedEndOfRow {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Unexpected end of row")
     }
 }

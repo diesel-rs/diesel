@@ -1400,9 +1400,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load<'b, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
     where
-        Self: LoadQuery<'b, Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
     {
         self.internal_load(conn)?.collect()
     }
@@ -1507,10 +1507,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'a, 'b:'a, U>(self, conn: &'a mut Conn) -> QueryResult<LoadIter<'a, 'b, Self, Conn, U>>
+    fn load_iter<'conn 'conn:'query, U>(self, conn: &'conn mut Conn) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U>>
     where
-        U: 'a,
-        Self: LoadQuery<'b, Conn, U> + 'a,
+        U: 'conn,
+        Self: LoadQuery<'qcory, Conn, U> + 'conn,
     {
         self.internal_load(conn)
     }
@@ -1560,9 +1560,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn get_result<U>(self, conn: &mut Conn) -> QueryResult<U>
+    fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
     {
         match self.internal_load(conn)?.next() {
             Some(v) => v,
@@ -1576,9 +1576,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// sense for insert, update, and delete statements.
     ///
     /// [`load`]: crate::query_dsl::RunQueryDsl::load()
-    fn get_results<U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
     {
         self.load(conn)
     }
@@ -1616,10 +1616,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn first<U>(self, conn: &mut Conn) -> QueryResult<U>
+    fn first<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
     where
         Self: methods::LimitDsl,
-        Limit<Self>: LoadQuery<Conn, U>,
+        Limit<Self>: LoadQuery<'query, Conn, U>,
     {
         methods::LimitDsl::limit(self, 1).get_result(conn)
     }

@@ -40,7 +40,7 @@ pub enum PgNumeric {
 struct InvalidNumericSign(u16);
 
 impl ::std::fmt::Display for InvalidNumericSign {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> ::std::fmt::Result {
         f.write_str("sign for numeric field was not one of 0, 0x4000, 0xC000")
     }
 }

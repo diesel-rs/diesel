@@ -142,14 +142,14 @@ impl PgMetadataCache {
     }
 
     /// Lookup the OID of a custom type
-    pub fn lookup_type(&self, type_name: &PgMetadataCacheKey) -> Option<PgTypeMetadata> {
+    pub fn lookup_type(&self, type_name: &PgMetadataCacheKey<'_>) -> Option<PgTypeMetadata> {
         Some(PgTypeMetadata(Ok(*self.cache.get(type_name)?)))
     }
 
     /// Store the OID of a custom type
     pub fn store_type(
         &mut self,
-        type_name: PgMetadataCacheKey,
+        type_name: PgMetadataCacheKey<'_>,
         type_metadata: impl Into<InnerPgTypeMetadata>,
     ) {
         self.cache

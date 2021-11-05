@@ -136,7 +136,7 @@ where
         source: &T,
         bind_types: &[DB::TypeMetadata],
         prepare_fn: F,
-    ) -> QueryResult<MaybeCached<Statement>>
+    ) -> QueryResult<MaybeCached<'_, Statement>>
     where
         T: QueryFragment<DB> + QueryId,
         F: FnOnce(&str, PrepareForCache) -> QueryResult<Statement>,
@@ -226,7 +226,7 @@ where
         }
     }
 
-    pub fn sql<T: QueryFragment<DB>>(&self, source: &T) -> QueryResult<Cow<str>> {
+    pub fn sql<T: QueryFragment<DB>>(&self, source: &T) -> QueryResult<Cow<'_, str>> {
         match *self {
             StatementCacheKey::Type(_) => Self::construct_sql(source).map(Cow::Owned),
             StatementCacheKey::Sql { ref sql, .. } => Ok(Cow::Borrowed(sql)),

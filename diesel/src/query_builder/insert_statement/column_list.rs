@@ -13,7 +13,7 @@ pub trait ColumnList {
     /// Generate the SQL for this column list.
     ///
     /// Column names must *not* be qualified.
-    fn walk_ast<DB: Backend>(&self, out: AstPass<DB>) -> QueryResult<()>;
+    fn walk_ast<DB: Backend>(&self, out: AstPass<'_, '_, DB>) -> QueryResult<()>;
 }
 
 impl<C> ColumnList for C
@@ -22,7 +22,7 @@ where
 {
     type Table = <C as Column>::Table;
 
-    fn walk_ast<DB: Backend>(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<DB: Backend>(&self, mut out: AstPass<'_, '_, DB>) -> QueryResult<()> {
         out.push_identifier(C::NAME)?;
         Ok(())
     }

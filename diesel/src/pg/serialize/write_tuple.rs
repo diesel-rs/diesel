@@ -40,5 +40,5 @@ use crate::serialize::{self, Output};
 /// ```
 pub trait WriteTuple<ST> {
     /// See trait documentation.
-    fn write_tuple(&self, out: &mut Output<Pg>) -> serialize::Result;
+    fn write_tuple(&self, out: &mut Output<'_, '_, Pg>) -> serialize::Result;
 }

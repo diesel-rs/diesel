@@ -9,13 +9,13 @@ use crate::sqlite::Sqlite;
 use crate::util::OnceCell;
 
 #[allow(missing_debug_implementations)]
-pub struct SqliteRow<'a, 'b> {
-    pub(super) inner: Rc<RefCell<PrivateSqliteRow<'a, 'b>>>,
+pub struct SqliteRow<'stmt, 'query> {
+    pub(super) inner: Rc<RefCell<PrivateSqliteRow<'stmt, 'query>>>,
     pub(super) field_count: usize,
 }
 
-pub(super) enum PrivateSqliteRow<'a, 'b> {
-    Direct(StatementUse<'a, 'b>),
+pub(super) enum PrivateSqliteRow<'stmt, 'query> {
+    Direct(StatementUse<'stmt, 'query>),
     Duplicated {
         values: Vec<Option<OwnedSqliteValue>>,
         column_names: Rc<[Option<String>]>,
@@ -23,8 +23,11 @@ pub(super) enum PrivateSqliteRow<'a, 'b> {
     TemporaryEmpty,
 }
 
-impl<'a, 'b> PrivateSqliteRow<'a, 'b> {
-    pub(super) fn duplicate(&mut self, column_names: &mut Option<Rc<[Option<String>]>>) -> Self {
+impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
+    pub(super) fn duplicate(
+        &mut self,
+        column_names: &mut Option<Rc<[Option<String>]>>,
+    ) -> PrivateSqliteRow<'stmt, 'query> {
         match self {
             PrivateSqliteRow::Direct(stmt) => {
                 let column_names = if let Some(column_names) = column_names {
@@ -60,20 +63,23 @@ impl<'a, 'b> PrivateSqliteRow<'a, 'b> {
     }
 }
 
-impl<'a, 'b, 'c> RowGatWorkaround<'a, Sqlite> for SqliteRow<'b, 'c> {
-    type Field = SqliteField<'a, 'a>;
+impl<'field, 'stmt, 'query> RowGatWorkaround<'field, Sqlite> for SqliteRow<'stmt, 'query> {
+    type Field = SqliteField<'field, 'field>;
 }
 
-impl<'a, 'c> Row<'a, Sqlite> for SqliteRow<'a, 'c> {
+impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.field_count
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Sqlite>>::Field>
+    fn get<'field, I>(
+        &'field self,
+        idx: I,
+    ) -> Option<<Self as RowGatWorkaround<'field, Sqlite>>::Field>
     where
-        'a: 'b,
+        'stmt: 'field,
         Self: RowIndex<I>,
     {
         let idx = self.idx(idx)?;
@@ -84,12 +90,12 @@ impl<'a, 'c> Row<'a, Sqlite> for SqliteRow<'a, 'c> {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
+    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
 
-impl<'a, 'b> RowIndex<usize> for SqliteRow<'a, 'b> {
+impl<'stmt, 'query> RowIndex<usize> for SqliteRow<'stmt, 'query> {
     fn idx(&self, idx: usize) -> Option<usize> {
         if idx < self.field_count {
             Some(idx)
@@ -99,8 +105,8 @@ impl<'a, 'b> RowIndex<usize> for SqliteRow<'a, 'b> {
     }
 }
 
-impl<'a, 'd, 'c> RowIndex<&'d str> for SqliteRow<'a, 'c> {
-    fn idx(&self, field_name: &'d str) -> Option<usize> {
+impl<'stmt, 'idx, 'query> RowIndex<&'idx str> for SqliteRow<'stmt, 'query> {
+    fn idx(&self, field_name: &'idx str) -> Option<usize> {
         match &mut *self.inner.borrow_mut() {
             PrivateSqliteRow::Direct(stmt) => stmt.index_for_column_name(field_name),
             PrivateSqliteRow::Duplicated { column_names, .. } => column_names
@@ -121,13 +127,13 @@ impl<'a, 'd, 'c> RowIndex<&'d str> for SqliteRow<'a, 'c> {
 }
 
 #[allow(missing_debug_implementations)]
-pub struct SqliteField<'a, 'b> {
-    pub(super) row: Ref<'a, PrivateSqliteRow<'a, 'b>>,
+pub struct SqliteField<'stmt, 'query> {
+    pub(super) row: Ref<'stmt, PrivateSqliteRow<'stmt, 'query>>,
     pub(super) col_idx: i32,
     field_name: OnceCell<Option<String>>,
 }
 
-impl<'a, 'b> Field<'a, Sqlite> for SqliteField<'a, 'b> {
+impl<'stmt, 'query> Field<'stmt, Sqlite> for SqliteField<'stmt, 'query> {
     fn field_name(&self) -> Option<&str> {
         self.field_name
             .get_or_init(|| match &*self.row {
@@ -167,7 +173,7 @@ impl<'a, 'b> Field<'a, Sqlite> for SqliteField<'a, 'b> {
         self.value().is_none()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<Sqlite>> {
+    fn value(&self) -> Option<crate::backend::RawValue<'_, Sqlite>> {
         SqliteValue::new(Ref::clone(&self.row), self.col_idx)
     }
 }

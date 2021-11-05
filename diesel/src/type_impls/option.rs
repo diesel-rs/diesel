@@ -31,11 +31,11 @@ where
     DB: Backend,
     ST: SqlType<IsNull = is_nullable::NotNull>,
 {
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
         T::from_sql(bytes).map(Some)
     }
 
-    fn from_nullable_sql(bytes: Option<backend::RawValue<DB>>) -> deserialize::Result<Self> {
+    fn from_nullable_sql(bytes: Option<backend::RawValue<'_, DB>>) -> deserialize::Result<Self> {
         match bytes {
             Some(bytes) => T::from_sql(bytes).map(Some),
             None => Ok(None),

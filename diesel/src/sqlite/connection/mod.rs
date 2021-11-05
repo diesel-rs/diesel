@@ -52,9 +52,9 @@ impl SimpleConnection for SqliteConnection {
     }
 }
 
-impl<'a, 'b> ConnectionGatWorkaround<'a, 'b, Sqlite> for SqliteConnection {
-    type Cursor = StatementIterator<'a, 'b>;
-    type Row = self::row::SqliteRow<'a, 'b>;
+impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Sqlite> for SqliteConnection {
+    type Cursor = StatementIterator<'conn, 'query>;
+    type Row = self::row::SqliteRow<'conn, 'query>;
 }
 
 impl Connection for SqliteConnection {
@@ -88,13 +88,13 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn load<'a, 'b, T>(
-        &'a mut self,
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, 'b, Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'b,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         let statement_use = self.prepared_query(source.as_query())?;

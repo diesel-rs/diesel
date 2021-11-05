@@ -148,7 +148,7 @@ where
 pub struct OnKeyword;
 
 impl<DB: Backend> nodes::MiddleFragment<DB> for OnKeyword {
-    fn push_sql(&self, mut pass: AstPass<DB>) {
+    fn push_sql(&self, mut pass: AstPass<'_, '_, DB>) {
         pass.push_sql(" ON ");
     }
 }

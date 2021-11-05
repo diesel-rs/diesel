@@ -99,7 +99,7 @@ macro_rules! tuple_impls {
             {
                 type Table = Tab;
 
-                fn walk_ast<__DB: Backend>(&self, mut out: AstPass<__DB>) -> QueryResult<()> {
+                fn walk_ast<__DB: Backend>(&self, mut out: AstPass<'_, '_, __DB>) -> QueryResult<()> {
                     $(
                         if $idx != 0 {
                             out.push_sql(", ");
@@ -170,7 +170,7 @@ macro_rules! tuple_impls {
                 __DB: Backend,
                 $($T: InsertValues<Tab, __DB>,)+
             {
-                fn column_names(&self, mut out: AstPass<__DB>) -> QueryResult<()> {
+                fn column_names(&self, mut out: AstPass<'_, '_, __DB>) -> QueryResult<()> {
                     let mut needs_comma = false;
                     $(
                         let noop_element = self.$idx.is_noop()?;

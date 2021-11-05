@@ -366,6 +366,6 @@ impl<T: Query> AsQuery for T {
 /// # }
 /// # }
 /// ```
-pub fn debug_query<DB, T>(query: &T) -> DebugQuery<T, DB> {
+pub fn debug_query<DB, T>(query: &T) -> DebugQuery<'_, T, DB> {
     DebugQuery::new(query)
 }

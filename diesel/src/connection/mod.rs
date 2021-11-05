@@ -29,14 +29,14 @@ pub trait SimpleConnection {
 /// implementation. This trait is only useful in combination with [`Connection`].
 ///
 /// Implementation wise this is a workaround for GAT's
-pub trait ConnectionGatWorkaround<'a, 'b, DB: Backend> {
+pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend> {
     /// The cursor type returned by [`Connection::load`]
     ///
     /// Users should handle this as opaque type that implements [`Iterator`]
     type Cursor: Iterator<Item = QueryResult<Self::Row>>;
     /// The row type used as [`Iterator::Item`] for the iterator implementation
     /// of [`ConnectionGatWorkaround::Cursor`]
-    type Row: crate::row::Row<'a, DB>;
+    type Row: crate::row::Row<'conn, DB>;
 }
 
 /// A connection to a database
@@ -192,13 +192,13 @@ where
     fn execute(&mut self, query: &str) -> QueryResult<usize>;
 
     #[doc(hidden)]
-    fn load<'a, 'b, T>(
-        &'a mut self,
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'a, 'b, Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'b,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>;
 
     #[doc(hidden)]

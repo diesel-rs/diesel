@@ -98,6 +98,7 @@
 #![warn(
     missing_debug_implementations,
     missing_copy_implementations,
+    elided_lifetimes_in_paths,
     missing_docs
 )]
 // Clippy lints

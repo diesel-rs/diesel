@@ -98,7 +98,7 @@ macro_rules! tuple_impls {
             $($T: ToSql<$ST, Pg>,)+
             $(Pg: HasSqlType<$ST>),+
         {
-            fn write_tuple(&self, out: &mut Output<Pg>) -> serialize::Result {
+            fn write_tuple(&self, out: &mut Output<'_, '_, Pg>) -> serialize::Result {
                 let mut buffer = Vec::new();
                 out.write_i32::<NetworkEndian>($Tuple)?;
 

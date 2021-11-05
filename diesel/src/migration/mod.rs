@@ -37,7 +37,7 @@ where
     String: FromSql<Text, DB>,
     DB: Backend,
 {
-    fn from_sql(bytes: crate::backend::RawValue<DB>) -> crate::deserialize::Result<Self> {
+    fn from_sql(bytes: crate::backend::RawValue<'_, DB>) -> crate::deserialize::Result<Self> {
         let s = String::from_sql(bytes)?;
         Ok(Self(Cow::Owned(s)))
     }
@@ -91,7 +91,7 @@ impl<'a> Display for MigrationVersion<'a> {
 /// schema.
 pub trait MigrationName: Display {
     /// The version corresponding to the current migration name
-    fn version(&self) -> MigrationVersion;
+    fn version(&self) -> MigrationVersion<'_>;
 }
 
 /// Represents a migration that interacts with diesel

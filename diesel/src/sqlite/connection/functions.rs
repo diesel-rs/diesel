@@ -201,7 +201,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
+    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
@@ -236,7 +236,7 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
         self.value().is_none()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<Sqlite>> {
+    fn value(&self) -> Option<crate::backend::RawValue<'_, Sqlite>> {
         SqliteValue::new(
             Ref::map(Ref::clone(&self.args), |drop| std::ops::Deref::deref(drop)),
             self.col_idx,

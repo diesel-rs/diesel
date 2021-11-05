@@ -78,10 +78,12 @@ where
         let value = unsafe {
             // This cast is safe as `SqliteBatchInsertWrapper` is #[repr(transparent)]
             &*(self as *const DebugQuery<
+                'a,
                 InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
                 Sqlite,
             >
                 as *const DebugQuery<
+                    'a,
                     InsertStatement<T, SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Op>,
                     Sqlite,
                 >)
@@ -93,10 +95,12 @@ where
         let value = unsafe {
             // This cast is safe as `SqliteBatchInsertWrapper` is #[repr(transparent)]
             &*(self as *const DebugQuery<
+                'a,
                 InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>,
                 Sqlite,
             >
                 as *const DebugQuery<
+                    'a,
                     InsertStatement<T, SqliteBatchInsertWrapper<V, T, QId, STATIC_QUERY_ID>, Op>,
                     Sqlite,
                 >)

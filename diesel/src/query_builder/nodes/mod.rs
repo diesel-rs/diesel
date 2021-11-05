@@ -39,11 +39,11 @@ impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
 }
 
 pub trait MiddleFragment<DB: Backend> {
-    fn push_sql(&self, pass: AstPass<DB>);
+    fn push_sql(&self, pass: AstPass<'_, '_, DB>);
 }
 
 impl<'a, DB: Backend> MiddleFragment<DB> for &'a str {
-    fn push_sql(&self, mut pass: AstPass<DB>) {
+    fn push_sql(&self, mut pass: AstPass<'_, '_, DB>) {
         pass.push_sql(self);
     }
 }

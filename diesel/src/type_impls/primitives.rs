@@ -117,7 +117,7 @@ where
     DB: Backend,
     *const str: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
         let str_ptr = <*const str as FromSql<ST, DB>>::from_sql(bytes)?;
         // We know that the pointer impl will never return null
         let string = unsafe { &*str_ptr };
@@ -157,7 +157,7 @@ where
     DB: Backend,
     *const [u8]: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
         let slice_ptr = <*const [u8] as FromSql<ST, DB>>::from_sql(bytes)?;
         // We know that the pointer impl will never return null
         let bytes = unsafe { &*slice_ptr };
@@ -214,7 +214,7 @@ where
     DB: Backend,
     T::Owned: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
         T::Owned::from_sql(bytes).map(Cow::Owned)
     }
 }

@@ -136,7 +136,7 @@ impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Write for O
         self.out.write_all(buf)
     }
 
-    fn write_fmt(&mut self, fmt: fmt::Arguments) -> io::Result<()> {
+    fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> io::Result<()> {
         self.out.write_fmt(fmt)
     }
 }
@@ -170,7 +170,7 @@ where
     <<DB as HasBindCollector<'a>>::BindCollector as BindCollector<'a, DB>>::Buffer: fmt::Debug,
     DB: Backend,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.out.fmt(f)
     }
 }

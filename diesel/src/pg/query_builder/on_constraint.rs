@@ -42,7 +42,7 @@ use crate::result::QueryResult;
 /// assert!(pk_conflict_result.is_err());
 /// # }
 /// ```
-pub fn on_constraint(constraint_name: &str) -> OnConstraint {
+pub fn on_constraint(constraint_name: &str) -> OnConstraint<'_> {
     OnConstraint { constraint_name }
 }
 

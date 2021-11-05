@@ -116,7 +116,7 @@ where
 }
 
 pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
-    fn column_names(&self, out: AstPass<DB>) -> QueryResult<()>;
+    fn column_names(&self, out: AstPass<'_, '_, DB>) -> QueryResult<()>;
 }
 
 #[derive(Debug, Copy, Clone, QueryId)]
@@ -161,7 +161,7 @@ where
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<DB>,
 {
-    fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn column_names(&self, mut out: AstPass<'_, '_, DB>) -> QueryResult<()> {
         out.push_identifier(Col::NAME)?;
         Ok(())
     }
@@ -174,7 +174,7 @@ where
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<DB>,
 {
-    fn column_names(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn column_names(&self, mut out: AstPass<'_, '_, DB>) -> QueryResult<()> {
         out.push_identifier(Col::NAME)?;
         Ok(())
     }
@@ -230,7 +230,7 @@ where
     Expr: Expression<SqlType = Col::SqlType> + AppearsOnTable<NoFromClause>,
     Self: QueryFragment<crate::sqlite::Sqlite>,
 {
-    fn column_names(&self, mut out: AstPass<crate::sqlite::Sqlite>) -> QueryResult<()> {
+    fn column_names(&self, mut out: AstPass<'_, '_, crate::sqlite::Sqlite>) -> QueryResult<()> {
         if let Self::Expression(..) = *self {
             out.push_identifier(Col::NAME)?;
         }

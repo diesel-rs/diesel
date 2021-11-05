@@ -173,7 +173,7 @@ impl<'a> Row<'a, Mysql> for MysqlRow {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
+    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
@@ -217,7 +217,7 @@ impl<'a> Field<'a, Mysql> for MysqlField<'a> {
         }
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<Mysql>> {
+    fn value(&self) -> Option<crate::backend::RawValue<'_, Mysql>> {
         match &*self.binds {
             PrivateMysqlRow::Copied(b) | PrivateMysqlRow::Direct(b) => b[self.idx].value(),
         }

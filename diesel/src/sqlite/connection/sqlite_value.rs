@@ -13,11 +13,11 @@ use super::row::PrivateSqliteRow;
 /// Use existing `FromSql` implementations to convert this into
 /// rust values
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct SqliteValue<'a, 'b, 'c> {
+pub struct SqliteValue<'row, 'stmt, 'query> {
     // This field exists to ensure that nobody
     // can modify the underlying row while we are
     // holding a reference to some row value here
-    _row: Ref<'a, PrivateSqliteRow<'b, 'c>>,
+    _row: Ref<'row, PrivateSqliteRow<'stmt, 'query>>,
     // we extract the raw value pointer as part of the constructor
     // to safe the match statements for each method
     // Acconding to benchmarks this leads to a ~20-30% speedup
@@ -39,8 +39,11 @@ impl Drop for OwnedSqliteValue {
     }
 }
 
-impl<'a, 'b, 'c> SqliteValue<'a, 'b, 'c> {
-    pub(super) fn new(row: Ref<'a, PrivateSqliteRow<'b, 'c>>, col_idx: i32) -> Option<Self> {
+impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
+    pub(super) fn new(
+        row: Ref<'row, PrivateSqliteRow<'stmt, 'query>>,
+        col_idx: i32,
+    ) -> Option<Self> {
         let value = match &*row {
             PrivateSqliteRow::Direct(stmt) => stmt.column_value(col_idx)?,
             PrivateSqliteRow::Duplicated { values, .. } => {
@@ -66,7 +69,7 @@ impl<'a, 'b, 'c> SqliteValue<'a, 'b, 'c> {
         }
     }
 
-    pub(crate) fn parse_string<'d, R>(&'d self, f: impl FnOnce(&'d str) -> R) -> R {
+    pub(crate) fn parse_string<'value, R>(&'value self, f: impl FnOnce(&'value str) -> R) -> R {
         let s = unsafe {
             let ptr = ffi::sqlite3_value_text(self.value.as_ptr());
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());

@@ -174,7 +174,7 @@ impl BindData {
         }
     }
 
-    fn for_output(tpe: Option<MysqlType>, metadata: &MysqlFieldMetadata) -> Self {
+    fn for_output(tpe: Option<MysqlType>, metadata: &MysqlFieldMetadata<'_>) -> Self {
         let (tpe, flags) = if let Some(tpe) = tpe {
             match (tpe, metadata.field_type()) {
                 // Those are types where we handle the conversion in diesel itself

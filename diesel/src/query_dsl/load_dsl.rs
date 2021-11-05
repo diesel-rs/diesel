@@ -13,18 +13,18 @@ use crate::result::QueryResult;
 /// to call `load` from generic code.
 ///
 /// [`RunQueryDsl`]: crate::RunQueryDsl
-pub trait LoadQuery<'b, Conn, U>: RunQueryDsl<Conn>
+pub trait LoadQuery<'query, Conn, U>: RunQueryDsl<Conn>
 where
-    for<'a> Self: LoadQueryGatWorkaround<'a, 'b, Conn, U>,
+    for<'a> Self: LoadQueryGatWorkaround<'a, 'query, Conn, U>,
 {
     /// Load this query
-    fn internal_load<'a>(
+    fn internal_load<'conn>(
         self,
-        conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, 'b, Conn, U>>::Ret>;
+        conn: &'conn mut Conn,
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret>;
 }
 
-pub trait LoadQueryGatWorkaround<'a, 'b, Conn, U> {
+pub trait LoadQueryGatWorkaround<'conn, 'query, Conn, U> {
     type Ret: Iterator<Item = QueryResult<U>>;
 }
 
@@ -64,12 +64,12 @@ where
 }
 
 #[allow(missing_debug_implementations)]
-pub struct LoadIter<'a, U, C, ST, DB> {
+pub struct LoadIter<'conn, U, C, ST, DB> {
     cursor: C,
-    _marker: std::marker::PhantomData<&'a (ST, U, DB)>,
+    _marker: std::marker::PhantomData<&'conn (ST, U, DB)>,
 }
 
-impl<'a, 'b, Conn, T, U, DB> LoadQueryGatWorkaround<'a, 'b, Conn, U> for T
+impl<'conn, 'query, Conn, T, U, DB> LoadQueryGatWorkaround<'conn, 'query, Conn, U> for T
 where
     Conn: Connection<Backend = DB>,
     T: AsQuery + RunQueryDsl<Conn>,
@@ -80,19 +80,19 @@ where
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
     type Ret = LoadIter<
-        'a,
+        'conn,
         U,
-        <Conn as ConnectionGatWorkaround<'a, 'b, DB>>::Cursor,
+        <Conn as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
         DB,
     >;
 }
 
-impl<'b, Conn, T, U, DB> LoadQuery<'b, Conn, U> for T
+impl<'query, Conn, T, U, DB> LoadQuery<'query, Conn, U> for T
 where
     Conn: Connection<Backend = DB>,
     T: AsQuery + RunQueryDsl<Conn>,
-    T::Query: QueryFragment<DB> + QueryId + 'b,
+    T::Query: QueryFragment<DB> + QueryId + 'query,
     T::SqlType: CompatibleType<U, DB>,
     DB: Backend + QueryMetadata<T::SqlType> + 'static,
     U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
@@ -101,7 +101,7 @@ where
     fn internal_load<'a>(
         self,
         conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, 'b, Conn, U>>::Ret> {
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, 'query, Conn, U>>::Ret> {
         Ok(LoadIter {
             cursor: conn.load(self)?,
             _marker: Default::default(),
@@ -134,11 +134,11 @@ where
     }
 }
 
-impl<'a, C, U, ST, DB, R> LoadIter<'a, U, C, ST, DB>
+impl<'conn, C, U, ST, DB, R> LoadIter<'conn, U, C, ST, DB>
 where
     DB: Backend,
     C: Iterator<Item = QueryResult<R>>,
-    R: crate::row::Row<'a, DB>,
+    R: crate::row::Row<'conn, DB>,
     U: FromSqlRow<ST, DB>,
 {
     fn map_row(row: Option<QueryResult<R>>) -> Option<QueryResult<U>> {
@@ -151,11 +151,11 @@ where
     }
 }
 
-impl<'a, C, U, ST, DB, R> Iterator for LoadIter<'a, U, C, ST, DB>
+impl<'conn, C, U, ST, DB, R> Iterator for LoadIter<'conn, U, C, ST, DB>
 where
     DB: Backend,
     C: Iterator<Item = QueryResult<R>>,
-    R: crate::row::Row<'a, DB>,
+    R: crate::row::Row<'conn, DB>,
     U: FromSqlRow<ST, DB>,
 {
     type Item = QueryResult<U>;
@@ -187,11 +187,11 @@ where
     }
 }
 
-impl<'a, C, U, ST, DB, R> ExactSizeIterator for LoadIter<'a, U, C, ST, DB>
+impl<'conn, C, U, ST, DB, R> ExactSizeIterator for LoadIter<'conn, U, C, ST, DB>
 where
     DB: Backend,
     C: ExactSizeIterator + Iterator<Item = QueryResult<R>>,
-    R: crate::row::Row<'a, DB>,
+    R: crate::row::Row<'conn, DB>,
     U: FromSqlRow<ST, DB>,
 {
     fn len(&self) -> usize {

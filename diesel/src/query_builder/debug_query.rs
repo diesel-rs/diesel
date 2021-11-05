@@ -35,7 +35,7 @@ where
     DB::QueryBuilder: Default,
     T: QueryFragment<DB>,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut query_builder = DB::QueryBuilder::default();
         QueryFragment::<DB>::to_sql(self.query, &mut query_builder).map_err(|_| fmt::Error)?;
         let debug_binds = DebugBinds::<_, DB>::new(self.query);
@@ -49,7 +49,7 @@ where
     DB::QueryBuilder: Default,
     T: QueryFragment<DB>,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut query_builder = DB::QueryBuilder::default();
         QueryFragment::<DB>::to_sql(self.query, &mut query_builder).map_err(|_| fmt::Error)?;
         let debug_binds = DebugBinds::<_, DB>::new(self.query);
@@ -83,7 +83,7 @@ where
 {
     // Clippy is wrong, this cannot be expressed with pointer casting
     #[allow(clippy::transmute_ptr_to_ptr)]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut list = f.debug_list();
         {
             // Safe because the lifetime is shortened to one smaller

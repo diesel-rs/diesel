@@ -8,7 +8,7 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 const SQLITE_DATE_FORMAT: &str = "%F";
 
 impl FromSql<Date, Sqlite> for NaiveDate {
-    fn from_sql(value: backend::RawValue<Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value
             .parse_string(|s| Self::parse_from_str(s, SQLITE_DATE_FORMAT))
             .map_err(Into::into)
@@ -27,7 +27,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 }
 
 impl FromSql<Time, Sqlite> for NaiveTime {
-    fn from_sql(value: backend::RawValue<Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             let valid_time_formats = &[
                 // Most likely
@@ -58,7 +58,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 }
 
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn from_sql(value: backend::RawValue<Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             let sqlite_datetime_formats = &[
                 // Most likely format
