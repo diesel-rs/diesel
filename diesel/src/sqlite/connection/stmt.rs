@@ -8,9 +8,9 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::query_builder::{SqliteBindCollector, SqliteBindValue};
 use crate::sqlite::{Sqlite, SqliteType};
-use crate::util::OnceCell;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
+use std::mem::ManuallyDrop;
 use std::os::raw as libc;
 use std::ptr::{self, NonNull};
 #[allow(missing_debug_implementations)]
@@ -48,10 +48,15 @@ impl Statement {
         })
     }
 
+    // The caller of this function has to ensure that:
+    // * Any buffer provided as `SqliteBindValue::BorrowedBinary`, `SqliteBindValue::Binary`
+    // `SqliteBindValue::String` or `SqliteBindValue::BorrowedString` is valid
+    // till either a new value is bound to the same paramter or the underlying
+    // prepared statement is dropped.
     unsafe fn bind(
         &mut self,
         tpe: SqliteType,
-        value: &SqliteBindValue,
+        value: &SqliteBindValue<'_>,
         bind_index: i32,
     ) -> QueryResult<()> {
         // This unsafe block assumes the following invariants:
@@ -187,38 +192,58 @@ impl Drop for Statement {
     }
 }
 
-#[allow(missing_debug_implementations)]
-pub struct StatementUse<'a, 'b> {
-    statement: MaybeCached<'a, Statement>,
-    column_names: OnceCell<Vec<*const str>>,
+struct BoundStatement<'stmt, 'query> {
+    statement: MaybeCached<'stmt, Statement>,
     // we need to store the query here to ensure noone does
     // drop it till the end ot the statement
     // We use a boxed queryfragment here just to erase the
-    // generic type
-    _query: Box<dyn QueryFragment<Sqlite> + 'b>,
-    binds_to_free: Vec<(i32, Option<SqliteBindValue<'static>>)>,
+    // generic type, we use ManuallyDrop to communicate
+    // that this is a shared buffer
+    query: ManuallyDrop<Box<dyn QueryFragment<Sqlite> + 'query>>,
+    // we need to store any owned bind values speratly, as they are not
+    // contained in the query itself. We use ManuallyDrop to
+    // communicate that this is a shared buffer
+    binds_to_free: ManuallyDrop<Vec<(i32, Option<SqliteBindValue<'static>>)>>,
 }
 
-impl<'a, 'b> StatementUse<'a, 'b> {
-    pub(super) fn bind<T>(mut statement: MaybeCached<'a, Statement>, query: T) -> QueryResult<Self>
+impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
+    fn bind<T>(
+        mut statement: MaybeCached<'stmt, Statement>,
+        query: T,
+    ) -> QueryResult<BoundStatement<'stmt, 'query>>
     where
-        T: QueryFragment<Sqlite> + QueryId + 'b,
+        T: QueryFragment<Sqlite> + QueryId + 'query,
     {
+        // Don't use a trait object here to prevent using virtual function call
+        // For sqlite this can introduce a measurable overhead
+        let mut query = ManuallyDrop::new(query);
+
         let mut bind_collector = SqliteBindCollector::new();
         query.collect_binds(&mut bind_collector, &mut ())?;
 
         let SqliteBindCollector { metadata, binds } = bind_collector;
-        let mut binds_to_free = Vec::new();
+        let mut binds_to_free = ManuallyDrop::new(Vec::new());
 
-        for (idx, (bind, tpe)) in binds.into_iter().zip(metadata).enumerate() {
-            // Sqlite starts to count by 1
-            let bind_idx = idx as i32 + 1;
-
+        for (bind_idx, (bind, tpe)) in (1..).zip(binds.into_iter().zip(metadata)) {
             // It's safe to call bind here as:
             // * The type and value matches
             // * We ensure that corresponding buffers lives long enough below
             // * The statement is not used yet by `step` or anything else
-            unsafe { statement.bind(tpe, &bind, bind_idx)? };
+            let res = unsafe { statement.bind(tpe, &bind, bind_idx) };
+
+            if let Err(e) = res {
+                Self::unbind_buffers(&mut statement, &binds_to_free);
+
+                unsafe {
+                    // This is safe as we return early from this function, we
+                    // unbound the binds above, so it's fine now to drop
+                    // the owned binds
+                    ManuallyDrop::drop(&mut binds_to_free);
+                    // At last we can also drop query
+                    ManuallyDrop::drop(&mut query);
+                }
+                return Err(e);
+            }
 
             // We want to unbind the buffers later to ensure
             // that sqlite does not access uninitilized memory
@@ -238,9 +263,69 @@ impl<'a, 'b> StatementUse<'a, 'b> {
 
         Ok(Self {
             statement,
-            column_names: OnceCell::new(),
             binds_to_free,
-            _query: Box::new(query) as Box<_>,
+            query: ManuallyDrop::new(Box::new(ManuallyDrop::into_inner(query))
+                as Box<dyn QueryFragment<Sqlite> + 'query>),
+        })
+    }
+
+    fn unbind_buffers(
+        stmt: &mut MaybeCached<'stmt, Statement>,
+        binds_to_free: &[(i32, Option<SqliteBindValue<'static>>)],
+    ) {
+        for (idx, _buffer) in binds_to_free {
+            unsafe {
+                // It's always safe to bind null values, as there is no buffer that needs to outlife something
+                stmt.bind(SqliteType::Text, &SqliteBindValue::Null, *idx)
+                    .expect(
+                        "Binding a null value should never fail. \
+                             If you ever see this error message please open \
+                             an issue at diesels issue tracker containing \
+                             code how to trigger this message.",
+                    );
+            }
+        }
+    }
+}
+
+impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
+    fn drop(&mut self) {
+        // First reset the statement, otherwise the bind calls
+        // below will fails
+        self.statement.reset();
+
+        // Reset the binds that may point to memory that will be/needs to be freed
+        Self::unbind_buffers(&mut self.statement, &self.binds_to_free);
+        unsafe {
+            // We unbound the corresponding buffers above, so it's fine to drop the
+            // owned binds now
+            ManuallyDrop::drop(&mut self.binds_to_free);
+            // We've dropped everything that could reference the query
+            // so it's safe to drop the query here
+            ManuallyDrop::drop(&mut self.query);
+        }
+    }
+}
+
+#[allow(missing_debug_implementations)]
+pub struct StatementUse<'stmt, 'query> {
+    statement: BoundStatement<'stmt, 'query>,
+    column_names: Option<Vec<*const str>>,
+    called_step_once: bool,
+}
+
+impl<'stmt, 'query> StatementUse<'stmt, 'query> {
+    pub(super) fn bind<T>(
+        statement: MaybeCached<'stmt, Statement>,
+        query: T,
+    ) -> QueryResult<StatementUse<'stmt, 'query>>
+    where
+        T: QueryFragment<Sqlite> + QueryId + 'query,
+    {
+        Ok(Self {
+            statement: BoundStatement::bind(statement, query)?,
+            column_names: None,
+            called_step_once: false,
         })
     }
 
@@ -250,13 +335,23 @@ impl<'a, 'b> StatementUse<'a, 'b> {
 
     pub(in crate::sqlite::connection) fn step(self) -> QueryResult<Option<Self>> {
         let res = unsafe {
-            match ffi::sqlite3_step(self.statement.inner_statement.as_ptr()) {
+            match ffi::sqlite3_step(self.statement.statement.inner_statement.as_ptr()) {
                 ffi::SQLITE_DONE => Ok(None),
                 ffi::SQLITE_ROW => Ok(Some(())),
-                _ => Err(last_error(self.statement.raw_connection())),
+                _ => Err(last_error(self.statement.statement.raw_connection())),
             }
         }?;
-        Ok(res.map(move |()| self))
+        Ok(res.map(move |()| {
+            if self.called_step_once {
+                self
+            } else {
+                Self {
+                    called_step_once: true,
+                    column_names: None,
+                    ..self
+                }
+            }
+        }))
     }
 
     // The returned string pointer is valid until either the prepared statement is
@@ -266,10 +361,14 @@ impl<'a, 'b> StatementUse<'a, 'b> {
     // on the same column.
     //
     // https://sqlite.org/c3ref/column_name.html
+    //
+    // Note: This function is marked as unsafe, as calling it can invalidate
+    // any existing column name pointer. It should maximally be called once
+    // per column at all.
     pub(super) unsafe fn column_name(&self, idx: i32) -> *const str {
         let name = {
             let column_name =
-                ffi::sqlite3_column_name(self.statement.inner_statement.as_ptr(), idx);
+                ffi::sqlite3_column_name(self.statement.statement.inner_statement.as_ptr(), idx);
             assert!(
                 !column_name.is_null(),
                 "The Sqlite documentation states that it only returns a \
@@ -286,7 +385,7 @@ impl<'a, 'b> StatementUse<'a, 'b> {
     }
 
     pub(super) fn column_count(&self) -> i32 {
-        unsafe { ffi::sqlite3_column_count(self.statement.inner_statement.as_ptr()) }
+        unsafe { ffi::sqlite3_column_count(self.statement.statement.inner_statement.as_ptr()) }
     }
 
     pub(super) fn index_for_column_name(&mut self, field_name: &str) -> Option<usize> {
@@ -296,17 +395,25 @@ impl<'a, 'b> StatementUse<'a, 'b> {
     }
 
     pub(super) fn field_name(&mut self, idx: i32) -> Option<&str> {
-        if let Some(column_names) = self.column_names.get() {
+        if let Some(column_names) = &self.column_names {
             return column_names
                 .get(idx as usize)
                 .and_then(|c| unsafe { c.as_ref() });
         }
-        let values = (0..self.column_count())
-            .map(|idx| unsafe { self.column_name(idx) })
-            .collect::<Vec<_>>();
-        let ret = values.get(idx as usize).copied();
-        let _ = self.column_names.set(values);
-        ret.and_then(|p| unsafe { p.as_ref() })
+        let count = self.column_count();
+        if idx >= count {
+            return None;
+        }
+        self.column_names = Some(
+            (0..count)
+                .map(|idx| unsafe {
+                    // By initializing the whole vec at once we ensure that
+                    // we really call this only once.
+                    self.column_name(idx)
+                })
+                .collect(),
+        );
+        self.field_name(idx)
     }
 
     pub(super) fn copy_value(&self, idx: i32) -> Option<OwnedSqliteValue> {
@@ -314,26 +421,9 @@ impl<'a, 'b> StatementUse<'a, 'b> {
     }
 
     pub(super) fn column_value(&self, idx: i32) -> Option<NonNull<ffi::sqlite3_value>> {
-        let ptr =
-            unsafe { ffi::sqlite3_column_value(self.statement.inner_statement.as_ptr(), idx) };
+        let ptr = unsafe {
+            ffi::sqlite3_column_value(self.statement.statement.inner_statement.as_ptr(), idx)
+        };
         NonNull::new(ptr)
-    }
-}
-
-impl<'a, 'b> Drop for StatementUse<'a, 'b> {
-    fn drop(&mut self) {
-        // First reset the statement, otherwise the bind calls
-        // below will fails
-        self.statement.reset();
-
-        // Reset the binds that may point to memory that will be/needs to be freed
-        for (idx, _buffer) in std::mem::take(&mut self.binds_to_free) {
-            unsafe {
-                // It's always safe to bind null values
-                self.statement
-                    .bind(SqliteType::Text, &SqliteBindValue::Null, idx)
-                    .expect("Binding nulls shouldn't ever fail");
-            }
-        }
     }
 }
