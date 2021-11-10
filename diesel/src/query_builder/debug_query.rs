@@ -1,9 +1,7 @@
-use std::fmt::{self, Debug, Display};
-use std::marker::PhantomData;
-use std::mem;
-
 use super::{AstPass, QueryBuilder, QueryFragment};
 use crate::backend::Backend;
+use std::fmt::{self, Debug, Display};
+use std::marker::PhantomData;
 
 /// A struct that implements `fmt::Display` and `fmt::Debug` to show the SQL
 /// representation of a query.
@@ -81,16 +79,14 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    // Clippy is wrong, this cannot be expressed with pointer casting
-    #[allow(clippy::transmute_ptr_to_ptr)]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut buffer = Vec::new();
+        let _ast_pass = AstPass::debug_binds(&mut buffer);
+        self.query.walk_ast(_ast_pass).map_err(|_| fmt::Error)?;
+
         let mut list = f.debug_list();
-        {
-            // Safe because the lifetime is shortened to one smaller
-            // than the lifetime of the formatter.
-            let list_with_shorter_lifetime = unsafe { mem::transmute(&mut list) };
-            let ast_pass = AstPass::debug_binds(list_with_shorter_lifetime);
-            self.query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
+        for entry in buffer {
+            list.entry(entry);
         }
         list.finish()?;
         Ok(())

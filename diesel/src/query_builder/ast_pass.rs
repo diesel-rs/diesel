@@ -66,7 +66,7 @@ where
     }
 
     #[doc(hidden)]
-    pub fn debug_binds(formatter: &'a mut fmt::DebugList<'b, 'b>) -> Self {
+    pub fn debug_binds(formatter: &'a mut Vec<&'b dyn fmt::Debug>) -> Self {
         AstPass {
             internals: AstPassInternals::DebugBinds(formatter),
         }
@@ -198,7 +198,7 @@ where
                 ref mut metadata_lookup,
             } => collector.push_bound_value(bind, metadata_lookup)?,
             AstPassInternals::DebugBinds(ref mut f) => {
-                f.entry(bind);
+                f.push(bind);
             }
             AstPassInternals::IsNoop(ref mut result) => **result = false,
             _ => {}
@@ -244,6 +244,6 @@ where
         metadata_lookup: &'a mut DB::MetadataLookup,
     },
     IsSafeToCachePrepared(&'a mut bool),
-    DebugBinds(&'a mut fmt::DebugList<'b, 'b>),
+    DebugBinds(&'a mut Vec<&'b dyn fmt::Debug>),
     IsNoop(&'a mut bool),
 }
