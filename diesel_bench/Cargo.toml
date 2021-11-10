@@ -22,7 +22,7 @@ rustorm_dao = {version = "0.20", optional = true}
 quaint = {version = "0.2.0-alpha.13", optional = true}
 tokio = {version = "0.2", optional = true}
 serde = {version = "1", optional = true, features = ["derive"]}
-sea-orm = {version = "0.2", optional = true, features = ["runtime-async-std-rustls"]}
+sea-orm = {version = "0.3", optional = true, features = ["runtime-async-std-rustls"]}
 futures = {version = "0.3", optional = true}
 
 [dependencies.diesel]
