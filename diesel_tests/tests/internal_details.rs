@@ -51,3 +51,36 @@ fn empty_query_gives_proper_error_instead_of_panicking() {
         Err(_) => panic!("We got back the wrong kind of error. This test is invalid."),
     }
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn postgres_connections_are_threadsafe() {
+    use std::sync::{Arc, Barrier};
+
+    const THREAD_COUNT: usize = 10;
+
+    let connection_url = dotenv::var("PG_DATABASE_URL")
+        .or_else(|_| dotenv::var("DATABASE_URL"))
+        .expect("DATABASE_URL must be set in order to run tests");
+
+    let b = Arc::new(Barrier::new(THREAD_COUNT));
+    let mut handles = Vec::new();
+
+    for i in 0..THREAD_COUNT {
+        let b = Arc::clone(&b);
+        let connection_url = connection_url.clone();
+
+        let h = std::thread::spawn(move || {
+            b.wait();
+
+            let _ = PgConnection::establish(&connection_url).unwrap();
+            println!("Successfully initialized connection {}", i);
+        });
+
+        handles.push(h);
+    }
+
+    for h in handles {
+        assert!(h.join().is_ok());
+    }
+}
