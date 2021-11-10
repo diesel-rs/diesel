@@ -185,10 +185,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::InsertWithDefaultKeyword>,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'a: 'b, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::InsertWithDefaultKeyword>>::walk_ast(self, pass)
     }
 }
@@ -198,7 +195,7 @@ where
     DB: Backend + SqlDialect<InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword>,
     Expr: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> where 'a: 'b {
+    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         if let Self::Expression(ref inner) = *self {
             inner.walk_ast(out.reborrow())?;
@@ -214,10 +211,7 @@ where
     DB: Backend,
     Expr: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'a: 'b, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.expr.walk_ast(pass)
     }
 }
@@ -247,13 +241,10 @@ impl<Col, Expr>
 where
     Expr: QueryFragment<crate::sqlite::Sqlite>,
 {
-    fn walk_ast<'a, 'b>(
+    fn walk_ast<'a: 'b, 'b>(
         &'a self,
         mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>,
-    ) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    ) -> QueryResult<()> {
         if let Self::Expression(ref inner) = *self {
             inner.walk_ast(out.reborrow())?;
         }

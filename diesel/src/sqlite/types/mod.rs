@@ -72,9 +72,7 @@ impl ToSql<sql_types::Bool, Sqlite> for bool {
     where
         'a: 'b,
     {
-        const ZERO: i32 = 0;
-        const ONE: i32 = 1;
-        let int_value = if *self { &ONE } else { &ZERO };
+        let int_value = if *self { &1 } else { &0 };
         <i32 as ToSql<sql_types::Integer, Sqlite>>::to_sql(int_value, out)
     }
 }

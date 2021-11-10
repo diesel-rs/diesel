@@ -69,43 +69,43 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
 #[cfg(feature = "sqlite")]
 impl<'a, 'b> Output<'a, 'b, crate::sqlite::Sqlite> {
     pub(crate) fn set_small_int(&mut self, i: i16) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::SmallInt(i);
+        self.out = crate::sqlite::SqliteBindValue::SmallInt(i);
     }
 
     pub(crate) fn set_int(&mut self, i: i32) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::Integer(i);
+        self.out = crate::sqlite::SqliteBindValue::Integer(i);
     }
 
     pub(crate) fn set_big_int(&mut self, i: i64) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::BigInt(i);
+        self.out = crate::sqlite::SqliteBindValue::BigInt(i);
     }
 
     pub(crate) fn set_float(&mut self, i: f32) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::Float(i);
+        self.out = crate::sqlite::SqliteBindValue::Float(i);
     }
 
     pub(crate) fn set_double(&mut self, i: f64) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::Double(i);
+        self.out = crate::sqlite::SqliteBindValue::Double(i);
     }
 
     pub(crate) fn set_borrowed_string(&mut self, s: &'a str) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::BorrowedString(s);
+        self.out = crate::sqlite::SqliteBindValue::BorrowedString(s);
     }
 
     pub(crate) fn set_borrowed_binary(&mut self, s: &'a [u8]) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::BorrowedBinary(s);
+        self.out = crate::sqlite::SqliteBindValue::BorrowedBinary(s);
     }
 
     // this can be unused depending on the enabled features
     #[allow(dead_code)]
     pub(crate) fn set_owned_string(&mut self, s: String) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::String(s.into_boxed_str());
+        self.out = crate::sqlite::SqliteBindValue::String(s.into_boxed_str());
     }
 
     // This can be unused depending on the enabled features
     #[allow(dead_code)]
     pub(crate) fn set_owned_binary(&mut self, b: Vec<u8>) {
-        self.out = crate::sqlite::query_builder::SqliteBindValue::Binary(b.into_boxed_slice());
+        self.out = crate::sqlite::SqliteBindValue::Binary(b.into_boxed_slice());
     }
 }
 

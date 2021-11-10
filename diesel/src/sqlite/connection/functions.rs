@@ -9,7 +9,7 @@ use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
-use crate::sqlite::query_builder::SqliteBindValue;
+use crate::sqlite::connection::bind_collector::SqliteBindValue;
 use crate::sqlite::SqliteValue;
 use std::cell::{Ref, RefCell};
 use std::marker::PhantomData;

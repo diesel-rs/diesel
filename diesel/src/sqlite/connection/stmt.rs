@@ -1,12 +1,12 @@
 extern crate libsqlite3_sys as ffi;
 
+use super::bind_collector::{SqliteBindCollector, SqliteBindValue};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::{MaybeCached, PrepareForCache};
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
-use crate::sqlite::query_builder::{SqliteBindCollector, SqliteBindValue};
 use crate::sqlite::{Sqlite, SqliteType};
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};

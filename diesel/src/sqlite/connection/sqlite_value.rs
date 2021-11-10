@@ -43,7 +43,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
     pub(super) fn new(
         row: Ref<'row, PrivateSqliteRow<'stmt, 'query>>,
         col_idx: i32,
-    ) -> Option<Self> {
+    ) -> Option<SqliteValue<'row, 'stmt, 'query>> {
         let value = match &*row {
             PrivateSqliteRow::Direct(stmt) => stmt.column_value(col_idx)?,
             PrivateSqliteRow::Duplicated { values, .. } => {

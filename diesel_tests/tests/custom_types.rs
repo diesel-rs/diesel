@@ -158,10 +158,10 @@ fn custom_types_in_custom_schema_round_trip() {
         )
         .unwrap();
 
-    let inserted = insert_into(custom_types_with_custom_schema::table).values(&data);
-
-    dbg!(diesel::debug_query::<diesel::pg::Pg, _>(&inserted));
-    let inserted = inserted.get_results(connection).unwrap();
+    let inserted = insert_into(custom_types_with_custom_schema::table)
+        .values(&data)
+        .get_results(connection)
+        .unwrap();
     assert_eq!(data, inserted);
 }
 

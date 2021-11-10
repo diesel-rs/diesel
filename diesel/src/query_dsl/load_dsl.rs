@@ -98,10 +98,10 @@ where
     U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
-    fn internal_load<'a>(
+    fn internal_load<'conn>(
         self,
-        conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, 'query, Conn, U>>::Ret> {
+        conn: &'conn mut Conn,
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret> {
         Ok(LoadIter {
             cursor: conn.load(self)?,
             _marker: Default::default(),

@@ -1,5 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 
+mod bind_collector;
 mod functions;
 #[doc(hidden)]
 pub mod raw;
@@ -8,6 +9,8 @@ mod sqlite_value;
 mod statement_iterator;
 mod stmt;
 
+pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
+pub(crate) use self::bind_collector::SqliteBindValue;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
