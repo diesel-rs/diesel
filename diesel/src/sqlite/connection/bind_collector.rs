@@ -1,8 +1,8 @@
 use crate::query_builder::BindCollector;
 use crate::serialize::{IsNull, Output};
+use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
 use crate::QueryResult;
-use crate::sql_types::HasSqlType;
 
 #[derive(Debug)]
 pub struct SqliteBindCollector<'a> {

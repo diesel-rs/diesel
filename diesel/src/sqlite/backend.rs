@@ -1,6 +1,6 @@
 //! The SQLite backend
 
-use super::connection::{SqliteValue, SqliteBindCollector};
+use super::connection::{SqliteBindCollector, SqliteValue};
 use super::query_builder::SqliteQueryBuilder;
 use crate::backend::*;
 use crate::sql_types::TypeMetadata;
