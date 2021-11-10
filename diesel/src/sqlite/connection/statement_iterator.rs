@@ -19,7 +19,7 @@ enum PrivateStatementIterator<'stmt, 'query> {
 }
 
 impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
-    pub fn new(stmt: StatementUse<'stmt, 'query>) -> StatementUse<'stmt, 'query> {
+    pub fn new(stmt: StatementUse<'stmt, 'query>) -> StatementIterator<'stmt, 'query> {
         Self {
             inner: PrivateStatementIterator::NotStarted(stmt),
             column_names: None,
