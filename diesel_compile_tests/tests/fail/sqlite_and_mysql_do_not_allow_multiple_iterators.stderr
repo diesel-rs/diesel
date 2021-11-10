@@ -1,46 +1,20 @@
-error[E0716]: temporary value dropped while borrowed
-  --> $DIR/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:12:32
-   |
-12 |     let row_iter1 = conn.load(&sql_query("bar")).unwrap();
-   |                                ^^^^^^^^^^^^^^^^          - temporary value is freed at the end of this statement
-   |                                |
-   |                                creates a temporary which is freed while still in use
-...
-15 |     let _ = row_iter1.zip(row_iter2);
-   |             --------- borrow later used here
-   |
-   = note: consider using a `let` binding to create a longer lived value
-
 error[E0499]: cannot borrow `*conn` as mutable more than once at a time
   --> $DIR/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:13:21
    |
-12 |     let row_iter1 = conn.load(&sql_query("bar")).unwrap();
+12 |     let row_iter1 = conn.load(sql_query("bar")).unwrap();
    |                     ---- first mutable borrow occurs here
-13 |     let row_iter2 = conn.load(&sql_query("bar")).unwrap();
+13 |     let row_iter2 = conn.load(sql_query("bar")).unwrap();
    |                     ^^^^ second mutable borrow occurs here
 14 |
 15 |     let _ = row_iter1.zip(row_iter2);
    |             --------- first borrow later used here
 
-error[E0716]: temporary value dropped while borrowed
-  --> $DIR/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:13:32
-   |
-13 |     let row_iter2 = conn.load(&sql_query("bar")).unwrap();
-   |                                ^^^^^^^^^^^^^^^^          - temporary value is freed at the end of this statement
-   |                                |
-   |                                creates a temporary which is freed while still in use
-14 |
-15 |     let _ = row_iter1.zip(row_iter2);
-   |                           --------- borrow later used here
-   |
-   = note: consider using a `let` binding to create a longer lived value
-
 error[E0499]: cannot borrow `*conn` as mutable more than once at a time
   --> $DIR/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:20:21
    |
-19 |     let row_iter1 = conn.load(&sql_query("bar")).unwrap();
+19 |     let row_iter1 = conn.load(sql_query("bar")).unwrap();
    |                     ---- first mutable borrow occurs here
-20 |     let row_iter2 = conn.load(&sql_query("bar")).unwrap();
+20 |     let row_iter2 = conn.load(sql_query("bar")).unwrap();
    |                     ^^^^ second mutable borrow occurs here
 21 |
 22 |     let _ = row_iter1.zip(row_iter2);
