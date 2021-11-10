@@ -81,8 +81,8 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut buffer = Vec::new();
-        let _ast_pass = AstPass::debug_binds(&mut buffer);
-        self.query.walk_ast(_ast_pass).map_err(|_| fmt::Error)?;
+        let ast_pass = AstPass::debug_binds(&mut buffer);
+        self.query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
 
         let mut list = f.debug_list();
         for entry in buffer {
