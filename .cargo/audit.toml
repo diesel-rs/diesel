@@ -1,0 +1,5 @@
+[advisories]
+ignore = [
+    # we cannot do much here without an update from chrono + we do not call any affected function
+    "RUSTSEC-2020-0159"
+] 
