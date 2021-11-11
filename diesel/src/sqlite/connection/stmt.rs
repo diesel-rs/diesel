@@ -13,6 +13,7 @@ use std::io::{stderr, Write};
 use std::mem::ManuallyDrop;
 use std::os::raw as libc;
 use std::ptr::{self, NonNull};
+
 #[allow(missing_debug_implementations)]
 pub(in crate::sqlite) struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,
@@ -59,12 +60,6 @@ impl Statement {
         value: &SqliteBindValue<'_>,
         bind_index: i32,
     ) -> QueryResult<()> {
-        // This unsafe block assumes the following invariants:
-        //
-        // - `stmt` points to valid memory
-        // - If `self.ty` is anything other than `Binary` or `Text`, the appropriate
-        //   number of bytes were written to `value` for an integer of the
-        //   corresponding size.
         let result = match (tpe, value) {
             (_, SqliteBindValue::Null) => {
                 ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), bind_index)
@@ -214,7 +209,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     where
         T: QueryFragment<Sqlite> + QueryId + 'query,
     {
-        // Don't use a trait object here to prevent using virtual function call
+        // Don't use a trait object here to prevent using a virtual function call
         // For sqlite this can introduce a measurable overhead
         let mut query = ManuallyDrop::new(query);
 
@@ -363,8 +358,8 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     // https://sqlite.org/c3ref/column_name.html
     //
     // Note: This function is marked as unsafe, as calling it can invalidate
-    // any existing column name pointer. It should maximally be called once
-    // per column at all.
+    // any existing column name pointer. To prevent that, 
+    // it should maximally be called once per column at all.
     pub(super) unsafe fn column_name(&self, idx: i32) -> *const str {
         let name = {
             let column_name =
