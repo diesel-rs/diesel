@@ -33,9 +33,9 @@ To enable other crates add the following features:
 
 * `SQLx: ` `sqlx-bench sqlx/$backend $backend`
 * `Rustorm`: `rustorm rustorm/with-$backend rustorm_dao $backend`
-* `SeaORM`: `sea-orm sea-orm/sqlx-$backend sqlx async-std criterion/async_std futures $backend`
+* `SeaORM`: `sea-orm sea-orm/sqlx-$backend sqlx tokio criterion/tokio futures $backend`
 * `Quaint`: `quaint quaint/$backend tokio quaint/serde-support serde $backend`
-* `Postgres`: `rust-postgres $backend`
+* `Postgres`: `rust_postgres $backend`
 * `Rusqlite`: `rusqlite $backend`
 * `Mysql`: `rust-mysql $backend`
 

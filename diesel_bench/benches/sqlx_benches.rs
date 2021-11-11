@@ -1,6 +1,7 @@
 use criterion::Bencher;
 use sqlx::*;
 use std::collections::HashMap;
+use tokio::runtime::Runtime;
 
 #[derive(sqlx::FromRow)]
 pub struct User {
@@ -66,15 +67,17 @@ type Connection = sqlx::MySqlConnection;
 type Connection = sqlx::PgConnection;
 
 #[cfg(feature = "postgres")]
-fn connection() -> Connection {
+fn connection() -> (Runtime, Connection) {
     use sqlx::Connection;
+
+    let runtime = Runtime::new().expect("Failed to create runtime");
 
     dotenv::dotenv().ok();
     let connection_url = dotenv::var("POSTGRES_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
 
-    async_std::task::block_on(async {
+    let conn = runtime.block_on(async {
         let mut conn = sqlx::PgConnection::connect(&connection_url).await.unwrap();
         sqlx::query("TRUNCATE TABLE comments CASCADE;")
             .execute(&mut conn)
@@ -89,19 +92,23 @@ fn connection() -> Connection {
             .await
             .unwrap();
         conn
-    })
+    });
+
+    (runtime, conn)
 }
 
 #[cfg(feature = "mysql")]
-fn connection() -> Connection {
+fn connection() -> (Runtime, Connection) {
     use sqlx::Connection;
+
+    let runtime = Runtime::new().expect("Failed to create runtime");
 
     dotenv::dotenv().ok();
     let connection_url = dotenv::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
 
-    async_std::task::block_on(async {
+    let conn = runtime.block_on(async {
         let mut conn = sqlx::MySqlConnection::connect(&connection_url)
             .await
             .unwrap();
@@ -126,14 +133,18 @@ fn connection() -> Connection {
             .await
             .unwrap();
         conn
-    })
+    });
+
+    (runtime, conn)
 }
 
 #[cfg(feature = "sqlite")]
-fn connection() -> Connection {
+fn connection() -> (Runtime, Connection) {
     use sqlx::Connection;
 
-    async_std::task::block_on(async {
+    let runtime = Runtime::new().expect("Failed to create runtime");
+
+    let conn = runtime.block_on(async {
         let mut conn = sqlx::SqliteConnection::connect("sqlite::memory:")
             .await
             .unwrap();
@@ -157,10 +168,12 @@ fn connection() -> Connection {
             .unwrap();
 
         conn
-    })
+    });
+
+    (runtime, conn)
 }
 
-fn insert_users(
+async fn insert_users(
     size: usize,
     conn: &mut Connection,
     hair_color_init: impl Fn(usize) -> Option<String>,
@@ -174,19 +187,17 @@ fn insert_users(
     if cfg!(feature = "sqlite") {
         let query = String::from("INSERT INTO users (name, hair_color) VALUES(?, ?)");
 
-        async_std::task::block_on(async {
-            let mut conn = Connection::begin(conn).await.unwrap();
-            for x in 0..size {
-                sqlx::query(&query)
-                    .bind(format!("User {}", x))
-                    .bind(hair_color_init(x))
-                    .execute(&mut *conn)
-                    .await
-                    .unwrap();
-            }
+        let mut conn = Connection::begin(conn).await.unwrap();
+        for x in 0..size {
+            sqlx::query(&query)
+                .bind(format!("User {}", x))
+                .bind(hair_color_init(x))
+                .execute(&mut *conn)
+                .await
+                .unwrap();
+        }
 
-            conn.commit().await.unwrap();
-        });
+        conn.commit().await.unwrap();
     } else {
         let mut query = String::from("INSERT INTO users (name, hair_color) VALUES");
 
@@ -205,17 +216,17 @@ fn insert_users(
             query = query.bind(format!("User {}", x)).bind(hair_color_init(x));
         }
 
-        async_std::task::block_on(async { query.execute(conn).await.unwrap() });
+        query.execute(conn).await.unwrap();
     }
 }
 
 pub fn bench_trivial_query_query_as_macro(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
+    let (rt, mut conn) = connection();
 
-    insert_users(size, &mut conn, |_| None);
+    rt.block_on(insert_users(size, &mut conn, |_| None));
 
     b.iter(|| {
-        async_std::task::block_on(async {
+        rt.block_on(async {
             sqlx::query_as!(User, "SELECT id, name, hair_color FROM users")
                 .fetch_all(&mut conn)
                 .await
@@ -225,10 +236,11 @@ pub fn bench_trivial_query_query_as_macro(b: &mut Bencher, size: usize) {
 }
 
 pub fn bench_trivial_query_from_row(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
-    insert_users(size, &mut conn, |_| None);
+    let (rt, mut conn) = connection();
+    rt.block_on(insert_users(size, &mut conn, |_| None));
+
     b.iter(|| {
-        async_std::task::block_on(async {
+        rt.block_on(async {
             sqlx::query_as::<_, User>("SELECT id, name, hair_color FROM users")
                 .fetch_all(&mut conn)
                 .await
@@ -237,15 +249,17 @@ pub fn bench_trivial_query_from_row(b: &mut Bencher, size: usize) {
     })
 }
 
+// The query_as macro panics of sqlite
+#[cfg(not(feature = "sqlite"))]
 pub fn bench_medium_complex_query_query_as_macro(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
+    let (rt, mut conn) = connection();
 
-    insert_users(size, &mut conn, |i| {
+    rt.block_on(insert_users(size, &mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
-    });
+    }));
 
     b.iter(|| {
-        async_std::task::block_on(async {
+        rt.block_on(async {
             let res = sqlx::query_as!(UserWithPost,
                 "SELECT u.id as \"myuser_id!\", u.name as \"name!\", u.hair_color, p.id as \"post_id?\", p.user_id as \"user_id?\", p.title as \"title?\", p.body  as \"body?\"\
                  FROM users as u LEFT JOIN posts as p on u.id = p.user_id"
@@ -277,14 +291,14 @@ pub fn bench_medium_complex_query_query_as_macro(b: &mut Bencher, size: usize) {
 }
 
 pub fn bench_medium_complex_query_from_row(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
+    let (rt, mut conn) = connection();
 
-    insert_users(size, &mut conn, |i| {
+    rt.block_on(insert_users(size, &mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
-    });
+    }));
 
     b.iter(|| {
-        async_std::task::block_on(async {
+        rt.block_on(async {
             let res = sqlx::query_as::<_, UserWithPost>(
                 "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id , p.title, p.body \
                  FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
@@ -316,9 +330,13 @@ pub fn bench_medium_complex_query_from_row(b: &mut Bencher, size: usize) {
 }
 
 pub fn bench_insert(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
+    let (rt, mut conn) = connection();
 
-    b.iter(|| insert_users(size, &mut conn, |_| Some(String::from("hair_color"))))
+    b.iter(|| {
+        rt.block_on(insert_users(size, &mut conn, |_| {
+            Some(String::from("hair_color"))
+        }))
+    })
 }
 
 pub fn loading_associations_sequentially(b: &mut Bencher) {
@@ -330,17 +348,17 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
 
     use sqlx::Connection;
 
-    let mut conn = connection();
+    let (rt, mut conn) = connection();
 
-    insert_users(USER_NUMBER, &mut conn, |i| {
+    rt.block_on(insert_users(USER_NUMBER, &mut conn, |i| {
         Some(if i % 2 == 0 {
             String::from("black")
         } else {
             String::from("brown")
         })
-    });
+    }));
 
-    let user_ids = async_std::task::block_on(async {
+    let user_ids = rt.block_on(async {
         sqlx::query_as!(User, "SELECT id, name, hair_color FROM users")
             .fetch_all(&mut conn)
             .await
@@ -383,9 +401,9 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
             insert_query = insert_query.bind(title).bind(user_id).bind(body);
         }
 
-        async_std::task::block_on(async { insert_query.execute(&mut conn).await.unwrap() });
+        rt.block_on(async { insert_query.execute(&mut conn).await.unwrap() });
     } else if cfg!(feature = "sqlite") {
-        async_std::task::block_on(async {
+        rt.block_on(async {
             let mut conn = Connection::begin(&mut conn).await.unwrap();
             let insert_query = "INSERT INTO posts (title, user_id, body) VALUES (?, ?, ?)";
 
@@ -405,7 +423,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         });
     }
 
-    let all_posts = async_std::task::block_on(async {
+    let all_posts = rt.block_on(async {
         sqlx::query_as!(Post, "SELECT id, title, user_id, body FROM posts")
             .fetch_all(&mut conn)
             .await
@@ -441,11 +459,11 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
             insert_query = insert_query.bind(title).bind(post_id);
         }
 
-        async_std::task::block_on(async {
+        rt.block_on(async {
             insert_query.execute(&mut conn).await.unwrap();
         });
     } else if cfg!(feature = "sqlite") {
-        async_std::task::block_on(async {
+        rt.block_on(async {
             let mut conn = Connection::begin(&mut conn).await.unwrap();
             let insert_query = "INSERT INTO comments (text, post_id) VALUES (?, ?)";
 
@@ -465,7 +483,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     }
 
     b.iter(|| {
-        async_std::task::block_on(async {
+        rt.block_on(async {
             let users = sqlx::query_as!(User, "SELECT id, name, hair_color FROM users")
                 .fetch_all(&mut conn)
                 .await
