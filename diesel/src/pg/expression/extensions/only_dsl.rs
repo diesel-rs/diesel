@@ -23,7 +23,7 @@ use crate::query_source::Table;
 /// tables.
 pub trait OnlyDsl: AsQuery + Sized {
     /// See the trait-level docs.
-    fn only(self) -> SelectStatement<Only<Self>> {
+    fn only(self) -> crate::dsl::SelectFromOnly<Self> {
         SelectStatement::simple(Only { query: self })
     }
 }
