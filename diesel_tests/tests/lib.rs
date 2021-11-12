@@ -36,6 +36,8 @@ mod internal_details;
 mod joins;
 mod limit_offset;
 mod macros;
+#[cfg(feature = "postgres")]
+mod only;
 mod order;
 mod perf_details;
 mod raw_sql;

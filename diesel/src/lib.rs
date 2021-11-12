@@ -201,8 +201,7 @@ pub mod helper_types {
     //! `users.filter(first_name.eq("John")).order(last_name.asc()).limit(10)` would
     //! be `Limit<Order<FindBy<users, first_name, &str>, Asc<last_name>>>`
     use super::query_builder::combination_clause::{self, CombinationClause};
-    use super::query_builder::locking_clause as lock;
-    use super::query_builder::AsQuery;
+    use super::query_builder::{locking_clause as lock, AsQuery};
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::joins;
@@ -372,6 +371,11 @@ pub mod helper_types {
     /// Which conveniently lets you omit the exact join condition.
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
+
+    /// Represents the return type of `.only()`
+    #[cfg(feature = "postgres_backend")]
+    pub type SelectFromOnly<T> =
+        crate::query_builder::SelectStatement<crate::pg::query_builder::only_clause::Only<T>>;
 }
 
 pub mod prelude {

@@ -70,6 +70,9 @@ pub use self::returning_clause::ReturningClause;
 
 pub(crate) use self::insert_statement::ColumnList;
 
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::only_clause::Only;
+
 use std::error::Error;
 
 use crate::backend::Backend;

@@ -1,13 +1,13 @@
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
-  --> $DIR/select_requires_column_from_same_table.rs:20:41
+  --> tests/fail/select_requires_column_from_same_table.rs:20:41
    |
 20 |     let select_id = users::table.select(posts::id);
    |                                         ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
    = help: the following implementations were found:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <posts::columns::id as SelectableExpression<Only<posts::table>>>
              <posts::columns::id as SelectableExpression<SelectStatement<From>>>
              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
-             <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, LeftOuter>>>
-             <posts::columns::id as SelectableExpression<posts::table>>
+           and 2 others
    = note: required because of the requirements on the impl of `SelectDsl<posts::columns::id>` for `SelectStatement<users::table>`

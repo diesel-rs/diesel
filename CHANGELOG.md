@@ -68,6 +68,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added an option to `#[derive(Insertable)]` that let you insert `NULL` values instead of `DEFAULT` values for `Option<T>` 
 
+* Added support for the `FROM ONLY <table>` clause in Postgresql
+
 ### Removed
 
 * All previously deprecated items have been removed.
