@@ -47,7 +47,21 @@ where
                     .store_type(cache_key, type_metadata);
                 PgTypeMetadata(Ok(type_metadata))
             }
-            Err(_e) => PgTypeMetadata(Err(FailedToLookupTypeError::new(cache_key.into_owned()))),
+            Err(_e) => {
+                let metadata_cache = self.get_metadata_cache();
+                let lower_schema = schema.map(|schema| schema.to_lowercase()).unwrap();
+                if let Some(_) = metadata_cache.lookup_type(&PgMetadataCacheKey {
+                    schema: Some(Cow::Borrowed(lower_schema.as_str())),
+                    type_name: Cow::Borrowed(type_name.to_lowercase().as_str()),
+                }) {
+                    return PgTypeMetadata(Err(FailedToLookupTypeError::InvalidCasing(Box::new(
+                        cache_key.into_owned(),
+                    ))));
+                }
+                PgTypeMetadata(Err(FailedToLookupTypeError::TypeNotFound(Box::new(
+                    cache_key.into_owned(),
+                ))))
+            }
         }
     }
 }

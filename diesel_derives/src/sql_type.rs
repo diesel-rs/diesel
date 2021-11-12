@@ -138,11 +138,10 @@ fn get_type_name(attr: &MetaItem) -> Result<Option<PgType>, Diagnostic> {
     let schema = attr.nested_item("type_schema")?;
     Ok(attr.nested_item("type_name")?.map(|ty| {
         attr.warn_if_other_options(&["type_name", "type_schema"]);
-        let mut type_string = ty.expect_str_value();
-        if !(type_string.starts_with('"') && type_string.ends_with('"')) {
-            type_string = type_string.to_lowercase()
-        }
-        PgType::Lookup(type_string, schema.map(|schema| schema.expect_str_value()))
+        PgType::Lookup(
+            ty.expect_str_value(),
+            schema.map(|schema| schema.expect_str_value()),
+        )
     }))
 }
 

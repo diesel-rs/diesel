@@ -29,28 +29,37 @@ impl From<(u32, u32)> for InnerPgTypeMetadata {
 /// This error indicates that a type lookup for a custom
 /// postgres type failed
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
-pub struct FailedToLookupTypeError(Box<PgMetadataCacheKey<'static>>);
-
-impl FailedToLookupTypeError {
-    /// Construct a new instance of this error type
-    /// containing information about which type lookup failed
-    pub fn new(cache_key: PgMetadataCacheKey<'static>) -> Self {
-        Self(Box::new(cache_key))
-    }
+pub enum FailedToLookupTypeError {
+    /// Error used when a type error lookup fails
+    TypeNotFound(Box<PgMetadataCacheKey<'static>>),
+    /// Error used when the lookup fails but there is a lowercase version of the given typename
+    InvalidCasing(Box<PgMetadataCacheKey<'static>>),
 }
 
 impl std::error::Error for FailedToLookupTypeError {}
 
 impl std::fmt::Display for FailedToLookupTypeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(schema) = self.0.schema.as_ref() {
-            write!(
-                f,
-                "Failed to find a type oid for `{}`.`{}`",
-                schema, self.0.type_name
-            )
-        } else {
-            write!(f, "Failed to find a type oid for `{}`", self.0.type_name)
+        match self {
+            FailedToLookupTypeError::TypeNotFound(cache_key) => match cache_key.schema.as_ref() {
+                Some(schema) => write!(
+                    f,
+                    "Failed to find a type oid for `{}`.`{}`",
+                    schema, cache_key.type_name
+                ),
+                _ => write!(f, "Failed to find a type oid for `{}`", cache_key.type_name),
+            },
+            FailedToLookupTypeError::InvalidCasing(cache_key) => match cache_key.schema.as_ref() {
+                Some(schema) => write!(
+                    f,
+                    "Failed to find a type oid for `{}`.`{}` but did find `{}`.`{}`. Is the casing correct?",
+                    schema,
+                    cache_key.type_name,
+                    schema.to_lowercase(),
+                    cache_key.type_name.to_lowercase()
+                ),
+                _ => write!(f, "Failed to find a type oid for `{}` but did find `{}`. Is the casing correct?", cache_key.type_name, cache_key.type_name.to_lowercase())
+            }
         }
     }
 }
