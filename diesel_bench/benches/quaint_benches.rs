@@ -58,9 +58,20 @@ fn connect(rt: &mut Runtime) -> Quaint {
 
     let conn = rt.block_on({
         async {
-            let conn = Quaint::new(&db_url).await.unwrap();
+            let conn;
+
+            #[cfg(feature = "sqlite")]
+            {
+                conn = Quaint::new_in_memory().unwrap();
+            }
+
+            #[cfg(not(feature = "sqlite"))]
+            {
+                conn = Quaint::new(&db_url).await.unwrap();
+            }
 
             if cfg!(feature = "sqlite") {
+                #[cfg(feature = "sqlite")]
                 for migration in super::SQLITE_MIGRATION_SQL {
                     conn.execute_raw(migration, &[]).await.unwrap();
                 }

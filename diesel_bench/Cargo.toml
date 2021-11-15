@@ -12,17 +12,16 @@ autobenches = false
 [dependencies]
 dotenv = "0.15"
 criterion = "0.3.2"
-sqlx = {version = "0.5.0", optional = true}
-async-std = { version = "1.5", optional = true}
+sqlx = {version = "0.5.0", features = ["runtime-tokio-rustls"], optional = true}
+tokio = {version = "1", optional = true}
 rusqlite = {version = "0.25", optional = true}
 rust_postgres = {version = "0.19", optional = true, package = "postgres"}
 rust_mysql = {version = "21.0.1", optional = true, package = "mysql"}
 rustorm = {version = "0.20", optional = true}
 rustorm_dao = {version = "0.20", optional = true}
 quaint = {version = "0.2.0-alpha.13", optional = true}
-tokio = {version = "0.2", optional = true}
 serde = {version = "1", optional = true, features = ["derive"]}
-sea-orm = {version = "0.3", optional = true, features = ["runtime-async-std-rustls"]}
+sea-orm = {version = "0.3", optional = true, features = ["runtime-tokio-rustls"]}
 futures = {version = "0.3", optional = true}
 
 [dependencies.diesel]
@@ -47,7 +46,7 @@ default = []
 postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
-sqlx-bench = ["sqlx", "async-std", "sqlx/runtime-async-std-rustls"]
+sqlx-bench = ["sqlx", "tokio", "sqlx/runtime-tokio-rustls"]
 
 [patch.crates-io]
-quaint = {git = "https://github.com/prisma/quaint", rev = "ec9384f"}
+quaint = {git = "https://github.com/prisma/quaint", rev = "e077df3"}

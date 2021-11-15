@@ -2,6 +2,7 @@ use criterion::Bencher;
 use sea_orm::entity::*;
 use sea_orm::query::*;
 use sea_orm::DatabaseConnection;
+use tokio::runtime::Runtime;
 
 mod comments;
 mod posts;
@@ -12,14 +13,16 @@ use self::posts::Entity as Post;
 use self::users::Entity as User;
 
 #[cfg(feature = "postgres")]
-fn connection() -> (sqlx::PgPool, DatabaseConnection) {
+fn connection() -> (sqlx::PgPool, DatabaseConnection, Runtime) {
     use sea_orm::SqlxPostgresConnector;
+
+    let rt = Runtime::new().expect("Failed to start runtime");
 
     dotenv::dotenv().ok();
     let connection_url = dotenv::var("PG_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    async_std::task::block_on(async {
+    let (pool, db) = rt.block_on(async {
         use sqlx::Executor;
         let pool = sqlx::PgPool::connect(&connection_url).await.unwrap();
         pool.execute("TRUNCATE TABLE comments CASCADE;")
@@ -30,19 +33,23 @@ fn connection() -> (sqlx::PgPool, DatabaseConnection) {
 
         let db = SqlxPostgresConnector::from_sqlx_postgres_pool(pool.clone());
         (pool, db)
-    })
+    });
+
+    (pool, db, rt)
 }
 
 #[cfg(feature = "mysql")]
-fn connection() -> (sqlx::MySqlPool, DatabaseConnection) {
-    use sea_orm::SqlxMySqlConnector;
+fn connection() -> (sqlx::MySqlPool, DatabaseConnection, Runtime) {
     use futures::StreamExt;
+    use sea_orm::SqlxMySqlConnector;
+
+    let rt = Runtime::new().expect("Failed to start runtime");
 
     dotenv::dotenv().ok();
     let connection_url = dotenv::var("MYSQL_DATABASE_URL")
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
-    async_std::task::block_on(async {
+    let (pool, db) = rt.block_on(async {
         use sqlx::Executor;
         let pool = sqlx::MySqlPool::connect(&connection_url).await.unwrap();
         let mut result_stream = pool.execute_many(
@@ -51,23 +58,25 @@ fn connection() -> (sqlx::MySqlPool, DatabaseConnection) {
              TRUNCATE TABLE posts;\
              TRUNCATE TABLE users;\
              SET FOREIGN_KEY_CHECKS = 1;\
-             "
+             ",
         );
         while let Some(e) = result_stream.next().await {
             let _ = e.unwrap();
         }
         let db = SqlxMySqlConnector::from_sqlx_mysql_pool(pool.clone());
         (pool, db)
-    })
+    });
+    (pool, db, rt)
 }
 
 #[cfg(feature = "sqlite")]
-fn connection() -> (sqlx::SqlitePool, DatabaseConnection) {
+fn connection() -> (sqlx::SqlitePool, DatabaseConnection, Runtime) {
     use sea_orm::SqlxSqliteConnector;
 
+    let rt = Runtime::new().expect("Failed to start runtime");
     dotenv::dotenv().ok();
 
-    async_std::task::block_on(async {
+    let (pool, db) = rt.block_on(async {
         use sqlx::Executor;
         let pool = sqlx::SqlitePool::connect("sqlite::memory:").await.unwrap();
 
@@ -81,7 +90,9 @@ fn connection() -> (sqlx::SqlitePool, DatabaseConnection) {
 
         let db = SqlxSqliteConnector::from_sqlx_sqlite_pool(pool.clone());
         (pool, db)
-    })
+    });
+
+    (pool, db, rt)
 }
 
 async fn insert_users(
@@ -101,22 +112,22 @@ async fn insert_users(
 }
 
 pub fn bench_trivial_query(b: &mut Bencher, size: usize) {
-    let (pool, conn) = connection();
+    let (pool, conn, rt) = connection();
 
-    async_std::task::block_on(async {
+    rt.block_on(async {
         insert_users(size, &conn, |_| None).await;
     });
 
-    b.to_async(criterion::async_executor::AsyncStdExecutor)
+    b.to_async(&rt)
         .iter(|| async { User::find().all(&conn).await.unwrap() });
 
-    async_std::task::block_on(async {
+    rt.block_on(async {
         pool.close().await;
     })
 }
 
 pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
-    let (pool, conn) = connection();
+    let (pool, conn, rt) = connection();
 
     let hair_color_callback = |i| {
         Some(if i % 2 == 0 {
@@ -125,34 +136,32 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
             String::from("brown")
         })
     };
-    async_std::task::block_on(async {
+    rt.block_on(async {
         insert_users(size, &conn, hair_color_callback).await;
     });
 
-    b.to_async(criterion::async_executor::AsyncStdExecutor)
-        .iter(|| async {
-            let r: Vec<(self::users::Model, Option<self::posts::Model>)> = User::find()
-                .find_also_related(Post)
-                .all(&conn)
-                .await
-                .unwrap();
-            r
-        });
+    b.to_async(&rt).iter(|| async {
+        let r: Vec<(self::users::Model, Option<self::posts::Model>)> = User::find()
+            .find_also_related(Post)
+            .all(&conn)
+            .await
+            .unwrap();
+        r
+    });
 
-    async_std::task::block_on(async {
+    rt.block_on(async {
         pool.close().await;
     })
 }
 
 pub fn bench_insert(b: &mut Bencher, size: usize) {
-    let (pool, conn) = connection();
+    let (pool, conn, rt) = connection();
 
-    b.to_async(criterion::async_executor::AsyncStdExecutor)
-        .iter(|| async {
-            insert_users(size, &conn, |_| Some(String::from("hair_color"))).await;
-        });
+    b.to_async(&rt).iter(|| async {
+        insert_users(size, &conn, |_| Some(String::from("hair_color"))).await;
+    });
 
-    async_std::task::block_on(async {
+    rt.block_on(async {
         pool.close().await;
     })
 }
@@ -165,9 +174,9 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     const USER_NUMBER: usize = 100;
 
     // SETUP A TON OF DATA
-    let (pool, conn) = connection();
+    let (pool, conn, rt) = connection();
 
-    async_std::task::block_on(async {
+    rt.block_on(async {
         insert_users(USER_NUMBER, &conn, |i| {
             Some(if i % 2 == 0 {
                 "black".to_owned()
@@ -213,54 +222,53 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     });
 
     // ACTUAL BENCHMARK
-    b.to_async(criterion::async_executor::AsyncStdExecutor)
-        .iter(|| async {
-            use std::collections::HashMap;
+    b.to_async(&rt).iter(|| async {
+        use std::collections::HashMap;
 
-            let res: Vec<(self::users::Model, Vec<self::posts::Model>)> = User::find()
-                .find_with_related(Post)
-                .all(&conn)
-                .await
-                .unwrap();
+        let res: Vec<(self::users::Model, Vec<self::posts::Model>)> = User::find()
+            .find_with_related(Post)
+            .all(&conn)
+            .await
+            .unwrap();
 
-            let post_ids = res
-                .iter()
-                .flat_map(|(_, posts)| posts.iter().map(|post| post.id))
-                .collect::<Vec<_>>();
+        let post_ids = res
+            .iter()
+            .flat_map(|(_, posts)| posts.iter().map(|post| post.id))
+            .collect::<Vec<_>>();
 
-            let comments = Comment::find()
-                .filter(self::comments::Column::PostId.is_in(post_ids))
-                .all(&conn)
-                .await
-                .unwrap();
+        let comments = Comment::find()
+            .filter(self::comments::Column::PostId.is_in(post_ids))
+            .all(&conn)
+            .await
+            .unwrap();
 
-            let mut lookup = HashMap::new();
+        let mut lookup = HashMap::new();
 
-            for comment in comments {
-                lookup
-                    .entry(comment.post_id)
-                    .or_insert(Vec::new())
-                    .push(comment);
-            }
+        for comment in comments {
+            lookup
+                .entry(comment.post_id)
+                .or_insert(Vec::new())
+                .push(comment);
+        }
 
-            res.into_iter()
-                .map(|(user, posts)| {
-                    let posts = posts
-                        .into_iter()
-                        .map(|post| {
-                            let post_id = post.id;
-                            (post, lookup[&post_id].clone())
-                        })
-                        .collect();
-                    (user, posts)
-                })
-                .collect::<Vec<(
-                    self::users::Model,
-                    Vec<(self::posts::Model, Vec<self::comments::Model>)>,
-                )>>()
-        });
+        res.into_iter()
+            .map(|(user, posts)| {
+                let posts = posts
+                    .into_iter()
+                    .map(|post| {
+                        let post_id = post.id;
+                        (post, lookup[&post_id].clone())
+                    })
+                    .collect();
+                (user, posts)
+            })
+            .collect::<Vec<(
+                self::users::Model,
+                Vec<(self::posts::Model, Vec<self::comments::Model>)>,
+            )>>()
+    });
 
-    async_std::task::block_on(async {
+    rt.block_on(async {
         pool.close().await;
     })
 }

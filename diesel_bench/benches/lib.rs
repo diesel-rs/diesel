@@ -148,7 +148,7 @@ fn bench_medium_complex_query(c: &mut Criterion) {
             crate::quaint_benches::bench_medium_complex_query(b, *i);
         });
 
-        #[cfg(feature = "sqlx-bench")]
+        #[cfg(all(feature = "sqlx-bench", not(feature = "sqlite")))]
         group.bench_with_input(
             BenchmarkId::new("sqlx_query_as_macro", size),
             size,
