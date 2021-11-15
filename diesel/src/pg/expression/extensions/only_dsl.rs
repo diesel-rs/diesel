@@ -1,6 +1,5 @@
-use crate::query_builder::Only;
-use crate::query_builder::{AsQuery, SelectStatement};
-use crate::query_source::Table;
+use crate::query_builder::{Only, SelectStatement};
+use crate::query_source::{QuerySource, Table};
 
 /// The `only` method
 ///
@@ -21,9 +20,12 @@ use crate::query_source::Table;
 /// ```
 /// Selects the number of entries in the `users` table excluding any rows found in inherited
 /// tables.
-pub trait OnlyDsl: AsQuery + Sized {
+pub trait OnlyDsl: Table + Sized {
     /// See the trait-level docs.
-    fn only(self) -> crate::dsl::SelectFromOnly<Self> {
+    fn only(self) -> crate::dsl::SelectFromOnly<Self>
+    where
+        Only<Self>: QuerySource,
+    {
         SelectStatement::simple(Only { query: self })
     }
 }

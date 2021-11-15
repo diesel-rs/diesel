@@ -358,7 +358,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     // https://sqlite.org/c3ref/column_name.html
     //
     // Note: This function is marked as unsafe, as calling it can invalidate
-    // any existing column name pointer. To prevent that, 
+    // any existing column name pointer. To prevent that,
     // it should maximally be called once per column at all.
     pub(super) unsafe fn column_name(&self, idx: i32) -> *const str {
         let name = {

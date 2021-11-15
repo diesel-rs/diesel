@@ -377,10 +377,11 @@ pub mod helper_types {
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
 
-    /// Represents the return type of `.only()`
+    /// Represents the return type of [`.only()`](crate::pg::expression::extensions::OnlyDsl)
     #[cfg(feature = "postgres_backend")]
-    pub type SelectFromOnly<T> =
-        crate::query_builder::SelectStatement<crate::pg::query_builder::only_clause::Only<T>>;
+    pub type SelectFromOnly<T> = crate::query_builder::SelectStatement<
+        crate::query_builder::FromClause<crate::pg::query_builder::only_clause::Only<T>>,
+    >;
 
     /// [`Iterator`](std::iter::Iterator) of [`QueryResult<U>`](crate::result::QueryResult)
     ///
@@ -449,7 +450,3 @@ pub use crate::result::Error::NotFound;
 pub(crate) mod diesel {
     pub use super::*;
 }
-
-// workaround https://github.com/rust-lang/rust/pull/52234
-#[doc(hidden)]
-pub use __diesel_check_column_count_internal as __diesel_check_column_count;
