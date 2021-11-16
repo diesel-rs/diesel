@@ -262,14 +262,9 @@ mod tests {
                 query
                     .get_result::<PgInterval>(conn)
                     .map(|res| {
-                        let r = (value.months == res.months
+                        value.months == res.months
                             && value.days == res.days
-                            && (value.microseconds - res.microseconds).abs() <= $max_diff);
-                        if !r {
-                            dbg!(res);
-                            dbg!(value);
-                        }
-                        r
+                            && (value.microseconds - res.microseconds).abs() <= $max_diff
                     })
                     .unwrap_or(false)
             }
