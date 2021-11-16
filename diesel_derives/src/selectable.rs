@@ -17,9 +17,14 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
 
     let struct_name = &item.ident;
 
-    let field_columns_ty = model.fields().iter().map(|f| field_column_ty(f, &model));
+    let fields = model
+        .fields()
+        .iter()
+        .filter(|f| !f.has_skip_flag())
+        .collect::<Vec<_>>();
 
-    let field_columns_inst = model.fields().iter().map(|f| field_column_inst(f, &model));
+    let field_columns_ty = fields.iter().map(|f| field_column_ty(f, &model));
+    let field_columns_inst = fields.iter().map(|f| field_column_inst(f, &model));
 
     Ok(wrap_in_dummy_mod(quote! {
         use diesel::expression::Selectable;

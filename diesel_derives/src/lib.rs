@@ -413,6 +413,9 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///   Then `Type` is converted via
 ///   [`.try_into`](https://doc.rust-lang.org/stable/std/convert/trait.TryInto.html#tymethod.try_into)
 ///   into the field type. By default this derive will deserialize directly into the field type
+/// * `[diesel(skip)]`, instead of deserializing anything into that type, deserialization will
+///   behave as if this field wasn't here, and it will simply be set using the `Default` impl
+///   of the type of the field.
 ///
 /// # Examples
 ///
@@ -772,6 +775,7 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
 ///    single database column, but is a type that implements
 ///    `Selectable` on it's own
+/// * `[diesel(skip)]`, field is ignored for the `Selectable` impl. Consistent with `Queryable`.
 #[proc_macro_derive(Selectable, attributes(table_name, column_name, sql_type, diesel))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
     expand_proc_macro(input, selectable::derive)
