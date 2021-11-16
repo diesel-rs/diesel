@@ -49,8 +49,8 @@ impl Arbitrary for PgTime {
 
 impl Arbitrary for PgTimestamp {
     fn arbitrary(g: &mut Gen) -> Self {
-        const MIN_TIMESTAMP: i64 = -4713 * 365 * 24 * 60 * 60 * 1_000_00;
-        const MAX_TIMESTAMP: i64 = 294276 * 365 * 24 * 60 * 60 * 1_000_00;
+        const MIN_TIMESTAMP: i64 = -4713 * 365 * 24 * 60 * 60 * 100_000;
+        const MAX_TIMESTAMP: i64 = 294276 * 365 * 24 * 60 * 60 * 100_000;
 
         let mut timestamp = i64::arbitrary(g);
 

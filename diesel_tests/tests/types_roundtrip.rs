@@ -634,7 +634,7 @@ fn mk_f32(f: FloatWrapper) -> f32 {
 impl quickcheck::Arbitrary for FloatWrapper {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         let mut f = f32::arbitrary(g);
-        while cfg!(feature = "sqlite") && f.is_nan() {
+        while (cfg!(feature = "sqlite") || cfg!(feature = "mysql")) && f.is_nan() {
             f = f32::arbitrary(g);
         }
         FloatWrapper(f)
@@ -651,7 +651,7 @@ fn mk_f64(f: DoubleWrapper) -> f64 {
 impl quickcheck::Arbitrary for DoubleWrapper {
     fn arbitrary(g: &mut quickcheck::Gen) -> Self {
         let mut f = f64::arbitrary(g);
-        while cfg!(feature = "sqlite") && f.is_nan() {
+        while (cfg!(feature = "sqlite") || cfg!(featuer = "mysql")) && f.is_nan() {
             f = f64::arbitrary(g);
         }
         DoubleWrapper(f)
