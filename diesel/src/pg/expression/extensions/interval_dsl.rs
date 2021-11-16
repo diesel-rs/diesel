@@ -247,7 +247,10 @@ mod tests {
     use crate::{select, sql_types};
 
     macro_rules! test_fn {
-        ($tpe:ty, $test_name:ident, $units:ident, $max_range: expr) => {
+        ($tpe:ty, $test_name:ident, $units: ident, $max_range: expr) => {
+            test_fn!($tpe, $test_name, $units, $max_range, 1);
+        };
+        ($tpe:ty, $test_name:ident, $units:ident, $max_range: expr, $max_diff: expr) => {
             fn $test_name(val: $tpe) -> bool {
                 if val > $max_range || val < (-1 as $tpe) * $max_range || (val as f64).is_nan() {
                     return true;
@@ -259,9 +262,14 @@ mod tests {
                 query
                     .get_result::<PgInterval>(conn)
                     .map(|res| {
-                        value.months == res.months
+                        let r = (value.months == res.months
                             && value.days == res.days
-                            && (value.microseconds - res.microseconds).abs() <= 1
+                            && (value.microseconds - res.microseconds).abs() <= $max_diff);
+                        if !r {
+                            dbg!(res);
+                            dbg!(value);
+                        }
+                        r
                     })
                     .unwrap_or(false)
             }
@@ -300,16 +308,29 @@ mod tests {
 
     #[test]
     fn intervals_match_pg_values_f64() {
+        const MAX_DIFF: i64 = 1_000_000;
         // postgres does not really support intervals with more than i32::MAX microseconds
         // https://www.postgresql.org/message-id/20140126025049.GL9750@momjian.us
-        test_fn!(f64, test_microseconds, microseconds, i32::MAX as f64);
-        test_fn!(f64, test_milliseconds, milliseconds, i32::MAX as f64);
-        test_fn!(f64, test_seconds, seconds, i32::MAX as f64);
-        test_fn!(f64, test_minutes, minutes, i32::MAX as f64);
-        test_fn!(f64, test_hours, hours, i32::MAX as f64);
-        test_fn!(f64, test_days, days, i32::MAX as f64);
-        test_fn!(f64, test_weeks, weeks, (i32::MAX / 7) as f64);
-        test_fn!(f64, test_months, months, i32::MAX as f64);
-        test_fn!(f64, test_years, years, (i32::MAX / 12) as f64);
+        test_fn!(
+            f64,
+            test_microseconds,
+            microseconds,
+            i32::MAX as f64,
+            MAX_DIFF
+        );
+        test_fn!(
+            f64,
+            test_milliseconds,
+            milliseconds,
+            i32::MAX as f64,
+            MAX_DIFF
+        );
+        test_fn!(f64, test_seconds, seconds, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_minutes, minutes, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_hours, hours, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_days, days, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_weeks, weeks, (i32::MAX / 7) as f64, MAX_DIFF);
+        test_fn!(f64, test_months, months, i32::MAX as f64, MAX_DIFF);
+        test_fn!(f64, test_years, years, (i32::MAX / 12) as f64, MAX_DIFF);
     }
 }

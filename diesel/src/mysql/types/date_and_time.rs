@@ -271,35 +271,6 @@ impl FromSql<Date, Mysql> for NaiveDate {
     }
 }
 
-#[cfg(feature = "quickcheck")]
-impl quickcheck::Arbitrary for MysqlTime {
-    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
-        let year = u32::arbitrary(g);
-        let month = u32::arbitrary(g);
-        let day = u32::arbitrary(g);
-        let hour = u32::arbitrary(g);
-        let minute = u32::arbitrary(g);
-        let second = u32::arbitrary(g);
-        let second_part = u64::arbitrary(g);
-        let neg = bool::arbitrary(g);
-
-        let time_type = g.choose(&[-2, -1, 0, 1, 2, 3]).expect("Slice is not empty");
-
-        Self {
-            year,
-            month,
-            day,
-            hour,
-            minute,
-            second,
-            second_part,
-            neg,
-            time_type: MysqlTimestampType(*time_type),
-            time_zone_displacement: 0,
-        }
-    }
-}
-
 #[cfg(all(test, feature = "chrono"))]
 mod tests {
     extern crate chrono;

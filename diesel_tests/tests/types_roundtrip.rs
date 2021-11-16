@@ -115,8 +115,8 @@ pub fn f64_ne(a: &f64, b: &f64) -> bool {
 test_round_trip!(i16_roundtrips, SmallInt, i16);
 test_round_trip!(i32_roundtrips, Integer, i32);
 test_round_trip!(i64_roundtrips, BigInt, i64);
-test_round_trip!(f32_roundtrips, Float, f32, id, f32_ne);
-test_round_trip!(f64_roundtrips, Double, f64, id, f64_ne);
+test_round_trip!(f32_roundtrips, Float, FloatWrapper, mk_f32, f32_ne);
+test_round_trip!(f64_roundtrips, Double, DoubleWrapper, mk_f64, f64_ne);
 test_round_trip!(string_roundtrips, VarChar, String);
 test_round_trip!(text_roundtrips, Text, String);
 test_round_trip!(binary_roundtrips, Binary, Vec<u8>);
@@ -157,9 +157,9 @@ mod pg_types {
         naive_datetime_roundtrips,
         Timestamp,
         (i64, u32),
-        mk_naive_datetime
+        mk_pg_naive_datetime
     );
-    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_pg_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
     test_round_trip!(datetime_roundtrips, Timestamptz, (i64, u32), mk_datetime);
     test_round_trip!(
@@ -314,7 +314,19 @@ mod pg_types {
                 break;
             }
         }
-        r
+        // Strip of nano second precision as postgres
+        // does not accuratly handle them
+        let nanos = (r.nanosecond() / 1000) * 1000;
+        r.with_nanosecond(nanos).unwrap()
+    }
+
+    pub fn mk_pg_naive_time(data: (u32, u32)) -> NaiveTime {
+        let time = mk_naive_time(data);
+
+        // Strip of nano second precision as postgres
+        // does not accuratly handle them
+        let nanos = (time.nanosecond() / 1000) * 1000;
+        time.with_nanosecond(nanos).unwrap()
     }
 
     pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
@@ -337,40 +349,155 @@ mod mysql_types {
         naive_datetime_roundtrips_to_datetime,
         Datetime,
         (i64, u32),
-        mk_naive_datetime
+        mk_mysql_naive_datetime
     );
-    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_naive_time);
+    test_round_trip!(naive_time_roundtrips, Time, (u32, u32), mk_mysql_naive_time);
     test_round_trip!(naive_date_roundtrips, Date, u32, mk_naive_date);
-    test_round_trip!(mysql_time_time_roundtrips, Time, MysqlTime);
-    test_round_trip!(mysql_time_date_roundtrips, Date, MysqlTime);
-    test_round_trip!(mysql_time_date_time_roundtrips, Datetime, MysqlTime);
-    test_round_trip!(mysql_time_timestamp_roundtrips, Timestamp, MysqlTime);
+    test_round_trip!(
+        mysql_time_time_roundtrips,
+        Time,
+        (u32, u32),
+        mk_mysql_time_for_time
+    );
+    test_round_trip!(
+        mysql_time_date_roundtrips,
+        Date,
+        u32,
+        mk_mysql_time_for_date
+    );
+    test_round_trip!(
+        mysql_time_date_time_roundtrips,
+        Datetime,
+        (i64, u32),
+        mk_mysql_time_for_date_time
+    );
+    test_round_trip!(
+        mysql_time_timestamp_roundtrips,
+        Timestamp,
+        (i64, u32),
+        mk_mysql_time_for_timestamp
+    );
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
     test_round_trip!(u16_roundtrips, Unsigned<SmallInt>, u16);
     test_round_trip!(u32_roundtrips, Unsigned<Integer>, u32);
     test_round_trip!(u64_roundtrips, Unsigned<BigInt>, u64);
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
-}
 
-#[cfg(feature = "mysql")]
-pub fn mk_naive_timestamp(data: (i64, u32)) -> NaiveDateTime {
-    let earliest_mysql_date = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 1);
-    let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(03, 14, 7);
-    let mut r = mk_naive_datetime(data);
-
-    loop {
-        if r < earliest_mysql_date {
-            let diff = earliest_mysql_date - r;
-            r = earliest_mysql_date + diff;
-        } else if r > latest_mysql_date {
-            let diff = r - latest_mysql_date;
-            r = earliest_mysql_date + diff;
-        } else {
-            break;
-        }
+    pub fn mk_mysql_time_for_time(data: (u32, u32)) -> MysqlTime {
+        let t = mk_mysql_naive_time(data);
+        MysqlTime::new(
+            0,
+            0,
+            0,
+            t.hour(),
+            t.minute(),
+            t.second(),
+            t.nanosecond() as _,
+            false,
+            MysqlTimestampType::MYSQL_TIMESTAMP_TIME,
+            0,
+        )
     }
 
-    r
+    pub fn mk_mysql_time_for_date(data: u32) -> MysqlTime {
+        let date = mk_naive_date(data);
+        MysqlTime::new(
+            date.year() as _,
+            date.month(),
+            date.day(),
+            0,
+            0,
+            0,
+            0,
+            false,
+            MysqlTimestampType::MYSQL_TIMESTAMP_DATE,
+            0,
+        )
+    }
+
+    pub fn mk_mysql_time_for_date_time(data: (i64, u32)) -> MysqlTime {
+        let t = mk_mysql_naive_datetime(data);
+        MysqlTime::new(
+            t.year() as _,
+            t.month(),
+            t.day(),
+            t.hour(),
+            t.minute(),
+            t.second(),
+            t.timestamp_subsec_micros() as _,
+            false,
+            MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
+            0,
+        )
+    }
+
+    pub fn mk_mysql_time_for_timestamp(data: (i64, u32)) -> MysqlTime {
+        let t = mk_naive_timestamp(data);
+        MysqlTime::new(
+            t.year() as _,
+            t.month(),
+            t.day(),
+            t.hour(),
+            t.minute(),
+            t.second(),
+            t.timestamp_subsec_micros() as _,
+            false,
+            MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
+            0,
+        )
+    }
+
+    pub fn mk_mysql_naive_time(data: (u32, u32)) -> NaiveTime {
+        let time = mk_naive_time(data);
+
+        // Strip of nano second precision as mysql
+        // does not handle them at all
+        time.with_nanosecond(0).unwrap()
+    }
+
+    pub fn mk_naive_timestamp((mut seconds, nanos): (i64, u32)) -> NaiveDateTime {
+        // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
+        let earliest_mysql_date = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 1);
+        let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(03, 14, 7);
+
+        if seconds != 0 {
+            seconds = earliest_mysql_date.timestamp()
+                + ((latest_mysql_date.timestamp() - earliest_mysql_date.timestamp()) % seconds);
+        } else {
+            seconds = earliest_mysql_date.timestamp();
+        }
+
+        let r = mk_naive_datetime((seconds, nanos));
+
+        // Strip of nano second precision as mysql
+        // does not accuratly handle them
+        let nanos = (r.nanosecond() / 1000) * 1000;
+        r.with_nanosecond(nanos).unwrap()
+    }
+
+    pub fn mk_mysql_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
+        // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
+        let earliest_mysql_date = NaiveDate::from_ymd(1000, 1, 1).and_hms(0, 0, 1);
+        let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31).and_hms(23, 59, 59);
+        let mut r = mk_naive_datetime(data);
+
+        loop {
+            if r < earliest_mysql_date {
+                let diff = earliest_mysql_date - r;
+                r = earliest_mysql_date + diff;
+            } else if r > latest_mysql_date {
+                let diff = r - latest_mysql_date;
+                r = earliest_mysql_date + diff;
+            } else {
+                break;
+            }
+        }
+
+        // Strip of nano second precision as mysql
+        // does not accuratly handle them
+        let nanos = (r.nanosecond() / 1000) * 1000;
+        r.with_nanosecond(nanos).unwrap()
+    }
 }
 
 pub fn mk_naive_datetime((mut secs, mut nano): (i64, u32)) -> NaiveDateTime {
@@ -480,6 +607,40 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
     earliest_sqlite_date + Duration::days(days as i64 % num_days_representable)
 }
 
+#[derive(Debug, Clone, Copy)]
+struct FloatWrapper(f32);
+
+fn mk_f32(f: FloatWrapper) -> f32 {
+    f.0
+}
+
+impl quickcheck::Arbitrary for FloatWrapper {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        let mut f = f32::arbitrary(g);
+        while cfg!(feature = "sqlite") && f.is_nan() {
+            f = f32::arbitrary(g);
+        }
+        FloatWrapper(f)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct DoubleWrapper(f64);
+
+fn mk_f64(f: DoubleWrapper) -> f64 {
+    f.0
+}
+
+impl quickcheck::Arbitrary for DoubleWrapper {
+    fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+        let mut f = f64::arbitrary(g);
+        while cfg!(feature = "sqlite") && f.is_nan() {
+            f = f64::arbitrary(g);
+        }
+        DoubleWrapper(f)
+    }
+}
+
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 #[derive(Clone, Debug)]
 struct SerdeWrapper(serde_json::Value);
@@ -510,7 +671,10 @@ fn arbitrary_serde(g: &mut quickcheck::Gen, depth: usize) -> serde_json::Value {
             serde_json::Value::Number(n.into())
         }
         3 => {
-            let s = String::arbitrary(g);
+            let s = String::arbitrary(g)
+                .chars()
+                .filter(|c| c.is_ascii_alphabetic())
+                .collect();
             serde_json::Value::String(s)
         }
         4 => {
@@ -527,7 +691,11 @@ fn arbitrary_serde(g: &mut quickcheck::Gen, depth: usize) -> serde_json::Value {
             let map = (0..*fields)
                 .map(|_| {
                     let len = g.choose(&[1, 2, 3, 4, 5]).expect("Slice is not empty");
-                    let name = String::arbitrary(g).chars().take(*len).collect();
+                    let name = String::arbitrary(g)
+                        .chars()
+                        .filter(|c| c.is_ascii_alphabetic())
+                        .take(*len)
+                        .collect();
                     (name, arbitrary_serde(g, depth + 1))
                 })
                 .collect();
