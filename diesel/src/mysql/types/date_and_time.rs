@@ -4,7 +4,8 @@ use std::io::Write;
 use std::os::raw as libc;
 use std::{mem, slice};
 
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, FromSql, FromSqlRow};
+use crate::expression::AsExpression;
 use crate::mysql::{Mysql, MysqlValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Datetime, Time, Timestamp};
@@ -17,8 +18,12 @@ use crate::sql_types::{Date, Datetime, Time, Timestamp};
 /// [MYSQL_TIME](https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__TIME.html)
 /// struct from libmysqlclient
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, AsExpression, FromSqlRow)]
 #[non_exhaustive]
+#[sql_type = "Timestamp"]
+#[sql_type = "Time"]
+#[sql_type = "Date"]
+#[sql_type = "Datetime"]
 pub struct MysqlTime {
     /// [Year field](https://dev.mysql.com/doc/dev/mysql-server/latest/structMYSQL__TIME.html#af585231d3ed0bc2fa389856e61e15d4e)
     pub year: libc::c_uint,
