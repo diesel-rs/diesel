@@ -25,7 +25,6 @@ where
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
     T: AsExpression<ST>
         + FromSqlRow<ST, <TestConnection as Connection>::Backend>
-        + PartialEq
         + Clone
         + ::std::fmt::Debug
         + 'static,
@@ -357,25 +356,29 @@ mod mysql_types {
         mysql_time_time_roundtrips,
         Time,
         (u32, u32),
-        mk_mysql_time_for_time
+        mk_mysql_time_for_time,
+        cmp_mysql_time
     );
     test_round_trip!(
         mysql_time_date_roundtrips,
         Date,
         u32,
-        mk_mysql_time_for_date
+        mk_mysql_time_for_date,
+        cmp_mysql_time
     );
     test_round_trip!(
         mysql_time_date_time_roundtrips,
         Datetime,
         (i64, u32),
-        mk_mysql_time_for_date_time
+        mk_mysql_time_for_date_time,
+        cmp_mysql_time
     );
     test_round_trip!(
         mysql_time_timestamp_roundtrips,
         Timestamp,
         (i64, u32),
-        mk_mysql_time_for_timestamp
+        mk_mysql_time_for_timestamp,
+        cmp_mysql_time
     );
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
     test_round_trip!(u16_roundtrips, Unsigned<SmallInt>, u16);
@@ -497,6 +500,20 @@ mod mysql_types {
         // does not accuratly handle them
         let nanos = (r.nanosecond() / 1000) * 1000;
         r.with_nanosecond(nanos).unwrap()
+    }
+
+    fn cmp_mysql_time(this: &MysqlTime, other: &MysqlTime) -> bool {
+        let is_eq = this.year == other.year
+            && this.month == other.month
+            && this.day == other.day
+            && this.hour == other.hour
+            && this.minute == other.minute
+            && this.second == other.second
+            && this.second_part == other.second_part
+            && this.neg == other.neg
+            && this.time_zone_displacement == other.time_zone_displacement;
+
+        !is_eq
     }
 }
 

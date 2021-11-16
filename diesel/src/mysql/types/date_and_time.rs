@@ -47,21 +47,6 @@ pub struct MysqlTime {
     pub time_zone_displacement: libc::c_int,
 }
 
-impl PartialEq for MysqlTime {
-    fn eq(&self, other: &Self) -> bool {
-        self.year == other.year
-            && self.month == other.month
-            && self.day == other.day
-            && self.hour == other.hour
-            && self.minute == other.minute
-            && self.second == other.second
-            && self.second_part == other.second_part
-            && self.neg == other.neg
-            //&& self.time_type == other.time_type
-            && self.time_zone_displacement == other.time_zone_displacement
-    }
-}
-
 impl MysqlTime {
     /// Construct a new instance of [MysqlTime]
     #[allow(clippy::too_many_arguments)]
