@@ -114,7 +114,7 @@ impl Model {
     pub fn find_column(&self, column_name: &Ident) -> &Field {
         self.fields()
             .iter()
-            .find(|f| f.column_name() == column_name)
+            .find(|f| f.column_name() == *column_name)
             .unwrap_or_else(|| abort!(column_name, "No field with column name {}", column_name))
     }
 

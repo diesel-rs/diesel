@@ -3,13 +3,13 @@ use quote::ToTokens;
 use syn::spanned::Spanned;
 use syn::{Field as SynField, Ident, Index, Type};
 
-use attrs::{parse_attributes, FieldAttr};
+use attrs::{parse_attributes, FieldAttr, SqlIdentifier};
 
 pub struct Field {
     pub ty: Type,
     pub span: Span,
     pub name: FieldName,
-    column_name: Option<Ident>,
+    column_name: Option<SqlIdentifier>,
     pub sql_type: Option<Type>,
     pub serialize_as: Option<Type>,
     pub deserialize_as: Option<Type>,
@@ -60,14 +60,16 @@ impl Field {
         }
     }
 
-    pub fn column_name(&self) -> &Ident {
-        self.column_name.as_ref()
-            .unwrap_or_else(|| match self.name {
-                FieldName::Named(ref x) => x,
-                FieldName::Unnamed(ref x) => {
-                    abort!(x, "All fields of tuple structs must be annotated with `#[diesel(column_name)]`");
-                }
-            })
+    pub fn column_name(&self) -> SqlIdentifier {
+        self.column_name.clone().unwrap_or_else(|| match self.name {
+            FieldName::Named(ref x) => x.into(),
+            FieldName::Unnamed(ref x) => {
+                abort!(
+                    x,
+                    "All fields of tuple structs must be annotated with `#[diesel(column_name)]`"
+                );
+            }
+        })
     }
 
     pub fn ty_for_deserialize(&self) -> &Type {

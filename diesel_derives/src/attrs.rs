@@ -1,8 +1,13 @@
+use std::fmt::{Display, Formatter};
+
+use proc_macro2::{Span, TokenStream};
 use proc_macro_error::ResultExt;
+use quote::ToTokens;
+use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream, Parser, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parenthesized, Attribute, Ident, LitBool, Path, Type};
+use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, Type};
 
 use deprecated::ParseDeprecated;
 use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
@@ -11,10 +16,66 @@ use util::{parse_eq, parse_paren, unknown_attribute};
 pub enum FieldAttr {
     Embed(Ident),
 
-    ColumnName(Ident, Ident),
+    ColumnName(Ident, SqlIdentifier),
     SqlType(Ident, Type),
     SerializeAs(Ident, Type),
     DeserializeAs(Ident, Type),
+}
+
+#[derive(Clone)]
+pub struct SqlIdentifier {
+    field_name: String,
+    span: Span,
+}
+
+impl SqlIdentifier {
+    pub fn span(&self) -> Span {
+        self.span
+    }
+}
+
+impl ToTokens for SqlIdentifier {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        Ident::new(&self.field_name, self.span).to_tokens(tokens)
+    }
+}
+
+impl Display for SqlIdentifier {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.field_name)
+    }
+}
+
+impl PartialEq<Ident> for SqlIdentifier {
+    fn eq(&self, other: &Ident) -> bool {
+        *other == self.field_name
+    }
+}
+
+impl From<&'_ Ident> for SqlIdentifier {
+    fn from(ident: &'_ Ident) -> Self {
+        Self {
+            span: ident.span(),
+            field_name: ident.to_string(),
+        }
+    }
+}
+
+impl Parse for SqlIdentifier {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let fork = input.fork();
+
+        if let Ok(ident) = fork.parse::<Ident>() {
+            input.advance_to(&fork);
+            Ok((&ident).into())
+        } else {
+            let name = input.parse::<LitStr>()?;
+            Ok(Self {
+                field_name: name.value(),
+                span: name.span(),
+            })
+        }
+    }
 }
 
 impl Parse for FieldAttr {

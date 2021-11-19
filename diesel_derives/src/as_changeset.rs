@@ -14,7 +14,12 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     let fields_for_update = model
         .fields()
         .iter()
-        .filter(|f| !model.primary_key_names.contains(f.column_name()))
+        .filter(|f| {
+            !model
+                .primary_key_names
+                .iter()
+                .any(|p| f.column_name() == *p)
+        })
         .collect::<Vec<_>>();
 
     if fields_for_update.is_empty() {

@@ -29,11 +29,4 @@ struct User3 {
     name: String,
 }
 
-#[derive(Queryable)]
-#[diesel(table_name = users)]
-struct User4 {
-    #[diesel(column_name = "name")]
-    name: String,
-}
-
 fn main() {}

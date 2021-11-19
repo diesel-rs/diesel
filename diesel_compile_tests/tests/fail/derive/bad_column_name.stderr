@@ -10,14 +10,8 @@ error: expected `=`
 21 |     #[diesel(column_name(another))]
    |                         ^^^^^^^^^
 
-error: expected identifier
+error: expected string literal
   --> $DIR/bad_column_name.rs:28:28
    |
 28 |     #[diesel(column_name = true)]
    |                            ^^^^
-
-error: expected identifier
-  --> $DIR/bad_column_name.rs:35:28
-   |
-35 |     #[diesel(column_name = "name")]
-   |                            ^^^^^^

@@ -69,24 +69,24 @@ fn struct_with_no_table() {
     assert_eq!(Ok(MyStructNamedSoYouCantInferIt { foo: 1, bar: 2 }), data);
 }
 
-// #[test]
-// fn struct_with_non_ident_column_name() {
-//     #[derive(Debug, Clone, PartialEq, Eq, QueryableByName)]
-//     struct QueryPlan {
-//         #[diesel(sql_type = diesel::sql_types::Text)]
-//         #[diesel(column_name = "QUERY PLAN")]
-//         qp: String,
-//     }
+#[test]
+fn struct_with_non_ident_column_name() {
+    #[derive(Debug, Clone, PartialEq, Eq, QueryableByName)]
+    struct QueryPlan {
+        #[diesel(sql_type = diesel::sql_types::Text)]
+        #[diesel(column_name = "QUERY PLAN")]
+        qp: String,
+    }
 
-//     let conn = &mut connection();
-//     let data = sql_query("SELECT 'some plan' AS \"QUERY PLAN\"").get_result(conn);
-//     assert_eq!(
-//         Ok(QueryPlan {
-//             qp: "some plan".to_string()
-//         }),
-//         data
-//     );
-// }
+    let conn = &mut connection();
+    let data = sql_query("SELECT 'some plan' AS \"QUERY PLAN\"").get_result(conn);
+    assert_eq!(
+        Ok(QueryPlan {
+            qp: "some plan".to_string()
+        }),
+        data
+    );
+}
 
 #[test]
 fn embedded_struct() {
