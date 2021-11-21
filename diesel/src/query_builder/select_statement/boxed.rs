@@ -164,10 +164,7 @@ where
     QS: QueryFragment<DB>,
     BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
 {
-    fn walk_ast<'b, 'c>(&'b self, out: AstPass<'_, 'c, DB>) -> QueryResult<()>
-    where
-        'b: 'c,
-    {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.build_query(out, |where_clause, out| where_clause.walk_ast(out))
     }
 }

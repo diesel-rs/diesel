@@ -12,10 +12,7 @@ impl<T: Expression> Expression for Grouped<T> {
 }
 
 impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("(");
         self.0.walk_ast(out.reborrow())?;
         out.push_sql(")");

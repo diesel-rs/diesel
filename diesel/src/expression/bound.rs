@@ -34,10 +34,7 @@ where
     DB: Backend + HasSqlType<T>,
     U: ToSql<T, DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_bind_param(&self.item)?;
         Ok(())
     }

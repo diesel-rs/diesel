@@ -168,7 +168,7 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// This method will contain the behavior required for all possible AST
     /// passes. See [`AstPass`] for more details.
     ///
-    fn walk_ast<'a: 'b, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>;
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>;
 
     /// Converts this `QueryFragment` to its SQL representation.
     ///
@@ -183,14 +183,11 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// itself. It is represented in SQL with a placeholder such as `?` or `$1`.
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn collect_binds<'a, 'b, 'c>(
-        &'c self,
-        out: &'a mut <DB as HasBindCollector<'b>>::BindCollector,
-        metadata_lookup: &'a mut DB::MetadataLookup,
-    ) -> QueryResult<()>
-    where
-        'c: 'b,
-    {
+    fn collect_binds<'b>(
+        &'b self,
+        out: &mut <DB as HasBindCollector<'b>>::BindCollector,
+        metadata_lookup: &mut DB::MetadataLookup,
+    ) -> QueryResult<()> {
         self.walk_ast(AstPass::collect_binds(out, metadata_lookup))
     }
 
@@ -229,10 +226,7 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
@@ -242,19 +236,13 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast<'b, 'c>(&'b self, pass: AstPass<'_, 'c, DB>) -> QueryResult<()>
-    where
-        'b: 'c,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         QueryFragment::walk_ast(&**self, pass)
     }
 }
 
 impl<DB: Backend> QueryFragment<DB> for () {
-    fn walk_ast<'a, 'b>(&'a self, _: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -264,10 +252,7 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         match *self {
             Some(ref c) => c.walk_ast(out),
             None => Ok(()),

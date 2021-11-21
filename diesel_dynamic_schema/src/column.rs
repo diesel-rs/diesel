@@ -63,7 +63,7 @@ where
     T: QueryFragment<DB>,
     U: Borrow<str>,
 {
-    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.table.walk_ast(out.reborrow())?;
         out.push_sql(".");

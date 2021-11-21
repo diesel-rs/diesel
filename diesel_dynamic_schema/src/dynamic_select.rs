@@ -57,7 +57,7 @@ impl<'a, DB, QS> QueryFragment<DB> for DynamicSelectClause<'a, DB, QS>
 where
     DB: Backend,
 {
-    fn walk_ast<'b: 'c, 'c>(&'b self, mut pass: AstPass<'_, 'c, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         let mut first = true;
         for s in &self.selects {
             if first {

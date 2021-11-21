@@ -17,7 +17,7 @@ impl<T> QueryFragment<Pg> for Only<T>
 where
     T: QueryFragment<Pg>,
 {
-    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.push_sql("ONLY ");
         self.query.walk_ast(out.reborrow())?;
         Ok(())

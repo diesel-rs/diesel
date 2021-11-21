@@ -75,8 +75,7 @@ macro_rules! __diesel_column {
             <$table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
         {
             #[allow(non_snake_case)]
-            fn walk_ast<'a, 'b>(&'a self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
-            where 'a: 'b
+            fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
             {
                 use $crate::QuerySource;
                 const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
@@ -920,8 +919,7 @@ macro_rules! __diesel_table_impl {
                     <table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
                 {
                     #[allow(non_snake_case)]
-                    fn walk_ast<'a, 'b>(&'a self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
-                        where 'a: 'b
+                    fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
                     {
                         use $crate::QuerySource;
                         const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();

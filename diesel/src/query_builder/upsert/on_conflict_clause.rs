@@ -56,10 +56,7 @@ where
     Target: QueryFragment<DB>,
     Action: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.values.walk_ast(out.reborrow())?;
         out.push_sql(" ON CONFLICT");
         self.target.walk_ast(out.reborrow())?;

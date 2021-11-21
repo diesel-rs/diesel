@@ -151,7 +151,7 @@ where
     ///     Left: QueryFragment<DB>,
     ///     Right: QueryFragment<DB>,
     /// {
-    ///     fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+    ///     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
     ///         self.left.walk_ast(out.reborrow())?;
     ///         out.push_sql(" AND ");
     ///         self.right.walk_ast(out.reborrow())?;

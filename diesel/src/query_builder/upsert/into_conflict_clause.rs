@@ -28,10 +28,7 @@ impl<S> QueryFragment<crate::pg::Pg> for OnConflictSelectWrapper<S>
 where
     S: QueryFragment<crate::pg::Pg>,
 {
-    fn walk_ast<'a, 'b>(&'a self, out: AstPass<'_, 'b, crate::pg::Pg>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, crate::pg::Pg>) -> QueryResult<()> {
         self.0.walk_ast(out)
     }
 }
@@ -45,10 +42,7 @@ where
     SelectStatement<F, S, D, WhereClause<W>, O, LOf, G, H, LC>:
         QueryFragment<crate::sqlite::Sqlite>,
 {
-    fn walk_ast<'a, 'b>(&'a self, out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
         self.0.walk_ast(out)
     }
 }
@@ -61,10 +55,7 @@ where
         QueryFragment<crate::sqlite::Sqlite>,
     QS: QueryFragment<crate::sqlite::Sqlite>,
 {
-    fn walk_ast<'b, 'c>(&'b self, pass: AstPass<'_, 'c, crate::sqlite::Sqlite>) -> QueryResult<()>
-    where
-        'b: 'c,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, crate::sqlite::Sqlite>) -> QueryResult<()> {
         // https://www.sqlite.org/lang_UPSERT.html (Parsing Ambiguity)
         self.0.build_query(pass, |where_clause, mut pass| {
             match where_clause {

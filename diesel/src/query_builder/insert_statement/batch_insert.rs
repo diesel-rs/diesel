@@ -82,10 +82,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::BatchInsertSupport>,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::BatchInsertSupport>>::walk_ast(self, pass)
     }
 }
@@ -102,10 +99,7 @@ where
     ValuesClause<V, Tab>: QueryFragment<DB>,
     V: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         if !HAS_STATIC_QUERY_ID {
             out.unsafe_to_cache_prepared();
         }

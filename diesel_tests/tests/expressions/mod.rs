@@ -157,10 +157,7 @@ impl<T, DB> QueryFragment<DB> for Arbitrary<T>
 where
     DB: Backend,
 {
-    fn walk_ast<'a, 'b>(&'a self, _: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }

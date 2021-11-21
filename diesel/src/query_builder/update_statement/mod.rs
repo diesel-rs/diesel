@@ -198,10 +198,7 @@ where
     V: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         if self.values.is_noop()? {
             return Err(QueryBuilderError(
                 "There are no changes to save. This query cannot be built".into(),

@@ -6,7 +6,7 @@ use crate::query_builder::{AstPass, IntoBoxedClause, QueryFragment};
 use crate::result::QueryResult;
 
 impl QueryFragment<Mysql> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
-    fn walk_ast<'a: 'b, 'b>(&'a self, _out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -15,7 +15,7 @@ impl<L> QueryFragment<Mysql> for LimitOffsetClause<LimitClause<L>, NoOffsetClaus
 where
     LimitClause<L>: QueryFragment<Mysql>,
 {
-    fn walk_ast<'a: 'b, 'b>(&'a self, out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         self.limit_clause.walk_ast(out)?;
         Ok(())
     }
@@ -26,7 +26,7 @@ where
     LimitClause<L>: QueryFragment<Mysql>,
     OffsetClause<O>: QueryFragment<Mysql>,
 {
-    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         self.limit_clause.walk_ast(out.reborrow())?;
         self.offset_clause.walk_ast(out.reborrow())?;
         Ok(())
@@ -34,7 +34,7 @@ where
 }
 
 impl<'a> QueryFragment<Mysql> for BoxedLimitOffsetClause<'a, Mysql> {
-    fn walk_ast<'b: 'c, 'c>(&'b self, mut out: AstPass<'_, 'c, Mysql>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         match (self.limit.as_ref(), self.offset.as_ref()) {
             (Some(limit), Some(offset)) => {
                 limit.walk_ast(out.reborrow())?;

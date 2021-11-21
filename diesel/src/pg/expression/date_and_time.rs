@@ -39,7 +39,7 @@ where
     Ts: QueryFragment<Pg>,
     Tz: QueryFragment<Pg>,
 {
-    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         self.timestamp.walk_ast(out.reborrow())?;
         out.push_sql(" AT TIME ZONE ");
         self.timezone.walk_ast(out.reborrow())?;

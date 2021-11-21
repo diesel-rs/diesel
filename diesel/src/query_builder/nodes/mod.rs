@@ -24,7 +24,7 @@ where
     T: StaticQueryFragment,
     T::Component: QueryFragment<DB>,
 {
-    fn walk_ast<'a: 'b, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         T::STATIC_COMPONENT.walk_ast(pass)
     }
 }
@@ -33,7 +33,7 @@ where
 pub struct Identifier<'a>(pub &'a str);
 
 impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
-    fn walk_ast<'b: 'c, 'c>(&'b self, mut out: AstPass<'_, 'c, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_identifier(self.0)
     }
 }
@@ -68,7 +68,7 @@ where
     U: QueryFragment<DB>,
     M: MiddleFragment<DB>,
 {
-    fn walk_ast<'b: 'c, 'c>(&'b self, mut out: AstPass<'_, 'c, DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.lhs.walk_ast(out.reborrow())?;
         self.middle.push_sql(out.reborrow());
         self.rhs.walk_ast(out.reborrow())?;

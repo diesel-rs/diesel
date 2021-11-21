@@ -46,10 +46,7 @@ where
     Source: QueryFragment<DB>,
     Expr: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.source.walk_ast(pass.reborrow())?;
         pass.push_sql(" ORDER BY ");
         self.expr.walk_ast(pass)
@@ -60,10 +57,7 @@ where
 pub struct OrderColumn(u32);
 
 impl<DB: Backend> QueryFragment<DB> for OrderColumn {
-    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_sql(&self.0.to_string());
         Ok(())
     }

@@ -86,7 +86,7 @@ impl<Expr> QueryFragment<Pg> for Any<Expr>
 where
     Expr: QueryFragment<Pg>,
 {
-    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.push_sql("ANY(");
         self.expr.walk_ast(out.reborrow())?;
         out.push_sql(")");
@@ -120,7 +120,7 @@ impl<Expr> QueryFragment<Pg> for All<Expr>
 where
     Expr: QueryFragment<Pg>,
 {
-    fn walk_ast<'a: 'b, 'b>(&'a self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.push_sql("ALL(");
         self.expr.walk_ast(out.reborrow())?;
         out.push_sql(")");

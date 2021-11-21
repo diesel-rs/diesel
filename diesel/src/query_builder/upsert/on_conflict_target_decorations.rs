@@ -62,10 +62,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::OnConflictClause>,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
     }
 }

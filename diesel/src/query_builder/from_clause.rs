@@ -12,10 +12,7 @@ where
     Self: QueryFragment<DB, DB::EmptyFromClauseSyntax>,
     DB: Backend,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::EmptyFromClauseSyntax>>::walk_ast(self, pass)
     }
 }
@@ -25,7 +22,7 @@ impl<DB> QueryFragment<DB, crate::backend::sql_dialect::from_clause_syntax::Ansi
 where
     DB: Backend<EmptyFromClauseSyntax = crate::backend::sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax>,
 {
-    fn walk_ast<'a, 'b>(&'a self, _pass: AstPass<'_, 'b, DB>) -> QueryResult<()> where 'a: 'b {
+    fn walk_ast<'b>(&'b self, _pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -120,10 +117,7 @@ where
     DB: Backend,
     F::FromClause: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_sql(" FROM ");
         self.from_clause.walk_ast(pass)
     }

@@ -102,10 +102,7 @@ where
     T::SelectExpression: QueryFragment<DB>,
     DB: Backend,
 {
-    fn walk_ast<'a, 'b>(&'a self, out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.selection.walk_ast(out)
     }
 }

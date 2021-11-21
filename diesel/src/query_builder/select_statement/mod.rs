@@ -144,10 +144,7 @@ where
     H: QueryFragment<DB>,
     LC: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("SELECT ");
         self.distinct.walk_ast(out.reborrow())?;
         self.select.walk_ast(out.reborrow())?;

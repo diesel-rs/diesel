@@ -185,10 +185,7 @@ where
     Right::FromClause: QueryFragment<DB>,
     Kind: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.left.from_clause.walk_ast(out.reborrow())?;
         self.kind.walk_ast(out.reborrow())?;
         out.push_sql(" JOIN ");
@@ -268,10 +265,7 @@ where
 pub struct Inner;
 
 impl<DB: Backend> QueryFragment<DB> for Inner {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" INNER");
         Ok(())
     }
@@ -282,10 +276,7 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
 pub struct LeftOuter;
 
 impl<DB: Backend> QueryFragment<DB> for LeftOuter {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" LEFT OUTER");
         Ok(())
     }

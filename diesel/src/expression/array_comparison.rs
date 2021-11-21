@@ -55,10 +55,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::ArrayComparision>,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
     }
 }
@@ -71,10 +68,7 @@ where
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         if self.values.is_empty() {
             out.push_sql("1=0");
         } else {
@@ -92,10 +86,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::ArrayComparision>,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
     }
 }
@@ -108,10 +99,7 @@ where
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         if self.values.is_empty() {
             out.push_sql("1=1");
         } else {
@@ -227,10 +215,7 @@ where
     Self: QueryFragment<DB, DB::ArrayComparision>,
     DB: Backend,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
     }
 }
@@ -244,10 +229,7 @@ where
     ST: SingleValue,
     I: ToSql<ST, DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         let mut first = true;
         for value in &self.0 {

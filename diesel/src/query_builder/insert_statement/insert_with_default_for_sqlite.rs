@@ -263,10 +263,7 @@ where
     ValuesClause<V, Tab>: QueryFragment<Sqlite>,
     V: QueryFragment<Sqlite>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         if !STATIC_QUERY_ID {
             out.unsafe_to_cache_prepared();
         }

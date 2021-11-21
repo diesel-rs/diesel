@@ -75,9 +75,7 @@ macro_rules! tuple_impls {
 
             impl<$($T: QueryFragment<__DB>),+, __DB: Backend> QueryFragment<__DB> for ($($T,)+) {
                 #[allow(unused_assignments)]
-                fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()>
-                where
-                    'a: 'b
+                fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, __DB>) -> QueryResult<()>
                 {
                     let mut needs_comma = false;
                     $(

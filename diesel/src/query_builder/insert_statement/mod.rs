@@ -198,10 +198,7 @@ where
     Op: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         if self.records.rows_to_insert() == Some(0) {
             out.push_sql("SELECT 1 FROM ");
             self.into_clause.walk_ast(out.reborrow())?;
@@ -282,10 +279,7 @@ impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
 pub struct Insert;
 
 impl<DB: Backend> QueryFragment<DB> for Insert {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("INSERT");
         Ok(())
     }
@@ -297,10 +291,7 @@ pub struct InsertOrIgnore;
 
 #[cfg(feature = "sqlite")]
 impl QueryFragment<Sqlite> for InsertOrIgnore {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         out.push_sql("INSERT OR IGNORE");
         Ok(())
     }
@@ -308,10 +299,7 @@ impl QueryFragment<Sqlite> for InsertOrIgnore {
 
 #[cfg(feature = "mysql")]
 impl QueryFragment<Mysql> for InsertOrIgnore {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.push_sql("INSERT IGNORE");
         Ok(())
     }
@@ -323,10 +311,7 @@ pub struct Replace;
 
 #[cfg(feature = "sqlite")]
 impl QueryFragment<Sqlite> for Replace {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         out.push_sql("REPLACE");
         Ok(())
     }
@@ -334,10 +319,7 @@ impl QueryFragment<Sqlite> for Replace {
 
 #[cfg(feature = "mysql")]
 impl QueryFragment<Mysql> for Replace {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.push_sql("REPLACE");
         Ok(())
     }
@@ -426,10 +408,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::DefaultValueClauseForInsert>,
 {
-    fn walk_ast<'a, 'b>(&'a self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::DefaultValueClauseForInsert>>::walk_ast(self, pass)
     }
 }
@@ -442,10 +421,7 @@ where
             DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause,
         >,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("DEFAULT VALUES");
         Ok(())
     }
@@ -490,10 +466,7 @@ where
     T: InsertValues<Tab, DB>,
     DefaultValues: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         if self.values.is_noop()? {
             DefaultValues.walk_ast(out)?;
         } else {

@@ -102,10 +102,7 @@ where
     DB: Backend,
     Inner: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.inner.walk_ast(out.reborrow())?;
         out.push_sql(&self.query);
@@ -232,10 +229,7 @@ where
     Query: QueryFragment<DB>,
     Value: ToSql<ST, DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.query.walk_ast(out.reborrow())?;
         out.push_bind_param_value_only(&self.value)?;
         Ok(())
@@ -269,10 +263,7 @@ where
     DB: Backend + HasSqlType<ST>,
     U: ToSql<ST, DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_bind_param_value_only(&self.value)
     }
 }
@@ -316,10 +307,7 @@ where
     DB: Backend,
     Query: QueryFragment<DB>,
 {
-    fn walk_ast<'a, 'b>(&'a self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
-    where
-        'a: 'b,
-    {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.query.walk_ast(out.reborrow())?;
         out.push_sql(&self.sql);
