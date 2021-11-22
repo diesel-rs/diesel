@@ -6,7 +6,6 @@ use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
 use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
 use crate::sqlite::Sqlite;
-use crate::util::OnceCell;
 
 #[allow(missing_debug_implementations)]
 pub struct SqliteRow<'stmt, 'query> {
@@ -86,7 +85,6 @@ impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
         Some(SqliteField {
             row: self.inner.borrow(),
             col_idx: i32::try_from(idx).ok()?,
-            field_name: OnceCell::new(),
         })
     }
 
@@ -130,43 +128,26 @@ impl<'stmt, 'idx, 'query> RowIndex<&'idx str> for SqliteRow<'stmt, 'query> {
 pub struct SqliteField<'stmt, 'query> {
     pub(super) row: Ref<'stmt, PrivateSqliteRow<'stmt, 'query>>,
     pub(super) col_idx: i32,
-    field_name: OnceCell<Option<String>>,
 }
 
 impl<'stmt, 'query> Field<'stmt, Sqlite> for SqliteField<'stmt, 'query> {
     fn field_name(&self) -> Option<&str> {
-        self.field_name
-            .get_or_init(|| match &*self.row {
-                PrivateSqliteRow::Direct(stmt) => {
-                    let column_name = unsafe {
-                        // This is safe due to the fact that we
-                        // move the column name to an allocation
-                        // on rust side as soon as possible
-                        //
-                        // We cannot index into a non existing column here, because
-                        // we checked that before even constructing the corresponding
-                        // field
-                        let column_name = stmt.column_name(self.col_idx);
-                        (&*column_name).to_owned()
-                    };
-                    Some(column_name)
-                }
-                PrivateSqliteRow::Duplicated { column_names, .. } => column_names
-                    .get(self.col_idx as usize)
-                    .and_then(|n| n.clone()),
-                PrivateSqliteRow::TemporaryEmpty => {
-                    // This cannot happen as this is only a temproray state
-                    // used inside of `StatementIterator::next()`
-                    unreachable!(
-                        "You've reached an impossible internal state. \
-                         If you ever see this error message please open \
-                         an issue at https://github.com/diesel-rs/diesel \
-                         providing example code how to trigger this error."
-                    )
-                }
-            })
-            .as_ref()
-            .map(|s| s as &str)
+        match &*self.row {
+            PrivateSqliteRow::Direct(stmt) => stmt.field_name(self.col_idx),
+            PrivateSqliteRow::Duplicated { column_names, .. } => column_names
+                .get(self.col_idx as usize)
+                .and_then(|t| t.as_ref().map(|n| n as &str)),
+            PrivateSqliteRow::TemporaryEmpty => {
+                // This cannot happen as this is only a temproray state
+                // used inside of `StatementIterator::next()`
+                unreachable!(
+                    "You've reached an impossible internal state. \
+                     If you ever see this error message please open \
+                     an issue at https://github.com/diesel-rs/diesel \
+                     providing example code how to trigger this error."
+                )
+            }
+        }
     }
 
     fn is_null(&self) -> bool {

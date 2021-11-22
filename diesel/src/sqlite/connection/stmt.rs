@@ -8,6 +8,7 @@ use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::{Sqlite, SqliteType};
+use crate::util::OnceCell;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::mem::ManuallyDrop;
@@ -305,7 +306,7 @@ impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
 #[allow(missing_debug_implementations)]
 pub struct StatementUse<'stmt, 'query> {
     statement: BoundStatement<'stmt, 'query>,
-    column_names: Option<Vec<*const str>>,
+    column_names: OnceCell<Vec<*const str>>,
     called_step_once: bool,
 }
 
@@ -319,7 +320,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     {
         Ok(Self {
             statement: BoundStatement::bind(statement, query)?,
-            column_names: None,
+            column_names: OnceCell::new(),
             called_step_once: false,
         })
     }
@@ -342,7 +343,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
             } else {
                 Self {
                     called_step_once: true,
-                    column_names: None,
+                    column_names: OnceCell::new(),
                     ..self
                 }
             }
@@ -358,9 +359,9 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     // https://sqlite.org/c3ref/column_name.html
     //
     // Note: This function is marked as unsafe, as calling it can invalidate
-    // any existing column name pointer. To prevent that,
+    // other existing column name pointers on the same column. To prevent that,
     // it should maximally be called once per column at all.
-    pub(super) unsafe fn column_name(&self, idx: i32) -> *const str {
+    unsafe fn column_name(&self, idx: i32) -> *const str {
         let name = {
             let column_name =
                 ffi::sqlite3_column_name(self.statement.statement.inner_statement.as_ptr(), idx);
@@ -389,26 +390,21 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
             .map(|v| v as usize)
     }
 
-    pub(super) fn field_name(&mut self, idx: i32) -> Option<&str> {
-        if let Some(column_names) = &self.column_names {
-            return column_names
-                .get(idx as usize)
-                .and_then(|c| unsafe { c.as_ref() });
-        }
-        let count = self.column_count();
-        if idx >= count {
-            return None;
-        }
-        self.column_names = Some(
+    pub(super) fn field_name(&self, idx: i32) -> Option<&str> {
+        let column_names = self.column_names.get_or_init(|| {
+            let count = self.column_count();
             (0..count)
                 .map(|idx| unsafe {
                     // By initializing the whole vec at once we ensure that
                     // we really call this only once.
                     self.column_name(idx)
                 })
-                .collect(),
-        );
-        self.field_name(idx)
+                .collect()
+        });
+
+        column_names
+            .get(idx as usize)
+            .and_then(|c| unsafe { c.as_ref() })
     }
 
     pub(super) fn copy_value(&self, idx: i32) -> Option<OwnedSqliteValue> {
