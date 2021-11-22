@@ -44,7 +44,7 @@ fn tuple_struct() {
 fn embedded_struct() {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[table_name = "my_structs"]
-    struct A {
+    struct A<B> {
         foo: i32,
         #[diesel(embed)]
         b: B,
@@ -52,12 +52,14 @@ fn embedded_struct() {
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
     #[table_name = "my_structs"]
-    struct B {
+    struct C {
         bar: i32,
     }
 
     let conn = &mut connection();
-    let data = my_structs::table.select(A::as_select()).get_result(conn);
+    let data = my_structs::table
+        .select(A::<C>::as_select())
+        .get_result(conn);
     assert!(data.is_err());
 }
 
