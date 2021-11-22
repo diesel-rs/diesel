@@ -12,7 +12,7 @@ impl FromSql<sql_types::Bool, Pg> for bool {
 }
 
 impl ToSql<sql_types::Bool, Pg> for bool {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(&[*self as u8])
             .map(|_| IsNull::No)
             .map_err(Into::into)

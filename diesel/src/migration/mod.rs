@@ -48,13 +48,10 @@ where
     Cow<'a, str>: ToSql<Text, DB>,
     DB: Backend,
 {
-    fn to_sql<'b, 'c, 'd>(
+    fn to_sql<'b>(
         &'b self,
-        out: &mut crate::serialize::Output<'c, 'd, DB>,
-    ) -> crate::serialize::Result
-    where
-        'b: 'c,
-    {
+        out: &mut crate::serialize::Output<'b, '_, DB>,
+    ) -> crate::serialize::Result {
         self.0.to_sql(out)
     }
 }

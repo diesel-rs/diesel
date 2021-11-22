@@ -129,10 +129,7 @@ impl<DB> ToSql<sql_types::Text, DB> for str
 where
     DB: Backend<BindCollector = RawBytesBindCollector<DB>>,
 {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
@@ -144,10 +141,7 @@ where
     DB: Backend,
     str: ToSql<sql_types::Text, DB>,
 {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         (self as &str).to_sql(out)
     }
 }
@@ -170,10 +164,7 @@ where
     DB: Backend,
     [u8]: ToSql<sql_types::Binary, DB>,
 {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         (self as &[u8]).to_sql(out)
     }
 }
@@ -182,10 +173,7 @@ impl<DB> ToSql<sql_types::Binary, DB> for [u8]
 where
     DB: Backend<BindCollector = RawBytesBindCollector<DB>>,
 {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         out.write_all(self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
@@ -200,10 +188,7 @@ where
     DB: Backend,
     Self: fmt::Debug,
 {
-    fn to_sql<'b, 'c, 'd>(&'b self, out: &mut Output<'c, 'd, DB>) -> serialize::Result
-    where
-        'b: 'c,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         ToSql::<ST, DB>::to_sql(&**self, out)
     }
 }

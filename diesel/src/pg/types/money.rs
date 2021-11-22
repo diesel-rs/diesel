@@ -29,7 +29,7 @@ impl FromSql<Money, Pg> for PgMoney {
 }
 
 impl ToSql<Money, Pg> for PgMoney {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<BigInt, Pg>::to_sql(&self.0, out)
     }
 }

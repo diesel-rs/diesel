@@ -144,7 +144,7 @@ mod bigdecimal {
     }
 
     impl ToSql<Numeric, Pg> for BigDecimal {
-        fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
             let numeric = PgNumeric::from(self);
             ToSql::<Numeric, Pg>::to_sql(&numeric, &mut out.reborrow())
         }

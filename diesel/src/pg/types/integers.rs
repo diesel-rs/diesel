@@ -12,7 +12,7 @@ impl FromSql<sql_types::Oid, Pg> for u32 {
 }
 
 impl ToSql<sql_types::Oid, Pg> for u32 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_u32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(Into::into)
@@ -78,7 +78,7 @@ impl FromSql<sql_types::BigInt, Pg> for i64 {
 }
 
 impl ToSql<sql_types::SmallInt, Pg> for i16 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_i16::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<_>)
@@ -86,7 +86,7 @@ impl ToSql<sql_types::SmallInt, Pg> for i16 {
 }
 
 impl ToSql<sql_types::Integer, Pg> for i32 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_i32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<_>)
@@ -94,7 +94,7 @@ impl ToSql<sql_types::Integer, Pg> for i32 {
 }
 
 impl ToSql<sql_types::BigInt, Pg> for i64 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_i64::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<_>)

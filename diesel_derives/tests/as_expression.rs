@@ -36,7 +36,7 @@ where
     DB: Backend,
     str: ToSql<Text, DB>,
 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         let string = std::str::from_utf8(&self.0).unwrap();
 
         string.to_sql(out)

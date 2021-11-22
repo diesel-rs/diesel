@@ -229,7 +229,7 @@ mod tests {
         struct MyStruct<'a>(i32, &'a str);
 
         impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
-            fn to_sql<'b: 'c, 'c>(&'b self, out: &mut Output<'c, '_, Pg>) -> serialize::Result {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
                 WriteTuple::<(Integer, Text)>::write_tuple(&(self.0, self.1), out)
             }
         }

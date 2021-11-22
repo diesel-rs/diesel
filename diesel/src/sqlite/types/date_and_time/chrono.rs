@@ -16,10 +16,7 @@ impl FromSql<Date, Sqlite> for NaiveDate {
 }
 
 impl ToSql<Date, Sqlite> for NaiveDate {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         let s = self.format(SQLITE_DATE_FORMAT).to_string();
         out.set_owned_string(s);
         Ok(IsNull::No)
@@ -47,10 +44,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
 }
 
 impl ToSql<Time, Sqlite> for NaiveTime {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         let s = self.format("%T%.f").to_string();
         out.set_owned_string(s);
         Ok(IsNull::No)
@@ -100,10 +94,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
 }
 
 impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         let s = self.format("%F %T%.f").to_string();
         out.set_owned_string(s);
         Ok(IsNull::No)

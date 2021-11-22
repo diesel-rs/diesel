@@ -14,19 +14,13 @@ impl FromSql<sql_types::Date, Sqlite> for String {
 }
 
 impl ToSql<sql_types::Date, Sqlite> for str {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         ToSql::<sql_types::Text, Sqlite>::to_sql(self, out)
     }
 }
 
 impl ToSql<sql_types::Date, Sqlite> for String {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         <str as ToSql<sql_types::Date, Sqlite>>::to_sql(self as &str, out)
     }
 }
@@ -38,19 +32,13 @@ impl FromSql<sql_types::Time, Sqlite> for String {
 }
 
 impl ToSql<sql_types::Time, Sqlite> for str {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         ToSql::<sql_types::Text, Sqlite>::to_sql(self, out)
     }
 }
 
 impl ToSql<sql_types::Time, Sqlite> for String {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         <str as ToSql<sql_types::Time, Sqlite>>::to_sql(self as &str, out)
     }
 }
@@ -62,19 +50,13 @@ impl FromSql<sql_types::Timestamp, Sqlite> for String {
 }
 
 impl ToSql<sql_types::Timestamp, Sqlite> for str {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         ToSql::<sql_types::Text, Sqlite>::to_sql(self, out)
     }
 }
 
 impl ToSql<sql_types::Timestamp, Sqlite> for String {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, Sqlite>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         <str as ToSql<sql_types::Timestamp, Sqlite>>::to_sql(self as &str, out)
     }
 }

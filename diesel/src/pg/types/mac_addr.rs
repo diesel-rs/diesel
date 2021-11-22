@@ -28,7 +28,7 @@ impl FromSql<MacAddr, Pg> for [u8; 6] {
 }
 
 impl ToSql<MacAddr, Pg> for [u8; 6] {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(&self[..])
             .map(|_| IsNull::No)
             .map_err(Into::into)

@@ -225,7 +225,7 @@ where
 ///     DB: Backend,
 ///     i32: ToSql<Integer, DB>,
 /// {
-///     fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+///     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
 ///         match self {
 ///             MyEnum::A => 1.to_sql(out),
 ///             MyEnum::B => 2.to_sql(out),
@@ -235,7 +235,7 @@ where
 /// ```
 pub trait ToSql<A, DB: Backend>: fmt::Debug {
     /// See the trait documentation.
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, DB>) -> Result;
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> Result;
 }
 
 impl<'a, A, T, DB> ToSql<A, DB> for &'a T
@@ -243,10 +243,7 @@ where
     DB: Backend,
     T: ToSql<A, DB> + ?Sized,
 {
-    fn to_sql<'b, 'c, 'd>(&'b self, out: &mut Output<'c, 'd, DB>) -> Result
-    where
-        'b: 'c,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> Result {
         (*self).to_sql(out)
     }
 }

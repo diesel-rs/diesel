@@ -11,7 +11,7 @@ pub mod bigdecimal {
     use crate::sql_types::Numeric;
 
     impl ToSql<Numeric, Mysql> for BigDecimal {
-        fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+        fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
             write!(out, "{}", *self)
                 .map(|_| IsNull::No)
                 .map_err(Into::into)

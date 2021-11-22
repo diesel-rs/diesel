@@ -108,7 +108,7 @@ impl<ST, T> ToSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let mut flags = match self.0 {
             Bound::Included(_) => RangeFlags::LB_INC,
             Bound::Excluded(_) => RangeFlags::empty(),
@@ -159,7 +159,7 @@ where
     ST: 'static,
     (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<Range<ST>, Pg>::to_sql(self, out)
     }
 }

@@ -77,7 +77,7 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
 }
 
 impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let sign = match *self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,
@@ -149,7 +149,7 @@ impl FromSql<sql_types::Double, Pg> for f64 {
 }
 
 impl ToSql<sql_types::Float, Pg> for f32 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_f32::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
@@ -157,7 +157,7 @@ impl ToSql<sql_types::Float, Pg> for f32 {
 }
 
 impl ToSql<sql_types::Double, Pg> for f64 {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_f64::<NetworkEndian>(*self)
             .map(|_| IsNull::No)
             .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)

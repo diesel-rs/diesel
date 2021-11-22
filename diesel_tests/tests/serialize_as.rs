@@ -18,10 +18,7 @@ where
     DB: Backend,
     String: ToSql<sql_types::Text, DB>,
 {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         self.0.to_sql(out)
     }
 }

@@ -27,7 +27,7 @@ pub enum MyEnum {
 }
 
 impl ToSql<MyType, Pg> for MyEnum {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         match *self {
             MyEnum::Foo => out.write_all(b"foo")?,
             MyEnum::Bar => out.write_all(b"bar")?,
@@ -106,7 +106,7 @@ pub enum MyEnumInCustomSchema {
 }
 
 impl ToSql<MyTypeInCustomSchema, Pg> for MyEnumInCustomSchema {
-    fn to_sql<'a: 'b, 'b>(&'a self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         match *self {
             MyEnumInCustomSchema::Foo => out.write_all(b"foo")?,
             MyEnumInCustomSchema::Bar => out.write_all(b"bar")?,

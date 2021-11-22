@@ -49,10 +49,7 @@ where
     DB: Backend,
     ST: SqlType<IsNull = is_nullable::NotNull>,
 {
-    fn to_sql<'a, 'b, 'c>(&'a self, out: &mut Output<'b, 'c, DB>) -> serialize::Result
-    where
-        'a: 'b,
-    {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         if let Some(ref value) = *self {
             value.to_sql(out)
         } else {

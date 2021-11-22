@@ -95,7 +95,7 @@ macro_rules! impl_Sql {
         }
 
         impl ToSql<$ty, Pg> for IpNetwork {
-            fn to_sql<'a: 'b, 'b>(&self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
                 use self::ipnetwork::IpNetwork::*;
                 let net_type = $net_type;
                 match *self {
