@@ -93,12 +93,14 @@ impl Statement {
                 bytes.len() as libc::c_int,
                 ffi::SQLITE_STATIC(),
             ),
-            (SqliteType::Double, SqliteBindValue::F64(value)) => ffi::sqlite3_bind_double(
+            (SqliteType::Float, SqliteBindValue::F64(value))
+            | (SqliteType::Double, SqliteBindValue::F64(value)) => ffi::sqlite3_bind_double(
                 self.inner_statement.as_ptr(),
                 bind_index,
                 *value as libc::c_double,
             ),
-            (SqliteType::Integer, SqliteBindValue::I32(value)) => {
+            (SqliteType::SmallInt, SqliteBindValue::I32(value))
+            | (SqliteType::Integer, SqliteBindValue::I32(value)) => {
                 ffi::sqlite3_bind_int(self.inner_statement.as_ptr(), bind_index, *value)
             }
             (SqliteType::Long, SqliteBindValue::I64(value)) => {
