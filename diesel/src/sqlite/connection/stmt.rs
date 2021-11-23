@@ -53,7 +53,7 @@ impl Statement {
     // The caller of this function has to ensure that:
     // * Any buffer provided as `SqliteBindValue::BorrowedBinary`, `SqliteBindValue::Binary`
     // `SqliteBindValue::String` or `SqliteBindValue::BorrowedString` is valid
-    // till either a new value is bound to the same paramter or the underlying
+    // till either a new value is bound to the same parameter or the underlying
     // prepared statement is dropped.
     unsafe fn bind(
         &mut self,
