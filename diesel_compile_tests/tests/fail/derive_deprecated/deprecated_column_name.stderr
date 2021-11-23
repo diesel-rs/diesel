@@ -1,11 +1,8 @@
 warning: #[column_name] attribute form is deprecated
-  = help: use `#[diesel(column_name = name)]` format instead
+  = help: use `#[diesel(column_name = name)]` instead
 
 warning: #[column_name] attribute form is deprecated
-  = help: use `#[diesel(column_name = name)]` format instead
-
-warning: #[column_name] attribute form is deprecated
-  = help: use `#[diesel(column_name = name)]` format instead
+  = help: use `#[diesel(column_name = name)]` instead
 
 error: unexpected end of input, expected `=`
   --> $DIR/deprecated_column_name.rs:24:7
@@ -13,17 +10,11 @@ error: unexpected end of input, expected `=`
 24 |     #[column_name]
    |       ^^^^^^^^^^^
 
-warning: #[column_name] attribute form is deprecated
-  = help: use `#[diesel(column_name = name)]` format instead
-
 error: expected `=`
   --> $DIR/deprecated_column_name.rs:31:18
    |
 31 |     #[column_name()]
    |                  ^^
-
-warning: #[column_name] attribute form is deprecated
-  = help: use `#[diesel(column_name = name)]` format instead
 
 error: expected string literal
   --> $DIR/deprecated_column_name.rs:38:21
@@ -32,9 +23,9 @@ error: expected string literal
    |                     ^
 
 warning: #[column_name] attribute form is deprecated
-  = help: use `#[diesel(column_name = name)]` format instead
+  = help: use `#[diesel(column_name = 1)]` instead
 
-error: expected identifier
+error: expected string literal
   --> $DIR/deprecated_column_name.rs:45:21
    |
 45 |     #[column_name = "1"]

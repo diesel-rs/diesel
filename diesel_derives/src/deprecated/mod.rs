@@ -15,7 +15,7 @@ use deprecated::changeset_options::parse_changeset_options;
 use deprecated::postgres_type::parse_postgres_type;
 use deprecated::primary_key::parse_primary_key;
 use deprecated::utils::parse_eq_and_lit_str;
-use parsers::{MysqlType, SqliteType};
+use parsers::{MysqlType, PostgresType, SqliteType};
 
 macro_rules! warn {
     ($ident: expr, $help: expr) => {
@@ -38,77 +38,124 @@ impl ParseDeprecated for StructAttr {
 
         match &*name_str {
             "table_name" => {
-                warn!(name, "use `#[diesel(table_name = users)]` format instead");
-                Ok(Some(StructAttr::TableName(name.clone(), {
-                    let lit_str = parse_eq_and_lit_str(name, input)?;
+                let lit_str = parse_eq_and_lit_str(name.clone(), input)?;
+                warn!(
+                    name,
+                    &format!("use `#[diesel(table_name = {})]` instead", lit_str.value())
+                );
+                Ok(Some(StructAttr::TableName(name, {
                     lit_str.parse().unwrap_or_abort()
                 })))
             }
             "changeset_options" => {
+                let (ident, value) = parse_changeset_options(name.clone(), input)?;
                 warn!(
                     name,
-                    "use `#[diesel(treat_none_as_null = true)]` format instead"
+                    &format!(
+                        "use `#[diesel(treat_none_as_null = {})]` instead",
+                        value.value
+                    )
                 );
-                let value = parse_changeset_options(name, input)?;
-                Ok(Some(StructAttr::TreatNoneAsNull(value.0, value.1)))
+                Ok(Some(StructAttr::TreatNoneAsNull(ident, value)))
             }
             "sql_type" => {
-                warn!(name, "use `#[diesel(sql_type = Text)]` format instead");
-                Ok(Some(StructAttr::SqlType(name.clone(), {
-                    let lit_str = parse_eq_and_lit_str(name, input)?;
+                let lit_str = parse_eq_and_lit_str(name.clone(), input)?;
+                warn!(
+                    name,
+                    &format!("use `#[diesel(sql_type = {})]` instead", lit_str.value())
+                );
+                Ok(Some(StructAttr::SqlType(name, {
                     lit_str.parse().unwrap_or_abort()
                 })))
             }
             "primary_key" => {
+                let keys = parse_primary_key(name.clone(), input)?;
+                let hint = keys
+                    .iter()
+                    .map(|i| i.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
                 warn!(
                     name,
-                    "use `#[diesel(primary_key(id1, id2))]` format instead"
+                    &format!("use `#[diesel(primary_key({}))]` instead", hint)
                 );
-                Ok(Some(StructAttr::PrimaryKey(
-                    name.clone(),
-                    parse_primary_key(name, input)?,
-                )))
+                Ok(Some(StructAttr::PrimaryKey(name, keys)))
             }
             "belongs_to" => {
-                warn!(
-                    name,
-                    "use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead"
-                );
-                Ok(Some(StructAttr::BelongsTo(
-                    name.clone(),
-                    parse_belongs_to(name, input)?,
-                )))
+                let belongs_to = parse_belongs_to(name.clone(), input)?;
+                let parent = belongs_to
+                    .parent
+                    .path
+                    .segments
+                    .iter()
+                    .map(|s| s.ident.to_string())
+                    .collect::<Vec<_>>()
+                    .join("::");
+                if let Some(ref key) = belongs_to.foreign_key {
+                    warn!(
+                        name,
+                        &format!(
+                            "use `#[diesel(belongs_to({}, foreign_key = {}))]` instead",
+                            parent, key
+                        )
+                    );
+                } else {
+                    warn!(
+                        name,
+                        &format!("use `#[diesel(belongs_to({}))]` instead", parent)
+                    );
+                }
+                Ok(Some(StructAttr::BelongsTo(name, belongs_to)))
             }
             "sqlite_type" => {
+                let name_value = parse_eq_and_lit_str(name.clone(), input)?;
                 warn!(
                     name,
-                    "use `#[diesel(sqlite_type(name = \"TypeName\"))]` format instead"
+                    &format!(
+                        "use `#[diesel(sqlite_type(name = \"{}\"))]` instead",
+                        name_value.value()
+                    )
                 );
                 Ok(Some(StructAttr::SqliteType(
-                    name.clone(),
-                    SqliteType {
-                        name: parse_eq_and_lit_str(name, input)?,
-                    },
+                    name,
+                    SqliteType { name: name_value },
                 )))
             }
             "mysql_type" => {
+                let name_value = parse_eq_and_lit_str(name.clone(), input)?;
                 warn!(
                     name,
-                    "use `#[diesel(mysql_type(name = \"TypeName\"))]` format instead"
+                    &format!(
+                        "use `#[diesel(mysql_type(name = \"{}\"))]` instead",
+                        name_value.value()
+                    )
                 );
                 Ok(Some(StructAttr::MysqlType(
-                    name.clone(),
-                    MysqlType {
-                        name: parse_eq_and_lit_str(name, input)?,
-                    },
+                    name,
+                    MysqlType { name: name_value },
                 )))
             }
             "postgres" => {
-                warn!(name, "use `#[diesel(postgres_type(name = \"TypeName\", schema = \"public\"))]` format instead");
-                Ok(Some(StructAttr::PostgresType(
-                    name.clone(),
-                    parse_postgres_type(name, input)?,
-                )))
+                let pg_type = parse_postgres_type(name.clone(), input)?;
+                let msg = match &pg_type {
+                    PostgresType::Fixed(oid, array_oid) => format!(
+                        "use `#[diesel(postgres_type(oid = {}, array_oid = {}))]` instead",
+                        oid.base10_parse::<u32>()?,
+                        array_oid.base10_parse::<u32>()?
+                    ),
+                    PostgresType::Lookup(name, Some(schema)) => format!(
+                        "use `#[diesel(postgres_type(name = \"{}\", schema = \"{}\"))]` instead",
+                        name.value(),
+                        schema.value()
+                    ),
+                    PostgresType::Lookup(name, None) => format!(
+                        "use `#[diesel(postgres_type(name = \"{}\"))]` instead",
+                        name.value(),
+                    ),
+                };
+
+                warn!(name, &msg);
+                Ok(Some(StructAttr::PostgresType(name, pg_type)))
             }
             _ => Ok(None),
         }
@@ -122,16 +169,22 @@ impl ParseDeprecated for FieldAttr {
 
         match &*name_str {
             "column_name" => {
-                warn!(name, "use `#[diesel(column_name = name)]` format instead");
-                Ok(Some(FieldAttr::ColumnName(name.clone(), {
-                    let lit_str = parse_eq_and_lit_str(name, input)?;
+                let lit_str = parse_eq_and_lit_str(name.clone(), input)?;
+                warn!(
+                    name,
+                    &format!("use `#[diesel(column_name = {})]` instead", lit_str.value())
+                );
+                Ok(Some(FieldAttr::ColumnName(name, {
                     lit_str.parse().unwrap_or_abort()
                 })))
             }
             "sql_type" => {
-                warn!(name, "use `#[diesel(sql_type = Text)]` format instead");
-                Ok(Some(FieldAttr::SqlType(name.clone(), {
-                    let lit_str = parse_eq_and_lit_str(name, input)?;
+                let lit_str = parse_eq_and_lit_str(name.clone(), input)?;
+                warn!(
+                    name,
+                    &format!("use `#[diesel(sql_type = {})]` instead", lit_str.value())
+                );
+                Ok(Some(FieldAttr::SqlType(name, {
                     lit_str.parse().unwrap_or_abort()
                 })))
             }

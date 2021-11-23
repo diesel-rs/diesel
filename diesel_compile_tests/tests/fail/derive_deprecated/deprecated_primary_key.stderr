@@ -1,14 +1,8 @@
-warning: #[primary_key] attribute form is deprecated
-  = help: use `#[diesel(primary_key(id1, id2))]` format instead
-
 error: expected `,`
   --> $DIR/deprecated_primary_key.rs:12:23
    |
 12 | #[primary_key(id, bar = "baz")]
    |                       ^
-
-warning: #[primary_key] attribute form is deprecated
-  = help: use `#[diesel(primary_key(id1, id2))]` format instead
 
 error: expected `,`
   --> $DIR/deprecated_primary_key.rs:19:22
@@ -16,17 +10,11 @@ error: expected `,`
 19 | #[primary_key(id, qux(id))]
    |                      ^^^^
 
-warning: #[primary_key] attribute form is deprecated
-  = help: use `#[diesel(primary_key(id1, id2))]` format instead
-
 error: unexpected end of input, expected parentheses
   --> $DIR/deprecated_primary_key.rs:26:3
    |
 26 | #[primary_key]
    |   ^^^^^^^^^^^
-
-warning: #[primary_key] attribute form is deprecated
-  = help: use `#[diesel(primary_key(id1, id2))]` format instead
 
 error: expected parentheses
   --> $DIR/deprecated_primary_key.rs:33:15
@@ -35,7 +23,7 @@ error: expected parentheses
    |               ^
 
 warning: #[primary_key] attribute form is deprecated
-  = help: use `#[diesel(primary_key(id1, id2))]` format instead
+  = help: use `#[diesel(primary_key(id, name))]` instead
 
 error: Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
 

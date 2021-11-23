@@ -1,23 +1,14 @@
-warning: #[sqlite_type] attribute form is deprecated
-  = help: use `#[diesel(sqlite_type(name = "TypeName"))]` format instead
-
 error: unexpected end of input, expected `=`
  --> $DIR/deprecated_sqlite_type.rs:6:3
   |
 6 | #[sqlite_type]
   |   ^^^^^^^^^^^
 
-warning: #[sqlite_type] attribute form is deprecated
-  = help: use `#[diesel(sqlite_type(name = "TypeName"))]` format instead
-
 error: expected `=`
   --> $DIR/deprecated_sqlite_type.rs:10:14
    |
 10 | #[sqlite_type()]
    |              ^^
-
-warning: #[sqlite_type] attribute form is deprecated
-  = help: use `#[diesel(sqlite_type(name = "TypeName"))]` format instead
 
 error: expected string literal
   --> $DIR/deprecated_sqlite_type.rs:14:17
@@ -26,7 +17,7 @@ error: expected string literal
    |                 ^
 
 warning: #[sqlite_type] attribute form is deprecated
-  = help: use `#[diesel(sqlite_type(name = "TypeName"))]` format instead
+  = help: use `#[diesel(sqlite_type(name = "foo"))]` instead
 
 error[E0599]: no variant or associated item named `foo` found for enum `SqliteType` in the current scope
   --> $DIR/deprecated_sqlite_type.rs:17:10

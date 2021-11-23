@@ -1,14 +1,8 @@
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
-
 error: unexpected end of input, expected parentheses
   --> $DIR/deprecated_belongs_to.rs:29:3
    |
 29 | #[belongs_to]
    |   ^^^^^^^^^^
-
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
 
 error: expected parentheses
   --> $DIR/deprecated_belongs_to.rs:36:14
@@ -16,17 +10,11 @@ error: expected parentheses
 36 | #[belongs_to = Bar]
    |              ^
 
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
-
 error: unexpected end of input, expected identifier
   --> $DIR/deprecated_belongs_to.rs:43:13
    |
 43 | #[belongs_to()]
    |             ^^
-
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
 
 error: expected identifier
   --> $DIR/deprecated_belongs_to.rs:50:14
@@ -34,17 +22,11 @@ error: expected identifier
 50 | #[belongs_to("what")]
    |              ^^^^^^
 
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
-
 error: unexpected end of input, expected `=`
   --> $DIR/deprecated_belongs_to.rs:57:14
    |
 57 | #[belongs_to(parent)]
    |              ^^^^^^
-
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
 
 error: expected `=`
   --> $DIR/deprecated_belongs_to.rs:64:20
@@ -52,17 +34,11 @@ error: expected `=`
 64 | #[belongs_to(parent())]
    |                    ^^
 
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
-
 error: expected string literal
   --> $DIR/deprecated_belongs_to.rs:71:23
    |
 71 | #[belongs_to(parent = 1)]
    |                       ^
-
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
 
 error: expected identifier
   --> $DIR/deprecated_belongs_to.rs:78:23
@@ -71,10 +47,7 @@ error: expected identifier
    |                       ^^^
 
 warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
-
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
+  = help: use `#[diesel(belongs_to(Bar))]` instead
 
 error: expected `foreign_key`
   --> $DIR/deprecated_belongs_to.rs:92:19
@@ -82,26 +55,17 @@ error: expected `foreign_key`
 92 | #[belongs_to(Bar, what)]
    |                   ^^^^
 
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
-
 error: unexpected end of input, expected `=`
   --> $DIR/deprecated_belongs_to.rs:99:19
    |
 99 | #[belongs_to(Bar, foreign_key)]
    |                   ^^^^^^^^^^^
 
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
-
 error: expected string literal
    --> $DIR/deprecated_belongs_to.rs:106:33
     |
 106 | #[belongs_to(Bar, foreign_key = 1)]
     |                                 ^
-
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
 
 error: expected identifier
    --> $DIR/deprecated_belongs_to.rs:113:33
@@ -110,7 +74,7 @@ error: expected identifier
     |                                 ^^^
 
 warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(User, foreign_key = mykey))]` format instead
+  = help: use `#[diesel(belongs_to(Baz, foreign_key = bar_id))]` instead
 
 error: unexpected token: `Bar`
   --> $DIR/deprecated_belongs_to.rs:36:16
