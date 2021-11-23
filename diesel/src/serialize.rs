@@ -69,23 +69,23 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
 #[cfg(feature = "sqlite")]
 impl<'a, 'b> Output<'a, 'b, crate::sqlite::Sqlite> {
     pub(crate) fn set_small_int(&mut self, i: i16) {
-        self.out = crate::sqlite::SqliteBindValue::SmallInt(i);
+        self.out = crate::sqlite::SqliteBindValue::I32(i as i32);
     }
 
     pub(crate) fn set_int(&mut self, i: i32) {
-        self.out = crate::sqlite::SqliteBindValue::Integer(i);
+        self.out = crate::sqlite::SqliteBindValue::I32(i);
     }
 
     pub(crate) fn set_big_int(&mut self, i: i64) {
-        self.out = crate::sqlite::SqliteBindValue::BigInt(i);
+        self.out = crate::sqlite::SqliteBindValue::I64(i);
     }
 
     pub(crate) fn set_float(&mut self, i: f32) {
-        self.out = crate::sqlite::SqliteBindValue::Float(i);
+        self.out = crate::sqlite::SqliteBindValue::F64(i as f64);
     }
 
     pub(crate) fn set_double(&mut self, i: f64) {
-        self.out = crate::sqlite::SqliteBindValue::Double(i);
+        self.out = crate::sqlite::SqliteBindValue::F64(i);
     }
 
     pub(crate) fn set_borrowed_string(&mut self, s: &'a str) {

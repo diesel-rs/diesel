@@ -93,29 +93,19 @@ impl Statement {
                 bytes.len() as libc::c_int,
                 ffi::SQLITE_STATIC(),
             ),
-            (SqliteType::Float, SqliteBindValue::Float(value)) => ffi::sqlite3_bind_double(
-                self.inner_statement.as_ptr(),
-                bind_index,
-                libc::c_double::from(*value),
-            ),
-            (SqliteType::Double, SqliteBindValue::Double(value)) => ffi::sqlite3_bind_double(
+            (SqliteType::Double, SqliteBindValue::F64(value)) => ffi::sqlite3_bind_double(
                 self.inner_statement.as_ptr(),
                 bind_index,
                 *value as libc::c_double,
             ),
-            (SqliteType::SmallInt, SqliteBindValue::SmallInt(value)) => ffi::sqlite3_bind_int(
-                self.inner_statement.as_ptr(),
-                bind_index,
-                libc::c_int::from(*value),
-            ),
-            (SqliteType::Integer, SqliteBindValue::Integer(value)) => {
+            (SqliteType::Integer, SqliteBindValue::I32(value)) => {
                 ffi::sqlite3_bind_int(self.inner_statement.as_ptr(), bind_index, *value)
             }
-            (SqliteType::Long, SqliteBindValue::BigInt(value)) => {
+            (SqliteType::Long, SqliteBindValue::I64(value)) => {
                 ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), bind_index, *value)
             }
             (t, b) => {
-                return Err(Error::DeserializationError(
+                return Err(Error::SerializationError(
                     format!("Type missmatch: Expected {:?}, got {}", t, b).into(),
                 ))
             }
@@ -212,15 +202,57 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     {
         // Don't use a trait object here to prevent using a virtual function call
         // For sqlite this can introduce a measurable overhead
-        let mut query = ManuallyDrop::new(query);
+        let mut query = ManuallyDrop::new(Box::new(query));
 
         let mut bind_collector = SqliteBindCollector::new();
         query.collect_binds(&mut bind_collector, &mut ())?;
+        let SqliteBindCollector { binds } = bind_collector;
 
-        let SqliteBindCollector { metadata, binds } = bind_collector;
-        let mut binds_to_free = ManuallyDrop::new(Vec::new());
+        let binds_to_free = match Self::bind_buffers(binds, &mut statement) {
+            Ok(value) => value,
+            Err(e) => {
+                unsafe {
+                    // We return from this function afterwards and
+                    // any buffer is already unbound by `bind_buffers`
+                    // so it's safe to drop query now
+                    ManuallyDrop::drop(&mut query);
+                }
+                return Err(e);
+            }
+        };
 
-        for (bind_idx, (bind, tpe)) in (1..).zip(binds.into_iter().zip(metadata)) {
+        Ok(Self {
+            statement,
+            binds_to_free,
+            query: ManuallyDrop::new(
+                // Cast to a trait object here, to erase the generic parameter T
+                ManuallyDrop::into_inner(query) as Box<dyn QueryFragment<Sqlite> + 'query>,
+            ),
+        })
+    }
+
+    // This is a seperate function so that
+    // not the whole construtor is generic over the query type T.
+    // This hopefully prevents binary bloat.
+    fn bind_buffers(
+        binds: Vec<(SqliteBindValue<'_>, SqliteType)>,
+        statement: &mut MaybeCached<'stmt, Statement>,
+    ) -> QueryResult<ManuallyDrop<Vec<(i32, Option<SqliteBindValue<'static>>)>>> {
+        let mut binds_to_free = ManuallyDrop::new(Vec::with_capacity(
+            binds
+                .iter()
+                .filter(|&(b, _)| {
+                    matches!(
+                        b,
+                        SqliteBindValue::BorrowedBinary(_)
+                            | SqliteBindValue::BorrowedString(_)
+                            | SqliteBindValue::String(_)
+                            | SqliteBindValue::Binary(_)
+                    )
+                })
+                .count(),
+        ));
+        for (bind_idx, (bind, tpe)) in (1..).zip(binds) {
             // It's safe to call bind here as:
             // * The type and value matches
             // * We ensure that corresponding buffers lives long enough below
@@ -228,15 +260,11 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
             let res = unsafe { statement.bind(tpe, &bind, bind_idx) };
 
             if let Err(e) = res {
-                Self::unbind_buffers(&mut statement, &binds_to_free);
-
+                Self::unbind_buffers(statement, &binds_to_free);
                 unsafe {
-                    // This is safe as we return early from this function, we
-                    // unbound the binds above, so it's fine now to drop
-                    // the owned binds
+                    // It's safe to drop binds_to_free here as
+                    // we've already unbound the buffers
                     ManuallyDrop::drop(&mut binds_to_free);
-                    // At last we can also drop query
-                    ManuallyDrop::drop(&mut query);
                 }
                 return Err(e);
             }
@@ -253,16 +281,13 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
                 SqliteBindValue::String(b) => {
                     binds_to_free.push((bind_idx, Some(SqliteBindValue::String(b))));
                 }
-                _ => (),
+                SqliteBindValue::I32(_)
+                | SqliteBindValue::I64(_)
+                | SqliteBindValue::F64(_)
+                | SqliteBindValue::Null => {}
             }
         }
-
-        Ok(Self {
-            statement,
-            binds_to_free,
-            query: ManuallyDrop::new(Box::new(ManuallyDrop::into_inner(query))
-                as Box<dyn QueryFragment<Sqlite> + 'query>),
-        })
+        Ok(binds_to_free)
     }
 
     fn unbind_buffers(
