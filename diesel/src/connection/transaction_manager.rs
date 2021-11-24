@@ -192,6 +192,7 @@ mod test {
     fn postgres_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
         use crate::*;
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
@@ -210,6 +211,10 @@ mod test {
             // In Postgres, a syntax error breaks the transaction block
             let query_result = sql_query("SELECT_SYNTAX_ERROR 1").execute(conn);
             assert!(query_result.is_err());
+            assert_eq!(
+                PgTransactionStatus::InError,
+                conn.raw_connection.transaction_status()
+            );
             query_result
         });
         assert_eq!(
@@ -217,6 +222,10 @@ mod test {
             <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
                 conn
             )
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
         );
     }
 
@@ -291,6 +300,7 @@ mod test {
     fn nested_postgres_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
         use crate::*;
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
@@ -324,9 +334,17 @@ mod test {
             );
             let query_result = sql_query("SELECT 1").execute(conn);
             assert!(query_result.is_ok());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
             query_result
         });
         assert!(result.is_ok());
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
         assert_eq!(
             0,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
@@ -478,6 +496,7 @@ mod test {
     fn postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
 
@@ -502,6 +521,10 @@ mod test {
             let result =
                 sql_query("INSERT INTO deferred_constraint_commit VALUES(1)").execute(conn);
             assert!(result.is_ok());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
             Ok(())
         });
         assert_eq!(
@@ -509,6 +532,10 @@ mod test {
             <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
                 conn
             )
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
         );
         assert!(result.is_err());
     }
@@ -518,6 +545,7 @@ mod test {
     fn postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
 
@@ -568,6 +596,10 @@ mod test {
             .execute(conn)?;
             let result = sql_query("INSERT INTO deferred_trigger_commit VALUES(42)").execute(conn);
             assert!(result.is_ok());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
             Ok(())
         });
         assert_eq!(
@@ -575,6 +607,10 @@ mod test {
             <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
                 conn
             )
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
         );
         assert!(result.is_err());
     }
@@ -584,6 +620,7 @@ mod test {
     fn nested_postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
 
@@ -641,6 +678,10 @@ mod test {
                 Ok(())
             });
             assert!(inner_result.is_err());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
             Ok(())
         });
         assert_eq!(
@@ -648,6 +689,10 @@ mod test {
             <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
                 conn
             )
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
         );
         assert!(result.is_ok(), "Expected success, got {:?}", result);
     }
@@ -657,6 +702,7 @@ mod test {
     fn nested_postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::Error;
         use crate::*;
 
@@ -690,6 +736,10 @@ mod test {
             });
             assert!(inner_result.is_err());
             assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
+            assert_eq!(
                 1,
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
                     conn
@@ -702,6 +752,10 @@ mod test {
             <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(
                 conn
             )
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
         );
         assert!(result.is_ok());
     }
