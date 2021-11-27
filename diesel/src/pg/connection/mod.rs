@@ -59,11 +59,25 @@ impl CommitErrorProcessor for PgConnection {
         }
         if transaction_depth <= 1 {
             match error {
-                Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
-                | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _) => {
+                Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
+                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _) => {
                     CommitErrorOutcome::RollbackAndThrow(error)
                 }
-                _ => CommitErrorOutcome::Throw(error),
+                Error::AlreadyInTransaction
+                | Error::DatabaseError(DatabaseErrorKind::CheckViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
+                | Error::DatabaseError(DatabaseErrorKind::ForeignKeyViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::NotNullViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::UnableToSendCommand, _)
+                | Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::Unknown, _)
+                | Error::DeserializationError(_)
+                | Error::InvalidCString(_)
+                | Error::NotFound
+                | Error::QueryBuilderError(_)
+                | Error::RollbackError(_)
+                | Error::RollbackTransaction
+                | Error::SerializationError(_) => CommitErrorOutcome::Throw(error)
             }
         } else {
             let transaction_status = self.raw_connection.transaction_status();
@@ -73,7 +87,23 @@ impl CommitErrorProcessor for PgConnection {
                 {
                     CommitErrorOutcome::RollbackAndThrow(error)
                 }
-                _ => CommitErrorOutcome::Throw(error),
+                Error::AlreadyInTransaction
+                | Error::DatabaseError(DatabaseErrorKind::CheckViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
+                | Error::DatabaseError(DatabaseErrorKind::ForeignKeyViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::NotNullViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
+                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
+                | Error::DatabaseError(DatabaseErrorKind::UnableToSendCommand, _)
+                | Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::Unknown, _)
+                | Error::DeserializationError(_)
+                | Error::InvalidCString(_)
+                | Error::NotFound
+                | Error::QueryBuilderError(_)
+                | Error::RollbackError(_)
+                | Error::RollbackTransaction
+                | Error::SerializationError(_) => CommitErrorOutcome::Throw(error)
             }
         }
     }
