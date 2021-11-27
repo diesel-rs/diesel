@@ -73,7 +73,7 @@ error: expected `name` to be also present
 50 | #[diesel(postgres_type(schema = "foo"))]
    |                                 ^^^^^
 
-error: unknown attribute
+error: unknown attribute, expected one of `oid`, `array_oid`, `name`, `schema`
   --> $DIR/bad_postgres_type.rs:54:24
    |
 54 | #[diesel(postgres_type(what))]

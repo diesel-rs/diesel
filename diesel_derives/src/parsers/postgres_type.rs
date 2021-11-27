@@ -24,7 +24,7 @@ impl Parse for Attr {
             "name" => Ok(Attr::Name(name, parse_eq(input)?)),
             "schema" => Ok(Attr::Schema(name, parse_eq(input)?)),
 
-            _ => unknown_attribute(&name),
+            _ => unknown_attribute(&name, &["oid", "array_oid", "name", "schema"]),
         }
     }
 }

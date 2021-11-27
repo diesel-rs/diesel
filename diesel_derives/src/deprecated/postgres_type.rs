@@ -32,7 +32,7 @@ impl Parse for Attr {
                 parse_eq_and_lit_str(name, input)?,
             )),
 
-            _ => unknown_attribute(&name),
+            _ => unknown_attribute(&name, &["oid", "array_oid", "type_name"]),
         }
     }
 }

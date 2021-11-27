@@ -5,8 +5,15 @@ use syn::{parenthesized, Data, DeriveInput, GenericArgument, Ident, Type};
 
 use model::Model;
 
-pub fn unknown_attribute(name: &Ident) -> ! {
-    abort!(name, "unknown attribute")
+pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> ! {
+    let prefix = if valid.len() == 1 { "" } else { " one of" };
+
+    abort!(
+        name,
+        "unknown attribute, expected{} `{}`",
+        prefix,
+        valid.join("`, `")
+    )
 }
 
 pub fn parse_eq<T: Parse>(input: ParseStream) -> Result<T> {

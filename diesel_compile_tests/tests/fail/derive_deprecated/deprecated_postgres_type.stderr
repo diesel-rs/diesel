@@ -67,7 +67,7 @@ error: expected string literal
 warning: #[postgres] attribute form is deprecated
   = help: use `#[diesel(postgres_type(oid = 1, array_oid = 1))]` instead
 
-error: unknown attribute
+error: unknown attribute, expected one of `oid`, `array_oid`, `type_name`
   --> $DIR/deprecated_postgres_type.rs:54:12
    |
 54 | #[postgres(what)]

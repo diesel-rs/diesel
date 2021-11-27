@@ -17,7 +17,7 @@ impl Parse for Attr {
         match &*name_str {
             "foreign_key" => Ok(Attr::ForeignKey(name, parse_eq(input)?)),
 
-            _ => unknown_attribute(&name),
+            _ => unknown_attribute(&name, &["foreign_key"]),
         }
     }
 }

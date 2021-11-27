@@ -17,7 +17,7 @@ impl Parse for Attr {
         match &*name_str {
             "name" => Ok(Attr::Name(name, parse_eq(input)?)),
 
-            _ => unknown_attribute(&name),
+            _ => unknown_attribute(&name, &["name"]),
         }
     }
 }

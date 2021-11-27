@@ -34,7 +34,7 @@ error: expected string literal
 26 | #[diesel(sqlite_type(name = Foo))]
    |                             ^^^
 
-error: unknown attribute
+error: unknown attribute, expected `name`
   --> $DIR/bad_sqlite_type.rs:30:22
    |
 30 | #[diesel(sqlite_type(what))]

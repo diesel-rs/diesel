@@ -91,7 +91,16 @@ impl Parse for FieldAttr {
             "serialize_as" => Ok(FieldAttr::SerializeAs(name, parse_eq(input)?)),
             "deserialize_as" => Ok(FieldAttr::DeserializeAs(name, parse_eq(input)?)),
 
-            _ => unknown_attribute(&name),
+            _ => unknown_attribute(
+                &name,
+                &[
+                    "embed",
+                    "column_name",
+                    "sql_type",
+                    "serialize_as",
+                    "deserialize_as",
+                ],
+            ),
         }
     }
 }
@@ -141,7 +150,23 @@ impl Parse for StructAttr {
                 content.parse_terminated(Ident::parse)?
             })),
 
-            _ => unknown_attribute(&name),
+            _ => unknown_attribute(
+                &name,
+                &[
+                    "aggregate",
+                    "not_sized",
+                    "foreign_derive",
+                    "table_name",
+                    "sql_type",
+                    "treat_none_as_default_value",
+                    "treat_none_as_null",
+                    "belongs_to",
+                    "mysql_type",
+                    "sqlite_type",
+                    "postgres_type",
+                    "primary_key",
+                ],
+            ),
         }
     }
 }

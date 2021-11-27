@@ -40,7 +40,7 @@ error: expected `=`
 71 | #[diesel(belongs_to(Bar, foreign_key(bar_id)))]
    |                                     ^^^^^^^^
 
-error: unknown attribute
+error: unknown attribute, expected `foreign_key`
   --> $DIR/bad_belongs_to.rs:78:26
    |
 78 | #[diesel(belongs_to(Bar, what))]

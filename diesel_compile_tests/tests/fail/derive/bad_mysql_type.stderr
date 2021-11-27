@@ -34,7 +34,7 @@ error: expected string literal
 26 | #[diesel(mysql_type(name = Foo))]
    |                            ^^^
 
-error: unknown attribute
+error: unknown attribute, expected `name`
   --> $DIR/bad_mysql_type.rs:30:21
    |
 30 | #[diesel(mysql_type(what))]
