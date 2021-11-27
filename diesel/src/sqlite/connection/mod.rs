@@ -19,7 +19,7 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
-use crate::connection::commit_error_processor::CommitErrorProcessor;
+use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor, default_process_commit_error};
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
@@ -61,7 +61,11 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Sqlite> for SqliteCon
     type Row = self::row::SqliteRow<'conn, 'query>;
 }
 
-impl CommitErrorProcessor for SqliteConnection {}
+impl CommitErrorProcessor for SqliteConnection {
+    fn process_commit_error(&self, transaction_depth: i32, error: Error) -> CommitErrorOutcome {
+        default_process_commit_error(transaction_depth, error)
+    }
+}
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
