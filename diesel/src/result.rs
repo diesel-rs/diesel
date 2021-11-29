@@ -79,6 +79,13 @@ pub enum Error {
     /// Attempted to perform an operation that cannot be done inside a transaction
     /// when a transaction was already open.
     AlreadyInTransaction,
+
+    /// Attempted to perform an operation that can only be done inside a transaction
+    /// when no transaction was open
+    NotInTransaction,
+
+    /// Transaction broken, likely due to a broken connection. No other operations are possible.
+    BrokenTransaction,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -297,10 +304,14 @@ impl Display for Error {
             Error::SerializationError(ref e) => e.fmt(f),
             Error::RollbackError(ref e) => e.fmt(f),
             Error::RollbackTransaction => write!(f, "The current transaction was aborted"),
+            Error::BrokenTransaction => write!(f, "The current transaction is broken"),
             Error::AlreadyInTransaction => write!(
                 f,
                 "Cannot perform this operation while a transaction is open",
             ),
+            Error::NotInTransaction => {
+                write!(f, "Cannot perform this operation outside of a transaction",)
+            }
         }
     }
 }

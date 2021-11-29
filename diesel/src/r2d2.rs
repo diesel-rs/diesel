@@ -17,9 +17,9 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use crate::backend::Backend;
+use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::{
-    commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor},
-    ConnectionGatWorkaround, SimpleConnection, TransactionManager,
+    ConnectionGatWorkaround, SimpleConnection, TransactionManager, TransactionManagerStatus,
 };
 use crate::expression::QueryMetadata;
 use crate::prelude::*;
@@ -230,8 +230,10 @@ where
         T::commit_transaction(&mut **conn)
     }
 
-    fn get_transaction_depth(conn: &mut PooledConnection<M>) -> u32 {
-        T::get_transaction_depth(&mut **conn)
+    fn transaction_manager_status_mut(
+        conn: &mut PooledConnection<M>,
+    ) -> &mut TransactionManagerStatus {
+        T::transaction_manager_status_mut(&mut **conn)
     }
 }
 

@@ -19,7 +19,9 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
-use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor, default_process_commit_error};
+use crate::connection::commit_error_processor::{
+    default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
+};
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;

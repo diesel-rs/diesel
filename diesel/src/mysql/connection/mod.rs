@@ -8,7 +8,9 @@ use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
-use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor, default_process_commit_error};
+use crate::connection::commit_error_processor::{
+    default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
+};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;

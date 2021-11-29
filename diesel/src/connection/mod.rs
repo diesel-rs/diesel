@@ -13,7 +13,10 @@ use crate::result::*;
 
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, PrepareForCache, StatementCache, StatementCacheKey};
-pub use self::transaction_manager::{AnsiTransactionManager, TransactionManager};
+pub use self::transaction_manager::{
+    AnsiTransactionManager, TransactionManager, TransactionManagerStatus,
+    ValidTransactionManagerStatus,
+};
 
 /// Perform simple operations on a backend.
 ///
@@ -139,7 +142,12 @@ where
     /// Creates a transaction that will never be committed. This is useful for
     /// tests. Panics if called while inside of a transaction.
     fn begin_test_transaction(&mut self) -> QueryResult<()> {
-        assert_eq!(Self::TransactionManager::get_transaction_depth(self), 0);
+        match Self::TransactionManager::transaction_manager_status_mut(self) {
+            TransactionManagerStatus::Valid(valid_status) => {
+                assert_eq!(0, valid_status.transaction_depth())
+            }
+            TransactionManagerStatus::InError => panic!("Transaction manager in error"),
+        };
         Self::TransactionManager::begin_transaction(self)
     }
 

@@ -76,8 +76,10 @@ impl CommitErrorProcessor for PgConnection {
                 | Error::NotFound
                 | Error::QueryBuilderError(_)
                 | Error::RollbackError(_)
+                | Error::NotInTransaction
                 | Error::RollbackTransaction
-                | Error::SerializationError(_) => CommitErrorOutcome::Throw(error)
+                | Error::SerializationError(_)
+                | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
             }
         } else {
             let transaction_status = self.raw_connection.transaction_status();
@@ -102,8 +104,10 @@ impl CommitErrorProcessor for PgConnection {
                 | Error::NotFound
                 | Error::QueryBuilderError(_)
                 | Error::RollbackError(_)
+                | Error::NotInTransaction
                 | Error::RollbackTransaction
-                | Error::SerializationError(_) => CommitErrorOutcome::Throw(error)
+                | Error::SerializationError(_)
+                | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
             }
         }
     }

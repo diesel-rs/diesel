@@ -8,6 +8,9 @@ pub enum CommitErrorOutcome {
     RollbackAndThrow(Error),
     /// Broken transaction. Returned if an error has occurred earlier in a Postgres transaction.
     Throw(Error),
+    /// Broken transaction. Similar to `Throw`, but marks the manager as broken. It should switch
+    /// to `TransactionManagerStatus::InError` and refuse to run additional operations.
+    ThrowAndMarkManagerAsBroken(Error),
 }
 
 /// Trait needed for the transaction manager.
@@ -47,8 +50,8 @@ pub fn default_process_commit_error(transaction_depth: i32, error: Error) -> Com
         | Error::QueryBuilderError(_)
         | Error::RollbackError(_)
         | Error::RollbackTransaction
-        | Error::SerializationError(_) => {
-            CommitErrorOutcome::Throw(error)
-        }
+        | Error::SerializationError(_)
+        | Error::NotInTransaction
+        | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
     }
 }
