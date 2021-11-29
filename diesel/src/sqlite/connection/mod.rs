@@ -2,8 +2,7 @@ extern crate libsqlite3_sys as ffi;
 
 mod bind_collector;
 mod functions;
-#[doc(hidden)]
-pub mod raw;
+mod raw;
 mod row;
 mod sqlite_value;
 mod statement_iterator;
@@ -22,6 +21,7 @@ use super::SqliteAggregateFunction;
 use crate::connection::commit_error_processor::{
     default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
 };
+use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
@@ -38,6 +38,7 @@ use crate::sqlite::Sqlite;
 /// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
 /// - Special identifiers (`:memory:`)
 #[allow(missing_debug_implementations)]
+#[cfg(feature = "sqlite")]
 pub struct SqliteConnection {
     // statement_cache needs to be before raw_connection
     // otherwise we will get errors about open statements before closing the
@@ -105,17 +106,15 @@ impl Connection for SqliteConnection {
         Ok(self.raw_connection.rows_affected_by_last_query())
     }
 
-    #[doc(hidden)]
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
     where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let statement_use = self.prepared_query(source.as_query())?;
+        let statement_use = self.prepared_query(source)?;
 
         Ok(StatementIterator::new(statement_use))
     }

@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use super::Query;
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::connection::Connection;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::query_dsl::RunQueryDsl;
@@ -18,7 +18,7 @@ use crate::sql_types::{HasSqlType, Untyped};
 /// a tuple, and any structs used must implement `QueryableByName`.
 ///
 /// See [`sql_query`](crate::sql_query()) for examples.
-pub struct SqlQuery<Inner = ()> {
+pub struct SqlQuery<Inner = self::private::Empty> {
     inner: Inner,
     query: String,
 }
@@ -97,9 +97,18 @@ impl<Inner> SqlQuery<Inner> {
     }
 }
 
+impl SqlQuery {
+    pub(crate) fn from_sql(query: String) -> SqlQuery {
+        Self {
+            inner: self::private::Empty,
+            query,
+        }
+    }
+}
+
 impl<DB, Inner> QueryFragment<DB> for SqlQuery<Inner>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Inner: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -225,7 +234,7 @@ where
 
 impl<Query, Value, ST, DB> QueryFragment<DB> for UncheckedBind<Query, Value, ST>
 where
-    DB: Backend + HasSqlType<ST>,
+    DB: Backend + HasSqlType<ST> + DieselReserveSpecialization,
     Query: QueryFragment<DB>,
     Value: ToSql<ST, DB>,
 {
@@ -304,7 +313,7 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
 
 impl<DB, Query> QueryFragment<DB> for BoxedSqlQuery<'_, DB, Query>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Query: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -333,3 +342,23 @@ where
 }
 
 impl<Conn: Connection, Query> RunQueryDsl<Conn> for BoxedSqlQuery<'_, Conn::Backend, Query> {}
+
+mod private {
+    use crate::backend::{Backend, DieselReserveSpecialization};
+    use crate::query_builder::{QueryFragment, QueryId};
+
+    #[derive(Debug, Clone, Copy, QueryId)]
+    pub struct Empty;
+
+    impl<DB> QueryFragment<DB> for Empty
+    where
+        DB: Backend + DieselReserveSpecialization,
+    {
+        fn walk_ast<'b>(
+            &'b self,
+            _pass: crate::query_builder::AstPass<'_, 'b, DB>,
+        ) -> crate::QueryResult<()> {
+            Ok(())
+        }
+    }
+}

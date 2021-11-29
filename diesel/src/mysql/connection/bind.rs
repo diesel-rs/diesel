@@ -5,16 +5,15 @@ use std::ops::Index;
 use std::os::raw as libc;
 use std::ptr::NonNull;
 
-use super::stmt::MysqlFieldMetadata;
-use super::stmt::Statement;
+use super::stmt::{MysqlFieldMetadata, Statement};
 use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
-pub struct PreparedStatementBinds(Binds);
+pub(super) struct PreparedStatementBinds(Binds);
 
-pub struct OutputBinds(Binds);
+pub(super) struct OutputBinds(Binds);
 
 impl Clone for OutputBinds {
     fn clone(&self) -> Self {
@@ -29,7 +28,7 @@ struct Binds {
 }
 
 impl PreparedStatementBinds {
-    pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
+    pub(super) fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
@@ -41,7 +40,7 @@ impl PreparedStatementBinds {
         Ok(Self(Binds { data }))
     }
 
-    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    pub(super) fn with_mysql_binds<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
@@ -50,7 +49,10 @@ impl PreparedStatementBinds {
 }
 
 impl OutputBinds {
-    pub fn from_output_types(types: &[Option<MysqlType>], metadata: &StatementMetadata) -> Self {
+    pub(super) fn from_output_types(
+        types: &[Option<MysqlType>],
+        metadata: &StatementMetadata,
+    ) -> Self {
         let data = metadata
             .fields()
             .iter()
@@ -61,7 +63,7 @@ impl OutputBinds {
         Self(Binds { data })
     }
 
-    pub fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
+    pub(super) fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
         for (i, data) in self.0.data.iter_mut().enumerate() {
             data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers
@@ -78,13 +80,13 @@ impl OutputBinds {
         unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) }
     }
 
-    pub fn update_buffer_lengths(&mut self) {
+    pub(super) fn update_buffer_lengths(&mut self) {
         for data in &mut self.0.data {
             data.update_buffer_length();
         }
     }
 
-    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    pub(super) fn with_mysql_binds<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
@@ -150,7 +152,7 @@ impl From<u32> for Flags {
 }
 
 #[derive(Debug)]
-pub struct BindData {
+pub(super) struct BindData {
     tpe: ffi::enum_field_types,
     bytes: Option<NonNull<u8>>,
     length: libc::c_ulong,
@@ -397,7 +399,7 @@ impl BindData {
         known_buffer_size_for_ffi_type(self.tpe).is_some()
     }
 
-    pub fn value(&'_ self) -> Option<MysqlValue<'_>> {
+    pub(super) fn value(&'_ self) -> Option<MysqlValue<'_>> {
         if self.is_null() {
             None
         } else {
@@ -413,11 +415,11 @@ impl BindData {
                 // invariant.
                 std::slice::from_raw_parts(data.as_ptr(), self.length as usize)
             };
-            Some(MysqlValue::new(slice, tpe))
+            Some(MysqlValue::new_internal(slice, tpe))
         }
     }
 
-    pub fn is_null(&self) -> bool {
+    pub(super) fn is_null(&self) -> bool {
         self.is_null != 0
     }
 
@@ -748,7 +750,7 @@ mod tests {
         dbg!(meta);
 
         let value = bind.value().expect("Is not null");
-        let value = MysqlValue::new(value.as_bytes(), meta);
+        let value = MysqlValue::new_internal(value.as_bytes(), meta);
 
         dbg!(T::from_sql(value))
     }

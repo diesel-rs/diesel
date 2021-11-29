@@ -1,10 +1,9 @@
-pub mod changeset;
-pub mod target;
+pub(super) mod changeset;
+pub(super) mod target;
 
-pub use self::changeset::AsChangeset;
-pub use self::target::{IntoUpdateTarget, UpdateTarget};
+use self::target::UpdateTarget;
 
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::dsl::{Filter, IntoBoxed};
 use crate::expression::{
     is_aggregate, AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping,
@@ -191,7 +190,7 @@ where
 
 impl<T, U, V, Ret, DB> QueryFragment<DB> for UpdateStatement<T, U, V, Ret>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: Table,
     T::FromClause: QueryFragment<DB>,
     U: QueryFragment<DB>,

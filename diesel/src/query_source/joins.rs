@@ -1,5 +1,6 @@
 use super::{AppearsInFromClause, Plus, QuerySource};
 use crate::backend::Backend;
+use crate::backend::DieselReserveSpecialization;
 use crate::expression::grouped::Grouped;
 use crate::expression::nullable::Nullable;
 use crate::expression::SelectableExpression;
@@ -178,7 +179,7 @@ where
 
 impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Left: QuerySource,
     Left::FromClause: QueryFragment<DB>,
     Right: QuerySource,
@@ -264,7 +265,10 @@ where
 #[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Inner;
 
-impl<DB: Backend> QueryFragment<DB> for Inner {
+impl<DB> QueryFragment<DB> for Inner
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" INNER");
         Ok(())
@@ -275,7 +279,10 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
 #[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct LeftOuter;
 
-impl<DB: Backend> QueryFragment<DB> for LeftOuter {
+impl<DB> QueryFragment<DB> for LeftOuter
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" LEFT OUTER");
         Ok(())

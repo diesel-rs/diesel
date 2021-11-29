@@ -204,7 +204,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable extras"
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable extras i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 
       - name: Test diesel
         if: matrix.rust != 'nightly'
@@ -299,7 +299,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable"
+          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable doc_cfg i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 
       - name: Run rustdoc
         if: matrix.run != 'nightly'

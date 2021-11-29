@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::helper_types::{Asc, Desc};
 use crate::query_builder::combination_clause::CombinationClause;
 use crate::query_builder::{AstPass, Query, QueryFragment, QueryId};
@@ -42,7 +42,7 @@ impl<Source, Expr, Conn> RunQueryDsl<Conn> for PositionalOrderClause<Source, Exp
 
 impl<Source, Expr, DB> QueryFragment<DB> for PositionalOrderClause<Source, Expr>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Source: QueryFragment<DB>,
     Expr: QueryFragment<DB>,
 {

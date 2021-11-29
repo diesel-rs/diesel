@@ -11,12 +11,14 @@ use super::backend::Mysql;
 use crate::connection::commit_error_processor::{
     default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
 };
+use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
 
+#[cfg(feature = "mysql")]
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
 /// `mysql://[user[:password]@]host/database_name`
@@ -86,17 +88,15 @@ impl Connection for MysqlConnection {
             .map(|_| self.raw_connection.affected_rows())
     }
 
-    #[doc(hidden)]
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
     where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let stmt = self.prepared_query(&source.as_query())?;
+        let stmt = self.prepared_query(&source)?;
 
         let mut metadata = Vec::new();
         Mysql::row_metadata(&mut (), &mut metadata);

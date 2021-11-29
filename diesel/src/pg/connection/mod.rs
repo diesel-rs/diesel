@@ -1,7 +1,6 @@
 pub(crate) mod cursor;
-pub mod raw;
-#[doc(hidden)]
-pub mod result;
+mod raw;
+mod result;
 mod row;
 mod stmt;
 
@@ -13,6 +12,7 @@ use self::raw::{PgTransactionStatus, RawConnection};
 use self::result::PgResult;
 use self::stmt::Statement;
 use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
+use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
@@ -26,8 +26,9 @@ use crate::result::*;
 /// should be a PostgreSQL connection string, as documented at
 /// <https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING>
 #[allow(missing_debug_implementations)]
+#[cfg(feature = "postgres")]
 pub struct PgConnection {
-    pub(crate) raw_connection: RawConnection,
+    raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
@@ -45,7 +46,7 @@ impl SimpleConnection for PgConnection {
 }
 
 impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection {
-    type Cursor = Cursor;
+    type Cursor = Cursor<'conn>;
     type Row = self::row::PgRow;
 }
 
@@ -133,17 +134,15 @@ impl Connection for PgConnection {
         self.execute_inner(query).map(|res| res.rows_affected())
     }
 
-    #[doc(hidden)]
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg>>::Cursor>
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
     where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source.as_query(), |stmt, params, conn| {
+        self.with_prepared_query(&source, |stmt, params, conn| {
             let result = stmt.execute(conn, &params)?;
             let cursor = Cursor::new(result);
 

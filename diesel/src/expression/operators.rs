@@ -75,7 +75,7 @@ macro_rules! __diesel_operator_body {
         }
 
         impl<$($ty_param,)+> $name<$($ty_param,)+> {
-            pub fn new($($field_name: $ty_param,)+) -> Self {
+            pub(crate) fn new($($field_name: $ty_param,)+) -> Self {
                 $name { $($field_name,)+ }
             }
         }
@@ -575,14 +575,13 @@ where
 }
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
-#[doc(hidden)]
 pub struct Concat<L, R> {
     pub(crate) left: L,
     pub(crate) right: R,
 }
 
 impl<L, R> Concat<L, R> {
-    pub fn new(left: L, right: R) -> Self {
+    pub(crate) fn new(left: L, right: R) -> Self {
         Self { left, right }
     }
 }

@@ -77,7 +77,7 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
     fn value(&self) -> Option<crate::backend::RawValue<'_, Pg>> {
         let raw = self.db_result.get(self.row_idx, self.col_idx)?;
 
-        Some(PgValue::new(raw, self))
+        Some(PgValue::new_internal(raw, self))
     }
 }
 

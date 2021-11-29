@@ -1,5 +1,5 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
-
+#![allow(warnings)]
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 extern crate bigdecimal;
 extern crate chrono;
@@ -8,6 +8,7 @@ use crate::schema::*;
 use diesel::deserialize::FromSqlRow;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
+use diesel::query_dsl::LoadQuery;
 use diesel::sql_types::*;
 use diesel::*;
 
@@ -1259,7 +1260,7 @@ use std::fmt::Debug;
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<diesel::query_builder::NoFromClause, SqlType = T>
+    U::Expression: SelectableExpression<diesel::internal::table_macro::NoFromClause, SqlType = T>
         + ValidGrouping<(), IsAggregate = is_aggregate::Never>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
     T: QueryId + SingleValue + SqlType,

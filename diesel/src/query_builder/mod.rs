@@ -15,12 +15,11 @@ pub(crate) mod combination_clause;
 mod debug_query;
 mod delete_statement;
 mod distinct_clause;
-mod from_clause;
-#[doc(hidden)]
-pub mod functions;
+pub(crate) mod from_clause;
+pub(crate) mod functions;
 mod group_by_clause;
 mod having_clause;
-mod insert_statement;
+pub(crate) mod insert_statement;
 pub(crate) mod limit_clause;
 pub(crate) mod limit_offset_clause;
 pub(crate) mod locking_clause;
@@ -36,52 +35,85 @@ mod update_statement;
 pub(crate) mod upsert;
 mod where_clause;
 
+#[doc(inline)]
 pub use self::ast_pass::AstPass;
+#[doc(inline)]
 pub use self::bind_collector::BindCollector;
+#[doc(inline)]
 pub use self::debug_query::DebugQuery;
+#[doc(inline)]
 pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
-#[doc(hidden)]
-pub use self::insert_statement::{BatchInsert, DefaultValues};
 #[doc(inline)]
 pub use self::insert_statement::{
-    IncompleteInsertStatement, InsertStatement, UndecoratedInsertRecord, ValuesClause,
+    IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement, IncompleteReplaceStatement,
+    InsertOrIgnoreStatement, InsertStatement, ReplaceStatement,
 };
+#[doc(inline)]
 pub use self::query_id::QueryId;
 #[doc(inline)]
-pub use self::select_clause::SelectClauseExpression;
-#[doc(hidden)]
-pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
-pub use self::update_statement::{
-    AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
-};
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
-#[doc(hidden)]
-pub use self::from_clause::{FromClause, NoFromClause};
+#[doc(inline)]
+pub use self::update_statement::changeset::AsChangeset;
+#[doc(inline)]
+pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
+#[doc(inline)]
+pub use self::update_statement::{BoxedUpdateStatement, UpdateStatement};
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_clause::{LimitClause, NoLimitClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
-#[doc(hidden)]
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::insert_statement::batch_insert::BatchInsert;
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) use self::insert_statement::{BatchInsert, UndecoratedInsertRecord, ValuesClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::insert_statement::{DefaultValues, UndecoratedInsertRecord, ValuesClause};
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
 pub use self::returning_clause::ReturningClause;
-#[doc(hidden)]
-pub use self::select_clause::DefaultSelectClause;
 
-pub(crate) use self::insert_statement::ColumnList;
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) use self::select_clause::SelectClauseExpression;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::select_clause::SelectClauseExpression;
 
-#[cfg(feature = "postgres_backend")]
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) use self::from_clause::NoFromClause;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::from_clause::NoFromClause;
+
+#[cfg(all(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    feature = "postgres_backend"
+))]
+#[doc(inline)]
 pub use crate::pg::query_builder::only_clause::Only;
+#[cfg(all(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    feature = "postgres_backend"
+))]
+pub(crate) use crate::pg::query_builder::only_clause::Only;
 
-use std::error::Error;
+pub(crate) use self::from_clause::FromClause;
+pub(crate) use self::insert_statement::ColumnList;
+pub(crate) use self::select_statement::BoxedSelectStatement;
+pub(crate) use self::select_statement::SelectStatement;
 
 use crate::backend::{Backend, HasBindCollector};
 use crate::result::QueryResult;
-
-mod private {
-    #[allow(missing_debug_implementations, missing_copy_implementations)]
-    pub struct NotSpecialized;
-}
+use std::error::Error;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
@@ -353,4 +385,9 @@ impl<T: Query> AsQuery for T {
 /// ```
 pub fn debug_query<DB, T>(query: &T) -> DebugQuery<'_, T, DB> {
     DebugQuery::new(query)
+}
+
+mod private {
+    #[allow(missing_debug_implementations, missing_copy_implementations)]
+    pub struct NotSpecialized;
 }

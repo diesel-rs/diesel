@@ -1,6 +1,22 @@
 //! Types which represent various database backends
+
 use crate::query_builder::QueryBuilder;
 use crate::sql_types::{self, HasSqlType, TypeMetadata};
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::private::{
+    DieselReserveSpecialization, HasBindCollector, HasRawValue, TrustedBackend,
+};
+
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) use self::private::{DieselReserveSpecialization, HasBindCollector, HasRawValue};
+
+#[cfg(all(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    any(feature = "postgres", feature = "sqlite", feature = "mysql")
+))]
+pub(crate) use self::private::TrustedBackend;
 
 /// A database backend
 ///
@@ -9,11 +25,33 @@ use crate::sql_types::{self, HasSqlType, TypeMetadata};
 /// to that backend.
 /// One backend may have multiple concrete connection implementations.
 ///
+/// # Implementing a custom backend
+///
+/// Implementing a custom backend requires enabling the
+/// `i-implement-a-third-party-backend-and-opt-into-breaking-changes` crate feature
+/// to get access to all nessesary type and trait implementations.
+///
 /// Implementations of this trait should not assume details about how the
 /// connection is implemented.
 /// For example, the `Pg` backend does not assume that `libpq` is being used.
 /// Implementations of this trait can and should care about details of the wire
 /// protocol used to communicated with the database.
+///
+/// Types implementing `Backend` should generally be zero sized structs.
+///
+/// The `Backend` trait allows you to:
+///
+/// * Specify how a query should be build from string parts by providing a [`QueryBuilder`]
+/// matching your backend
+/// * Specify the bind value format used by your database connection library by providing
+/// a [`BindCollector`] matching your backend
+/// * Specify  how values are receive from the database by providing a corresponding raw value
+/// definition via `HasRawValue`
+/// * Control sql dialect specific parts of diesels query dsl implementation by providing a
+/// matching `SqlDialect` implementation
+///
+/// Additionally to the listed required trait bounds you may want to implement `DieselReserveSpecialization`
+/// to opt in existing wild card `QueryFragment` impls for large parts of the dsl.
 pub trait Backend
 where
     Self: Sized + SqlDialect,
@@ -33,32 +71,6 @@ where
 {
     /// The concrete `QueryBuilder` implementation for this backend.
     type QueryBuilder: QueryBuilder<Self>;
-}
-
-/// The bind collector type used to collect query binds for this backend
-///
-/// This trait is separate from `Backend` to imitate `type BindCollector<'a>`. It
-/// should only be referenced directly by implementors. Users of this type
-/// should instead use the [`BindCollector`] helper type instead.
-pub trait HasBindCollector<'a>: TypeMetadata + Sized {
-    /// The concrete `BindCollector` implementation for this backend.
-    ///
-    /// Most backends should use [`RawBytesBindCollector`].
-    ///
-    /// [`RawBytesBindCollector`]: crate::query_builder::bind_collector::RawBytesBindCollector
-    type BindCollector: crate::query_builder::bind_collector::BindCollector<'a, Self> + 'a;
-}
-
-/// The raw representation of a database value given to `FromSql`.
-///
-/// This trait is separate from `Backend` to imitate `type RawValue<'a>`. It
-/// should only be referenced directly by implementors. Users of this type
-/// should instead use the [`RawValue`] helper type instead.
-pub trait HasRawValue<'a> {
-    /// The actual type given to `FromSql`, with lifetimes applied. This type
-    /// should not be used directly. Use the [`RawValue`]
-    /// helper type instead.
-    type RawValue;
 }
 
 /// A helper type to get the raw representation of a database type given to
@@ -84,7 +96,7 @@ pub type BindCollector<'a, DB> = <DB as HasBindCollector<'a>>::BindCollector;
 /// to specialize on generic `QueryFragment<DB, DB::AssociatedType>` implementations.
 ///
 /// See the [`sql_dialect`] module for options provided by diesel out of the box.
-pub trait SqlDialect {
+pub trait SqlDialect: self::private::TrustedBackend {
     /// Configures how this backends supports `RETURNING` clauses
     ///
     /// This allows backends to opt in  `RETURNING` clause support and to
@@ -265,4 +277,76 @@ pub mod sql_dialect {
         #[derive(Debug, Copy, Clone)]
         pub struct AnsiSqlArrayComparison;
     }
+}
+
+// These traits are not part of the public API
+// because we want to replace them by with an associated type
+// in the child trait later if GAT's are finally stable
+mod private {
+    use super::TypeMetadata;
+
+    /// The raw representation of a database value given to `FromSql`.
+    ///
+    /// This trait is separate from `Backend` to imitate `type RawValue<'a>`. It
+    /// should only be referenced directly by implementors. Users of this type
+    /// should instead use the [`RawValue`](super::RawValue) helper type instead.
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+    pub trait HasRawValue<'a> {
+        /// The actual type given to `FromSql`, with lifetimes applied. This type
+        /// should not be used directly. Use the [`RawValue`](super::RawValue)
+        /// helper type instead.
+        type RawValue;
+    }
+
+    /// This is a marker trait which indicates that
+    /// diesel may specialize a certain [`QueryFragment`](crate::query_builder::QueryFragment)
+    /// impl in a later version. If you as a user encounter, where rustc
+    /// suggests adding this a bound to a type implementing `Backend`
+    /// consider adding the following bound instead
+    /// `YourQueryType: QueryFragment<DB>` (the concrete bound
+    /// is likely mentioned by rustc as part of a `note: …`
+    ///
+    /// For any user implementing a custom backend: You likely want to implement
+    /// this trait for your custom backend type to opt in the existing `QueryFragment` impls in diesel.
+    /// As indicated by the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature
+    /// diesel reserves the right to specialize any generic `QueryFragment` impl via
+    /// [`SqlDialect`](super::SqlDialect) in a later minor version release
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+    pub trait DieselReserveSpecialization {}
+
+    /// The bind collector type used to collect query binds for this backend
+    ///
+    /// This trait is separate from `Backend` to imitate `type BindCollector<'a>`. It
+    /// should only be referenced directly by implementors. Users of this type
+    /// should instead use the [`BindCollector`] helper type instead.
+    ///
+    /// [`BindCollector`]: super::BindCollector
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+    pub trait HasBindCollector<'a>: TypeMetadata + Sized {
+        /// The concrete `BindCollector` implementation for this backend.
+        ///
+        /// Most backends should use [`RawBytesBindCollector`].
+        ///
+        /// [`RawBytesBindCollector`]: crate::query_builder::bind_collector::RawBytesBindCollector
+        type BindCollector: crate::query_builder::bind_collector::BindCollector<'a, Self> + 'a;
+    }
+
+    /// This trait just indicates that noone implements
+    /// [`SqlDialect`](super::SqlDialect) without enabling the
+    /// `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
+    /// feature flag.
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+    pub trait TrustedBackend {}
 }

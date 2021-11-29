@@ -16,16 +16,30 @@ pub(crate) mod serialize;
 mod transaction;
 mod value;
 
-pub use self::backend::{FailedToLookupTypeError, Pg, PgTypeMetadata};
+pub use self::backend::{Pg, PgTypeMetadata};
 #[cfg(feature = "postgres")]
 pub use self::connection::PgConnection;
-#[doc(hidden)]
-pub use self::metadata_lookup::{
-    GetPgMetadataCache, PgMetadataCache, PgMetadataCacheKey, PgMetadataLookup,
-};
-pub use self::query_builder::{DistinctOnClause, PgQueryBuilder};
+#[doc(inline)]
+pub use self::metadata_lookup::PgMetadataLookup;
+#[doc(inline)]
+pub use self::query_builder::DistinctOnClause;
+#[doc(inline)]
+pub use self::query_builder::PgQueryBuilder;
+#[doc(inline)]
 pub use self::transaction::TransactionBuilder;
-pub use self::value::{PgValue, TypeOidLookup};
+#[doc(inline)]
+pub use self::value::PgValue;
+
+#[doc(inline)]
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::backend::FailedToLookupTypeError;
+#[doc(inline)]
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::metadata_lookup::{GetPgMetadataCache, PgMetadataCache, PgMetadataCacheKey};
+#[doc(inline)]
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::value::TypeOidLookup;
+
 #[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[deprecated(since = "2.0.0", note = "Use `diesel::upsert` instead")]

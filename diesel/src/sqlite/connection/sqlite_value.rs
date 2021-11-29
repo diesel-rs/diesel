@@ -29,7 +29,7 @@ pub struct SqliteValue<'row, 'stmt, 'query> {
 }
 
 #[repr(transparent)]
-pub struct OwnedSqliteValue {
+pub(super) struct OwnedSqliteValue {
     pub(super) value: NonNull<ffi::sqlite3_value>,
 }
 

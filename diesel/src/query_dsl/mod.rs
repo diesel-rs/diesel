@@ -48,10 +48,10 @@ mod single_value_dsl;
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::combine_dsl::CombineDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
-#[doc(hidden)]
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
-pub use self::load_dsl::LoadQuery;
+pub use self::load_dsl::{LoadQuery, LoadRet};
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
@@ -68,7 +68,7 @@ pub mod methods {
     pub use super::group_by_dsl::GroupByDsl;
     pub use super::having_dsl::HavingDsl;
     pub use super::limit_dsl::LimitDsl;
-    pub use super::load_dsl::{ExecuteDsl, LoadQuery};
+    pub use super::load_dsl::{ExecuteDsl, LoadQuery, LoadRet};
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
     pub use super::nullable_select_dsl::SelectNullableDsl;
     pub use super::offset_dsl::OffsetDsl;

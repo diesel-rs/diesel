@@ -40,6 +40,7 @@ pub mod sql_types {
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 26, array_oid = 1018))]
     pub struct Oid;
@@ -75,6 +76,7 @@ pub mod sql_types {
         not(feature = "chrono"),
         doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
     )]
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 1184, array_oid = 1185))]
     pub struct Timestamptz;
@@ -99,6 +101,7 @@ pub mod sql_types {
     /// [Vec]: std::vec::Vec
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
     pub struct Array<ST: 'static>(ST);
 
     /// The `Range` SQL type.
@@ -117,6 +120,7 @@ pub mod sql_types {
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [bound]: std::collections::Bound
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[cfg(feature = "postgres_backend")]
     pub struct Range<ST: 'static>(ST);
 
     #[doc(hidden)]
@@ -169,17 +173,21 @@ pub mod sql_types {
     /// for details.
     ///
     /// [`WriteTuple`]: super::super::super::serialize::WriteTuple
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 2249, array_oid = 2287))]
     pub struct Record<ST: 'static>(ST);
 
-    /// Alias for `SmallInt`
+    /// Alias for [`SmallInt`](crate::sql_types::SmallInt)
+    #[cfg(feature = "postgres_backend")]
     pub type SmallSerial = crate::sql_types::SmallInt;
 
-    /// Alias for `Integer`
+    /// Alias for [`Integer`](crate::sql_types::Integer)
+    #[cfg(feature = "postgres_backend")]
     pub type Serial = crate::sql_types::Integer;
 
-    /// Alias for `BigInt`
+    /// Alias for [`BigInt`](crate::sql_types::BigInt)
+    #[cfg(feature = "postgres_backend")]
     pub type BigSerial = crate::sql_types::BigInt;
 
     /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
@@ -195,6 +203,7 @@ pub mod sql_types {
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 2950, array_oid = 2951))]
     pub struct Uuid;
@@ -286,6 +295,7 @@ pub mod sql_types {
     /// # #[cfg(not(feature = "serde_json"))]
     /// # fn main() {}
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 3802, array_oid = 3807))]
     pub struct Jsonb;
@@ -334,6 +344,7 @@ pub mod sql_types {
     /// assert_eq!(Ok(Cents(123_456)), inserted_price);
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 790, array_oid = 791))]
     pub struct Money;
@@ -378,6 +389,7 @@ pub mod sql_types {
     /// #     Ok(())
     /// # }
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 829, array_oid = 1040))]
     pub struct MacAddr;
@@ -439,6 +451,7 @@ pub mod sql_types {
     /// # #[cfg(not(feature = "network-address"))]
     /// # fn main() {}
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 869, array_oid = 1041))]
     pub struct Inet;
@@ -495,6 +508,7 @@ pub mod sql_types {
     /// # #[cfg(not(feature = "network-address"))]
     /// # fn main() {}
     /// ```
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 650, array_oid = 651))]
     pub struct Cidr;

@@ -1,8 +1,7 @@
-use std::marker::PhantomData;
-
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::query_builder::*;
 use crate::result::QueryResult;
+use std::marker::PhantomData;
 
 pub trait StaticQueryFragment {
     type Component: 'static;
@@ -20,7 +19,7 @@ impl<T> StaticQueryFragmentInstance<T> {
 
 impl<T, DB> QueryFragment<DB> for StaticQueryFragmentInstance<T>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: StaticQueryFragment,
     T::Component: QueryFragment<DB>,
 {
@@ -63,7 +62,7 @@ impl<T, U, M> InfixNode<T, U, M> {
 
 impl<T, U, DB, M> QueryFragment<DB> for InfixNode<T, U, M>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: QueryFragment<DB>,
     U: QueryFragment<DB>,
     M: MiddleFragment<DB>,

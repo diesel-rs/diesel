@@ -20,6 +20,7 @@ use crate::query_source::{QuerySource, Table};
 /// ```
 /// Selects the number of entries in the `users` table excluding any rows found in inherited
 /// tables.
+#[cfg(feature = "postgres_backend")]
 pub trait OnlyDsl: Table + Sized {
     /// See the trait-level docs.
     fn only(self) -> crate::dsl::SelectFromOnly<Self>

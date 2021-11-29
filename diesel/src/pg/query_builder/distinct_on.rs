@@ -12,6 +12,7 @@ use crate::{Expression, QuerySource};
 
 /// Represents `DISTINCT ON (...)`
 #[derive(Debug, Clone, Copy, QueryId)]
+#[cfg(feature = "postgres_backend")]
 pub struct DistinctOnClause<T>(pub(crate) T);
 
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for NoOrderClause {}

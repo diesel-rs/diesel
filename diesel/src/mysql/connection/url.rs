@@ -40,7 +40,7 @@ bitflags::bitflags! {
     }
 }
 
-pub struct ConnectionOptions {
+pub(in crate::mysql::connection) struct ConnectionOptions {
     host: Option<CString>,
     user: CString,
     password: Option<CString>,
@@ -52,7 +52,7 @@ pub struct ConnectionOptions {
 }
 
 impl ConnectionOptions {
-    pub fn parse(database_url: &str) -> ConnectionResult<Self> {
+    pub(in crate::mysql::connection) fn parse(database_url: &str) -> ConnectionResult<Self> {
         let url = match Url::parse(database_url) {
             Ok(url) => url,
             Err(_) => return Err(connection_url_error()),
@@ -126,31 +126,31 @@ impl ConnectionOptions {
         })
     }
 
-    pub fn host(&self) -> Option<&CStr> {
+    pub(in crate::mysql::connection) fn host(&self) -> Option<&CStr> {
         self.host.as_deref()
     }
 
-    pub fn user(&self) -> &CStr {
+    pub(in crate::mysql::connection) fn user(&self) -> &CStr {
         &self.user
     }
 
-    pub fn password(&self) -> Option<&CStr> {
+    pub(in crate::mysql::connection) fn password(&self) -> Option<&CStr> {
         self.password.as_deref()
     }
 
-    pub fn database(&self) -> Option<&CStr> {
+    pub(in crate::mysql::connection) fn database(&self) -> Option<&CStr> {
         self.database.as_deref()
     }
 
-    pub fn port(&self) -> Option<u16> {
+    pub(in crate::mysql::connection) fn port(&self) -> Option<u16> {
         self.port
     }
 
-    pub fn unix_socket(&self) -> Option<&CStr> {
+    pub(in crate::mysql::connection) fn unix_socket(&self) -> Option<&CStr> {
         self.unix_socket.as_deref()
     }
 
-    pub fn client_flags(&self) -> CapabilityFlags {
+    pub(in crate::mysql::connection) fn client_flags(&self) -> CapabilityFlags {
         self.client_flags
     }
 

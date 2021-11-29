@@ -70,6 +70,7 @@ use crate::data_types::PgInterval;
 /// assert_eq!("Tess".to_string(), data[1]);
 /// # }
 /// ```
+#[cfg(feature = "postgres_backend")]
 pub trait IntervalDsl: Sized + From<i32> + Mul<Self, Output = Self> {
     /// Returns a PgInterval representing `self` as microseconds
     fn microseconds(self) -> PgInterval;

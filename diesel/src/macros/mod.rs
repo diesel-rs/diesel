@@ -6,6 +6,8 @@ pub(crate) mod prelude {
         any(feature = "huge-tables", feature = "large-tables"),
         allow(deprecated)
     )]
+    // This is a false positive, we reexport it later
+    #[allow(unreachable_pub)]
     #[doc(inline)]
     pub use crate::{
         allow_columns_to_appear_in_same_group_by_clause,
@@ -36,9 +38,9 @@ macro_rules! __diesel_fix_sql_type_import {
 #[cfg(feature = "postgres_backend")]
 macro_rules! __diesel_internal_table_backend_specific_impls {
     ($table:ident, $column_name:ident) => { 
-        impl $crate::expression::AppearsOnTable<$crate::query_builder::Only<$table>>
+        impl $crate::expression::AppearsOnTable<$crate::internal::table_macro::Only<$table>>
             for $column_name {}
-        impl $crate::expression::SelectableExpression<$crate::query_builder::Only<$table>>
+        impl $crate::expression::SelectableExpression<$crate::internal::table_macro::Only<$table>>
             for $column_name {}
     };
 }
@@ -126,9 +128,9 @@ macro_rules! __diesel_column {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<From> $crate::SelectableExpression<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<From>>> for $column_name where
+        impl<From> $crate::SelectableExpression<$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<From>>> for $column_name where
             From: $crate::query_source::QuerySource,
-            $column_name: $crate::SelectableExpression<From> + $crate::AppearsOnTable<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<From>>>,
+            $column_name: $crate::SelectableExpression<From> + $crate::AppearsOnTable<$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<From>>>,
         {
         }
 
@@ -694,7 +696,7 @@ macro_rules! __diesel_table_impl {
         },)+],
     ) => {
         $($meta)*
-        #[allow(unused_imports, dead_code)]
+        #[allow(unused_imports, dead_code, unreachable_pub)]
         pub mod $table_name {
             pub use self::columns::*;
             $($imports)*
@@ -749,7 +751,7 @@ macro_rules! __diesel_table_impl {
             pub type SqlType = ($($($column_ty)*,)+);
 
             /// Helper type for representing a boxed query from this table
-            pub type BoxedQuery<'a, DB, ST = SqlType> = $crate::query_builder::BoxedSelectStatement<'a, ST, $crate::query_builder::FromClause<table>, DB>;
+            pub type BoxedQuery<'a, DB, ST = SqlType> = $crate::internal::table_macro::BoxedSelectStatement<'a, ST, $crate::internal::table_macro::FromClause<table>, DB>;
 
             impl $crate::QuerySource for table {
                 type FromClause = $crate::query_builder::nodes::StaticQueryFragmentInstance<table>;
@@ -775,10 +777,10 @@ macro_rules! __diesel_table_impl {
 
             impl $crate::query_builder::AsQuery for table {
                 type SqlType = SqlType;
-                type Query = $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<Self>>;
+                type Query = $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<Self>>;
 
                 fn as_query(self) -> Self::Query {
-                    $crate::query_builder::SelectStatement::simple(self)
+                    $crate::internal::table_macro::SelectStatement::simple(self)
                 }
             }
 
@@ -808,7 +810,7 @@ macro_rules! __diesel_table_impl {
 
                 fn into_update_target(self) -> $crate::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
                     use $crate::query_builder::AsQuery;
-                    let q: $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<table>> = self.as_query();
+                    let q: $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<table>> = self.as_query();
                     q.into_update_target()
                 }
             }
@@ -853,7 +855,7 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
-            impl $crate::query_source::AppearsInFromClause<table> for $crate::query_builder::NoFromClause {
+            impl $crate::query_source::AppearsInFromClause<table> for $crate::internal::table_macro::NoFromClause {
                 type Count = $crate::query_source::Never;
             }
 
@@ -883,27 +885,27 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
-            impl<F, S, D, W, O, L, Of, G> $crate::JoinTo<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>> for table where
-                $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>: $crate::JoinTo<table>,
+            impl<F, S, D, W, O, L, Of, G> $crate::JoinTo<$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>> for table where
+                $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>: $crate::JoinTo<table>,
                 F: $crate::query_source::QuerySource
             {
-                type FromClause = $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>;
-                type OnClause = <$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G> as $crate::JoinTo<table>>::OnClause;
+                type FromClause = $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>;
+                type OnClause = <$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_builder::SelectStatement::join_target(table);
+                fn join_target(rhs: $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::internal::table_macro::SelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<'a, QS, ST, DB> $crate::JoinTo<$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>> for table where
-                $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>: $crate::JoinTo<table>,
+            impl<'a, QS, ST, DB> $crate::JoinTo<$crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>> for table where
+                $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>: $crate::JoinTo<table>,
                 QS: $crate::query_source::QuerySource,
             {
-                type FromClause = $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>;
-                type OnClause = <$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
-                fn join_target(rhs: $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_builder::BoxedSelectStatement::join_target(table);
+                type FromClause = $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>;
+                type OnClause = <$crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
+                fn join_target(rhs: $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::internal::table_macro::BoxedSelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
             }
@@ -1180,8 +1182,8 @@ macro_rules! joinable_inner {
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
             type FromClause = $right_table_ty;
             type OnClause = $crate::dsl::Eq<
-                $crate::expression::nullable::Nullable<$foreign_key>,
-                $crate::expression::nullable::Nullable<$primary_key_ty>,
+                $crate::internal::table_macro::NullableExpression<$foreign_key>,
+                $crate::internal::table_macro::NullableExpression<$primary_key_ty>,
             >;
 
             fn join_target(rhs: $right_table_ty) -> (Self::FromClause, Self::OnClause) {

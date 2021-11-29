@@ -12,6 +12,7 @@ pub use self::distinct_on::DistinctOnClause;
 /// The PostgreSQL query builder
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
+#[cfg(feature = "postgres_backend")]
 pub struct PgQueryBuilder {
     sql: String,
     bind_idx: u32,

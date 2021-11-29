@@ -2,15 +2,13 @@
 //!
 //! Note: This module requires enabling the `r2d2` feature
 
-extern crate r2d2;
-
-pub use self::r2d2::*;
+pub use r2d2::*;
 
 /// A re-export of [`r2d2::Error`], which is only used by methods on [`r2d2::Pool`].
 ///
 /// [`r2d2::Error`]: r2d2::Error
 /// [`r2d2::Pool`]: r2d2::Pool
-pub type PoolError = self::r2d2::Error;
+pub type PoolError = r2d2::Error;
 
 use std::convert::Into;
 use std::fmt;
@@ -23,7 +21,7 @@ use crate::connection::{
 };
 use crate::expression::QueryMetadata;
 use crate::prelude::*;
-use crate::query_builder::{AsQuery, QueryFragment, QueryId};
+use crate::query_builder::{Query, QueryFragment, QueryId};
 
 /// An r2d2 connection manager for use with Diesel.
 ///
@@ -167,8 +165,7 @@ where
         source: T,
     ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
     where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         (&mut **self).load(source)

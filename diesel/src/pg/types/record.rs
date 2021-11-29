@@ -52,7 +52,7 @@ macro_rules! tuple_impls {
                     } else {
                         let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
                         bytes = new_bytes;
-                        $T::from_sql(PgValue::new(
+                        $T::from_sql(PgValue::new_internal(
                             elem_bytes,
                             &oid,
                         ))?

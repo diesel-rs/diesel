@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::TypedExpressionType;
 use crate::expression::*;
 use crate::query_builder::*;
@@ -6,11 +6,12 @@ use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
 use crate::sql_types::{DieselNumericOps, IntoNullable};
 
+#[doc(hidden)] // This is used by the `table!` macro internally
 #[derive(Debug, Copy, Clone, DieselNumericOps, ValidGrouping)]
 pub struct Nullable<T>(pub(crate) T);
 
 impl<T> Nullable<T> {
-    pub fn new(expr: T) -> Self {
+    pub(crate) fn new(expr: T) -> Self {
         Nullable(expr)
     }
 }
@@ -26,7 +27,7 @@ where
 
 impl<T, DB> QueryFragment<DB> for Nullable<T>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {

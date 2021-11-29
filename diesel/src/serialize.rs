@@ -9,8 +9,9 @@ use crate::backend::{Backend, HasBindCollector};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::BindCollector;
 
+#[doc(inline)]
 #[cfg(feature = "postgres_backend")]
-pub use crate::pg::serialize::*;
+pub use crate::pg::serialize::WriteTuple;
 
 /// A specialized result type representing the result of serializing
 /// a value for the database.

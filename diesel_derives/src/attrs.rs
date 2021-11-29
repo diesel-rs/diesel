@@ -260,7 +260,10 @@ where
                         attribute_span: attr.tokens.span(),
                     })
                     .collect::<Vec<_>>()
-            } else {
+            } else if cfg!(all(
+                not(feature = "without-deprecated"),
+                feature = "with-deprecated"
+            )) {
                 let mut p = Vec::new();
                 let Attribute { path, tokens, .. } = attr;
                 let ident = path.get_ident().map(|f| f.to_string());
@@ -281,6 +284,8 @@ where
                     }
                 }
                 p
+            } else {
+                Vec::new()
             }
         })
         .collect()

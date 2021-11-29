@@ -12,7 +12,7 @@ use crate::sql_types::{DieselNumericOps, SqlType};
 /// Returned by the [`sql()`] function.
 ///
 /// [`sql()`]: crate::dsl::sql()
-pub struct SqlLiteral<ST, T = ()> {
+pub struct SqlLiteral<ST, T = self::private::Empty> {
     sql: String,
     inner: T,
     _marker: PhantomData<ST>,
@@ -22,11 +22,10 @@ impl<ST, T> SqlLiteral<ST, T>
 where
     ST: TypedExpressionType,
 {
-    #[doc(hidden)]
-    pub fn new(sql: String, inner: T) -> Self {
+    pub(crate) fn new(sql: String, inner: T) -> Self {
         SqlLiteral {
-            sql: sql,
-            inner: inner,
+            sql,
+            inner,
             _marker: PhantomData,
         }
     }
@@ -264,7 +263,7 @@ pub fn sql<ST>(sql: &str) -> SqlLiteral<ST>
 where
     ST: TypedExpressionType,
 {
-    SqlLiteral::new(sql.into(), ())
+    SqlLiteral::new(sql.into(), self::private::Empty)
 }
 
 #[derive(QueryId, Debug, Clone, Copy)]
@@ -371,3 +370,23 @@ impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> 
 impl<QS, Query, Value> AppearsOnTable<QS> for UncheckedBind<Query, Value> where Self: Expression {}
 
 impl<Query, Value, Conn> RunQueryDsl<Conn> for UncheckedBind<Query, Value> {}
+
+mod private {
+    use crate::backend::{Backend, DieselReserveSpecialization};
+    use crate::query_builder::{QueryFragment, QueryId};
+
+    #[derive(Debug, Clone, Copy, QueryId)]
+    pub struct Empty;
+
+    impl<DB> QueryFragment<DB> for Empty
+    where
+        DB: Backend + DieselReserveSpecialization,
+    {
+        fn walk_ast<'b>(
+            &'b self,
+            _pass: crate::query_builder::AstPass<'_, 'b, DB>,
+        ) -> crate::QueryResult<()> {
+            Ok(())
+        }
+    }
+}

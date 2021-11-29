@@ -1,8 +1,6 @@
 #[cfg(feature = "bigdecimal")]
-pub mod bigdecimal {
-    extern crate bigdecimal;
-
-    use self::bigdecimal::{BigDecimal, FromPrimitive};
+mod bigdecimal {
+    use bigdecimal::{BigDecimal, FromPrimitive};
     use std::io::prelude::*;
 
     use crate::deserialize::{self, FromSql};

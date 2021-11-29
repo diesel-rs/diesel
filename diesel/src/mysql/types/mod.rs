@@ -31,6 +31,7 @@ impl FromSql<TinyInt, Mysql> for i8 {
 
 /// Represents the MySQL unsigned type.
 #[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
+#[cfg(feature = "mysql_backend")]
 pub struct Unsigned<ST: 'static>(ST);
 
 impl<T> Add for Unsigned<T>
@@ -216,4 +217,5 @@ impl HasSqlType<Unsigned<BigInt>> for Mysql {
 )]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(mysql_type(name = "DateTime"))]
+#[cfg(feature = "mysql_backend")]
 pub struct Datetime;

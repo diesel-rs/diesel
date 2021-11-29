@@ -60,7 +60,7 @@ where
 
 /// A struct that implements `fmt::Debug` by walking the given AST and writing
 /// the `fmt::Debug` implementation of each bind parameter.
-pub struct DebugBinds<'a, T: 'a, DB> {
+pub(crate) struct DebugBinds<'a, T: 'a, DB> {
     query: &'a T,
     _marker: PhantomData<DB>,
 }

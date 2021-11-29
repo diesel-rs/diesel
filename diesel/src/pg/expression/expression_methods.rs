@@ -1,12 +1,18 @@
 //! PostgreSQL specific expression methods
 
+pub(in crate::pg) use self::private::{
+    ArrayOrNullableArray, InetOrCidr, RangeHelper, RangeOrNullableRange, TextOrNullableText,
+};
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
+use crate::expression::operators::{Asc, Desc};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
 use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
+use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `IS NOT DISTINCT FROM` expression.
     ///
@@ -71,6 +77,7 @@ use super::date_and_time::{AtTimeZone, DateTimeLike};
 use crate::sql_types::VarChar;
 
 /// PostgreSQL specific methods present on timestamp expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL "AT TIME ZONE" expression.
     ///
@@ -139,6 +146,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
 impl<T: Expression> PgTimestampExpressionMethods for T where T::SqlType: DateTimeLike {}
 
 /// PostgreSQL specific methods present on array expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgArrayExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `&&` expression.
     ///
@@ -309,23 +317,12 @@ where
 {
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
-/// types. Once coherence takes associated types into account, we can remove
-/// this trait.
-pub trait ArrayOrNullableArray {}
-
-impl<T> ArrayOrNullableArray for Array<T> {}
-impl<T> ArrayOrNullableArray for Nullable<Array<T>> {}
-
-use crate::expression::operators::{Asc, Desc};
-use crate::EscapeExpressionMethods;
-
 /// PostgreSQL expression methods related to sorting.
 ///
 /// This trait is only implemented for `Asc` and `Desc`. Although `.asc` is
 /// implicit if no order is given, you will need to call `.asc()` explicitly in
 /// order to call these methods.
+#[cfg(feature = "postgres_backend")]
 pub trait PgSortExpressionMethods: Sized {
     /// Specify that nulls should come before other values in this ordering.
     ///
@@ -428,6 +425,7 @@ impl<T> PgSortExpressionMethods for Asc<T> {}
 impl<T> PgSortExpressionMethods for Desc<T> {}
 
 /// PostgreSQL specific methods present on text expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgTextExpressionMethods: Expression + Sized {
     /// Creates a  PostgreSQL `ILIKE` expression
     ///
@@ -544,15 +542,6 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     }
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `PgTextExpressionMethods` on the appropriate
-/// types. Once coherence takes associated types into account, we can remove
-/// this trait.
-pub trait TextOrNullableText {}
-
-impl TextOrNullableText for Text {}
-impl TextOrNullableText for Nullable<Text> {}
-
 impl<T> PgTextExpressionMethods for T
 where
     T: Expression,
@@ -604,21 +593,8 @@ impl<T, U> EscapeExpressionMethods for Grouped<NotSimilarTo<T, U>> {
     }
 }
 
-#[doc(hidden)]
-/// Marker trait used to extract the inner type
-/// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
-pub trait RangeHelper: SqlType {
-    type Inner;
-}
-
-impl<ST> RangeHelper for Range<ST>
-where
-    Self: 'static,
-{
-    type Inner = ST;
-}
-
 /// PostgreSQL specific methods present on range expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgRangeExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `@>` expression.
     ///
@@ -673,15 +649,6 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     }
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `PgRangeExpressionMethods` on the appropriate
-/// types. Once coherence takes associated types into account, we can remove
-/// this trait.
-pub trait RangeOrNullableRange {}
-
-impl<ST> RangeOrNullableRange for Range<ST> {}
-impl<ST> RangeOrNullableRange for Nullable<Range<ST>> {}
-
 impl<T> PgRangeExpressionMethods for T
 where
     T: Expression,
@@ -690,6 +657,7 @@ where
 }
 
 /// PostgreSQL specific methods present between CIDR/INET expressions
+#[cfg(feature = "postgres_backend")]
 pub trait PgNetExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `>>` expression.
     ///
@@ -1159,15 +1127,6 @@ where
 {
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `PgNetExpressionMethods` on the appropriate types.
-pub trait InetOrCidr {}
-
-impl InetOrCidr for Inet {}
-impl InetOrCidr for Cidr {}
-impl InetOrCidr for Nullable<Inet> {}
-impl InetOrCidr for Nullable<Cidr> {}
-
 /// PostgreSQL specific methods present on JSONB expressions.
 pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `||` expression.
@@ -1562,3 +1521,52 @@ where
 pub trait JsonbOrNullableJsonb {}
 impl JsonbOrNullableJsonb for Jsonb {}
 impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+mod private {
+    use crate::sql_types::{Array, Cidr, Inet, Nullable, Range, SqlType, Text};
+
+    /// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    pub trait ArrayOrNullableArray {}
+
+    impl<T> ArrayOrNullableArray for Array<T> {}
+    impl<T> ArrayOrNullableArray for Nullable<Array<T>> {}
+
+    /// Marker trait used to implement `PgNetExpressionMethods` on the appropriate types.
+    pub trait InetOrCidr {}
+
+    impl InetOrCidr for Inet {}
+    impl InetOrCidr for Cidr {}
+    impl InetOrCidr for Nullable<Inet> {}
+    impl InetOrCidr for Nullable<Cidr> {}
+
+    /// Marker trait used to implement `PgTextExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    pub trait TextOrNullableText {}
+
+    impl TextOrNullableText for Text {}
+    impl TextOrNullableText for Nullable<Text> {}
+
+    /// Marker trait used to extract the inner type
+    /// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
+    pub trait RangeHelper: SqlType {
+        type Inner;
+    }
+
+    impl<ST> RangeHelper for Range<ST>
+    where
+        Self: 'static,
+    {
+        type Inner = ST;
+    }
+
+    /// Marker trait used to implement `PgRangeExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    pub trait RangeOrNullableRange {}
+
+    impl<ST> RangeOrNullableRange for Range<ST> {}
+    impl<ST> RangeOrNullableRange for Nullable<Range<ST>> {}
+}

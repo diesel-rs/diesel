@@ -1,15 +1,20 @@
 //! Types related to database connections
 
 pub mod commit_error_processor;
-mod statement_cache;
+#[cfg(all(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    any(feature = "sqlite", feature = "postgres", feature = "mysql")
+))]
+pub(crate) mod statement_cache;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub mod statement_cache;
 mod transaction_manager;
-
-use std::fmt::Debug;
 
 use crate::backend::Backend;
 use crate::expression::QueryMetadata;
-use crate::query_builder::{AsQuery, QueryFragment, QueryId};
+use crate::query_builder::{Query, QueryFragment, QueryId};
 use crate::result::*;
+use std::fmt::Debug;
 
 #[doc(hidden)]
 pub use self::statement_cache::{MaybeCached, PrepareForCache, StatementCache, StatementCacheKey};
@@ -17,6 +22,13 @@ pub use self::transaction_manager::{
     AnsiTransactionManager, TransactionManager, TransactionManagerStatus,
     ValidTransactionManagerStatus,
 };
+
+#[doc(inline)]
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::private::ConnectionGatWorkaround;
+
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) use self::private::ConnectionGatWorkaround;
 
 /// Perform simple operations on a backend.
 ///
@@ -29,21 +41,126 @@ pub trait SimpleConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()>;
 }
 
-/// This trait describes which cursor type is used by a given connection
-/// implementation. This trait is only useful in combination with [`Connection`].
+/// Return type of [`Connection::load`].
 ///
-/// Implementation wise this is a workaround for GAT's
-pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend> {
-    /// The cursor type returned by [`Connection::load`]
-    ///
-    /// Users should handle this as opaque type that implements [`Iterator`]
-    type Cursor: Iterator<Item = QueryResult<Self::Row>>;
-    /// The row type used as [`Iterator::Item`] for the iterator implementation
-    /// of [`ConnectionGatWorkaround::Cursor`]
-    type Row: crate::row::Row<'conn, DB>;
-}
+/// Users should threat this type as `impl Iterator<Item = QueryResult<impl Row<DB>>>`
+pub type LoadRowIter<'conn, 'query, C, DB> =
+    <C as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor;
 
 /// A connection to a database
+///
+/// This trait represents a database connection. It can be used to query the database through
+/// the query dsl provided by diesel, custom extensions or raw sql queries.
+///
+/// # Implementing a custom connection
+///
+/// There are several reasons why you would want to implement a custom connection implementation:
+///
+/// * To wrap an existing connection for instrumentation purposes
+/// * To use a different underlying library to provide a connection implementation
+/// for already existing backends.
+/// * To add support for an unsupported database system
+///
+/// Implementing a `Connection` in a third party crate requires
+/// enabling the
+/// `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
+/// crate feature to access all nesessary type definitions.
+///
+///
+/// ## Wrapping an existing connection impl
+///
+/// Wrapping an existing connection allows you to customize the implementation to
+/// add additional functionality, like for example instrumentation. For this use case
+/// you only need to implement `Connection` and all super traits. You should forward
+/// any method call to the wrapped connection type. It is **important** to also
+/// forward any method where diesel provides a default implementation, as the
+/// wrapped connection implementation may contain a customized implementation.
+///
+/// To allow the integration of your new connection type with other diesel features
+/// it may be useful to also implement [`R2D2Connection`](crate::r2d2::R2D2Connection)
+/// and [`MigrationConnection`](crate::migration::MigrationConnection).
+///
+/// ## Provide a new connection implementation for an existing backend
+///
+/// Implementing a new connection based on an existing backend can enable the usage of
+/// other methods to connect to the database. One example here would be to replace
+/// the offical diesel provided connection implementations with an implementation
+/// based on a pure rust connection crate.
+///
+/// **It's important to use prepared statements to implement the following methods:**
+/// * [`Connection::load`]
+/// * [`Connection::execute_returning_count`]
+/// * [`Connection::execute`]
+///
+/// For performance reasons it may also be meaningful to cache already prepared statements.
+/// See [`StatementCache`](self::statement_cache::StatementCache)
+/// for a helper type to implement prepared statement caching. The [statement_cache](self::statement_cache)
+/// modul documentation contains details efficient prepared statement caching
+/// based on diesels query builder.
+///
+/// It is required to implement at least the following parts:
+///
+/// * A row type that describes how to receive values form a database row.
+///   This type needs to implement [`Row`](crate::row::Row)
+/// * A field type that describes a database field value.
+///   This type needs to implement [`Field`](crate::row::Field)
+/// * A connection type that wraps the connection +
+///   the nessesary state managment.
+/// * Maybe a [`TransactionManager`] implementation matching
+///  the interface provided by the database connection crate.
+///  Otherwise the implementation used by the corresponding
+///  `Connection` in diesel can be reused.
+///
+/// To allow the integration of your new connection type with other diesel features
+/// it may be useful to also implement [`R2D2Connection`](crate::r2d2::R2D2Connection)
+/// and [`MigrationConnection`](crate::migration::MigrationConnection).
+///
+/// The exact implementation of the `Connection` trait depends on the interface provided
+/// by the connection crate/library. A struct implementing `Connection` should
+/// likely contain a [`StatementCache`](self::statement_cache::StatementCache)
+/// to cache prepared statements efficiently.
+///
+/// As implementations differ significantly between the supported backends
+/// we cannot give a one for all description here. Generally it's likely a
+/// good idea to follow the implementation of the corresponding connection
+/// in diesel at a heigh level to gain some idea how to implement your
+/// custom implementation.
+///
+/// ## Implement support for an unsupported database system
+///
+/// Additionally to anything mentioned in the previous section the following steps are required:
+///
+/// * Implement a custom backend type. See the documentation of [`Backend`] for details
+/// * Implement appropiated [`FromSql`](crate::deserialize::FromSql)/
+/// [`ToSql`](crate::serialize::ToSql) conversions.
+/// At least the following impls should be considered:
+///     * `i16`: `FromSql<SmallInt, YourBackend>`
+///     * `i32`: `FromSql<Integer, YourBackend>`
+///     * `i64`: `FromSql<BigInt, YourBackend>`
+///     * `f32`: `FromSql<Float, YourBackend>`
+///     * `f64`: `FromSql<Double, YourBackend>`
+///     * `bool`: FromSql<Bool, YourBackend>`
+///     * `String`: `FromSql<Text, YourBackend>`
+///     * `Vec<u8>`: `FromSql<Binary, YourBackend>`
+///     * `i16`: `ToSql<SmallInt, YourBackend>`
+///     * `i32`: `ToSql<Integer, YourBackend>`
+///     * `i64`: `ToSql<BigInt, YourBackend>`
+///     * `f32`: `ToSql<Float, YourBackend>`
+///     * `f64`: `ToSql<Double, YourBackend>`
+///     * `bool`: ToSql<Bool, YourBackend>`
+///     * `String`: `ToSql<Text, YourBackend>`
+///     * `Vec<u8>`: `ToSql<Binary, YourBackend>`
+/// * Maybe a [`TransactionManager`] implementation matching
+///  the interface provided by the database connection crate.
+///  Otherwise the implementation used by the corresponding
+///  `Connection` in diesel can be reused.
+///
+/// As implementations differ significantly between the supported backends
+/// we cannot give a one for all description here. Generally it's likely a
+/// good idea to follow the implementation of the connection
+/// in diesel, which uses a similar interface internally,
+/// at a heigh level to gain some idea how to implement your
+/// custom implementation.
 pub trait Connection: SimpleConnection + Sized + Send
 where
     Self: for<'a, 'b> ConnectionGatWorkaround<'a, 'b, <Self as Connection>::Backend>,
@@ -51,7 +168,15 @@ where
     /// The backend this type connects to
     type Backend: Backend;
 
-    #[doc(hidden)]
+    /// The transaction manager implementation used by this connection
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc(hidden)
+    )]
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
     type TransactionManager: TransactionManager<Self>;
 
     /// Establishes a new connection to the database
@@ -211,25 +336,63 @@ where
         user_result.expect("Transaction did not succeed")
     }
 
-    #[doc(hidden)]
+    /// Execute a single SQL statements within the same string and return the
+    /// number of affected rows
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc(hidden)
+    )]
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
     fn execute(&mut self, query: &str) -> QueryResult<usize>;
 
-    #[doc(hidden)]
+    /// Executes a given query and returns any requested values
+    ///
+    /// This function executes a given query and returns the
+    /// query result as given by the database. **Normal users
+    /// should not use this function**. Use
+    /// [`QueryDsl::load`](crate::QueryDsl) instead.
+    ///
+    /// This function is useful for people trying to build an alternative
+    /// dsl on top of diesel. It returns an [ `LoadRowIter`], which
+    /// is essentially an [`Iterator<Item = QueryResult<&impl Row<Self::Backend>>`].
+    /// This type can be used to iterate over all rows returned by the database.
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
     where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>;
 
-    #[doc(hidden)]
+    /// Execute a single SQL statements given by a query and return
+    /// number of affected rows
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc(hidden)
+    )]
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId;
 
-    #[doc(hidden)]
+    /// Get access to the current transaction state of this connection
+    ///
+    /// This function should be used from [`TransactionManager`] to access
+    /// internally required state.
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc(hidden)
+    )]
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
     fn transaction_state(
         &mut self,
     ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData;
@@ -278,5 +441,36 @@ impl<DB: Backend> dyn BoxableConnection<DB> {
         T: Connection<Backend = DB> + 'static,
     {
         self.as_any().is::<T>()
+    }
+}
+
+// These traits are not part of the public API
+// because we want to replace them by with an associated type
+// in the child trait later if GAT's are finally stable
+mod private {
+    use crate::backend::Backend;
+    use crate::QueryResult;
+
+    /// This trait describes which cursor type is used by a given connection
+    /// implementation. This trait is only useful in combination with [`Connection`].
+    ///
+    /// Implementation wise this is a workaround for GAT's
+    ///
+    /// [`Connection`]: super::Connection
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+
+    pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend> {
+        /// The cursor type returned by [`Connection::load`]
+        ///
+        /// Users should handle this as opaque type that implements [`Iterator`]
+        ///
+        /// [`Connection::load`]: super::Connection::load
+        type Cursor: Iterator<Item = QueryResult<Self::Row>>;
+        /// The row type used as [`Iterator::Item`] for the iterator implementation
+        /// of [`ConnectionGatWorkaround::Cursor`]
+        type Row: crate::row::Row<'conn, DB>;
     }
 }

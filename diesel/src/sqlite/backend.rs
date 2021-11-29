@@ -71,6 +71,9 @@ impl SqlDialect for Sqlite {
     type ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison;
 }
 
+impl DieselReserveSpecialization for Sqlite {}
+impl TrustedBackend for Sqlite {}
+
 #[derive(Debug, Copy, Clone)]
 pub struct SqliteOnConflictClaues;
 

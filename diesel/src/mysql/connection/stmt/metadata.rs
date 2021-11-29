@@ -5,16 +5,16 @@ use std::slice;
 use super::ffi;
 use crate::mysql::connection::bind::Flags;
 
-pub struct StatementMetadata {
+pub(in crate::mysql::connection) struct StatementMetadata {
     result: NonNull<ffi::MYSQL_RES>,
 }
 
 impl StatementMetadata {
-    pub fn new(result: NonNull<ffi::MYSQL_RES>) -> Self {
+    pub(in crate::mysql::connection) fn new(result: NonNull<ffi::MYSQL_RES>) -> Self {
         StatementMetadata { result }
     }
 
-    pub fn fields(&'_ self) -> &'_ [MysqlFieldMetadata<'_>] {
+    pub(in crate::mysql::connection) fn fields(&'_ self) -> &'_ [MysqlFieldMetadata<'_>] {
         unsafe {
             let num_fields = ffi::mysql_num_fields(self.result.as_ptr());
             let field_ptr = ffi::mysql_fetch_fields(self.result.as_ptr());
@@ -34,10 +34,13 @@ impl Drop for StatementMetadata {
 }
 
 #[repr(transparent)]
-pub struct MysqlFieldMetadata<'a>(ffi::MYSQL_FIELD, std::marker::PhantomData<&'a ()>);
+pub(in crate::mysql::connection) struct MysqlFieldMetadata<'a>(
+    ffi::MYSQL_FIELD,
+    std::marker::PhantomData<&'a ()>,
+);
 
 impl<'a> MysqlFieldMetadata<'a> {
-    pub fn field_name(&self) -> Option<&str> {
+    pub(in crate::mysql::connection) fn field_name(&self) -> Option<&str> {
         if self.0.name.is_null() {
             None
         } else {
@@ -50,11 +53,11 @@ impl<'a> MysqlFieldMetadata<'a> {
         }
     }
 
-    pub fn field_type(&self) -> ffi::enum_field_types {
+    pub(in crate::mysql::connection) fn field_type(&self) -> ffi::enum_field_types {
         self.0.type_
     }
 
-    pub(crate) fn flags(&self) -> Flags {
+    pub(in crate::mysql::connection) fn flags(&self) -> Flags {
         Flags::from(self.0.flags)
     }
 }

@@ -92,5 +92,8 @@ impl SqlDialect for Mysql {
     type ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison;
 }
 
+impl DieselReserveSpecialization for Mysql {}
+impl TrustedBackend for Mysql {}
+
 #[derive(Debug, Clone, Copy)]
 pub struct MysqlStyleDefaultValueClause;

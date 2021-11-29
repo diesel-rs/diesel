@@ -2,7 +2,7 @@ use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
 use super::{OutputBinds, Statement, StatementMetadata};
-use crate::connection::MaybeCached;
+use crate::connection::statement_cache::MaybeCached;
 use crate::mysql::{Mysql, MysqlType};
 use crate::result::QueryResult;
 use crate::row::*;

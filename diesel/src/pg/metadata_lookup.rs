@@ -19,6 +19,7 @@ use std::collections::HashMap;
 /// Custom implementations of `Connection<Backend = Pg>` should not implement this trait directly.
 /// Instead `GetPgMetadataCache` should be implemented, afterwards the generic implementation will provide
 /// the necessary functions to perform the type lookup.
+#[cfg(feature = "postgres_backend")]
 pub trait PgMetadataLookup {
     /// Determine the type metadata for the given `type_name`
     ///
@@ -54,7 +55,9 @@ where
                     .store_type(cache_key, type_metadata);
                 PgTypeMetadata(Ok(type_metadata))
             }
-            Err(_e) => PgTypeMetadata(Err(FailedToLookupTypeError::new(cache_key.into_owned()))),
+            Err(_e) => PgTypeMetadata(Err(FailedToLookupTypeError::new_internal(
+                cache_key.into_owned(),
+            ))),
         }
     }
 }
@@ -63,6 +66,10 @@ where
 /// so that the lookup of user defined types, or types which come from an extension can be cached.
 ///
 /// Implementing this trait for a `Connection<Backend=Pg>` will cause `PgMetadataLookup` to be auto implemented.
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub trait GetPgMetadataCache {
     /// Get the `PgMetadataCache`
     fn get_metadata_cache(&mut self) -> &mut PgMetadataCache;
@@ -103,6 +110,10 @@ fn lookup_type<T: Connection<Backend = Pg>>(
 /// The key used to lookup cached type oid's inside of
 /// a [PgMetadataCache].
 #[derive(Hash, PartialEq, Eq, Debug, Clone)]
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub struct PgMetadataCacheKey<'a> {
     pub(in crate::pg) schema: Option<Cow<'a, str>>,
     pub(in crate::pg) type_name: Cow<'a, str>,
@@ -131,6 +142,10 @@ impl<'a> PgMetadataCacheKey<'a> {
 /// [OIDs]: https://www.postgresql.org/docs/current/static/datatype-oid.html
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub struct PgMetadataCache {
     cache: HashMap<PgMetadataCacheKey<'static>, InnerPgTypeMetadata>,
 }
@@ -157,6 +172,7 @@ impl PgMetadataCache {
     }
 }
 
+//trace_macros!(true);
 table! {
     pg_type (oid) {
         oid -> Oid,
@@ -165,6 +181,7 @@ table! {
         typnamespace -> Oid,
     }
 }
+//trace_macros!(false);
 
 table! {
     pg_namespace (oid) {

@@ -17,7 +17,7 @@ use crate::query_builder::locking_clause::*;
 use crate::query_builder::offset_clause::*;
 use crate::query_builder::order_clause::*;
 use crate::query_builder::select_clause::*;
-use crate::query_builder::update_statement::*;
+use crate::query_builder::update_statement::target::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::NoFromClause;
 use crate::query_builder::{
@@ -323,7 +323,7 @@ where
 }
 
 #[doc(hidden)]
-pub type Limit = AsExprOf<i64, BigInt>;
+type Limit = AsExprOf<i64, BigInt>;
 
 impl<ST, F, S, D, W, O, L, Of, G, H, LC> LimitDsl
     for SelectStatement<F, S, D, W, O, LimitOffsetClause<L, Of>, G, H, LC>
@@ -355,7 +355,7 @@ where
 }
 
 #[doc(hidden)]
-pub type Offset = Limit;
+type Offset = Limit;
 
 impl<ST, F, S, D, W, O, L, Of, G, H, LC> OffsetDsl
     for SelectStatement<F, S, D, W, O, LimitOffsetClause<L, Of>, G, H, LC>
