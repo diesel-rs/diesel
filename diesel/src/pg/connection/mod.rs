@@ -51,6 +51,10 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection 
 
 impl CommitErrorProcessor for PgConnection {
     fn process_commit_error(&self, transaction_depth: i32, error: Error) -> CommitErrorOutcome {
+        let transaction_status = self.raw_connection.transaction_status();
+        if transaction_status == PgTransactionStatus::Unknown {
+            return CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error);
+        }
         if matches!(
             error,
             Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
@@ -82,7 +86,6 @@ impl CommitErrorProcessor for PgConnection {
                 | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
             }
         } else {
-            let transaction_status = self.raw_connection.transaction_status();
             match error {
                 Error::DatabaseError(DatabaseErrorKind::Unknown, _)
                     if transaction_status == PgTransactionStatus::InError =>
