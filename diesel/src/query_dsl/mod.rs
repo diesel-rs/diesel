@@ -51,7 +51,7 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 #[doc(hidden)]
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
-pub use self::load_dsl::LoadQuery;
+pub use self::load_dsl::{LoadQuery, LoadQueryGatWorkaround};
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
@@ -1506,12 +1506,12 @@ pub trait RunQueryDsl<Conn>: Sized {
     fn load_iter<'a, U>(
         self,
         conn: &'a mut Conn,
-    ) -> QueryResult<Box<dyn Iterator<Item = QueryResult<U>> + 'a>>
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, Conn, U>>::Ret>
     where
         U: 'a,
         Self: LoadQuery<Conn, U> + 'a,
     {
-        self.internal_load(conn).map(|i| Box::new(i) as Box<_>)
+        self.internal_load(conn)
     }
 
     /// Runs the command, and returns the affected row.
