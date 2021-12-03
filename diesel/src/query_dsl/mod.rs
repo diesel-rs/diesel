@@ -51,7 +51,7 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 #[doc(hidden)]
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
-pub use self::load_dsl::{LoadQuery, LoadQueryGatWorkaround};
+pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
@@ -1405,9 +1405,11 @@ pub trait RunQueryDsl<Conn>: Sized {
         self.internal_load(conn)?.collect()
     }
 
-    /// Executes the given query, returning a [`Iterator`] with the returned rows.
+    /// Executes the given query, returning an [`Iterator`] with the returned rows.
     ///
-    /// **You should normally prefer to use [`RunQueryDsl::load`] instead**. This method
+    /// The iterator's item is [`QueryResult<U>`](crate::result::QueryResult).
+    ///
+    /// You should normally prefer to use [`RunQueryDsl::load`] instead. This method
     /// is provided for situations where the result needs to be collected into a different
     /// container than a [`Vec`]
     ///
@@ -1503,10 +1505,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'a, U>(
-        self,
-        conn: &'a mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'a, Conn, U>>::Ret>
+    fn load_iter<'a, U>(self, conn: &'a mut Conn) -> QueryResult<LoadIter<'a, Self, Conn, U>>
     where
         U: 'a,
         Self: LoadQuery<Conn, U> + 'a,
