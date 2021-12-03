@@ -63,7 +63,7 @@ impl Model {
         let mut postgres_type = None;
 
         for attr in parse_attributes(attrs) {
-            match attr {
+            match attr.item {
                 StructAttr::SqlType(_, value) => sql_types.push(Type::Path(value)),
                 StructAttr::TableName(_, value) => table_name = Some(value),
                 StructAttr::PrimaryKey(_, keys) => {

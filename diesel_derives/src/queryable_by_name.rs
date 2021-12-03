@@ -1,6 +1,7 @@
 use proc_macro2::{Span, TokenStream};
 use syn::{DeriveInput, Ident, LitStr, Type};
 
+use attrs::AttributeSpanWrapper;
 use field::{Field, FieldName};
 use model::Model;
 use util::wrap_in_dummy_mod;
@@ -15,7 +16,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     let initial_field_expr = model.fields().iter().map(|f| {
         let field_ty = &f.ty;
 
-        if f.embed {
+        if f.embed() {
             quote!(<#field_ty as QueryableByName<__DB>>::build(row)?)
         } else {
             let deserialize_ty = f.ty_for_deserialize();
@@ -39,7 +40,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     for field in model.fields() {
         let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
         let field_ty = field.ty_for_deserialize();
-        if field.embed {
+        if field.embed() {
             where_clause
                 .predicates
                 .push(parse_quote!(#field_ty: QueryableByName<__DB>));
@@ -88,7 +89,7 @@ fn sql_type(field: &Field, model: &Model) -> Type {
     let table_name = model.table_name();
 
     match field.sql_type {
-        Some(ref st) => st.clone(),
+        Some(AttributeSpanWrapper { item: ref st, .. }) => st.clone(),
         None => {
             if model.has_table_name_attribute() {
                 let column_name = field.column_name();
