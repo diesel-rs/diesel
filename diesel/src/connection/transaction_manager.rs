@@ -330,6 +330,44 @@ mod test {
 
     #[test]
     #[cfg(feature = "postgres")]
+    fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::PgConnection;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result = AnsiTransactionManager::commit_transaction(conn);
+        assert!(matches!(result, Err(Error::NotInTransaction)))
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::PgConnection;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            0,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result = AnsiTransactionManager::rollback_transaction(conn);
+        assert!(matches!(result, Err(Error::NotInTransaction)))
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
     fn postgres_transaction_is_rolled_back_upon_syntax_error() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
