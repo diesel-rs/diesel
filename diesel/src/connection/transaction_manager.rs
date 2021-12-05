@@ -318,6 +318,104 @@ where
 
 #[cfg(test)]
 mod test {
+    // Mock connection. Uses the Postgres backend for type signatures.
+    // This is really because implementing a new backend is pain
+    #[cfg(feature = "postgres")]
+    mod mock {
+        use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::{
+            Connection, ConnectionGatWorkaround, SimpleConnection, TransactionManager,
+        };
+        use crate::diesel::pg::connection::cursor::Cursor;
+        use crate::expression::QueryMetadata;
+        use crate::pg::Pg;
+        use crate::query_builder::{AsQuery, QueryFragment, QueryId};
+        use crate::result::{Error, QueryResult};
+        use crate::PgConnection;
+
+        pub(crate) struct MockConnection {
+            pub next_result: Option<QueryResult<usize>>,
+            pub next_batch_execute_result: Option<QueryResult<()>>,
+            pub broken: bool,
+            transaction_state: AnsiTransactionManager,
+        }
+
+        impl SimpleConnection for MockConnection {
+            fn batch_execute(&mut self, _query: &str) -> QueryResult<()> {
+                self.next_batch_execute_result
+                    .take()
+                    .expect("No next result")
+            }
+        }
+
+        impl<'a> ConnectionGatWorkaround<'a, Pg> for MockConnection {
+            type Cursor = Cursor;
+
+            type Row = <PgConnection as ConnectionGatWorkaround<'a, Pg>>::Row;
+        }
+
+        impl CommitErrorProcessor for MockConnection {
+            fn process_commit_error(
+                &self,
+                _transaction_depth: i32,
+                error: Error,
+            ) -> CommitErrorOutcome {
+                if self.broken {
+                    CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error)
+                } else {
+                    CommitErrorOutcome::Throw(error)
+                }
+            }
+        }
+
+        impl Connection for MockConnection {
+            type Backend = Pg;
+
+            type TransactionManager = AnsiTransactionManager;
+
+            fn establish(_database_url: &str) -> crate::ConnectionResult<Self> {
+                Ok(Self {
+                    next_result: None,
+                    next_batch_execute_result: None,
+                    broken: false,
+                    transaction_state: AnsiTransactionManager::default(),
+                })
+            }
+
+            fn execute(&mut self, _query: &str) -> QueryResult<usize> {
+                self.next_result.take().expect("No next result")
+            }
+
+            fn load<T>(
+                &mut self,
+                _source: T,
+            ) -> QueryResult<<Self as ConnectionGatWorkaround<Pg>>::Cursor>
+            where
+                T: AsQuery,
+                T::Query: QueryFragment<Self::Backend> + QueryId,
+                Self::Backend: QueryMetadata<T::SqlType>,
+            {
+                unimplemented!()
+            }
+
+            fn execute_returning_count<T>(&mut self, _source: &T) -> QueryResult<usize>
+            where
+                T: crate::query_builder::QueryFragment<Self::Backend>
+                    + crate::query_builder::QueryId,
+            {
+                self.next_result.take().expect("No next result")
+            }
+
+            fn transaction_state(
+                &mut self,
+            ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData
+            {
+                &mut self.transaction_state
+            }
+        }
+    }
+
     #[cfg(feature = "postgres")]
     macro_rules! matches {
         ($expression:expr, $( $pattern:pat )|+ $( if $guard: expr )?) => {
@@ -364,6 +462,45 @@ mod test {
         );
         let result = AnsiTransactionManager::rollback_transaction(conn);
         assert!(matches!(result, Err(Error::NotInTransaction)))
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn transaction_manager_enters_broken_state_when_connection_is_broken() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::connection::TransactionManagerStatus;
+        use crate::result::{DatabaseErrorKind, Error};
+        use crate::*;
+
+        let mut conn = mock::MockConnection::establish("mock").expect("Mock connection");
+
+        // Set result for BEGIN
+        conn.next_batch_execute_result = Some(Ok(()));
+        let result = conn.transaction(|conn| {
+            conn.next_result = Some(Ok(1));
+            let query_result = sql_query("SELECT 1").execute(conn);
+            assert!(query_result.is_ok());
+            conn.broken = true;
+            // Set result for COMMIT attempt
+            conn.next_batch_execute_result = Some(Err(Error::DatabaseError(
+                DatabaseErrorKind::Unknown,
+                Box::new("whatever".to_string()),
+            )));
+            Ok(())
+        });
+        assert!(matches!(
+            result,
+            Err(Error::DatabaseError(DatabaseErrorKind::Unknown, _))
+        ));
+        assert_eq!(
+            *<AnsiTransactionManager as TransactionManager<mock::MockConnection>>::transaction_manager_status_mut(
+                &mut conn),
+            TransactionManagerStatus::InError
+        );
+        // Ensure the transaction manager is unusable
+        let result = conn.transaction(|_conn| Ok(()));
+        assert!(matches!(result, Err(Error::BrokenTransaction)))
     }
 
     #[test]
