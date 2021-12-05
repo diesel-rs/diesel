@@ -93,6 +93,7 @@
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
 // Built-in Lints
+#![allow(deprecated)]
 #![deny(warnings)]
 #![warn(
     missing_debug_implementations,
