@@ -2,6 +2,10 @@
 #![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
 
 pub(crate) mod prelude {
+    #[cfg_attr(
+        any(feature = "huge-tables", feature = "large-tables"),
+        allow(deprecated)
+    )]
     #[doc(inline)]
     pub use crate::{
         allow_columns_to_appear_in_same_group_by_clause,

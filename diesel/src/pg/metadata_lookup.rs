@@ -1,4 +1,11 @@
-#![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
+// FIXME: Remove this attribute once false positive is resolved.
+#![allow(unused_parens)]
+// conditionally allow deprecated items to allow using the
+// "deprecated" table! macro
+#![cfg_attr(
+    any(feature = "huge-tables", feature = "large-tables"),
+    allow(deprecated)
+)]
 
 use super::backend::{FailedToLookupTypeError, InnerPgTypeMetadata};
 use super::{Pg, PgTypeMetadata};
