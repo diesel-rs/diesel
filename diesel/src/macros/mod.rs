@@ -2,6 +2,10 @@
 #![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
 
 pub(crate) mod prelude {
+    #[cfg_attr(
+        any(feature = "huge-tables", feature = "large-tables"),
+        allow(deprecated)
+    )]
     #[doc(inline)]
     pub use crate::{
         allow_columns_to_appear_in_same_group_by_clause,
@@ -319,6 +323,10 @@ macro_rules! __diesel_column {
 /// ```ignore
 /// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 /// ```
+
+#[allow(deprecated)]
+#[cfg_attr(feature="huge-tables", deprecated="`huge-tables` is deprecated in favor of `64-column-tables`")]
+#[cfg_attr(feature="large-tables", deprecated="`large-tables` is deprecated in favor of `32-column-tables`")]
 #[macro_export]
 macro_rules! table {
     ($($tokens:tt)*) => {
