@@ -1405,9 +1405,11 @@ pub trait RunQueryDsl<Conn>: Sized {
         self.internal_load(conn)?.collect()
     }
 
-    /// Executes the given query, returning a [`Iterator`] with the returned rows.
+    /// Executes the given query, returning an [`Iterator`] with the returned rows.
     ///
-    /// **You should normally prefer to use [`RunQueryDsl::load`] instead**. This method
+    /// The iterator's item is [`QueryResult<U>`](crate::result::QueryResult).
+    ///
+    /// You should normally prefer to use [`RunQueryDsl::load`] instead. This method
     /// is provided for situations where the result needs to be collected into a different
     /// container than a [`Vec`]
     ///
@@ -1503,15 +1505,12 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'a, U>(
-        self,
-        conn: &'a mut Conn,
-    ) -> QueryResult<Box<dyn Iterator<Item = QueryResult<U>> + 'a>>
+    fn load_iter<'a, U>(self, conn: &'a mut Conn) -> QueryResult<LoadIter<'a, Self, Conn, U>>
     where
         U: 'a,
         Self: LoadQuery<Conn, U> + 'a,
     {
-        self.internal_load(conn).map(|i| Box::new(i) as Box<_>)
+        self.internal_load(conn)
     }
 
     /// Runs the command, and returns the affected row.

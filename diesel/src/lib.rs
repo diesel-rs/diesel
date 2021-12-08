@@ -376,6 +376,11 @@ pub mod helper_types {
     #[cfg(feature = "postgres_backend")]
     pub type SelectFromOnly<T> =
         crate::query_builder::SelectStatement<crate::pg::query_builder::only_clause::Only<T>>;
+
+    /// [`Iterator`](std::iter::Iterator) of [`QueryResult<U>`](crate::result::QueryResult)
+    ///
+    /// See [`RunQueryDsl::load_iter`] for more information
+    pub type LoadIter<'a, Q, Conn, U> = <Q as load_dsl::LoadQueryGatWorkaround<'a, Conn, U>>::Ret;
 }
 
 pub mod prelude {
