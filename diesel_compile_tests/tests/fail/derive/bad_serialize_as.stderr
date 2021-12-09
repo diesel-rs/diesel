@@ -13,13 +13,13 @@ error: expected `=`
 23 |     #[diesel(serialize_as(Foo))]
    |                          ^^^^^
 
-error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+error: expected identifier
   --> $DIR/bad_serialize_as.rs:31:29
    |
 31 |     #[diesel(serialize_as = "foo")]
    |                             ^^^^^
 
-error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+error: expected identifier
   --> $DIR/bad_serialize_as.rs:39:29
    |
 39 |     #[diesel(serialize_as = 1omg)]

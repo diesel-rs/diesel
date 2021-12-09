@@ -13,13 +13,13 @@ error: expected `=`
 9 | #[diesel(sql_type(Foo))]
   |                  ^^^^^
 
-error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+error: expected identifier
   --> $DIR/bad_sql_type.rs:13:21
    |
 13 | #[diesel(sql_type = "foo")]
    |                     ^^^^^
 
-error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+error: expected identifier
   --> $DIR/bad_sql_type.rs:17:21
    |
 17 | #[diesel(sql_type = 1omg)]

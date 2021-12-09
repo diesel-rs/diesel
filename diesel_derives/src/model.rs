@@ -64,7 +64,7 @@ impl Model {
 
         for attr in parse_attributes(attrs) {
             match attr {
-                StructAttr::SqlType(_, value) => sql_types.push(value),
+                StructAttr::SqlType(_, value) => sql_types.push(Type::Path(value)),
                 StructAttr::TableName(_, value) => table_name = Some(value),
                 StructAttr::PrimaryKey(_, keys) => {
                     primary_key_names = keys.into_iter().collect();

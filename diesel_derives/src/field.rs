@@ -31,9 +31,9 @@ impl Field {
         for attr in parse_attributes(attrs) {
             match attr {
                 FieldAttr::ColumnName(_, value) => column_name = Some(value),
-                FieldAttr::SqlType(_, value) => sql_type = Some(value),
-                FieldAttr::SerializeAs(_, value) => serialize_as = Some(value),
-                FieldAttr::DeserializeAs(_, value) => deserialize_as = Some(value),
+                FieldAttr::SqlType(_, value) => sql_type = Some(Type::Path(value)),
+                FieldAttr::SerializeAs(_, value) => serialize_as = Some(Type::Path(value)),
+                FieldAttr::DeserializeAs(_, value) => deserialize_as = Some(Type::Path(value)),
                 FieldAttr::Embed(_) => embed = true,
             }
         }

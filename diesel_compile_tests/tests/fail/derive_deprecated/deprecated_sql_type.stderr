@@ -25,7 +25,7 @@ error: expected string literal
 warning: #[sql_type] attribute form is deprecated
   = help: use `#[diesel(sql_type = 1)]` instead
 
-error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+error: expected identifier
   --> $DIR/deprecated_sql_type.rs:22:14
    |
 22 | #[sql_type = "1"]
@@ -58,7 +58,7 @@ error: expected string literal
 warning: #[sql_type] attribute form is deprecated
   = help: use `#[diesel(sql_type = 1)]` instead
 
-error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+error: expected identifier
   --> $DIR/deprecated_sql_type.rs:51:18
    |
 51 |     #[sql_type = "1"]

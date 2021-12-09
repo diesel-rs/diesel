@@ -7,7 +7,7 @@ use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream, Parser, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, Type};
+use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, TypePath};
 
 use deprecated::ParseDeprecated;
 use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
@@ -21,9 +21,9 @@ pub enum FieldAttr {
     Embed(Ident),
 
     ColumnName(Ident, SqlIdentifier),
-    SqlType(Ident, Type),
-    SerializeAs(Ident, Type),
-    DeserializeAs(Ident, Type),
+    SqlType(Ident, TypePath),
+    SerializeAs(Ident, TypePath),
+    DeserializeAs(Ident, TypePath),
 }
 
 #[derive(Clone)]
@@ -125,7 +125,7 @@ pub enum StructAttr {
     ForeignDerive(Ident),
 
     TableName(Ident, Path),
-    SqlType(Ident, Type),
+    SqlType(Ident, TypePath),
     TreatNoneAsDefaultValue(Ident, LitBool),
     TreatNoneAsNull(Ident, LitBool),
 
