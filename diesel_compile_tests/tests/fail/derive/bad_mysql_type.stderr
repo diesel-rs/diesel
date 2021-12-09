@@ -1,4 +1,7 @@
 error: unexpected end of input, expected parentheses
+
+  = help: The correct format looks like `#[diesel(mysql_type(name = "foo"))]`
+
  --> $DIR/bad_mysql_type.rs:6:9
   |
 6 | #[diesel(mysql_type)]
@@ -17,6 +20,9 @@ error: expected parentheses
    |                     ^
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(mysql_type(name = "foo"))]`
+
   --> $DIR/bad_mysql_type.rs:18:20
    |
 18 | #[diesel(mysql_type(name))]

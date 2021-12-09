@@ -4,10 +4,15 @@ use syn::{parenthesized, Ident, LitStr};
 
 use deprecated::utils::parse_eq_and_lit_str;
 use parsers::BelongsTo;
+use util::BELONGS_TO_NOTE;
 
 pub fn parse_belongs_to(name: Ident, input: ParseStream) -> Result<BelongsTo> {
     if input.is_empty() {
-        abort!(name.span(), "unexpected end of input, expected parentheses");
+        abort!(
+            name.span(),
+            "unexpected end of input, expected parentheses";
+            help = "The correct format looks like `#[diesel({})]`", BELONGS_TO_NOTE
+        );
     }
 
     let content;
@@ -17,7 +22,7 @@ pub fn parse_belongs_to(name: Ident, input: ParseStream) -> Result<BelongsTo> {
         let name: Ident = content.parse()?;
 
         if name == "parent" {
-            let lit_str = parse_eq_and_lit_str(name, &content)?;
+            let lit_str = parse_eq_and_lit_str(name, &content, BELONGS_TO_NOTE)?;
             lit_str.parse()?
         } else {
             LitStr::new(&name.to_string(), name.span()).parse()?
@@ -37,7 +42,7 @@ pub fn parse_belongs_to(name: Ident, input: ParseStream) -> Result<BelongsTo> {
             abort!(name, "expected `foreign_key`");
         }
 
-        let lit_str = parse_eq_and_lit_str(name, &content)?;
+        let lit_str = parse_eq_and_lit_str(name, &content, BELONGS_TO_NOTE)?;
         foreign_key = Some(lit_str.parse()?);
     }
 

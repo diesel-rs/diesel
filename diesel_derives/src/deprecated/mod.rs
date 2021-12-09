@@ -16,6 +16,7 @@ use deprecated::postgres_type::parse_postgres_type;
 use deprecated::primary_key::parse_primary_key;
 use deprecated::utils::parse_eq_and_lit_str;
 use parsers::{MysqlType, PostgresType, SqliteType};
+use util::{COLUMN_NAME_NOTE, MYSQL_TYPE_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE, TABLE_NAME_NOTE};
 
 macro_rules! warn {
     ($ident: expr, $help: expr) => {
@@ -38,7 +39,7 @@ impl ParseDeprecated for StructAttr {
 
         match &*name_str {
             "table_name" => {
-                let lit_str = parse_eq_and_lit_str(name.clone(), input)?;
+                let lit_str = parse_eq_and_lit_str(name.clone(), input, TABLE_NAME_NOTE)?;
                 warn!(
                     name,
                     &format!("use `#[diesel(table_name = {})]` instead", lit_str.value())
@@ -59,7 +60,7 @@ impl ParseDeprecated for StructAttr {
                 Ok(Some(StructAttr::TreatNoneAsNull(ident, value)))
             }
             "sql_type" => {
-                let lit_str = parse_eq_and_lit_str(name.clone(), input)?;
+                let lit_str = parse_eq_and_lit_str(name.clone(), input, SQL_TYPE_NOTE)?;
                 warn!(
                     name,
                     &format!("use `#[diesel(sql_type = {})]` instead", lit_str.value())
@@ -108,7 +109,7 @@ impl ParseDeprecated for StructAttr {
                 Ok(Some(StructAttr::BelongsTo(name, belongs_to)))
             }
             "sqlite_type" => {
-                let name_value = parse_eq_and_lit_str(name.clone(), input)?;
+                let name_value = parse_eq_and_lit_str(name.clone(), input, SQLITE_TYPE_NOTE)?;
                 warn!(
                     name,
                     &format!(
@@ -122,7 +123,7 @@ impl ParseDeprecated for StructAttr {
                 )))
             }
             "mysql_type" => {
-                let name_value = parse_eq_and_lit_str(name.clone(), input)?;
+                let name_value = parse_eq_and_lit_str(name.clone(), input, MYSQL_TYPE_NOTE)?;
                 warn!(
                     name,
                     &format!(
@@ -169,7 +170,7 @@ impl ParseDeprecated for FieldAttr {
 
         match &*name_str {
             "column_name" => {
-                let lit_str = parse_eq_and_lit_str(name.clone(), input)?;
+                let lit_str = parse_eq_and_lit_str(name.clone(), input, COLUMN_NAME_NOTE)?;
                 warn!(
                     name,
                     &format!("use `#[diesel(column_name = {})]` instead", lit_str.value())
@@ -179,7 +180,7 @@ impl ParseDeprecated for FieldAttr {
                 })))
             }
             "sql_type" => {
-                let lit_str = parse_eq_and_lit_str(name.clone(), input)?;
+                let lit_str = parse_eq_and_lit_str(name.clone(), input, SQL_TYPE_NOTE)?;
                 warn!(
                     name,
                     &format!("use `#[diesel(sql_type = {})]` instead", lit_str.value())

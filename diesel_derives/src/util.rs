@@ -5,6 +5,19 @@ use syn::{parenthesized, Data, DeriveInput, GenericArgument, Ident, Type};
 
 use model::Model;
 
+pub const COLUMN_NAME_NOTE: &str = "column_name = foo";
+pub const SQL_TYPE_NOTE: &str = "sql_type = Foo";
+pub const SERIALIZE_AS_NOTE: &str = "serialize_as = Foo";
+pub const DESERIALIZE_AS_NOTE: &str = "deserialize_as = Foo";
+pub const TABLE_NAME_NOTE: &str = "table_name = foo";
+pub const TREAT_NONE_AS_DEFAULT_VALUE_NOTE: &str = "treat_none_as_default_value = true";
+pub const TREAT_NONE_AS_NULL_NOTE: &str = "treat_none_as_null = true";
+pub const BELONGS_TO_NOTE: &str = "belongs_to(Foo, foreign_key = foo_id)";
+pub const MYSQL_TYPE_NOTE: &str = "mysql_type(name = \"foo\")";
+pub const SQLITE_TYPE_NOTE: &str = "sqlite_type(name = \"foo\")";
+pub const POSTGRES_TYPE_NOTE: &str = "postgres_type(name = \"foo\", schema = \"public\")";
+pub const POSTGRES_TYPE_NOTE_ID: &str = "postgres_type(oid = 37, array_oid = 54)";
+
 pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> ! {
     let prefix = if valid.len() == 1 { "" } else { " one of" };
 
@@ -16,16 +29,28 @@ pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> ! {
     )
 }
 
-pub fn parse_eq<T: Parse>(input: ParseStream) -> Result<T> {
+pub fn parse_eq<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
     if input.is_empty() {
-        abort!(input.span(), "unexpected end of input, expected `=`");
+        abort!(
+            input.span(),
+            "unexpected end of input, expected `=`";
+            help = "The correct format looks like `#[diesel({})]`", help
+        );
     }
 
     input.parse::<Eq>()?;
     input.parse()
 }
 
-pub fn parse_paren<T: Parse>(input: ParseStream) -> Result<T> {
+pub fn parse_paren<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
+    if input.is_empty() {
+        abort!(
+            input.span(),
+            "unexpected end of input, expected parentheses";
+            help = "The correct format looks like `#[diesel({})]`", help
+        );
+    }
+
     let content;
     parenthesized!(content in input);
     content.parse()

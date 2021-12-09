@@ -20,6 +20,9 @@ error: expected `treat_none_as_null`
    |                     ^^^^
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(treat_none_as_null = true)]`
+
   --> $DIR/deprecated_changeset_options.rs:45:21
    |
 45 | #[changeset_options(treat_none_as_null)]

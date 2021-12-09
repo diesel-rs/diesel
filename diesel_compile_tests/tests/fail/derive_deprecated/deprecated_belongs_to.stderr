@@ -1,4 +1,7 @@
 error: unexpected end of input, expected parentheses
+
+  = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+
   --> $DIR/deprecated_belongs_to.rs:29:3
    |
 29 | #[belongs_to]
@@ -23,6 +26,9 @@ error: expected identifier
    |              ^^^^^^
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+
   --> $DIR/deprecated_belongs_to.rs:57:14
    |
 57 | #[belongs_to(parent)]
@@ -56,6 +62,9 @@ error: expected `foreign_key`
    |                   ^^^^
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+
   --> $DIR/deprecated_belongs_to.rs:99:19
    |
 99 | #[belongs_to(Bar, foreign_key)]

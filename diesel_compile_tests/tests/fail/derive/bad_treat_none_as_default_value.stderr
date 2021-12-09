@@ -5,6 +5,9 @@ error: expected `=`
    |                                     ^^
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(treat_none_as_default_value = true)]`
+
   --> $DIR/bad_treat_none_as_default_value.rs:21:9
    |
 21 | #[diesel(treat_none_as_default_value)]

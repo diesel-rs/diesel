@@ -1,4 +1,7 @@
 error: unexpected end of input, expected parentheses
+
+  = help: The correct format looks like `#[diesel(postgres_type(name = "foo", schema = "public"))]`
+
  --> $DIR/bad_postgres_type.rs:6:9
   |
 6 | #[diesel(postgres_type)]
@@ -17,6 +20,9 @@ error: expected parentheses
    |                        ^
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(postgres_type(name = "foo", schema = "public"))]`
+
   --> $DIR/bad_postgres_type.rs:18:23
    |
 18 | #[diesel(postgres_type(name))]
@@ -78,3 +84,30 @@ error: unknown attribute, expected one of `oid`, `array_oid`, `name`, `schema`
    |
 54 | #[diesel(postgres_type(what))]
    |                        ^^^^
+
+error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(postgres_type(name = "foo", schema = "public"))]`
+
+  --> $DIR/bad_postgres_type.rs:58:23
+   |
+58 | #[diesel(postgres_type(schema))]
+   |                       ^^^^^^^^
+
+error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+
+  --> $DIR/bad_postgres_type.rs:62:23
+   |
+62 | #[diesel(postgres_type(oid))]
+   |                       ^^^^^
+
+error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
+
+  --> $DIR/bad_postgres_type.rs:66:23
+   |
+66 | #[diesel(postgres_type(array_oid))]
+   |                       ^^^^^^^^^^^

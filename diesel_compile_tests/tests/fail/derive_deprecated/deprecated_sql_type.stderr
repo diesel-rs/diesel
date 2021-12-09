@@ -2,6 +2,9 @@ warning: #[sql_type] attribute form is deprecated
   = help: use `#[diesel(sql_type = foo)]` instead
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(sql_type = Foo)]`
+
   --> $DIR/deprecated_sql_type.rs:10:3
    |
 10 | #[sql_type]
@@ -32,6 +35,9 @@ warning: #[sql_type] attribute form is deprecated
   = help: use `#[diesel(sql_type = foo)]` instead
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(sql_type = Foo)]`
+
   --> $DIR/deprecated_sql_type.rs:33:7
    |
 33 |     #[sql_type]

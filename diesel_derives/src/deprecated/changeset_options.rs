@@ -3,6 +3,7 @@ use syn::parse::{ParseStream, Result};
 use syn::{parenthesized, Ident, LitBool};
 
 use deprecated::utils::parse_eq_and_lit_str;
+use util::TREAT_NONE_AS_NULL_NOTE;
 
 pub fn parse_changeset_options(name: Ident, input: ParseStream) -> Result<(Ident, LitBool)> {
     if input.is_empty() {
@@ -20,7 +21,7 @@ pub fn parse_changeset_options(name: Ident, input: ParseStream) -> Result<(Ident
     }
 
     Ok((name.clone(), {
-        let lit_str = parse_eq_and_lit_str(name, &content)?;
+        let lit_str = parse_eq_and_lit_str(name, &content, TREAT_NONE_AS_NULL_NOTE)?;
         lit_str.parse().unwrap_or_abort()
     }))
 }

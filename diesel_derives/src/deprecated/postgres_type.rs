@@ -5,7 +5,7 @@ use syn::{parenthesized, Ident, LitInt, LitStr};
 
 use deprecated::utils::parse_eq_and_lit_str;
 use parsers::PostgresType;
-use util::unknown_attribute;
+use util::{unknown_attribute, POSTGRES_TYPE_NOTE};
 
 enum Attr {
     Oid(Ident, LitInt),
@@ -20,16 +20,16 @@ impl Parse for Attr {
 
         match &*name_str {
             "oid" => Ok(Attr::Oid(name.clone(), {
-                let lit_str = parse_eq_and_lit_str(name, input)?;
+                let lit_str = parse_eq_and_lit_str(name, input, POSTGRES_TYPE_NOTE)?;
                 lit_str.parse()?
             })),
             "array_oid" => Ok(Attr::ArrayOid(name.clone(), {
-                let lit_str = parse_eq_and_lit_str(name, input)?;
+                let lit_str = parse_eq_and_lit_str(name, input, POSTGRES_TYPE_NOTE)?;
                 lit_str.parse()?
             })),
             "type_name" => Ok(Attr::TypeName(
                 name.clone(),
-                parse_eq_and_lit_str(name, input)?,
+                parse_eq_and_lit_str(name, input, POSTGRES_TYPE_NOTE)?,
             )),
 
             _ => unknown_attribute(&name, &["oid", "array_oid", "type_name"]),
@@ -39,7 +39,11 @@ impl Parse for Attr {
 
 pub fn parse_postgres_type(name: Ident, input: ParseStream) -> Result<PostgresType> {
     if input.is_empty() {
-        abort!(name.span(), "unexpected end of input, expected parentheses");
+        abort!(
+            name.span(),
+            "unexpected end of input, expected parentheses";
+            help = "The correct format looks like `#[diesel({})]`", POSTGRES_TYPE_NOTE
+        );
     }
 
     let content;

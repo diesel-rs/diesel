@@ -54,4 +54,16 @@ struct Type12;
 #[diesel(postgres_type(what))]
 struct Type13;
 
+#[derive(SqlType)]
+#[diesel(postgres_type(schema))]
+struct Type14;
+
+#[derive(SqlType)]
+#[diesel(postgres_type(oid))]
+struct Type15;
+
+#[derive(SqlType)]
+#[diesel(postgres_type(array_oid))]
+struct Type16;
+
 fn main() {}

@@ -1,4 +1,7 @@
 error: unexpected end of input, expected parentheses
+
+  = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+
   --> $DIR/bad_belongs_to.rs:29:9
    |
 29 | #[diesel(belongs_to)]
@@ -29,6 +32,9 @@ error: expected `,`
    |                         ^
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
+
   --> $DIR/bad_belongs_to.rs:64:20
    |
 64 | #[diesel(belongs_to(Bar, foreign_key))]

@@ -3,7 +3,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitStr};
 
-use util::{parse_eq, unknown_attribute};
+use util::{parse_eq, unknown_attribute, SQLITE_TYPE_NOTE};
 
 enum Attr {
     Name(Ident, LitStr),
@@ -15,7 +15,7 @@ impl Parse for Attr {
         let name_str = name.to_string();
 
         match &*name_str {
-            "name" => Ok(Attr::Name(name, parse_eq(input)?)),
+            "name" => Ok(Attr::Name(name, parse_eq(input, SQLITE_TYPE_NOTE)?)),
 
             _ => unknown_attribute(&name, &["name"]),
         }

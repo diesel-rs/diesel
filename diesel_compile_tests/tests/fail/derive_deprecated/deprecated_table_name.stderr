@@ -2,6 +2,9 @@ warning: #[table_name] attribute form is deprecated
   = help: use `#[diesel(table_name = users)]` instead
 
 error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(table_name = foo)]`
+
   --> $DIR/deprecated_table_name.rs:12:3
    |
 12 | #[table_name]

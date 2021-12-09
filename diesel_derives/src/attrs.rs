@@ -11,7 +11,11 @@ use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, Type};
 
 use deprecated::ParseDeprecated;
 use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
-use util::{parse_eq, parse_paren, unknown_attribute};
+use util::{
+    parse_eq, parse_paren, unknown_attribute, BELONGS_TO_NOTE, COLUMN_NAME_NOTE,
+    DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE,
+    SQL_TYPE_NOTE, TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
+};
 
 pub enum FieldAttr {
     Embed(Ident),
@@ -86,10 +90,19 @@ impl Parse for FieldAttr {
         match &*name_str {
             "embed" => Ok(FieldAttr::Embed(name)),
 
-            "column_name" => Ok(FieldAttr::ColumnName(name, parse_eq(input)?)),
-            "sql_type" => Ok(FieldAttr::SqlType(name, parse_eq(input)?)),
-            "serialize_as" => Ok(FieldAttr::SerializeAs(name, parse_eq(input)?)),
-            "deserialize_as" => Ok(FieldAttr::DeserializeAs(name, parse_eq(input)?)),
+            "column_name" => Ok(FieldAttr::ColumnName(
+                name,
+                parse_eq(input, COLUMN_NAME_NOTE)?,
+            )),
+            "sql_type" => Ok(FieldAttr::SqlType(name, parse_eq(input, SQL_TYPE_NOTE)?)),
+            "serialize_as" => Ok(FieldAttr::SerializeAs(
+                name,
+                parse_eq(input, SERIALIZE_AS_NOTE)?,
+            )),
+            "deserialize_as" => Ok(FieldAttr::DeserializeAs(
+                name,
+                parse_eq(input, DESERIALIZE_AS_NOTE)?,
+            )),
 
             _ => unknown_attribute(
                 &name,
@@ -133,17 +146,36 @@ impl Parse for StructAttr {
             "not_sized" => Ok(StructAttr::NotSized(name)),
             "foreign_derive" => Ok(StructAttr::ForeignDerive(name)),
 
-            "table_name" => Ok(StructAttr::TableName(name, parse_eq(input)?)),
-            "sql_type" => Ok(StructAttr::SqlType(name, parse_eq(input)?)),
-            "treat_none_as_default_value" => {
-                Ok(StructAttr::TreatNoneAsDefaultValue(name, parse_eq(input)?))
-            }
-            "treat_none_as_null" => Ok(StructAttr::TreatNoneAsNull(name, parse_eq(input)?)),
+            "table_name" => Ok(StructAttr::TableName(
+                name,
+                parse_eq(input, TABLE_NAME_NOTE)?,
+            )),
+            "sql_type" => Ok(StructAttr::SqlType(name, parse_eq(input, SQL_TYPE_NOTE)?)),
+            "treat_none_as_default_value" => Ok(StructAttr::TreatNoneAsDefaultValue(
+                name,
+                parse_eq(input, TREAT_NONE_AS_DEFAULT_VALUE_NOTE)?,
+            )),
+            "treat_none_as_null" => Ok(StructAttr::TreatNoneAsNull(
+                name,
+                parse_eq(input, TREAT_NONE_AS_NULL_NOTE)?,
+            )),
 
-            "belongs_to" => Ok(StructAttr::BelongsTo(name, parse_paren(input)?)),
-            "mysql_type" => Ok(StructAttr::MysqlType(name, parse_paren(input)?)),
-            "sqlite_type" => Ok(StructAttr::SqliteType(name, parse_paren(input)?)),
-            "postgres_type" => Ok(StructAttr::PostgresType(name, parse_paren(input)?)),
+            "belongs_to" => Ok(StructAttr::BelongsTo(
+                name,
+                parse_paren(input, BELONGS_TO_NOTE)?,
+            )),
+            "mysql_type" => Ok(StructAttr::MysqlType(
+                name,
+                parse_paren(input, MYSQL_TYPE_NOTE)?,
+            )),
+            "sqlite_type" => Ok(StructAttr::SqliteType(
+                name,
+                parse_paren(input, SQLITE_TYPE_NOTE)?,
+            )),
+            "postgres_type" => Ok(StructAttr::PostgresType(
+                name,
+                parse_paren(input, POSTGRES_TYPE_NOTE)?,
+            )),
             "primary_key" => Ok(StructAttr::PrimaryKey(name, {
                 let content;
                 parenthesized!(content in input);

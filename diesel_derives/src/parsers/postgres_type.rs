@@ -4,7 +4,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitInt, LitStr};
 
-use util::{parse_eq, unknown_attribute};
+use util::{parse_eq, unknown_attribute, POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID};
 
 enum Attr {
     Oid(Ident, LitInt),
@@ -19,10 +19,13 @@ impl Parse for Attr {
         let name_str = name.to_string();
 
         match &*name_str {
-            "oid" => Ok(Attr::Oid(name, parse_eq(input)?)),
-            "array_oid" => Ok(Attr::ArrayOid(name, parse_eq(input)?)),
-            "name" => Ok(Attr::Name(name, parse_eq(input)?)),
-            "schema" => Ok(Attr::Schema(name, parse_eq(input)?)),
+            "oid" => Ok(Attr::Oid(name, parse_eq(input, POSTGRES_TYPE_NOTE_ID)?)),
+            "array_oid" => Ok(Attr::ArrayOid(
+                name,
+                parse_eq(input, POSTGRES_TYPE_NOTE_ID)?,
+            )),
+            "name" => Ok(Attr::Name(name, parse_eq(input, POSTGRES_TYPE_NOTE)?)),
+            "schema" => Ok(Attr::Schema(name, parse_eq(input, POSTGRES_TYPE_NOTE)?)),
 
             _ => unknown_attribute(&name, &["oid", "array_oid", "name", "schema"]),
         }
