@@ -39,7 +39,10 @@ impl Parse for SqliteType {
         if let Some(name) = name {
             Ok(SqliteType { name })
         } else {
-            abort!(input.span(), "expected attribute `name`");
+            abort!(
+                input.span(), "expected attribute `name`";
+                help = "The correct format looks like #[diesel({})]", SQLITE_TYPE_NOTE
+            );
         }
     }
 }

@@ -70,6 +70,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for the `FROM ONLY <table>` clause in Postgresql
 
+* Added support for all the derive attributes being inside `#[diesel(...)]`
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -243,7 +245,19 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * `diesel::dsl::any` and `diesel::dsl::all` are now deprecated in 
    favour of `ExpressionMethods::eq_any()` and `ExpressionMethods::ne_all()`
 
+* All the diesel derive attributes that are not inside `#[diesel(...)]`
+
 ### Upgrade Notes
+
+### Derive attributes
+<a name="2-0-0-derive-attributes"></a>
+
+We have updated all of our diesel derive attributes to follow the patterns that are used
+widely in the rust ecosystem. This means that all of them need to be wrapped by `#[diesel()]` now. And you can specify multiple attributes on the same line now separated by `,`.
+
+This is backward compatible and thus all of your old attributes will still work, but with
+warnings. The attributes can be upgraded by either looking at the warnings or by reading
+diesel derive documentation reference.
 
 #### Replacement of `NonAggregate` with `ValidGrouping`
 <a name="2-0-0-upgrade-non-aggregate"></a>

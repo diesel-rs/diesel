@@ -8,6 +8,9 @@ error: unexpected end of input, expected parentheses
   |         ^^^^^^^^^^^^^
 
 error: expected attribute `name`
+
+  = help: The correct format looks like #[diesel(sqlite_type(name = "foo"))]
+
   --> $DIR/bad_sqlite_type.rs:10:21
    |
 10 | #[diesel(sqlite_type())]

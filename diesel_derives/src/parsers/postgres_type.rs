@@ -65,11 +65,22 @@ impl PostgresType {
         name: Option<LitStr>,
         schema: Option<LitStr>,
     ) -> Result<Self> {
+        let help = format!(
+            "The correct format looks like either `#[diesel({})]` or `#[diesel({})]`",
+            POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID
+        );
+
         if let Some(name) = name {
             if oid.is_some() {
-                abort!(oid, "unexpected `oid` when `name` is present");
+                abort!(
+                    oid, "unexpected `oid` when `name` is present";
+                    help = "{}", help
+                );
             } else if array_oid.is_some() {
-                abort!(array_oid, "unexpected `array_oid` when `name` is present");
+                abort!(
+                    array_oid, "unexpected `array_oid` when `name` is present";
+                    help = "{}", help
+                );
             }
 
             Ok(PostgresType::Lookup(name, schema))
@@ -83,7 +94,8 @@ impl PostgresType {
         } else {
             abort!(
                 input.span(),
-                "expected `oid` and `array_oid` attribute or `name` attribute"
+                "expected `oid` and `array_oid` attribute or `name` attribute";
+                help = "{}", help
             );
         }
     }

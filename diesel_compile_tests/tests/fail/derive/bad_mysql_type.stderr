@@ -8,6 +8,9 @@ error: unexpected end of input, expected parentheses
   |         ^^^^^^^^^^^^
 
 error: expected attribute `name`
+
+  = help: The correct format looks like #[diesel(mysql_type(name = "foo"))]
+
   --> $DIR/bad_mysql_type.rs:10:20
    |
 10 | #[diesel(mysql_type())]

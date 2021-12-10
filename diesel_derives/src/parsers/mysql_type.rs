@@ -39,7 +39,10 @@ impl Parse for MysqlType {
         if let Some(name) = name {
             Ok(MysqlType { name })
         } else {
-            abort!(input.span(), "expected attribute `name`");
+            abort!(
+                input.span(), "expected attribute `name`";
+                help = "The correct format looks like #[diesel({})]", MYSQL_TYPE_NOTE
+            );
         }
     }
 }
