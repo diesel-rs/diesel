@@ -10,16 +10,15 @@ table! {
 }
 
 #[derive(Insertable)]
-#[table_name = "users"]
-pub struct NewUser(#[column_name = "name"] String);
+#[diesel(table_name = users)]
+pub struct NewUser(#[diesel(column_name = name)] String);
 
 fn main() {
     use self::users::dsl::*;
 
     let mut connection = PgConnection::establish("").unwrap();
 
-    let query = delete(users.filter(name.eq("Bill")))
-        .returning(id);
+    let query = delete(users.filter(name.eq("Bill"))).returning(id);
     query.returning(name);
 
     let query = insert_into(users)
@@ -27,8 +26,6 @@ fn main() {
         .returning(id);
     query.returning(name);
 
-    let query = update(users)
-        .set(name.eq("Bill"))
-        .returning(id);
+    let query = update(users).set(name.eq("Bill")).returning(id);
     query.returning(name);
 }

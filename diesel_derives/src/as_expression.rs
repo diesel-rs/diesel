@@ -1,30 +1,30 @@
-use proc_macro2;
-use syn;
+use proc_macro2::TokenStream;
+use syn::DeriveInput;
 
-use meta::*;
-use util::*;
+use model::Model;
+use util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
-pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
-    let flags =
-        MetaItem::with_name(&item.attrs, "diesel").unwrap_or_else(|| MetaItem::empty("diesel"));
-    let is_sized = !flags.has_flag("not_sized");
+pub fn derive(item: DeriveInput) -> TokenStream {
+    let model = Model::from_item(&item, true);
 
-    let sql_types = MetaItem::all_with_name(&item.attrs, "sql_type");
-    let any_sql_types = !sql_types.is_empty();
-    let sql_types = sql_types
-        .into_iter()
-        .filter_map(|attr| attr.ty_value().map_err(Diagnostic::emit).ok());
+    if model.sql_types.is_empty() {
+        abort_call_site!(
+            "At least one `sql_type` is needed for deriving `AsExpression` on a structure."
+        );
+    }
+
+    let struct_ty = ty_for_foreign_derive(&item, &model);
 
     let (impl_generics, ..) = item.generics.split_for_impl();
     let lifetimes = item.generics.lifetimes().collect::<Vec<_>>();
     let ty_params = item.generics.type_params().collect::<Vec<_>>();
     let const_params = item.generics.const_params().collect::<Vec<_>>();
-    let struct_ty = ty_for_foreign_derive(&item, &flags)?;
 
-    let tokens = sql_types.map(|sql_type| {
+    let tokens = model.sql_types.iter().map(|sql_type| {
         let lifetimes = &lifetimes;
         let ty_params = &ty_params;
         let const_params = &const_params;
+
         let tokens = quote!(
             impl<'expr, #(#lifetimes,)* #(#ty_params,)* #(#const_params,)*> AsExpression<#sql_type>
                 for &'expr #struct_ty
@@ -77,7 +77,10 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 }
             }
         );
-        if is_sized {
+
+        if model.not_sized {
+            tokens
+        } else {
             quote!(
                 #tokens
 
@@ -97,21 +100,15 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                     }
                 }
             )
-        } else {
-            tokens
         }
     });
 
-    if any_sql_types {
-        Ok(wrap_in_dummy_mod(quote! {
-            use diesel::expression::AsExpression;
-            use diesel::expression::bound::Bound;
-            use diesel::sql_types::Nullable;
-            use diesel::serialize::{self, ToSql, Output};
+    wrap_in_dummy_mod(quote! {
+        use diesel::expression::AsExpression;
+        use diesel::expression::bound::Bound;
+        use diesel::sql_types::Nullable;
+        use diesel::serialize::{self, ToSql, Output};
 
-            #(#tokens)*
-        }))
-    } else {
-        Ok(quote!())
-    }
+        #(#tokens)*
+    })
 }

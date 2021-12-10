@@ -11,9 +11,10 @@ autotests = false
 include = ["src/**/*", "LICENSE-*"]
 
 [dependencies]
-syn = { version = "1.0.1", features = ["full", "fold"] }
-quote = "1"
-proc-macro2 = "1"
+syn = { version = "1.0.73", features = ["full", "fold"] }
+quote = "1.0.9"
+proc-macro2 = "1.0.27"
+proc-macro-error = "1.0.4"
 
 [dev-dependencies]
 cfg-if = "1"

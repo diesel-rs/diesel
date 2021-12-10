@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use diesel::*;
 use diesel::upsert::*;
+use diesel::*;
 
 table! {
     users {
@@ -18,8 +18,8 @@ table! {
 }
 
 #[derive(Insertable)]
-#[table_name = "users"]
-pub struct NewUser(#[column_name = "name"] &'static str);
+#[diesel(table_name = users)]
+pub struct NewUser(#[diesel(column_name = name)] &'static str);
 
 #[allow(deprecated)]
 fn main() {
@@ -27,7 +27,12 @@ fn main() {
     let mut connection = PgConnection::establish("postgres://localhost").unwrap();
 
     // Valid update as sanity check
-    insert_into(users).values(&NewUser("Sean")).on_conflict(id).do_update().set(name.eq("Sean")).execute(&mut connection);
+    insert_into(users)
+        .values(&NewUser("Sean"))
+        .on_conflict(id)
+        .do_update()
+        .set(name.eq("Sean"))
+        .execute(&mut connection);
 
     // No set clause
     insert_into(users)
@@ -42,7 +47,6 @@ fn main() {
         .on_conflict(id)
         .do_update()
         .set(posts::title.eq("Sean"));
-
 
     // Update column with value that is not selectable
     insert_into(users)

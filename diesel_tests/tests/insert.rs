@@ -368,13 +368,13 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
 }
 
 #[derive(Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct BaldUser {
     name: String,
 }
 
 #[derive(Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct BorrowedUser<'a> {
     name: &'a str,
 }

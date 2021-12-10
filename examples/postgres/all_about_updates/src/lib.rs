@@ -177,7 +177,7 @@ fn examine_sql_from_update_post_fields() {
 
 pub fn update_with_option(conn: &mut PgConnection) -> QueryResult<usize> {
     #[derive(AsChangeset)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     struct PostForm<'a> {
         title: Option<&'a str>,
         body: Option<&'a str>,
@@ -194,7 +194,7 @@ pub fn update_with_option(conn: &mut PgConnection) -> QueryResult<usize> {
 #[test]
 fn examine_sql_from_update_with_option() {
     #[derive(AsChangeset)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     struct PostForm<'a> {
         title: Option<&'a str>,
         body: Option<&'a str>,

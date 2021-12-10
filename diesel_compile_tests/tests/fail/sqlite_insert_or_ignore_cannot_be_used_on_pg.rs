@@ -9,7 +9,7 @@ table! {
 }
 
 #[derive(Insertable)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 struct User {
     id: i32,
 }

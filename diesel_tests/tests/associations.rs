@@ -54,7 +54,7 @@ mod eager_loading_with_string_keys {
     }
 
     #[derive(Queryable, Identifiable, Debug, PartialEq, Clone, Associations)]
-    #[belongs_to(User)]
+    #[diesel(belongs_to(User))]
     pub struct Post {
         id: String,
         user_id: String,
@@ -178,8 +178,8 @@ fn associations_can_be_grouped_multiple_levels_deep() {
 #[test]
 fn self_referencing_associations() {
     #[derive(Insertable, Queryable, Associations, Identifiable, Debug, Clone, Copy, PartialEq)]
-    #[table_name = "trees"]
-    #[belongs_to(Tree, foreign_key = "parent_id")]
+    #[diesel(table_name = trees)]
+    #[diesel(belongs_to(Tree, foreign_key = parent_id))]
     struct Tree {
         id: i32,
         parent_id: Option<i32>,
@@ -284,15 +284,15 @@ fn custom_foreign_key() {
     allow_tables_to_appear_in_same_query!(users1, posts1);
 
     #[derive(Clone, Debug, PartialEq, Identifiable, Queryable)]
-    #[table_name = "users1"]
+    #[diesel(table_name = users1)]
     pub struct User {
         id: i32,
         name: String,
     }
 
     #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable)]
-    #[belongs_to(User, foreign_key = "belongs_to_user")]
-    #[table_name = "posts1"]
+    #[diesel(belongs_to(User, foreign_key = belongs_to_user))]
+    #[diesel(table_name = posts1)]
     pub struct Post {
         id: i32,
         belongs_to_user: i32,

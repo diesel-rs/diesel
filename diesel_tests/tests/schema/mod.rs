@@ -22,7 +22,7 @@ include!("mysql_schema.rs");
     QueryableByName,
     Selectable,
 )]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -52,8 +52,8 @@ impl User {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Selectable)]
-#[table_name = "users"]
-pub struct UserName(#[column_name = "name"] pub String);
+#[diesel(table_name = users)]
+pub struct UserName(#[diesel(column_name = name)] pub String);
 
 impl UserName {
     pub fn new(name: &str) -> Self {
@@ -62,7 +62,7 @@ impl UserName {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[belongs_to(Post)]
+#[diesel(belongs_to(Post))]
 pub struct Comment {
     id: i32,
     post_id: i32,
@@ -80,10 +80,10 @@ impl Comment {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable)]
-#[belongs_to(User)]
-#[belongs_to(Post)]
-#[table_name = "followings"]
-#[primary_key(user_id, post_id)]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(Post))]
+#[diesel(table_name = followings)]
+#[diesel(primary_key(user_id, post_id))]
 pub struct Following {
     pub user_id: i32,
     pub post_id: i32,
@@ -98,7 +98,7 @@ mod backend_specifics;
 pub use self::backend_specifics::*;
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset, Selectable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
@@ -114,7 +114,7 @@ impl NewUser {
 }
 
 #[derive(Debug, PartialEq, Eq, Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct DefaultColorUser {
     pub name: String,
     pub hair_color: Option<Option<String>>,
@@ -130,7 +130,7 @@ impl DefaultColorUser {
 }
 
 #[derive(Insertable)]
-#[table_name = "posts"]
+#[diesel(table_name = posts)]
 pub struct NewPost {
     user_id: i32,
     title: String,
@@ -148,14 +148,14 @@ impl NewPost {
 }
 
 #[derive(Debug, Clone, Copy, Insertable)]
-#[table_name = "comments"]
+#[diesel(table_name = comments)]
 pub struct NewComment<'a>(
-    #[column_name = "post_id"] pub i32,
-    #[column_name = "text"] pub &'a str,
+    #[diesel(column_name = post_id)] pub i32,
+    #[diesel(column_name = text)] pub &'a str,
 );
 
 #[derive(PartialEq, Eq, Debug, Clone, Insertable)]
-#[table_name = "fk_tests"]
+#[diesel(table_name = fk_tests)]
 pub struct FkTest {
     id: i32,
     fk_id: i32,
@@ -171,17 +171,17 @@ impl FkTest {
 }
 
 #[derive(Queryable, Insertable)]
-#[table_name = "nullable_table"]
+#[diesel(table_name = nullable_table)]
 pub struct NullableColumn {
     id: i32,
     value: Option<i32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations)]
-#[table_name = "likes"]
-#[primary_key(user_id, comment_id)]
-#[belongs_to(User)]
-#[belongs_to(Comment)]
+#[diesel(table_name = likes)]
+#[diesel(primary_key(user_id, comment_id))]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(Comment))]
 pub struct Like {
     pub user_id: i32,
     pub comment_id: i32,

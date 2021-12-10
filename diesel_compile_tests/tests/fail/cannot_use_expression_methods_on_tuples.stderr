@@ -5,9 +5,9 @@ error[E0599]: the method `is_not_null` exists for tuple `(columns::id, columns::
    |                             ^^^^^^^^^^^ method cannot be called on `(columns::id, columns::name)` due to unsatisfied trait bounds
    |
    = note: the following trait bounds were not satisfied:
-           `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
            which is required by `(columns::id, columns::name): diesel::ExpressionMethods`
-           `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
            which is required by `&(columns::id, columns::name): diesel::ExpressionMethods`
            `&mut (columns::id, columns::name): diesel::Expression`
            which is required by `&mut (columns::id, columns::name): diesel::ExpressionMethods`
@@ -19,9 +19,9 @@ error[E0599]: the method `eq_any` exists for tuple `(columns::id, columns::name)
    |                             ^^^^^^ method cannot be called on `(columns::id, columns::name)` due to unsatisfied trait bounds
    |
    = note: the following trait bounds were not satisfied:
-           `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
            which is required by `(columns::id, columns::name): diesel::ExpressionMethods`
-           `(diesel::sql_types::Integer, diesel::sql_types::Text): SingleValue`
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
            which is required by `&(columns::id, columns::name): diesel::ExpressionMethods`
            `&mut (columns::id, columns::name): diesel::Expression`
            which is required by `&mut (columns::id, columns::name): diesel::ExpressionMethods`

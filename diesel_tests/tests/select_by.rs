@@ -64,7 +64,7 @@ fn selecting_columns_and_tables_with_reserved_names() {
         .unwrap();
 
     #[derive(Debug, PartialEq, Queryable, Selectable)]
-    #[table_name = "select"]
+    #[diesel(table_name = select)]
     struct Select {
         join: i32,
     }
@@ -117,7 +117,7 @@ fn selection_using_subselect() {
     connection.execute(&query).unwrap();
 
     #[derive(Debug, PartialEq, Queryable, Selectable)]
-    struct Post(#[column_name = "title"] String);
+    struct Post(#[diesel(column_name = title)] String);
 
     let users = users::table
         .filter(users::name.eq("Sean"))

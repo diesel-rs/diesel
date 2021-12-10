@@ -1,0 +1,5 @@
+error: expected `,`
+  --> $DIR/bad_embed.rs:14:20
+   |
+14 |     #[diesel(embed = true)]
+   |                    ^

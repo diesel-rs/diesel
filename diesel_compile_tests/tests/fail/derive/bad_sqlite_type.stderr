@@ -1,0 +1,50 @@
+error: unexpected end of input, expected parentheses
+
+  = help: The correct format looks like `#[diesel(sqlite_type(name = "foo"))]`
+
+ --> $DIR/bad_sqlite_type.rs:6:9
+  |
+6 | #[diesel(sqlite_type)]
+  |         ^^^^^^^^^^^^^
+
+error: expected attribute `name`
+
+  = help: The correct format looks like #[diesel(sqlite_type(name = "foo"))]
+
+  --> $DIR/bad_sqlite_type.rs:10:21
+   |
+10 | #[diesel(sqlite_type())]
+   |                     ^^
+
+error: expected parentheses
+  --> $DIR/bad_sqlite_type.rs:14:22
+   |
+14 | #[diesel(sqlite_type = "foo")]
+   |                      ^
+
+error: unexpected end of input, expected `=`
+
+  = help: The correct format looks like `#[diesel(sqlite_type(name = "foo"))]`
+
+  --> $DIR/bad_sqlite_type.rs:18:21
+   |
+18 | #[diesel(sqlite_type(name))]
+   |                     ^^^^^^
+
+error: expected `=`
+  --> $DIR/bad_sqlite_type.rs:22:26
+   |
+22 | #[diesel(sqlite_type(name()))]
+   |                          ^^
+
+error: expected string literal
+  --> $DIR/bad_sqlite_type.rs:26:29
+   |
+26 | #[diesel(sqlite_type(name = Foo))]
+   |                             ^^^
+
+error: unknown attribute, expected `name`
+  --> $DIR/bad_sqlite_type.rs:30:22
+   |
+30 | #[diesel(sqlite_type(what))]
+   |                      ^^^^

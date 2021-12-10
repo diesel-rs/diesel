@@ -1,0 +1,7 @@
+error: At least one `belongs_to` is needed for deriving `Associations` on a structure.
+ --> $DIR/associations_without_belongs_to.rs:4:10
+  |
+4 | #[derive(Associations)]
+  |          ^^^^^^^^^^^^
+  |
+  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

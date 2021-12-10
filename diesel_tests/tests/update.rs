@@ -146,7 +146,7 @@ fn save_on_struct_with_primary_key_changes_that_struct() {
 #[test]
 fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
     #[derive(AsChangeset)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct Changes {
         hair_color: Option<String>,
         name: String,
@@ -171,7 +171,7 @@ fn sql_syntax_is_correct_when_option_field_comes_before_non_option() {
 #[test]
 fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
     #[derive(AsChangeset)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     struct Changes {
         user_id: i32,
         title: Option<String>,
@@ -208,7 +208,7 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
 #[should_panic(expected = "There are no changes to save.")]
 fn update_with_no_changes() {
     #[derive(AsChangeset)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct Changes {
         name: Option<String>,
         hair_color: Option<String>,
@@ -229,7 +229,7 @@ fn update_with_no_changes() {
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_no_changes_executes_do_nothing() {
     #[derive(AsChangeset)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct Changes {
         hair_color: Option<String>,
     }
@@ -249,7 +249,7 @@ fn upsert_with_no_changes_executes_do_nothing() {
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_no_changes_executes_do_nothing_owned() {
     #[derive(AsChangeset)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct Changes {
         hair_color: Option<String>,
     }

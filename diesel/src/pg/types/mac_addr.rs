@@ -14,7 +14,7 @@ mod foreign_derives {
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "MacAddr"]
+    #[diesel(sql_type = MacAddr)]
     struct ByteArrayProxy([u8; 6]);
 }
 

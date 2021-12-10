@@ -21,7 +21,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 /// in order, therefore two different instances of this type
 /// must be sortable
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
-#[sql_type = "Text"]
+#[diesel(sql_type = Text)]
 pub struct MigrationVersion<'a>(Cow<'a, str>);
 
 impl<'a> MigrationVersion<'a> {

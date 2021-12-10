@@ -1,0 +1,11 @@
+error: unknown attribute, expected one of `aggregate`, `not_sized`, `foreign_derive`, `table_name`, `sql_type`, `treat_none_as_default_value`, `treat_none_as_null`, `belongs_to`, `mysql_type`, `sqlite_type`, `postgres_type`, `primary_key`
+ --> $DIR/unknown_attribute.rs:5:10
+  |
+5 | #[diesel(what = true)]
+  |          ^^^^
+
+error: unknown attribute, expected one of `embed`, `column_name`, `sql_type`, `serialize_as`, `deserialize_as`
+  --> $DIR/unknown_attribute.rs:12:14
+   |
+12 |     #[diesel(what = true)]
+   |              ^^^^

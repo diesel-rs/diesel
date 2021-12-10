@@ -3,13 +3,13 @@ Deriving Traits in Depth
 
 Part of what makes Diesel's query builder so powerful is
 its ability to assist writing safe SQL queries in Rust.
-It enables this level of safety through implementing 
+It enables this level of safety through implementing
 a series of traits on your structs.
 Writing these implementations by hand can be very laborious,
 so Diesel offers custom derives.
 
 In this guide,
-we will cover each trait in detail in terms of its use cases 
+we will cover each trait in detail in terms of its use cases
 and usage considerations.
 To be able to use these derives,
 make sure you have `#[macro_use] extern crate diesel;` at the root of your project.
@@ -35,11 +35,11 @@ Diesel's code generation derives are for safely building SQL queries.
 - [Associations](#associations)
 
 ## Queryable
-A `Queryable` struct is one that represents the 
+A `Queryable` struct is one that represents the
 data returned from a database query.
 In many cases this may map exactly to the column structure of a single table,
 however there may be cases where you need to make a query that spans several tables and/or only uses
-a subset of columns. 
+a subset of columns.
 For this reason, it may be helpful to view `Queryable` structs as the *result* of your query.
 It is acceptable and often desirable to have multiple `Queryable` structs for the same database table.
 
@@ -131,7 +131,7 @@ When reading, take note of the values in the tuple(s).
 `Queryable` is trying to convert those four types into the types on our `User` struct.
 Our struct has the three String fields commented out,
 so it doesn't know what those `Text` columns are supposed to be converted to.
-Remember, `Queryable` structs represent the exact columns, value, 
+Remember, `Queryable` structs represent the exact columns, value,
 and ordering of your query's returned result,
 which we are violating here.
 `Queryable` is expecting a tuple that looks like `(i32, String, String, String)`,
@@ -147,7 +147,7 @@ Diesel provides some escape hatches to execute raw SQL queries.
 The problem with this is that Diesel can't ensure type safety
 and it's accessing fields by name instead of by index.
 This means that you can't deserialize the raw query result into a tuple or a regular struct.
-Adding [`#[derive(QueryableByName)]`][queryable_by_name_doc] to your struct means 
+Adding [`#[derive(QueryableByName)]`][queryable_by_name_doc] to your struct means
 that it will be able to be built from the result of a raw SQL query using the [`sql_query`] function.
 
 [`sql_query`]: https://docs.diesel.rs/diesel/fn.sql_query.html
@@ -157,11 +157,11 @@ The implementation of `QueryableByName` assumes that each field on your struct
 has a certain SQL type.
 It makes these assumptions based on the annotations you add to your struct.
 If your `QueryableByName` struct references a single table,
-you may annotate that struct with `#[table_name="my_table"]`.
+you may annotate that struct with `#[diesel(table_name = my_table)]`.
 `QueryableByName` will bind the struct fields to the SQL types it finds in your table's schema.
 
 You may also individually annotate each field on your struct
-with `#[sql_type="ColumnTypeHere"]`.
+with `#[diesel(sql_type = ColumnTypeHere)]`.
 If you're not using the `table_name` annotation,
 every field in your struct needs to have this annotation.
 When combining both `table_name` and `sql_type` annotations,
@@ -171,7 +171,7 @@ Diesel will override any fields using `sql_type` and pick the rest from the tabl
 If you have any fields whose type is a struct that also implements `QueryableByName`,
 you may add the `#[diesel(embed)]` annotation.
 
-### Example 
+### Example
 
 ```rust
 // File: src/models.rs
@@ -214,9 +214,9 @@ use diesel::sql_types::{Integer, Text};
 
 #[derive(Debug, QueryableByName)]
 pub struct UserEmail {
-    #[sql_type="Integer"]
+    #[diesel(sql_type = Integer)]
     pub id: i32,
-    #[sql_type="Text"]
+    #[diesel(sql_type = Text)]
     pub email: String,
 }
 
@@ -226,11 +226,11 @@ pub struct UserEmail {
 // `QueryableByName` will use the users table for
 // all other column types.
 #[derive(Debug, QueryableByName)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct UserName {
     pub first_name: String,
     pub last_name: String,
-    #[sql_type="Text"]
+    #[diesel(sql_type = Text)]
     pub full_name: String,
 }
 
@@ -238,7 +238,7 @@ pub struct UserName {
 // `QueryableByName` struct and all other fields
 // reference the posts table.
 #[derive(Debug, QueryableByName)]
-#[table_name="posts"]
+#[diesel(table_name = posts)]
 pub struct PostsWithUserName {
     #[diesel(embed)]
     pub user_name: UserName,
@@ -285,26 +285,26 @@ fn main() {
     let users_emails = sql_query("SELECT users.id, users.email FROM users ORDER BY id")
       .load::<UserEmail>(&connection);
 
-    println!("{:?}", users_emails); 
+    println!("{:?}", users_emails);
     //=> User { id: 1, email: "gordon.freeman@blackmesa.co" }
-    
+
     let joined = sql_query("
-      SELECT users.first_name, 
+      SELECT users.first_name,
              users.last_name,
              CONCAT(users.first_name, users.last_name) as full_name,
              posts.body,
-             posts.title 
-      FROM users 
+             posts.title
+      FROM users
       INNER JOIN posts ON users.id = posts.user_id
     ")
       .load::<PostsWithUserName>(&connection);
-    println!("{:?}", joined); 
+    println!("{:?}", joined);
     /* Output =>
         [
-            PostsWithUserName { 
-                user_name: UserName { first_name: "Gordon", last_name: "Freeman", full_name: "GordonFreeman" }, 
+            PostsWithUserName {
+                user_name: UserName { first_name: "Gordon", last_name: "Freeman", full_name: "GordonFreeman" },
                 title: "Thoughts on Tomorrow's Experiment",
-                body: "What could possibly go wrong? 
+                body: "What could possibly go wrong?
             }
         ]
     */
@@ -315,7 +315,7 @@ If we were to forget one of `QueryableByName`'s required struct annotations,
 we would see the following error.
 
 ```rust
-error: Your struct must either be annotated with `#[table_name = "foo"]` or have all of its fields annotated with `#[sql_type = "Integer"]`
+error: Your struct must either be annotated with `#[diesel(table_name = foo)]` or have all of its fields annotated with `#[diesel(sql_type = Integer)]`
  --> src/models.rs:4:17
   |
 4 | #[derive(Debug, QueryableByName)]
@@ -343,7 +343,7 @@ whose data you want to easily insert into your database.
 To implement `Insertable` on your struct,
 add the [`#[derive(Insertable)]`][insertable_doc] annotation.
 
-As with usual Diesel inserts, 
+As with usual Diesel inserts,
 you will still be using the [`.insert_into()`]
 method to generate a SQL `INSERT` statement for that table.
 You may chain [`.values()`] or [`.default_values()`]
@@ -362,9 +362,9 @@ On SQLite, one query will be performed per row.
 [insertable_doc]: https://docs.diesel.rs/diesel/prelude/trait.Insertable.html
 
 For `Insertable` structs, Diesel needs to know the corresponding table name.
-You must add the `#[table_name="some_table_name"]` attribute to your `Insertable` struct.
+You must add the `#[diesel(table_name = some_table_name)]` attribute to your `Insertable` struct.
 If your struct has different field names than the columns they reference,
-they may be annotated with `#[column_name = "some_column_name"]`.
+they may be annotated with `#[diesel(column_name = some_column_name)]`.
 
 Typically, you will not use `Queryable` and `Insertable` together.
 Thinking of web forms again, a new record wouldn't have such fields as
@@ -375,7 +375,7 @@ Thinking of web forms again, a new record wouldn't have such fields as
 ```rust
 // File: src/models.rs
 
-// Add serde, serde_derive, and serde_json to simulate 
+// Add serde, serde_derive, and serde_json to simulate
 // deserializing a web form.
 extern crate serde;
 extern crate serde_derive;
@@ -393,11 +393,11 @@ pub struct User {
 }
 
 #[derive(Deserialize, Insertable)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct NewUser<'a> {
     pub first_name: &'a str,
     pub last_name: &'a str,
-    #[column_name = "email"]
+    #[diesel(column_name = email)]
     pub electronic_mail: &'a str,
  }
 ```
@@ -446,11 +446,11 @@ The compiler reports that `Insertable` isn't implemented for our `NewUser` struc
 ## Identifiable
 
 Certain database operations,
-such as table [associations](#associations) and updates, 
+such as table [associations](#associations) and updates,
 require that rows be uniquely identifiable.
 Implementing the `Identifiable` trait on your struct will define which columns (primary keys)
 make your struct uniquely identifiable.
-To implement `Identifiable`, 
+To implement `Identifiable`,
 annotate your struct with [`#[derive(Identifiable)]`][identifiable_doc].
 
 [identifiable_doc]: https://docs.diesel.rs/diesel/associations/trait.Identifiable.html
@@ -459,7 +459,7 @@ By default, `Identifiable` will assume the primary key is a column named `id`.
 If your table's primary key is named differently,
 you can annotate the table with the attribute `#[primary_key(some_field_name)` or `#[primary_key(some_field_name, another_field_name)`.
 The `Identifiable` trait will assume that the annotated struct will be named in the singular form of the table it corresponds to.
-If the table name differs you may use the `#[table_name="some_table_name"]` attribute annotation.
+If the table name differs you may use the `#[diesel(table_name = some_table_name)]` attribute annotation.
 The `Identifiable` trait gives us the `id()` method on our models,
 which returns the value of our record's primary key.
 
@@ -484,7 +484,7 @@ pub struct User {
 }
 
 #[derive(Insertable)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct NewUser<'a> {
     pub first_name: &'a str,
     pub last_name: &'a str,
@@ -499,9 +499,9 @@ pub struct NewUser<'a> {
 use diesel::prelude::*;
 
 fn main() {
-    let new_user = NewUser { 
-        first_name: "Gordon", 
-        last_name: "Freeman", 
+    let new_user = NewUser {
+        first_name: "Gordon",
+        last_name: "Freeman",
         electronic_mail: "gordon.freeman@blackmesa.co",
     };
 
@@ -526,10 +526,10 @@ fn main() {
         first_name.eq("Alyx"),
         last_name.eq("Vance"),
     )).execute(&db_connection);
-    
+
     let updated_hero = users.first::<Users>(&db_connection)
         .expect("Error loading first user");
-    
+
     println!("Our Hero's updated name: {} {}", updated_hero.first_name, updated_hero.last_name);
     //=> Our Hero's updated name: Alyx Vance
 }
@@ -612,12 +612,12 @@ table! {
 `AsChangeset` will automatically assume you don't want to change your record's primary key,
 so it will ignore that column.
 If your primary key field name is different than `id`,
-you must annotate your struct with the `#[primary_key(your_key)]` attribute.
+you must annotate your struct with the `#[diesel(primary_key(your_key))]` attribute.
 
 By default, `AsChangeset` will assume that anytime a field has the value `None`,
 we do not want to assign any values to it (ignore).
 If we truly want to assign a `NULL` value,
-we can use the annotation `#[changeset_options(treat_none_as_null="true")]`.
+we can use the annotation `#[diesel(treat_none_as_null = true)]`.
 Be careful, as when you are setting your `Option<T>` fields to `None`,
 they will be `NULL` in the database instead of ignored.
 
@@ -648,7 +648,7 @@ pub struct User {
 }
 
 #[derive(Insertable)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct NewUser<'a> {
     pub first_name: &'a str,
     pub last_name: &'a str,
@@ -658,7 +658,7 @@ pub struct NewUser<'a> {
 // This struct will ignore any fields with the value None
 // and NULL any fields with the value Some(None) - all the behaviors we need.
 #[derive(AsChangeset)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct IgnoreNoneFieldsUpdateUser<'a> {
     pub first_name: &'a str,
     pub last_name: &'a str,
@@ -668,8 +668,8 @@ pub struct IgnoreNoneFieldsUpdateUser<'a> {
 // This struct will set the column to NULL if its value is None
 // Notice the treat_none_as_null option.
 #[derive(AsChangeset)]
-#[changeset_options(treat_none_as_null="true")]
-#[table_name="users"]
+#[diesel(treat_none_as_null = true)]
+#[diesel(table_name = users)]
 pub struct NullNoneFieldsUpdateUser<'a> {
     pub first_name: &'a str,
     pub last_name: &'a str,
@@ -684,9 +684,9 @@ pub struct NullNoneFieldsUpdateUser<'a> {
 use diesel::prelude::*;
 
 fn main() {
-    let new_user = NewUser { 
-        first_name: "Gordon", 
-        last_name: "Freeman", 
+    let new_user = NewUser {
+        first_name: "Gordon",
+        last_name: "Freeman",
         email: "gordon.freeman@blackmesa.co",
     };
 
@@ -714,19 +714,19 @@ fn main() {
 
     diesel::update(&hero).set(&ignore_fields_update)
         .execute(&db_connection);
-    
+
     let updated_hero = users.first(&db_connection)::<Users>
         .expect("Error loading first user");
 
-    println!("Name: {} {} Email: {}", updated_hero.first_name, 
-        updated_hero.last_name, 
+    println!("Name: {} {} Email: {}", updated_hero.first_name,
+        updated_hero.last_name,
         updated_hero.email.unwrap(),
     );
 
     // Output
-    //=> Name: Issac Kleiner Email: gordon.freeman@blackmesa.ca 
-    
-    // Update scenario 2 
+    //=> Name: Issac Kleiner Email: gordon.freeman@blackmesa.ca
+
+    // Update scenario 2
     let null_a_field_update = IgnoreNoneFieldsUpdateUser {
         first_name: "Issac",
         last_name: "Kleiner",
@@ -735,12 +735,12 @@ fn main() {
 
     diesel::update(&hero).set(&null_a_field_update)
         .execute(&db_connection);
-    
+
     let updated_hero = users.first::<User>(&db_connection)
         .expect("Error loading first user");
 
-    println!("Name: {} {} Email: {}", updated_hero.first_name, 
-        updated_hero.last_name, 
+    println!("Name: {} {} Email: {}", updated_hero.first_name,
+        updated_hero.last_name,
         updated_hero.email.unwrap_or("This field is now Nulled".to_string()),
     );
 
@@ -756,12 +756,12 @@ fn main() {
 
     diesel::update(&hero).set(&null_fields_update)
         .execute(&db_connection);
-    
+
     let updated_hero = users.first::<User>(&db_connection)
         .expect("Error loading first user");
 
-    println!("Name: {} {} Email: {:?}", updated_hero.first_name, 
-        updated_hero.last_name, 
+    println!("Name: {} {} Email: {:?}", updated_hero.first_name,
+        updated_hero.last_name,
         updated_hero.email.unwrap_or("This is a Null value".to_string()),
     );
 
@@ -780,7 +780,7 @@ error[E0277]: the trait bound `&diesel_demo_cli::models::IgnoreFieldsUpdateUser<
    |                                 ^^^ the trait `diesel::query_builder::AsChangeset` is not implemented for `&diesel_demo_cli::models::IgnoreFieldsUpdateUser<'_>`
 ```
 
-Here we get a clear message from Rust indicating that we're trying to use this 
+Here we get a clear message from Rust indicating that we're trying to use this
 struct without an implementation of `AsChangeset`.
 
 ## Associations
@@ -793,19 +793,19 @@ In this case, the parent is `User` and the child is `Posts`.
 
 To implement `Associations`, on the child struct
 use the [`#[derive(Associations)]`][associations_doc] annotation.
-You will also need the `#[belongs_to(ParentStruct)]` annotation to reference its parent.
+You will also need the `#[diesel(belongs_to(ParentStruct))]` annotation to reference its parent.
 
 [associations_doc]: https://docs.diesel.rs/diesel/associations/index.html
 
 Both parent and child structs must have the [Identifiable](#identifiable) trait implemented.
 By default, the foreign key column on the child should take the form of `parent_id`.
 If there is a custom foreign key,
-the `belongs_to` attribute must be written as 
-`#[belongs_to(ParentStruct, foreign_key="my_custom_key")]`.
+the `belongs_to` attribute must be written as
+`#[diesel(belongs_to(ParentStruct, foreign_key = my_custom_key))]`.
 
 Let's take a look at how we would set up the relation between a User and their Posts.
 
-### Example 
+### Example
 
 ```rust
 // Output of "diesel print-schema"
@@ -843,7 +843,7 @@ pub struct User {
 }
 
 #[derive(Insertable)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct NewUser<'a> {
     pub first_name: &'a str,
     pub last_name: &'a str,
@@ -851,7 +851,7 @@ pub struct NewUser<'a> {
  }
 
 #[derive(AsChangeset)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct UpdateUser<'a> {
     pub first_name: &'a str,
     pub last_name: &'a str,
@@ -860,7 +860,7 @@ pub struct UpdateUser<'a> {
 
 // Setting up the association to users
 #[derive(Identifiable, Associations, Queryable)]
-#[belongs_to(User)]
+#[diesel(belongs_to(User))]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -870,7 +870,7 @@ pub struct Post {
 
 // Lets us insert new posts
 #[derive(Insertable)]
-#[table_name="posts"]
+#[diesel(table_name = posts)]
 pub struct NewPost<'a> {
     pub user_id: i32,
     pub title: &'a str,
@@ -885,9 +885,9 @@ pub struct NewPost<'a> {
 use diesel::prelude::*;
 
 fn main() {
-    let new_user = NewUser { 
-        first_name: "Issac", 
-        last_name: "Kleiner", 
+    let new_user = NewUser {
+        first_name: "Issac",
+        last_name: "Kleiner",
         email: Some("issac.kleiner@blackmesa.co"),
     };
 
@@ -896,7 +896,7 @@ fn main() {
         .get_result::<User>(&db_connection)
         .expect("Error inserting row into database");
 
-    // Setting up our posts vec and pointing each post to the 
+    // Setting up our posts vec and pointing each post to the
     // most recently inserted user
     let post_list = vec![
         NewPost {

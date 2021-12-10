@@ -179,7 +179,7 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 /// #[derive(Queryable, PartialEq, Debug)]
 /// struct User {
 ///     id: i32,
-///     #[diesel(deserialize_as = "LowercaseString")]
+///     #[diesel(deserialize_as = LowercaseString)]
 ///     name: String,
 /// }
 ///
@@ -273,7 +273,7 @@ pub use diesel_derives::Queryable;
 /// # use diesel::sql_query;
 /// #
 /// #[derive(QueryableByName, PartialEq, Debug)]
-/// #[table_name = "users"]
+/// #[diesel(table_name = users)]
 /// struct User {
 ///     id: i32,
 ///     name: String,
@@ -323,10 +323,10 @@ pub use diesel_derives::Queryable;
 /// }
 ///
 /// #[derive(QueryableByName, PartialEq, Debug)]
-/// #[table_name = "users"]
+/// #[diesel(table_name = users)]
 /// struct User {
 ///     id: i32,
-///     #[diesel(deserialize_as = "LowercaseString")]
+///     #[diesel(deserialize_as = LowercaseString)]
 ///     name: String,
 /// }
 ///

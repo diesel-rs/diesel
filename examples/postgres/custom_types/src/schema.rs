@@ -2,7 +2,7 @@
 
 pub mod sql_types {
     #[derive(diesel::sql_types::SqlType)]
-    #[postgres(type_name = "language")]
+    #[diesel(postgres_type(name = "language"))]
     pub struct Language;
 }
 

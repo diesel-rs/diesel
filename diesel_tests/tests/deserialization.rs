@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use std::borrow::Cow;
 
 #[derive(Queryable, PartialEq, Debug, Selectable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 struct CowUser<'a> {
     id: i32,
     name: Cow<'a, str>,

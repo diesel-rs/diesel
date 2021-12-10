@@ -113,7 +113,7 @@ where
 /// }
 ///
 /// #[derive(AsChangeset, Identifiable)]
-/// #[table_name = "animals"]
+/// #[diesel(table_name = animals)]
 /// struct AnimalForm<'a> {
 ///     id: i32,
 ///     name: &'a str,

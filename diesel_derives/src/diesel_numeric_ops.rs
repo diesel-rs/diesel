@@ -1,9 +1,9 @@
-use proc_macro2;
-use syn;
+use proc_macro2::TokenStream;
+use syn::DeriveInput;
 
-use util::*;
+use util::wrap_in_dummy_mod;
 
-pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagnostic> {
+pub fn derive(mut item: DeriveInput) -> TokenStream {
     let struct_name = &item.ident;
 
     {
@@ -14,12 +14,13 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
         where_clause.predicates.push(parse_quote!(Self: Expression));
         where_clause.predicates.push_punct(Default::default());
     }
+
     let (_, ty_generics, where_clause) = item.generics.split_for_impl();
     let mut impl_generics = item.generics.clone();
     impl_generics.params.push(parse_quote!(__Rhs));
     let (impl_generics, _, _) = impl_generics.split_for_impl();
 
-    Ok(wrap_in_dummy_mod(quote! {
+    wrap_in_dummy_mod(quote! {
         use diesel::expression::{ops, Expression, AsExpression};
         use diesel::sql_types::ops::{Add, Sub, Mul, Div};
         use diesel::sql_types::{SqlType, SingleValue};
@@ -79,5 +80,5 @@ pub fn derive(mut item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Di
                 ops::Div::new(self, rhs.as_expression())
             }
         }
-    }))
+    })
 }

@@ -1,9 +1,9 @@
 extern crate diesel;
 
-use diesel::*;
-use diesel::sql_types::*;
 use diesel::dsl::*;
+use diesel::sql_types::*;
 use diesel::upsert::on_constraint;
+use diesel::*;
 
 table! {
     users {
@@ -15,8 +15,8 @@ table! {
 sql_function!(fn lower(x: VarChar) -> VarChar);
 
 #[derive(Insertable)]
-#[table_name="users"]
-struct NewUser(#[column_name = "name"] &'static str);
+#[diesel(table_name = users)]
+struct NewUser(#[diesel(column_name = name)] &'static str);
 
 // NOTE: This test is meant to be comprehensive, but not exhaustive.
 fn main() {

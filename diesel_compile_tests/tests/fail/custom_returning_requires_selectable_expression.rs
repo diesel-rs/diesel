@@ -17,7 +17,7 @@ table! {
 }
 
 #[derive(Insertable)]
-#[table_name="users"]
+#[diesel(table_name = users)]
 pub struct NewUser {
     name: String,
 }

@@ -8,7 +8,7 @@ use crate::sql_types::Uuid;
 
 #[derive(AsExpression, FromSqlRow)]
 #[diesel(foreign_derive)]
-#[sql_type = "Uuid"]
+#[diesel(sql_type = Uuid)]
 #[allow(dead_code)]
 struct UuidProxy(uuid::Uuid);
 

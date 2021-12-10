@@ -222,11 +222,11 @@ mod tests {
     #[test]
     fn serializing_named_composite_types() {
         #[derive(SqlType, QueryId, Debug, Clone, Copy)]
-        #[postgres(type_name = "my_type")]
+        #[diesel(postgres_type(name = "my_type"))]
         struct MyType;
 
         #[derive(Debug, AsExpression)]
-        #[sql_type = "MyType"]
+        #[diesel(sql_type = MyType)]
         struct MyStruct<'a>(i32, &'a str);
 
         impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {

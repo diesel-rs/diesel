@@ -1,0 +1,11 @@
+error[E0433]: failed to resolve: use of undeclared crate or module `users`
+ --> $DIR/no_table.rs:5:8
+  |
+5 | struct User {
+  |        ^^^^ use of undeclared crate or module `users`
+
+error[E0433]: failed to resolve: use of undeclared crate or module `users`
+  --> $DIR/no_table.rs:11:23
+   |
+11 | #[diesel(table_name = users)]
+   |                       ^^^^^ use of undeclared crate or module `users`

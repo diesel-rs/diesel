@@ -11,7 +11,7 @@ table! {
 }
 
 #[derive(Queryable, AsChangeset)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct User {
     name: String,
     hair_color: String,

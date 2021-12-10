@@ -38,9 +38,9 @@ use crate::query_builder::QueryId;
 ///
 /// [bool]: https://doc.rust-lang.org/nightly/std/primitive.bool.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "16", array_oid = "1000")]
-#[sqlite_type = "Integer"]
-#[mysql_type = "Tiny"]
+#[diesel(postgres_type(oid = 16, array_oid = 1000))]
+#[diesel(sqlite_type(name = "Integer"))]
+#[diesel(mysql_type(name = "Tiny"))]
 pub struct Bool;
 
 /// The tiny integer SQL type.
@@ -59,7 +59,7 @@ pub struct Bool;
 ///
 /// [i8]: https://doc.rust-lang.org/nightly/std/primitive.i8.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[mysql_type = "Tiny"]
+#[diesel(mysql_type(name = "Tiny"))]
 pub struct TinyInt;
 #[doc(hidden)]
 pub type Tinyint = TinyInt;
@@ -76,9 +76,9 @@ pub type Tinyint = TinyInt;
 ///
 /// [i16]: https://doc.rust-lang.org/nightly/std/primitive.i16.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "21", array_oid = "1005")]
-#[sqlite_type = "SmallInt"]
-#[mysql_type = "Short"]
+#[diesel(postgres_type(oid = 21, array_oid = 1005))]
+#[diesel(sqlite_type(name = "SmallInt"))]
+#[diesel(mysql_type(name = "Short"))]
 pub struct SmallInt;
 #[doc(hidden)]
 pub type Int2 = SmallInt;
@@ -97,9 +97,9 @@ pub type Smallint = SmallInt;
 ///
 /// [i32]: https://doc.rust-lang.org/nightly/std/primitive.i32.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "23", array_oid = "1007")]
-#[sqlite_type = "Integer"]
-#[mysql_type = "Long"]
+#[diesel(postgres_type(oid = 23, array_oid = 1007))]
+#[diesel(sqlite_type(name = "Integer"))]
+#[diesel(mysql_type(name = "Long"))]
 pub struct Integer;
 #[doc(hidden)]
 pub type Int4 = Integer;
@@ -116,9 +116,9 @@ pub type Int4 = Integer;
 ///
 /// [i64]: https://doc.rust-lang.org/nightly/std/primitive.i64.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "20", array_oid = "1016")]
-#[sqlite_type = "Long"]
-#[mysql_type = "LongLong"]
+#[diesel(postgres_type(oid = 20, array_oid = 1016))]
+#[diesel(sqlite_type(name = "Long"))]
+#[diesel(mysql_type(name = "LongLong"))]
 pub struct BigInt;
 #[doc(hidden)]
 pub type Int8 = BigInt;
@@ -137,9 +137,9 @@ pub type Bigint = BigInt;
 ///
 /// [f32]: https://doc.rust-lang.org/nightly/std/primitive.f32.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "700", array_oid = "1021")]
-#[sqlite_type = "Float"]
-#[mysql_type = "Float"]
+#[diesel(postgres_type(oid = 700, array_oid = 1021))]
+#[diesel(sqlite_type(name = "Float"))]
+#[diesel(mysql_type(name = "Float"))]
 pub struct Float;
 #[doc(hidden)]
 pub type Float4 = Float;
@@ -156,9 +156,9 @@ pub type Float4 = Float;
 ///
 /// [f64]: https://doc.rust-lang.org/nightly/std/primitive.f64.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "701", array_oid = "1022")]
-#[sqlite_type = "Double"]
-#[mysql_type = "Double"]
+#[diesel(postgres_type(oid = 701, array_oid = 1022))]
+#[diesel(sqlite_type(name = "Double"))]
+#[diesel(mysql_type(name = "Double"))]
 pub struct Double;
 #[doc(hidden)]
 pub type Float8 = Double;
@@ -178,9 +178,9 @@ pub type Float8 = Double;
 ///
 /// [`bigdecimal::BigDecimal`]: /bigdecimal/struct.BigDecimal.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1700", array_oid = "1231")]
-#[mysql_type = "Numeric"]
-#[sqlite_type = "Double"]
+#[diesel(postgres_type(oid = 1700, array_oid = 1231))]
+#[diesel(mysql_type(name = "Numeric"))]
+#[diesel(sqlite_type(name = "Double"))]
 pub struct Numeric;
 
 /// Alias for `Numeric`
@@ -206,9 +206,9 @@ pub type Decimal = Numeric;
 /// [String]: std::string::String
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "25", array_oid = "1009")]
-#[sqlite_type = "Text"]
-#[mysql_type = "String"]
+#[diesel(postgres_type(oid = 25, array_oid = 1009))]
+#[diesel(sqlite_type(name = "Text"))]
+#[diesel(mysql_type(name = "String"))]
 pub struct Text;
 
 /// The SQL `VARCHAR` type
@@ -249,9 +249,9 @@ pub type Longtext = Text;
 /// [Vec]: std::vec::Vec
 /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "17", array_oid = "1001")]
-#[sqlite_type = "Binary"]
-#[mysql_type = "Blob"]
+#[diesel(postgres_type(oid = 17, array_oid = 1001))]
+#[diesel(sqlite_type(name = "Binary"))]
+#[diesel(mysql_type(name = "Blob"))]
 pub struct Binary;
 
 #[doc(hidden)]
@@ -279,9 +279,9 @@ pub type Bit = Binary;
 ///
 /// [NaiveDate]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1082", array_oid = "1182")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Date"]
+#[diesel(postgres_type(oid = 1082, array_oid = 1182))]
+#[diesel(sqlite_type(name = "Text"))]
+#[diesel(mysql_type(name = "Date"))]
 pub struct Date;
 
 /// The interval SQL type.
@@ -299,7 +299,7 @@ pub struct Date;
 /// [`PgInterval`]: ../pg/data_types/struct.PgInterval.html
 /// [`IntervalDsl`]: ../pg/expression/extensions/trait.IntervalDsl.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1186", array_oid = "1187")]
+#[diesel(postgres_type(oid = 1186, array_oid = 1187))]
 pub struct Interval;
 
 /// The time SQL type.
@@ -314,9 +314,9 @@ pub struct Interval;
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1083", array_oid = "1183")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Time"]
+#[diesel(postgres_type(oid = 1083, array_oid = 1183))]
+#[diesel(sqlite_type(name = "Text"))]
+#[diesel(mysql_type(name = "Time"))]
 pub struct Time;
 
 /// The timestamp SQL type.
@@ -344,9 +344,9 @@ pub struct Time;
 )]
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "1114", array_oid = "1115")]
-#[sqlite_type = "Text"]
-#[mysql_type = "Timestamp"]
+#[diesel(postgres_type(oid = 1114, array_oid = 1115))]
+#[diesel(sqlite_type(name = "Text"))]
+#[diesel(mysql_type(name = "Timestamp"))]
 pub struct Timestamp;
 
 /// The JSON SQL type.  This type can only be used with `feature =
@@ -367,8 +367,8 @@ pub struct Timestamp;
 /// [`FromSql`]: /deserialize/trait.FromSql.html
 /// [`serde_json::Value`]: /../serde_json/value/enum.Value.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[postgres(oid = "114", array_oid = "199")]
-#[mysql_type = "String"]
+#[diesel(postgres_type(oid = 114, array_oid = 199))]
+#[diesel(mysql_type(name = "String"))]
 pub struct Json;
 
 /// The nullable SQL type.
@@ -408,9 +408,9 @@ pub use crate::mysql::types::*;
 ///
 /// ```rust
 /// #[derive(diesel::sql_types::SqlType)]
-/// #[postgres(oid = "23", array_oid = "1007")]
-/// #[sqlite_type = "Integer"]
-/// #[mysql_type = "Long"]
+/// #[diesel(postgres_type(oid = 23, array_oid = 1007))]
+/// #[diesel(sqlite_type(name = "Integer"))]
+/// #[diesel(mysql_type(name = "Long"))]
 /// pub struct Integer;
 /// ```
 pub trait HasSqlType<ST>: TypeMetadata {

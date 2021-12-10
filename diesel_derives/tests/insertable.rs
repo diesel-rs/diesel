@@ -5,7 +5,7 @@ use schema::*;
 #[test]
 fn simple_struct_definition() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser {
         name: String,
         hair_color: String,
@@ -56,7 +56,7 @@ fn with_implicit_table_name() {
 #[test]
 fn with_path_in_table_name() {
     #[derive(Insertable)]
-    #[table_name = "crate::schema::users"]
+    #[diesel(table_name = crate::schema::users)]
     struct NewUser {
         name: String,
         hair_color: String,
@@ -82,7 +82,7 @@ fn with_path_in_table_name() {
 #[test]
 fn simple_reference_definition() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser {
         name: String,
         hair_color: String,
@@ -110,7 +110,7 @@ macro_rules! test_struct_definition {
         #[test]
         fn $test_name() {
             #[derive(Insertable)]
-            #[table_name = "users"]
+            #[diesel(table_name = users)]
             $struct_def
 
             let conn = &mut connection();
@@ -168,9 +168,9 @@ test_struct_definition! {
 #[test]
 fn named_struct_with_renamed_field() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser {
-        #[column_name = "name"]
+        #[diesel(column_name = name)]
         my_name: String,
         hair_color: String,
     }
@@ -195,11 +195,11 @@ fn named_struct_with_renamed_field() {
 #[test]
 fn named_struct_with_renamed_option_field() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser {
-        #[column_name = "name"]
+        #[diesel(column_name = name)]
         my_name: String,
-        #[column_name = "hair_color"]
+        #[diesel(column_name = hair_color)]
         my_hair_color: Option<String>,
     }
 
@@ -223,10 +223,10 @@ fn named_struct_with_renamed_option_field() {
 #[test]
 fn tuple_struct() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser<'a>(
-        #[column_name = "name"] &'a str,
-        #[column_name = "hair_color"] Option<&'a str>,
+        #[diesel(column_name = name)] &'a str,
+        #[diesel(column_name = hair_color)] Option<&'a str>,
     );
 
     let conn = &mut connection();
@@ -246,7 +246,7 @@ fn tuple_struct() {
 #[test]
 fn named_struct_with_unusual_reference_type() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser<'a> {
         name: &'a String,
         hair_color: Option<&'a String>,
@@ -282,7 +282,7 @@ fn insertable_with_slice_of_borrowed() {
     }
 
     #[derive(Insertable)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     struct NewPost<'a> {
         tags: &'a [&'a str],
     }
@@ -310,7 +310,7 @@ fn insertable_with_slice_of_borrowed() {
 #[test]
 fn embedded_struct() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NameAndHairColor<'a> {
         name: &'a str,
         hair_color: &'a str,

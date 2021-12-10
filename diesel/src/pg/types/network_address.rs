@@ -28,8 +28,8 @@ mod foreign_derives {
 
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(foreign_derive)]
-    #[sql_type = "Inet"]
-    #[sql_type = "Cidr"]
+    #[diesel(sql_type = Inet)]
+    #[diesel(sql_type = Cidr)]
     struct IpNetworkProxy(IpNetwork);
 }
 
