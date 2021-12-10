@@ -55,9 +55,9 @@ pub fn parse_postgres_type(name: Ident, input: ParseStream) -> Result<PostgresTy
 
     for attr in Punctuated::<Attr, Comma>::parse_terminated(&content)? {
         match attr {
-            Attr::Oid(_, value) => oid = Some(value),
-            Attr::ArrayOid(_, value) => array_oid = Some(value),
-            Attr::TypeName(_, value) => type_name = Some(value),
+            Attr::Oid(ident, value) => oid = Some((ident, value)),
+            Attr::ArrayOid(ident, value) => array_oid = Some((ident, value)),
+            Attr::TypeName(ident, value) => type_name = Some((ident, value)),
         }
     }
 
