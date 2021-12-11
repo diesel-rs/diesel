@@ -3,17 +3,17 @@ use quote::ToTokens;
 use syn::spanned::Spanned;
 use syn::{Field as SynField, Ident, Index, Type};
 
-use attrs::{parse_attributes, FieldAttr, SqlIdentifier};
+use attrs::{parse_attributes, AttributeSpanWrapper, FieldAttr, SqlIdentifier};
 
 pub struct Field {
     pub ty: Type,
     pub span: Span,
     pub name: FieldName,
-    column_name: Option<SqlIdentifier>,
-    pub sql_type: Option<Type>,
-    pub serialize_as: Option<Type>,
-    pub deserialize_as: Option<Type>,
-    pub embed: bool,
+    column_name: Option<AttributeSpanWrapper<SqlIdentifier>>,
+    pub sql_type: Option<AttributeSpanWrapper<Type>>,
+    pub serialize_as: Option<AttributeSpanWrapper<Type>>,
+    pub deserialize_as: Option<AttributeSpanWrapper<Type>>,
+    pub embed: Option<AttributeSpanWrapper<bool>>,
 }
 
 impl Field {
@@ -26,15 +26,47 @@ impl Field {
         let mut sql_type = None;
         let mut serialize_as = None;
         let mut deserialize_as = None;
-        let mut embed = false;
+        let mut embed = None;
 
         for attr in parse_attributes(attrs) {
-            match attr {
-                FieldAttr::ColumnName(_, value) => column_name = Some(value),
-                FieldAttr::SqlType(_, value) => sql_type = Some(Type::Path(value)),
-                FieldAttr::SerializeAs(_, value) => serialize_as = Some(Type::Path(value)),
-                FieldAttr::DeserializeAs(_, value) => deserialize_as = Some(Type::Path(value)),
-                FieldAttr::Embed(_) => embed = true,
+            let attribute_span = attr.attribute_span;
+            let ident_span = attr.ident_span;
+            match attr.item {
+                FieldAttr::ColumnName(_, value) => {
+                    column_name = Some(AttributeSpanWrapper {
+                        item: value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SqlType(_, value) => {
+                    sql_type = Some(AttributeSpanWrapper {
+                        item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SerializeAs(_, value) => {
+                    serialize_as = Some(AttributeSpanWrapper {
+                        item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::DeserializeAs(_, value) => {
+                    deserialize_as = Some(AttributeSpanWrapper {
+                        item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::Embed(_) => {
+                    embed = Some(AttributeSpanWrapper {
+                        item: true,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
             }
         }
 
@@ -61,23 +93,30 @@ impl Field {
     }
 
     pub fn column_name(&self) -> SqlIdentifier {
-        self.column_name.clone().unwrap_or_else(|| match self.name {
-            FieldName::Named(ref x) => x.into(),
-            FieldName::Unnamed(ref x) => {
-                abort!(
+        self.column_name
+            .as_ref()
+            .map(|a| a.item.clone())
+            .unwrap_or_else(|| match self.name {
+                FieldName::Named(ref x) => x.into(),
+                FieldName::Unnamed(ref x) => {
+                    abort!(
                     x,
                     "All fields of tuple structs must be annotated with `#[diesel(column_name)]`"
                 );
-            }
-        })
+                }
+            })
     }
 
     pub fn ty_for_deserialize(&self) -> &Type {
-        if let Some(value) = &self.deserialize_as {
+        if let Some(AttributeSpanWrapper { item: value, .. }) = &self.deserialize_as {
             value
         } else {
             &self.ty
         }
+    }
+
+    pub(crate) fn embed(&self) -> bool {
+        self.embed.as_ref().map(|a| a.item).unwrap_or(false)
     }
 }
 

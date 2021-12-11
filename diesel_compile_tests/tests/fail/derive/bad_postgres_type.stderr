@@ -47,19 +47,19 @@ error: unexpected `oid` when `name` is present
 
   = help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
 
-  --> $DIR/bad_postgres_type.rs:30:44
+  --> $DIR/bad_postgres_type.rs:30:38
    |
 30 | #[diesel(postgres_type(name = "foo", oid = 2, array_oid = 3))]
-   |                                            ^
+   |                                      ^^^
 
 error: unexpected `array_oid` when `name` is present
 
   = help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
 
-  --> $DIR/bad_postgres_type.rs:34:50
+  --> $DIR/bad_postgres_type.rs:34:38
    |
 34 | #[diesel(postgres_type(name = "foo", array_oid = 3))]
-   |                                                  ^
+   |                                      ^^^^^^^^^
 
 error: expected `oid` and `array_oid` attribute or `name` attribute
 
@@ -86,10 +86,10 @@ error: expected `name` to be also present
 
   = help: make sure `name` is present, `#[diesel(postgres_type(name = "...", schema = "foo"))]`
 
-  --> $DIR/bad_postgres_type.rs:50:33
+  --> $DIR/bad_postgres_type.rs:50:24
    |
 50 | #[diesel(postgres_type(schema = "foo"))]
-   |                                 ^^^^^
+   |                        ^^^^^^
 
 error: unknown attribute, expected one of `oid`, `array_oid`, `name`, `schema`
   --> $DIR/bad_postgres_type.rs:54:24

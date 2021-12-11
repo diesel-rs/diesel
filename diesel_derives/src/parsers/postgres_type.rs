@@ -46,10 +46,10 @@ impl Parse for PostgresType {
 
         for attr in Punctuated::<Attr, Comma>::parse_terminated(input)? {
             match attr {
-                Attr::Oid(_, value) => oid = Some(value),
-                Attr::ArrayOid(_, value) => array_oid = Some(value),
-                Attr::Name(_, value) => name = Some(value),
-                Attr::Schema(_, value) => schema = Some(value),
+                Attr::Oid(ident, value) => oid = Some((ident, value)),
+                Attr::ArrayOid(ident, value) => array_oid = Some((ident, value)),
+                Attr::Name(ident, value) => name = Some((ident, value)),
+                Attr::Schema(ident, value) => schema = Some((ident, value)),
             }
         }
 
@@ -60,36 +60,36 @@ impl Parse for PostgresType {
 impl PostgresType {
     pub fn validate_and_build(
         input: ParseStream,
-        oid: Option<LitInt>,
-        array_oid: Option<LitInt>,
-        name: Option<LitStr>,
-        schema: Option<LitStr>,
+        oid: Option<(Ident, LitInt)>,
+        array_oid: Option<(Ident, LitInt)>,
+        name: Option<(Ident, LitStr)>,
+        schema: Option<(Ident, LitStr)>,
     ) -> Result<Self> {
         let help = format!(
             "The correct format looks like either `#[diesel({})]` or `#[diesel({})]`",
             POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID
         );
 
-        if let Some(name) = name {
-            if oid.is_some() {
+        if let Some((_, name)) = name {
+            if let Some((oid, _)) = oid {
                 abort!(
                     oid, "unexpected `oid` when `name` is present";
                     help = "{}", help
                 );
-            } else if array_oid.is_some() {
+            } else if let Some((array_oid, _)) = array_oid {
                 abort!(
                     array_oid, "unexpected `array_oid` when `name` is present";
                     help = "{}", help
                 );
             }
 
-            Ok(PostgresType::Lookup(name, schema))
-        } else if let Some(schema) = schema {
+            Ok(PostgresType::Lookup(name, schema.map(|s| s.1)))
+        } else if let Some((schema, lit)) = schema {
             abort!(
                 schema, "expected `name` to be also present";
-                help = "make sure `name` is present, `#[diesel(postgres_type(name = \"...\", schema = \"{}\"))]`", schema.value()
+                help = "make sure `name` is present, `#[diesel(postgres_type(name = \"...\", schema = \"{}\"))]`", lit.value()
             );
-        } else if let (Some(oid), Some(array_oid)) = (oid, array_oid) {
+        } else if let (Some((_, oid)), Some((_, array_oid))) = (oid, array_oid) {
             Ok(PostgresType::Fixed(oid, array_oid))
         } else {
             abort!(

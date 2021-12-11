@@ -47,19 +47,19 @@ error: unexpected `oid` when `name` is present
 
   = help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
 
-  --> $DIR/deprecated_postgres_type.rs:30:37
+  --> $DIR/deprecated_postgres_type.rs:30:31
    |
 30 | #[postgres(type_name = "foo", oid = "2", array_oid = "3")]
-   |                                     ^^^
+   |                               ^^^
 
 error: unexpected `array_oid` when `name` is present
 
   = help: The correct format looks like either `#[diesel(postgres_type(name = "foo", schema = "public"))]` or `#[diesel(postgres_type(oid = 37, array_oid = 54))]`
 
-  --> $DIR/deprecated_postgres_type.rs:34:43
+  --> $DIR/deprecated_postgres_type.rs:34:31
    |
 34 | #[postgres(type_name = "foo", array_oid = "3")]
-   |                                           ^^^
+   |                               ^^^^^^^^^
 
 error: expected `oid` and `array_oid` attribute or `name` attribute
 

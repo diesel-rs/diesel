@@ -15,7 +15,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         .params
         .push(parse_quote!(__DB: diesel::backend::Backend));
 
-    for embed_field in model.fields().iter().filter(|f| f.embed) {
+    for embed_field in model.fields().iter().filter(|f| f.embed()) {
         let embed_ty = &embed_field.ty;
         generics
             .where_clause
@@ -48,7 +48,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 }
 
 fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
-    if field.embed {
+    if field.embed() {
         let embed_ty = &field.ty;
         quote!(<#embed_ty as Selectable<__DB>>::SelectExpression)
     } else {
@@ -59,7 +59,7 @@ fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
 }
 
 fn field_column_inst(field: &Field, model: &Model) -> TokenStream {
-    if field.embed {
+    if field.embed() {
         let embed_ty = &field.ty;
         quote!(<#embed_ty as Selectable<__DB>>::construct_selection())
     } else {

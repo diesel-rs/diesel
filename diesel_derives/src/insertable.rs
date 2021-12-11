@@ -1,6 +1,7 @@
 use proc_macro2::TokenStream;
 use syn::{DeriveInput, Expr, Path, Type};
 
+use attrs::AttributeSpanWrapper;
 use field::Field;
 use model::Model;
 use util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
@@ -25,7 +26,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     let mut ref_field_assign = Vec::with_capacity(model.fields().len());
 
     for field in model.fields() {
-        match (field.serialize_as.as_ref(), field.embed) {
+        match (field.serialize_as.as_ref(), field.embed()) {
             (None, true) => {
                 direct_field_ty.push(field_ty_embed(field, None));
                 direct_field_assign.push(field_expr_embed(field, None));
@@ -58,7 +59,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                     treat_none_as_default_value,
                 ));
             }
-            (Some(ty), false) => {
+            (Some(AttributeSpanWrapper { item: ty, .. }), false) => {
                 direct_field_ty.push(field_ty_serialize_as(
                     field,
                     table_name,
@@ -74,9 +75,9 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 
                 generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of Insertable for borrowed structs
             }
-            (Some(ty), true) => {
+            (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
                 abort!(
-                    ty,
+                    attribute_span,
                     "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`"
                 )
             }
