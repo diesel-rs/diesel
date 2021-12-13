@@ -92,6 +92,7 @@
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
+#![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
 #![deny(warnings)]
 #![warn(
