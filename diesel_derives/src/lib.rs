@@ -62,7 +62,7 @@ mod valid_grouping;
 /// `#[diesel(column_name = some_column_name)]`.
 ///
 /// To provide custom serialization behavior for a field, you can use
-/// `#[diesel(serialize_as = "SomeType")]`. If this attribute is present, Diesel
+/// `#[diesel(serialize_as = SomeType)]`. If this attribute is present, Diesel
 /// will call `.into` on the corresponding field and serialize the instance of `SomeType`,
 /// rather than the actual field on your struct. This can be used to add custom behavior for a
 /// single field, or use types that are otherwise unsupported by Diesel.
@@ -97,7 +97,7 @@ mod valid_grouping;
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column name
 ///    of the current field to `some_column_name`. By default the field
 ///    name is used as column name.
-/// * `#[diesel(serialize_as = "SomeType")]`, instead of serializing the actual
+/// * `#[diesel(serialize_as = SomeType)]`, instead of serializing the actual
 ///    field type, Diesel will convert the field into `SomeType` using `.into` and
 ///    serialize that instead. By default this derive will serialize directly using
 ///    the actual field type.

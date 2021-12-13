@@ -221,7 +221,7 @@ fn with_explicit_column_names() {
 #[test]
 fn with_serialize_as() {
     #[derive(Debug, FromSqlRow, AsExpression)]
-    #[sql_type = "sql_types::Text"]
+    #[diesel(sql_type = sql_types::Text)]
     struct UppercaseString(pub String);
 
     impl Into<UppercaseString> for String {
