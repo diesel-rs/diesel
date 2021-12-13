@@ -713,7 +713,7 @@ fn mixed_defaultable_insert() {
     }
 
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct UserHairColor {
         hair_color: &'static str,
     }
