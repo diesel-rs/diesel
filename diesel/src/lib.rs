@@ -444,3 +444,7 @@ pub use crate::result::Error::NotFound;
 pub(crate) mod diesel {
     pub use super::*;
 }
+
+// workaround https://github.com/rust-lang/rust/pull/52234
+#[doc(hidden)]
+pub use __diesel_check_column_count_internal as __diesel_check_column_count;
