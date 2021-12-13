@@ -92,6 +92,7 @@
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
+#![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
 #![deny(warnings)]
 #![warn(
@@ -171,7 +172,10 @@ mod util;
 #[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 #[deprecated(since = "2.0.0", note = "Use explicit macro imports instead")]
-pub use diesel_derives::*;
+pub use diesel_derives::{
+    AsChangeset, AsExpression, Associations, DieselNumericOps, FromSqlRow, Identifiable,
+    Insertable, QueryId, Queryable, QueryableByName, SqlType,
+};
 
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
@@ -444,3 +448,7 @@ pub use crate::result::Error::NotFound;
 pub(crate) mod diesel {
     pub use super::*;
 }
+
+// workaround https://github.com/rust-lang/rust/pull/52234
+#[doc(hidden)]
+pub use __diesel_check_column_count_internal as __diesel_check_column_count;

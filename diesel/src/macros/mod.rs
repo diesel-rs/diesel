@@ -645,6 +645,32 @@ macro_rules! __diesel_parse_columns {
 #[doc(hidden)]
 macro_rules! __diesel_table_impl {
     (
+        table = { $($table: tt)* },
+        columns = [$({
+            name = $column_name:ident,
+            sql_name = $column_sql_name:expr,
+            ty = ($($column_ty:tt)*),
+            $($column:tt)*
+        },)+],
+    ) => {
+        $crate::__diesel_check_column_count!{
+            inner = {
+                $crate::__diesel_table_impl! {
+                    impl_table,
+                    table = { $($table)*},
+                    columns = [$({
+                        name = $column_name,
+                        sql_name = $column_sql_name,
+                        ty = ($($column_ty)*),
+                        $($column)*
+                    },)+],
+                }
+            },
+            ($($column_name,)*)
+        }
+    };
+    (
+        impl_table,
         table = {
             imports = [$($imports:tt)*],
             meta = [$($meta:tt)*],
@@ -1324,6 +1350,102 @@ macro_rules! __diesel_with_dollar_sign {
 }
 
 
+macro_rules! impl_column_check {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        __diesel_with_dollar_sign! {
+            ($d:tt) => {
+                #[macro_export]
+                #[doc(hidden)]
+                macro_rules! __diesel_check_column_count_internal {
+                    $(
+                    (inner = {$d($d inner: tt)*}, ($($d $T: ident,)*)) => {
+                        $d($d inner)*
+                    };
+                    )*
+                    (inner = {$d($d inner: tt)*}, ($d($d names: ident,)*)) => {
+                        $crate::__diesel_error_table_size!();
+                    }
+                }
+            }
+        }
+    }
+}
+
+diesel_derives::__diesel_for_each_tuple!(impl_column_check);
+
+#[cfg(not(any(
+    feature = "32-column-tables",
+    feature = "64-column-tables",
+    feature = "128-column-tables"
+)))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_error_table_size {
+    () => {
+        compile_error!(
+            "Table contains more than 16 columns. Consider enabling the `32-column-tables` feature to enable diesels support for tables with more than 16 columns."
+        );
+
+    }
+}
+
+
+#[cfg(all(
+    feature = "32-column-tables",
+    not(feature = "64-column-tables"),
+    not(feature = "128-column-tables")
+))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_error_table_size {
+    () => {
+        compile_error!(
+            "Table contains more than 32 columns. Consider enabling the `64-column-tables` feature to enable diesels support for tables with more than 32 columns."
+        );
+
+    }
+}
+
+
+#[cfg(all(
+    feature = "32-column-tables",
+    feature = "64-column-tables",
+    not(feature = "128-column-tables")
+))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_error_table_size {
+    () => {
+        compile_error!(
+            "Table contains more than 64 columns. Consider enabling the `128-column-tables` feature to enable diesels support for tables with more than 64 columns."
+        );
+
+    }
+}
+
+
+#[cfg(all(
+    feature = "32-column-tables",
+    feature = "64-column-tables",
+    feature = "128-column-tables"
+))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_error_table_size {
+    () => {
+        compile_error!(
+            "You reached the end. Diesel does not support tables with more than 128 columns. Consider using less columns."
+        );
+    }
+}
+
+
+
+
 // The order of these modules is important (at least for those which have tests).
 // Utility macros which don't call any others need to come first.
 #[macro_use]
@@ -1332,8 +1454,7 @@ mod internal;
 mod static_cond;
 #[macro_use]
 mod ops;
-#[macro_use]
-mod tuples;
+
 
 #[cfg(test)]
 mod tests {
