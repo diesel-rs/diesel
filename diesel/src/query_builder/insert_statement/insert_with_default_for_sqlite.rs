@@ -482,4 +482,4 @@ macro_rules! impl_contains_defaultable_value {
     }
 }
 
-__diesel_for_each_tuple!(tuple_impls);
+diesel_derives::__diesel_for_each_tuple!(tuple_impls);
