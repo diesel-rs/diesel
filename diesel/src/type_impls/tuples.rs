@@ -220,17 +220,17 @@ macro_rules! tuple_impls {
             }
 
             impl<$($T,)+ Parent> BelongsTo<Parent> for ($($T,)+) where
-                A: BelongsTo<Parent>,
+                T0: BelongsTo<Parent>,
             {
-                type ForeignKey = A::ForeignKey;
-                type ForeignKeyColumn = A::ForeignKeyColumn;
+                type ForeignKey = T0::ForeignKey;
+                type ForeignKeyColumn = T0::ForeignKeyColumn;
 
                 fn foreign_key(&self) -> Option<&Self::ForeignKey> {
                     self.0.foreign_key()
                 }
 
                 fn foreign_key_column() -> Self::ForeignKeyColumn {
-                    A::foreign_key_column()
+                    T0::foreign_key_column()
                 }
             }
 
@@ -558,4 +558,4 @@ macro_rules! impl_sql_type {
     }
 }
 
-__diesel_for_each_tuple!(tuple_impls);
+diesel_derives::__diesel_for_each_tuple!(tuple_impls);

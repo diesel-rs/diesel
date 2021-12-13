@@ -69,4 +69,4 @@ macro_rules! impl_eq_all_for_all_tuples {
     };
 }
 
-__diesel_for_each_tuple!(impl_eq_all_for_all_tuples);
+diesel_derives::__diesel_for_each_tuple!(impl_eq_all_for_all_tuples);

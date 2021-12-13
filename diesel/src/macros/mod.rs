@@ -1370,16 +1370,12 @@ macro_rules! impl_column_check {
                         $crate::__diesel_error_table_size!();
                     }
                 }
-
-                // workaround https://github.com/rust-lang/rust/pull/52234
-                #[doc(hidden)]
-                pub use __diesel_check_column_count_internal as __diesel_check_column_count;
             }
         }
     }
 }
 
-crate::__diesel_for_each_tuple!(impl_column_check);
+diesel_derives::__diesel_for_each_tuple!(impl_column_check);
 
 #[cfg(not(any(
     feature = "32-column-tables",
@@ -1458,8 +1454,7 @@ mod internal;
 mod static_cond;
 #[macro_use]
 mod ops;
-#[macro_use]
-mod tuples;
+
 
 #[cfg(test)]
 mod tests {

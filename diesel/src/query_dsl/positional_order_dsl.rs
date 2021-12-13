@@ -129,4 +129,4 @@ macro_rules! impl_order_for_all_tuples {
     };
 }
 
-__diesel_for_each_tuple!(impl_order_for_all_tuples);
+diesel_derives::__diesel_for_each_tuple!(impl_order_for_all_tuples);
