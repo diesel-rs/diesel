@@ -1,39 +1,39 @@
 error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): CompatibleType<UserWithToFewFields, _>` is not satisfied
-  --> $DIR/queryable_type_missmatch.rs:59:26
+  --> tests/fail/derive/queryable_type_missmatch.rs:59:26
    |
 59 |     let _ = users::table.load::<UserWithToFewFields>(conn);
    |                          ^^^^ the trait `CompatibleType<UserWithToFewFields, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
    |
    = help: the following implementations were found:
-             <(SA, SB, SC) as CompatibleType<__T, __DB>>
+             <(ST0, ST1, ST2) as CompatibleType<__T, __DB>>
    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithToFewFields>` for `users::table`
 
 error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): CompatibleType<UserWithToManyFields, _>` is not satisfied
-  --> $DIR/queryable_type_missmatch.rs:61:26
+  --> tests/fail/derive/queryable_type_missmatch.rs:61:26
    |
 61 |     let _ = users::table.load::<UserWithToManyFields>(conn);
    |                          ^^^^ the trait `CompatibleType<UserWithToManyFields, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
    |
    = help: the following implementations were found:
-             <(SA, SB, SC) as CompatibleType<__T, __DB>>
+             <(ST0, ST1, ST2) as CompatibleType<__T, __DB>>
    = note: required because of the requirements on the impl of `LoadQuery<_, UserWithToManyFields>` for `users::table`
 
 error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): CompatibleType<UserWrongOrder, _>` is not satisfied
-  --> $DIR/queryable_type_missmatch.rs:63:26
+  --> tests/fail/derive/queryable_type_missmatch.rs:63:26
    |
 63 |     let _ = users::table.load::<UserWrongOrder>(conn);
    |                          ^^^^ the trait `CompatibleType<UserWrongOrder, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
    |
    = help: the following implementations were found:
-             <(SA, SB, SC) as CompatibleType<__T, __DB>>
+             <(ST0, ST1, ST2) as CompatibleType<__T, __DB>>
    = note: required because of the requirements on the impl of `LoadQuery<_, UserWrongOrder>` for `users::table`
 
 error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): CompatibleType<UserTypeMissmatch, _>` is not satisfied
-  --> $DIR/queryable_type_missmatch.rs:65:26
+  --> tests/fail/derive/queryable_type_missmatch.rs:65:26
    |
 65 |     let _ = users::table.load::<UserTypeMissmatch>(conn);
    |                          ^^^^ the trait `CompatibleType<UserTypeMissmatch, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
    |
    = help: the following implementations were found:
-             <(SA, SB, SC) as CompatibleType<__T, __DB>>
+             <(ST0, ST1, ST2) as CompatibleType<__T, __DB>>
    = note: required because of the requirements on the impl of `LoadQuery<_, UserTypeMissmatch>` for `users::table`
