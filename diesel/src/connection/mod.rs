@@ -140,7 +140,8 @@ where
     }
 
     /// Creates a transaction that will never be committed. This is useful for
-    /// tests. Panics if called while inside of a transaction.
+    /// tests. Panics if called while inside of a transaction or
+    /// if called with a connection containing a broken transaction
     fn begin_test_transaction(&mut self) -> QueryResult<()> {
         match Self::TransactionManager::transaction_manager_status_mut(self) {
             TransactionManagerStatus::Valid(valid_status) => {
