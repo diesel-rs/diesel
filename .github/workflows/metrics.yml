@@ -51,9 +51,9 @@ jobs:
       - name: Install mysql (Linux)
         if: matrix.backend == 'mysql'
         run: |
+          sudo systemctl start mysql.service
           sudo apt-get update
-          sudo apt-get -y install mysql-server libmysqlclient-dev
-          sudo /etc/init.d/mysql start
+          sudo apt-get -y install libmysqlclient-dev
           mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
           echo 'DATABASE_URL=mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
 
