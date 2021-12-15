@@ -1,5 +1,5 @@
 use crate::backend::Backend;
-use crate::dsl::{Filter, IntoBoxed};
+use crate::dsl::{Filter, IntoBoxed, OrFilter};
 use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
@@ -71,6 +71,39 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
         Self: FilterDsl<Predicate>,
     {
         FilterDsl::filter(self, predicate)
+    }
+
+    /// Adds to the `WHERE` clause of a query using `OR`
+    ///
+    /// If there is already a `WHERE` clause, the result will be `(old OR new)`.
+    /// Calling `foo.filter(bar).or_filter(baz)`
+    /// is identical to `foo.filter(bar.or(baz))`.
+    /// However, the second form is much harder to do dynamically.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// let deleted_rows = diesel::delete(users)
+    ///     .filter(name.eq("Sean"))
+    ///     .or_filter(name.eq("Tess"))
+    ///     .execute(connection);
+    /// assert_eq!(Ok(2), deleted_rows);
+    ///
+    /// let num_users = users.count().first(connection);
+    ///
+    /// assert_eq!(Ok(0), num_users);
+    /// # }
+    /// ```
+    pub fn or_filter<Predicate>(self, predicate: Predicate) -> OrFilter<Self, Predicate>
+    where
+        Self: OrFilterDsl<Predicate>,
+    {
+        OrFilterDsl::or_filter(self, predicate)
     }
 
     /// Boxes the `WHERE` clause of this delete statement.
