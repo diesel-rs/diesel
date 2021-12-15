@@ -4,7 +4,7 @@ use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::returning_clause::*;
 use crate::query_builder::where_clause::*;
 use crate::query_builder::*;
-use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
+use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::Table;
 use crate::result::QueryResult;
@@ -136,6 +136,22 @@ where
         DeleteStatement {
             table: self.table,
             where_clause: self.where_clause.and(predicate),
+            returning: self.returning,
+        }
+    }
+}
+
+impl<T, U, Ret, Predicate> OrFilterDsl<Predicate> for DeleteStatement<T, U, Ret>
+where
+    U: WhereOr<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = DeleteStatement<T, U::Output, Ret>;
+
+    fn or_filter(self, predicate: Predicate) -> Self::Output {
+        DeleteStatement {
+            table: self.table,
+            where_clause: self.where_clause.or(predicate),
             returning: self.returning,
         }
     }
