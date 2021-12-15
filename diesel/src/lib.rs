@@ -386,7 +386,8 @@ pub mod helper_types {
     /// [`Iterator`](std::iter::Iterator) of [`QueryResult<U>`](crate::result::QueryResult)
     ///
     /// See [`RunQueryDsl::load_iter`] for more information
-    pub type LoadIter<'a, Q, Conn, U> = <Q as load_dsl::LoadQueryGatWorkaround<'a, Conn, U>>::Ret;
+    pub type LoadIter<'conn, 'query, Q, Conn, U> =
+        <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret;
 }
 
 pub mod prelude {
@@ -450,3 +451,7 @@ pub use crate::result::Error::NotFound;
 pub(crate) mod diesel {
     pub use super::*;
 }
+
+// workaround https://github.com/rust-lang/rust/pull/52234
+#[doc(hidden)]
+pub use __diesel_check_column_count_internal as __diesel_check_column_count;

@@ -1507,10 +1507,13 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'conn 'conn:'query, U>(self, conn: &'conn mut Conn) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U>>
+    fn load_iter<'conn, 'query: 'conn, U>(
+        self,
+        conn: &'conn mut Conn,
+    ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U>>
     where
         U: 'conn,
-        Self: LoadQuery<'qcory, Conn, U> + 'conn,
+        Self: LoadQuery<'query, Conn, U> + 'conn,
     {
         self.internal_load(conn)
     }

@@ -1,8 +1,8 @@
 error[E0433]: failed to resolve: use of undeclared crate or module `post`
-  --> tests/fail/selectable.rs:58:16
+  --> tests/fail/selectable.rs:58:23
    |
-58 | #[table_name = "post"]
-   |                ^^^^^^ use of undeclared crate or module `post`
+58 | #[diesel(table_name = post)]
+   |                       ^^^^ use of undeclared crate or module `post`
 
 error[E0412]: cannot find type `titel` in module `posts`
   --> tests/fail/selectable.rs:53:5
@@ -183,7 +183,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
     = help: the following implementations were found:
               <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
               <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
-    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(users::columns::id, users::columns::name, count::count::count<diesel::sql_types::Integer, posts::columns::id>)`
+    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(users::columns::id, users::columns::name, diesel::expression::count::count::count<diesel::sql_types::Integer, posts::columns::id>)`
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `SelectBy<UserWithPostCount, Pg>`
     = note: required because of the requirements on the impl of `SelectDsl<SelectBy<UserWithPostCount, Pg>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>>`
@@ -197,7 +197,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
     = help: the following implementations were found:
               <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
               <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
-    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(users::columns::id, users::columns::name, count::count::count<diesel::sql_types::Integer, posts::columns::id>)`
+    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(users::columns::id, users::columns::name, diesel::expression::count::count::count<diesel::sql_types::Integer, posts::columns::id>)`
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `SelectBy<UserWithPostCount, Pg>`
     = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<posts::columns::user_id>, diesel::expression::nullable::Nullable<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<SelectBy<UserWithPostCount, Pg>>>`
@@ -518,11 +518,11 @@ error[E0599]: the function or associated item `as_select` exists for struct `Use
             `&mut UserWithoutSelectable: diesel::Selectable<_>`
             which is required by `&mut UserWithoutSelectable: diesel::SelectableHelper<_>`
 
-error[E0277]: the trait bound `SelectBy<Post, _>: SingleValue` is not satisfied
+error[E0277]: the trait bound `SelectBy<Post, _>: diesel::sql_types::SingleValue` is not satisfied
    --> tests/fail/selectable.rs:195:52
     |
 195 |     let _ = posts::table.select(Post::as_select()).load::<(i32, String)>(&mut conn).unwrap();
-    |                                                    ^^^^ the trait `SingleValue` is not implemented for `SelectBy<Post, _>`
+    |                                                    ^^^^ the trait `diesel::sql_types::SingleValue` is not implemented for `SelectBy<Post, _>`
     |
     = note: required because of the requirements on the impl of `CompatibleType<(i32, std::string::String), _>` for `SelectBy<Post, _>`
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String)>` for `SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<SelectBy<Post, _>>>`
@@ -534,18 +534,18 @@ error[E0277]: the trait bound `(i32, std::string::String): diesel::Queryable<Sel
     |                                                    ^^^^ the trait `diesel::Queryable<SelectBy<Post, _>, _>` is not implemented for `(i32, std::string::String)`
     |
     = help: the following implementations were found:
-              <(A, B) as diesel::Queryable<(SA, SB), __DB>>
-              <(A, B) as diesel::Queryable<Record<(SA, SB)>, Pg>>
+              <(T0, T1) as diesel::Queryable<(ST0, ST1), __DB>>
+              <(T0, T1) as diesel::Queryable<Record<(ST0, ST1)>, Pg>>
               <(std::collections::Bound<T>, std::collections::Bound<T>) as diesel::Queryable<diesel::sql_types::Range<ST>, Pg>>
     = note: required because of the requirements on the impl of `FromSqlRow<SelectBy<Post, _>, _>` for `(i32, std::string::String)`
     = note: required because of the requirements on the impl of `CompatibleType<(i32, std::string::String), _>` for `SelectBy<Post, _>`
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String)>` for `SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<SelectBy<Post, _>>>`
 
-error[E0277]: the trait bound `SelectBy<Post, _>: SingleValue` is not satisfied
+error[E0277]: the trait bound `SelectBy<Post, _>: diesel::sql_types::SingleValue` is not satisfied
    --> tests/fail/selectable.rs:196:65
     |
 196 |     let _ = posts::table.select(Post::as_select()).into_boxed().load::<(i32, String)>(&mut conn).unwrap();
-    |                                                                 ^^^^ the trait `SingleValue` is not implemented for `SelectBy<Post, _>`
+    |                                                                 ^^^^ the trait `diesel::sql_types::SingleValue` is not implemented for `SelectBy<Post, _>`
     |
     = note: required because of the requirements on the impl of `CompatibleType<(i32, std::string::String), _>` for `SelectBy<Post, _>`
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String)>` for `BoxedSelectStatement<'_, SelectBy<Post, _>, FromClause<posts::table>, _>`
@@ -557,12 +557,12 @@ error[E0277]: the trait bound `(i32, std::string::String): diesel::Queryable<Sel
     |                                                                 ^^^^ the trait `diesel::Queryable<SelectBy<Post, _>, _>` is not implemented for `(i32, std::string::String)`
     |
     = help: the following implementations were found:
-              <(A, B) as diesel::Queryable<(SA, SB), __DB>>
-              <(A, B) as diesel::Queryable<Record<(SA, SB)>, Pg>>
+              <(T0, T1) as diesel::Queryable<(ST0, ST1), __DB>>
+              <(T0, T1) as diesel::Queryable<Record<(ST0, ST1)>, Pg>>
               <(std::collections::Bound<T>, std::collections::Bound<T>) as diesel::Queryable<diesel::sql_types::Range<ST>, Pg>>
     = note: required because of the requirements on the impl of `FromSqlRow<SelectBy<Post, _>, _>` for `(i32, std::string::String)`
     = note: required because of the requirements on the impl of `CompatibleType<(i32, std::string::String), _>` for `SelectBy<Post, _>`
-    = note: required because of the requirements on the impl of `LoadQuery<_, (i32, std::string::String)>` for `BoxedSelectStatement<'_, SelectBy<Post, _>, FromClause<posts::table>, _>`
+    = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String)>` for `BoxedSelectStatement<'_, SelectBy<Post, _>, FromClause<posts::table>, _>`
 
 error[E0277]: the trait bound `(SelectBy<Post, _>, diesel::sql_types::Text): CompatibleType<((i32, std::string::String), std::string::String), _>` is not satisfied
    --> tests/fail/selectable.rs:197:68
@@ -571,14 +571,14 @@ error[E0277]: the trait bound `(SelectBy<Post, _>, diesel::sql_types::Text): Com
     |                                                                    ^^^^ the trait `CompatibleType<((i32, std::string::String), std::string::String), _>` is not implemented for `(SelectBy<Post, _>, diesel::sql_types::Text)`
     |
     = help: the following implementations were found:
-              <(SA, SB) as CompatibleType<__T, __DB>>
+              <(ST0, ST1) as CompatibleType<__T, __DB>>
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, ((i32, std::string::String), std::string::String)>` for `SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<(SelectBy<Post, _>, posts::columns::title)>>`
 
-error[E0277]: the trait bound `SelectBy<Post, _>: SingleValue` is not satisfied
+error[E0277]: the trait bound `SelectBy<Post, _>: diesel::sql_types::SingleValue` is not satisfied
    --> tests/fail/selectable.rs:201:10
     |
 201 |         .load::<(i32, String, i32)>(&mut conn)
-    |          ^^^^ the trait `SingleValue` is not implemented for `SelectBy<Post, _>`
+    |          ^^^^ the trait `diesel::sql_types::SingleValue` is not implemented for `SelectBy<Post, _>`
     |
     = note: required because of the requirements on the impl of `CompatibleType<(i32, std::string::String, i32), _>` for `SelectBy<Post, _>`
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String, i32)>` for `InsertStatement<posts::table, ValuesClause<ColumnInsertValue<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, posts::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<Post, _>>>`
@@ -590,8 +590,8 @@ error[E0277]: the trait bound `(i32, std::string::String, i32): diesel::Queryabl
     |          ^^^^ the trait `diesel::Queryable<SelectBy<Post, _>, _>` is not implemented for `(i32, std::string::String, i32)`
     |
     = help: the following implementations were found:
-              <(A, B, C) as diesel::Queryable<(SA, SB, SC), __DB>>
-              <(A, B, C) as diesel::Queryable<Record<(SA, SB, SC)>, Pg>>
+              <(T0, T1, T2) as diesel::Queryable<(ST0, ST1, ST2), __DB>>
+              <(T0, T1, T2) as diesel::Queryable<Record<(ST0, ST1, ST2)>, Pg>>
     = note: required because of the requirements on the impl of `FromSqlRow<SelectBy<Post, _>, _>` for `(i32, std::string::String, i32)`
     = note: required because of the requirements on the impl of `CompatibleType<(i32, std::string::String, i32), _>` for `SelectBy<Post, _>`
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String, i32)>` for `InsertStatement<posts::table, ValuesClause<ColumnInsertValue<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, posts::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<SelectBy<Post, _>>>`
