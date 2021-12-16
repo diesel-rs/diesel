@@ -88,11 +88,19 @@ impl ValidTransactionManagerStatus {
         self.transaction_depth
     }
 
-    /// Update the transaction depth by adding the value of the `by` parameter if the `query` is
+    /// Update the transaction depth by adding the value of the `transaction_depth_change` parameter if the `query` is
     /// `Ok(())`
-    pub fn change_transaction_depth(&mut self, by: i32, query: QueryResult<()>) -> QueryResult<()> {
+    pub fn change_transaction_depth(
+        &mut self,
+        transaction_depth_change: TransactionDepthChange,
+        query: QueryResult<()>,
+    ) -> QueryResult<()> {
         if query.is_ok() {
-            self.transaction_depth += by;
+            let transaction_delta = match transaction_depth_change {
+                TransactionDepthChange::IncreaseDepth => 1,
+                TransactionDepthChange::DecreaseDepth => -1,
+            };
+            self.transaction_depth += transaction_delta;
         }
         query
     }
@@ -116,9 +124,12 @@ struct TransactionUpdate {
     transaction_depth_change: TransactionDepthChange,
 }
 
-#[derive(Clone, Copy)]
-enum TransactionDepthChange {
+/// Represents a change to apply to the depth of a transaction
+#[derive(Debug, Clone, Copy)]
+pub enum TransactionDepthChange {
+    /// Increase the depth of the transaction (corresponds to `BEGIN` or `SAVEPOINT`)
     IncreaseDepth,
+    /// Decreases the depth of the transaction (corresponds to `COMMIT`/`RELEASE SAVEPOINT` or `ROLLBACK`)
     DecreaseDepth,
 }
 
@@ -148,27 +159,24 @@ impl AnsiTransactionManager {
         match status {
             TransactionManagerStatus::InError => Err(Error::BrokenTransaction), // Unlikely, but the action actually updated the transaction state and broke it
             TransactionManagerStatus::Valid(valid_status) => match update {
-                ManagerUpdate::UpdateTransaction(transaction_update) => {
-                    let transaction_delta = match transaction_update.transaction_depth_change {
-                        TransactionDepthChange::IncreaseDepth => 1,
-                        TransactionDepthChange::DecreaseDepth => -1,
-                    };
-                    match transaction_update.update_condition {
-                        UpdateCondition::AfterResultCheck => {
-                            valid_status.change_transaction_depth(transaction_delta, result)
-                        }
-                        UpdateCondition::AfterCheck(result_to_check) => {
-                            let _r = valid_status
-                                .change_transaction_depth(transaction_delta, result_to_check);
-                            result
-                        }
-                        UpdateCondition::Unconditionally => {
-                            let _r =
-                                valid_status.change_transaction_depth(transaction_delta, Ok(()));
-                            result
-                        }
+                ManagerUpdate::UpdateTransaction(TransactionUpdate {
+                    update_condition,
+                    transaction_depth_change,
+                }) => match update_condition {
+                    UpdateCondition::AfterResultCheck => {
+                        valid_status.change_transaction_depth(transaction_depth_change, result)
                     }
-                }
+                    UpdateCondition::AfterCheck(result_to_check) => {
+                        let _r = valid_status
+                            .change_transaction_depth(transaction_depth_change, result_to_check);
+                        result
+                    }
+                    UpdateCondition::Unconditionally => {
+                        let _r =
+                            valid_status.change_transaction_depth(transaction_depth_change, Ok(()));
+                        result
+                    }
+                },
                 ManagerUpdate::MarkManagerAsInError => {
                     *status = TransactionManagerStatus::InError;
                     result
