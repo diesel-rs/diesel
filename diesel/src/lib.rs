@@ -98,6 +98,7 @@
 #![warn(
     missing_debug_implementations,
     missing_copy_implementations,
+    elided_lifetimes_in_paths,
     missing_docs
 )]
 // Clippy lints
@@ -217,9 +218,9 @@ pub mod helper_types {
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
 
     /// Represents the return type of `diesel::select(selection)`
-    pub type BareSelect<T> = Select<
-        crate::query_builder::SelectStatement<crate::query_builder::select_statement::NoFromClause>,
-        T,
+    pub type BareSelect<T> = crate::query_builder::SelectStatement<
+        crate::query_builder::NoFromClause,
+        crate::query_builder::select_clause::SelectClause<T>,
     >;
 
     /// Represents the return type of `.filter(predicate)`
@@ -376,15 +377,17 @@ pub mod helper_types {
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
 
-    /// Represents the return type of `.only()`
+    /// Represents the return type of [`.only()`](crate::pg::expression::extensions::OnlyDsl)
     #[cfg(feature = "postgres_backend")]
-    pub type SelectFromOnly<T> =
-        crate::query_builder::SelectStatement<crate::pg::query_builder::only_clause::Only<T>>;
+    pub type SelectFromOnly<T> = crate::query_builder::SelectStatement<
+        crate::query_builder::FromClause<crate::pg::query_builder::only_clause::Only<T>>,
+    >;
 
     /// [`Iterator`](std::iter::Iterator) of [`QueryResult<U>`](crate::result::QueryResult)
     ///
     /// See [`RunQueryDsl::load_iter`] for more information
-    pub type LoadIter<'a, Q, Conn, U> = <Q as load_dsl::LoadQueryGatWorkaround<'a, Conn, U>>::Ret;
+    pub type LoadIter<'conn, 'query, Q, Conn, U> =
+        <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret;
 }
 
 pub mod prelude {

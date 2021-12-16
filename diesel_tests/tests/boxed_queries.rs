@@ -165,13 +165,15 @@ fn boxed_queries_implement_or_filter() {
 fn can_box_query_with_boxable_expression() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    let expr: Box<dyn BoxableExpression<_, _, SqlType = _>> = Box::new(users::name.eq("Sean")) as _;
+    let expr: Box<dyn BoxableExpression<users::table, _, SqlType = _>> =
+        Box::new(users::name.eq("Sean")) as _;
 
     let data = users::table.into_boxed().filter(expr).load(connection);
     let expected = vec![find_user_by_name("Sean", connection)];
     assert_eq!(Ok(expected), data);
 
-    let expr: Box<dyn BoxableExpression<_, _, SqlType = _>> = Box::new(users::name.eq("Sean")) as _;
+    let expr: Box<dyn BoxableExpression<users::table, _, SqlType = _>> =
+        Box::new(users::name.eq("Sean")) as _;
 
     let data = users::table.filter(expr).into_boxed().load(connection);
     let expected = vec![find_user_by_name("Sean", connection)];

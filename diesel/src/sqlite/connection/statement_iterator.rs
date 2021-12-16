@@ -6,20 +6,20 @@ use super::stmt::StatementUse;
 use crate::result::QueryResult;
 
 #[allow(missing_debug_implementations)]
-pub struct StatementIterator<'a> {
-    inner: PrivateStatementIterator<'a>,
+pub struct StatementIterator<'stmt, 'query> {
+    inner: PrivateStatementIterator<'stmt, 'query>,
     column_names: Option<Rc<[Option<String>]>>,
     field_count: usize,
 }
 
-enum PrivateStatementIterator<'a> {
-    NotStarted(StatementUse<'a>),
-    Started(Rc<RefCell<PrivateSqliteRow<'a>>>),
+enum PrivateStatementIterator<'stmt, 'query> {
+    NotStarted(StatementUse<'stmt, 'query>),
+    Started(Rc<RefCell<PrivateSqliteRow<'stmt, 'query>>>),
     TemporaryEmpty,
 }
 
-impl<'a> StatementIterator<'a> {
-    pub fn new(stmt: StatementUse<'a>) -> Self {
+impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
+    pub fn new(stmt: StatementUse<'stmt, 'query>) -> StatementIterator<'stmt, 'query> {
         Self {
             inner: PrivateStatementIterator::NotStarted(stmt),
             column_names: None,
@@ -28,8 +28,8 @@ impl<'a> StatementIterator<'a> {
     }
 }
 
-impl<'a> Iterator for StatementIterator<'a> {
-    type Item = QueryResult<SqliteRow<'a>>;
+impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
+    type Item = QueryResult<SqliteRow<'stmt, 'query>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         use PrivateStatementIterator::{NotStarted, Started, TemporaryEmpty};

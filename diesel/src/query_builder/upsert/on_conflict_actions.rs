@@ -13,7 +13,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::OnConflictClause>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
     }
 }
@@ -23,7 +23,7 @@ where
     DB: Backend,
     T: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" DO NOTHING");
         Ok(())
     }
@@ -46,7 +46,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::OnConflictClause>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
     }
 }
@@ -57,7 +57,7 @@ where
     SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         if self.changeset.is_noop()? {
             out.push_sql(" DO NOTHING");
@@ -84,7 +84,7 @@ where
     DB: Backend,
     Self: QueryFragment<DB, DB::OnConflictClause>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
     }
 }
@@ -95,7 +95,7 @@ where
     SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: Column,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("excluded.");
         out.push_identifier(T::NAME)?;
         Ok(())

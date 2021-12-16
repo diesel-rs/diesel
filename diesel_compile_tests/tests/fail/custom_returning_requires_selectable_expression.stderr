@@ -7,7 +7,7 @@ error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::ta
    = help: the following implementations were found:
              <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
              <bad::columns::age as SelectableExpression<Only<bad::table>>>
-             <bad::columns::age as SelectableExpression<SelectStatement<From>>>
+             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
              <bad::columns::age as SelectableExpression<bad::table>>
            and 2 others
    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<bad::columns::age>>`
@@ -21,7 +21,7 @@ error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::ta
    = help: the following implementations were found:
              <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
              <bad::columns::age as SelectableExpression<Only<bad::table>>>
-             <bad::columns::age as SelectableExpression<SelectStatement<From>>>
+             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
              <bad::columns::age as SelectableExpression<bad::table>>
            and 2 others
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`

@@ -1,9 +1,7 @@
-use std::fmt::{self, Debug, Display};
-use std::marker::PhantomData;
-use std::mem;
-
 use super::{AstPass, QueryBuilder, QueryFragment};
 use crate::backend::Backend;
+use std::fmt::{self, Debug, Display};
+use std::marker::PhantomData;
 
 /// A struct that implements `fmt::Display` and `fmt::Debug` to show the SQL
 /// representation of a query.
@@ -35,7 +33,7 @@ where
     DB::QueryBuilder: Default,
     T: QueryFragment<DB>,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut query_builder = DB::QueryBuilder::default();
         QueryFragment::<DB>::to_sql(self.query, &mut query_builder).map_err(|_| fmt::Error)?;
         let debug_binds = DebugBinds::<_, DB>::new(self.query);
@@ -49,7 +47,7 @@ where
     DB::QueryBuilder: Default,
     T: QueryFragment<DB>,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut query_builder = DB::QueryBuilder::default();
         QueryFragment::<DB>::to_sql(self.query, &mut query_builder).map_err(|_| fmt::Error)?;
         let debug_binds = DebugBinds::<_, DB>::new(self.query);
@@ -81,16 +79,14 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    // Clippy is wrong, this cannot be expressed with pointer casting
-    #[allow(clippy::transmute_ptr_to_ptr)]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut buffer = Vec::new();
+        let ast_pass = AstPass::debug_binds(&mut buffer);
+        self.query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
+
         let mut list = f.debug_list();
-        {
-            // Safe because the lifetime is shortened to one smaller
-            // than the lifetime of the formatter.
-            let list_with_shorter_lifetime = unsafe { mem::transmute(&mut list) };
-            let ast_pass = AstPass::debug_binds(list_with_shorter_lifetime);
-            self.query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
+        for entry in buffer {
+            list.entry(entry);
         }
         list.finish()?;
         Ok(())

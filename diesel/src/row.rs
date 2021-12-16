@@ -73,7 +73,7 @@ pub trait Row<'a, DB: Backend>:
     /// Returns a wrapping row that allows only to access fields, where the index is part of
     /// the provided range.
     #[doc(hidden)]
-    fn partial_row(&self, range: Range<usize>) -> PartialRow<Self::InnerPartialRow>;
+    fn partial_row(&self, range: Range<usize>) -> PartialRow<'_, Self::InnerPartialRow>;
 }
 
 /// Represents a single field in a database row.
@@ -88,7 +88,7 @@ pub trait Field<'a, DB: Backend> {
 
     /// Get the value representing the current field in the raw representation
     /// as it is transmitted by the database
-    fn value(&self) -> Option<backend::RawValue<DB>>;
+    fn value(&self) -> Option<backend::RawValue<'_, DB>>;
 
     /// Checks whether this field is null or not.
     fn is_null(&self) -> bool {
@@ -154,7 +154,7 @@ where
         self.inner.get(idx)
     }
 
-    fn partial_row(&self, range: Range<usize>) -> PartialRow<R> {
+    fn partial_row(&self, range: Range<usize>) -> PartialRow<'_, R> {
         let range_upper_bound = std::cmp::min(self.range.end, self.range.start + range.end);
         let range = (self.range.start + range.start)..range_upper_bound;
         PartialRow {

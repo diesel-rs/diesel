@@ -9,6 +9,7 @@ use diesel::prelude::*;
 use diesel::query_builder::{InsertStatement, ValuesClause};
 use diesel::query_dsl::methods::ExecuteDsl;
 use diesel::query_dsl::LoadQuery;
+use diesel::serialize::ToSql;
 use diesel::sql_types::Text;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -153,14 +154,14 @@ pub trait MigrationHarness<DB: Backend> {
     fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>>;
 }
 
-impl<C, DB> MigrationHarness<DB> for C
+impl<'b, C, DB> MigrationHarness<DB> for C
 where
     DB: Backend,
     C: Connection<Backend = DB> + MigrationConnection + 'static,
     dsl::Order<
         dsl::Select<__diesel_schema_migrations::table, __diesel_schema_migrations::version>,
         dsl::Desc<__diesel_schema_migrations::version>,
-    >: LoadQuery<C, MigrationVersion<'static>>,
+    >: LoadQuery<'b, C, MigrationVersion<'static>>,
     for<'a> InsertStatement<
         __diesel_schema_migrations::table,
         ValuesClause<
@@ -171,6 +172,7 @@ where
             __diesel_schema_migrations::table,
         >,
     >: ExecuteDsl<C>,
+    str: ToSql<Text, DB>,
 {
     fn run_migration(
         &mut self,

@@ -1,10 +1,8 @@
 //! The SQLite backend
-use byteorder::NativeEndian;
 
-use super::connection::SqliteValue;
+use super::connection::{SqliteBindCollector, SqliteValue};
 use super::query_builder::SqliteQueryBuilder;
 use crate::backend::*;
-use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
 
 /// The SQLite backend
@@ -40,12 +38,14 @@ pub enum SqliteType {
 
 impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
-    type BindCollector = RawBytesBindCollector<Sqlite>;
-    type ByteOrder = NativeEndian;
+}
+
+impl<'a> HasBindCollector<'a> for Sqlite {
+    type BindCollector = SqliteBindCollector<'a>;
 }
 
 impl<'a> HasRawValue<'a> for Sqlite {
-    type RawValue = SqliteValue<'a, 'a>;
+    type RawValue = SqliteValue<'a, 'a, 'a>;
 }
 
 impl TypeMetadata for Sqlite {

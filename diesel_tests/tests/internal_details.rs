@@ -51,3 +51,17 @@ fn empty_query_gives_proper_error_instead_of_panicking() {
         Err(_) => panic!("We got back the wrong kind of error. This test is invalid."),
     }
 }
+
+#[test]
+fn ensure_sqlite_does_not_access_dropped_buffers() {
+    let connection = &mut connection();
+
+    let buf: Vec<u8> = vec![0, 1, 2];
+
+    let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
+
+    let mut iter = Connection::load(connection, query).unwrap();
+
+    assert_eq!(iter.next().is_some(), true);
+    assert_eq!(iter.next().is_none(), true);
+}

@@ -2,13 +2,13 @@ extern crate libsqlite3_sys as ffi;
 
 use super::raw::RawConnection;
 use super::row::PrivateSqliteRow;
-use super::serialized_value::SerializedValue;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
+use crate::sqlite::connection::bind_collector::SqliteBindValue;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
 use crate::sqlite::SqliteValue;
 use std::cell::{Ref, RefCell};
@@ -40,9 +40,7 @@ where
     conn.register_sql_function(fn_name, fields_needed, deterministic, move |conn, args| {
         let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
 
-        let result = f(conn, args);
-
-        process_sql_function_result::<RetSqlType, Ret>(result)
+        Ok(f(conn, args))
     })?;
     Ok(())
 }
@@ -58,10 +56,7 @@ where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
-    conn.register_sql_function(fn_name, 0, deterministic, move |_, _| {
-        let result = f();
-        process_sql_function_result::<RetSqlType, Ret>(result)
-    })?;
+    conn.register_sql_function(fn_name, 0, deterministic, move |_, _| Ok(f()))?;
     Ok(())
 }
 
@@ -102,32 +97,27 @@ where
 }
 
 pub(crate) fn process_sql_function_result<RetSqlType, Ret>(
-    result: Ret,
-) -> QueryResult<SerializedValue>
+    result: &'_ Ret,
+) -> QueryResult<SqliteBindValue<'_>>
 where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     let mut metadata_lookup = ();
-    let mut buf = Output::new(Vec::new(), &mut metadata_lookup);
+    let mut buf = Output::new(SqliteBindValue::Null, &mut metadata_lookup);
     let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
 
-    let bytes = if let IsNull::Yes = is_null {
-        None
+    if let IsNull::Yes = is_null {
+        Ok(SqliteBindValue::Null)
     } else {
-        Some(buf.into_inner())
-    };
-
-    Ok(SerializedValue {
-        ty: Sqlite::metadata(&mut ()),
-        data: bytes,
-    })
+        Ok(buf.into_inner())
+    }
 }
 
 struct FunctionRow<'a> {
     // we use `ManuallyDrop` to prevent dropping the content of the internal vector
     // as this buffer is owned by sqlite not by diesel
-    args: Rc<RefCell<ManuallyDrop<PrivateSqliteRow<'a>>>>,
+    args: Rc<RefCell<ManuallyDrop<PrivateSqliteRow<'a, 'static>>>>,
     field_count: usize,
     marker: PhantomData<&'a ffi::sqlite3_value>,
 }
@@ -211,7 +201,7 @@ impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
+    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
@@ -233,7 +223,7 @@ impl<'a, 'b> RowIndex<&'a str> for FunctionRow<'b> {
 }
 
 struct FunctionArgument<'a> {
-    args: Ref<'a, ManuallyDrop<PrivateSqliteRow<'a>>>,
+    args: Ref<'a, ManuallyDrop<PrivateSqliteRow<'a, 'static>>>,
     col_idx: i32,
 }
 
@@ -246,7 +236,7 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
         self.value().is_none()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<Sqlite>> {
+    fn value(&self) -> Option<crate::backend::RawValue<'_, Sqlite>> {
         SqliteValue::new(
             Ref::map(Ref::clone(&self.args), |drop| std::ops::Deref::deref(drop)),
             self.col_idx,

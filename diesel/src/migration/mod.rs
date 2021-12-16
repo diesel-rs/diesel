@@ -37,7 +37,7 @@ where
     String: FromSql<Text, DB>,
     DB: Backend,
 {
-    fn from_sql(bytes: crate::backend::RawValue<DB>) -> crate::deserialize::Result<Self> {
+    fn from_sql(bytes: crate::backend::RawValue<'_, DB>) -> crate::deserialize::Result<Self> {
         let s = String::from_sql(bytes)?;
         Ok(Self(Cow::Owned(s)))
     }
@@ -48,9 +48,9 @@ where
     Cow<'a, str>: ToSql<Text, DB>,
     DB: Backend,
 {
-    fn to_sql<W: std::io::Write>(
-        &self,
-        out: &mut crate::serialize::Output<W, DB>,
+    fn to_sql<'b>(
+        &'b self,
+        out: &mut crate::serialize::Output<'b, '_, DB>,
     ) -> crate::serialize::Result {
         self.0.to_sql(out)
     }
@@ -88,7 +88,7 @@ impl<'a> Display for MigrationVersion<'a> {
 /// schema.
 pub trait MigrationName: Display {
     /// The version corresponding to the current migration name
-    fn version(&self) -> MigrationVersion;
+    fn version(&self) -> MigrationVersion<'_>;
 }
 
 /// Represents a migration that interacts with diesel

@@ -188,6 +188,11 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * The MySQL connection is using the CLIENT_FOUND_ROWS from now on. This means that updating rows without changing any values will return the number of matched rows (like most other SQL servers do), as opposed to the number of changed rows.
 
+* The definition of `ToSql::to_sql` and `QueryFragment::walk_ast` has changed to allow serializing values without 
+  copying the value itself. This is useful for database backends like sqlite where you can directly share a buffer
+  with the database. Beside of the changed signature, existing impls of this trait should remain unchanged in almost 
+  all cases.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not

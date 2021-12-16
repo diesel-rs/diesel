@@ -60,7 +60,7 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.values.walk_ast(out.reborrow())?;
         Ok(())
     }

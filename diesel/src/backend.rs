@@ -1,10 +1,6 @@
 //! Types which represent various database backends
-
-use byteorder::ByteOrder;
-
-use crate::query_builder::bind_collector::BindCollector;
 use crate::query_builder::QueryBuilder;
-use crate::sql_types::{self, HasSqlType};
+use crate::sql_types::{self, HasSqlType, TypeMetadata};
 
 /// A database backend
 ///
@@ -33,19 +29,24 @@ where
     Self: HasSqlType<sql_types::Time>,
     Self: HasSqlType<sql_types::Timestamp>,
     Self: for<'a> HasRawValue<'a>,
+    Self: for<'a> HasBindCollector<'a>,
 {
     /// The concrete `QueryBuilder` implementation for this backend.
     type QueryBuilder: QueryBuilder<Self>;
+}
+
+/// The bind collector type used to collect query binds for this backend
+///
+/// This trait is separate from `Backend` to imitate `type BindCollector<'a>`. It
+/// should only be referenced directly by implementors. Users of this type
+/// should instead use the [`BindCollector`] helper type instead.
+pub trait HasBindCollector<'a>: TypeMetadata + Sized {
     /// The concrete `BindCollector` implementation for this backend.
     ///
     /// Most backends should use [`RawBytesBindCollector`].
     ///
     /// [`RawBytesBindCollector`]: crate::query_builder::bind_collector::RawBytesBindCollector
-    type BindCollector: BindCollector<Self>;
-    /// What byte order is used to transmit integers?
-    ///
-    /// This type is only used if `RawValue` is `[u8]`.
-    type ByteOrder: ByteOrder;
+    type BindCollector: crate::query_builder::bind_collector::BindCollector<'a, Self> + 'a;
 }
 
 /// The raw representation of a database value given to `FromSql`.
@@ -60,18 +61,13 @@ pub trait HasRawValue<'a> {
     type RawValue;
 }
 
-/// A trait indicating that the provided raw value uses a binary representation internally
-// That's a false positive, `HasRawValue<'a>` is essentially
-// a reference wrapper
-#[allow(clippy::wrong_self_convention)]
-pub trait BinaryRawValue<'a>: HasRawValue<'a> {
-    /// Get the underlying binary representation of the raw value
-    fn as_bytes(value: Self::RawValue) -> &'a [u8];
-}
-
 /// A helper type to get the raw representation of a database type given to
 /// `FromSql`. Equivalent to `<DB as Backend>::RawValue<'a>`.
 pub type RawValue<'a, DB> = <DB as HasRawValue<'a>>::RawValue;
+
+/// A helper type to get the bind collector for a database backend.
+/// Equivalent to `<DB as HasBindCollector<'a>>::BindCollector<'a>`j
+pub type BindCollector<'a, DB> = <DB as HasBindCollector<'a>>::BindCollector;
 
 /// This trait provides various options to configure the
 /// generated SQL for a specific backend.

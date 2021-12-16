@@ -9,4 +9,4 @@ error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` 
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
-   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), users::table, Pg>`
+   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`

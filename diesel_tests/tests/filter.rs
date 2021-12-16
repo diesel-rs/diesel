@@ -497,6 +497,8 @@ fn filter_subselect_with_nullable_column() {
         }
     }
 
+    allow_tables_to_appear_in_same_query!(heros, home_worlds);
+
     #[derive(Debug, Queryable, PartialEq)]
     struct Hero {
         id: i32,

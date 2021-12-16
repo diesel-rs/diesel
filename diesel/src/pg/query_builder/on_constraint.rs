@@ -42,7 +42,7 @@ use crate::result::QueryResult;
 /// assert!(pk_conflict_result.is_err());
 /// # }
 /// ```
-pub fn on_constraint(constraint_name: &str) -> OnConstraint {
+pub fn on_constraint(constraint_name: &str) -> OnConstraint<'_> {
     OnConstraint { constraint_name }
 }
 
@@ -59,7 +59,7 @@ impl<'a> QueryId for OnConstraint<'a> {
 }
 
 impl<'a> QueryFragment<Pg, PgOnConflictClaues> for ConflictTarget<OnConstraint<'a>> {
-    fn walk_ast(&self, mut out: AstPass<Pg>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql(" ON CONSTRAINT ");
         out.push_identifier(self.0.constraint_name)?;

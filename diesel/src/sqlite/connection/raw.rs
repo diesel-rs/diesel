@@ -7,7 +7,6 @@ use std::ptr::NonNull;
 use std::{mem, ptr, slice, str};
 
 use super::functions::{build_sql_function_args, process_sql_function_result};
-use super::serialized_value::SerializedValue;
 use super::stmt::ensure_sqlite_ok;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
@@ -83,7 +82,7 @@ impl RawConnection {
         unsafe { ffi::sqlite3_changes(self.internal_connection.as_ptr()) as usize }
     }
 
-    pub fn register_sql_function<F>(
+    pub fn register_sql_function<F, Ret, RetSqlType>(
         &self,
         fn_name: &str,
         num_args: usize,
@@ -91,10 +90,12 @@ impl RawConnection {
         f: F,
     ) -> QueryResult<()>
     where
-        F: FnMut(&Self, &mut [*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
+        F: FnMut(&Self, &mut [*mut ffi::sqlite3_value]) -> QueryResult<Ret>
             + std::panic::UnwindSafe
             + Send
             + 'static,
+        Ret: ToSql<RetSqlType, Sqlite>,
+        Sqlite: HasSqlType<RetSqlType>,
     {
         let callback_fn = Box::into_raw(Box::new(CustomFunctionUserPtr {
             callback: f,
@@ -110,7 +111,7 @@ impl RawConnection {
                 num_args as _,
                 flags,
                 callback_fn as *mut _,
-                Some(run_custom_function::<F>),
+                Some(run_custom_function::<F, Ret, RetSqlType>),
                 None,
                 None,
                 Some(destroy_boxed::<CustomFunctionUserPtr<F>>),
@@ -264,15 +265,17 @@ struct CustomFunctionUserPtr<F> {
 }
 
 #[allow(warnings)]
-extern "C" fn run_custom_function<F>(
+extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     ctx: *mut ffi::sqlite3_context,
     num_args: libc::c_int,
     value_ptr: *mut *mut ffi::sqlite3_value,
 ) where
-    F: FnMut(&RawConnection, &mut [*mut ffi::sqlite3_value]) -> QueryResult<SerializedValue>
+    F: FnMut(&RawConnection, &mut [*mut ffi::sqlite3_value]) -> QueryResult<Ret>
         + std::panic::UnwindSafe
         + Send
         + 'static,
+    Ret: ToSql<RetSqlType, Sqlite>,
+    Sqlite: HasSqlType<RetSqlType>,
 {
     use std::ops::Deref;
     static NULL_DATA_ERR: &str = "An unknown error occurred. sqlite3_user_data returned a null pointer. This should never happen.";
@@ -307,7 +310,13 @@ extern "C" fn run_custom_function<F>(
 
     let result = std::panic::catch_unwind(move || {
         let args = unsafe { slice::from_raw_parts_mut(value_ptr, num_args as _) };
-        Ok((callback.0)(&*conn, args)?)
+        let res = (callback.0)(&*conn, args)?;
+        let value = process_sql_function_result(&res)?;
+        // We've checked already that ctx is not null
+        unsafe {
+            value.result_of(&mut *ctx);
+        }
+        Ok(())
     })
     .unwrap_or_else(|p| {
         Err(SqliteCallbackError::Panic(
@@ -315,12 +324,8 @@ extern "C" fn run_custom_function<F>(
             data_ptr.function_name.clone(),
         ))
     });
-    match result {
-        Ok(value) => value.result_of(ctx),
-        Err(e) => {
-            e.emit(ctx);
-            return;
-        }
+    if let Err(e) = result {
+        e.emit(ctx);
     }
 }
 
@@ -455,7 +460,12 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
         };
 
         let res = A::finalize(aggregator);
-        Ok(process_sql_function_result::<RetSqlType, Ret>(res)?)
+        let value = process_sql_function_result(&res)?;
+        // We've checked already that ctx is not null
+        unsafe {
+            value.result_of(&mut *ctx);
+        }
+        Ok(())
     })
     .unwrap_or_else(|e| {
         Err(SqliteCallbackError::Panic(
@@ -463,10 +473,9 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
             format!("{}::finalize() paniced", std::any::type_name::<A>()),
         ))
     });
-
-    match result {
-        Ok(value) => value.result_of(ctx),
-        Err(e) => e.emit(ctx),
+    if let Err(e) = result {
+        e.emit(ctx);
+        return;
     }
 }
 

@@ -13,16 +13,19 @@ use crate::sql_types::{HasSqlType, TypeMetadata};
 /// the query builder will use [`AstPass::push_bind_param`] instead.
 ///
 /// [`AstPass::push_bind_param`]: crate::query_builder::AstPass::push_bind_param()
-pub trait BindCollector<DB: Backend> {
+pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
+    /// The internal buffer type used by this bind collector
+    type Buffer;
+
     /// Serializes the given bind value, and collects the result.
     fn push_bound_value<T, U>(
         &mut self,
-        bind: &U,
+        bind: &'a U,
         metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()>
     where
-        DB: HasSqlType<T>,
-        U: ToSql<T, DB>;
+        DB: Backend + HasSqlType<T>,
+        U: ToSql<T, DB> + 'a;
 }
 
 #[derive(Debug)]
@@ -51,9 +54,18 @@ impl<DB: Backend + TypeMetadata> RawBytesBindCollector<DB> {
             binds: Vec::new(),
         }
     }
+
+    pub(crate) fn reborrow_buffer<'a: 'b, 'b>(b: &'a mut Vec<u8>) -> &'b mut Vec<u8> {
+        b
+    }
 }
 
-impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB> {
+impl<'a, DB> BindCollector<'a, DB> for RawBytesBindCollector<DB>
+where
+    DB: Backend<BindCollector = Self> + TypeMetadata,
+{
+    type Buffer = &'a mut Vec<u8>;
+
     fn push_bound_value<T, U>(
         &mut self,
         bind: &U,
@@ -63,11 +75,12 @@ impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB>
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
     {
-        let mut to_sql_output = Output::new(Vec::new(), metadata_lookup);
-        let is_null = bind
-            .to_sql(&mut to_sql_output)
-            .map_err(SerializationError)?;
-        let bytes = to_sql_output.into_inner();
+        let mut bytes = Vec::new();
+        let is_null = {
+            let mut to_sql_output = Output::new(&mut bytes, metadata_lookup);
+            bind.to_sql(&mut to_sql_output)
+                .map_err(SerializationError)?
+        };
         let metadata = <DB as HasSqlType<T>>::metadata(metadata_lookup);
         match is_null {
             IsNull::No => self.binds.push(Some(bytes)),

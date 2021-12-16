@@ -235,10 +235,7 @@ fn with_serialize_as() {
         DB: backend::Backend,
         String: serialize::ToSql<sql_types::Text, DB>,
     {
-        fn to_sql<W: std::io::Write>(
-            &self,
-            out: &mut serialize::Output<W, DB>,
-        ) -> serialize::Result {
+        fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, DB>) -> serialize::Result {
             self.0.to_sql(out)
         }
     }

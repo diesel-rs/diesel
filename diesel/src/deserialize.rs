@@ -411,7 +411,7 @@ pub use diesel_derives::QueryableByName;
 /// ```
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn from_sql(bytes: backend::RawValue<DB>) -> Result<Self>;
+    fn from_sql(bytes: backend::RawValue<'_, DB>) -> Result<Self>;
 
     /// A specialized variant of `from_sql` for handling null values.
     ///
@@ -421,7 +421,7 @@ pub trait FromSql<A, DB: Backend>: Sized {
     /// If your custom type supports null values you need to provide a
     /// custom implementation.
     #[inline(always)]
-    fn from_nullable_sql(bytes: Option<backend::RawValue<DB>>) -> Result<Self> {
+    fn from_nullable_sql(bytes: Option<backend::RawValue<'_, DB>>) -> Result<Self> {
         match bytes {
             Some(bytes) => Self::from_sql(bytes),
             None => Err(Box::new(crate::result::UnexpectedNullError)),

@@ -1,7 +1,6 @@
 use crate::backend::Backend;
 use crate::expression::TypedExpressionType;
 use crate::expression::*;
-use crate::query_builder::select_statement::NoFromClause;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;
 use crate::result::QueryResult;
@@ -30,7 +29,7 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)
     }
 }

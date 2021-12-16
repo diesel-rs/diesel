@@ -63,7 +63,7 @@ pub enum Error {
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::ConnectionError(ref e) => e.fmt(f),
             Error::QueryError(ref e) => e.fmt(f),
@@ -130,14 +130,14 @@ where
     }
 }
 
-impl<'a, DB, M> ConnectionGatWorkaround<'a, DB> for PooledConnection<M>
+impl<'conn, 'query, DB, M> ConnectionGatWorkaround<'conn, 'query, DB> for PooledConnection<M>
 where
     M: ManageConnection,
     M::Connection: Connection<Backend = DB>,
     DB: Backend,
 {
-    type Cursor = <M::Connection as ConnectionGatWorkaround<'a, DB>>::Cursor;
-    type Row = <M::Connection as ConnectionGatWorkaround<'a, DB>>::Row;
+    type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor;
+    type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Row;
 }
 
 impl<M> Connection for PooledConnection<M>
@@ -159,13 +159,13 @@ where
         (&mut **self).execute(query)
     }
 
-    fn load<T>(
-        &mut self,
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         (&mut **self).load(source)

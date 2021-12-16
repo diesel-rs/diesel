@@ -1,8 +1,8 @@
-error[E0277]: the trait bound `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::name>>: HavingDsl<_>` is not satisfied
+error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>>: HavingDsl<_>` is not satisfied
   --> $DIR/having_cant_be_used_without_group_by.rs:26:38
    |
 26 |     users::table.select(users::name).having(users::id.gt(1)).load(&mut conn);
-   |                                      ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::name>>`
+   |                                      ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>>`
    |
    = help: the following implementations were found:
              <SelectStatement<F, S, D, W, O, LOf, diesel::query_builder::group_by_clause::GroupByClause<G>, H> as HavingDsl<Predicate>>
@@ -13,26 +13,26 @@ error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
 28 |     users::table.into_boxed().having(users::id.gt(1)).load(&mut conn);
    |                               ^^^^^^ the trait `diesel::Expression` is not implemented for `()`
    |
-   = note: required because of the requirements on the impl of `HavingDsl<_>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), users::table, _>`
+   = note: required because of the requirements on the impl of `HavingDsl<_>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/having_cant_be_used_without_group_by.rs:30:58
    |
 30 |     users::table.select(users::name).group_by(users::id).having(posts::id.eq(42)).load(&mut conn);
    |                                                          ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::id`
    = note: 2 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-   = note: required because of the requirements on the impl of `HavingDsl<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `SelectStatement<users::table, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
+   = note: required because of the requirements on the impl of `HavingDsl<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, LimitOffsetClause<NoLimitClause, NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> $DIR/having_cant_be_used_without_group_by.rs:32:71
    |
 32 |     users::table.select(users::name).group_by(users::id).into_boxed().having(posts::id.eq(42)).load(&mut conn);
    |                                                                       ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::id`
    = note: 2 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-   = note: required because of the requirements on the impl of `HavingDsl<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, users::table, _, users::columns::id>`
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
+   = note: required because of the requirements on the impl of `HavingDsl<Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::id>`

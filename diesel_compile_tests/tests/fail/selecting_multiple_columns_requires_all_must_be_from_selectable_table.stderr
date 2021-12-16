@@ -7,11 +7,11 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
    = help: the following implementations were found:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<From>>>
+             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
            and 2 others
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
-   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<FromClause<users::table>>`
 
 error[E0277]: the trait bound `posts::columns::user_id: SelectableExpression<users::table>` is not satisfied
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:37
@@ -22,11 +22,11 @@ error[E0277]: the trait bound `posts::columns::user_id: SelectableExpression<use
    = help: the following implementations were found:
              <posts::columns::user_id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::user_id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::user_id as SelectableExpression<SelectStatement<From>>>
+             <posts::columns::user_id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::user_id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
            and 2 others
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
-   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<FromClause<users::table>>`
 
 error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
@@ -40,7 +40,7 @@ error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` 
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::user_id)`
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
-   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<FromClause<users::table>>`
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:37
@@ -51,11 +51,11 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
    = help: the following implementations were found:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
-             <posts::columns::id as SelectableExpression<SelectStatement<From>>>
+             <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
            and 2 others
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, users::columns::name)`
-   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, users::columns::name)>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, users::columns::name)>` for `SelectStatement<FromClause<users::table>>`
 
 error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
@@ -69,4 +69,4 @@ error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` 
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, users::columns::name)`
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, users::columns::name)`
-   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, users::columns::name)>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, users::columns::name)>` for `SelectStatement<FromClause<users::table>>`

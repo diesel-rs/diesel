@@ -17,7 +17,7 @@ impl Expression for now {
 }
 
 impl<DB: Backend> QueryFragment<DB> for now {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("CURRENT_TIMESTAMP");
         Ok(())
     }
@@ -82,7 +82,7 @@ impl Expression for today {
 }
 
 impl<DB: Backend> QueryFragment<DB> for today {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("CURRENT_DATE");
         Ok(())
     }

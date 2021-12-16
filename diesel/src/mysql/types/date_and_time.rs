@@ -111,7 +111,7 @@ impl MysqlTimestampType {
 macro_rules! mysql_time_impls {
     ($ty:ty) => {
         impl ToSql<$ty, Mysql> for MysqlTime {
-            fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+            fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
                 let bytes = unsafe {
                     let bytes_ptr = self as *const MysqlTime as *const u8;
                     slice::from_raw_parts(bytes_ptr, mem::size_of::<MysqlTime>())
@@ -136,7 +136,7 @@ mysql_time_impls!(Date);
 
 #[cfg(feature = "chrono")]
 impl ToSql<Datetime, Mysql> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         <NaiveDateTime as ToSql<Timestamp, Mysql>>::to_sql(self, out)
     }
 }
@@ -150,7 +150,7 @@ impl FromSql<Datetime, Mysql> for NaiveDateTime {
 
 #[cfg(feature = "chrono")]
 impl ToSql<Timestamp, Mysql> for NaiveDateTime {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year() as libc::c_uint,
             month: self.month() as libc::c_uint,
@@ -164,7 +164,7 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Timestamp, Mysql>>::to_sql(&mysql_time, out)
+        <MysqlTime as ToSql<Timestamp, Mysql>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 
@@ -192,7 +192,7 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
 
 #[cfg(feature = "chrono")]
 impl ToSql<Time, Mysql> for NaiveTime {
-    fn to_sql<W: Write>(&self, out: &mut serialize::Output<W, Mysql>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut serialize::Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
             hour: self.hour() as libc::c_uint,
             minute: self.minute() as libc::c_uint,
@@ -206,7 +206,7 @@ impl ToSql<Time, Mysql> for NaiveTime {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Time, Mysql>>::to_sql(&mysql_time, out)
+        <MysqlTime as ToSql<Time, Mysql>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 
@@ -225,7 +225,7 @@ impl FromSql<Time, Mysql> for NaiveTime {
 
 #[cfg(feature = "chrono")]
 impl ToSql<Date, Mysql> for NaiveDate {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let mysql_time = MysqlTime {
             year: self.year() as libc::c_uint,
             month: self.month() as libc::c_uint,
@@ -239,7 +239,7 @@ impl ToSql<Date, Mysql> for NaiveDate {
             time_zone_displacement: 0,
         };
 
-        <MysqlTime as ToSql<Date, Mysql>>::to_sql(&mysql_time, out)
+        <MysqlTime as ToSql<Date, Mysql>>::to_sql(&mysql_time, &mut out.reborrow())
     }
 }
 

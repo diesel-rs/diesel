@@ -1247,6 +1247,8 @@ pub trait QueryDsl: Sized {
     ///     }
     /// }
     ///
+    /// allow_tables_to_appear_in_same_query!(users, posts);
+    ///
     /// # let _: Vec<(i32, Option<String>)> =
     /// posts::table.filter(
     ///    posts::by_user.eq_any(users::table.select(users::name).nullable())
@@ -1398,9 +1400,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load<U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
     {
         self.internal_load(conn)?.collect()
     }
@@ -1505,10 +1507,13 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'a, U>(self, conn: &'a mut Conn) -> QueryResult<LoadIter<'a, Self, Conn, U>>
+    fn load_iter<'conn, 'query: 'conn, U>(
+        self,
+        conn: &'conn mut Conn,
+    ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U>>
     where
-        U: 'a,
-        Self: LoadQuery<Conn, U> + 'a,
+        U: 'conn,
+        Self: LoadQuery<'query, Conn, U> + 'conn,
     {
         self.internal_load(conn)
     }
@@ -1558,9 +1563,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn get_result<U>(self, conn: &mut Conn) -> QueryResult<U>
+    fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
     {
         match self.internal_load(conn)?.next() {
             Some(v) => v,
@@ -1574,9 +1579,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// sense for insert, update, and delete statements.
     ///
     /// [`load`]: crate::query_dsl::RunQueryDsl::load()
-    fn get_results<U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+    fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
     where
-        Self: LoadQuery<Conn, U>,
+        Self: LoadQuery<'query, Conn, U>,
     {
         self.load(conn)
     }
@@ -1614,10 +1619,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn first<U>(self, conn: &mut Conn) -> QueryResult<U>
+    fn first<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
     where
         Self: methods::LimitDsl,
-        Limit<Self>: LoadQuery<Conn, U>,
+        Limit<Self>: LoadQuery<'query, Conn, U>,
     {
         methods::LimitDsl::limit(self, 1).get_result(conn)
     }

@@ -8,9 +8,7 @@ error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<users:
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<diesel::query_source::joins::Join<users::table, posts::table, Inner>>` for `Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>`
    = note: required because of the requirements on the impl of `QuerySource` for `JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>`
-   = note: required because of the requirements on the impl of `Query` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>>`
-   = note: required because of the requirements on the impl of `AsQuery` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>>`
-   = note: required because of the requirements on the impl of `InternalJoinDsl<posts::table, Inner, Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `InternalJoinDsl<posts::table, Inner, Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>` for `SelectStatement<FromClause<users::table>>`
 
 error[E0277]: the trait bound `diesel::sql_types::Integer: BoolOrNullableBool` is not satisfied
   --> $DIR/join_with_explicit_on_requires_valid_boolean_expression.rs:33:26
@@ -19,6 +17,4 @@ error[E0277]: the trait bound `diesel::sql_types::Integer: BoolOrNullableBool` i
    |                          ^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
    |
    = note: required because of the requirements on the impl of `QuerySource` for `JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>`
-   = note: required because of the requirements on the impl of `Query` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>>`
-   = note: required because of the requirements on the impl of `AsQuery` for `SelectStatement<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>>`
-   = note: required because of the requirements on the impl of `InternalJoinDsl<posts::table, Inner, users::columns::id>` for `SelectStatement<users::table>`
+   = note: required because of the requirements on the impl of `InternalJoinDsl<posts::table, Inner, users::columns::id>` for `SelectStatement<FromClause<users::table>>`

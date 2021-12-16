@@ -54,6 +54,8 @@ macro_rules! __diesel_internal_table_backend_specific_impls {
 macro_rules! __diesel_column {
     (
         table = $table:ident,
+        table_sql_name = $table_sql_name:expr,
+        table_schema = $table_schema:ident,
         name = $column_name:ident,
         sql_name = $sql_name:expr,
         ty = ($($Type:tt)*),
@@ -73,9 +75,12 @@ macro_rules! __diesel_column {
             <$table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
         {
             #[allow(non_snake_case)]
-            fn walk_ast(&self, mut __out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+            fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
+            {
                 use $crate::QuerySource;
-                $table.from_clause().walk_ast(__out.reborrow())?;
+                const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
+
+                FROM_CLAUSE.walk_ast(__out.reborrow())?;
                 __out.push_sql(".");
                 __out.push_identifier($sql_name)
             }
@@ -90,22 +95,23 @@ macro_rules! __diesel_column {
         }
 
         impl<Left, Right> $crate::SelectableExpression<
-            $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>,
+                $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>,
         > for $column_name where
             $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>>,
             Self: $crate::SelectableExpression<Left>,
             // If our table is on the right side of this join, only
             // `Nullable<Self>` can be selected
-            Right: $crate::query_source::AppearsInFromClause<$table, Count=$crate::query_source::Never>,
+            Right: $crate::query_source::AppearsInFromClause<$table, Count=$crate::query_source::Never> + $crate::query_source::QuerySource,
+            Left: $crate::query_source::QuerySource
         {
         }
 
         impl<Left, Right> $crate::SelectableExpression<
-            $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>,
+                $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>,
         > for $column_name where
             $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>>,
-            Left: $crate::query_source::AppearsInFromClause<$table>,
-            Right: $crate::query_source::AppearsInFromClause<$table>,
+            Left: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
+            Right: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
             (Left::Count, Right::Count): $crate::query_source::Pick<Left, Right>,
             Self: $crate::SelectableExpression<
                 <(Left::Count, Right::Count) as $crate::query_source::Pick<Left, Right>>::Selection,
@@ -120,8 +126,9 @@ macro_rules! __diesel_column {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<From> $crate::SelectableExpression<$crate::query_builder::SelectStatement<From>> for $column_name where
-            $column_name: $crate::SelectableExpression<From> + $crate::AppearsOnTable<$crate::query_builder::SelectStatement<From>>,
+        impl<From> $crate::SelectableExpression<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<From>>> for $column_name where
+            From: $crate::query_source::QuerySource,
+            $column_name: $crate::SelectableExpression<From> + $crate::AppearsOnTable<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<From>>>,
         {
         }
 
@@ -742,13 +749,27 @@ macro_rules! __diesel_table_impl {
             pub type SqlType = ($($($column_ty)*,)+);
 
             /// Helper type for representing a boxed query from this table
-            pub type BoxedQuery<'a, DB, ST = SqlType> = $crate::query_builder::BoxedSelectStatement<'a, ST, table, DB>;
+            pub type BoxedQuery<'a, DB, ST = SqlType> = $crate::query_builder::BoxedSelectStatement<'a, ST, $crate::query_builder::FromClause<table>, DB>;
 
-            $crate::__diesel_table_query_source_impl!(table, $schema, $sql_name);
+            impl $crate::QuerySource for table {
+                type FromClause = $crate::query_builder::nodes::StaticQueryFragmentInstance<table>;
+                type DefaultSelection = <Self as $crate::Table>::AllColumns;
+
+                fn from_clause(&self) -> Self::FromClause {
+                    $crate::query_builder::nodes::StaticQueryFragmentInstance::new()
+                }
+
+                fn default_selection(&self) -> Self::DefaultSelection {
+                    use $crate::Table;
+                    Self::all_columns()
+                }
+            }
+
+            $crate::__diesel_table_generate_static_query_fragment_for_table!($schema, table, $sql_name);
 
             impl $crate::query_builder::AsQuery for table {
                 type SqlType = SqlType;
-                type Query = $crate::query_builder::SelectStatement<Self>;
+                type Query = $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<Self>>;
 
                 fn as_query(self) -> Self::Query {
                     $crate::query_builder::SelectStatement::simple(self)
@@ -781,7 +802,8 @@ macro_rules! __diesel_table_impl {
 
                 fn into_update_target(self) -> $crate::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
                     use $crate::query_builder::AsQuery;
-                    self.as_query().into_update_target()
+                    let q: $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<table>> = self.as_query();
+                    q.into_update_target()
                 }
             }
 
@@ -795,6 +817,8 @@ macro_rules! __diesel_table_impl {
 
             impl<Left, Right, Kind> $crate::JoinTo<$crate::query_source::joins::Join<Left, Right, Kind>> for table where
                 $crate::query_source::joins::Join<Left, Right, Kind>: $crate::JoinTo<table>,
+                Left: $crate::query_source::QuerySource,
+                Right: $crate::query_source::QuerySource,
             {
                 type FromClause = $crate::query_source::joins::Join<Left, Right, Kind>;
                 type OnClause = <$crate::query_source::joins::Join<Left, Right, Kind> as $crate::JoinTo<table>>::OnClause;
@@ -817,24 +841,26 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
-            impl<F, S, D, W, O, L, Of, G> $crate::JoinTo<$crate::query_builder::SelectStatement<F, S, D, W, O, L, Of, G>> for table where
-                $crate::query_builder::SelectStatement<F, S, D, W, O, L, Of, G>: $crate::JoinTo<table>,
+            impl<F, S, D, W, O, L, Of, G> $crate::JoinTo<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>> for table where
+                $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>: $crate::JoinTo<table>,
+                F: $crate::query_source::QuerySource
             {
-                type FromClause = $crate::query_builder::SelectStatement<F, S, D, W, O, L, Of, G>;
-                type OnClause = <$crate::query_builder::SelectStatement<F, S, D, W, O, L, Of, G> as $crate::JoinTo<table>>::OnClause;
+                type FromClause = $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>;
+                type OnClause = <$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::query_builder::SelectStatement<F, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
+                fn join_target(rhs: $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
                     let (_, on_clause) = $crate::query_builder::SelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<'a, QS, ST, DB> $crate::JoinTo<$crate::query_builder::BoxedSelectStatement<'a, QS, ST, DB>> for table where
-                $crate::query_builder::BoxedSelectStatement<'a, QS, ST, DB>: $crate::JoinTo<table>,
+            impl<'a, QS, ST, DB> $crate::JoinTo<$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>> for table where
+                $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>: $crate::JoinTo<table>,
+                QS: $crate::query_source::QuerySource,
             {
-                type FromClause = $crate::query_builder::BoxedSelectStatement<'a, QS, ST, DB>;
-                type OnClause = <$crate::query_builder::BoxedSelectStatement<'a, QS, ST, DB> as $crate::JoinTo<table>>::OnClause;
-                fn join_target(rhs: $crate::query_builder::BoxedSelectStatement<'a, QS, ST, DB>) -> (Self::FromClause, Self::OnClause) {
+                type FromClause = $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>;
+                type OnClause = <$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
+                fn join_target(rhs: $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
                     let (_, on_clause) = $crate::query_builder::BoxedSelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
@@ -893,9 +919,12 @@ macro_rules! __diesel_table_impl {
                     <table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
                 {
                     #[allow(non_snake_case)]
-                    fn walk_ast(&self, mut __out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
+                    fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
+                    {
                         use $crate::QuerySource;
-                        table.from_clause().walk_ast(__out.reborrow())?;
+                        const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
+
+                        FROM_CLAUSE.walk_ast(__out.reborrow())?;
                         __out.push_sql(".*");
                         Ok(())
                     }
@@ -909,6 +938,8 @@ macro_rules! __diesel_table_impl {
 
                 $($crate::__diesel_column! {
                     table = table,
+                    table_sql_name = $sql_name,
+                    table_schema = $schema,
                     name = $column_name,
                     sql_name = $column_sql_name,
                     ty = ($($column_ty)*),
@@ -969,47 +1000,33 @@ macro_rules! __diesel_valid_grouping_for_table_columns {
 
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __diesel_table_query_source_impl {
-    ($table_struct:ident, public, $table_name:expr) => {
-        impl $crate::QuerySource for $table_struct {
-            type FromClause = $crate::query_builder::nodes::Identifier<'static>;
-            type DefaultSelection = <Self as $crate::Table>::AllColumns;
-
-            fn from_clause(&self) -> Self::FromClause {
-                $crate::query_builder::nodes::Identifier($table_name)
-            }
-
-            fn default_selection(&self) -> Self::DefaultSelection {
-                use $crate::Table;
-                Self::all_columns()
-            }
+macro_rules! __diesel_table_generate_static_query_fragment_for_table {
+    (public, $table: ident, $table_name:expr) => {
+        impl $crate::query_builder::nodes::StaticQueryFragment for table {
+            type Component = $crate::query_builder::nodes::Identifier<'static>;
+            const STATIC_COMPONENT: &'static Self::Component = &$crate::query_builder::nodes::Identifier($table_name);
         }
+
     };
-
-    ($table_struct:ident, $schema_name:ident, $table_name:expr) => {
-        impl $crate::QuerySource for $table_struct {
-            type FromClause = $crate::query_builder::nodes::InfixNode<
-                'static,
-                $crate::query_builder::nodes::Identifier<'static>,
-                $crate::query_builder::nodes::Identifier<'static>,
-            >;
-            type DefaultSelection = <Self as $crate::Table>::AllColumns;
-
-            fn from_clause(&self) -> Self::FromClause {
-                $crate::query_builder::nodes::InfixNode::new(
-                    $crate::query_builder::nodes::Identifier(stringify!($schema_name)),
-                    $crate::query_builder::nodes::Identifier($table_name),
-                    ".",
-                )
-            }
-
-            fn default_selection(&self) -> Self::DefaultSelection {
-                use $crate::Table;
-                Self::all_columns()
-            }
+    ($schema_name:ident, $table: ident, $table_name:expr) => {
+        impl $crate::query_builder::nodes::StaticQueryFragment for table {
+            type Component = $crate::query_builder::nodes::InfixNode<
+                    $crate::query_builder::nodes::Identifier<'static>,
+                    $crate::query_builder::nodes::Identifier<'static>,
+                    &'static str
+                >;
+            const STATIC_COMPONENT: &'static Self::Component = &$crate::query_builder::nodes::InfixNode::new(
+                $crate::query_builder::nodes::Identifier(stringify!($schema_name)),
+                $crate::query_builder::nodes::Identifier($table_name),
+                "."
+            );
         }
-    };
+    }
 }
+
+
+
+
 
 /// Allow two tables to be referenced in a join query without providing an
 /// explicit `ON` clause.

@@ -145,11 +145,22 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
             for #fn_name #ty_generics
         where
             __DieselInternal: diesel::backend::Backend,
-            for<'a> (#(&'a #arg_name),*): QueryFragment<__DieselInternal>,
+            #(#arg_name: QueryFragment<__DieselInternal>,)*
         {
-            fn walk_ast(&self, mut out: AstPass<__DieselInternal>) -> QueryResult<()> {
+            #[allow(unused_assignments)]
+            fn walk_ast<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()>{
                 out.push_sql(concat!(#sql_name, "("));
-                (#(&self.#arg_name,)*).walk_ast(out.reborrow())?;
+                // we unroll the arguments manually here, to prevent borrow check issues
+                let mut needs_comma = false;
+                #(
+                    if !self.#arg_name.is_noop()? {
+                        if needs_comma {
+                            out.push_sql(", ");
+                        }
+                        self.#arg_name.walk_ast(out.reborrow())?;
+                        needs_comma = true;
+                    }
+                )*
                 out.push_sql(")");
                 Ok(())
             }

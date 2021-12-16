@@ -10,6 +10,7 @@ use crate::sql_types::BoolOrNullableBool;
 
 impl<T, U, Op, Ret> InsertStatement<T, U, Op, Ret>
 where
+    T: QuerySource,
     U: UndecoratedInsertRecord<T> + IntoConflictValueClause,
 {
     /// Adds `ON CONFLICT DO NOTHING` to the insert statement, without
@@ -224,7 +225,9 @@ pub struct IncompleteOnConflict<Stmt, Target> {
     target: Target,
 }
 
-impl<T, U, Op, Ret, Target> IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target> {
+impl<T: QuerySource, U, Op, Ret, Target>
+    IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
+{
     /// Creates a query with `ON CONFLICT (target) DO NOTHING`
     ///
     /// If you want to do nothing when *any* constraint conflicts, use
@@ -371,7 +374,9 @@ pub struct IncompleteDoUpdate<Stmt, Target> {
     target: Target,
 }
 
-impl<T, U, Op, Ret, Target> IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, Target> {
+impl<T: QuerySource, U, Op, Ret, Target>
+    IncompleteDoUpdate<InsertStatement<T, U, Op, Ret>, Target>
+{
     /// See [`do_update`] for usage examples.
     ///
     /// [`do_update`]: IncompleteOnConflict::do_update()

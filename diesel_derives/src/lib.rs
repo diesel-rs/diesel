@@ -316,7 +316,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///         DB: Backend,
 ///         String: ToSql<sql_types::Text, DB>,
 /// {
-///     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
+///     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
 ///         self.0.to_sql(out)
 ///     }
 /// }

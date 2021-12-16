@@ -7,6 +7,8 @@ use crate::expression::*;
 use crate::insertable::Insertable;
 use crate::query_builder::combination_clause::*;
 use crate::query_builder::distinct_clause::*;
+use crate::query_builder::from_clause::AsQuerySource;
+use crate::query_builder::from_clause::FromClause;
 use crate::query_builder::group_by_clause::*;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::limit_clause::*;
@@ -17,6 +19,7 @@ use crate::query_builder::order_clause::*;
 use crate::query_builder::select_clause::*;
 use crate::query_builder::update_statement::*;
 use crate::query_builder::where_clause::*;
+use crate::query_builder::NoFromClause;
 use crate::query_builder::{
     AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement,
 };
@@ -28,17 +31,86 @@ use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::QuerySource;
 use crate::sql_types::{BigInt, BoolOrNullableBool};
 
-impl<F, S, D, W, O, LOf, G, H, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
-    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+impl<F, D, W, O, LOf, G, H, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
+    for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, D, W, O, LOf, G, H, LC>
 where
-    SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, LOf, G, H, LC>: AsQuery,
+    F: QuerySource,
+    Rhs: QuerySource,
+    JoinOn<Join<F, Rhs, Kind>, On>: QuerySource,
+    SelectStatement<
+        FromClause<JoinOn<Join<F, Rhs, Kind>, On>>,
+        DefaultSelectClause<FromClause<JoinOn<Join<F, Rhs, Kind>, On>>>,
+        D,
+        W,
+        O,
+        LOf,
+        G,
+        H,
+        LC,
+    >: AsQuery,
 {
-    type Output = SelectStatement<JoinOn<Join<F, Rhs, Kind>, On>, S, D, W, O, LOf, G, H, LC>;
+    type Output = SelectStatement<
+        FromClause<JoinOn<Join<F, Rhs, Kind>, On>>,
+        DefaultSelectClause<FromClause<JoinOn<Join<F, Rhs, Kind>, On>>>,
+        D,
+        W,
+        O,
+        LOf,
+        G,
+        H,
+        LC,
+    >;
+
+    fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
+        let from = FromClause::new(Join::new(self.from.source, rhs, kind).on(on));
+        SelectStatement::new(
+            DefaultSelectClause::new(&from),
+            from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit_offset,
+            self.group_by,
+            self.having,
+            self.locking,
+        )
+    }
+}
+
+impl<F, S, D, W, O, LOf, G, H, LC, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On>
+    for SelectStatement<FromClause<F>, SelectClause<S>, D, W, O, LOf, G, H, LC>
+where
+    F: QuerySource,
+    Rhs: QuerySource,
+    JoinOn<Join<F, Rhs, Kind>, On>: QuerySource,
+    SelectStatement<
+        FromClause<JoinOn<Join<F, Rhs, Kind>, On>>,
+        SelectClause<S>,
+        D,
+        W,
+        O,
+        LOf,
+        G,
+        H,
+        LC,
+    >: AsQuery,
+{
+    type Output = SelectStatement<
+        FromClause<JoinOn<Join<F, Rhs, Kind>, On>>,
+        SelectClause<S>,
+        D,
+        W,
+        O,
+        LOf,
+        G,
+        H,
+        LC,
+    >;
 
     fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output {
         SelectStatement::new(
             self.select,
-            Join::new(self.from, rhs, kind).on(on),
+            FromClause::new(Join::new(self.from.source, rhs, kind).on(on)),
             self.distinct,
             self.where_clause,
             self.order,
@@ -51,13 +123,38 @@ where
 }
 
 impl<F, S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
-    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
 where
     G: ValidGroupByClause,
+    F: QuerySource,
     Selection: SelectableExpression<F> + ValidGrouping<G::Expressions>,
-    SelectStatement<F, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
+    SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
 {
-    type Output = SelectStatement<F, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
+    type Output = SelectStatement<FromClause<F>, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
+
+    fn select(self, selection: Selection) -> Self::Output {
+        SelectStatement::new(
+            SelectClause(selection),
+            self.from,
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit_offset,
+            self.group_by,
+            self.having,
+            self.locking,
+        )
+    }
+}
+
+impl<S, D, W, O, LOf, G, H, LC, Selection> SelectDsl<Selection>
+    for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H, LC>
+where
+    G: ValidGroupByClause,
+    Selection: SelectableExpression<NoFromClause> + ValidGrouping<G::Expressions>,
+    SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>: SelectQuery,
+{
+    type Output = SelectStatement<NoFromClause, SelectClause<Selection>, D, W, O, LOf, G, H, LC>;
 
     fn select(self, selection: Selection) -> Self::Output {
         SelectStatement::new(
@@ -149,7 +246,8 @@ use crate::expression_methods::EqAll;
 use crate::query_builder::having_clause::{HavingClause, NoHavingClause};
 use crate::query_source::Table;
 
-impl<F, S, D, W, O, LOf, G, H, LC, PK> FindDsl<PK> for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+impl<F, S, D, W, O, LOf, G, H, LC, PK> FindDsl<PK>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
 where
     F: Table,
     F::PrimaryKey: EqAll<PK>,
@@ -158,7 +256,7 @@ where
     type Output = Filter<Self, <F::PrimaryKey as EqAll<PK>>::Output>;
 
     fn find(self, id: PK) -> Self::Output {
-        let primary_key = self.from.primary_key();
+        let primary_key = self.from.source.primary_key();
         FilterDsl::filter(self, primary_key.eq_all(id))
     }
 }
@@ -361,11 +459,12 @@ impl<F, S, D, W, O, LOf, G, H, LC, LM, Modifier> ModifyLockDsl<Modifier>
 }
 
 impl<'a, F, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
-    for SelectStatement<F, S, D, W, O, LOf, G, H>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
 where
     Self: AsQuery,
     DB: Backend,
-    S: IntoBoxedSelectClause<'a, DB, F> + SelectClauseExpression<F>,
+    F: QuerySource,
+    S: SelectClauseExpression<FromClause<F>> + QueryFragment<DB> + Send + 'a,
     S::Selection: ValidGrouping<G::Expressions>,
     D: QueryFragment<DB> + Send + 'a,
     W: Into<BoxedWhereClause<'a, DB>>,
@@ -374,7 +473,8 @@ where
     G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
     H: QueryFragment<DB> + Send + 'a,
 {
-    type Output = BoxedSelectStatement<'a, S::SqlType, F, DB, G::Expressions>;
+    type Output =
+        BoxedSelectStatement<'a, S::SelectClauseSqlType, FromClause<F>, DB, G::Expressions>;
 
     fn internal_into_boxed(self) -> Self::Output {
         BoxedSelectStatement::new(
@@ -390,9 +490,41 @@ where
     }
 }
 
-impl<F, S, D, W, O, LOf, G, H, LC> HasTable for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+impl<'a, S, D, W, O, LOf, G, H, DB> BoxedDsl<'a, DB>
+    for SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
 where
-    F: HasTable,
+    Self: AsQuery,
+    DB: Backend,
+    S: SelectClauseExpression<NoFromClause> + QueryFragment<DB> + Send + 'a,
+    S::Selection: ValidGrouping<G::Expressions>,
+    D: QueryFragment<DB> + Send + 'a,
+    W: Into<BoxedWhereClause<'a, DB>>,
+    O: Into<Option<Box<dyn QueryFragment<DB> + Send + 'a>>>,
+    LOf: IntoBoxedClause<'a, DB, BoxedClause = BoxedLimitOffsetClause<'a, DB>>,
+    G: ValidGroupByClause + QueryFragment<DB> + Send + 'a,
+    H: QueryFragment<DB> + Send + 'a,
+{
+    type Output =
+        BoxedSelectStatement<'a, S::SelectClauseSqlType, NoFromClause, DB, G::Expressions>;
+
+    fn internal_into_boxed(self) -> Self::Output {
+        BoxedSelectStatement::new_no_from_clause(
+            self.select,
+            self.from,
+            Box::new(self.distinct),
+            self.where_clause.into(),
+            self.order.into(),
+            self.limit_offset.into_boxed(),
+            self.group_by,
+            Box::new(self.having),
+        )
+    }
+}
+
+impl<F, S, D, W, O, LOf, G, H, LC> HasTable
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
+where
+    F: HasTable + QuerySource,
 {
     type Table = F::Table;
 
@@ -401,9 +533,11 @@ where
     }
 }
 
-impl<F, W> IntoUpdateTarget for SelectStatement<F, DefaultSelectClause, NoDistinctClause, W>
+impl<F, W> IntoUpdateTarget
+    for SelectStatement<FromClause<F>, DefaultSelectClause<FromClause<F>>, NoDistinctClause, W>
 where
-    SelectStatement<F, DefaultSelectClause, NoDistinctClause, W>: HasTable,
+    F: QuerySource,
+    Self: HasTable,
     W: ValidWhereClause<F>,
 {
     type WhereClause = W;
@@ -420,11 +554,11 @@ where
 // any other query methods where a join no longer has the same semantics as
 // joining on just the table?
 impl<F, S, D, W, O, LOf, G, H, LC, Rhs> JoinTo<Rhs>
-    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
 where
-    F: JoinTo<Rhs>,
+    F: JoinTo<Rhs> + QuerySource,
 {
-    type FromClause = F::FromClause;
+    type FromClause = <F as JoinTo<Rhs>>::FromClause;
     type OnClause = F::OnClause;
 
     fn join_target(rhs: Rhs) -> (Self::FromClause, Self::OnClause) {
@@ -490,16 +624,26 @@ impl<'a, F, S, D, W, O, LOf, G, H> SelectNullableDsl
 }
 
 impl<'a, F, D, W, O, LOf, G, H> SelectNullableDsl
-    for SelectStatement<F, DefaultSelectClause, D, W, O, LOf, G, H>
+    for SelectStatement<F, DefaultSelectClause<F>, D, W, O, LOf, G, H>
 where
-    F: QuerySource,
+    F: AsQuerySource,
 {
-    type Output =
-        SelectStatement<F, SelectClause<Nullable<F::DefaultSelection>>, D, W, O, LOf, G, H>;
+    type Output = SelectStatement<
+        F,
+        SelectClause<Nullable<<F::QuerySource as QuerySource>::DefaultSelection>>,
+        D,
+        W,
+        O,
+        LOf,
+        G,
+        H,
+    >;
 
     fn nullable(self) -> Self::Output {
         SelectStatement::new(
-            SelectClause(Nullable::new(self.from.default_selection())),
+            SelectClause(Nullable::new(
+                self.from.as_query_source().default_selection(),
+            )),
             self.from,
             self.distinct,
             self.where_clause,

@@ -1,10 +1,13 @@
 use super::delete_statement::DeleteStatement;
 use super::insert_statement::{Insert, InsertOrIgnore, Replace};
+use super::select_clause::SelectClause;
 use super::{
-    IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery, UpdateStatement,
+    AsQuery, IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery,
+    UpdateStatement,
 };
 use crate::expression::Expression;
-use crate::query_dsl::methods::SelectDsl;
+use crate::query_builder::distinct_clause::NoDistinctClause;
+use crate::Table;
 
 /// Creates an `UPDATE` statement.
 ///
@@ -399,7 +402,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
 /// ```
-pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
+pub fn insert_into<T: Table>(target: T) -> IncompleteInsertStatement<T, Insert> {
     IncompleteInsertStatement::new(target, Insert)
 }
 
@@ -450,7 +453,7 @@ pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
 /// #     Ok(())
 /// # }
 /// ```
-pub fn insert_or_ignore_into<T>(target: T) -> IncompleteInsertStatement<T, InsertOrIgnore> {
+pub fn insert_or_ignore_into<T: Table>(target: T) -> IncompleteInsertStatement<T, InsertOrIgnore> {
     IncompleteInsertStatement::new(target, InsertOrIgnore)
 }
 
@@ -460,9 +463,22 @@ pub fn insert_or_ignore_into<T>(target: T) -> IncompleteInsertStatement<T, Inser
 pub fn select<T>(expression: T) -> crate::dsl::BareSelect<T>
 where
     T: Expression,
-    SelectStatement<crate::query_builder::select_statement::NoFromClause>: SelectDsl<T>,
+    crate::dsl::BareSelect<T>: AsQuery,
 {
-    SelectStatement::simple(crate::query_builder::select_statement::NoFromClause).select(expression)
+    SelectStatement::new(
+        SelectClause(expression),
+        super::NoFromClause,
+        NoDistinctClause,
+        super::where_clause::NoWhereClause,
+        super::order_clause::NoOrderClause,
+        super::LimitOffsetClause {
+            limit_clause: super::NoLimitClause,
+            offset_clause: super::NoOffsetClause,
+        },
+        super::group_by_clause::NoGroupByClause,
+        super::having_clause::NoHavingClause,
+        super::locking_clause::NoLockingClause,
+    )
 }
 
 /// Creates a `REPLACE` statement.
@@ -500,7 +516,7 @@ where
 /// assert_eq!(Ok(vec!["Jim".into(), "Tess".into()]), names);
 /// # }
 /// # #[cfg(feature = "postgres")] fn main() {}
-pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
+pub fn replace_into<T: Table>(target: T) -> IncompleteInsertStatement<T, Replace> {
     IncompleteInsertStatement::new(target, Replace)
 }
 

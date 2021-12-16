@@ -1,14 +1,16 @@
 extern crate libsqlite3_sys as ffi;
 
+mod bind_collector;
 mod functions;
 #[doc(hidden)]
 pub mod raw;
 mod row;
-mod serialized_value;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
 
+pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
+pub(crate) use self::bind_collector::SqliteBindValue;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
@@ -20,7 +22,6 @@ use super::SqliteAggregateFunction;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
-use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
@@ -54,9 +55,9 @@ impl SimpleConnection for SqliteConnection {
     }
 }
 
-impl<'a> ConnectionGatWorkaround<'a, Sqlite> for SqliteConnection {
-    type Cursor = StatementIterator<'a>;
-    type Row = self::row::SqliteRow<'a>;
+impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Sqlite> for SqliteConnection {
+    type Cursor = StatementIterator<'conn, 'query>;
+    type Row = self::row::SqliteRow<'conn, 'query>;
 }
 
 impl Connection for SqliteConnection {
@@ -90,18 +91,17 @@ impl Connection for SqliteConnection {
     }
 
     #[doc(hidden)]
-    fn load<T>(
-        &mut self,
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<Self::Backend>>::Cursor>
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let stmt = self.prepared_query(&source.as_query())?;
+        let statement_use = self.prepared_query(source.as_query())?;
 
-        let statement_use = StatementUse::new(stmt);
         Ok(StatementIterator::new(statement_use))
     }
 
@@ -110,9 +110,7 @@ impl Connection for SqliteConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let stmt = self.prepared_query(source)?;
-
-        let statement_use = StatementUse::new(stmt);
+        let statement_use = self.prepared_query(source)?;
         statement_use.run()?;
 
         Ok(self.raw_connection.rows_affected_by_last_query())
@@ -203,25 +201,17 @@ impl SqliteConnection {
         }
     }
 
-    fn prepared_query<'a, T: QueryFragment<Sqlite> + QueryId>(
-        &'a mut self,
-        source: &'_ T,
-    ) -> QueryResult<MaybeCached<'a, Statement>> {
+    fn prepared_query<'a, 'b, T>(&'a mut self, source: T) -> QueryResult<StatementUse<'a, 'b>>
+    where
+        T: QueryFragment<Sqlite> + QueryId + 'b,
+    {
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
-        let mut statement = cache.cached_statement(source, &[], |sql, is_cached| {
+        let statement = cache.cached_statement(&source, &[], |sql, is_cached| {
             Statement::prepare(raw_connection, sql, is_cached)
         })?;
 
-        let mut bind_collector = RawBytesBindCollector::<Sqlite>::new();
-        source.collect_binds(&mut bind_collector, &mut ())?;
-        let metadata = bind_collector.metadata;
-        let binds = bind_collector.binds;
-        for (tpe, value) in metadata.into_iter().zip(binds) {
-            statement.bind(tpe, value)?;
-        }
-
-        Ok(statement)
+        StatementUse::bind(statement, source)
     }
 
     #[doc(hidden)]

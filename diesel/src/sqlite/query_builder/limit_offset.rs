@@ -6,7 +6,7 @@ use crate::result::QueryResult;
 use crate::sqlite::Sqlite;
 
 impl QueryFragment<Sqlite> for LimitOffsetClause<NoLimitClause, NoOffsetClause> {
-    fn walk_ast(&self, _out: AstPass<Sqlite>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -15,7 +15,7 @@ impl<L> QueryFragment<Sqlite> for LimitOffsetClause<LimitClause<L>, NoOffsetClau
 where
     LimitClause<L>: QueryFragment<Sqlite>,
 {
-    fn walk_ast(&self, out: AstPass<Sqlite>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         self.limit_clause.walk_ast(out)?;
         Ok(())
     }
@@ -25,7 +25,7 @@ impl<O> QueryFragment<Sqlite> for LimitOffsetClause<NoLimitClause, OffsetClause<
 where
     OffsetClause<O>: QueryFragment<Sqlite>,
 {
-    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         // Sqlite requires a limit clause in front of any offset clause
         // using `LIMIT -1` is the same as not having any limit clause
         // https://sqlite.org/lang_select.html
@@ -40,7 +40,7 @@ where
     LimitClause<L>: QueryFragment<Sqlite>,
     OffsetClause<O>: QueryFragment<Sqlite>,
 {
-    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         self.limit_clause.walk_ast(out.reborrow())?;
         self.offset_clause.walk_ast(out.reborrow())?;
         Ok(())
@@ -48,7 +48,7 @@ where
 }
 
 impl<'a> QueryFragment<Sqlite> for BoxedLimitOffsetClause<'a, Sqlite> {
-    fn walk_ast(&self, mut out: AstPass<Sqlite>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
         match (self.limit.as_ref(), self.offset.as_ref()) {
             (Some(limit), Some(offset)) => {
                 limit.walk_ast(out.reborrow())?;

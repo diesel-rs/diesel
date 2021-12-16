@@ -3,6 +3,7 @@ use crate::dsl;
 use crate::expression::SelectableExpression;
 use crate::expression::TypedExpressionType;
 use crate::expression::ValidGrouping;
+use crate::query_builder::FromClause;
 use crate::query_builder::{AsQuery, SelectStatement};
 use crate::query_source::Table;
 use crate::Expression;
@@ -24,13 +25,13 @@ pub trait DistinctDsl {
 
 impl<T> DistinctDsl for T
 where
-    T: Table + AsQuery<Query = SelectStatement<T>>,
+    T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {
-    type Output = dsl::Distinct<SelectStatement<T>>;
+    type Output = dsl::Distinct<SelectStatement<FromClause<T>>>;
 
-    fn distinct(self) -> dsl::Distinct<SelectStatement<T>> {
+    fn distinct(self) -> dsl::Distinct<SelectStatement<FromClause<T>>> {
         self.as_query().distinct()
     }
 }
@@ -55,12 +56,13 @@ pub trait DistinctOnDsl<Selection> {
 impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,
-    T: Table + AsQuery<Query = SelectStatement<T>>,
-    SelectStatement<T>: DistinctOnDsl<Selection>,
+    Selection::SqlType: crate::sql_types::SingleValue,
+    T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    SelectStatement<FromClause<T>>: DistinctOnDsl<Selection>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
 {
-    type Output = dsl::DistinctOn<SelectStatement<T>, Selection>;
+    type Output = dsl::DistinctOn<SelectStatement<FromClause<T>>, Selection>;
 
     fn distinct_on(self, selection: Selection) -> dsl::DistinctOn<Self, Selection> {
         self.as_query().distinct_on(selection)

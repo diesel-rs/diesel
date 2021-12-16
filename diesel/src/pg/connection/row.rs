@@ -41,7 +41,7 @@ impl<'a> Row<'a, Pg> for PgRow {
         })
     }
 
-    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<Self::InnerPartialRow> {
+    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
         PartialRow::new(self, range)
     }
 }
@@ -74,7 +74,7 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
         self.db_result.column_name(self.col_idx)
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<Pg>> {
+    fn value(&self) -> Option<crate::backend::RawValue<'_, Pg>> {
         let raw = self.db_result.get(self.row_idx, self.col_idx)?;
 
         Some(PgValue::new(raw, self))

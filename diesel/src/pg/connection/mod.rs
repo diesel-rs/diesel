@@ -43,7 +43,7 @@ impl SimpleConnection for PgConnection {
     }
 }
 
-impl<'a> ConnectionGatWorkaround<'a, Pg> for PgConnection {
+impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection {
     type Cursor = Cursor;
     type Row = self::row::PgRow;
 }
@@ -72,10 +72,13 @@ impl Connection for PgConnection {
     }
 
     #[doc(hidden)]
-    fn load<T>(&mut self, source: T) -> QueryResult<<Self as ConnectionGatWorkaround<Pg>>::Cursor>
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
         self.with_prepared_query(&source.as_query(), |stmt, params, conn| {
@@ -134,17 +137,17 @@ impl PgConnection {
     ///     .run(|conn| Ok(()))
     /// # }
     /// ```
-    pub fn build_transaction(&mut self) -> TransactionBuilder<Self> {
+    pub fn build_transaction(&mut self) -> TransactionBuilder<'_, Self> {
         TransactionBuilder::new(self)
     }
 
-    fn with_prepared_query<'a, T: QueryFragment<Pg> + QueryId, R>(
-        &'a mut self,
+    fn with_prepared_query<'conn, T: QueryFragment<Pg> + QueryId, R>(
+        &'conn mut self,
         source: &'_ T,
         f: impl FnOnce(
-            MaybeCached<Statement>,
+            MaybeCached<'_, Statement>,
             Vec<Option<Vec<u8>>>,
-            &'a mut RawConnection,
+            &'conn mut RawConnection,
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
