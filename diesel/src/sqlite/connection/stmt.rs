@@ -253,6 +253,8 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     {
         // Don't use a trait object here to prevent using a virtual function call
         // For sqlite this can introduce a measurable overhead
+        // Query is boxed here to make sure it won't move in memory anymore, so any bind
+        // it could output would stay valid.
         let query = Box::new(query);
 
         let mut bind_collector = SqliteBindCollector::new();

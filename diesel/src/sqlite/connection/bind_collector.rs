@@ -96,10 +96,13 @@ impl<'a> BindCollector<'a, Sqlite> for SqliteBindCollector<'a> {
             .map_err(crate::result::Error::SerializationError)?;
         let bind = to_sql_output.into_inner();
         let metadata = Sqlite::metadata(metadata_lookup);
-        match is_null {
-            IsNull::No => self.binds.push((bind, metadata)),
-            IsNull::Yes => self.binds.push((SqliteBindValue::Null, metadata)),
-        }
+        self.binds.push((
+            match is_null {
+                IsNull::No => bind,
+                IsNull::Yes => SqliteBindValue::Null,
+            },
+            metadata,
+        ));
         Ok(())
     }
 }
