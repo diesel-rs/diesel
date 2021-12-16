@@ -3,6 +3,7 @@ use crate::result::{DatabaseErrorKind, Error};
 
 /// Transaction status returned upon error on commit.
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum CommitErrorOutcome {
     /// Necessitates a rollback to return to a valid transaction
     RollbackAndThrow(Error),
