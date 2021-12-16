@@ -42,3 +42,18 @@ fn return_deleted_records() {
     let num_users = users.count().first(connection);
     assert_eq!(Ok(1), num_users);
 }
+
+#[test]
+fn delete_or_filter() {
+    use crate::schema::users::dsl::*;
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let deleted_rows =
+        delete(users.filter(name.eq("Sean")).or_filter(name.eq("Tess"))).execute(connection);
+
+    assert_eq!(Ok(2), deleted_rows);
+
+    let num_users = users.count().first(connection);
+
+    assert_eq!(Ok(0), num_users);
+}
