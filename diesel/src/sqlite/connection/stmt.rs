@@ -264,20 +264,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         let mut ret = BoundStatement {
             statement,
             query: None,
-            binds_to_free: Vec::with_capacity(
-                binds
-                    .iter()
-                    .filter(|&(b, _)| {
-                        matches!(
-                            b,
-                            SqliteBindValue::BorrowedBinary(_)
-                                | SqliteBindValue::BorrowedString(_)
-                                | SqliteBindValue::String(_)
-                                | SqliteBindValue::Binary(_)
-                        )
-                    })
-                    .count(),
-            ),
+            binds_to_free: Vec::new(),
         };
 
         ret.bind_buffers(binds)?;
@@ -292,6 +279,24 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     // not the whole construtor is generic over the query type T.
     // This hopefully prevents binary bloat.
     fn bind_buffers(&mut self, binds: Vec<(SqliteBindValue<'_>, SqliteType)>) -> QueryResult<()> {
+        // It is useful to preallocate `binds_to_free` because it
+        // - Guarantees that pushing inside it cannot panic, which guarantees the `Drop`
+        //   impl of `BoundStatement` will always re-`bind` as needed
+        // - Avoids reallocations
+        self.binds_to_free.reserve(
+            binds
+                .iter()
+                .filter(|&(b, _)| {
+                    matches!(
+                        b,
+                        SqliteBindValue::BorrowedBinary(_)
+                            | SqliteBindValue::BorrowedString(_)
+                            | SqliteBindValue::String(_)
+                            | SqliteBindValue::Binary(_)
+                    )
+                })
+                .count(),
+        );
         for (bind_idx, (bind, tpe)) in (1..).zip(binds) {
             if matches!(
                 bind,
