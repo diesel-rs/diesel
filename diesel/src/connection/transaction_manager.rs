@@ -357,10 +357,10 @@ mod test {
             }
         }
 
-        impl<'a> ConnectionGatWorkaround<'a, Pg> for MockConnection {
+        impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for MockConnection {
             type Cursor = Cursor;
 
-            type Row = <PgConnection as ConnectionGatWorkaround<'a, Pg>>::Row;
+            type Row = <PgConnection as ConnectionGatWorkaround<'conn, 'query, Pg>>::Row;
         }
 
         impl CommitErrorProcessor for MockConnection {
@@ -395,13 +395,13 @@ mod test {
                 self.next_result.take().expect("No next result")
             }
 
-            fn load<T>(
-                &mut self,
+            fn load<'conn, 'query, T>(
+                &'conn mut self,
                 _source: T,
-            ) -> QueryResult<<Self as ConnectionGatWorkaround<Pg>>::Cursor>
+            ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg>>::Cursor>
             where
                 T: AsQuery,
-                T::Query: QueryFragment<Self::Backend> + QueryId,
+                T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
                 Self::Backend: QueryMetadata<T::SqlType>,
             {
                 unimplemented!()
