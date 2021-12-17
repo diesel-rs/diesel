@@ -2,6 +2,7 @@ use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorP
 use crate::connection::Connection;
 use crate::result::{Error, QueryResult};
 use std::borrow::Cow;
+use std::num::NonZeroU32;
 
 /// Manages the internal transaction state for a connection.
 ///
@@ -46,7 +47,7 @@ pub trait TransactionManager<Conn: Connection> {
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 #[derive(Default)]
 pub struct AnsiTransactionManager {
-    status: TransactionManagerStatus,
+    pub(crate) status: TransactionManagerStatus,
 }
 
 /// Status of the transaction manager
@@ -67,9 +68,16 @@ impl Default for TransactionManagerStatus {
 impl TransactionManagerStatus {
     /// Returns the transaction depth if the transaction manager's status is valid, or returns
     /// [`Error::BrokenTransaction`] if the transaction manager is in error.
-    pub fn transaction_depth(&self) -> Result<i32, Error> {
+    pub fn transaction_depth(&self) -> QueryResult<Option<NonZeroU32>> {
         match self {
             TransactionManagerStatus::Valid(valid_status) => Ok(valid_status.transaction_depth()),
+            TransactionManagerStatus::InError => Err(Error::BrokenTransaction),
+        }
+    }
+
+    fn transaction_state(&mut self) -> QueryResult<&mut ValidTransactionManagerStatus> {
+        match self {
+            TransactionManagerStatus::Valid(valid_status) => Ok(valid_status),
             TransactionManagerStatus::InError => Err(Error::BrokenTransaction),
         }
     }
@@ -79,12 +87,15 @@ impl TransactionManagerStatus {
 #[allow(missing_copy_implementations)]
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct ValidTransactionManagerStatus {
-    transaction_depth: i32,
+    transaction_depth: Option<NonZeroU32>,
 }
 
 impl ValidTransactionManagerStatus {
     /// Return the current transaction depth
-    pub fn transaction_depth(&self) -> i32 {
+    ///
+    /// This value is `None` if no current transaction is running
+    /// otherwise the number of nested transactions is returned.
+    pub fn transaction_depth(&self) -> Option<NonZeroU32> {
         self.transaction_depth
     }
 
@@ -96,32 +107,28 @@ impl ValidTransactionManagerStatus {
         query: QueryResult<()>,
     ) -> QueryResult<()> {
         if query.is_ok() {
-            let transaction_delta = match transaction_depth_change {
-                TransactionDepthChange::IncreaseDepth => 1,
-                TransactionDepthChange::DecreaseDepth => -1,
-            };
-            self.transaction_depth += transaction_delta;
+            match (&mut self.transaction_depth, transaction_depth_change) {
+                (Some(depth), TransactionDepthChange::IncreaseDepth) => {
+                    // This is always `Some(_)`
+                    self.transaction_depth = NonZeroU32::new(depth.get().saturating_add(1));
+                }
+                (Some(depth), TransactionDepthChange::DecreaseDepth) => {
+                    // This sets `transaction_depth` to `None` as soon as we reach zero
+                    self.transaction_depth = NonZeroU32::new(depth.get().saturating_sub(1));
+                }
+                (None, TransactionDepthChange::IncreaseDepth) => {
+                    self.transaction_depth = NonZeroU32::new(1);
+                }
+                (None, TransactionDepthChange::DecreaseDepth) => {
+                    // We screwed up something somewhere
+                    // we cannot decrease the transaction count if
+                    // we are not inside a transaction
+                    return Err(Error::NotInTransaction);
+                }
+            }
         }
         query
     }
-}
-
-/// The outcome of a transactional operation
-struct OperationOutcome {
-    /// The result of the operation
-    result: QueryResult<()>,
-    /// The way the state of the transaction manager should be updated
-    update: ManagerUpdate,
-}
-
-enum ManagerUpdate {
-    UpdateTransaction(TransactionUpdate),
-    MarkManagerAsInError,
-}
-
-struct TransactionUpdate {
-    update_condition: UpdateCondition,
-    transaction_depth_change: TransactionDepthChange,
 }
 
 /// Represents a change to apply to the depth of a transaction
@@ -133,56 +140,14 @@ pub enum TransactionDepthChange {
     DecreaseDepth,
 }
 
-enum UpdateCondition {
-    /// Only update the transaction depth if if the result was Ok
-    AfterResultCheck,
-    // Only update the transaction depth if the content of this variant is OK
-    AfterCheck(QueryResult<()>),
-    /// Always update the result
-    Unconditionally,
-}
-
 impl AnsiTransactionManager {
-    fn run_if_valid<Conn>(
+    fn get_transaction_state<Conn>(
         conn: &mut Conn,
-        mut action: impl FnMut(&mut Conn, i32) -> Result<OperationOutcome, Error>,
-    ) -> QueryResult<()>
+    ) -> QueryResult<&mut ValidTransactionManagerStatus>
     where
         Conn: Connection<TransactionManager = Self> + CommitErrorProcessor,
     {
-        let transaction_depth = match &mut conn.transaction_state().status {
-            TransactionManagerStatus::InError => return Err(Error::BrokenTransaction),
-            TransactionManagerStatus::Valid(valid_status) => valid_status.transaction_depth(),
-        };
-        let OperationOutcome { result, update } = action(conn, transaction_depth)?;
-        let status = &mut conn.transaction_state().status;
-        match status {
-            TransactionManagerStatus::InError => Err(Error::BrokenTransaction), // Unlikely, but the action actually updated the transaction state and broke it
-            TransactionManagerStatus::Valid(valid_status) => match update {
-                ManagerUpdate::UpdateTransaction(TransactionUpdate {
-                    update_condition,
-                    transaction_depth_change,
-                }) => match update_condition {
-                    UpdateCondition::AfterResultCheck => {
-                        valid_status.change_transaction_depth(transaction_depth_change, result)
-                    }
-                    UpdateCondition::AfterCheck(result_to_check) => {
-                        let _r = valid_status
-                            .change_transaction_depth(transaction_depth_change, result_to_check);
-                        result
-                    }
-                    UpdateCondition::Unconditionally => {
-                        let _r =
-                            valid_status.change_transaction_depth(transaction_depth_change, Ok(()));
-                        result
-                    }
-                },
-                ManagerUpdate::MarkManagerAsInError => {
-                    *status = TransactionManagerStatus::InError;
-                    result
-                }
-            },
-        }
+        conn.transaction_state().status.transaction_state()
     }
 
     /// Begin a transaction with custom SQL
@@ -194,20 +159,15 @@ impl AnsiTransactionManager {
     where
         Conn: Connection<TransactionManager = Self> + CommitErrorProcessor,
     {
-        AnsiTransactionManager::run_if_valid(
-            conn,
-            |conn, transaction_depth| match transaction_depth {
-                0 => Ok(OperationOutcome {
-                    result: conn.batch_execute(sql),
-                    update: ManagerUpdate::UpdateTransaction(TransactionUpdate {
-                        update_condition: UpdateCondition::AfterResultCheck,
-                        transaction_depth_change: TransactionDepthChange::IncreaseDepth,
-                    }),
-                }),
-                depth if depth > 0 => Err(Error::AlreadyInTransaction),
-                _depth => panic!("Transaction depth < 0"),
-            },
-        )
+        let state = Self::get_transaction_state(conn)?;
+        match state.transaction_depth() {
+            None => {
+                let res = conn.batch_execute(sql);
+                let state = Self::get_transaction_state(conn)?;
+                state.change_transaction_depth(TransactionDepthChange::IncreaseDepth, res)
+            }
+            Some(_depth) => Err(Error::AlreadyInTransaction),
+        }
     }
 }
 
@@ -218,45 +178,31 @@ where
     type TransactionStateData = Self;
 
     fn begin_transaction(conn: &mut Conn) -> QueryResult<()> {
-        AnsiTransactionManager::run_if_valid(conn, |conn, transaction_depth| {
-            let start_transaction_sql = match transaction_depth {
-                i32::MIN..=-1 => panic!("Transaction depth < 0"),
-                0 => Cow::from("BEGIN"),
-                1..=i32::MAX => {
-                    Cow::from(format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
-                }
-            };
-            let result = conn.batch_execute(&*start_transaction_sql);
-            Ok(OperationOutcome {
-                result,
-                update: ManagerUpdate::UpdateTransaction(TransactionUpdate {
-                    update_condition: UpdateCondition::AfterResultCheck,
-                    transaction_depth_change: TransactionDepthChange::IncreaseDepth,
-                }),
-            })
-        })
+        let transaction_state = Self::get_transaction_state(conn)?;
+        let start_transaction_sql = match transaction_state.transaction_depth() {
+            None => Cow::from("BEGIN"),
+            Some(transaction_depth) => {
+                Cow::from(format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
+            }
+        };
+        let result = conn.batch_execute(&*start_transaction_sql);
+        let state = Self::get_transaction_state(conn)?;
+        state.change_transaction_depth(TransactionDepthChange::IncreaseDepth, result)
     }
 
     fn rollback_transaction(conn: &mut Conn) -> QueryResult<()> {
-        AnsiTransactionManager::run_if_valid(conn, |conn, transaction_depth| {
-            let rollback_sql = match transaction_depth {
-                i32::MIN..=-1 => panic!("Transaction depth < 0"),
-                0 => return Err(Error::NotInTransaction),
-                1 => Cow::from("ROLLBACK"),
-                2..=i32::MAX => Cow::from(format!(
-                    "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                    transaction_depth - 1
-                )),
-            };
-            let result = conn.batch_execute(&*rollback_sql);
-            Ok(OperationOutcome {
-                result,
-                update: ManagerUpdate::UpdateTransaction(TransactionUpdate {
-                    update_condition: UpdateCondition::AfterResultCheck,
-                    transaction_depth_change: TransactionDepthChange::DecreaseDepth,
-                }),
-            })
-        })
+        let transaction_state = Self::get_transaction_state(conn)?;
+        let rollback_sql = match transaction_state.transaction_depth() {
+            None => return Err(Error::NotInTransaction),
+            Some(transaction_depth) if transaction_depth.get() == 1 => Cow::from("ROLLBACK"),
+            Some(transaction_depth) => Cow::from(format!(
+                "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                transaction_depth.get() - 1
+            )),
+        };
+        let result = conn.batch_execute(&*rollback_sql);
+        let state = Self::get_transaction_state(conn)?;
+        state.change_transaction_depth(TransactionDepthChange::DecreaseDepth, result)
     }
 
     /// If the transaction fails to commit due to a `SerializationFailure` or a
@@ -265,58 +211,68 @@ where
     /// will be returned. In the second case the connection should be considered broken
     /// as it contains a uncommitted unabortable open transaction.
     fn commit_transaction(conn: &mut Conn) -> QueryResult<()> {
-        AnsiTransactionManager::run_if_valid(conn, |conn, transaction_depth| {
-            let transaction_depth_change = TransactionDepthChange::DecreaseDepth;
-            let (commit_sql, rollback_sql) = match transaction_depth {
-                i32::MIN..=-1 => panic!("Transaction depth < 0"),
-                0 => return Err(Error::NotInTransaction),
-                1 => (Cow::from("COMMIT"), Cow::from("ROLLBACK")),
-                2..=i32::MAX => (
-                    Cow::from(format!(
-                        "RELEASE SAVEPOINT diesel_savepoint_{}",
-                        transaction_depth - 1
-                    )),
-                    Cow::from(format!(
-                        "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                        transaction_depth - 1
-                    )),
-                ),
-            };
-            match conn.batch_execute(&*commit_sql) {
-                result @ Ok(()) => Ok(OperationOutcome {
-                    result,
-                    update: ManagerUpdate::UpdateTransaction(TransactionUpdate {
-                        update_condition: UpdateCondition::Unconditionally,
-                        transaction_depth_change,
-                    }),
-                }),
-                Err(error) => match conn.process_commit_error(transaction_depth, error) {
-                    CommitErrorOutcome::RollbackAndThrow(error) => {
-                        let rollback_result = conn.batch_execute(&*rollback_sql);
-                        Ok(OperationOutcome {
-                            result: Err(error),
-                            update: ManagerUpdate::UpdateTransaction(TransactionUpdate {
-                                update_condition: UpdateCondition::AfterCheck(rollback_result),
-                                transaction_depth_change,
-                            }),
-                        })
-                    }
-                    CommitErrorOutcome::Throw(error) => Ok(OperationOutcome {
-                        result: Err(error),
-                        update: ManagerUpdate::UpdateTransaction(TransactionUpdate {
-                            update_condition: UpdateCondition::Unconditionally,
-                            transaction_depth_change,
-                        }),
-                    }),
-                    CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error) => {
-                        Ok(OperationOutcome {
-                            result: Err(error),
-                            update: ManagerUpdate::MarkManagerAsInError,
-                        })
-                    }
-                },
+        let transaction_state = Self::get_transaction_state(conn)?;
+        let transaction_depth = transaction_state.transaction_depth();
+        let (commit_sql, rollback_sql) = match transaction_depth {
+            None => return Err(Error::NotInTransaction),
+            Some(transaction_depth) if transaction_depth.get() == 1 => {
+                (Cow::from("COMMIT"), Cow::from("ROLLBACK"))
             }
-        })
+            Some(transaction_depth) => (
+                Cow::from(format!(
+                    "RELEASE SAVEPOINT diesel_savepoint_{}",
+                    transaction_depth.get() - 1
+                )),
+                Cow::from(format!(
+                    "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                    transaction_depth.get() - 1
+                )),
+            ),
+        };
+        let res = conn.batch_execute(&*commit_sql);
+        let state = Self::get_transaction_state(conn)?;
+        match res {
+            Ok(()) => {
+                // commit succeeded, so we just decrease the transaction depth
+                // and we are done
+                state.change_transaction_depth(TransactionDepthChange::DecreaseDepth, res)
+            }
+            Err(error) => {
+                let commit_error_outcome = conn.process_commit_error(error);
+                let state = Self::get_transaction_state(conn)?;
+                // commit failed so we call the error processor to get a information out
+                // what should be done
+                match commit_error_outcome {
+                    CommitErrorOutcome::RollbackAndThrow(error) => {
+                        // We should try to rollback the transaction here
+                        let rollback_result = conn.batch_execute(&*rollback_sql);
+                        let state = Self::get_transaction_state(conn)?;
+                        let _ = state.change_transaction_depth(
+                            TransactionDepthChange::DecreaseDepth,
+                            rollback_result,
+                        );
+                        // TODO: return a new error here indicating that we've rolled back
+                        Err(error)
+                    }
+                    CommitErrorOutcome::Throw(error) => {
+                        // The error processor indicated that we just
+                        // need to decrease the transaction depth and return the original error
+                        let _ = state.change_transaction_depth(
+                            TransactionDepthChange::DecreaseDepth,
+                            Ok(()),
+                        );
+                        Err(error)
+                    }
+                    CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error) => {
+                        // The connection contains an unrecoverable broken transaction
+                        // so mark the transaction state as broken and return the error
+                        *Self::transaction_manager_status_mut(conn) =
+                            TransactionManagerStatus::InError;
+                        Err(error)
+                    }
+                }
+            }
+        }
     }
 
     fn transaction_manager_status_mut(conn: &mut Conn) -> &mut TransactionManagerStatus {
@@ -326,6 +282,8 @@ where
 
 #[cfg(test)]
 mod test {
+    use std::num::NonZeroU32;
+
     // Mock connection. Uses the Postgres backend for type signatures.
     // This is really because implementing a new backend is pain
     #[cfg(feature = "postgres")]
@@ -364,11 +322,7 @@ mod test {
         }
 
         impl CommitErrorProcessor for MockConnection {
-            fn process_commit_error(
-                &self,
-                _transaction_depth: i32,
-                error: Error,
-            ) -> CommitErrorOutcome {
+            fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
                 if self.broken {
                     CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error)
                 } else {
@@ -444,7 +398,7 @@ mod test {
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -463,7 +417,7 @@ mod test {
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -514,20 +468,22 @@ mod test {
     #[test]
     #[cfg(feature = "postgres")]
     fn postgres_transaction_is_rolled_back_upon_syntax_error() {
+        use std::num::NonZeroU32;
+
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::*;
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let _result = conn.build_transaction().run(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                     conn
                 ).transaction_depth().expect("Transaction depth")
@@ -542,7 +498,7 @@ mod test {
             query_result
         });
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -622,27 +578,29 @@ mod test {
     #[test]
     #[cfg(feature = "postgres")]
     fn nested_postgres_transaction_is_rolled_back_upon_syntax_error() {
+        use std::num::NonZeroU32;
+
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::*;
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let result = conn.build_transaction().run(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
             );
             let result = conn.build_transaction().run(|conn| {
                 assert_eq!(
-                    2,
+                    NonZeroU32::new(2),
                     <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                         conn
             ).transaction_depth().expect("Transaction depth")
@@ -651,7 +609,7 @@ mod test {
             });
             assert!(result.is_err());
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -670,7 +628,7 @@ mod test {
             conn.raw_connection.transaction_status()
         );
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -685,21 +643,21 @@ mod test {
         use crate::*;
         let conn = &mut crate::test_helpers::connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let result = conn.transaction(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
             );
             let result = conn.transaction(|conn| {
                 assert_eq!(
-                    2,
+                    NonZeroU32::new(2),
                     <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(
                         conn
             ).transaction_depth().expect("Transaction depth")
@@ -709,7 +667,7 @@ mod test {
             });
             assert!(result.is_err());
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -720,7 +678,7 @@ mod test {
         });
         assert!(result.is_ok());
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -776,11 +734,11 @@ mod test {
                     use crate::connection::transaction_manager::AnsiTransactionManager;
                     use crate::connection::transaction_manager::TransactionManager;
                     let conn = &mut crate::test_helpers::pg_connection_no_transaction();
-                    assert_eq!(0, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
                     let result =
                     conn.build_transaction().serializable().run(|conn| {
-                        assert_eq!(1, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                        assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
                         let _ = serialization_example::table
                             .filter(serialization_example::class.eq(i))
@@ -795,7 +753,7 @@ mod test {
                             .execute(conn)
                     });
 
-                    assert_eq!(0, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
                     result
                 })
             })
@@ -826,14 +784,14 @@ mod test {
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let result: Result<_, Error> = conn.build_transaction().run(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -852,7 +810,7 @@ mod test {
             Ok(())
         });
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -875,14 +833,14 @@ mod test {
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let result: Result<_, Error> = conn.build_transaction().run(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -927,7 +885,7 @@ mod test {
             Ok(())
         });
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -950,14 +908,14 @@ mod test {
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let result: Result<_, Error> = conn.build_transaction().run(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -1009,7 +967,7 @@ mod test {
             Ok(())
         });
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -1032,14 +990,14 @@ mod test {
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let result: Result<_, Error> = conn.build_transaction().run(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -1048,7 +1006,7 @@ mod test {
             sql_query("CREATE TABLE deferred_constraint_nested_commit(id INT UNIQUE INITIALLY DEFERRED)").execute(conn)?;
             let inner_result: Result<_, Error> = conn.build_transaction().run(|conn| {
                 assert_eq!(
-                    2,
+                    NonZeroU32::new(2),
                     <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                         conn
                     ).transaction_depth().expect("Transaction depth")
@@ -1064,7 +1022,7 @@ mod test {
                 conn.raw_connection.transaction_status()
             );
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -1072,7 +1030,7 @@ mod test {
             sql_query("INSERT INTO deferred_constraint_nested_commit VALUES(1)").execute(conn)
         });
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -1093,14 +1051,14 @@ mod test {
         use crate::*;
         let conn = &mut crate::test_helpers::connection();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let result: Result<_, Error> = conn.transaction(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -1114,7 +1072,7 @@ mod test {
         });
         assert!(result.is_err());
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")

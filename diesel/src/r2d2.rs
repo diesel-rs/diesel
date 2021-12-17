@@ -148,12 +148,8 @@ where
     M: ManageConnection,
     M::Connection: R2D2Connection + CommitErrorProcessor + Send + 'static,
 {
-    fn process_commit_error(
-        &self,
-        transaction_depth: i32,
-        error: crate::result::Error,
-    ) -> CommitErrorOutcome {
-        (&**self).process_commit_error(transaction_depth, error)
+    fn process_commit_error(&self, error: crate::result::Error) -> CommitErrorOutcome {
+        (&**self).process_commit_error(error)
     }
 }
 

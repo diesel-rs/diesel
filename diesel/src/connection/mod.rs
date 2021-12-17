@@ -145,7 +145,7 @@ where
     fn begin_test_transaction(&mut self) -> QueryResult<()> {
         match Self::TransactionManager::transaction_manager_status_mut(self) {
             TransactionManagerStatus::Valid(valid_status) => {
-                assert_eq!(0, valid_status.transaction_depth())
+                assert_eq!(None, valid_status.transaction_depth())
             }
             TransactionManagerStatus::InError => panic!("Transaction manager in error"),
         };

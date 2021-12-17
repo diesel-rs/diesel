@@ -1,6 +1,8 @@
 //! A module to evaluate what to do when a commit triggers an error.
 use crate::result::{DatabaseErrorKind, Error};
 
+use super::ValidTransactionManagerStatus;
+
 /// Transaction status returned upon error on commit.
 #[derive(Debug)]
 #[non_exhaustive]
@@ -20,18 +22,22 @@ pub trait CommitErrorProcessor {
     /// When any of these kinds of error happen on `COMMIT`, it is expected
     /// that a `ROLLBACK` would succeed, leaving the transaction in a non-broken state.
     /// If there are other such errors, it is fine to add them here.
-    fn process_commit_error(&self, transaction_depth: i32, error: Error) -> CommitErrorOutcome;
+    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome;
 }
 
 /// Default implementation of CommitErrorProcessor::process_commit_error(), used for MySql and
 /// Sqlite connections. Returns `CommitErrorOutcome::RollbackAndThrow` if the transaction depth is
 /// greater than 1, the error is a `DatabaseError` and the error kind is either
 /// `DatabaseErrorKind::SerializationFailure` or `DatabaseErrorKind::ReadOnlyTransaction`
-pub fn default_process_commit_error(transaction_depth: i32, error: Error) -> CommitErrorOutcome {
+pub fn default_process_commit_error(
+    transaction_state: &ValidTransactionManagerStatus,
+    error: Error,
+) -> CommitErrorOutcome {
+    let transaction_depth = transaction_state.transaction_depth();
     match error {
         Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
         | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
-            if transaction_depth <= 1 =>
+            if transaction_depth.is_none() =>
         {
             CommitErrorOutcome::RollbackAndThrow(error)
         }

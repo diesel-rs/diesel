@@ -50,7 +50,11 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection 
 }
 
 impl CommitErrorProcessor for PgConnection {
-    fn process_commit_error(&self, transaction_depth: i32, error: Error) -> CommitErrorOutcome {
+    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
+        let transaction_depth = match self.transaction_state.status.transaction_depth() {
+            Ok(d) => d,
+            Err(e) => return CommitErrorOutcome::Throw(e),
+        };
         let transaction_status = self.raw_connection.transaction_status();
         if transaction_status == PgTransactionStatus::Unknown {
             return CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error);
@@ -61,7 +65,7 @@ impl CommitErrorProcessor for PgConnection {
         ) {
             return CommitErrorOutcome::Throw(error);
         }
-        if transaction_depth <= 1 {
+        if transaction_depth.is_none() {
             match error {
                 Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
                 | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _) => {

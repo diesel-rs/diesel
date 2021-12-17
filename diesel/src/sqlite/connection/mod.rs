@@ -64,8 +64,14 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Sqlite> for SqliteCon
 }
 
 impl CommitErrorProcessor for SqliteConnection {
-    fn process_commit_error(&self, transaction_depth: i32, error: Error) -> CommitErrorOutcome {
-        default_process_commit_error(transaction_depth, error)
+    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
+        let state = match self.transaction_state.status {
+            TransactionManagerStatus::InError => {
+                return CommitErrorOutcome::Throw(Error::BrokenTransaction)
+            }
+            TransactionManagerStatus::Valid(ref v) => v,
+        };
+        default_process_commit_error(state, error)
     }
 }
 
