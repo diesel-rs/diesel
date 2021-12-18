@@ -517,14 +517,14 @@ mod test {
         use crate::*;
         let conn = &mut crate::test_helpers::connection_no_transaction();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let _result = conn.transaction(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -535,7 +535,7 @@ mod test {
             query_result
         });
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
@@ -550,14 +550,14 @@ mod test {
         use crate::*;
         let conn = &mut crate::test_helpers::connection();
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
         let _result = conn.transaction(|conn| {
             assert_eq!(
-                1,
+                NonZeroU32::new(1),
                 <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
                     conn
             ).transaction_depth().expect("Transaction depth")
@@ -568,7 +568,7 @@ mod test {
             query_result
         });
         assert_eq!(
-            0,
+            None,
             <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
