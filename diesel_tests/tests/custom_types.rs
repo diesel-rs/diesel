@@ -16,7 +16,7 @@ table! {
 }
 
 #[derive(SqlType)]
-#[diesel(postgres_type(name = "my_type"))]
+#[diesel(postgres_type(name = "My_Type"))]
 pub struct MyType;
 
 #[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
@@ -69,10 +69,10 @@ fn custom_types_round_trip() {
     connection
         .batch_execute(
             r#"
-        CREATE TYPE my_type AS ENUM ('foo', 'bar');
+        CREATE TYPE "My_Type" AS ENUM ('foo', 'bar');
         CREATE TABLE custom_types (
             id SERIAL PRIMARY KEY,
-            custom_enum my_type NOT NULL
+            custom_enum "My_Type" NOT NULL
         );
     "#,
         )
@@ -95,7 +95,7 @@ table! {
 }
 
 #[derive(SqlType)]
-#[diesel(postgres_type(name = "my_type", schema = "custom_schema"))]
+#[diesel(postgres_type(name = "My_Type", schema = "custom_schema"))]
 pub struct MyTypeInCustomSchema;
 
 #[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
@@ -149,10 +149,10 @@ fn custom_types_in_custom_schema_round_trip() {
         .batch_execute(
             r#"
         CREATE SCHEMA IF NOT EXISTS custom_schema;
-        CREATE TYPE custom_schema.my_type AS ENUM ('foo', 'bar');
+        CREATE TYPE custom_schema."My_Type" AS ENUM ('foo', 'bar');
         CREATE TABLE custom_schema.custom_types_with_custom_schema (
             id SERIAL PRIMARY KEY,
-            custom_enum custom_schema.my_type NOT NULL
+            custom_enum custom_schema."My_Type" NOT NULL
         );
     "#,
         )
