@@ -33,32 +33,92 @@ pub fn default_process_commit_error(
     transaction_state: &ValidTransactionManagerStatus,
     error: Error,
 ) -> CommitErrorOutcome {
-    let transaction_depth = transaction_state.transaction_depth();
-    match error {
-        Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
-        | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
-            if transaction_depth.is_none() =>
-        {
-            CommitErrorOutcome::RollbackAndThrow(error)
+    if let Some(transaction_depth) = transaction_state.transaction_depth() {
+        match error {
+            Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
+            | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
+                if transaction_depth.get() == 1 =>
+            {
+                CommitErrorOutcome::RollbackAndThrow(error)
+            }
+            Error::AlreadyInTransaction
+            | Error::DatabaseError(DatabaseErrorKind::CheckViolation, _)
+            | Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
+            | Error::DatabaseError(DatabaseErrorKind::ForeignKeyViolation, _)
+            | Error::DatabaseError(DatabaseErrorKind::NotNullViolation, _)
+            | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
+            | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
+            | Error::DatabaseError(DatabaseErrorKind::UnableToSendCommand, _)
+            | Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)
+            | Error::DatabaseError(DatabaseErrorKind::Unknown, _)
+            | Error::DeserializationError(_)
+            | Error::InvalidCString(_)
+            | Error::NotFound
+            | Error::QueryBuilderError(_)
+            | Error::RollbackError(_)
+            | Error::RollbackTransaction
+            | Error::SerializationError(_)
+            | Error::NotInTransaction
+            | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
         }
-        Error::AlreadyInTransaction
-        | Error::DatabaseError(DatabaseErrorKind::CheckViolation, _)
-        | Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
-        | Error::DatabaseError(DatabaseErrorKind::ForeignKeyViolation, _)
-        | Error::DatabaseError(DatabaseErrorKind::NotNullViolation, _)
-        | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
-        | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
-        | Error::DatabaseError(DatabaseErrorKind::UnableToSendCommand, _)
-        | Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)
-        | Error::DatabaseError(DatabaseErrorKind::Unknown, _)
-        | Error::DeserializationError(_)
-        | Error::InvalidCString(_)
-        | Error::NotFound
-        | Error::QueryBuilderError(_)
-        | Error::RollbackError(_)
-        | Error::RollbackTransaction
-        | Error::SerializationError(_)
-        | Error::NotInTransaction
-        | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
+    } else {
+        CommitErrorOutcome::ThrowAndMarkManagerAsBroken(Error::BrokenTransaction)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    fn check_default_process_commit_error_implementation() {
+        use super::CommitErrorOutcome;
+        use crate::connection::ValidTransactionManagerStatus;
+        use crate::result::{DatabaseErrorKind, Error};
+        use std::num::NonZeroU32;
+
+        let state = ValidTransactionManagerStatus {
+            // Transaction depth == 1, so one unnested transaction
+            transaction_depth: NonZeroU32::new(1),
+        };
+        let error = Error::DatabaseError(
+            DatabaseErrorKind::ReadOnlyTransaction,
+            Box::new(String::from("whatever")),
+        );
+        let action = super::default_process_commit_error(&state, error);
+        assert!(matches!(action, CommitErrorOutcome::RollbackAndThrow(_)));
+
+        let error = Error::DatabaseError(
+            DatabaseErrorKind::UnableToSendCommand,
+            Box::new(String::from("whatever")),
+        );
+        let action = super::default_process_commit_error(&state, error);
+        assert!(matches!(action, CommitErrorOutcome::Throw(_)));
+
+        let state = ValidTransactionManagerStatus {
+            // Transaction depth == None, so no transaction running, so nothing
+            // to rollback. Something went wrong so mark everything as broken.
+            transaction_depth: None,
+        };
+        let error = Error::DatabaseError(
+            DatabaseErrorKind::ReadOnlyTransaction,
+            Box::new(String::from("whatever")),
+        );
+        let action = super::default_process_commit_error(&state, error);
+        assert!(matches!(
+            action,
+            CommitErrorOutcome::ThrowAndMarkManagerAsBroken(_)
+        ));
+
+        let state = ValidTransactionManagerStatus {
+            // Transaction depth == 2, so two nested transactions
+            transaction_depth: NonZeroU32::new(2),
+        };
+        let error = Error::DatabaseError(
+            DatabaseErrorKind::ReadOnlyTransaction,
+            Box::new(String::from("whatever")),
+        );
+        let action = super::default_process_commit_error(&state, error);
+        assert!(matches!(action, CommitErrorOutcome::Throw(_)));
     }
 }

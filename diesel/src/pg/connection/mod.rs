@@ -65,10 +65,18 @@ impl CommitErrorProcessor for PgConnection {
         ) {
             return CommitErrorOutcome::Throw(error);
         }
-        if transaction_depth.is_none() {
+        if let Some(transaction_depth) = transaction_depth {
             match error {
                 Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
-                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _) => {
+                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
+                    if transaction_depth.get() == 1 =>
+                {
+                    CommitErrorOutcome::RollbackAndThrow(error)
+                }
+                Error::DatabaseError(DatabaseErrorKind::Unknown, _)
+                    if transaction_status == PgTransactionStatus::InError
+                        && transaction_depth.get() > 1 =>
+                {
                     CommitErrorOutcome::RollbackAndThrow(error)
                 }
                 Error::AlreadyInTransaction
@@ -79,6 +87,8 @@ impl CommitErrorProcessor for PgConnection {
                 | Error::DatabaseError(DatabaseErrorKind::UnableToSendCommand, _)
                 | Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)
                 | Error::DatabaseError(DatabaseErrorKind::Unknown, _)
+                | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
+                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
                 | Error::DeserializationError(_)
                 | Error::InvalidCString(_)
                 | Error::NotFound
@@ -90,32 +100,7 @@ impl CommitErrorProcessor for PgConnection {
                 | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
             }
         } else {
-            match error {
-                Error::DatabaseError(DatabaseErrorKind::Unknown, _)
-                    if transaction_status == PgTransactionStatus::InError =>
-                {
-                    CommitErrorOutcome::RollbackAndThrow(error)
-                }
-                Error::AlreadyInTransaction
-                | Error::DatabaseError(DatabaseErrorKind::CheckViolation, _)
-                | Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
-                | Error::DatabaseError(DatabaseErrorKind::ForeignKeyViolation, _)
-                | Error::DatabaseError(DatabaseErrorKind::NotNullViolation, _)
-                | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
-                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
-                | Error::DatabaseError(DatabaseErrorKind::UnableToSendCommand, _)
-                | Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)
-                | Error::DatabaseError(DatabaseErrorKind::Unknown, _)
-                | Error::DeserializationError(_)
-                | Error::InvalidCString(_)
-                | Error::NotFound
-                | Error::QueryBuilderError(_)
-                | Error::RollbackError(_)
-                | Error::NotInTransaction
-                | Error::RollbackTransaction
-                | Error::SerializationError(_)
-                | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
-            }
+            CommitErrorOutcome::ThrowAndMarkManagerAsBroken(Error::BrokenTransaction)
         }
     }
 }

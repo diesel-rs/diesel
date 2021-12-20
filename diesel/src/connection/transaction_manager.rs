@@ -87,7 +87,7 @@ impl TransactionManagerStatus {
 #[allow(missing_copy_implementations)]
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct ValidTransactionManagerStatus {
-    transaction_depth: Option<NonZeroU32>,
+    pub(super) transaction_depth: Option<NonZeroU32>,
 }
 
 impl ValidTransactionManagerStatus {
@@ -286,19 +286,16 @@ mod test {
 
     // Mock connection. Uses the Postgres backend for type signatures.
     // This is really because implementing a new backend is pain
-    #[cfg(feature = "postgres")]
     mod mock {
         use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::{
             Connection, ConnectionGatWorkaround, SimpleConnection, TransactionManager,
         };
-        use crate::diesel::pg::connection::cursor::Cursor;
         use crate::expression::QueryMetadata;
-        use crate::pg::Pg;
         use crate::query_builder::{AsQuery, QueryFragment, QueryId};
         use crate::result::{Error, QueryResult};
-        use crate::PgConnection;
+        use crate::test_helpers::TestConnection;
 
         pub(crate) struct MockConnection {
             pub next_result: Option<QueryResult<usize>>,
@@ -315,10 +312,21 @@ mod test {
             }
         }
 
-        impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for MockConnection {
-            type Cursor = Cursor;
+        impl<'conn, 'query>
+            ConnectionGatWorkaround<'conn, 'query, <TestConnection as Connection>::Backend>
+            for MockConnection
+        {
+            type Cursor = <TestConnection as ConnectionGatWorkaround<
+                'conn,
+                'query,
+                <TestConnection as Connection>::Backend,
+            >>::Cursor;
 
-            type Row = <PgConnection as ConnectionGatWorkaround<'conn, 'query, Pg>>::Row;
+            type Row = <TestConnection as ConnectionGatWorkaround<
+                'conn,
+                'query,
+                <TestConnection as Connection>::Backend,
+            >>::Row;
         }
 
         impl CommitErrorProcessor for MockConnection {
@@ -332,7 +340,7 @@ mod test {
         }
 
         impl Connection for MockConnection {
-            type Backend = Pg;
+            type Backend = <TestConnection as Connection>::Backend;
 
             type TransactionManager = AnsiTransactionManager;
 
@@ -352,7 +360,7 @@ mod test {
             fn load<'conn, 'query, T>(
                 &'conn mut self,
                 _source: T,
-            ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg>>::Cursor>
+            ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
             where
                 T: AsQuery,
                 T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
@@ -374,16 +382,6 @@ mod test {
             ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData
             {
                 &mut self.transaction_state
-            }
-        }
-    }
-
-    #[cfg(feature = "postgres")]
-    macro_rules! matches {
-        ($expression:expr, $( $pattern:pat )|+ $( if $guard: expr )?) => {
-            match $expression {
-                $( $pattern )|+ $( if $guard )? => true,
-                _ => false
             }
         }
     }
@@ -427,7 +425,6 @@ mod test {
     }
 
     #[test]
-    #[cfg(feature = "postgres")]
     fn transaction_manager_enters_broken_state_when_connection_is_broken() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
