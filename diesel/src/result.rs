@@ -86,6 +86,18 @@ pub enum Error {
 
     /// Transaction broken, likely due to a broken connection. No other operations are possible.
     BrokenTransaction,
+
+    /// Commiting a transaction failed
+    ///
+    /// The transaction manager will try to perform
+    /// a rollback in such cases. Indications about the success
+    /// of this can be extracted from this error variant
+    CommitFailed {
+        /// Failure message of the commit attempt
+        commit_error: Box<Error>,
+        /// Outcome of the rollback attempt
+        rollback_result: Box<QueryResult<()>>,
+    },
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -311,6 +323,20 @@ impl Display for Error {
             ),
             Error::NotInTransaction => {
                 write!(f, "Cannot perform this operation outside of a transaction",)
+            }
+            Error::CommitFailed {
+                ref commit_error,
+                ref rollback_result,
+            } => {
+                write!(
+                    f,
+                    "Commiting the current transaction failed: {}",
+                    commit_error
+                )?;
+                match &**rollback_result {
+                    Ok(()) => write!(f, " Rollback attempt was succesful"),
+                    Err(e) => write!(f, " Rollback attempt failed with {}", e),
+                }
             }
         }
     }

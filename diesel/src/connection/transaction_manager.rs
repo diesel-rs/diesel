@@ -247,12 +247,14 @@ where
                         // We should try to rollback the transaction here
                         let rollback_result = conn.batch_execute(&*rollback_sql);
                         let state = Self::get_transaction_state(conn)?;
-                        let _ = state.change_transaction_depth(
+                        let rollback_result = state.change_transaction_depth(
                             TransactionDepthChange::DecreaseDepth,
                             rollback_result,
                         );
-                        // TODO: return a new error here indicating that we've rolled back
-                        Err(error)
+                        Err(Error::CommitFailed {
+                            commit_error: Box::new(error),
+                            rollback_result: Box::new(rollback_result),
+                        })
                     }
                     CommitErrorOutcome::Throw(error) => {
                         // The error processor indicated that we just
@@ -261,14 +263,20 @@ where
                             TransactionDepthChange::DecreaseDepth,
                             Ok(()),
                         );
-                        Err(error)
+                        Err(Error::CommitFailed {
+                            commit_error: Box::new(error),
+                            rollback_result: Box::new(Ok(())),
+                        })
                     }
                     CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error) => {
                         // The connection contains an unrecoverable broken transaction
                         // so mark the transaction state as broken and return the error
                         *Self::transaction_manager_status_mut(conn) =
                             TransactionManagerStatus::InError;
-                        Err(error)
+                        Err(Error::CommitFailed {
+                            commit_error: Box::new(error),
+                            rollback_result: Box::new(Err(Error::BrokenTransaction)),
+                        })
                     }
                 }
             }
