@@ -80,26 +80,16 @@ impl ::std::error::Error for Error {}
 pub trait R2D2Connection: Connection {
     /// Check if a connection is still valid
     fn ping(&mut self) -> QueryResult<()>;
-}
 
-#[cfg(feature = "postgres")]
-impl R2D2Connection for crate::pg::PgConnection {
-    fn ping(&mut self) -> QueryResult<()> {
-        self.execute("SELECT 1").map(|_| ())
-    }
-}
-
-#[cfg(feature = "mysql")]
-impl R2D2Connection for crate::mysql::MysqlConnection {
-    fn ping(&mut self) -> QueryResult<()> {
-        self.execute("SELECT 1").map(|_| ())
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl R2D2Connection for crate::sqlite::SqliteConnection {
-    fn ping(&mut self) -> QueryResult<()> {
-        self.execute("SELECT 1").map(|_| ())
+    /// Checks if the connection is broken and should not be reused
+    ///
+    /// This method should return only contain a fast non-blocking check
+    /// if the connection is considered to be broken or not. See
+    /// [ManageConnection::has_broken] for details.
+    ///
+    /// The default implementation does not consider any connection as broken
+    fn is_broken(&mut self) -> bool {
+        false
     }
 }
 
@@ -118,8 +108,8 @@ where
         conn.ping().map_err(Error::QueryError)
     }
 
-    fn has_broken(&self, _conn: &mut T) -> bool {
-        std::thread::panicking()
+    fn has_broken(&self, conn: &mut T) -> bool {
+        std::thread::panicking() || conn.is_broken()
     }
 }
 

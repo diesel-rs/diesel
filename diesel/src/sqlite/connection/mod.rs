@@ -139,6 +139,20 @@ impl Connection for SqliteConnection {
     }
 }
 
+impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
+    fn ping(&mut self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
+    }
+
+    fn is_broken(&mut self) -> bool {
+        self.transaction_state
+            .status
+            .transaction_depth()
+            .map(|d| d.is_none())
+            .unwrap_or(true)
+    }
+}
+
 impl SqliteConnection {
     /// Run a transaction with `BEGIN IMMEDIATE`
     ///

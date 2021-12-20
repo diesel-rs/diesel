@@ -115,6 +115,21 @@ impl Connection for MysqlConnection {
     }
 }
 
+#[cfg(feature = "r2d2")]
+impl crate::r2d2::R2D2Connection for MysqlConnection {
+    fn ping(&mut self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
+    }
+
+    fn is_broken(&mut self) -> bool {
+        self.transaction_state
+            .status
+            .transaction_depth()
+            .map(|d| d.is_none())
+            .unwrap_or(true)
+    }
+}
+
 impl MysqlConnection {
     fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
         &'a mut self,
