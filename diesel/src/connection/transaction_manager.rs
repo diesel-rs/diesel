@@ -731,10 +731,12 @@ mod test {
             .execute(conn)
             .unwrap();
 
-        let barrier = Arc::new(Barrier::new(2));
+        let before_barrier = Arc::new(Barrier::new(2));
+        let after_barrier = Arc::new(Barrier::new(2));
         let threads = (1..3)
             .map(|i| {
-                let barrier = barrier.clone();
+                let before_barrier = before_barrier.clone();
+                let after_barrier = after_barrier.clone();
                 thread::spawn(move || {
                     use crate::connection::transaction_manager::AnsiTransactionManager;
                     use crate::connection::transaction_manager::TransactionManager;
@@ -750,12 +752,14 @@ mod test {
                             .count()
                             .execute(conn)?;
 
-                        barrier.wait();
-
                         let other_i = if i == 1 { 2 } else { 1 };
-                        insert_into(serialization_example::table)
-                            .values(serialization_example::class.eq(other_i))
-                            .execute(conn)
+                        let q = insert_into(serialization_example::table)
+                            .values(serialization_example::class.eq(other_i));
+                        before_barrier.wait();
+
+                        let r = q.execute(conn);
+                        after_barrier.wait();
+                        r
                     });
 
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));

@@ -144,10 +144,12 @@ fn isolation_errors_are_detected() {
         .execute(conn)
         .unwrap();
 
-    let barrier = Arc::new(Barrier::new(2));
+    let before_barrier = Arc::new(Barrier::new(2));
+    let after_barrier = Arc::new(Barrier::new(2));
     let threads = (1..3)
         .map(|i| {
-            let barrier = barrier.clone();
+            let before_barrier = before_barrier.clone();
+            let after_barrier = after_barrier.clone();
             thread::spawn(move || {
                 let conn = &mut connection_without_transaction();
 
@@ -157,12 +159,14 @@ fn isolation_errors_are_detected() {
                         .count()
                         .execute(conn)?;
 
-                    barrier.wait();
+                    before_barrier.wait();
 
                     let other_i = if i == 1 { 2 } else { 1 };
-                    insert_into(isolation_example::table)
+                    let r = insert_into(isolation_example::table)
                         .values(isolation_example::class.eq(other_i))
-                        .execute(conn)
+                        .execute(conn);
+                    after_barrier.wait();
+                    r
                 })
             })
         })
