@@ -251,7 +251,7 @@ where
                             TransactionDepthChange::DecreaseDepth,
                             rollback_result,
                         );
-                        Err(Error::CommitFailed {
+                        Err(Error::CommitTransactionFailed {
                             commit_error: Box::new(error),
                             rollback_result: Box::new(rollback_result),
                         })
@@ -263,7 +263,7 @@ where
                             TransactionDepthChange::DecreaseDepth,
                             Ok(()),
                         );
-                        Err(Error::CommitFailed {
+                        Err(Error::CommitTransactionFailed {
                             commit_error: Box::new(error),
                             rollback_result: Box::new(Ok(())),
                         })
@@ -273,7 +273,7 @@ where
                         // so mark the transaction state as broken and return the error
                         *Self::transaction_manager_status_mut(conn) =
                             TransactionManagerStatus::InError;
-                        Err(Error::CommitFailed {
+                        Err(Error::CommitTransactionFailed {
                             commit_error: Box::new(error),
                             rollback_result: Box::new(Err(Error::BrokenTransaction)),
                         })
@@ -458,7 +458,7 @@ mod test {
         });
         assert!(matches!(
             result,
-            Err(Error::DatabaseError(DatabaseErrorKind::Unknown, _))
+            Err(Error::CommitTransactionFailed{commit_error, ..}) if matches!(&*commit_error, Error::DatabaseError(DatabaseErrorKind::Unknown, _))
         ));
         assert_eq!(
             *<AnsiTransactionManager as TransactionManager<mock::MockConnection>>::transaction_manager_status_mut(
@@ -694,7 +694,7 @@ mod test {
     #[cfg(feature = "postgres")]
     fn transaction_depth_is_tracked_properly_on_commit_failure() {
         use crate::result::DatabaseErrorKind::SerializationFailure;
-        use crate::result::Error::DatabaseError;
+        use crate::result::Error::{self, DatabaseError};
         use crate::*;
         use std::sync::{Arc, Barrier};
         use std::thread;
@@ -773,8 +773,10 @@ mod test {
 
         assert!(matches!(results[0], Ok(_)));
         assert!(matches!(
-            results[1],
-            Err(DatabaseError(SerializationFailure, _))
+            &results[1],
+            Err(Error::CommitTransactionFailed {
+                ref commit_error, ..
+            }) if matches!(&**commit_error, DatabaseError(SerializationFailure, _))
         ));
     }
 

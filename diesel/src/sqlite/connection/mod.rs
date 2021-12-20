@@ -139,6 +139,7 @@ impl Connection for SqliteConnection {
     }
 }
 
+#[cfg(feature = "r2d2")]
 impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
     fn ping(&mut self) -> QueryResult<()> {
         self.execute("SELECT 1").map(|_| ())

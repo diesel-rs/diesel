@@ -60,7 +60,7 @@ pub fn default_process_commit_error(
             | Error::SerializationError(_)
             | Error::NotInTransaction
             | Error::BrokenTransaction
-            | Error::CommitFailed { .. } => CommitErrorOutcome::Throw(error),
+            | Error::CommitTransactionFailed { .. } => CommitErrorOutcome::Throw(error),
         }
     } else {
         CommitErrorOutcome::ThrowAndMarkManagerAsBroken(Error::BrokenTransaction)

@@ -108,7 +108,7 @@ fn foreign_key_violation_correct_constraint_name() {
 #[cfg(feature = "postgres")]
 fn isolation_errors_are_detected() {
     use diesel::result::DatabaseErrorKind::SerializationFailure;
-    use diesel::result::Error::DatabaseError;
+    use diesel::result::Error::{CommitTransactionFailed, DatabaseError};
     use std::sync::{Arc, Barrier};
     use std::thread;
 
@@ -176,7 +176,11 @@ fn isolation_errors_are_detected() {
     results.sort_by_key(|r| r.is_err());
 
     assert_matches!(results[0], Ok(_));
-    assert_matches!(results[1], Err(DatabaseError(SerializationFailure, _)));
+    assert_matches!(results[1],
+                    Err(CommitTransactionFailed { ref commit_error, ..})
+                    if matches!(
+                        &** commit_error,
+                        DatabaseError(SerializationFailure, _)));
 }
 
 #[test]

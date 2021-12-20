@@ -98,7 +98,7 @@ impl CommitErrorProcessor for PgConnection {
                 | Error::RollbackTransaction
                 | Error::SerializationError(_)
                 | Error::BrokenTransaction
-                | Error::CommitFailed { .. } => CommitErrorOutcome::Throw(error),
+                | Error::CommitTransactionFailed { .. } => CommitErrorOutcome::Throw(error),
             }
         } else {
             CommitErrorOutcome::ThrowAndMarkManagerAsBroken(Error::BrokenTransaction)

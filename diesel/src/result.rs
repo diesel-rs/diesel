@@ -92,7 +92,7 @@ pub enum Error {
     /// The transaction manager will try to perform
     /// a rollback in such cases. Indications about the success
     /// of this can be extracted from this error variant
-    CommitFailed {
+    CommitTransactionFailed {
         /// Failure message of the commit attempt
         commit_error: Box<Error>,
         /// Outcome of the rollback attempt
@@ -324,7 +324,7 @@ impl Display for Error {
             Error::NotInTransaction => {
                 write!(f, "Cannot perform this operation outside of a transaction",)
             }
-            Error::CommitFailed {
+            Error::CommitTransactionFailed {
                 ref commit_error,
                 ref rollback_result,
             } => {
