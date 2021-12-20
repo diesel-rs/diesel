@@ -90,9 +90,9 @@ fn lookup_type<T: Connection<Backend = Pg>>(
         // and let postgres figure out the name resolution on it's own.
         metadata_query
             .filter(
-                pg_type::oid.eq(crate::dsl::sql("")
+                pg_type::oid.eq(crate::dsl::sql("quote_ident(")
                     .bind::<crate::sql_types::Text, _>(&cache_key.type_name)
-                    .sql("::regtype::oid")),
+                    .sql(")::regtype::oid")),
             )
             .first(conn)?
     };
