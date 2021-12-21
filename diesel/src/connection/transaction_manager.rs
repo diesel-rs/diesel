@@ -692,7 +692,8 @@ mod test {
 
     #[test]
     #[cfg(feature = "postgres")]
-    fn transaction_depth_is_tracked_properly_on_commit_failure() {
+    fn postgres_transaction_depth_is_tracked_properly_on_serialization_failure() {
+        use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::DatabaseErrorKind::SerializationFailure;
         use crate::result::Error::{self, DatabaseError};
         use crate::*;
@@ -700,7 +701,7 @@ mod test {
         use std::thread;
 
         table! {
-            #[sql_name = "transaction_depth_is_tracked_properly_on_commit_failure"]
+            #[sql_name = "pg_transaction_depth_is_tracked_properly_on_commit_failure"]
             serialization_example {
                 id -> Serial,
                 class -> Integer,
@@ -709,12 +710,14 @@ mod test {
 
         let conn = &mut crate::test_helpers::pg_connection_no_transaction();
 
-        sql_query("DROP TABLE IF EXISTS transaction_depth_is_tracked_properly_on_commit_failure;")
-            .execute(conn)
-            .unwrap();
+        sql_query(
+            "DROP TABLE IF EXISTS pg_transaction_depth_is_tracked_properly_on_commit_failure;",
+        )
+        .execute(conn)
+        .unwrap();
         sql_query(
             r#"
-            CREATE TABLE transaction_depth_is_tracked_properly_on_commit_failure (
+            CREATE TABLE pg_transaction_depth_is_tracked_properly_on_commit_failure (
                 id SERIAL PRIMARY KEY,
                 class INTEGER NOT NULL
             )
@@ -743,8 +746,7 @@ mod test {
                     let conn = &mut crate::test_helpers::pg_connection_no_transaction();
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
-                    let result =
-                    conn.build_transaction().serializable().run(|conn| {
+                    let result = conn.build_transaction().serializable().run(|conn| {
                         assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
                         let _ = serialization_example::table
@@ -761,6 +763,10 @@ mod test {
                         after_barrier.wait();
                         r
                     });
+                    assert_eq!(
+                        PgTransactionStatus::Idle,
+                        conn.raw_connection.transaction_status()
+                    );
 
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
                     result
@@ -775,13 +781,21 @@ mod test {
 
         results.sort_by_key(|r| r.is_err());
 
-        assert!(matches!(results[0], Ok(_)));
-        assert!(matches!(
-            &results[1],
-            Err(Error::CommitTransactionFailed {
-                ref commit_error, ..
-            }) if matches!(&**commit_error, DatabaseError(SerializationFailure, _))
-        ));
+        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        assert!(
+            matches!(
+                &results[1],
+                Err(Error::CommitTransactionFailed {
+                    ref commit_error, ..
+                }) if matches!(&**commit_error, DatabaseError(SerializationFailure, _))
+            ),
+            "Got {:?} instead",
+            results
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
     }
 
     #[test]
