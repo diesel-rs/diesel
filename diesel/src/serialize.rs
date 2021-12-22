@@ -52,8 +52,10 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
         }
     }
 
-    #[cfg(feature = "sqlite")]
-    pub(crate) fn into_inner(
+    /// Consume the current `Output` structure to access the inner buffer type
+    ///
+    /// This function is only useful for people implementing their own Backend.
+    pub fn into_inner(
         self,
     ) -> <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer {
         self.out
@@ -64,48 +66,16 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
     pub fn metadata_lookup(&mut self) -> &mut DB::MetadataLookup {
         *self.metadata_lookup.as_mut().expect("Lookup is there")
     }
-}
 
-#[cfg(feature = "sqlite")]
-impl<'a, 'b> Output<'a, 'b, crate::sqlite::Sqlite> {
-    pub(crate) fn set_small_int(&mut self, i: i16) {
-        self.out = crate::sqlite::SqliteBindValue::I32(i as i32);
-    }
-
-    pub(crate) fn set_int(&mut self, i: i32) {
-        self.out = crate::sqlite::SqliteBindValue::I32(i);
-    }
-
-    pub(crate) fn set_big_int(&mut self, i: i64) {
-        self.out = crate::sqlite::SqliteBindValue::I64(i);
-    }
-
-    pub(crate) fn set_float(&mut self, i: f32) {
-        self.out = crate::sqlite::SqliteBindValue::F64(i as f64);
-    }
-
-    pub(crate) fn set_double(&mut self, i: f64) {
-        self.out = crate::sqlite::SqliteBindValue::F64(i);
-    }
-
-    pub(crate) fn set_borrowed_string(&mut self, s: &'a str) {
-        self.out = crate::sqlite::SqliteBindValue::BorrowedString(s);
-    }
-
-    pub(crate) fn set_borrowed_binary(&mut self, s: &'a [u8]) {
-        self.out = crate::sqlite::SqliteBindValue::BorrowedBinary(s);
-    }
-
-    // this can be unused depending on the enabled features
-    #[allow(dead_code)]
-    pub(crate) fn set_owned_string(&mut self, s: String) {
-        self.out = crate::sqlite::SqliteBindValue::String(s.into_boxed_str());
-    }
-
-    // This can be unused depending on the enabled features
-    #[allow(dead_code)]
-    pub(crate) fn set_owned_binary(&mut self, b: Vec<u8>) {
-        self.out = crate::sqlite::SqliteBindValue::Binary(b.into_boxed_slice());
+    /// Set the inner buffer to a specific value
+    ///
+    /// Checkout the documentation of the type of `BindCollector::Buffer`
+    /// for your specific backend for supported types.
+    pub fn set_value<V>(&mut self, value: V)
+    where
+        V: Into<<crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer>,
+    {
+        self.out = value.into();
     }
 }
 
@@ -233,6 +203,75 @@ where
 ///     }
 /// }
 /// ```
+///
+/// Using temporary values as part of the `ToSql` implemenation requires additional
+/// work.
+///
+/// Backends using [`RawBytesBindCollector`] as [`BindCollector`] copy the serialized values as part
+/// of `Write` implementation. This includes the `Mysql` and the `Pg` backend provided by diesel.
+/// This means existing `ToSql` implemenations can be used even with
+/// temporary values. For these it is required to call
+/// [`Output::reborrow`] to shorten the lifetime of the `Output` type correspondenly.
+///
+/// ```
+/// # use diesel::backend::Backend;
+/// # use diesel::expression::AsExpression;
+/// # use diesel::sql_types::*;
+/// # use diesel::serialize::{self, ToSql, Output};
+/// # use std::io::Write;
+/// #
+/// #[repr(i32)]
+/// #[derive(Debug, Clone, Copy, AsExpression)]
+/// #[diesel(sql_type = Integer)]
+/// pub enum MyEnum {
+///     A = 1,
+///     B = 2,
+/// }
+///
+/// # #[cfg(feature = "postgres")]
+/// impl ToSql<Integer, diesel::pg::Pg> for MyEnum
+/// where
+///     i32: ToSql<Integer, diesel::pg::Pg>,
+/// {
+///     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, diesel::pg::Pg>) -> serialize::Result {
+///         let v = *self as i32;
+///         <i32 as ToSql<Integer, diesel::pg::Pg>>::to_sql(&v, &mut out.reborrow())
+///     }
+/// }
+/// ````
+///
+/// For any other backend the [`Output::set_value`] method provides a way to
+/// set the output value directly. Checkout the documentation of the corresponding
+/// `BindCollector::Buffer` type for provided `From<T>` implementations for a list
+/// of accepted types. For the `Sqlite` backend see `SqliteBindValue`.
+///
+/// ```
+/// # use diesel::backend::Backend;
+/// # use diesel::expression::AsExpression;
+/// # use diesel::sql_types::*;
+/// # use diesel::serialize::{self, ToSql, Output, IsNull};
+/// # use std::io::Write;
+/// #
+/// #[repr(i32)]
+/// #[derive(Debug, Clone, Copy, AsExpression)]
+/// #[diesel(sql_type = Integer)]
+/// pub enum MyEnum {
+///     A = 1,
+///     B = 2,
+/// }
+///
+/// # #[cfg(feature = "sqlite")]
+/// impl ToSql<Integer, diesel::sqlite::Sqlite> for MyEnum
+/// where
+///     i32: ToSql<Integer, diesel::sqlite::Sqlite>,
+/// {
+///     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, diesel::sqlite::Sqlite>) -> serialize::Result {
+///         out.set_value(*self as i32);
+///         Ok(IsNull::No)
+///     }
+/// }
+/// ````
+
 pub trait ToSql<A, DB: Backend>: fmt::Debug {
     /// See the trait documentation.
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> Result;

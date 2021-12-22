@@ -10,7 +10,7 @@ mod statement_iterator;
 mod stmt;
 
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
-pub(crate) use self::bind_collector::SqliteBindValue;
+pub use self::bind_collector::SqliteBindValue;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;

@@ -1,6 +1,6 @@
 extern crate libsqlite3_sys as ffi;
 
-use super::bind_collector::{SqliteBindCollector, SqliteBindValue};
+use super::bind_collector::{InternalSqliteBindValue, SqliteBindCollector};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::{MaybeCached, PrepareForCache};
@@ -57,22 +57,24 @@ impl Statement {
     unsafe fn bind(
         &mut self,
         tpe: SqliteType,
-        value: SqliteBindValue<'_>,
+        value: InternalSqliteBindValue<'_>,
         bind_index: i32,
     ) -> QueryResult<Option<NonNull<[u8]>>> {
         let mut ret_ptr = None;
         let result = match (tpe, value) {
-            (_, SqliteBindValue::Null) => {
+            (_, InternalSqliteBindValue::Null) => {
                 ffi::sqlite3_bind_null(self.inner_statement.as_ptr(), bind_index)
             }
-            (SqliteType::Binary, SqliteBindValue::BorrowedBinary(bytes)) => ffi::sqlite3_bind_blob(
-                self.inner_statement.as_ptr(),
-                bind_index,
-                bytes.as_ptr() as *const libc::c_void,
-                bytes.len() as libc::c_int,
-                ffi::SQLITE_STATIC(),
-            ),
-            (SqliteType::Binary, SqliteBindValue::Binary(mut bytes)) => {
+            (SqliteType::Binary, InternalSqliteBindValue::BorrowedBinary(bytes)) => {
+                ffi::sqlite3_bind_blob(
+                    self.inner_statement.as_ptr(),
+                    bind_index,
+                    bytes.as_ptr() as *const libc::c_void,
+                    bytes.len() as libc::c_int,
+                    ffi::SQLITE_STATIC(),
+                )
+            }
+            (SqliteType::Binary, InternalSqliteBindValue::Binary(mut bytes)) => {
                 let len = bytes.len();
                 // We need a seperate pointer here to pass it to sqlite
                 // as the returned pointer is a pointer to a dyn sized **slice**
@@ -93,14 +95,16 @@ impl Statement {
                     ffi::SQLITE_STATIC(),
                 )
             }
-            (SqliteType::Text, SqliteBindValue::BorrowedString(bytes)) => ffi::sqlite3_bind_text(
-                self.inner_statement.as_ptr(),
-                bind_index,
-                bytes.as_ptr() as *const libc::c_char,
-                bytes.len() as libc::c_int,
-                ffi::SQLITE_STATIC(),
-            ),
-            (SqliteType::Text, SqliteBindValue::String(bytes)) => {
+            (SqliteType::Text, InternalSqliteBindValue::BorrowedString(bytes)) => {
+                ffi::sqlite3_bind_text(
+                    self.inner_statement.as_ptr(),
+                    bind_index,
+                    bytes.as_ptr() as *const libc::c_char,
+                    bytes.len() as libc::c_int,
+                    ffi::SQLITE_STATIC(),
+                )
+            }
+            (SqliteType::Text, InternalSqliteBindValue::String(bytes)) => {
                 let mut bytes = Box::<[u8]>::from(bytes);
                 let len = bytes.len();
                 // We need a seperate pointer here to pass it to sqlite
@@ -122,17 +126,19 @@ impl Statement {
                     ffi::SQLITE_STATIC(),
                 )
             }
-            (SqliteType::Float, SqliteBindValue::F64(value))
-            | (SqliteType::Double, SqliteBindValue::F64(value)) => ffi::sqlite3_bind_double(
-                self.inner_statement.as_ptr(),
-                bind_index,
-                value as libc::c_double,
-            ),
-            (SqliteType::SmallInt, SqliteBindValue::I32(value))
-            | (SqliteType::Integer, SqliteBindValue::I32(value)) => {
+            (SqliteType::Float, InternalSqliteBindValue::F64(value))
+            | (SqliteType::Double, InternalSqliteBindValue::F64(value)) => {
+                ffi::sqlite3_bind_double(
+                    self.inner_statement.as_ptr(),
+                    bind_index,
+                    value as libc::c_double,
+                )
+            }
+            (SqliteType::SmallInt, InternalSqliteBindValue::I32(value))
+            | (SqliteType::Integer, InternalSqliteBindValue::I32(value)) => {
                 ffi::sqlite3_bind_int(self.inner_statement.as_ptr(), bind_index, value)
             }
-            (SqliteType::Long, SqliteBindValue::I64(value)) => {
+            (SqliteType::Long, InternalSqliteBindValue::I64(value)) => {
                 ffi::sqlite3_bind_int64(self.inner_statement.as_ptr(), bind_index, value)
             }
             (t, b) => {
@@ -278,7 +284,10 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     // This is a seperate function so that
     // not the whole construtor is generic over the query type T.
     // This hopefully prevents binary bloat.
-    fn bind_buffers(&mut self, binds: Vec<(SqliteBindValue<'_>, SqliteType)>) -> QueryResult<()> {
+    fn bind_buffers(
+        &mut self,
+        binds: Vec<(InternalSqliteBindValue<'_>, SqliteType)>,
+    ) -> QueryResult<()> {
         // It is useful to preallocate `binds_to_free` because it
         // - Guarantees that pushing inside it cannot panic, which guarantees the `Drop`
         //   impl of `BoundStatement` will always re-`bind` as needed
@@ -289,10 +298,10 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
                 .filter(|&(b, _)| {
                     matches!(
                         b,
-                        SqliteBindValue::BorrowedBinary(_)
-                            | SqliteBindValue::BorrowedString(_)
-                            | SqliteBindValue::String(_)
-                            | SqliteBindValue::Binary(_)
+                        InternalSqliteBindValue::BorrowedBinary(_)
+                            | InternalSqliteBindValue::BorrowedString(_)
+                            | InternalSqliteBindValue::String(_)
+                            | InternalSqliteBindValue::Binary(_)
                     )
                 })
                 .count(),
@@ -300,7 +309,8 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         for (bind_idx, (bind, tpe)) in (1..).zip(binds) {
             if matches!(
                 bind,
-                SqliteBindValue::BorrowedString(_) | SqliteBindValue::BorrowedBinary(_)
+                InternalSqliteBindValue::BorrowedString(_)
+                    | InternalSqliteBindValue::BorrowedBinary(_)
             ) {
                 // Store the id's of borrowed binds to unbind them on drop
                 self.binds_to_free.push((bind_idx, None));
@@ -331,7 +341,7 @@ impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
             unsafe {
                 // It's always safe to bind null values, as there is no buffer that needs to outlife something
                 self.statement
-                    .bind(SqliteType::Text, SqliteBindValue::Null, idx)
+                    .bind(SqliteType::Text, InternalSqliteBindValue::Null, idx)
                     .expect(
                         "Binding a null value should never fail. \
                              If you ever see this error message please open \
