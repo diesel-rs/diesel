@@ -101,7 +101,11 @@ impl CommitErrorProcessor for PgConnection {
                 | Error::CommitTransactionFailed { .. } => CommitErrorOutcome::Throw(error),
             }
         } else {
-            CommitErrorOutcome::ThrowAndMarkManagerAsBroken(Error::BrokenTransaction)
+            unreachable!(
+                "Calling commit_error_processor outside of a transaction is implementation error.\
+                 If you ever see this error message outside implementing a custom transaction manager\
+                 please open a new issue at diesels issue tracker."
+            )
         }
     }
 }

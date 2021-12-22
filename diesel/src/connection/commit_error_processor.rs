@@ -35,6 +35,9 @@ pub fn default_process_commit_error(
 ) -> CommitErrorOutcome {
     if let Some(transaction_depth) = transaction_state.transaction_depth() {
         match error {
+            // Neither mysql nor sqlite do currently produce these errors
+            // we keep this match arm here for the case we may generate
+            // such errors in future versions of diesel
             Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
             | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
                 if transaction_depth.get() == 1 =>
@@ -63,21 +66,23 @@ pub fn default_process_commit_error(
             | Error::CommitTransactionFailed { .. } => CommitErrorOutcome::Throw(error),
         }
     } else {
-        CommitErrorOutcome::ThrowAndMarkManagerAsBroken(Error::BrokenTransaction)
+        unreachable!(
+            "Calling commit_error_processor outside of a transaction is implementation error.\
+            If you ever see this error message outside implementing a custom transaction manager\
+            please open a new issue at diesels issue tracker."
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use super::CommitErrorOutcome;
+    use crate::connection::ValidTransactionManagerStatus;
+    use crate::result::{DatabaseErrorKind, Error};
+    use std::num::NonZeroU32;
 
     #[test]
-    #[cfg(any(feature = "sqlite", feature = "mysql"))]
     fn check_default_process_commit_error_implementation() {
-        use super::CommitErrorOutcome;
-        use crate::connection::ValidTransactionManagerStatus;
-        use crate::result::{DatabaseErrorKind, Error};
-        use std::num::NonZeroU32;
-
         let state = ValidTransactionManagerStatus {
             // Transaction depth == 1, so one unnested transaction
             transaction_depth: NonZeroU32::new(1),
@@ -97,6 +102,21 @@ mod tests {
         assert!(matches!(action, CommitErrorOutcome::Throw(_)));
 
         let state = ValidTransactionManagerStatus {
+            // Transaction depth == 2, so two nested transactions
+            transaction_depth: NonZeroU32::new(2),
+        };
+        let error = Error::DatabaseError(
+            DatabaseErrorKind::ReadOnlyTransaction,
+            Box::new(String::from("whatever")),
+        );
+        let action = super::default_process_commit_error(&state, error);
+        assert!(matches!(action, CommitErrorOutcome::Throw(_)));
+    }
+
+    #[test]
+    #[should_panic]
+    fn check_invalid_transaction_state_rejected() {
+        let state = ValidTransactionManagerStatus {
             // Transaction depth == None, so no transaction running, so nothing
             // to rollback. Something went wrong so mark everything as broken.
             transaction_depth: None,
@@ -110,16 +130,5 @@ mod tests {
             action,
             CommitErrorOutcome::ThrowAndMarkManagerAsBroken(_)
         ));
-
-        let state = ValidTransactionManagerStatus {
-            // Transaction depth == 2, so two nested transactions
-            transaction_depth: NonZeroU32::new(2),
-        };
-        let error = Error::DatabaseError(
-            DatabaseErrorKind::ReadOnlyTransaction,
-            Box::new(String::from("whatever")),
-        );
-        let action = super::default_process_commit_error(&state, error);
-        assert!(matches!(action, CommitErrorOutcome::Throw(_)));
     }
 }
