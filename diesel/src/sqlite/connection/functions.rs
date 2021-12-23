@@ -2,13 +2,13 @@ extern crate libsqlite3_sys as ffi;
 
 use super::raw::RawConnection;
 use super::row::PrivateSqliteRow;
-use super::{Sqlite, SqliteAggregateFunction};
+use super::{Sqlite, SqliteAggregateFunction, SqliteBindValue};
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
-use crate::sqlite::connection::bind_collector::SqliteBindValue;
+use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
 use crate::sqlite::connection::sqlite_value::OwnedSqliteValue;
 use crate::sqlite::SqliteValue;
 use std::cell::{Ref, RefCell};
@@ -98,19 +98,22 @@ where
 
 pub(crate) fn process_sql_function_result<RetSqlType, Ret>(
     result: &'_ Ret,
-) -> QueryResult<SqliteBindValue<'_>>
+) -> QueryResult<InternalSqliteBindValue<'_>>
 where
     Ret: ToSql<RetSqlType, Sqlite>,
     Sqlite: HasSqlType<RetSqlType>,
 {
     let mut metadata_lookup = ();
-    let mut buf = Output::new(SqliteBindValue::Null, &mut metadata_lookup);
+    let value = SqliteBindValue {
+        inner: InternalSqliteBindValue::Null,
+    };
+    let mut buf = Output::new(value, &mut metadata_lookup);
     let is_null = result.to_sql(&mut buf).map_err(Error::SerializationError)?;
 
     if let IsNull::Yes = is_null {
-        Ok(SqliteBindValue::Null)
+        Ok(InternalSqliteBindValue::Null)
     } else {
-        Ok(buf.into_inner())
+        Ok(buf.into_inner().inner)
     }
 }
 

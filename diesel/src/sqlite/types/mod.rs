@@ -76,49 +76,49 @@ impl ToSql<sql_types::Bool, Sqlite> for bool {
 
 impl ToSql<sql_types::Text, Sqlite> for str {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_borrowed_string(self);
+        out.set_value(self);
         Ok(IsNull::No)
     }
 }
 
 impl ToSql<sql_types::Binary, Sqlite> for [u8] {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_borrowed_binary(self);
+        out.set_value(self);
         Ok(IsNull::No)
     }
 }
 
 impl ToSql<sql_types::SmallInt, Sqlite> for i16 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_small_int(*self);
+        out.set_value(*self as i32);
         Ok(IsNull::No)
     }
 }
 
 impl ToSql<sql_types::Integer, Sqlite> for i32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_int(*self);
+        out.set_value(*self);
         Ok(IsNull::No)
     }
 }
 
 impl ToSql<sql_types::BigInt, Sqlite> for i64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_big_int(*self);
+        out.set_value(*self);
         Ok(IsNull::No)
     }
 }
 
 impl ToSql<sql_types::Float, Sqlite> for f32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_float(*self);
+        out.set_value(*self as f64);
         Ok(IsNull::No)
     }
 }
 
 impl ToSql<sql_types::Double, Sqlite> for f64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_double(*self);
+        out.set_value(*self);
         Ok(IsNull::No)
     }
 }
