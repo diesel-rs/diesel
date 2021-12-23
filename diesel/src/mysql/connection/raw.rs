@@ -7,7 +7,7 @@ use std::sync::Once;
 
 use super::stmt::Statement;
 use super::url::ConnectionOptions;
-use result::{ConnectionError, ConnectionResult, QueryResult};
+use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
 pub struct RawConnection(NonNull<ffi::MYSQL>);
 
@@ -45,6 +45,8 @@ impl RawConnection {
         let password = connection_options.password();
         let database = connection_options.database();
         let port = connection_options.port();
+        let unix_socket = connection_options.unix_socket();
+        let client_flags = connection_options.client_flags();
 
         unsafe {
             // Make sure you don't use the fake one!
@@ -59,8 +61,10 @@ impl RawConnection {
                     .map(CStr::as_ptr)
                     .unwrap_or_else(|| ptr::null_mut()),
                 u32::from(port.unwrap_or(0)),
-                ptr::null_mut(),
-                0,
+                unix_socket
+                    .map(CStr::as_ptr)
+                    .unwrap_or_else(|| ptr::null_mut()),
+                client_flags.bits().into(),
             )
         };
 
@@ -134,15 +138,15 @@ impl RawConnection {
     }
 
     fn did_an_error_occur(&self) -> QueryResult<()> {
-        use result::DatabaseErrorKind;
-        use result::Error::DatabaseError;
+        use crate::result::DatabaseErrorKind;
+        use crate::result::Error::DatabaseError;
 
         let error_message = self.last_error_message();
         if error_message.is_empty() {
             Ok(())
         } else {
             Err(DatabaseError(
-                DatabaseErrorKind::__Unknown,
+                DatabaseErrorKind::Unknown,
                 Box::new(error_message),
             ))
         }

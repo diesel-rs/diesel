@@ -1,0 +1,5 @@
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == Pg`
+  --> $DIR/insert_from_select_with_on_conflict_without_where_clause_not_supported_on_sqlite.rs:19:10
+   |
+19 |         .execute(&mut connection)
+   |          ^^^^^^^ expected struct `Sqlite`, found struct `Pg`

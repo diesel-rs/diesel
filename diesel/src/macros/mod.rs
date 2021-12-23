@@ -1,11 +1,61 @@
 #![allow(unused_parens)] // FIXME: Remove this attribute once false positive is resolved.
 #![cfg_attr(rustfmt, rustfmt_skip)] // https://github.com/rust-lang-nursery/rustfmt/issues/2755
 
+pub(crate) mod prelude {
+    #[cfg_attr(
+        any(feature = "huge-tables", feature = "large-tables"),
+        allow(deprecated)
+    )]
+    #[doc(inline)]
+    pub use crate::{
+        allow_columns_to_appear_in_same_group_by_clause,
+        allow_tables_to_appear_in_same_query,
+        joinable,
+        table,
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_fix_sql_type_import {
+    ($(use $($import:tt)::+;)*) => {
+        $(
+            $crate::__diesel_fix_sql_type_import!(@expand_import: $($import)::+);
+        )*
+    };
+    (@expand_import: super:: $($Type:tt)+) => {
+        use super::super::$($Type)+;
+    };
+    (@expand_import: $($Type:tt)+) => {
+        use $($Type)+;
+    }
+}
+
+#[macro_export]
+#[doc(hidden)]
+#[cfg(feature = "postgres_backend")]
+macro_rules! __diesel_internal_table_backend_specific_impls {
+    ($table:ident, $column_name:ident) => { 
+        impl $crate::expression::AppearsOnTable<$crate::query_builder::Only<$table>>
+            for $column_name {}
+        impl $crate::expression::SelectableExpression<$crate::query_builder::Only<$table>>
+            for $column_name {}
+    };
+}
+#[macro_export]
+#[doc(hidden)]
+#[cfg(not(feature = "postgres_backend"))]
+macro_rules! __diesel_internal_table_backend_specific_impls {
+    ($table:ident, $column_name:ident) => {};
+}
+
 #[macro_export]
 #[doc(hidden)]
 macro_rules! __diesel_column {
     (
         table = $table:ident,
+        table_sql_name = $table_sql_name:expr,
+        table_schema = $table_schema:ident,
         name = $column_name:ident,
         sql_name = $sql_name:expr,
         ty = ($($Type:tt)*),
@@ -13,7 +63,7 @@ macro_rules! __diesel_column {
     ) => {
         $($meta)*
         #[allow(non_camel_case_types, dead_code)]
-        #[derive(Debug, Clone, Copy, QueryId, Default)]
+        #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId, Default)]
         pub struct $column_name;
 
         impl $crate::expression::Expression for $column_name {
@@ -22,54 +72,79 @@ macro_rules! __diesel_column {
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
             DB: $crate::backend::Backend,
-            <$table as QuerySource>::FromClause: QueryFragment<DB>,
+            <$table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
         {
             #[allow(non_snake_case)]
-            fn walk_ast(&self, mut __out: $crate::query_builder::AstPass<DB>) -> $crate::result::QueryResult<()> {
-                $table.from_clause().walk_ast(__out.reborrow())?;
+            fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
+            {
+                use $crate::QuerySource;
+                const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
+
+                FROM_CLAUSE.walk_ast(__out.reborrow())?;
                 __out.push_sql(".");
                 __out.push_identifier($sql_name)
             }
         }
 
-        impl SelectableExpression<$table> for $column_name {
+        impl $crate::SelectableExpression<$table> for $column_name {
         }
 
-        impl<QS> AppearsOnTable<QS> for $column_name where
-            QS: AppearsInFromClause<$table, Count=Once>,
+        impl<QS> $crate::AppearsOnTable<QS> for $column_name where
+            QS: $crate::query_source::AppearsInFromClause<$table, Count=$crate::query_source::Once>,
         {
         }
 
-        impl<Left, Right> SelectableExpression<
-            Join<Left, Right, LeftOuter>,
+        impl<Left, Right> $crate::SelectableExpression<
+                $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>,
         > for $column_name where
-            $column_name: AppearsOnTable<Join<Left, Right, LeftOuter>>,
-            Left: AppearsInFromClause<$table, Count=Once>,
-            Right: AppearsInFromClause<$table, Count=Never>,
+            $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>>,
+            Self: $crate::SelectableExpression<Left>,
+            // If our table is on the right side of this join, only
+            // `Nullable<Self>` can be selected
+            Right: $crate::query_source::AppearsInFromClause<$table, Count=$crate::query_source::Never> + $crate::query_source::QuerySource,
+            Left: $crate::query_source::QuerySource
         {
         }
 
-        impl<Left, Right> SelectableExpression<
-            Join<Left, Right, Inner>,
+        impl<Left, Right> $crate::SelectableExpression<
+                $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>,
         > for $column_name where
-            $column_name: AppearsOnTable<Join<Left, Right, Inner>>,
-            Join<Left, Right, Inner>: AppearsInFromClause<$table, Count=Once>,
+            $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>>,
+            Left: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
+            Right: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
+            (Left::Count, Right::Count): $crate::query_source::Pick<Left, Right>,
+            Self: $crate::SelectableExpression<
+                <(Left::Count, Right::Count) as $crate::query_source::Pick<Left, Right>>::Selection,
+            >,
         {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<Join, On> SelectableExpression<JoinOn<Join, On>> for $column_name where
-            $column_name: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>,
+        impl<Join, On> $crate::SelectableExpression<$crate::query_source::joins::JoinOn<Join, On>> for $column_name where
+            $column_name: $crate::SelectableExpression<Join> + $crate::AppearsOnTable<$crate::query_source::joins::JoinOn<Join, On>>,
         {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<From> SelectableExpression<SelectStatement<From>> for $column_name where
-            $column_name: SelectableExpression<From> + AppearsOnTable<SelectStatement<From>>,
+        impl<From> $crate::SelectableExpression<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<From>>> for $column_name where
+            From: $crate::query_source::QuerySource,
+            $column_name: $crate::SelectableExpression<From> + $crate::AppearsOnTable<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<From>>>,
         {
         }
 
-        impl $crate::expression::NonAggregate for $column_name {}
+        impl<__GB> $crate::expression::ValidGrouping<__GB> for $column_name
+        where __GB: $crate::expression::IsContainedInGroupBy<$column_name, Output = $crate::expression::is_contained_in_group_by::Yes>,
+        {
+            type IsAggregate = $crate::expression::is_aggregate::Yes;
+        }
+
+        impl $crate::expression::ValidGrouping<()> for $column_name {
+            type IsAggregate = $crate::expression::is_aggregate::No;
+        }
+
+        impl $crate::expression::IsContainedInGroupBy<$column_name> for $column_name {
+            type Output = $crate::expression::is_contained_in_group_by::Yes;
+        }
 
         impl $crate::query_source::Column for $column_name {
             type Table = $table;
@@ -79,17 +154,22 @@ macro_rules! __diesel_column {
 
         impl<T> $crate::EqAll<T> for $column_name where
             T: $crate::expression::AsExpression<$($Type)*>,
-            $crate::dsl::Eq<$column_name, T>: $crate::Expression<SqlType=$crate::sql_types::Bool>,
+            $crate::dsl::Eq<$column_name, T::Expression>: $crate::Expression<SqlType=$crate::sql_types::Bool>,
         {
-            type Output = $crate::dsl::Eq<Self, T>;
+            type Output = $crate::dsl::Eq<Self, T::Expression>;
 
             fn eq_all(self, rhs: T) -> Self::Output {
-                $crate::expression::operators::Eq::new(self, rhs.as_expression())
+                use $crate::expression_methods::ExpressionMethods;
+                self.eq(rhs)
             }
         }
 
-        __diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
-        __diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
+
+        $crate::__diesel_internal_table_backend_specific_impls!($table, $column_name);
+
+        $crate::__diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
+        $crate::__diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
+        $crate::__diesel_generate_ops_impls_if_network!($column_name, $($Type)*);
     }
 }
 
@@ -111,38 +191,33 @@ macro_rules! __diesel_column {
 /// -------------
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
-/// table! {
+/// diesel::table! {
 ///     users {
 ///         id -> Integer,
 ///         name -> VarChar,
 ///         favorite_color -> Nullable<VarChar>,
 ///     }
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// You may also specify a primary key if it's called something other than `id`.
 /// Tables with no primary key are not supported.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
-/// table! {
+/// diesel::table! {
 ///     users (non_standard_primary_key) {
 ///         non_standard_primary_key -> Integer,
 ///         name -> VarChar,
 ///         favorite_color -> Nullable<VarChar>,
 ///     }
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// For tables with composite primary keys, list all of the columns in the
 /// primary key.
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
-/// table! {
+/// diesel::table! {
 ///     followings (user_id, post_id) {
 ///         user_id -> Integer,
 ///         post_id -> Integer,
@@ -150,7 +225,7 @@ macro_rules! __diesel_column {
 ///     }
 /// }
 /// # fn main() {
-/// #     use diesel::prelude::*;
+/// #     use diesel::prelude::Table;
 /// #     use self::followings::dsl::*;
 /// #     // Poor man's assert_eq! -- since this is type level this would fail
 /// #     // to compile if the wrong primary key were generated
@@ -162,17 +237,17 @@ macro_rules! __diesel_column {
 /// which types to import.
 ///
 /// ```
-/// #[macro_use] extern crate diesel;
-/// # /*
-/// extern crate diesel_full_text_search;
-/// # */
 /// # mod diesel_full_text_search {
+/// #     #[derive(diesel::sql_types::SqlType)]
 /// #     pub struct TsVector;
 /// # }
 ///
-/// table! {
+/// diesel::table! {
 ///     use diesel::sql_types::*;
+/// #    use crate::diesel_full_text_search::*;
+/// # /*
 ///     use diesel_full_text_search::*;
+/// # */
 ///
 ///     posts {
 ///         id -> Integer,
@@ -187,10 +262,7 @@ macro_rules! __diesel_column {
 /// following syntax:
 ///
 /// ```
-/// #[macro_use] extern crate diesel;
-///
-/// table! {
-///
+/// diesel::table! {
 ///     /// The table containing all blog posts
 ///     posts {
 ///         /// The post's unique id
@@ -199,16 +271,13 @@ macro_rules! __diesel_column {
 ///         title -> Text,
 ///     }
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// If you have a column with the same name as a Rust reserved keyword, you can use
 /// the `sql_name` attribute like this:
 ///
 /// ```
-/// #[macro_use] extern crate diesel;
-///
-/// table! {
+/// diesel::table! {
 ///     posts {
 ///         id -> Integer,
 ///         /// This column is named `mytype` but references the table `type` column.
@@ -216,7 +285,6 @@ macro_rules! __diesel_column {
 ///         mytype -> Text,
 ///     }
 /// }
-/// # fn main() {}
 /// ```
 ///
 /// This module will also contain several helper types:
@@ -254,7 +322,7 @@ macro_rules! __diesel_column {
 /// `all_columns`. The SQL type is needed for things like [returning boxed
 /// queries][boxed_queries].
 ///
-/// [boxed_queries]: query_dsl/trait.QueryDsl.html#method.into_boxed
+/// [boxed_queries]: crate::query_dsl::QueryDsl::into_boxed()
 ///
 /// `BoxedQuery`
 /// ----------
@@ -262,17 +330,21 @@ macro_rules! __diesel_column {
 /// ```ignore
 /// pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
 /// ```
+
+#[allow(deprecated)]
+#[cfg_attr(feature="huge-tables", deprecated="`huge-tables` is deprecated in favor of `64-column-tables`")]
+#[cfg_attr(feature="large-tables", deprecated="`large-tables` is deprecated in favor of `32-column-tables`")]
 #[macro_export]
 macro_rules! table {
     ($($tokens:tt)*) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($tokens)*],
             imports = [],
             meta = [],
             sql_name = unknown,
             name = unknown,
             schema = public,
-            primary_key = (id),
+            primary_key = id,
         }
     }
 }
@@ -282,8 +354,7 @@ macro_rules! table {
 macro_rules! __diesel_invalid_table_syntax {
     () => {
         compile_error!(
-            "Invalid `table!` syntax. Please see the `table!` macro docs for more info. \
-             `https://docs.diesel.rs/diesel/macro.table.html`"
+            "Invalid `table!` syntax. Please see the `table!` macro docs for more info."
         );
     };
 }
@@ -297,7 +368,7 @@ macro_rules! __diesel_parse_table {
         imports = [$($imports:tt)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = [$($imports)* use $($import)::+;],
             $($args)*
@@ -312,7 +383,7 @@ macro_rules! __diesel_parse_table {
         sql_name = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -328,7 +399,7 @@ macro_rules! __diesel_parse_table {
         meta = [$($meta:tt)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = [$($meta)* #$new_meta],
@@ -346,7 +417,7 @@ macro_rules! __diesel_parse_table {
         schema = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -366,7 +437,7 @@ macro_rules! __diesel_parse_table {
         name = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -387,7 +458,7 @@ macro_rules! __diesel_parse_table {
         primary_key = $ignore:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [$($rest)*],
             imports = $imports,
             meta = $meta,
@@ -405,7 +476,7 @@ macro_rules! __diesel_parse_table {
         imports = [],
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [{$($columns)*}],
             imports = [use $crate::sql_types::*;],
             $($args)*
@@ -421,7 +492,7 @@ macro_rules! __diesel_parse_table {
         name = $name:tt,
         $($args:tt)*
     ) => {
-        __diesel_parse_table! {
+        $crate::__diesel_parse_table! {
             tokens = [{$($columns)*}],
             imports = $imports,
             meta = $meta,
@@ -436,7 +507,7 @@ macro_rules! __diesel_parse_table {
         tokens = [{$($columns:tt)*}],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             tokens = [$($columns)*],
             table = { $($args)* },
             columns = [],
@@ -445,7 +516,7 @@ macro_rules! __diesel_parse_table {
 
     // Invalid syntax
     ($($tokens:tt)*) => {
-        __diesel_invalid_table_syntax!();
+        $crate::__diesel_invalid_table_syntax!();
     }
 }
 
@@ -462,7 +533,7 @@ macro_rules! __diesel_parse_columns {
         ],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$(#$meta)*],
                 name = $name,
@@ -484,7 +555,7 @@ macro_rules! __diesel_parse_columns {
         ],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$(#$meta)*],
                 name = $name,
@@ -508,7 +579,7 @@ macro_rules! __diesel_parse_columns {
         },
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$($meta)*],
                 name = $name,
@@ -531,7 +602,7 @@ macro_rules! __diesel_parse_columns {
         },
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             current_column = {
                 unchecked_meta = [$($unchecked_meta)*],
                 name = $name,
@@ -555,7 +626,7 @@ macro_rules! __diesel_parse_columns {
         columns = [$($columns:tt,)*],
         $($args:tt)*
     ) => {
-        __diesel_parse_columns! {
+        $crate::__diesel_parse_columns! {
             tokens = $tokens,
             table = $table,
             columns = [$($columns,)* { $($current_column)* },],
@@ -568,12 +639,12 @@ macro_rules! __diesel_parse_columns {
         tokens = [],
         $($args:tt)*
     ) => {
-        __diesel_table_impl!($($args)*);
+        $crate::__diesel_table_impl!($($args)*);
     };
 
     // Invalid syntax
     ($($tokens:tt)*) => {
-        __diesel_invalid_table_syntax!();
+        $crate::__diesel_invalid_table_syntax!();
     }
 }
 
@@ -581,6 +652,32 @@ macro_rules! __diesel_parse_columns {
 #[doc(hidden)]
 macro_rules! __diesel_table_impl {
     (
+        table = { $($table: tt)* },
+        columns = [$({
+            name = $column_name:ident,
+            sql_name = $column_sql_name:expr,
+            ty = ($($column_ty:tt)*),
+            $($column:tt)*
+        },)+],
+    ) => {
+        $crate::__diesel_check_column_count!{
+            inner = {
+                $crate::__diesel_table_impl! {
+                    impl_table,
+                    table = { $($table)*},
+                    columns = [$({
+                        name = $column_name,
+                        sql_name = $column_sql_name,
+                        ty = ($($column_ty)*),
+                        $($column)*
+                    },)+],
+                }
+            },
+            ($($column_name,)*)
+        }
+    };
+    (
+        impl_table,
         table = {
             imports = [$($imports:tt)*],
             meta = [$($meta:tt)*],
@@ -597,27 +694,16 @@ macro_rules! __diesel_table_impl {
         },)+],
     ) => {
         $($meta)*
+        #[allow(unused_imports, dead_code)]
         pub mod $table_name {
-            #![allow(dead_code)]
-            use $crate::{
-                QuerySource,
-                Table,
-                JoinTo,
-            };
-            use $crate::associations::HasTable;
-            use $crate::insertable::Insertable;
-            use $crate::query_builder::*;
-            use $crate::query_builder::nodes::Identifier;
-            use $crate::query_source::{AppearsInFromClause, Once, Never};
-            use $crate::query_source::joins::{Join, JoinOn};
-            $($imports)*
             pub use self::columns::*;
+            $($imports)*
 
             /// Re-exports all of the columns of this table, as well as the
             /// table struct renamed to the module name. This is meant to be
             /// glob imported for functions which only deal with one table.
             pub mod dsl {
-                $(static_cond! {
+                $($crate::static_cond! {
                     if $table_name == $column_name {
                         compile_error!(concat!(
                             "Column `",
@@ -642,7 +728,7 @@ macro_rules! __diesel_table_impl {
             pub const all_columns: ($($column_name,)+) = ($($column_name,)+);
 
             #[allow(non_camel_case_types)]
-            #[derive(Debug, Clone, Copy, QueryId)]
+            #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]
             /// The actual table struct
             ///
             /// This is the type which provides the base methods of the query
@@ -663,20 +749,34 @@ macro_rules! __diesel_table_impl {
             pub type SqlType = ($($($column_ty)*,)+);
 
             /// Helper type for representing a boxed query from this table
-            pub type BoxedQuery<'a, DB, ST = SqlType> = BoxedSelectStatement<'a, ST, table, DB>;
+            pub type BoxedQuery<'a, DB, ST = SqlType> = $crate::query_builder::BoxedSelectStatement<'a, ST, $crate::query_builder::FromClause<table>, DB>;
 
-            __diesel_table_query_source_impl!(table, $schema, $sql_name);
+            impl $crate::QuerySource for table {
+                type FromClause = $crate::query_builder::nodes::StaticQueryFragmentInstance<table>;
+                type DefaultSelection = <Self as $crate::Table>::AllColumns;
 
-            impl AsQuery for table {
-                type SqlType = SqlType;
-                type Query = SelectStatement<Self>;
+                fn from_clause(&self) -> Self::FromClause {
+                    $crate::query_builder::nodes::StaticQueryFragmentInstance::new()
+                }
 
-                fn as_query(self) -> Self::Query {
-                    SelectStatement::simple(self)
+                fn default_selection(&self) -> Self::DefaultSelection {
+                    use $crate::Table;
+                    Self::all_columns()
                 }
             }
 
-            impl Table for table {
+            $crate::__diesel_table_generate_static_query_fragment_for_table!($schema, table, $sql_name);
+
+            impl $crate::query_builder::AsQuery for table {
+                type SqlType = SqlType;
+                type Query = $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<Self>>;
+
+                fn as_query(self) -> Self::Query {
+                    $crate::query_builder::SelectStatement::simple(self)
+                }
+            }
+
+            impl $crate::Table for table {
                 type PrimaryKey = $primary_key;
                 type AllColumns = ($($column_name,)+);
 
@@ -689,7 +789,7 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
-            impl HasTable for table {
+            impl $crate::associations::HasTable for table {
                 type Table = Self;
 
                 fn table() -> Self::Table {
@@ -697,87 +797,94 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
-            impl IntoUpdateTarget for table {
-                type WhereClause = <<Self as AsQuery>::Query as IntoUpdateTarget>::WhereClause;
+            impl $crate::query_builder::IntoUpdateTarget for table {
+                type WhereClause = <<Self as $crate::query_builder::AsQuery>::Query as $crate::query_builder::IntoUpdateTarget>::WhereClause;
 
-                fn into_update_target(self) -> UpdateTarget<Self::Table, Self::WhereClause> {
-                    self.as_query().into_update_target()
+                fn into_update_target(self) -> $crate::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
+                    use $crate::query_builder::AsQuery;
+                    let q: $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<table>> = self.as_query();
+                    q.into_update_target()
                 }
             }
 
-            impl AppearsInFromClause<table> for table {
-                type Count = Once;
+            impl $crate::query_source::AppearsInFromClause<table> for table {
+                type Count = $crate::query_source::Once;
             }
 
-            impl AppearsInFromClause<table> for () {
-                type Count = Never;
+            impl $crate::query_source::AppearsInFromClause<table> for $crate::query_builder::NoFromClause {
+                type Count = $crate::query_source::Never;
             }
 
-            impl<Left, Right, Kind> JoinTo<Join<Left, Right, Kind>> for table where
-                Join<Left, Right, Kind>: JoinTo<table>,
+            impl<Left, Right, Kind> $crate::JoinTo<$crate::query_source::joins::Join<Left, Right, Kind>> for table where
+                $crate::query_source::joins::Join<Left, Right, Kind>: $crate::JoinTo<table>,
+                Left: $crate::query_source::QuerySource,
+                Right: $crate::query_source::QuerySource,
             {
-                type FromClause = Join<Left, Right, Kind>;
-                type OnClause = <Join<Left, Right, Kind> as JoinTo<table>>::OnClause;
+                type FromClause = $crate::query_source::joins::Join<Left, Right, Kind>;
+                type OnClause = <$crate::query_source::joins::Join<Left, Right, Kind> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = Join::join_target(table);
+                fn join_target(rhs: $crate::query_source::joins::Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::query_source::joins::Join::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<Join, On> JoinTo<JoinOn<Join, On>> for table where
-                JoinOn<Join, On>: JoinTo<table>,
+            impl<Join, On> $crate::JoinTo<$crate::query_source::joins::JoinOn<Join, On>> for table where
+                $crate::query_source::joins::JoinOn<Join, On>: $crate::JoinTo<table>,
             {
-                type FromClause = JoinOn<Join, On>;
-                type OnClause = <JoinOn<Join, On> as JoinTo<table>>::OnClause;
+                type FromClause = $crate::query_source::joins::JoinOn<Join, On>;
+                type OnClause = <$crate::query_source::joins::JoinOn<Join, On> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = JoinOn::join_target(table);
+                fn join_target(rhs: $crate::query_source::joins::JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::query_source::joins::JoinOn::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<F, S, D, W, O, L, Of, G> JoinTo<SelectStatement<F, S, D, W, O, L, Of, G>> for table where
-                SelectStatement<F, S, D, W, O, L, Of, G>: JoinTo<table>,
+            impl<F, S, D, W, O, L, Of, G> $crate::JoinTo<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>> for table where
+                $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>: $crate::JoinTo<table>,
+                F: $crate::query_source::QuerySource
             {
-                type FromClause = SelectStatement<F, S, D, W, O, L, Of, G>;
-                type OnClause = <SelectStatement<F, S, D, W, O, L, Of, G> as JoinTo<table>>::OnClause;
+                type FromClause = $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>;
+                type OnClause = <$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: SelectStatement<F, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = SelectStatement::join_target(table);
+                fn join_target(rhs: $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::query_builder::SelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<'a, QS, ST, DB> JoinTo<BoxedSelectStatement<'a, QS, ST, DB>> for table where
-                BoxedSelectStatement<'a, QS, ST, DB>: JoinTo<table>,
+            impl<'a, QS, ST, DB> $crate::JoinTo<$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>> for table where
+                $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>: $crate::JoinTo<table>,
+                QS: $crate::query_source::QuerySource,
             {
-                type FromClause = BoxedSelectStatement<'a, QS, ST, DB>;
-                type OnClause = <BoxedSelectStatement<'a, QS, ST, DB> as JoinTo<table>>::OnClause;
-                fn join_target(rhs: BoxedSelectStatement<'a, QS, ST, DB>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = BoxedSelectStatement::join_target(table);
+                type FromClause = $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>;
+                type OnClause = <$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
+                fn join_target(rhs: $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::query_builder::BoxedSelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
             // This impl should be able to live in Diesel,
             // but Rust tries to recurse for no reason
-            impl<T> Insertable<T> for table
+            impl<T> $crate::insertable::Insertable<T> for table
             where
-                <table as AsQuery>::Query: Insertable<T>,
+                <table as $crate::query_builder::AsQuery>::Query: $crate::insertable::Insertable<T>,
             {
-                type Values = <<table as AsQuery>::Query as Insertable<T>>::Values;
+                type Values = <<table as $crate::query_builder::AsQuery>::Query as $crate::insertable::Insertable<T>>::Values;
 
                 fn values(self) -> Self::Values {
+                    use $crate::query_builder::AsQuery;
                     self.as_query().values()
                 }
             }
 
-            impl<'a, T> Insertable<T> for &'a table
+            impl<'a, T> $crate::insertable::Insertable<T> for &'a table
             where
-                table: Insertable<T>,
+                table: $crate::insertable::Insertable<T>,
             {
-                type Values = <table as Insertable<T>>::Values;
+                type Values = <table as $crate::insertable::Insertable<T>>::Values;
 
                 fn values(self) -> Self::Values {
                     (*self).values()
@@ -787,50 +894,61 @@ macro_rules! __diesel_table_impl {
             /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
-                use $crate::{Expression, SelectableExpression, AppearsOnTable, QuerySource};
-                use $crate::backend::Backend;
-                use $crate::query_builder::{QueryFragment, AstPass, SelectStatement};
-                use $crate::query_source::joins::{Join, JoinOn, Inner, LeftOuter};
-                use $crate::query_source::{AppearsInFromClause, Once, Never};
-                use $crate::result::QueryResult;
-                $($imports)*
+                $crate::__diesel_fix_sql_type_import!($($imports)*);
 
                 #[allow(non_camel_case_types, dead_code)]
-                #[derive(Debug, Clone, Copy)]
+                #[derive(Debug, Clone, Copy, $crate::query_builder::QueryId)]
                 /// Represents `table_name.*`, which is sometimes needed for
                 /// efficient count queries. It cannot be used in place of
                 /// `all_columns`, and has a `SqlType` of `()` to prevent it
                 /// being used that way
                 pub struct star;
 
-                impl Expression for star {
-                    type SqlType = ();
+                impl<__GB> $crate::expression::ValidGrouping<__GB> for star
+                where
+                    ($($column_name,)+): $crate::expression::ValidGrouping<__GB>,
+                {
+                    type IsAggregate = <($($column_name,)+) as $crate::expression::ValidGrouping<__GB>>::IsAggregate;
                 }
 
-                impl<DB: Backend> QueryFragment<DB> for star where
-                    <table as QuerySource>::FromClause: QueryFragment<DB>,
+                impl $crate::Expression for star {
+                    type SqlType = $crate::expression::expression_types::NotSelectable;
+                }
+
+                impl<DB: $crate::backend::Backend> $crate::query_builder::QueryFragment<DB> for star where
+                    <table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
                 {
                     #[allow(non_snake_case)]
-                    fn walk_ast(&self, mut __out: AstPass<DB>) -> QueryResult<()> {
-                        table.from_clause().walk_ast(__out.reborrow())?;
+                    fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
+                    {
+                        use $crate::QuerySource;
+                        const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
+
+                        FROM_CLAUSE.walk_ast(__out.reborrow())?;
                         __out.push_sql(".*");
                         Ok(())
                     }
                 }
 
-                impl SelectableExpression<table> for star {
+                impl $crate::SelectableExpression<table> for star {
                 }
 
-                impl AppearsOnTable<table> for star {
+                impl $crate::AppearsOnTable<table> for star {
                 }
 
-                $(__diesel_column! {
+                $($crate::__diesel_column! {
                     table = table,
+                    table_sql_name = $sql_name,
+                    table_schema = $schema,
                     name = $column_name,
                     sql_name = $column_sql_name,
                     ty = ($($column_ty)*),
                     $($column)*
                 })+
+
+                $crate::__diesel_valid_grouping_for_table_columns! {
+                    primary_key = $primary_key, $($column_name,)*
+                }
             }
         }
     }
@@ -838,45 +956,77 @@ macro_rules! __diesel_table_impl {
 
 #[macro_export]
 #[doc(hidden)]
-macro_rules! __diesel_table_query_source_impl {
-    ($table_struct:ident, public, $table_name:expr) => {
-        impl QuerySource for $table_struct {
-            type FromClause = Identifier<'static>;
-            type DefaultSelection = <Self as Table>::AllColumns;
-
-            fn from_clause(&self) -> Self::FromClause {
-                Identifier($table_name)
-            }
-
-            fn default_selection(&self) -> Self::DefaultSelection {
-                Self::all_columns()
-            }
+macro_rules! __diesel_valid_grouping_for_table_columns {
+    (primary_key = ($primary_key: tt), $($cols: ident,)* ) => {
+        $crate::__diesel_valid_grouping_for_table_columns! {
+            primary_key = $primary_key,
+            $($cols,)*
         }
     };
-
-    ($table_struct:ident, $schema_name:ident, $table_name:expr) => {
-        impl QuerySource for $table_struct {
-            type FromClause = $crate::query_builder::nodes::InfixNode<
-                'static,
-                Identifier<'static>,
-                Identifier<'static>,
-            >;
-            type DefaultSelection = <Self as Table>::AllColumns;
-
-            fn from_clause(&self) -> Self::FromClause {
-                $crate::query_builder::nodes::InfixNode::new(
-                    Identifier(stringify!($schema_name)),
-                    Identifier($table_name),
-                    ".",
-                )
+    (primary_key = $primary_key: tt, $left_col: ident, $($right_col: ident,)+) => {
+        $(
+            $crate::static_cond! {
+                if $left_col == $primary_key {
+                    impl $crate::expression::IsContainedInGroupBy<$right_col> for $left_col {
+                        type Output = $crate::expression::is_contained_in_group_by::Yes;
+                    }
+                } else {
+                    impl $crate::expression::IsContainedInGroupBy<$right_col> for $left_col {
+                        type Output = $crate::expression::is_contained_in_group_by::No;
+                    }
+                }
             }
 
-            fn default_selection(&self) -> Self::DefaultSelection {
-                Self::all_columns()
+            $crate::static_cond! {
+                if $right_col == $primary_key {
+                    impl $crate::expression::IsContainedInGroupBy<$left_col> for $right_col {
+                        type Output = $crate::expression::is_contained_in_group_by::Yes;
+                    }
+                } else {
+                    impl $crate::expression::IsContainedInGroupBy<$left_col> for $right_col {
+                        type Output = $crate::expression::is_contained_in_group_by::No;
+                    }
+                }
             }
+       )*
+        $crate::__diesel_valid_grouping_for_table_columns! {
+            primary_key = $primary_key,
+            $($right_col,)*
         }
     };
+    (primary_key = $primary_key: tt, $left_col: ident,) => {};
+    (primary_key = $primary_key: tt) => {};
 }
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_table_generate_static_query_fragment_for_table {
+    (public, $table: ident, $table_name:expr) => {
+        impl $crate::query_builder::nodes::StaticQueryFragment for table {
+            type Component = $crate::query_builder::nodes::Identifier<'static>;
+            const STATIC_COMPONENT: &'static Self::Component = &$crate::query_builder::nodes::Identifier($table_name);
+        }
+
+    };
+    ($schema_name:ident, $table: ident, $table_name:expr) => {
+        impl $crate::query_builder::nodes::StaticQueryFragment for table {
+            type Component = $crate::query_builder::nodes::InfixNode<
+                    $crate::query_builder::nodes::Identifier<'static>,
+                    $crate::query_builder::nodes::Identifier<'static>,
+                    &'static str
+                >;
+            const STATIC_COMPONENT: &'static Self::Component = &$crate::query_builder::nodes::InfixNode::new(
+                $crate::query_builder::nodes::Identifier(stringify!($schema_name)),
+                $crate::query_builder::nodes::Identifier($table_name),
+                "."
+            );
+        }
+    }
+}
+
+
+
+
 
 /// Allow two tables to be referenced in a join query without providing an
 /// explicit `ON` clause.
@@ -884,11 +1034,11 @@ macro_rules! __diesel_table_query_source_impl {
 /// The generated `ON` clause will always join to the primary key of the parent
 /// table. This macro removes the need to call [`.on`] explicitly, you will
 /// still need to invoke [`allow_tables_to_appear_in_same_query!`] for these two tables to
-/// be able to use the resulting query, unless you are using `infer_schema!` or
-/// `diesel print-schema` which will generate it for you.
+/// be able to use the resulting query, unless you are using `diesel print-schema`
+/// which will generate it for you.
 ///
-/// If you are using `infer_schema!` or `diesel print-schema`, an invocation of
-/// this macro will be generated for every foreign key in your database unless
+/// If you are using `diesel print-schema`, an invocation of this macro
+/// will be generated for every foreign key in your database unless
 /// one of the following is true:
 ///
 /// - The foreign key references something other than the primary key
@@ -899,7 +1049,6 @@ macro_rules! __diesel_table_query_source_impl {
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// use schema::*;
 ///
@@ -931,13 +1080,13 @@ macro_rules! __diesel_table_query_source_impl {
 ///
 /// * `child_table` is the Table with the Foreign key.
 ///
-/// So given the Table decaration from [Associations docs](associations/index.html)
+/// So given the Table decaration from [Associations docs](crate::associations)
 ///
 /// * The parent table would be `User`
 /// * The child table would be `Post`
 /// * and the Foreign key would be `Post.user_id`
 ///
-/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](prelude/trait.JoinOnDsl.html)
+/// For joins that do not explicitly use on clauses via [`JoinOnDsl`](crate::prelude::JoinOnDsl)
 /// the following on clause is generated implicitly:
 /// ```sql
 /// post JOIN users ON posts.user_id = users.id
@@ -1061,53 +1210,7 @@ macro_rules! joinable {
                 )
             }
         }
-
-
-        //joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
-        //joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
     }
-}
-
-#[macro_export]
-#[doc(hidden)]
-macro_rules! joinable_inner {
-    ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path)) => {
-        joinable_inner!(
-            left_table_ty = $left_table,
-            right_table_ty = $right_table,
-            right_table_expr = $right_table,
-            foreign_key = $foreign_key,
-            primary_key_ty = <$parent_table as $crate::query_source::Table>::PrimaryKey,
-            primary_key_expr =
-                <$parent_table as $crate::query_source::Table>::primary_key(&$parent_table),
-        );
-    };
-
-    (
-        left_table_ty = $left_table_ty:ty,
-        right_table_ty = $right_table_ty:ty,
-        right_table_expr = $right_table_expr:expr,
-        foreign_key = $foreign_key:path,
-        primary_key_ty = $primary_key_ty:ty,
-        primary_key_expr = $primary_key_expr:expr,
-    ) => {
-        impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
-            type FromClause = $right_table_ty;
-            type OnClause = $crate::dsl::Eq<
-                $crate::expression::nullable::Nullable<$foreign_key>,
-                $crate::expression::nullable::Nullable<$primary_key_ty>,
-            >;
-
-            fn join_target(rhs: $right_table_ty) -> (Self::FromClause, Self::OnClause) {
-                use $crate::{ExpressionMethods, NullableExpressionMethods};
-
-                (
-                    rhs,
-                    $foreign_key.nullable().eq($primary_key_expr.nullable()),
-                )
-            }
-        }
-    };
 }
 
 /// Allow two or more tables which are otherwise unrelated to be used together
@@ -1118,7 +1221,7 @@ macro_rules! joinable_inner {
 /// in a subselect. When this macro is invoked with more than 2 tables, every
 /// combination of those tables will be allowed to appear together.
 ///
-/// If you are using `infer_schema!` or `diesel print-schema`, an invocation of
+/// If you are using `diesel print-schema`, an invocation of
 /// this macro will be generated for you for all tables in your schema.
 ///
 /// # Example
@@ -1182,7 +1285,7 @@ macro_rules! allow_tables_to_appear_in_same_query {
             }
 
         )+
-        allow_tables_to_appear_in_same_query!($($right_mod,)+);
+        $crate::allow_tables_to_appear_in_same_query!($($right_mod,)+);
     };
 
     ($last_table:ident,) => {};
@@ -1190,18 +1293,276 @@ macro_rules! allow_tables_to_appear_in_same_query {
     () => {};
 }
 
-/// Gets the value out of an option, or returns an error.
-///
-/// This is used by `FromSql` implementations.
+#[doc(hidden)]
 #[macro_export]
-macro_rules! not_none {
-    ($bytes:expr) => {
-        match $bytes {
-            Some(bytes) => bytes,
-            None => return Err(Box::new($crate::result::UnexpectedNullError)),
+macro_rules! __diesel_impl_allow_in_same_group_by_clause {
+    (
+        left = [$($left_path:tt)::+],
+    ) => {};
+    (
+        left = [$($left_path:tt)::+],
+        $($right_path:tt)::+
+    ) => {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
+            left = [$($left_path)+],
+            right = [$($right_path)+],
+            left_tbl = [],
+            left_path = [],
         }
     };
+    (
+        left = [$($left_path:tt)::+],
+        $($right_path:tt)::+,
+        $($other:tt)*
+    ) => {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
+            left = [$($left_path)+],
+            right = [$($right_path)+],
+            left_tbl = [],
+            left_path = [],
+        }
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
+            left = [$($left_path)::+],
+            $($other)*
+        }
+    };
+    (
+        left = [$left_path_p1: tt  $($left_path: tt)+],
+        right = [$($right_path: tt)*],
+        left_tbl = [$($left_tbl:tt)?],
+        left_path = [$($left_out_path:tt)*],
+    ) => {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
+            left = [$($left_path)+],
+            right = [$($right_path)*],
+            left_tbl = [$left_path_p1],
+            left_path = [$($left_out_path)* $($left_tbl)?],
+        }
+    };
+    (
+        left = [$left_col: tt],
+        right = [$($right_path: tt)*],
+        left_tbl = [$($left_tbl:tt)?],
+        left_path = [$($left_out_path:tt)*],
+    ) => {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
+            left = [$left_col],
+            right = [$($right_path)*],
+            left_tbl = [$($left_tbl)?],
+            left_path = [$($left_out_path)*],
+            right_tbl = [],
+            right_path = [],
+        }
+    };
+    (
+        left = [$left_col: tt ],
+        right = [$right_path_p1: tt  $($right_path: tt)+],
+        left_tbl = [$($left_tbl:tt)?],
+        left_path = [$($left_out_path:tt)*],
+        right_tbl = [$($right_tbl:tt)?],
+        right_path = [$($right_out_path:tt)*],
+    ) => {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
+            left = [$left_col],
+            right = [$($right_path)+],
+            left_tbl = [$($left_tbl)?],
+            left_path = [$($left_out_path)*],
+            right_tbl = [$right_path_p1],
+            right_path = [$($right_out_path)* $($right_tbl)?],
+        }
+    };
+    (
+        left = [$left_col: tt],
+        right = [$right_col: tt],
+        left_tbl = [$left_tbl:tt],
+        left_path = [$($left_begin:tt)*],
+        right_tbl = [$right_tbl:tt],
+        right_path = [$($right_begin:tt)*],
+    ) => {
+        $crate::static_cond! {
+            if $left_tbl != $right_tbl {
+                impl $crate::expression::IsContainedInGroupBy<$($left_begin ::)* $left_tbl :: $left_col> for $($right_begin ::)* $right_tbl :: $right_col {
+                    type Output = $crate::expression::is_contained_in_group_by::No;
+                }
+
+                impl $crate::expression::IsContainedInGroupBy<$($right_begin ::)* $right_tbl :: $right_col> for $($left_begin ::)* $left_tbl :: $left_col {
+                    type Output = $crate::expression::is_contained_in_group_by::No;
+                }
+            }
+        }
+    };
+    (
+        left = [$left_col: tt],
+        right = [$right_col: tt],
+        left_tbl = [$($left_tbl:tt)?],
+        left_path = [$($left_begin:tt)*],
+        right_tbl = [$($right_tbl:tt)?],
+        right_path = [$($right_begin:tt)*],
+    ) => {
+        impl $crate::expression::IsContainedInGroupBy<$($left_begin ::)* $($left_tbl ::)? $left_col> for $($right_begin ::)* $($right_tbl ::)? $right_col {
+            type Output = $crate::expression::is_contained_in_group_by::No;
+        }
+
+        impl $crate::expression::IsContainedInGroupBy<$($right_begin ::)* $($right_tbl ::)? $right_col> for $($left_begin ::)* $($left_tbl ::)? $left_col {
+            type Output = $crate::expression::is_contained_in_group_by::No;
+        }
+    };
+
 }
+
+
+/// Allow two or more columns which are otherwise unrelated to be used together
+/// in a group by clause.
+///
+/// This macro must be invoked any time two columns need to appear in the same
+/// group by clause. When this macro is invoked with more than 2 columns, every
+/// combination of those columns will be allowed to appear together.
+///
+/// # Example
+///
+/// ```ignore
+/// // This would be required to do
+/// // `users::table.inner_join(posts::table).group_by((users::name, users::hair_color, posts::id))`
+/// allow_columns_to_appear_in_same_group_by_clause!(users::name, users::hair_color, posts::id);
+/// ```
+///
+/// When more than two columns are passed, the relevant code is generated for
+/// every combination of those columns. This code would be equivalent to the
+/// previous example.
+///
+/// ```ignore
+/// allow_columns_to_appear_in_same_group_by_clause!(users::name, users::hair_color);
+/// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::id);
+/// allow_columns_to_appear_in_same_group_by_clause!(users::hair_color, posts::id);
+/// ```
+#[macro_export]
+macro_rules! allow_columns_to_appear_in_same_group_by_clause {
+    ($($left_path:tt)::+, $($right_path:tt)::+ $(,)?) => {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
+            left = [$($left_path)::+],
+            $($right_path)::+,
+        }
+    };
+    ($($left_path:tt)::+, $($right_path:tt)::+, $($other: tt)*) => {
+        $crate::__diesel_impl_allow_in_same_group_by_clause! {
+            left = [$($left_path)::+],
+            $($right_path)::+,
+            $($other)*
+        }
+        $crate::allow_columns_to_appear_in_same_group_by_clause! {
+            $($right_path)::+,
+            $($other)*
+        }
+    };
+    ($last_col:ty,) => {};
+    () => {};
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_with_dollar_sign {
+    ($($body:tt)*) => {
+        macro_rules! __with_dollar_sign { $($body)* }
+        __with_dollar_sign!($);
+    }
+}
+
+
+macro_rules! impl_column_check {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        __diesel_with_dollar_sign! {
+            ($d:tt) => {
+                #[macro_export]
+                #[doc(hidden)]
+                macro_rules! __diesel_check_column_count_internal {
+                    $(
+                    (inner = {$d($d inner: tt)*}, ($($d $T: ident,)*)) => {
+                        $d($d inner)*
+                    };
+                    )*
+                    (inner = {$d($d inner: tt)*}, ($d($d names: ident,)*)) => {
+                        $crate::__diesel_error_table_size!();
+                    }
+                }
+            }
+        }
+    }
+}
+
+diesel_derives::__diesel_for_each_tuple!(impl_column_check);
+
+#[cfg(not(any(
+    feature = "32-column-tables",
+    feature = "64-column-tables",
+    feature = "128-column-tables"
+)))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_error_table_size {
+    () => {
+        compile_error!(
+            "Table contains more than 16 columns. Consider enabling the `32-column-tables` feature to enable diesels support for tables with more than 16 columns."
+        );
+
+    }
+}
+
+
+#[cfg(all(
+    feature = "32-column-tables",
+    not(feature = "64-column-tables"),
+    not(feature = "128-column-tables")
+))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_error_table_size {
+    () => {
+        compile_error!(
+            "Table contains more than 32 columns. Consider enabling the `64-column-tables` feature to enable diesels support for tables with more than 32 columns."
+        );
+
+    }
+}
+
+
+#[cfg(all(
+    feature = "32-column-tables",
+    feature = "64-column-tables",
+    not(feature = "128-column-tables")
+))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_error_table_size {
+    () => {
+        compile_error!(
+            "Table contains more than 64 columns. Consider enabling the `128-column-tables` feature to enable diesels support for tables with more than 64 columns."
+        );
+
+    }
+}
+
+
+#[cfg(all(
+    feature = "32-column-tables",
+    feature = "64-column-tables",
+    feature = "128-column-tables"
+))]
+#[macro_export]
+#[doc(hidden)]
+macro_rules! __diesel_error_table_size {
+    () => {
+        compile_error!(
+            "You reached the end. Diesel does not support tables with more than 128 columns. Consider using less columns."
+        );
+    }
+}
+
+
+
 
 // The order of these modules is important (at least for those which have tests).
 // Utility macros which don't call any others need to come first.
@@ -1211,12 +1572,11 @@ mod internal;
 mod static_cond;
 #[macro_use]
 mod ops;
-#[macro_use]
-mod tuples;
+
 
 #[cfg(test)]
 mod tests {
-    use prelude::*;
+    use crate::prelude::*;
 
     table! {
         foo.bars {
@@ -1226,13 +1586,13 @@ mod tests {
     }
 
     mod my_types {
-        #[derive(Debug, Clone, Copy)]
+        #[derive(Debug, Clone, Copy, crate::sql_types::SqlType)]
         pub struct MyCustomType;
     }
 
     table! {
-        use sql_types::*;
-        use macros::tests::my_types::*;
+        use crate::sql_types::*;
+        use crate::macros::tests::my_types::*;
 
         table_with_custom_types {
             id -> Integer,
@@ -1241,8 +1601,8 @@ mod tests {
     }
 
     table! {
-        use sql_types::*;
-        use macros::tests::my_types::*;
+        use crate::sql_types::*;
+        use crate::macros::tests::my_types::*;
 
         /// Table documentation
         ///
@@ -1259,26 +1619,26 @@ mod tests {
     #[test]
     #[cfg(feature = "postgres")]
     fn table_with_custom_schema() {
-        use pg::Pg;
+        use crate::pg::Pg;
         let expected_sql = r#"SELECT "foo"."bars"."baz" FROM "foo"."bars" -- binds: []"#;
         assert_eq!(
             expected_sql,
-            &::debug_query::<Pg, _>(&bars::table.select(bars::baz)).to_string()
+            &crate::debug_query::<Pg, _>(&bars::table.select(bars::baz)).to_string()
         );
     }
 
     table! {
-        use sql_types;
-        use sql_types::*;
+        use crate::sql_types;
+        use crate::sql_types::*;
 
         table_with_arbitrarily_complex_types {
             id -> sql_types::Integer,
             qualified_nullable -> sql_types::Nullable<sql_types::Integer>,
-            deeply_nested_type -> Option<Nullable<Integer>>,
+            deeply_nested_type -> Nullable<Nullable<Integer>>,
             // This actually should work, but there appears to be a rustc bug
             // on the `AsExpression` bound for `EqAll` when the ty param is a projection
             // projected_type -> <Nullable<Integer> as sql_types::IntoNullable>::Nullable,
-            random_tuple -> (Integer, Integer),
+            //random_tuple -> (Integer, Integer),
         }
     }
 
@@ -1300,41 +1660,41 @@ mod tests {
     #[test]
     #[cfg(feature = "postgres")]
     fn table_with_column_renaming_postgres() {
-        use pg::Pg;
+        use crate::pg::Pg;
         let expected_sql =
-            r#"SELECT "foo"."id", "foo"."type", "foo"."bleh" FROM "foo" WHERE "foo"."type" = $1 -- binds: [1]"#;
+            r#"SELECT "foo"."id", "foo"."type", "foo"."bleh" FROM "foo" WHERE ("foo"."type" = $1) -- binds: [1]"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Pg, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
+            crate::debug_query::<Pg, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
         );
     }
 
     #[test]
     #[cfg(feature = "mysql")]
     fn table_with_column_renaming_mysql() {
-        use mysql::Mysql;
+        use crate::mysql::Mysql;
         let expected_sql =
-            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
+            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE (`foo`.`type` = ?) -- binds: [1]"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Mysql, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
+            crate::debug_query::<Mysql, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
         );
     }
 
     #[test]
     #[cfg(feature = "sqlite")]
     fn table_with_column_renaming_sqlite() {
-        use sqlite::Sqlite;
+        use crate::sqlite::Sqlite;
         let expected_sql =
-            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE `foo`.`type` = ? -- binds: [1]"#;
+            r#"SELECT `foo`.`id`, `foo`.`type`, `foo`.`bleh` FROM `foo` WHERE (`foo`.`type` = ?) -- binds: [1]"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Sqlite, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
+            crate::debug_query::<Sqlite, _>(&foo::table.filter(foo::mytype.eq(1))).to_string()
         );
     }
 
     table!(
-        use sql_types::*;
+        use crate::sql_types::*;
 
         /// Some documentation
         #[sql_name="mod"]
@@ -1347,33 +1707,84 @@ mod tests {
     #[test]
     #[cfg(feature = "postgres")]
     fn table_renaming_postgres() {
-        use pg::Pg;
+        use crate::pg::Pg;
         let expected_sql = r#"SELECT "mod"."id" FROM "mod" -- binds: []"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Pg, _>(&bar::table.select(bar::id)).to_string()
+            crate::debug_query::<Pg, _>(&bar::table.select(bar::id)).to_string()
         );
     }
 
     #[test]
     #[cfg(feature = "mysql")]
     fn table_renaming_mysql() {
-        use mysql::Mysql;
+        use crate::mysql::Mysql;
         let expected_sql = r#"SELECT `mod`.`id` FROM `mod` -- binds: []"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Mysql, _>(&bar::table.select(bar::id)).to_string()
+            crate::debug_query::<Mysql, _>(&bar::table.select(bar::id)).to_string()
         );
     }
 
     #[test]
     #[cfg(feature = "sqlite")]
     fn table_renaming_sqlite() {
-        use sqlite::Sqlite;
+        use crate::sqlite::Sqlite;
         let expected_sql = r#"SELECT `mod`.`id` FROM `mod` -- binds: []"#;
         assert_eq!(
             expected_sql,
-            ::debug_query::<Sqlite, _>(&bar::table.select(bar::id)).to_string()
+            crate::debug_query::<Sqlite, _>(&bar::table.select(bar::id)).to_string()
+        );
+    }
+
+    mod tests_for_allow_combined_group_by_syntax {
+        table! {
+            a(b) {
+                b -> Text,
+                c -> Text,
+                d -> Text,
+                e -> Text,
+            }
+        }
+
+        table! {
+            b(a) {
+                a -> Text,
+                c -> Text,
+                d -> Text,
+            }
+        }
+
+        table! {
+            c(a) {
+                a -> Text,
+                b -> Text,
+                d -> Text,
+            }
+        }
+
+        // allow using table::collumn
+        allow_columns_to_appear_in_same_group_by_clause!(
+            a::b, b::a, a::d,
+        );
+
+        // allow using full paths
+        allow_columns_to_appear_in_same_group_by_clause!(
+            self::a::c, self::b::c, self::b::d,
+        );
+
+        use self::a::d as a_d;
+        use self::b::d as b_d;
+        use self::c::d as c_d;
+
+        // allow using plain identifiers
+        allow_columns_to_appear_in_same_group_by_clause!(
+            a_d, b_d, c_d
+        );
+
+        // allow mixing all variants
+        allow_columns_to_appear_in_same_group_by_clause!(
+            c_d, self::b::a, a::e,
         );
     }
 }

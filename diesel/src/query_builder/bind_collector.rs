@@ -1,10 +1,10 @@
 //! Types related to managing bind parameters during query construction.
 
-use backend::Backend;
-use result::Error::SerializationError;
-use result::QueryResult;
-use serialize::{IsNull, Output, ToSql};
-use sql_types::{HasSqlType, TypeMetadata};
+use crate::backend::Backend;
+use crate::result::Error::SerializationError;
+use crate::result::QueryResult;
+use crate::serialize::{IsNull, Output, ToSql};
+use crate::sql_types::{HasSqlType, TypeMetadata};
 
 /// A type which manages serializing bind parameters during query construction.
 ///
@@ -12,17 +12,20 @@ use sql_types::{HasSqlType, TypeMetadata};
 /// are adding support for a new backend to Diesel. Plugins which are extending
 /// the query builder will use [`AstPass::push_bind_param`] instead.
 ///
-/// [`AstPass::push_bind_param`]: ../struct.AstPass.html#method.push_bind_param
-pub trait BindCollector<DB: Backend> {
+/// [`AstPass::push_bind_param`]: crate::query_builder::AstPass::push_bind_param()
+pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
+    /// The internal buffer type used by this bind collector
+    type Buffer;
+
     /// Serializes the given bind value, and collects the result.
     fn push_bound_value<T, U>(
         &mut self,
-        bind: &U,
-        metadata_lookup: &DB::MetadataLookup,
+        bind: &'a U,
+        metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()>
     where
-        DB: HasSqlType<T>,
-        U: ToSql<T, DB>;
+        DB: Backend + HasSqlType<T>,
+        U: ToSql<T, DB> + 'a;
 }
 
 #[derive(Debug)]
@@ -51,23 +54,33 @@ impl<DB: Backend + TypeMetadata> RawBytesBindCollector<DB> {
             binds: Vec::new(),
         }
     }
+
+    pub(crate) fn reborrow_buffer<'a: 'b, 'b>(b: &'a mut Vec<u8>) -> &'b mut Vec<u8> {
+        b
+    }
 }
 
-impl<DB: Backend + TypeMetadata> BindCollector<DB> for RawBytesBindCollector<DB> {
+impl<'a, DB> BindCollector<'a, DB> for RawBytesBindCollector<DB>
+where
+    DB: Backend<BindCollector = Self> + TypeMetadata,
+{
+    type Buffer = &'a mut Vec<u8>;
+
     fn push_bound_value<T, U>(
         &mut self,
         bind: &U,
-        metadata_lookup: &DB::MetadataLookup,
+        metadata_lookup: &mut DB::MetadataLookup,
     ) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
     {
-        let mut to_sql_output = Output::new(Vec::new(), metadata_lookup);
-        let is_null = bind
-            .to_sql(&mut to_sql_output)
-            .map_err(SerializationError)?;
-        let bytes = to_sql_output.into_inner();
+        let mut bytes = Vec::new();
+        let is_null = {
+            let mut to_sql_output = Output::new(&mut bytes, metadata_lookup);
+            bind.to_sql(&mut to_sql_output)
+                .map_err(SerializationError)?
+        };
         let metadata = <DB as HasSqlType<T>>::metadata(metadata_lookup);
         match is_null {
             IsNull::No => self.binds.push(Some(bytes)),

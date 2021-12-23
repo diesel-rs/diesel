@@ -1,25 +1,15 @@
-use backend::Backend;
-use expression::operators::Eq;
-use expression::AppearsOnTable;
-use query_builder::*;
-use query_source::{Column, QuerySource};
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::expression::grouped::Grouped;
+use crate::expression::operators::Eq;
+use crate::expression::AppearsOnTable;
+use crate::query_builder::*;
+use crate::query_source::{Column, QuerySource};
+use crate::result::QueryResult;
 
 /// Types which can be passed to
-/// [`update.set`](struct.UpdateStatement.html#method.set).
+/// [`update.set`](UpdateStatement::set()).
 ///
-/// ### Deriving
-///
-/// This trait can be automatically derived using by adding `#[derive(AsChangeset)]`
-/// to your struct.  Structs which derive this trait must be annotated with
-/// `#[table_name = "something"]`. If the field name of your struct differs
-/// from the name of the column, you can annotate the field with
-/// `#[column_name = "some_column_name"]`.
-///
-/// By default, any `Option` fields on the struct are skipped if their value is
-/// `None`. If you would like to assign `NULL` to the field instead, you can
-/// annotate your struct with `#[changeset_options(treat_none_as_null =
-/// "true")]`.
+/// This trait can be [derived](derive@AsChangeset)
 pub trait AsChangeset {
     /// The table which `Self::Changeset` will be updating
     type Target: QuerySource;
@@ -28,8 +18,14 @@ pub trait AsChangeset {
     type Changeset;
 
     /// Convert `self` into the actual update statement being executed
+    // This method is part of our public API
+    // we won't change it to just appease clippy
+    #[allow(clippy::wrong_self_convention)]
     fn as_changeset(self) -> Self::Changeset;
 }
+
+#[doc(inline)]
+pub use diesel_derives::AsChangeset;
 
 impl<T: AsChangeset> AsChangeset for Option<T> {
     type Target = T::Target;
@@ -56,7 +52,20 @@ where
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+impl<Left, Right> AsChangeset for Grouped<Eq<Left, Right>>
+where
+    Eq<Left, Right>: AsChangeset,
+{
+    type Target = <Eq<Left, Right> as AsChangeset>::Target;
+
+    type Changeset = <Eq<Left, Right> as AsChangeset>::Changeset;
+
+    fn as_changeset(self) -> Self::Changeset {
+        self.0.as_changeset()
+    }
+}
+
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct Assign<Col, Expr> {
     _column: Col,
     expr: Expr,
@@ -68,7 +77,7 @@ where
     T: Column,
     U: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_identifier(T::NAME)?;
         out.push_sql(" = ");
         QueryFragment::walk_ast(&self.expr, out)

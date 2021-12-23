@@ -1,4 +1,4 @@
-use support::project;
+use crate::support::{database, project};
 
 #[test]
 fn migration_redo_runs_the_last_migration_down_and_up() {
@@ -25,6 +25,59 @@ Running migration 12345_create_users_table
         "Unexpected stdout {}",
         result.stdout()
     );
+}
+
+#[test]
+fn migration_redo_runs_the_last_two_migrations_down_and_up() {
+    let p = project("migration_redo_runs_the_last_two_migrations_down_and_up")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2017-08-31-210424_create_customers",
+        "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE customers",
+    );
+
+    p.create_migration(
+        "2017-09-03-210424_create_contracts",
+        "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE contracts",
+    );
+
+    p.create_migration(
+        "2017-09-12-210424_create_bills",
+        "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE bills",
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("contracts"));
+    assert!(db.table_exists("bills"));
+
+    // Redo the last two migration files. The `contracts` and `bills` tables should be re-runs.
+    // The `customers` table shouldn't be redo.
+    let result = p.command("migration").arg("redo").arg("-n").arg("2").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(
+        result.stdout()
+            == "Rolling back migration 2017-09-12-210424_create_bills\n\
+                Rolling back migration 2017-09-03-210424_create_contracts\n\
+                Running migration 2017-09-12-210424_create_bills\n\
+                Running migration 2017-09-03-210424_create_contracts\n",
+        "Unexpected stdout : {}",
+        result.stdout()
+    );
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("contracts"));
+    assert!(db.table_exists("bills"));
 }
 
 #[test]
@@ -94,30 +147,6 @@ Running migration 12345_create_users_table
 }
 
 #[test]
-fn output_contains_path_to_migration_script() {
-    let p = project("output_contains_path_to_migration_script")
-        .folder("migrations")
-        .build();
-    p.create_migration(
-        "output_contains_path_to_migration_script",
-        "CREATE TABLE users (id INTEGER PRIMARY KEY);",
-        "DROP TABLE users};",
-    );
-
-    // Make sure the project is setup
-    p.command("setup").run();
-
-    let result = p.command("migration").arg("redo").run();
-
-    assert!(!result.is_success(), "Result was successful {:?}", result);
-    assert!(
-        result.stdout().contains("down.sql"),
-        "Unexpected stdout {}",
-        result.stdout()
-    );
-}
-
-#[test]
 fn error_migrations_fails() {
     let p = project("redo_error_migrations_fails")
         .folder("migrations")
@@ -134,7 +163,9 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("redo").run();
 
     assert!(!result.is_success());
-    assert!(result.stderr().contains("Failed with: "));
+    assert!(result
+        .stderr()
+        .contains("Failed to run redo_error_migrations_fails with: "));
 }
 
 #[test]
@@ -173,4 +204,166 @@ Running migration 12345_create_users_table
         "Unexpected stdout {}",
         result.stdout()
     );
+}
+
+#[test]
+fn migration_redo_all_runs_all_migrations_down_and_up() {
+    let p = project("migration_redo_all_runs_all_migrations_down_and_up")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2017-08-31-210424_create_customers",
+        "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE customers",
+    );
+
+    p.create_migration(
+        "2017-09-03-210424_create_contracts",
+        "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE contracts",
+    );
+
+    p.create_migration(
+        "2017-09-12-210424_create_bills",
+        "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE bills",
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("contracts"));
+    assert!(db.table_exists("bills"));
+
+    let result = p.command("migration").arg("redo").arg("--all").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(
+        result.stdout()
+            == "Rolling back migration 2017-09-12-210424_create_bills\n\
+                Rolling back migration 2017-09-03-210424_create_contracts\n\
+                Rolling back migration 2017-08-31-210424_create_customers\n\
+                Running migration 2017-09-12-210424_create_bills\n\
+                Running migration 2017-09-03-210424_create_contracts\n\
+                Running migration 2017-08-31-210424_create_customers\n",
+        "Unexpected stdout : {}",
+        result.stdout()
+    );
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("contracts"));
+    assert!(db.table_exists("bills"));
+}
+
+#[test]
+fn migration_redo_with_more_than_max_should_redo_all() {
+    let p = project("migration_redo_with_more_than_max_should_redo_all")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2017-08-31-210424_create_customers",
+        "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE customers",
+    );
+
+    p.create_migration(
+        "2017-09-03-210424_create_contracts",
+        "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE contracts",
+    );
+
+    p.create_migration(
+        "2017-09-12-210424_create_bills",
+        "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE bills",
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("contracts"));
+    assert!(db.table_exists("bills"));
+
+    let result = p
+        .command("migration")
+        .arg("redo")
+        .arg("-n")
+        .arg("1000")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(
+        result.stdout()
+            == "Rolling back migration 2017-09-12-210424_create_bills\n\
+                Rolling back migration 2017-09-03-210424_create_contracts\n\
+                Rolling back migration 2017-08-31-210424_create_customers\n\
+                Running migration 2017-09-12-210424_create_bills\n\
+                Running migration 2017-09-03-210424_create_contracts\n\
+                Running migration 2017-08-31-210424_create_customers\n",
+        "Unexpected stdout : {}",
+        result.stdout()
+    );
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("contracts"));
+    assert!(db.table_exists("bills"));
+}
+
+#[test]
+fn migration_redo_n_with_a_string_should_throw_an_error() {
+    let p = project("migration_redo_n_with_a_string_should_throw_an_error")
+        .folder("migrations")
+        .build();
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    // Should not revert any migration.
+    let result = p
+        .command("migration")
+        .arg("redo")
+        .arg("-n")
+        .arg("infinite")
+        .run();
+
+    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+
+    assert!(
+        result.stderr() == "error: Invalid value for '--number <REDO_NUMBER>': infinite isn't a positive integer.\n",
+        "Unexpected stderr : {}",
+        result.stderr()
+    );
+}
+
+#[test]
+fn migration_redo_with_zero_should_not_revert_any_migration() {
+    let p = project("migration_redo_with_zero_should_not_revert_any_migration")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2017-08-31-210424_create_customers",
+        "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
+        "DROP TABLE customers",
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+
+    // Should not revert any migration.
+    let result = p.command("migration").arg("redo").arg("-n").arg("0").run();
+
+    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(result.stdout() == "");
 }

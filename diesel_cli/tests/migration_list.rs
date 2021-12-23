@@ -2,8 +2,8 @@ use chrono::Utc;
 use std::thread::sleep;
 use std::time::Duration;
 
-use migrations_internals::TIMESTAMP_FORMAT;
-use support::{database, project};
+use crate::support::{database, project};
+pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 #[test]
 fn migration_list_lists_pending_applied_migrations() {

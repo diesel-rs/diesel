@@ -1,0 +1,65 @@
+error: expected `,`
+  --> $DIR/deprecated_primary_key.rs:12:23
+   |
+12 | #[primary_key(id, bar = "baz")]
+   |                       ^
+
+error: expected `,`
+  --> $DIR/deprecated_primary_key.rs:19:22
+   |
+19 | #[primary_key(id, qux(id))]
+   |                      ^^^^
+
+error: unexpected end of input, expected parentheses
+  --> $DIR/deprecated_primary_key.rs:26:3
+   |
+26 | #[primary_key]
+   |   ^^^^^^^^^^^
+
+error: expected parentheses
+  --> $DIR/deprecated_primary_key.rs:33:15
+   |
+33 | #[primary_key = id]
+   |               ^
+
+warning: #[primary_key] attribute form is deprecated
+  = help: use `#[diesel(primary_key(id, name))]` instead
+
+error: Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
+
+  = help: If you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.
+  = note: `#[derive(AsChangeset)]` never changes the primary key of a row.
+
+  --> $DIR/deprecated_primary_key.rs:39:10
+   |
+39 | #[derive(AsChangeset)]
+   |          ^^^^^^^^^^^
+   |
+   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: unexpected token: `id`
+  --> $DIR/deprecated_primary_key.rs:33:17
+   |
+33 | #[primary_key = id]
+   |                 ^^
+
+error[E0425]: cannot find value `id` in this scope
+  --> $DIR/deprecated_primary_key.rs:33:17
+   |
+33 | #[primary_key = id]
+   |                 ^^ not found in this scope
+   |
+help: consider importing one of these items
+   |
+12 | use crate::users::id;
+   |
+12 | use std::process::id;
+   |
+
+error[E0658]: arbitrary expressions in key-value attributes are unstable
+  --> $DIR/deprecated_primary_key.rs:33:17
+   |
+33 | #[primary_key = id]
+   |                 ^^
+   |
+   = note: see issue #78835 <https://github.com/rust-lang/rust/issues/78835> for more information

@@ -1,0 +1,11 @@
+error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == Pg`
+  --> $DIR/ilike_only_compiles_for_pg.rs:21:53
+   |
+21 |     users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
+   |                                                     ^^^^^^^ expected struct `Sqlite`, found struct `Pg`
+
+error[E0271]: type mismatch resolving `<diesel::MysqlConnection as diesel::Connection>::Backend == Pg`
+  --> $DIR/ilike_only_compiles_for_pg.rs:24:53
+   |
+24 |     users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
+   |                                                     ^^^^^^^ expected struct `Mysql`, found struct `Pg`

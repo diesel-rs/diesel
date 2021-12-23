@@ -1,10 +1,9 @@
-use std::io::Write;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, Output, ToSql};
-use sql_types;
+use crate::deserialize::{self, FromSql};
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types;
 
 fn pg_epoch() -> SystemTime {
     let thirty_years = Duration::from_secs(946_684_800);
@@ -12,7 +11,7 @@ fn pg_epoch() -> SystemTime {
 }
 
 impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let (before_epoch, duration) = match self.duration_since(pg_epoch()) {
             Ok(duration) => (false, duration),
             Err(time_err) => (true, time_err.duration()),
@@ -22,12 +21,12 @@ impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
         } else {
             duration_to_usecs(duration) as i64
         };
-        ToSql::<sql_types::BigInt, Pg>::to_sql(&time_since_epoch, out)
+        ToSql::<sql_types::BigInt, Pg>::to_sql(&time_since_epoch, &mut out.reborrow())
     }
 }
 
 impl FromSql<sql_types::Timestamp, Pg> for SystemTime {
-    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let usecs_passed = <i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes)?;
         let before_epoch = usecs_passed < 0;
         let time_passed = usecs_to_duration(usecs_passed.abs() as u64);
@@ -61,47 +60,38 @@ fn duration_to_usecs(duration: Duration) -> u64 {
 mod tests {
     extern crate dotenv;
 
-    use self::dotenv::dotenv;
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-    use dsl::{now, sql};
-    use prelude::*;
-    use select;
-    use sql_types::Timestamp;
-
-    fn connection() -> PgConnection {
-        dotenv().ok();
-
-        let connection_url = ::std::env::var("PG_DATABASE_URL")
-            .or_else(|_| ::std::env::var("DATABASE_URL"))
-            .expect("DATABASE_URL must be set in order to run tests");
-        PgConnection::establish(&connection_url).unwrap()
-    }
+    use crate::dsl::{now, sql};
+    use crate::prelude::*;
+    use crate::select;
+    use crate::sql_types::Timestamp;
+    use crate::test_helpers::pg_connection;
 
     #[test]
     fn unix_epoch_encodes_correctly() {
-        let connection = connection();
+        let connection = &mut pg_connection();
         let query = select(sql::<Timestamp>("'1970-01-01'").eq(UNIX_EPOCH));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_decodes_correctly() {
-        let connection = connection();
+        let connection = &mut pg_connection();
         let epoch_from_sql = select(sql::<Timestamp>("'1970-01-01'::timestamp"))
-            .get_result::<SystemTime>(&connection);
+            .get_result::<SystemTime>(connection);
         assert_eq!(Ok(UNIX_EPOCH), epoch_from_sql);
     }
 
     #[test]
     fn times_relative_to_now_encode_correctly() {
-        let connection = connection();
+        let connection = &mut pg_connection();
         let time = SystemTime::now() + Duration::from_secs(60);
         let query = select(now.at_time_zone("utc").lt(time));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let time = SystemTime::now() - Duration::from_secs(60);
         let query = select(now.at_time_zone("utc").gt(time));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 }

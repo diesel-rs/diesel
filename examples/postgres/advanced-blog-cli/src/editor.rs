@@ -1,6 +1,5 @@
-extern crate tempfile;
+use tempfile::NamedTempFile;
 
-use self::tempfile::NamedTempFile;
 use std::error::Error;
 use std::ffi::OsString;
 use std::io::prelude::*;

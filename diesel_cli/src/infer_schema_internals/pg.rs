@@ -3,7 +3,10 @@ use heck::CamelCase;
 use std::error::Error;
 use std::io::{stderr, Write};
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<dyn Error>> {
+pub fn determine_column_type(
+    attr: &ColumnInformation,
+    default_schema: String,
+) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
     let is_array = attr.type_name.starts_with('_');
     let tpe = if is_array {
         &attr.type_name[1..]
@@ -28,6 +31,14 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     }
 
     Ok(ColumnType {
+        schema: attr.type_schema.as_ref().and_then(|s| {
+            if s == &default_schema {
+                None
+            } else {
+                Some(s.clone())
+            }
+        }),
+        sql_name: tpe.to_lowercase(),
         rust_name: tpe.to_camel_case(),
         is_array,
         is_nullable: attr.nullable,

@@ -28,7 +28,7 @@ fn simple_belongs_to() {
     }
 
     #[derive(Associations, Identifiable)]
-    #[belongs_to(User)]
+    #[diesel(belongs_to(User))]
     pub struct Post {
         id: i32,
         user_id: i32,
@@ -63,6 +63,73 @@ fn simple_belongs_to() {
 }
 
 #[test]
+fn table_in_different_module() {
+    mod schema {
+        table! {
+            users {
+                id -> Integer,
+                name -> Text,
+            }
+        }
+
+        table! {
+            posts {
+                id -> Integer,
+                user_id -> Integer,
+                title -> Text,
+            }
+        }
+
+        allow_tables_to_appear_in_same_query!(users, posts);
+
+        joinable!(posts -> users(user_id));
+    }
+
+    #[derive(Identifiable)]
+    #[diesel(table_name = schema::users)]
+    pub struct User {
+        id: i32,
+    }
+
+    #[derive(Associations, Identifiable)]
+    #[diesel(table_name = schema::posts)]
+    #[diesel(belongs_to(User))]
+    pub struct Post {
+        id: i32,
+        user_id: i32,
+    }
+
+    let _can_join_tables = schema::posts::table
+        .inner_join(schema::users::table)
+        .select((schema::users::id, schema::users::name, schema::posts::id))
+        .filter(
+            schema::posts::id
+                .eq(1)
+                .and(schema::posts::user_id.eq(2))
+                .and(schema::posts::title.eq("Bar")),
+        );
+
+    let _can_reverse_join_tables = schema::users::table
+        .inner_join(schema::posts::table)
+        .select((
+            schema::posts::id,
+            schema::posts::user_id,
+            schema::posts::title,
+        ))
+        .filter(schema::users::id.eq(1).and(schema::users::name.eq("Sean")));
+
+    let t = User { id: 42 };
+
+    let belong_to = Post::belonging_to(&t);
+    let filter = schema::posts::table.filter(schema::posts::user_id.eq(42));
+
+    assert_eq!(
+        debug_query::<Backend, _>(&belong_to).to_string(),
+        debug_query::<Backend, _>(&filter).to_string()
+    );
+}
+
+#[test]
 fn custom_foreign_key() {
     table! {
         users {
@@ -87,7 +154,7 @@ fn custom_foreign_key() {
     }
 
     #[derive(Associations, Identifiable)]
-    #[belongs_to(User, foreign_key = "belongs_to_user")]
+    #[diesel(belongs_to(User, foreign_key = belongs_to_user))]
     pub struct Post {
         id: i32,
         belongs_to_user: i32,
@@ -131,7 +198,7 @@ fn self_referential() {
     }
 
     #[derive(Associations, Identifiable)]
-    #[belongs_to(Tree, foreign_key = "parent_id")]
+    #[diesel(belongs_to(Tree, foreign_key = parent_id))]
     pub struct Tree {
         id: i32,
         parent_id: Option<i32>,
@@ -182,8 +249,8 @@ fn multiple_associations() {
     }
 
     #[derive(Identifiable, Associations)]
-    #[belongs_to(User)]
-    #[belongs_to(Post)]
+    #[diesel(belongs_to(User))]
+    #[diesel(belongs_to(Post))]
     struct Comment {
         id: i32,
         user_id: i32,
@@ -228,10 +295,10 @@ fn foreign_key_field_with_column_rename() {
     }
 
     #[derive(Associations, Identifiable, Clone, Copy, PartialEq, Debug)]
-    #[belongs_to(User)]
+    #[diesel(belongs_to(User))]
     pub struct Post {
         id: i32,
-        #[column_name = "user_id"]
+        #[diesel(column_name = user_id)]
         author_id: i32,
     }
 
@@ -279,8 +346,11 @@ fn tuple_struct() {
     }
 
     #[derive(Associations, Identifiable)]
-    #[belongs_to(User)]
-    pub struct Post(#[column_name = "id"] i32, #[column_name = "user_id"] i32);
+    #[diesel(belongs_to(User))]
+    pub struct Post(
+        #[diesel(column_name = id)] i32,
+        #[diesel(column_name = user_id)] i32,
+    );
 
     let user = User { id: 1 };
 

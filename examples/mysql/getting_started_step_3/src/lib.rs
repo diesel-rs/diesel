@@ -1,7 +1,3 @@
-#[macro_use]
-extern crate diesel;
-extern crate dotenv;
-
 pub mod models;
 pub mod schema;
 
@@ -19,7 +15,7 @@ pub fn establish_connection() -> MysqlConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-pub fn create_post(conn: &MysqlConnection, title: &str, body: &str) -> Post {
+pub fn create_post(conn: &mut MysqlConnection, title: &str, body: &str) -> Post {
     use schema::posts::dsl::{id, posts};
 
     let new_post = NewPost { title, body };

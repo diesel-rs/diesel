@@ -1,0 +1,444 @@
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+      - "0.[0-9]+.x"
+      - "1.[0-9]+.x"
+
+name: CI Tests
+
+# See: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency.
+# This will ensure that only one commit will be running tests at a time on each PR.
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  check_and_test:
+    name: Check
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ["stable", "beta", "nightly"]
+        backend: ["postgres", "sqlite", "mysql"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Set environment variables
+        shell: bash
+        if: matrix.backend == 'mysql'
+        run: |
+          echo "RUST_TEST_THREADS=1" >> $GITHUB_ENV
+
+      - name: Set environment variables
+        shell: bash
+        if: matrix.rust == 'nightly'
+        run: |
+          echo "RUSTFLAGS=--cap-lints=warn" >> $GITHUB_ENV
+
+      - name: Install postgres (Linux)
+        if: runner.os == 'Linux' && matrix.backend == 'postgres'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql
+          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
+          sudo service postgresql restart && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart && sleep 3
+          echo "PG_DATABASE_URL=postgres://postgres:postgres@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:postgres@localhost/diesel_example" >> $GITHUB_ENV
+
+      - name: Install sqlite (Linux)
+        if: runner.os == 'Linux' && matrix.backend == 'sqlite'
+        run: |
+          curl -fsS --retry 3 -o sqlite-autoconf-3310100.tar.gz https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
+          tar zxf sqlite-autoconf-3310100.tar.gz
+          cd sqlite-autoconf-3310100
+          CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
+              -DSQLITE_DEFAULT_FOREIGN_KEYS=1 \
+              -DSQLITE_SECURE_DELETE \
+              -DSQLITE_ENABLE_COLUMN_METADATA \
+              -DSQLITE_ENABLE_FTS3_PARENTHESIS \
+              -DSQLITE_ENABLE_RTREE=1 \
+              -DSQLITE_SOUNDEX=1 \
+              -DSQLITE_ENABLE_UNLOCK_NOTIFY \
+              -DSQLITE_OMIT_LOOKASIDE=1 \
+              -DSQLITE_ENABLE_DBSTAT_VTAB \
+              -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT=1 \
+              -DSQLITE_ENABLE_LOAD_EXTENSION \
+              -DSQLITE_ENABLE_JSON1 \
+              -DSQLITE_LIKE_DOESNT_MATCH_BLOBS \
+              -DSQLITE_THREADSAFE=1 \
+              -DSQLITE_ENABLE_FTS3_TOKENIZER=1 \
+              -DSQLITE_MAX_SCHEMA_RETRY=25 \
+              -DSQLITE_ENABLE_PREUPDATE_HOOK \
+              -DSQLITE_ENABLE_SESSION \
+              -DSQLITE_ENABLE_STMTVTAB \
+              -DSQLITE_MAX_VARIABLE_NUMBER=250000" \
+          ./configure --prefix=/usr \
+              --enable-threadsafe \
+              --enable-dynamic-extensions \
+              --libdir=/usr/lib/x86_64-linux-gnu \
+              --libexecdir=/usr/lib/x86_64-linux-gnu/sqlite3
+          sudo make
+          sudo make install
+          echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
+
+      - name: Install mysql (Linux)
+        if: runner.os == 'Linux' && matrix.backend == 'mysql'
+        run: |
+          sudo systemctl start mysql.service
+          sudo apt-get update
+          sudo apt-get -y install libmysqlclient-dev
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+          echo "MYSQL_DATABASE_URL=mysql://root:root@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root:root@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root:root@localhost/diesel_unit_test" >> $GITHUB_ENV
+
+      - name: Install postgres (MacOS)
+        if: runner.os == 'macOS' && matrix.backend == 'postgres'
+        run: |
+          /usr/local/opt/postgres/bin/pg_ctl -D /usr/local/var/postgres start
+          sleep 3
+          /usr/local/opt/postgres/bin/createuser -s postgres
+          echo "PG_DATABASE_URL=postgres://postgres@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example" >> $GITHUB_ENV
+
+      - name: Install sqlite (MacOS)
+        if: runner.os == 'macOS' && matrix.backend == 'sqlite'
+        run: |
+          brew update
+          brew install sqlite
+          echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
+
+      - name: Install mysql (MacOS)
+        if: runner.os == 'macOS' && matrix.backend == 'mysql'
+        run: |
+          brew update
+          brew install mariadb
+          mysql_install_db
+          mysql.server start
+          sleep 3
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'runner'@'localhost';" -urunner
+          macos_mysql_version="$(ls /usr/local/Cellar/mariadb)"
+          echo "MYSQL_DATABASE_URL=mysql://runner@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://runner@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://runner@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=/usr/local/Cellar/mariadb/${macos_mysql_version}/lib" >> $GITHUB_ENV
+
+      - name: Install sqlite (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        shell: cmd
+        run: |
+          choco install sqlite
+          cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
+
+      - name: Set variables for sqlite (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'sqlite'
+        shell: bash
+        run: |
+          echo "C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_PATH
+          echo "SQLITE3_LIB_DIR=C:\ProgramData\chocolatey\lib\SQLite\tools" >> $GITHUB_ENV
+          echo "SQLITE_DATABASE_URL=C:\test.db" >> $GITHUB_ENV
+
+      - name: Install postgres (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'postgres'
+        shell: bash
+        run: |
+          choco install postgresql12 --force --params '/Password:root'
+          echo "C:\Program Files\PostgreSQL\12\bin" >> $GITHUB_PATH
+          echo "C:\Program Files\PostgreSQL\12\lib" >> $GITHUB_PATH
+          echo "PQ_LIB_DIR=C:\Program Files\PostgreSQL\12\lib" >> $GITHUB_ENV
+          echo "PG_DATABASE_URL=postgres://postgres:root@localhost/" >> $GITHUB_ENV
+          echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres:root@localhost/diesel_example" >> $GITHUB_ENV
+
+      - name: Install mysql (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'mysql'
+        shell: cmd
+        run: |
+          choco install mysql
+          "C:\tools\mysql\current\bin\mysql" -e "create database diesel_test; create database diesel_unit_test; grant all on `diesel_%`.* to 'root'@'localhost';" -uroot
+
+      - name: Set variables for mysql (Windows)
+        if: runner.os == 'Windows' && matrix.backend == 'mysql'
+        shell: bash
+        run: |
+          echo "MYSQL_DATABASE_URL=mysql://root@localhost/diesel_test" >> $GITHUB_ENV
+          echo "MYSQL_EXAMPLE_DATABASE_URL=mysql://root@localhost/diesel_example" >> $GITHUB_ENV
+          echo "MYSQL_UNIT_TEST_DATABASE_URL=mysql://root@localhost/diesel_unit_test" >> $GITHUB_ENV
+          echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: Rust version check
+        uses: actions-rs/cargo@v1
+        with:
+          command: version
+
+      - name: Test diesel (nightly)
+        if: matrix.rust == 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable extras"
+
+      - name: Test diesel
+        if: matrix.rust != 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras r2d2"
+
+      - name: Test diesel (with-deprecated)
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras with-deprecated"
+
+      - name: Test diesel-derives (nightly)
+        if: matrix.rust == 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} diesel/unstable"
+
+      - name: Test diesel-derives
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }}"
+
+      - name: Test diesel-cli
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+
+      - name: Test diesel examples
+        shell: bash
+        run: |
+          (cd examples/${{ matrix.backend }} && BACKEND=${{ matrix.backend }} ./test_all)
+
+      - name: Test migrations-internals
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_migrations/migrations_internals/Cargo.toml
+
+      - name: Test migrations-macros
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
+
+      - name: Test diesel_migrations
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_migrations/Cargo.toml --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
+
+      - name: Run diesel_tests (nightly)
+        if: matrix.run == 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
+
+      - name: Run diesel_tests
+        if: matrix.run != 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+
+      - name: Run diesel_dynamic_schema tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+
+      - name: Run diesel_benches
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" --bench benchmarks
+
+      - name: Run rustdoc (nightly)
+        if: matrix.run == 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable"
+
+      - name: Run rustdoc
+        if: matrix.run != 'nightly'
+        uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }}"
+
+  compile_tests:
+    name: Compiletests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.51.0
+          profile: minimal
+          override: true
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+
+      - name: Run compile tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_compile_tests/Cargo.toml
+
+  rustfmt_and_clippy:
+    name: Check rustfmt style && run clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.51.0
+          profile: minimal
+          components: clippy, rustfmt
+          override: true
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+
+      - name: Remove potential newer clippy.toml from dependencies
+        run: |
+          cargo update
+          cargo fetch
+          find ~/.cargo/registry -iname "*clippy.toml" -delete
+
+      - name: Run clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all
+
+      - name: Check formating
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  sqlite_bundled:
+    name: Check sqlite bundled + Sqlite with asan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          profile: minimal
+          override: true
+          components: rust-src
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+
+      - name: Setup environment
+        run: |
+          echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
+
+      - name: Test diesel-cli
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
+
+      - name: Run diesel_tests with ASAN enabled
+        env:
+          RUSTFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: detect_stack_use_after_return=1
+        run: cargo -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "sqlite libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
+
+      - name: Run diesel tests with ASAN enabled
+        env:
+          RUSTDOCFLAGS: -Zsanitizer=address
+          RUSTFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: detect_stack_use_after_return=1
+        run: cargo -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
+
+
+  minimal_rust_version:
+    name: Check Minimal supported rust version (1.51.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.51.0
+          profile: minimal
+          override: true
+      - name: Cache cargo registry
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+      - name: Use minimal dependencies
+        run: |
+          RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
+
+      - name: Check building with rust 1.51.0
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          # This example pulls generic-array v0.14.1 that cannot compile with rustc 1.40.0.
+          # We could exclude it as it won't affect our MSRV.
+          args: --all --exclude=advanced-blog-cli

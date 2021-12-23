@@ -1,9 +1,10 @@
 use std::marker::PhantomData;
 
-use expression::array_comparison::MaybeEmpty;
-use expression::*;
-use query_builder::*;
-use result::QueryResult;
+use crate::expression::array_comparison::MaybeEmpty;
+use crate::expression::*;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::SqlType;
 
 #[derive(Debug, Copy, Clone, QueryId)]
 pub struct Subselect<T, ST> {
@@ -20,7 +21,10 @@ impl<T, ST> Subselect<T, ST> {
     }
 }
 
-impl<T: SelectQuery, ST> Expression for Subselect<T, ST> {
+impl<T: SelectQuery, ST> Expression for Subselect<T, ST>
+where
+    ST: SqlType + TypedExpressionType,
+{
     type SqlType = ST;
 }
 
@@ -47,14 +51,16 @@ where
 // FIXME: This probably isn't sound. The subselect can reference columns from
 // the outer query, and is affected by the `GROUP BY` clause of the outer query
 // identically to using it outside of a subselect
-impl<T, ST> NonAggregate for Subselect<T, ST> {}
+impl<T, ST, GB> ValidGrouping<GB> for Subselect<T, ST> {
+    type IsAggregate = is_aggregate::Never;
+}
 
 impl<T, ST, DB> QueryFragment<DB> for Subselect<T, ST>
 where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.values.walk_ast(out.reborrow())?;
         Ok(())
     }

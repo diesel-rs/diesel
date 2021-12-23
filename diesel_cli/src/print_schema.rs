@@ -1,19 +1,22 @@
-use config;
+use crate::config;
+use crate::database::Backend;
+use crate::infer_schema_internals::*;
 
-use infer_schema_internals::*;
 use serde::de::{self, MapAccess, Visitor};
-use serde::{Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, Serialize};
+use serde_regex::Serde as RegexWrapper;
+use std::collections::HashSet;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};
-use std::fs::File;
-use std::io::{self, Error as IoError, ErrorKind, Write as IoWrite};
-use std::path::Path;
-use std::process::Command;
-use tempfile::NamedTempFile;
+use std::io::Write as IoWrite;
+
+const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
+
+type Regex = RegexWrapper<::regex::Regex>;
 
 pub enum Filtering {
-    OnlyTables(Vec<TableName>),
-    ExceptTables(Vec<TableName>),
+    OnlyTables(Vec<Regex>),
+    ExceptTables(Vec<Regex>),
     None,
 }
 
@@ -28,10 +31,27 @@ impl Filtering {
         use self::Filtering::*;
 
         match *self {
-            OnlyTables(ref names) => !names.contains(name),
-            ExceptTables(ref names) => names.contains(name),
+            OnlyTables(ref regexes) => !regexes.iter().any(|regex| regex.is_match(&name.sql_name)),
+            ExceptTables(ref regexes) => regexes.iter().any(|regex| regex.is_match(&name.sql_name)),
             None => false,
         }
+    }
+}
+
+/// How to sort columns when querying the table schema.
+#[derive(Debug, Deserialize, Serialize)]
+pub enum ColumnSorting {
+    /// Order by ordinal position
+    #[serde(rename = "ordinal_position")]
+    OrdinalPosition,
+    /// Order by column name
+    #[serde(rename = "name")]
+    Name,
+}
+
+impl Default for ColumnSorting {
+    fn default() -> Self {
+        ColumnSorting::OrdinalPosition
     }
 }
 
@@ -39,31 +59,105 @@ pub fn run_print_schema<W: IoWrite>(
     database_url: &str,
     config: &config::PrintSchema,
     output: &mut W,
-) -> Result<(), Box<dyn Error>> {
-    let tempfile = NamedTempFile::new()?;
-    let file = tempfile.reopen()?;
-    output_schema(database_url, config, file, tempfile.path())?;
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    let schema = output_schema(database_url, config)?;
 
-    // patch "replaces" our tempfile, meaning the old handle
-    // does not include the patched output.
-    let mut file = File::open(tempfile.path())?;
-    io::copy(&mut file, output)?;
+    output.write_all(schema.as_bytes())?;
     Ok(())
 }
 
-fn simplify_patch_error(err: IoError) -> Box<dyn Error> {
-    match err.kind() {
-        ErrorKind::NotFound => "Unable to find `patch` command, is it installed?".into(),
-        _ => err.into(),
-    }
+fn common_diesel_types(types: &mut HashSet<&str>) {
+    types.insert("Bool");
+    types.insert("Integer");
+    types.insert("SmallInt");
+    types.insert("BigInt");
+    types.insert("Binary");
+    types.insert("Text");
+    types.insert("Double");
+    types.insert("Float");
+    types.insert("Numeric");
+    types.insert("Timestamp");
+    types.insert("Date");
+    types.insert("Time");
+
+    // hidden type defs
+    types.insert("Float4");
+    types.insert("Smallint");
+    types.insert("Int2");
+    types.insert("Int4");
+    types.insert("Int8");
+    types.insert("Bigint");
+    types.insert("Float8");
+    types.insert("Decimal");
+    types.insert("VarChar");
+    types.insert("Varchar");
+    types.insert("Char");
+    types.insert("Tinytext");
+    types.insert("Mediumtext");
+    types.insert("Longtext");
+    types.insert("Tinyblob");
+    types.insert("Blob");
+    types.insert("Mediumblob");
+    types.insert("Longblob");
+    types.insert("Varbinary");
+    types.insert("Bit");
+}
+
+#[cfg(feature = "postgres")]
+fn pg_diesel_types() -> HashSet<&'static str> {
+    let mut types = HashSet::new();
+    types.insert("Cidr");
+    types.insert("Inet");
+    types.insert("Jsonb");
+    types.insert("MacAddr");
+    types.insert("Money");
+    types.insert("Oid");
+    types.insert("Range");
+    types.insert("Timestamptz");
+    types.insert("Uuid");
+    types.insert("Json");
+    types.insert("Record");
+    types.insert("Interval");
+
+    // hidden type defs
+    types.insert("Int4range");
+    types.insert("Int8range");
+    types.insert("Daterange");
+    types.insert("Numrange");
+    types.insert("Tsrange");
+    types.insert("Tstzrange");
+    types.insert("SmallSerial");
+    types.insert("BigSerial");
+    types.insert("Serial");
+    types.insert("Bytea");
+    types.insert("Bpchar");
+    types.insert("Macaddr");
+
+    common_diesel_types(&mut types);
+    types
+}
+
+#[cfg(feature = "mysql")]
+fn mysql_diesel_types() -> HashSet<&'static str> {
+    let mut types = HashSet::new();
+    common_diesel_types(&mut types);
+
+    types.insert("TinyInt");
+    types.insert("Tinyint");
+    types
+}
+
+#[cfg(feature = "sqlite")]
+fn sqlite_diesel_types() -> HashSet<&'static str> {
+    let mut types = HashSet::new();
+    common_diesel_types(&mut types);
+    types
 }
 
 pub fn output_schema(
     database_url: &str,
     config: &config::PrintSchema,
-    mut out: File,
-    out_path: &Path,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
     let table_names = load_table_names(database_url, config.schema_name())?
         .into_iter()
         .filter(|t| !config.filter.should_ignore_table(t))
@@ -73,39 +167,155 @@ pub fn output_schema(
         remove_unsafe_foreign_keys_for_codegen(database_url, &foreign_keys, &table_names);
     let table_data = table_names
         .into_iter()
-        .map(|t| load_table_data(database_url, t))
-        .collect::<Result<_, Box<dyn Error>>>()?;
+        .map(|t| load_table_data(database_url, t, &config.column_sorting))
+        .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync + 'static>>>()?;
+
+    let mut out = String::new();
+    writeln!(out, "{}", SCHEMA_HEADER)?;
+
+    let backend = Backend::for_url(database_url);
+
+    let custom_types_sorted = if config.generate_missing_sql_type_definitions() {
+        let diesel_provided_types = match backend {
+            #[cfg(feature = "postgres")]
+            Backend::Pg => pg_diesel_types(),
+            #[cfg(feature = "sqlite")]
+            Backend::Sqlite => sqlite_diesel_types(),
+            #[cfg(feature = "mysql")]
+            Backend::Mysql => mysql_diesel_types(),
+        };
+
+        let mut all_types = table_data
+            .iter()
+            .flat_map(|t| t.column_data.iter().map(|c| &c.ty))
+            .filter(|t| !diesel_provided_types.contains(&t.rust_name as &str))
+            .cloned()
+            .collect::<Vec<_>>();
+
+        all_types.sort_unstable_by(|a, b| a.rust_name.cmp(&b.rust_name));
+        all_types.dedup_by(|a, b| a.rust_name.eq(&b.rust_name));
+        all_types
+    } else {
+        Vec::new()
+    };
+
     let definitions = TableDefinitions {
         tables: table_data,
         fk_constraints: foreign_keys,
         include_docs: config.with_docs,
+        custom_type_defs: CustomTypeList {
+            backend,
+            types_sorted: custom_types_sorted,
+            with_docs: config.with_docs,
+        },
         import_types: config.import_types(),
     };
 
     if let Some(schema_name) = config.schema_name() {
         write!(out, "{}", ModuleDefinition(schema_name, definitions))?;
     } else {
+        write!(out, "{}", definitions.custom_type_defs)?;
         write!(out, "{}", definitions)?;
     }
 
     if let Some(ref patch_file) = config.patch_file {
-        let output = Command::new("patch")
-            .arg(out_path)
-            .arg(patch_file)
-            .output()
-            .map_err(simplify_patch_error)?;
-        if !output.status.success() {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(format!(
-                "Failed to apply schema patch. stdout: {} stderr: {}",
-                stdout, stderr,
-            )
-            .into());
-        }
+        let patch = std::fs::read_to_string(patch_file)?;
+        let patch = diffy::Patch::from_str(&patch)?;
+
+        out = diffy::apply(&out, &patch)?;
     }
 
-    Ok(())
+    Ok(out)
+}
+
+struct CustomTypeList {
+    backend: Backend,
+    types_sorted: Vec<ColumnType>,
+    with_docs: bool,
+}
+
+impl CustomTypeList {
+    #[cfg(feature = "postgres")]
+    fn position(&self, tpe: &str) -> Option<usize> {
+        self.types_sorted
+            .binary_search_by_key(&tpe, |c| &c.rust_name)
+            .ok()
+    }
+}
+
+impl Display for CustomTypeList {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.types_sorted.is_empty() {
+            return Ok(());
+        }
+        match self.backend {
+            #[cfg(feature = "postgres")]
+            Backend::Pg => {
+                if self.with_docs {
+                    writeln!(f, "/// A module containing custom SQL type definitions")?;
+                    writeln!(f, "///")?;
+                    writeln!(f, "/// (Automatically generated by Diesel.)")?;
+                }
+                let mut out = PadAdapter::new(f);
+                writeln!(out, "pub mod sql_types {{")?;
+
+                for (idx, t) in self.types_sorted.iter().enumerate() {
+                    if idx != 0 {
+                        writeln!(out)?;
+                    }
+                    if self.with_docs {
+                        if let Some(ref schema) = t.schema {
+                            writeln!(out, "/// The `{}.{}` SQL type", schema, t.sql_name)?;
+                        } else {
+                            writeln!(out, "/// The `{}` SQL type", t.sql_name)?;
+                        }
+                        writeln!(out, "///")?;
+                        writeln!(out, "/// (Automatically generated by Diesel.)")?;
+                    }
+                    writeln!(out, "#[derive(diesel::sql_types::SqlType)]")?;
+                    if let Some(ref schema) = t.schema {
+                        writeln!(
+                            out,
+                            "#[diesel(postgres_type(name = \"{}\", schema = \"{}\"))]",
+                            t.sql_name, schema
+                        )?;
+                    } else {
+                        writeln!(out, "#[diesel(postgres_type(name = \"{}\"))]", t.sql_name)?;
+                    }
+                    writeln!(out, "pub struct {};", t.rust_name)?;
+                }
+
+                writeln!(f, "}}\n")?;
+                Ok(())
+            }
+            #[cfg(feature = "sqlite")]
+            Backend::Sqlite => {
+                let _ = (&f, self.with_docs);
+                for t in &self.types_sorted {
+                    eprintln!("Encountered unknown type for Sqlite: {}", t.sql_name);
+                }
+                unreachable!(
+                    "Diesel only support a closed set of types for Sqlite. \
+                     If you ever see this error message please open an \
+                     issue at https://github.com/diesel-rs/diesel containing \
+                     a dump of your schema definition."
+                )
+            }
+            #[cfg(feature = "mysql")]
+            Backend::Mysql => {
+                let _ = (&f, self.with_docs);
+                for t in &self.types_sorted {
+                    eprintln!("Encountered unknown type for Mysql: {}", t.sql_name);
+                }
+                unreachable!(
+                    "Mysql only supports a closed set of types.
+                         If you ever see this error message please open an \
+                         issue at https://github.com/diesel-rs/diesel containing \
+                         a dump of your schema definition."
+                )
+            }
+        }
+    }
 }
 
 struct ModuleDefinition<'a>(&'a str, TableDefinitions<'a>);
@@ -115,6 +325,7 @@ impl<'a> Display for ModuleDefinition<'a> {
         {
             let mut out = PadAdapter::new(f);
             writeln!(out, "pub mod {} {{", self.0)?;
+            write!(out, "{}", self.1.custom_type_defs)?;
             write!(out, "{}", self.1)?;
         }
         writeln!(f, "}}")?;
@@ -127,6 +338,7 @@ struct TableDefinitions<'a> {
     fk_constraints: Vec<ForeignKeyConstraint>,
     include_docs: bool,
     import_types: Option<&'a [String]>,
+    custom_type_defs: CustomTypeList,
 }
 
 impl<'a> Display for TableDefinitions<'a> {
@@ -145,6 +357,7 @@ impl<'a> Display for TableDefinitions<'a> {
                     table,
                     include_docs: self.include_docs,
                     import_types: self.import_types,
+                    custom_type_defs: &self.custom_type_defs
                 }
             )?;
         }
@@ -158,12 +371,16 @@ impl<'a> Display for TableDefinitions<'a> {
         }
 
         if self.tables.len() > 1 {
-            write!(f, "\nallow_tables_to_appear_in_same_query!(")?;
+            write!(f, "\ndiesel::allow_tables_to_appear_in_same_query!(")?;
             {
                 let mut out = PadAdapter::new(f);
                 writeln!(out)?;
                 for table in &self.tables {
-                    writeln!(out, "{},", table.name.name)?;
+                    if table.name.rust_name == table.name.sql_name {
+                        writeln!(out, "{},", table.name.sql_name)?;
+                    } else {
+                        writeln!(out, "{},", table.name.rust_name)?;
+                    }
                 }
             }
             writeln!(f, ");")?;
@@ -175,21 +392,46 @@ impl<'a> Display for TableDefinitions<'a> {
 
 struct TableDefinition<'a> {
     table: &'a TableData,
-    import_types: Option<&'a [String]>,
     include_docs: bool,
+    import_types: Option<&'a [String]>,
+    custom_type_defs: &'a CustomTypeList,
 }
 
 impl<'a> Display for TableDefinition<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "table! {{")?;
+        write!(f, "diesel::table! {{")?;
         {
             let mut out = PadAdapter::new(f);
             writeln!(out)?;
 
+            let mut has_written_import = false;
             if let Some(types) = self.import_types {
                 for import in types {
                     writeln!(out, "use {};", import)?;
+                    has_written_import = true;
                 }
+            }
+
+            #[cfg(feature = "postgres")]
+            {
+                let mut already_imported_custom_types: HashSet<usize> = HashSet::new();
+                for col in &self.table.column_data {
+                    if let Some(custom_type_idx) = self.custom_type_defs.position(&col.ty.rust_name)
+                    {
+                        if already_imported_custom_types.insert(custom_type_idx) {
+                            if !has_written_import {
+                                writeln!(out, "use diesel::sql_types::*;")?;
+                            }
+                            writeln!(out, "use super::sql_types::{};", col.ty.rust_name)?;
+                            has_written_import = true;
+                        }
+                    }
+                }
+            }
+            #[cfg(not(feature = "postgres"))]
+            let _ = self.custom_type_defs;
+
+            if has_written_import {
                 writeln!(out)?;
             }
 
@@ -199,7 +441,16 @@ impl<'a> Display for TableDefinition<'a> {
                 }
             }
 
+            if self.table.name.rust_name != self.table.name.sql_name {
+                writeln!(
+                    out,
+                    r#"#[sql_name = "{}"]"#,
+                    self.table.name.full_sql_name()
+                )?;
+            }
+
             write!(out, "{} (", self.table.name)?;
+
             for (i, pk) in self.table.primary_key.iter().enumerate() {
                 if i != 0 {
                     write!(out, ", ")?;
@@ -237,11 +488,11 @@ impl<'a> Display for ColumnDefinitions<'a> {
                         writeln!(out, "///{}{}", if d.is_empty() { "" } else { " " }, d)?;
                     }
                 }
-                if let Some(ref rust_name) = column.rust_name {
-                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
-                    writeln!(out, "{} -> {},", rust_name, column.ty)?;
-                } else {
+                if column.rust_name == column.sql_name {
                     writeln!(out, "{} -> {},", column.sql_name, column.ty)?;
+                } else {
+                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
+                    writeln!(out, "{} -> {},", column.rust_name, column.ty)?;
                 }
             }
         }
@@ -254,10 +505,14 @@ struct Joinable<'a>(&'a ForeignKeyConstraint);
 
 impl<'a> Display for Joinable<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let child_table_name = &self.0.child_table.rust_name;
+
+        let parent_table_name = &self.0.parent_table.rust_name;
+
         write!(
             f,
-            "joinable!({} -> {} ({}));",
-            self.0.child_table.name, self.0.parent_table.name, self.0.foreign_key_rust_name,
+            "diesel::joinable!({} -> {} ({}));",
+            child_table_name, parent_table_name, self.0.foreign_key_rust_name,
         )
     }
 }
@@ -324,21 +579,21 @@ impl<'de> Deserialize<'de> for Filtering {
             where
                 V: MapAccess<'de>,
             {
-                let mut only_tables = None;
-                let mut except_tables = None;
-                while let Some((key, value)) = map.next_entry()? {
+                let mut only_tables = None::<Vec<Regex>>;
+                let mut except_tables = None::<Vec<Regex>>;
+                while let Some(key) = map.next_key()? {
                     match key {
                         "only_tables" => {
                             if only_tables.is_some() {
                                 return Err(de::Error::duplicate_field("only_tables"));
                             }
-                            only_tables = Some(value);
+                            only_tables = Some(map.next_value()?);
                         }
                         "except_tables" => {
                             if except_tables.is_some() {
                                 return Err(de::Error::duplicate_field("except_tables"));
                             }
-                            except_tables = Some(value);
+                            except_tables = Some(map.next_value()?);
                         }
                         _ => {
                             return Err(de::Error::unknown_field(
@@ -349,10 +604,10 @@ impl<'de> Deserialize<'de> for Filtering {
                     }
                 }
                 match (only_tables, except_tables) {
-                    (Some(_), Some(_)) => Err(de::Error::duplicate_field("except_tables")),
-                    (Some(w), None) => Ok(Filtering::OnlyTables(w)),
-                    (None, Some(b)) => Ok(Filtering::ExceptTables(b)),
+                    (Some(t), None) => Ok(Filtering::OnlyTables(t)),
+                    (None, Some(t)) => Ok(Filtering::ExceptTables(t)),
                     (None, None) => Ok(Filtering::None),
+                    _ => Err(de::Error::duplicate_field("only_tables except_tables")),
                 }
             }
         }

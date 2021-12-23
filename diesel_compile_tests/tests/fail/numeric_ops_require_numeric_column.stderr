@@ -1,0 +1,9 @@
+error[E0369]: cannot add `columns::name` to `columns::name`
+  --> $DIR/numeric_ops_require_numeric_column.rs:15:31
+   |
+15 |     let _ = users.select(name + name);
+   |                          ---- ^ ---- columns::name
+   |                          |
+   |                          columns::name
+   |
+   = note: an implementation of `std::ops::Add` might be missing for `columns::name`

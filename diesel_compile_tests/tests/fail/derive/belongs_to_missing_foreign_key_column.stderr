@@ -1,0 +1,47 @@
+error[E0412]: cannot find type `bar_id` in module `foo`
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:13:21
+   |
+13 | #[diesel(belongs_to(Bar))]
+   |                     ^^^ not found in `foo`
+
+error[E0425]: cannot find value `bar_id` in module `foo`
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:13:21
+   |
+13 | #[diesel(belongs_to(Bar))]
+   |                     ^^^ not found in `foo`
+
+error[E0412]: cannot find type `bar_id` in module `foo`
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:20:40
+   |
+20 | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
+   |                                        ^^^^^^ not found in `foo`
+
+error[E0425]: cannot find value `bar_id` in module `foo`
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:20:40
+   |
+20 | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
+   |                                        ^^^^^^ not found in `foo`
+
+error[E0412]: cannot find type `bar_id` in module `foo`
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:27:21
+   |
+27 | #[diesel(belongs_to(Bar))]
+   |                     ^^^ not found in `foo`
+
+error[E0425]: cannot find value `bar_id` in module `foo`
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:27:21
+   |
+27 | #[diesel(belongs_to(Bar))]
+   |                     ^^^ not found in `foo`
+
+error[E0412]: cannot find type `bar_id` in module `foo`
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:35:40
+   |
+35 | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
+   |                                        ^^^^^^ not found in `foo`
+
+error[E0425]: cannot find value `bar_id` in module `foo`
+  --> $DIR/belongs_to_missing_foreign_key_column.rs:35:40
+   |
+35 | #[diesel(belongs_to(Bar, foreign_key = bar_id))]
+   |                                        ^^^^^^ not found in `foo`

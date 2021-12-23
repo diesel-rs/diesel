@@ -1,20 +1,15 @@
-#[macro_use]
-extern crate diesel;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_json;
-
 #[cfg(test)]
 use diesel::debug_query;
 use diesel::insert_into;
 #[cfg(test)]
 use diesel::pg::Pg;
 use diesel::prelude::*;
+use serde::Deserialize;
 use std::error::Error;
 use std::time::SystemTime;
 
 mod schema {
-    table! {
+    diesel::table! {
         users {
             id -> Integer,
             name -> Text,
@@ -28,7 +23,7 @@ mod schema {
 use schema::users;
 
 #[derive(Deserialize, Insertable)]
-#[table_name = "users"]
+#[diesel(table_name = users)]
 pub struct UserForm<'a> {
     name: &'a str,
     hair_color: Option<&'a str>,
@@ -43,7 +38,7 @@ struct User {
     updated_at: SystemTime,
 }
 
-pub fn insert_default_values(conn: &PgConnection) -> QueryResult<usize> {
+pub fn insert_default_values(conn: &mut PgConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users).default_values().execute(conn)
@@ -58,7 +53,7 @@ fn examine_sql_from_insert_default_values() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_single_column(conn: &PgConnection) -> QueryResult<usize> {
+pub fn insert_single_column(conn: &mut PgConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users).values(name.eq("Sean")).execute(conn)
@@ -74,7 +69,7 @@ fn examine_sql_from_insert_single_column() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_multiple_columns(conn: &PgConnection) -> QueryResult<usize> {
+pub fn insert_multiple_columns(conn: &mut PgConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -92,7 +87,7 @@ fn examine_sql_from_insert_multiple_columns() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct(conn: &PgConnection) -> Result<(), Box<dyn Error>> {
+pub fn insert_insertable_struct(conn: &mut PgConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"{ "name": "Sean", "hair_color": "Black" }"#;
@@ -115,7 +110,7 @@ fn examine_sql_from_insertable_struct() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct_option(conn: &PgConnection) -> Result<(), Box<dyn Error>> {
+pub fn insert_insertable_struct_option(conn: &mut PgConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"{ "name": "Ruby", "hair_color": null }"#;
@@ -138,7 +133,7 @@ fn examine_sql_from_insertable_struct_option() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_single_column_batch(conn: &PgConnection) -> QueryResult<usize> {
+pub fn insert_single_column_batch(conn: &mut PgConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -157,7 +152,7 @@ fn examine_sql_from_insert_single_column_batch() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_single_column_batch_with_default(conn: &PgConnection) -> QueryResult<usize> {
+pub fn insert_single_column_batch_with_default(conn: &mut PgConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -176,7 +171,7 @@ fn examine_sql_from_insert_single_column_batch_with_default() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_tuple_batch(conn: &PgConnection) -> QueryResult<usize> {
+pub fn insert_tuple_batch(conn: &mut PgConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -202,7 +197,7 @@ fn examine_sql_from_insert_tuple_batch() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_tuple_batch_with_default(conn: &PgConnection) -> QueryResult<usize> {
+pub fn insert_tuple_batch_with_default(conn: &mut PgConnection) -> QueryResult<usize> {
     use schema::users::dsl::*;
 
     insert_into(users)
@@ -228,7 +223,7 @@ fn examine_sql_from_insert_tuple_batch_with_default() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn insert_insertable_struct_batch(conn: &PgConnection) -> Result<(), Box<dyn Error>> {
+pub fn insert_insertable_struct_batch(conn: &mut PgConnection) -> Result<(), Box<dyn Error>> {
     use schema::users::dsl::*;
 
     let json = r#"[
@@ -260,19 +255,19 @@ fn examine_sql_from_insertable_struct_batch() {
 
 #[test]
 fn insert_get_results_batch() {
-    let conn = establish_connection();
-    conn.test_transaction::<_, diesel::result::Error, _>(|| {
+    let conn = &mut establish_connection();
+    conn.test_transaction::<_, diesel::result::Error, _>(|conn| {
         use diesel::select;
         use schema::users::dsl::*;
 
-        let now = select(diesel::dsl::now).get_result::<SystemTime>(&conn)?;
+        let now = select(diesel::dsl::now).get_result::<SystemTime>(conn)?;
 
         let inserted_users = insert_into(users)
             .values(&vec![
                 (id.eq(1), name.eq("Sean")),
                 (id.eq(2), name.eq("Tess")),
             ])
-            .get_results(&conn)?;
+            .get_results(conn)?;
 
         let expected_users = vec![
             User {
@@ -312,16 +307,16 @@ fn examine_sql_from_insert_get_results_batch() {
 
 #[test]
 fn insert_get_result() {
-    let conn = establish_connection();
-    conn.test_transaction::<_, diesel::result::Error, _>(|| {
+    let conn = &mut establish_connection();
+    conn.test_transaction::<_, diesel::result::Error, _>(|conn| {
         use diesel::select;
         use schema::users::dsl::*;
 
-        let now = select(diesel::dsl::now).get_result::<SystemTime>(&conn)?;
+        let now = select(diesel::dsl::now).get_result::<SystemTime>(conn)?;
 
         let inserted_user = insert_into(users)
             .values((id.eq(3), name.eq("Ruby")))
-            .get_result(&conn)?;
+            .get_result(conn)?;
 
         let expected_user = User {
             id: 3,
@@ -351,7 +346,7 @@ fn examine_sql_from_insert_get_result() {
     assert_eq!(sql, debug_query::<Pg, _>(&query).to_string());
 }
 
-pub fn explicit_returning(conn: &PgConnection) -> QueryResult<i32> {
+pub fn explicit_returning(conn: &mut PgConnection) -> QueryResult<i32> {
     use schema::users::dsl::*;
 
     insert_into(users)

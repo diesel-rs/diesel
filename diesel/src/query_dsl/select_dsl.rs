@@ -1,6 +1,5 @@
-use expression::Expression;
-use query_builder::AsQuery;
-use query_source::Table;
+use crate::expression::Expression;
+use crate::query_source::Table;
 
 /// The `select` method
 ///
@@ -8,7 +7,7 @@ use query_source::Table;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `select` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait SelectDsl<Selection: Expression> {
     // FIXME: Once we've refactored the `impl Expression` on `SelectStatement`
     // to not conditionally be `sql_types::Array`, it is probably worthwhile to

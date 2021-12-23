@@ -1,5 +1,5 @@
-use expression::Expression;
-use query_source::Table;
+use crate::expression::Expression;
+use crate::query_source::Table;
 
 /// The `order` method
 ///
@@ -7,7 +7,7 @@ use query_source::Table;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `order` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait OrderDsl<Expr: Expression> {
     /// The type returned by `.order`.
     type Output;
@@ -35,7 +35,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `then_order_by` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait ThenOrderDsl<Expr> {
     /// The type returned by `.then_order_by`.
     type Output;
@@ -56,3 +56,5 @@ where
         self.as_query().then_order_by(expr)
     }
 }
+
+pub trait ValidOrderingForDistinct<D> {}

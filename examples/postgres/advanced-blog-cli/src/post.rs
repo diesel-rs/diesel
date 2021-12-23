@@ -1,11 +1,12 @@
-use auth::User;
 use chrono::NaiveDateTime;
-use comment::Comment;
+use diesel::prelude::*;
 
-use schema::posts;
+use crate::auth::User;
+use crate::comment::Comment;
+use crate::schema::posts;
 
 #[derive(Queryable, Associations, Identifiable)]
-#[belongs_to(User)]
+#[diesel(belongs_to(User))]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -13,6 +14,7 @@ pub struct Post {
     pub body: String,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
+    #[diesel(deserialize_as = Option<NaiveDateTime>)]
     pub status: Status,
 }
 
@@ -21,17 +23,11 @@ pub enum Status {
     Published { at: NaiveDateTime },
 }
 
-use diesel::deserialize::Queryable;
-use diesel::pg::Pg;
-use diesel::sql_types::{Nullable, Timestamp};
-
-impl Queryable<Nullable<Timestamp>, Pg> for Status {
-    type Row = Option<NaiveDateTime>;
-
-    fn build(row: Self::Row) -> Self {
-        match row {
-            Some(at) => Status::Published { at },
+impl From<Option<NaiveDateTime>> for Status {
+    fn from(o: Option<NaiveDateTime>) -> Self {
+        match o {
             None => Status::Draft,
+            Some(at) => Status::Published { at },
         }
     }
 }

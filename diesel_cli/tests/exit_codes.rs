@@ -1,4 +1,4 @@
-use support::project;
+use crate::support::project;
 
 #[test]
 fn errors_dont_cause_panic() {

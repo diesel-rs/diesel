@@ -1,52 +1,120 @@
-use backend::Backend;
-use expression::{Expression, SelectableExpression};
-use query_builder::*;
-use query_source::QuerySource;
+use super::from_clause::AsQuerySource;
+use crate::backend::Backend;
+use crate::expression::{Expression, SelectableExpression};
+use crate::query_builder::*;
+use crate::query_source::QuerySource;
 
-#[derive(Debug, Clone, Copy, QueryId)]
-pub struct DefaultSelectClause;
+#[doc(hidden)]
+pub struct DefaultSelectClause<QS: AsQuerySource> {
+    default_seletion: <QS::QuerySource as QuerySource>::DefaultSelection,
+}
+
+impl<QS> std::fmt::Debug for DefaultSelectClause<QS>
+where
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DefaultSelectClause")
+            .field("default_seletion", &self.default_seletion)
+            .finish()
+    }
+}
+
+impl<QS> Clone for DefaultSelectClause<QS>
+where
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            default_seletion: self.default_seletion.clone(),
+        }
+    }
+}
+
+impl<QS> Copy for DefaultSelectClause<QS>
+where
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: Copy,
+{
+}
+
+impl<QS: AsQuerySource> DefaultSelectClause<QS> {
+    pub(crate) fn new(qs: &QS) -> Self {
+        Self {
+            default_seletion: qs.as_query_source().default_selection(),
+        }
+    }
+}
+
+impl<QS> QueryId for DefaultSelectClause<QS>
+where
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: QueryId,
+{
+    type QueryId = <<QS::QuerySource as QuerySource>::DefaultSelection as QueryId>::QueryId;
+
+    const HAS_STATIC_QUERY_ID: bool =
+        <<QS::QuerySource as QuerySource>::DefaultSelection as QueryId>::HAS_STATIC_QUERY_ID;
+}
+
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct SelectClause<T>(pub T);
 
+/// Specialised variant of `Expression` for select clause types
+///
+/// The difference to the normal `Expression` trait is the query source (`QS`)
+/// generic type parameter. This allows to access the query source in generic code.
 pub trait SelectClauseExpression<QS> {
+    /// The expression represented by the given select clause
+    type Selection;
+    /// SQL type of the select clause
     type SelectClauseSqlType;
 }
 
-impl<T, QS> SelectClauseExpression<QS> for SelectClause<T>
+impl<T, QS> SelectClauseExpression<FromClause<QS>> for SelectClause<T>
 where
+    QS: QuerySource,
     T: SelectableExpression<QS>,
 {
+    type Selection = T;
     type SelectClauseSqlType = T::SqlType;
 }
 
-impl<QS> SelectClauseExpression<QS> for DefaultSelectClause
+impl<T> SelectClauseExpression<NoFromClause> for SelectClause<T>
+where
+    T: SelectableExpression<NoFromClause>,
+{
+    type Selection = T;
+    type SelectClauseSqlType = T::SqlType;
+}
+
+impl<QS> SelectClauseExpression<FromClause<QS>> for DefaultSelectClause<FromClause<QS>>
 where
     QS: QuerySource,
 {
-    type SelectClauseSqlType = <QS::DefaultSelection as Expression>::SqlType;
+    type Selection = QS::DefaultSelection;
+    type SelectClauseSqlType = <Self::Selection as Expression>::SqlType;
 }
 
-pub trait SelectClauseQueryFragment<QS, DB: Backend> {
-    fn walk_ast(&self, source: &QS, pass: AstPass<DB>) -> QueryResult<()>;
-}
-
-impl<T, QS, DB> SelectClauseQueryFragment<QS, DB> for SelectClause<T>
+impl<T, DB> QueryFragment<DB> for SelectClause<T>
 where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, _: &QS, pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.0.walk_ast(pass)
     }
 }
 
-impl<QS, DB> SelectClauseQueryFragment<QS, DB> for DefaultSelectClause
+impl<QS, DB> QueryFragment<DB> for DefaultSelectClause<QS>
 where
     DB: Backend,
-    QS: QuerySource,
-    QS::DefaultSelection: QueryFragment<DB>,
+    QS: AsQuerySource,
+    <QS::QuerySource as QuerySource>::DefaultSelection: QueryFragment<DB>,
 {
-    fn walk_ast(&self, source: &QS, pass: AstPass<DB>) -> QueryResult<()> {
-        source.default_selection().walk_ast(pass)
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.default_seletion.walk_ast(pass)
     }
 }

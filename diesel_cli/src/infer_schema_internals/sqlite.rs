@@ -5,6 +5,7 @@ use diesel::*;
 
 use super::data_structures::*;
 use super::table_data::TableName;
+use crate::print_schema::ColumnSorting;
 
 table! {
     sqlite_master (name) {
@@ -37,9 +38,9 @@ table! {
 }
 
 pub fn load_table_names(
-    connection: &SqliteConnection,
+    connection: &mut SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<dyn Error>> {
+) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>> {
     use self::sqlite_master::dsl::*;
 
     if schema_name.is_some() {
@@ -52,7 +53,7 @@ pub fn load_table_names(
         .select(name)
         .filter(name.not_like("\\_\\_%").escape('\\'))
         .filter(name.not_like("sqlite%"))
-        .filter(sql("type='table'"))
+        .filter(sql::<sql_types::Bool>("type='table'"))
         .order(name)
         .load::<String>(connection)?
         .into_iter()
@@ -61,14 +62,14 @@ pub fn load_table_names(
 }
 
 pub fn load_foreign_key_constraints(
-    connection: &SqliteConnection,
+    connection: &mut SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error>> {
+) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error + Send + Sync + 'static>> {
     let tables = load_table_names(connection, schema_name)?;
     let rows = tables
         .into_iter()
         .map(|child_table| {
-            let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.name);
+            let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.sql_name);
             Ok(sql::<pragma_foreign_key_list::SqlType>(&query)
                 .load::<ForeignKeyListRow>(connection)?
                 .into_iter()
@@ -85,15 +86,25 @@ pub fn load_foreign_key_constraints(
                 .collect())
         })
         .collect::<QueryResult<Vec<Vec<_>>>>()?;
-    Ok(rows.into_iter().flat_map(|x| x).collect())
+    Ok(rows.into_iter().flatten().collect())
 }
 
 pub fn get_table_data(
-    conn: &SqliteConnection,
+    conn: &mut SqliteConnection,
     table: &TableName,
+    column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
-    let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
-    sql::<pragma_table_info::SqlType>(&query).load(conn)
+    let query = format!("PRAGMA TABLE_INFO('{}')", &table.sql_name);
+    let mut result = sql::<pragma_table_info::SqlType>(&query).load(conn)?;
+    match column_sorting {
+        ColumnSorting::OrdinalPosition => {}
+        ColumnSorting::Name => {
+            result.sort_by(|a: &ColumnInformation, b: &ColumnInformation| {
+                a.column_name.partial_cmp(&b.column_name).unwrap()
+            });
+        }
+    };
+    Ok(result)
 }
 
 #[derive(Queryable)]
@@ -118,8 +129,11 @@ struct ForeignKeyListRow {
     _match: String,
 }
 
-pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResult<Vec<String>> {
-    let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
+pub fn get_primary_keys(
+    conn: &mut SqliteConnection,
+    table: &TableName,
+) -> QueryResult<Vec<String>> {
+    let query = format!("PRAGMA TABLE_INFO('{}')", &table.sql_name);
     let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
     Ok(results
         .into_iter()
@@ -127,7 +141,9 @@ pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResu
         .collect())
 }
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<dyn Error>> {
+pub fn determine_column_type(
+    attr: &ColumnInformation,
+) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
     let type_name = attr.type_name.to_lowercase();
     let path = if is_bool(&type_name) {
         String::from("Bool")
@@ -156,7 +172,9 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box
     };
 
     Ok(ColumnType {
-        rust_name: path,
+        schema: None,
+        rust_name: path.clone(),
+        sql_name: path,
         is_array: false,
         is_nullable: attr.nullable,
         is_unsigned: false,
@@ -193,61 +211,61 @@ fn is_double(type_name: &str) -> bool {
 
 #[test]
 fn load_table_names_returns_nothing_when_no_tables_exist() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     assert_eq!(
         Vec::<TableName>::new(),
-        load_table_names(&conn, None).unwrap()
+        load_table_names(&mut conn, None).unwrap()
     );
 }
 
 #[test]
 fn load_table_names_includes_tables_that_exist() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
-    let table_names = load_table_names(&conn, None).unwrap();
+    let table_names = load_table_names(&mut conn, None).unwrap();
     assert!(table_names.contains(&TableName::from_name("users")));
 }
 
 #[test]
 fn load_table_names_excludes_diesel_metadata_tables() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
-    let table_names = load_table_names(&conn, None).unwrap();
+    let table_names = load_table_names(&mut conn, None).unwrap();
     assert!(!table_names.contains(&TableName::from_name("__diesel_metadata")));
 }
 
 #[test]
 fn load_table_names_excludes_sqlite_metadata_tables() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
-    let table_names = load_table_names(&conn, None);
+    let table_names = load_table_names(&mut conn, None);
     assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
 }
 
 #[test]
 fn load_table_names_excludes_views() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
     conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
-    let table_names = load_table_names(&conn, None);
+    let table_names = load_table_names(&mut conn, None);
     assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
 }
 
 #[test]
 fn load_table_names_returns_error_when_given_schema_name() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     // We're testing the error message rather than using #[should_panic]
     // to ensure this is returning an error and not actually panicking.
-    let table_names = load_table_names(&conn, Some("stuff"));
+    let table_names = load_table_names(&mut conn, Some("stuff"));
     match table_names {
         Ok(_) => panic!("Expected load_table_names to return an error"),
-        Err(e) => assert!(e.description().starts_with(
+        Err(e) => assert!(e.to_string().starts_with(
             "sqlite cannot infer \
              schema for databases"
         )),
@@ -256,7 +274,7 @@ fn load_table_names_returns_error_when_given_schema_name() {
 
 #[test]
 fn load_table_names_output_is_ordered() {
-    let conn = SqliteConnection::establish(":memory:").unwrap();
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
     conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
     conn.execute("CREATE TABLE aaa (id INTEGER PRIMARY KEY AUTOINCREMENT)")
@@ -264,7 +282,7 @@ fn load_table_names_output_is_ordered() {
     conn.execute("CREATE TABLE ccc (id INTEGER PRIMARY KEY AUTOINCREMENT)")
         .unwrap();
 
-    let table_names = load_table_names(&conn, None)
+    let table_names = load_table_names(&mut conn, None)
         .unwrap()
         .iter()
         .map(|table| table.to_string())
@@ -274,7 +292,7 @@ fn load_table_names_output_is_ordered() {
 
 #[test]
 fn load_foreign_key_constraints_loads_foreign_keys() {
-    let connection = SqliteConnection::establish(":memory:").unwrap();
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
     connection.execute("CREATE TABLE table_1 (id)").unwrap();
     connection
@@ -301,6 +319,6 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
         foreign_key_rust_name: "fk_two".into(),
         primary_key: "id".into(),
     };
-    let fks = load_foreign_key_constraints(&connection, None).unwrap();
+    let fks = load_foreign_key_constraints(&mut connection, None).unwrap();
     assert_eq!(vec![fk_one, fk_two], fks);
 }

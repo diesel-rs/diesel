@@ -1,86 +1,138 @@
-use std::collections::HashMap;
-use std::marker::PhantomData;
+use std::cell::RefCell;
+use std::rc::Rc;
 
+use super::row::{PrivateSqliteRow, SqliteRow};
 use super::stmt::StatementUse;
-use deserialize::{FromSqlRow, Queryable, QueryableByName};
-use result::Error::DeserializationError;
-use result::QueryResult;
-use sqlite::Sqlite;
+use crate::result::QueryResult;
 
-pub struct StatementIterator<'a, ST, T> {
-    stmt: StatementUse<'a>,
-    _marker: PhantomData<(ST, T)>,
+#[allow(missing_debug_implementations)]
+pub struct StatementIterator<'stmt, 'query> {
+    inner: PrivateStatementIterator<'stmt, 'query>,
+    column_names: Option<Rc<[Option<String>]>>,
+    field_count: usize,
 }
 
-impl<'a, ST, T> StatementIterator<'a, ST, T> {
-    pub fn new(stmt: StatementUse<'a>) -> Self {
-        StatementIterator {
-            stmt: stmt,
-            _marker: PhantomData,
+enum PrivateStatementIterator<'stmt, 'query> {
+    NotStarted(StatementUse<'stmt, 'query>),
+    Started(Rc<RefCell<PrivateSqliteRow<'stmt, 'query>>>),
+    TemporaryEmpty,
+}
+
+impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
+    pub fn new(stmt: StatementUse<'stmt, 'query>) -> StatementIterator<'stmt, 'query> {
+        Self {
+            inner: PrivateStatementIterator::NotStarted(stmt),
+            column_names: None,
+            field_count: 0,
         }
     }
 }
 
-impl<'a, ST, T> Iterator for StatementIterator<'a, ST, T>
-where
-    T: Queryable<ST, Sqlite>,
-{
-    type Item = QueryResult<T>;
+impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
+    type Item = QueryResult<SqliteRow<'stmt, 'query>>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let row = match self.stmt.step() {
-            Ok(row) => row,
-            Err(e) => return Some(Err(e)),
-        };
-        row.map(|mut row| {
-            T::Row::build_from_row(&mut row)
-                .map(T::build)
-                .map_err(DeserializationError)
-        })
-    }
-}
+        use PrivateStatementIterator::{NotStarted, Started, TemporaryEmpty};
 
-pub struct NamedStatementIterator<'a, T> {
-    stmt: StatementUse<'a>,
-    column_indices: HashMap<&'a str, usize>,
-    _marker: PhantomData<T>,
-}
-
-impl<'a, T> NamedStatementIterator<'a, T> {
-    #[allow(clippy::new_ret_no_self)]
-    pub fn new(stmt: StatementUse<'a>) -> QueryResult<Self> {
-        let column_indices = (0..stmt.num_fields())
-            .filter_map(|i| {
-                stmt.field_name(i).map(|column| {
-                    let column = column
-                        .to_str()
-                        .map_err(|e| DeserializationError(e.into()))?;
-                    Ok((column, i))
-                })
-            })
-            .collect::<QueryResult<_>>()?;
-        Ok(NamedStatementIterator {
-            stmt,
-            column_indices,
-            _marker: PhantomData,
-        })
-    }
-}
-
-impl<'a, T> Iterator for NamedStatementIterator<'a, T>
-where
-    T: QueryableByName<Sqlite>,
-{
-    type Item = QueryResult<T>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let row = match self.stmt.step() {
-            Ok(row) => row,
-            Err(e) => return Some(Err(e)),
-        };
-        row.map(|row| {
-            let row = row.into_named(&self.column_indices);
-            T::build(&row).map_err(DeserializationError)
-        })
+        match std::mem::replace(&mut self.inner, TemporaryEmpty) {
+            NotStarted(stmt) => match stmt.step() {
+                Err(e) => Some(Err(e)),
+                Ok(None) => None,
+                Ok(Some(stmt)) => {
+                    let field_count = stmt.column_count() as usize;
+                    self.field_count = field_count;
+                    let inner = Rc::new(RefCell::new(PrivateSqliteRow::Direct(stmt)));
+                    self.inner = Started(inner.clone());
+                    Some(Ok(SqliteRow { inner, field_count }))
+                }
+            },
+            Started(mut last_row) => {
+                // There was already at least one iteration step
+                // We check here if the caller already released the row value or not
+                // by checking if our Rc owns the data or not
+                if let Some(last_row_ref) = Rc::get_mut(&mut last_row) {
+                    // We own the statement, there is no other reference here.
+                    // This means we don't need to copy out values from the sqlite provided
+                    // datastructures for now
+                    // We don't need to use the runtime borrowing system of the RefCell here
+                    // as we have a mutable reference, so all of this below is checked at compile time
+                    if let PrivateSqliteRow::Direct(stmt) =
+                        std::mem::replace(last_row_ref.get_mut(), PrivateSqliteRow::TemporaryEmpty)
+                    {
+                        match stmt.step() {
+                            Err(e) => Some(Err(e)),
+                            Ok(None) => None,
+                            Ok(Some(stmt)) => {
+                                let field_count = self.field_count;
+                                (*last_row_ref.get_mut()) = PrivateSqliteRow::Direct(stmt);
+                                self.inner = Started(last_row.clone());
+                                Some(Ok(SqliteRow {
+                                    inner: last_row,
+                                    field_count,
+                                }))
+                            }
+                        }
+                    } else {
+                        // any other state than `PrivateSqliteRow::Direct` is invalid here
+                        // and should not happen. If this ever happens this is a logic error
+                        // in the code above
+                        unreachable!(
+                            "You've reached an impossible internal state. \
+                             If you ever see this error message please open \
+                             an issue at https://github.com/diesel-rs/diesel \
+                             providing example code how to trigger this error."
+                        )
+                    }
+                } else {
+                    // We don't own the statement. There is another existing reference, likly because
+                    // a user stored the row in some long time container before calling next another time
+                    // In this case we copy out the current values into a temporary store and advance
+                    // the statement iterator internally afterwards
+                    let last_row = {
+                        let mut last_row = match last_row.try_borrow_mut() {
+                            Ok(o) => o,
+                            Err(_e) => {
+                                self.inner = Started(last_row.clone());
+                                return Some(Err(crate::result::Error::DeserializationError(
+                                    "Failed to reborrow row. Try to release any `SqliteField` or `SqliteValue` \
+                                     that exists at this point"
+                                        .into(),
+                                )));
+                            }
+                        };
+                        let last_row = &mut *last_row;
+                        let duplicated = last_row.duplicate(&mut self.column_names);
+                        std::mem::replace(last_row, duplicated)
+                    };
+                    if let PrivateSqliteRow::Direct(stmt) = last_row {
+                        match stmt.step() {
+                            Err(e) => Some(Err(e)),
+                            Ok(None) => None,
+                            Ok(Some(stmt)) => {
+                                let field_count = self.field_count;
+                                let last_row =
+                                    Rc::new(RefCell::new(PrivateSqliteRow::Direct(stmt)));
+                                self.inner = Started(last_row.clone());
+                                Some(Ok(SqliteRow {
+                                    inner: last_row,
+                                    field_count,
+                                }))
+                            }
+                        }
+                    } else {
+                        // any other state than `PrivateSqliteRow::Direct` is invalid here
+                        // and should not happen. If this ever happens this is a logic error
+                        // in the code above
+                        unreachable!(
+                            "You've reached an impossible internal state. \
+                             If you ever see this error message please open \
+                             an issue at https://github.com/diesel-rs/diesel \
+                             providing example code how to trigger this error."
+                        )
+                    }
+                }
+            }
+            TemporaryEmpty => None,
+        }
     }
 }

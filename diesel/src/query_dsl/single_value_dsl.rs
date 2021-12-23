@@ -1,9 +1,9 @@
 use super::methods::LimitDsl;
-use dsl::Limit;
-use expression::grouped::Grouped;
-use expression::subselect::Subselect;
-use query_builder::SelectQuery;
-use sql_types::{IntoNullable, SingleValue};
+use crate::dsl::Limit;
+use crate::expression::grouped::Grouped;
+use crate::expression::subselect::Subselect;
+use crate::query_builder::SelectQuery;
+use crate::sql_types::IntoNullable;
 
 /// The `single_value` method
 ///
@@ -11,7 +11,7 @@ use sql_types::{IntoNullable, SingleValue};
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `single_value` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait SingleValueDsl {
     /// The type returned by `.single_value`.
     type Output;
@@ -20,13 +20,13 @@ pub trait SingleValueDsl {
     fn single_value(self) -> Self::Output;
 }
 
-impl<T, ST> SingleValueDsl for T
+impl<T> SingleValueDsl for T
 where
-    Self: SelectQuery<SqlType = ST> + LimitDsl,
-    ST: IntoNullable,
-    ST::Nullable: SingleValue,
+    Self: SelectQuery + LimitDsl,
+    <Self as SelectQuery>::SqlType: IntoNullable,
 {
-    type Output = Grouped<Subselect<Limit<Self>, ST::Nullable>>;
+    type Output =
+        Grouped<Subselect<Limit<Self>, <<Self as SelectQuery>::SqlType as IntoNullable>::Nullable>>;
 
     fn single_value(self) -> Self::Output {
         Grouped(Subselect::new(self.limit(1)))

@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 
-use support::{database, project};
+use crate::support::{database, project};
 
 #[test]
 fn run_infer_schema_without_docs() {
@@ -18,7 +18,15 @@ fn run_infer_schema() {
 fn run_infer_schema_include() {
     test_print_schema(
         "print_schema_only_tables",
-        vec!["--with-docs", "-w", "users1"],
+        vec!["--with-docs", "-o", "users1"],
+    );
+}
+
+#[test]
+fn run_infer_schema_include_regex() {
+    test_print_schema(
+        "print_schema_only_table_regexes",
+        vec!["--with-docs", "-o", "users1"],
     );
 }
 
@@ -26,13 +34,29 @@ fn run_infer_schema_include() {
 fn run_infer_schema_exclude() {
     test_print_schema(
         "print_schema_except_tables",
-        vec!["--with-docs", "-b", "users1"],
+        vec!["--with-docs", "-e", "users1"],
     );
 }
 
 #[test]
-fn run_infer_schema_order() {
-    test_print_schema("print_schema_order", vec!["--with-docs"]);
+fn run_infer_schema_exclude_regex() {
+    test_print_schema(
+        "print_schema_except_table_regexes",
+        vec!["--with-docs", "-e", "users1"],
+    );
+}
+
+#[test]
+fn run_infer_schema_table_order() {
+    test_print_schema("print_schema_table_order", vec!["--with-docs"]);
+}
+
+#[test]
+fn run_infer_schema_column_order() {
+    test_print_schema(
+        "print_schema_column_order",
+        vec!["--column-sorting", "name"],
+    );
 }
 
 #[test]
@@ -113,6 +137,65 @@ fn print_schema_custom_types() {
         "print_schema_custom_types",
         vec!["--import-types", "foo::*", "--import-types", "bar::*"],
     );
+}
+
+#[test]
+fn print_schema_with_unmappable_names() {
+    test_print_schema("print_schema_with_unmappable_names", vec!["--with-docs"]);
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_with_unmappable_names_and_schema_name() {
+    test_print_schema(
+        "print_schema_with_unmappable_names_and_schema_name",
+        vec!["--with-docs", "--schema", "custom_schema"],
+    )
+}
+
+#[test]
+fn print_schema_with_seperate_unique_constraint_and_foreign_key() {
+    test_print_schema("print_schema_regression_test_for_2623", vec![])
+}
+
+#[test]
+fn schema_file_is_relative_to_project_root() {
+    let p = project("schema_file_is_relative_to_project_root")
+        .folder("foo")
+        .build();
+    let _db = database(&p.database_url());
+
+    p.command("setup").run();
+    p.command("migration").arg("run").cd("foo").run();
+
+    assert!(p.has_file("src/schema.rs"));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_disabling_custom_type_works() {
+    test_print_schema(
+        "print_schema_disabling_custom_type_works",
+        vec!["--no-generate-missing-sql-type-definitions"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_default_is_to_generate_custom_types() {
+    test_print_schema(
+        "print_schema_default_is_to_generate_custom_types",
+        vec!["--with-docs"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_specifying_schema_name_with_custom_type() {
+    test_print_schema(
+        "print_schema_specifying_schema_name_with_custom_type",
+        vec!["--with-docs", "--schema", "custom_schema"],
+    )
 }
 
 #[cfg(feature = "sqlite")]

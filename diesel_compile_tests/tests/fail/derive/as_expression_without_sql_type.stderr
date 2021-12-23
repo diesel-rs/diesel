@@ -1,0 +1,7 @@
+error: At least one `sql_type` is needed for deriving `AsExpression` on a structure.
+ --> $DIR/as_expression_without_sql_type.rs:4:10
+  |
+4 | #[derive(AsExpression)]
+  |          ^^^^^^^^^^^^
+  |
+  = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)

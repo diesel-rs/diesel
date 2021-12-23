@@ -3,14 +3,14 @@
 use super::data_structures::ForeignKeyConstraint;
 use super::inference::get_primary_keys;
 use super::table_data::TableName;
-use database::InferConnection;
+use crate::database::InferConnection;
 
 pub fn remove_unsafe_foreign_keys_for_codegen(
     database_url: &str,
     foreign_keys: &[ForeignKeyConstraint],
     safe_tables: &[TableName],
 ) -> Vec<ForeignKeyConstraint> {
-    let conn = InferConnection::establish(database_url)
+    let mut conn = InferConnection::establish(database_url)
         .expect(&format!("Could not connect to `{}`", database_url));
 
     let duplicates = foreign_keys
@@ -31,7 +31,7 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
         .filter(|fk| safe_tables.contains(&fk.parent_table))
         .filter(|fk| safe_tables.contains(&fk.child_table))
         .filter(|fk| {
-            let pk_columns = get_primary_keys(&conn, &fk.parent_table).expect(&format!(
+            let pk_columns = get_primary_keys(&mut conn, &fk.parent_table).expect(&format!(
                 "Error loading primary keys for `{}`",
                 fk.parent_table
             ));

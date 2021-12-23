@@ -1,0 +1,36 @@
+error[E0599]: the method `save_changes` exists for struct `User`, but its trait bounds were not satisfied
+  --> $DIR/codegen_does_not_add_save_changes_method_on_structs_without_primary_key.rs:26:10
+   |
+15 | pub struct User {
+   | ---------------
+   | |
+   | method `save_changes` not found for this
+   | doesn't satisfy `User: Copy`
+   | doesn't satisfy `User: HasTable`
+   | doesn't satisfy `User: IntoUpdateTarget`
+   | doesn't satisfy `User: diesel::SaveChangesDsl<_>`
+...
+26 |     user.save_changes(&mut connection);
+   |          ^^^^^^^^^^^^ method cannot be called on `User` due to unsatisfied trait bounds
+   |
+   = note: the following trait bounds were not satisfied:
+           `User: HasTable`
+           which is required by `User: diesel::SaveChangesDsl<_>`
+           `User: Copy`
+           which is required by `User: diesel::SaveChangesDsl<_>`
+           `User: IntoUpdateTarget`
+           which is required by `User: diesel::SaveChangesDsl<_>`
+           `User: HasTable`
+           which is required by `&User: diesel::SaveChangesDsl<_>`
+           `&User: IntoUpdateTarget`
+           which is required by `&User: diesel::SaveChangesDsl<_>`
+           `&mut User: HasTable`
+           which is required by `&mut User: diesel::SaveChangesDsl<_>`
+           `<&mut User as diesel::AsChangeset>::Target = _`
+           which is required by `&mut User: diesel::SaveChangesDsl<_>`
+           `&mut User: Copy`
+           which is required by `&mut User: diesel::SaveChangesDsl<_>`
+           `&mut User: diesel::AsChangeset`
+           which is required by `&mut User: diesel::SaveChangesDsl<_>`
+           `&mut User: IntoUpdateTarget`
+           which is required by `&mut User: diesel::SaveChangesDsl<_>`

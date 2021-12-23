@@ -1,52 +1,60 @@
-use std::collections::HashMap;
 use std::ffi::CStr;
+use std::ptr::NonNull;
 use std::slice;
 
 use super::ffi;
+use crate::mysql::connection::bind::Flags;
 
 pub struct StatementMetadata {
-    result: &'static mut ffi::MYSQL_RES,
-    column_indices: HashMap<&'static str, usize>,
+    result: NonNull<ffi::MYSQL_RES>,
 }
 
 impl StatementMetadata {
-    pub fn new(result: &'static mut ffi::MYSQL_RES) -> Self {
-        let mut res = StatementMetadata {
-            column_indices: HashMap::new(),
-            result,
-        };
-        res.populate_column_indices();
-        res
+    pub fn new(result: NonNull<ffi::MYSQL_RES>) -> Self {
+        StatementMetadata { result }
     }
 
-    pub fn fields(&self) -> &[ffi::MYSQL_FIELD] {
+    pub fn fields(&'_ self) -> &'_ [MysqlFieldMetadata<'_>] {
         unsafe {
-            let ptr = self.result as *const _ as *mut _;
-            let num_fields = ffi::mysql_num_fields(ptr);
-            let field_ptr = ffi::mysql_fetch_fields(ptr);
-            slice::from_raw_parts(field_ptr, num_fields as usize)
+            let num_fields = ffi::mysql_num_fields(self.result.as_ptr());
+            let field_ptr = ffi::mysql_fetch_fields(self.result.as_ptr());
+            if field_ptr.is_null() {
+                &[]
+            } else {
+                slice::from_raw_parts(field_ptr as _, num_fields as usize)
+            }
         }
-    }
-
-    pub fn column_indices(&self) -> &HashMap<&str, usize> {
-        &self.column_indices
-    }
-
-    fn populate_column_indices(&mut self) {
-        self.column_indices = self
-            .fields()
-            .iter()
-            .enumerate()
-            .map(|(i, field)| {
-                let c_name = unsafe { CStr::from_ptr(field.name) };
-                (c_name.to_str().unwrap_or_default(), i)
-            })
-            .collect()
     }
 }
 
 impl Drop for StatementMetadata {
     fn drop(&mut self) {
-        unsafe { ffi::mysql_free_result(self.result) };
+        unsafe { ffi::mysql_free_result(self.result.as_mut()) };
+    }
+}
+
+#[repr(transparent)]
+pub struct MysqlFieldMetadata<'a>(ffi::MYSQL_FIELD, std::marker::PhantomData<&'a ()>);
+
+impl<'a> MysqlFieldMetadata<'a> {
+    pub fn field_name(&self) -> Option<&str> {
+        if self.0.name.is_null() {
+            None
+        } else {
+            unsafe {
+                Some(CStr::from_ptr(self.0.name).to_str().expect(
+                    "Expect mysql field names to be UTF-8, because we \
+                     requested UTF-8 encoding on connection setup",
+                ))
+            }
+        }
+    }
+
+    pub fn field_type(&self) -> ffi::enum_field_types {
+        self.0.type_
+    }
+
+    pub(crate) fn flags(&self) -> Flags {
+        Flags::from(self.0.flags)
     }
 }

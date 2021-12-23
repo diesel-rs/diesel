@@ -2,15 +2,15 @@ use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::collections::Bound;
 use std::io::Write;
 
-use deserialize::{self, FromSql, FromSqlRow, Queryable};
-use expression::bound::Bound as SqlBound;
-use expression::AsExpression;
-use pg::{Pg, PgMetadataLookup, PgTypeMetadata, PgValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::*;
+use crate::deserialize::{self, FromSql, Queryable};
+use crate::expression::bound::Bound as SqlBound;
+use crate::expression::AsExpression;
+use crate::pg::{Pg, PgTypeMetadata, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types::*;
 
 // https://github.com/postgres/postgres/blob/113b0045e20d40f726a0a30e33214455e4f1385e/src/include/utils/rangetypes.h#L35-L43
-bitflags! {
+bitflags::bitflags! {
     struct RangeFlags: u8 {
         const EMPTY = 0x01;
         const LB_INC = 0x02;
@@ -23,17 +23,7 @@ bitflags! {
     }
 }
 
-impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
-where
-    T: FromSql<ST, Pg> + Queryable<ST, Pg>,
-{
-    type Row = Self;
-    fn build(row: Self) -> Self {
-        row
-    }
-}
-
-impl<ST, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
+impl<ST: 'static, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -41,7 +31,7 @@ impl<ST, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
     }
 }
 
-impl<'a, ST, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
+impl<'a, ST: 'static, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -49,7 +39,7 @@ impl<'a, ST, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
     }
 }
 
-impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
+impl<ST: 'static, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
     fn as_expression(self) -> Self::Expression {
@@ -57,20 +47,11 @@ impl<ST, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
     }
 }
 
-impl<'a, ST, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
+impl<'a, ST: 'static, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
     fn as_expression(self) -> Self::Expression {
         SqlBound::new(self)
-    }
-}
-
-impl<T, ST> FromSqlRow<Range<ST>, Pg> for (Bound<T>, Bound<T>)
-where
-    (Bound<T>, Bound<T>): FromSql<Range<ST>, Pg>,
-{
-    fn build_from_row<R: ::row::Row<Pg>>(row: &mut R) -> deserialize::Result<Self> {
-        FromSql::<Range<ST>, Pg>::from_sql(row.take())
     }
 }
 
@@ -78,8 +59,7 @@ impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: FromSql<ST, Pg>,
 {
-    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        let value = not_none!(bytes);
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
         let flags: RangeFlags = RangeFlags::from_bits_truncate(bytes.read_u8()?);
         let mut lower_bound = Bound::Unbounded;
@@ -89,7 +69,7 @@ where
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
-            let value = T::from_sql(Some(PgValue::new(elem_bytes, value.get_oid())))?;
+            let value = T::from_sql(PgValue::new(elem_bytes, &value))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
                 Bound::Included(value)
@@ -100,7 +80,7 @@ where
 
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
-            let value = T::from_sql(Some(PgValue::new(bytes, value.get_oid())))?;
+            let value = T::from_sql(PgValue::new(bytes, &value))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {
                 Bound::Included(value)
@@ -113,11 +93,22 @@ where
     }
 }
 
+impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
+where
+    T: FromSql<ST, Pg>,
+{
+    type Row = Self;
+
+    fn build(row: Self) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
 impl<ST, T> ToSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: ToSql<ST, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let mut flags = match self.0 {
             Bound::Included(_) => RangeFlags::LB_INC,
             Bound::Excluded(_) => RangeFlags::empty(),
@@ -132,22 +123,27 @@ where
 
         out.write_u8(flags.bits())?;
 
+        let mut buffer = Vec::new();
+
         match self.0 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
-                let mut buffer = out.with_buffer(Vec::new());
-
-                value.to_sql(&mut buffer)?;
+                {
+                    let mut inner_buffer = Output::new(&mut buffer, out.metadata_lookup());
+                    value.to_sql(&mut inner_buffer)?;
+                }
                 out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
                 out.write_all(&buffer)?;
+                buffer.clear();
             }
             Bound::Unbounded => {}
         }
 
         match self.1 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
-                let mut buffer = out.with_buffer(Vec::new());
-
-                value.to_sql(&mut buffer)?;
+                {
+                    let mut inner_buffer = Output::new(&mut buffer, out.metadata_lookup());
+                    value.to_sql(&mut inner_buffer)?;
+                }
                 out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
                 out.write_all(&buffer)?;
             }
@@ -160,63 +156,46 @@ where
 
 impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
+    ST: 'static,
     (Bound<T>, Bound<T>): ToSql<Range<ST>, Pg>,
 {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<Range<ST>, Pg>::to_sql(self, out)
     }
 }
 
 impl HasSqlType<Int4range> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3904,
-            array_oid: 3905,
-        }
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3904, 3905)
     }
 }
 
 impl HasSqlType<Numrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3906,
-            array_oid: 3907,
-        }
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3906, 3907)
     }
 }
 
 impl HasSqlType<Tsrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3908,
-            array_oid: 3909,
-        }
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3908, 3909)
     }
 }
 
 impl HasSqlType<Tstzrange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3910,
-            array_oid: 3911,
-        }
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3910, 3911)
     }
 }
 
 impl HasSqlType<Daterange> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3912,
-            array_oid: 3913,
-        }
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3912, 3913)
     }
 }
 
 impl HasSqlType<Int8range> for Pg {
-    fn metadata(_: &PgMetadataLookup) -> PgTypeMetadata {
-        PgTypeMetadata {
-            oid: 3926,
-            array_oid: 3927,
-        }
+    fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
+        PgTypeMetadata::new(3926, 3927)
     }
 }

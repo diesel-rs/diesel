@@ -1,4 +1,4 @@
-use query_source::Table;
+use crate::query_source::Table;
 
 /// The `offset` method
 ///
@@ -6,7 +6,7 @@ use query_source::Table;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `offset` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait OffsetDsl {
     /// The type returned by `.offset`.
     type Output;

@@ -1,0 +1,16 @@
+error[E0271]: type mismatch resolving `<Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as AsChangeset>::Target == users::table`
+  --> $DIR/update_requires_column_be_from_same_table.rs:22:33
+   |
+22 |     let command = update(users).set(posts::title.eq("Hello"));
+   |                                 ^^^ expected struct `posts::table`, found struct `users::table`
+
+error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
+  --> $DIR/update_requires_column_be_from_same_table.rs:23:33
+   |
+23 |     let command = update(users).set(name.eq(posts::title));
+   |                                 ^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |
+   = help: the following implementations were found:
+             <users::table as AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+   = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`

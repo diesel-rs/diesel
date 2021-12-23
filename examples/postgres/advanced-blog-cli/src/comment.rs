@@ -1,12 +1,13 @@
 use chrono::NaiveDateTime;
+use diesel::prelude::*;
 
-use auth::User;
-use post::Post;
-use schema::comments;
+use crate::auth::User;
+use crate::post::Post;
+use crate::schema::comments;
 
 #[derive(Queryable, Identifiable, Associations)]
-#[belongs_to(User)]
-#[belongs_to(Post)]
+#[diesel(belongs_to(User))]
+#[diesel(belongs_to(Post))]
 pub struct Comment {
     pub id: i32,
     pub user_id: i32,

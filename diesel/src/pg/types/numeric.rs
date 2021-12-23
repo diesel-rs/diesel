@@ -9,13 +9,12 @@ mod bigdecimal {
     use self::num_bigint::{BigInt, BigUint, Sign};
     use self::num_integer::Integer;
     use self::num_traits::{Signed, ToPrimitive, Zero};
-    use std::io::prelude::*;
 
-    use deserialize::{self, FromSql};
-    use pg::data_types::PgNumeric;
-    use pg::{Pg, PgValue};
-    use serialize::{self, Output, ToSql};
-    use sql_types::Numeric;
+    use crate::deserialize::{self, FromSql};
+    use crate::pg::data_types::PgNumeric;
+    use crate::pg::{Pg, PgValue};
+    use crate::serialize::{self, Output, ToSql};
+    use crate::sql_types::Numeric;
 
     use std::convert::{TryFrom, TryInto};
     use std::error::Error;
@@ -89,7 +88,17 @@ mod bigdecimal {
         #[allow(clippy::assign_op_pattern, clippy::redundant_closure)]
         fn from(decimal: &'a BigDecimal) -> Self {
             let (mut integer, scale) = decimal.as_bigint_and_exponent();
-            let scale = scale as u16;
+
+            // Handling of negative scale
+            let scale = if scale < 0 {
+                for _ in 0..(-scale) {
+                    integer = integer * 10;
+                }
+                0
+            } else {
+                scale as u16
+            };
+
             integer = integer.abs();
 
             // Ensure that the decimal will always lie on a digit boundary
@@ -100,21 +109,10 @@ mod bigdecimal {
 
             let mut digits = ToBase10000(Some(integer)).collect::<Vec<_>>();
             digits.reverse();
-            let digits_after_decimal = scale as u16 / 4 + 1;
+            let digits_after_decimal = scale / 4 + 1;
             let weight = digits.len() as i16 - digits_after_decimal as i16 - 1;
 
-            let unnecessary_zeroes = if weight >= 0 {
-                let index_of_decimal = (weight + 1) as usize;
-                digits
-                    .get(index_of_decimal..)
-                    .expect("enough digits exist")
-                    .iter()
-                    .rev()
-                    .take_while(|i| i.is_zero())
-                    .count()
-            } else {
-                0
-            };
+            let unnecessary_zeroes = digits.iter().rev().take_while(|i| i.is_zero()).count();
 
             let relevant_digits = digits.len() - unnecessary_zeroes;
             digits.truncate(relevant_digits);
@@ -146,14 +144,14 @@ mod bigdecimal {
     }
 
     impl ToSql<Numeric, Pg> for BigDecimal {
-        fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+        fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
             let numeric = PgNumeric::from(self);
-            ToSql::<Numeric, Pg>::to_sql(&numeric, out)
+            ToSql::<Numeric, Pg>::to_sql(&numeric, &mut out.reborrow())
         }
     }
 
     impl FromSql<Numeric, Pg> for BigDecimal {
-        fn from_sql(numeric: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+        fn from_sql(numeric: PgValue<'_>) -> deserialize::Result<Self> {
             PgNumeric::from_sql(numeric)?.try_into()
         }
     }
@@ -185,7 +183,7 @@ mod bigdecimal {
             let expected = PgNumeric::Positive {
                 weight: 1,
                 scale: 0,
-                digits: vec![1, 0],
+                digits: vec![1],
             };
             assert_eq!(expected, decimal.into());
 
@@ -201,7 +199,7 @@ mod bigdecimal {
             let expected = PgNumeric::Positive {
                 weight: 2,
                 scale: 0,
-                digits: vec![1, 0, 0],
+                digits: vec![1],
             };
             assert_eq!(expected, decimal.into());
         }
@@ -277,7 +275,52 @@ mod bigdecimal {
         }
 
         #[test]
-        #[cfg(feature = "unstable")]
+        fn bigdecimal_with_negative_scale_to_pg_numeric_works() {
+            let decimal = BigDecimal::new(50.into(), -2);
+            let expected = PgNumeric::Positive {
+                weight: 0,
+                scale: 0,
+                digits: vec![5000],
+            };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::new(1.into(), -4);
+            let expected = PgNumeric::Positive {
+                weight: 1,
+                scale: 0,
+                digits: vec![1],
+            };
+            assert_eq!(expected, decimal.into());
+        }
+
+        #[test]
+        fn bigdecimal_with_negative_weight_to_pg_numeric_works() {
+            let decimal = BigDecimal::from_str("0.1000000000000000").unwrap();
+            let expected = PgNumeric::Positive {
+                weight: -1,
+                scale: 16,
+                digits: vec![1000],
+            };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("0.00315937").unwrap();
+            let expected = PgNumeric::Positive {
+                weight: -1,
+                scale: 8,
+                digits: vec![31, 5937],
+            };
+            assert_eq!(expected, decimal.into());
+
+            let decimal = BigDecimal::from_str("0.003159370000000000").unwrap();
+            let expected = PgNumeric::Positive {
+                weight: -1,
+                scale: 18,
+                digits: vec![31, 5937],
+            };
+            assert_eq!(expected, decimal.into());
+        }
+
+        #[test]
         fn pg_numeric_to_bigdecimal_works() {
             let expected = BigDecimal::from_str("123.456").unwrap();
             let pg_numeric = PgNumeric::Positive {

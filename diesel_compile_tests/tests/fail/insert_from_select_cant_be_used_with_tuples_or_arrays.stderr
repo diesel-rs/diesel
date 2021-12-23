@@ -1,0 +1,18 @@
+error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::table>` is not satisfied
+  --> $DIR/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:34:17
+   |
+34 |         .values(vec![users, users]);
+   |                 ^^^^^^^^^^^^^^^^^^ the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`
+   |
+   = note: required because of the requirements on the impl of `diesel::Insertable<posts::table>` for `Vec<users::table>`
+   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<users::table as diesel::Insertable<posts::table>>::Values == ValuesClause<_, posts::table>`
+  --> $DIR/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:10
+   |
+37 |         .values((users, users));
+   |          ^^^^^^ expected struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect`, found struct `ValuesClause`
+   |
+   = note: expected struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
+              found struct `ValuesClause<_, posts::table>`
+   = note: required because of the requirements on the impl of `diesel::Insertable<posts::table>` for `(users::table, users::table)`

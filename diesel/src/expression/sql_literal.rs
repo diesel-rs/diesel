@@ -1,23 +1,27 @@
 use std::marker::PhantomData;
 
-use backend::Backend;
-use expression::*;
-use query_builder::*;
-use query_dsl::RunQueryDsl;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::expression::*;
+use crate::query_builder::*;
+use crate::query_dsl::RunQueryDsl;
+use crate::result::QueryResult;
+use crate::sql_types::{DieselNumericOps, SqlType};
 
 #[derive(Debug, Clone, DieselNumericOps)]
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`sql()`] function.
 ///
-/// [`sql()`]: ../dsl/fn.sql.html
+/// [`sql()`]: crate::dsl::sql()
 pub struct SqlLiteral<ST, T = ()> {
     sql: String,
     inner: T,
     _marker: PhantomData<ST>,
 }
 
-impl<ST, T> SqlLiteral<ST, T> {
+impl<ST, T> SqlLiteral<ST, T>
+where
+    ST: TypedExpressionType,
+{
     #[doc(hidden)]
     pub fn new(sql: String, inner: T) -> Self {
         SqlLiteral {
@@ -38,7 +42,6 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
@@ -51,17 +54,17 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::{Integer, Text};
-    /// #     let connection = establish_connection();
+    /// #     use diesel::sql_types::{Integer, Text, Bool};
+    /// #     let connection = &mut establish_connection();
     /// let seans_id = users
     ///     .select(id)
-    ///     .filter(sql("name = ").bind::<Text, _>("Sean"))
-    ///     .get_result(&connection);
+    ///     .filter(sql::<Bool>("name = ").bind::<Text, _>("Sean"))
+    ///     .get_result(connection);
     /// assert_eq!(Ok(1), seans_id);
     ///
     /// let tess_id = sql::<Integer>("SELECT id FROM users WHERE name = ")
     ///     .bind::<Text, _>("Tess")
-    ///     .get_result(&connection);
+    ///     .get_result(connection);
     /// assert_eq!(Ok(2), tess_id);
     /// # }
     /// ```
@@ -69,9 +72,8 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// ### Multiple Bind Params
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    ///
+    /// #
     /// # table! {
     /// #    users {
     /// #        id -> Integer,
@@ -82,25 +84,26 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::{Integer, Text};
-    /// #     let connection = establish_connection();
+    /// #     use diesel::sql_types::{Integer, Text, Bool};
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
-    ///         sql("id > ")
+    ///         sql::<Bool>("id > ")
     ///         .bind::<Integer,_>(1)
     ///         .sql(" AND name <> ")
     ///         .bind::<Text, _>("Ryan")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }
     /// ```
     pub fn bind<BindST, U>(self, bind_value: U) -> UncheckedBind<Self, U::Expression>
     where
+        BindST: SqlType + TypedExpressionType,
         U: AsExpression<BindST>,
     {
         UncheckedBind::new(self, bind_value.as_expression())
@@ -110,7 +113,7 @@ impl<ST, T> SqlLiteral<ST, T> {
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](../fn.sql_query.html) instead.
+    /// [`sql_query`](crate::sql_query()) instead.
     ///
     /// # Safety
     ///
@@ -121,9 +124,8 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    ///
+    /// #
     /// # table! {
     /// #    users {
     /// #        id -> Integer,
@@ -134,17 +136,17 @@ impl<ST, T> SqlLiteral<ST, T> {
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::{Integer, Text};
-    /// #     let connection = establish_connection();
+    /// #     use diesel::sql_types::Bool;
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
-    ///         sql("id > 1")
+    ///         sql::<Bool>("id > 1")
     ///         .sql(" AND name <> 'Ryan'")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }
@@ -154,7 +156,10 @@ impl<ST, T> SqlLiteral<ST, T> {
     }
 }
 
-impl<ST, T> Expression for SqlLiteral<ST, T> {
+impl<ST, T> Expression for SqlLiteral<ST, T>
+where
+    ST: TypedExpressionType,
+{
     type SqlType = ST;
 }
 
@@ -163,7 +168,7 @@ where
     DB: Backend,
     T: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         self.inner.walk_ast(out.reborrow())?;
         out.push_sql(&self.sql);
@@ -177,19 +182,24 @@ impl<ST, T> QueryId for SqlLiteral<ST, T> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<ST, T> Query for SqlLiteral<ST, T> {
+impl<ST, T> Query for SqlLiteral<ST, T>
+where
+    Self: Expression,
+{
     type SqlType = ST;
 }
 
 impl<ST, T, Conn> RunQueryDsl<Conn> for SqlLiteral<ST, T> {}
 
-impl<QS, ST, T> SelectableExpression<QS> for SqlLiteral<ST, T> {}
+impl<QS, ST, T> SelectableExpression<QS> for SqlLiteral<ST, T> where Self: Expression {}
 
-impl<QS, ST, T> AppearsOnTable<QS> for SqlLiteral<ST, T> {}
+impl<QS, ST, T> AppearsOnTable<QS> for SqlLiteral<ST, T> where Self: Expression {}
 
-impl<ST, T> NonAggregate for SqlLiteral<ST, T> {}
+impl<ST, T, GB> ValidGrouping<GB> for SqlLiteral<ST, T> {
+    type IsAggregate = is_aggregate::Never;
+}
 
-/// Use literal SQL in the query builder
+/// Use literal SQL in the query builder.
 ///
 /// Available for when you truly cannot represent something using the expression
 /// DSL. You will need to provide the SQL type of the expression, in addition to
@@ -197,7 +207,9 @@ impl<ST, T> NonAggregate for SqlLiteral<ST, T> {}
 ///
 /// This function is intended for use when you need a small bit of raw SQL in
 /// your query. If you want to write the entire query using raw SQL, use
-/// [`sql_query`](../fn.sql_query.html) instead.
+/// [`sql_query`](crate::sql_query()) instead.
+///
+/// Query parameters can be bound into the literal SQL using [`SqlLiteral::bind()`].
 ///
 /// # Safety
 ///
@@ -208,23 +220,50 @@ impl<ST, T> NonAggregate for SqlLiteral<ST, T> {}
 /// # Examples
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # fn main() {
-/// #     run_test().unwrap();
+/// #     run_test_1().unwrap();
+/// #     run_test_2().unwrap();
 /// # }
 /// #
-/// # fn run_test() -> QueryResult<()> {
+/// # fn run_test_1() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
+/// #     use diesel::sql_types::Bool;
 /// use diesel::dsl::sql;
-/// #     let connection = establish_connection();
-/// let user = users.filter(sql("name = 'Sean'")).first(&connection)?;
+/// #     let connection = &mut establish_connection();
+/// let user = users.filter(sql::<Bool>("name = 'Sean'")).first(connection)?;
 /// let expected = (1, String::from("Sean"));
 /// assert_eq!(expected, user);
 /// #     Ok(())
 /// # }
+/// #
+/// # fn run_test_2() -> QueryResult<()> {
+/// #     use crate::schema::users::dsl::*;
+/// #     use diesel::dsl::sql;
+/// #     use diesel::sql_types::{Bool, Integer, Text};
+/// #     let connection = &mut establish_connection();
+/// #     diesel::insert_into(users)
+/// #         .values(name.eq("Ryan"))
+/// #         .execute(connection).unwrap();
+/// let query = users
+///     .select(name)
+///     .filter(
+///         sql::<Bool>("id > ")
+///         .bind::<Integer,_>(1)
+///         .sql(" AND name <> ")
+///         .bind::<Text, _>("Ryan")
+///     )
+///     .get_results(connection);
+/// let expected = vec!["Tess".to_string()];
+/// assert_eq!(Ok(expected), query);
+/// #     Ok(())
+/// # }
 /// ```
-pub fn sql<ST>(sql: &str) -> SqlLiteral<ST> {
+/// [`SqlLiteral::bind()`]: crate::expression::SqlLiteral::bind()
+pub fn sql<ST>(sql: &str) -> SqlLiteral<ST>
+where
+    ST: TypedExpressionType,
+{
     SqlLiteral::new(sql.into(), ())
 }
 
@@ -232,7 +271,6 @@ pub fn sql<ST>(sql: &str) -> SqlLiteral<ST> {
 #[must_use = "Queries are only executed when calling `load`, `get_result`, or similar."]
 /// Returned by the [`SqlLiteral::bind()`] method when binding a value to a fragment of SQL.
 ///
-/// [`bind()`]: ./struct.SqlLiteral.html#method.bind
 pub struct UncheckedBind<Query, Value> {
     query: Query,
     value: Value,
@@ -246,11 +284,11 @@ where
         UncheckedBind { query, value }
     }
 
-    /// Use literal SQL in the query builder
+    /// Use literal SQL in the query builder.
     ///
     /// This function is intended for use when you need a small bit of raw SQL in
     /// your query. If you want to write the entire query using raw SQL, use
-    /// [`sql_query`](../fn.sql_query.html) instead.
+    /// [`sql_query`](crate::sql_query()) instead.
     ///
     /// # Safety
     ///
@@ -261,9 +299,8 @@ where
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
-    ///
+    /// #
     /// # table! {
     /// #    users {
     /// #        id -> Integer,
@@ -274,18 +311,18 @@ where
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     use diesel::dsl::sql;
-    /// #     use diesel::sql_types::{Integer, Text};
-    /// #     let connection = establish_connection();
+    /// #     use diesel::sql_types::{Integer, Bool};
+    /// #     let connection = &mut establish_connection();
     /// #     diesel::insert_into(users).values(name.eq("Ryan"))
-    /// #           .execute(&connection).unwrap();
+    /// #           .execute(connection).unwrap();
     /// let query = users
     ///     .select(name)
     ///     .filter(
-    ///         sql("id > ")
+    ///         sql::<Bool>("id > ")
     ///         .bind::<Integer,_>(1)
     ///         .sql(" AND name <> 'Ryan'")
     ///     )
-    ///     .get_results(&connection);
+    ///     .get_results(connection);
     /// let expected = vec!["Tess".to_string()];
     /// assert_eq!(Ok(expected), query);
     /// # }
@@ -308,7 +345,7 @@ where
     Query: QueryFragment<DB>,
     Value: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.query.walk_ast(out.reborrow())?;
         self.value.walk_ast(out.reborrow())?;
         Ok(())
@@ -322,7 +359,9 @@ where
     type SqlType = Q::SqlType;
 }
 
-impl<Query, Value> NonAggregate for UncheckedBind<Query, Value> {}
+impl<Query, Value, GB> ValidGrouping<GB> for UncheckedBind<Query, Value> {
+    type IsAggregate = is_aggregate::Never;
+}
 
 impl<QS, Query, Value> SelectableExpression<QS> for UncheckedBind<Query, Value> where
     Self: AppearsOnTable<QS>

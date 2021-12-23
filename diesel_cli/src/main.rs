@@ -1,38 +1,20 @@
 // Built-in Lints
 #![deny(warnings, missing_copy_implementations)]
 // Clippy lints
-#![allow(clippy::option_map_unwrap_or_else, clippy::option_map_unwrap_or)]
+#![allow(clippy::map_unwrap_or)]
 #![warn(
-    clippy::wrong_pub_self_convention,
+    clippy::if_not_else,
+    clippy::items_after_statements,
     clippy::mut_mut,
     clippy::non_ascii_literal,
     clippy::similar_names,
     clippy::unicode_not_nfc,
-    clippy::if_not_else,
-    clippy::items_after_statements,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    clippy::wrong_pub_self_convention
 )]
 #![cfg_attr(test, allow(clippy::result_unwrap_used))]
 
-extern crate chrono;
-#[macro_use]
-extern crate clap;
-#[macro_use]
-extern crate diesel;
-extern crate dotenv;
-extern crate heck;
-extern crate migrations_internals;
-#[macro_use]
-extern crate serde;
-extern crate tempfile;
-extern crate toml;
-#[cfg(feature = "url")]
-extern crate url;
-
 mod config;
-
-#[cfg(feature = "barrel-migrations")]
-extern crate barrel;
 
 mod database_error;
 #[macro_use]
@@ -42,11 +24,17 @@ mod infer_schema_internals;
 mod print_schema;
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 mod query_helper;
+mod validators;
 
 use chrono::*;
 use clap::{ArgMatches, Shell};
-use migrations_internals::{self as migrations, MigrationConnection};
+use diesel::backend::Backend;
+use diesel::migration::MigrationSource;
+use diesel::Connection;
+use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationError, MigrationHarness};
+use regex::Regex;
 use std::any::Any;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fmt::Display;
 use std::io::stdout;
@@ -55,11 +43,10 @@ use std::{env, fs};
 
 use self::config::Config;
 use self::database_error::{DatabaseError, DatabaseResult};
-use migrations::MigrationError;
-use migrations_internals::TIMESTAMP_FORMAT;
+pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 fn main() {
-    use self::dotenv::dotenv;
+    use dotenv::dotenv;
     dotenv().ok();
 
     let matches = cli::build_cli().get_matches();
@@ -75,61 +62,70 @@ fn main() {
     }
 }
 
-// https://github.com/rust-lang-nursery/rust-clippy/issues/2927#issuecomment-405705595
-#[allow(clippy::similar_names)]
-fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+fn run_migration_command(
+    matches: &ArgMatches,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     match matches.subcommand() {
         ("run", Some(_)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            call_with_conn!(
-                database_url,
-                migrations::run_pending_migrations_in_directory(&dir, &mut stdout())
-            )?;
+            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
+            call_with_conn!(database_url, run_migrations_with_output(dir))?;
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("revert", Some(_)) => {
+        ("revert", Some(args)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            call_with_conn!(
-                database_url,
-                migrations::revert_latest_migration_in_directory(&dir)
-            )?;
+            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
+            if args.is_present("REVERT_ALL") {
+                call_with_conn!(database_url, revert_all_migrations_with_output(dir))?;
+            } else {
+                // TODO : remove this logic when upgrading to clap 3.0.
+                // We handle the default_value here instead of doing it
+                // in the cli. This is because arguments with default
+                // values conflict even if not used.
+                // See https://github.com/clap-rs/clap/issues/1605
+                let number = args.value_of("REVERT_NUMBER").unwrap_or("1");
+                for _ in 0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected.") {
+                        match call_with_conn!(
+                            database_url,
+                            revert_migration_with_output(dir.clone())
+                        ) {
+                            Ok(_) => {}
+                            Err(e) if e.is::<MigrationError>() => {
+                                match e.downcast_ref::<MigrationError>() {
+                                    // If n is larger then the actual number of migrations,
+                                    // just stop reverting them
+                                    Some(MigrationError::NoMigrationRun) => break,
+                                    _ => return Err(e),
+                                }
+                            }
+                            Err(e) => return Err(e),
+                        }
+                    }
+            }
+
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("redo", Some(_)) => {
+        ("redo", Some(args)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            call_with_conn!(database_url, redo_latest_migration(&dir));
+            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
+            call_with_conn!(database_url, redo_migrations(dir, args));
             regenerate_schema_if_file_specified(matches)?;
         }
         ("list", Some(_)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            let mut migrations =
-                call_with_conn!(database_url, migrations::mark_migrations_in_directory(&dir))?;
-
-            migrations.sort_by_key(|&(ref m, _)| m.version().to_string());
-
-            println!("Migrations:");
-            for (migration, applied) in migrations {
-                let name = migration
-                    .file_path()
-                    .unwrap()
-                    .file_name()
-                    .unwrap()
-                    .to_string_lossy();
-                let x = if applied { 'X' } else { ' ' };
-                println!("  [{}] {}", x, name);
-            }
+            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
+            call_with_conn!(database_url, list_migrations(dir))?;
         }
         ("pending", Some(_)) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
-            let result = call_with_conn!(
-                database_url,
-                migrations::any_pending_migrations_in_directory(&dir)
-            )?;
+            let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
+            let result =
+                call_with_conn!(database_url, MigrationHarness::has_pending_migration(dir))?;
             println!("{:?}", result);
         }
         ("generate", Some(args)) => {
@@ -142,8 +138,6 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
             fs::create_dir(&migration_dir).unwrap();
 
             match args.value_of("MIGRATION_FORMAT") {
-                #[cfg(feature = "barrel-migrations")]
-                Some("barrel") => ::barrel::integrations::diesel::generate_initial(&migration_dir),
                 Some("sql") => generate_sql_migration(&migration_dir),
                 Some(x) => return Err(format!("Unrecognized migration format `{}`", x).into()),
                 None => unreachable!("MIGRATION_FORMAT has a default value"),
@@ -155,7 +149,7 @@ fn run_migration_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn generate_sql_migration(path: &PathBuf) {
+fn generate_sql_migration(path: &Path) {
     use std::io::Write;
 
     let migration_dir_relative =
@@ -198,6 +192,71 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
         })
 }
 
+fn run_migrations_with_output<Conn, DB>(
+    conn: &mut Conn,
+    migrations: FileBasedMigrations,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+where
+    Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
+    DB: Backend,
+{
+    HarnessWithOutput::write_to_stdout(conn)
+        .run_pending_migrations(migrations)
+        .map(|_| ())
+}
+
+fn revert_all_migrations_with_output<Conn, DB>(
+    conn: &mut Conn,
+    migrations: FileBasedMigrations,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+where
+    Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
+    DB: Backend,
+{
+    HarnessWithOutput::write_to_stdout(conn)
+        .revert_all_migrations(migrations)
+        .map(|_| ())
+}
+
+fn revert_migration_with_output<Conn, DB>(
+    conn: &mut Conn,
+    migrations: FileBasedMigrations,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+where
+    Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
+    DB: Backend,
+{
+    HarnessWithOutput::write_to_stdout(conn)
+        .revert_last_migration(migrations)
+        .map(|_| ())
+}
+
+fn list_migrations<Conn, DB>(
+    conn: &mut Conn,
+    migrations: FileBasedMigrations,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
+where
+    Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
+    DB: Backend,
+{
+    let applied_migrations = conn
+        .applied_migrations()?
+        .into_iter()
+        .collect::<HashSet<_>>();
+
+    let mut migrations = MigrationSource::<DB>::migrations(&migrations)?;
+    migrations.sort_unstable_by(|a, b| a.name().version().cmp(&b.name().version()));
+    println!("Migrations:");
+    for migration in migrations {
+        let applied = applied_migrations.contains(&migration.name().version());
+        let name = migration.name();
+        let x = if applied { 'X' } else { ' ' };
+        println!("  [{}] {}", x, name);
+    }
+
+    Ok(())
+}
+
 /// Checks for a migrations folder in the following order :
 /// 1. From the CLI arguments
 /// 2. From the MIGRATION_DIRECTORY environment variable
@@ -216,14 +275,13 @@ fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
                 Config::read(matches)
                     .unwrap_or_else(handle_error)
                     .migrations_directory?
-                    .dir
-                    .to_owned(),
+                    .dir,
             )
         });
 
     match migrations_dir {
         Some(dir) => Ok(dir),
-        None => migrations::find_migrations_directory(),
+        None => FileBasedMigrations::find_migrations_directory().map(|p| p.path().to_path_buf()),
     }
 }
 
@@ -244,11 +302,32 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
             .join("migrations"),
     };
 
-    if !dir.exists() {
+    if dir.exists() {
+        // This is a cleanup code for migrating from an
+        // older version of diesel_cli that set a `.gitkeep` instead of a `.keep` file.
+        // TODO: remove this after a few releases
+        if let Ok(read_dir) = fs::read_dir(&dir) {
+            if let Some(dir_entry) =
+                read_dir
+                    .filter_map(|entry| entry.ok())
+                    .find(|entry| match entry.file_type() {
+                        Ok(file_type) => file_type.is_file() && entry.file_name() == ".gitkeep",
+                        Err(_) => false,
+                    })
+            {
+                fs::remove_file(dir_entry.path()).unwrap_or_else(|err| {
+                    eprintln!(
+                        "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}",
+                        err
+                    )
+                });
+            }
+        }
+    } else {
         create_migrations_directory(&dir)?;
     }
 
-    Ok(dir.to_owned())
+    Ok(dir)
 }
 
 fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
@@ -262,14 +341,17 @@ fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
     Ok(())
 }
 
-fn run_database_command(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+fn run_database_command(
+    matches: &ArgMatches,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     match matches.subcommand() {
         ("setup", Some(args)) => {
-            let migrations_dir = migrations_dir(args).unwrap_or_else(handle_error);
+            let migrations_dir = migrations_dir(matches).unwrap_or_else(handle_error);
             database::setup_database(args, &migrations_dir)?;
+            regenerate_schema_if_file_specified(matches)?;
         }
         ("reset", Some(args)) => {
-            let migrations_dir = migrations_dir(args).unwrap_or_else(handle_error);
+            let migrations_dir = migrations_dir(matches).unwrap_or_else(handle_error);
             database::reset_database(args, &migrations_dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
@@ -287,59 +369,114 @@ fn generate_bash_completion_command(_: &ArgMatches) {
 }
 
 fn generate_completions_command(matches: &ArgMatches) {
+    use clap::value_t;
+
     let shell = value_t!(matches, "SHELL", Shell).unwrap_or_else(|e| e.exit());
     cli::build_cli().gen_completions_to("diesel", shell, &mut stdout());
 }
 
 /// Looks for a migrations directory in the current path and all parent paths,
 /// and creates one in the same directory as the Cargo.toml if it can't find
-/// one. It also sticks a .gitkeep in the directory so git will pick it up.
-/// Returns a `DatabaseError::CargoTomlNotFound` if no Cargo.toml is found.
+/// one. It also sticks a .keep in the directory so git will pick it up.
+/// Returns a `DatabaseError::ProjectRootNotFound` if no Cargo.toml is found.
 fn create_migrations_directory(path: &Path) -> DatabaseResult<PathBuf> {
     println!("Creating migrations directory at: {}", path.display());
     fs::create_dir(path)?;
-    fs::File::create(path.join(".gitkeep"))?;
+    fs::File::create(path.join(".keep"))?;
     Ok(path.to_owned())
 }
 
 fn find_project_root() -> DatabaseResult<PathBuf> {
-    search_for_cargo_toml_directory(&env::current_dir()?)
+    let current_dir = env::current_dir()?;
+    search_for_directory_containing_file(&current_dir, "diesel.toml")
+        .or_else(|_| search_for_directory_containing_file(&current_dir, "Cargo.toml"))
 }
 
 /// Searches for the directory that holds the project's Cargo.toml, and returns
-/// the path if it found it, or returns a `DatabaseError::CargoTomlNotFound`.
-fn search_for_cargo_toml_directory(path: &Path) -> DatabaseResult<PathBuf> {
-    let toml_path = path.join("Cargo.toml");
+/// the path if it found it, or returns a `DatabaseError::ProjectRootNotFound`.
+fn search_for_directory_containing_file(path: &Path, file: &str) -> DatabaseResult<PathBuf> {
+    let toml_path = path.join(file);
     if toml_path.is_file() {
         Ok(path.to_owned())
     } else {
         path.parent()
-            .map(search_for_cargo_toml_directory)
-            .unwrap_or(Err(DatabaseError::CargoTomlNotFound))
+            .map(|p| search_for_directory_containing_file(p, file))
+            .unwrap_or_else(|| Err(DatabaseError::ProjectRootNotFound(path.into())))
+            .map_err(|_| DatabaseError::ProjectRootNotFound(path.into()))
     }
 }
 
-/// Reverts the most recent migration, and then runs it again, all in a
-/// transaction. If either part fails, the transaction is not committed.
-fn redo_latest_migration<Conn>(conn: &Conn, migrations_dir: &Path)
-where
-    Conn: MigrationConnection + Any,
+/// Reverts all the migrations, and then runs them again, if the `--all`
+/// argument is used. Otherwise it only redoes a specific number of migrations
+/// if the `--number` argument is used.
+/// Migrations are performed in a transaction. If either part fails,
+/// the transaction is not committed.
+fn redo_migrations<Conn, DB>(
+    conn: &mut Conn,
+    migrations_dir: FileBasedMigrations,
+    args: &ArgMatches,
+) where
+    DB: Backend,
+    Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
 {
-    let migration_inner = || {
-        let reverted_version =
-            migrations::revert_latest_migration_in_directory(conn, migrations_dir)?;
-        migrations::run_migration_with_version(
-            conn,
-            migrations_dir,
-            &reverted_version,
-            &mut stdout(),
-        )
+    let migrations_inner = |harness: &mut HarnessWithOutput<Conn, _>| -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+        let reverted_versions = if args.is_present("REDO_ALL") {
+            harness.revert_all_migrations(migrations_dir.clone())?
+        } else {
+            // TODO : remove this logic when upgrading to clap 3.0.
+            // We handle the default_value here instead of doing it
+            // in the cli. This is because arguments with default
+            // values conflict even if not used.
+            // See https://github.com/clap-rs/clap/issues/1605
+            let number = args.value_of("REDO_NUMBER").unwrap_or("1");
+
+            (0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected."))
+                .filter_map(|_|{
+                    match harness.revert_last_migration(migrations_dir.clone()) {
+                        Ok(v) => {
+                            Some(Ok(v))
+                        }
+                        Err(e) if e.is::<MigrationError>() => {
+                            match e.downcast_ref::<MigrationError>() {
+                                // If n is larger then the actual number of migrations,
+                                // just stop reverting them
+                                Some(MigrationError::NoMigrationRun) => None,
+                                _ => Some(Err(e)),
+                            }
+                        }
+                        Err(e) => {
+                            Some(Err(e))
+                        }
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?
+        };
+
+        let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)?
+            .into_iter()
+            .map(|m| (m.name().version().as_owned(), m))
+            .collect::<HashMap<_, _>>();
+
+        let migrations = reverted_versions
+            .into_iter()
+            .map(|v| {
+                migrations
+                    .remove(&v)
+                    .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.as_owned()))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        harness.run_migrations(&migrations)?;
+
+        Ok(())
     };
+
     if should_redo_migration_in_transaction(conn) {
-        conn.transaction(migration_inner)
+        conn.transaction(|conn| migrations_inner(&mut HarnessWithOutput::write_to_stdout(conn)))
             .unwrap_or_else(handle_error);
     } else {
-        migration_inner().unwrap_or_else(handle_error);
+        migrations_inner(&mut HarnessWithOutput::write_to_stdout(conn))
+            .unwrap_or_else(handle_error);
     }
 }
 
@@ -375,9 +512,8 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
     result.join(target_path.strip_prefix(current_path).unwrap())
 }
 
-fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
-    use infer_schema_internals::TableName;
-    use print_schema::*;
+fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+    use crate::print_schema::*;
 
     let database_url = database::database_url(matches);
     let mut config = Config::read(matches)?.print_schema;
@@ -389,31 +525,26 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
     let filter = matches
         .values_of("table-name")
         .unwrap_or_default()
-        .map(|table_name| {
-            if let Some(schema) = config.schema_name() {
-                TableName::new(table_name, schema)
-            } else {
-                table_name.parse().unwrap()
-            }
-        })
-        .collect();
+        .map(|table_name_regex| Regex::new(table_name_regex).map(Into::into))
+        .collect::<Result<_, _>>()
+        .map_err(|e| format!("invalid argument for table filtering regex: {}", e));
 
-    if matches.is_present("whitelist") {
-        eprintln!("The `whitelist` option has been deprecated and renamed to `only-tables`.");
-    }
-
-    if matches.is_present("blacklist") {
-        eprintln!("The `blacklist` option has been deprecated and renamed to `except-tables`.");
-    }
-
-    if matches.is_present("only-tables") || matches.is_present("whitelist") {
-        config.filter = Filtering::OnlyTables(filter)
-    } else if matches.is_present("except-tables") || matches.is_present("blacklist") {
-        config.filter = Filtering::ExceptTables(filter)
+    if matches.is_present("only-tables") {
+        config.filter = Filtering::OnlyTables(filter?)
+    } else if matches.is_present("except-tables") {
+        config.filter = Filtering::ExceptTables(filter?)
     }
 
     if matches.is_present("with-docs") {
         config.with_docs = true;
+    }
+
+    if let Some(sorting) = matches.value_of("column-sorting") {
+        match sorting {
+            "ordinal_position" => config.column_sorting = ColumnSorting::OrdinalPosition,
+            "name" => config.column_sorting = ColumnSorting::Name,
+            _ => return Err(format!("Invalid column sorting mode: {}", sorting).into()),
+        }
     }
 
     if let Some(path) = matches.value_of("patch-file") {
@@ -425,11 +556,17 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
         config.import_types = Some(types);
     }
 
+    if matches.is_present("generate-custom-type-definitions") {
+        config.generate_missing_sql_type_definitions = Some(false);
+    }
+
     run_print_schema(&database_url, &config, &mut stdout())?;
     Ok(())
 }
 
-fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<dyn Error>> {
+fn regenerate_schema_if_file_specified(
+    matches: &ArgMatches,
+) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     use std::io::Read;
 
     let config = Config::read(matches)?;
@@ -457,8 +594,11 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<d
                 .into());
             }
         } else {
-            let file = fs::File::create(path)?;
-            print_schema::output_schema(&database_url, &config.print_schema, file, path)?;
+            use std::io::Write;
+
+            let mut file = fs::File::create(path)?;
+            let schema = print_schema::output_schema(&database_url, &config.print_schema)?;
+            file.write_all(schema.as_bytes())?;
         }
     }
     Ok(())
@@ -468,7 +608,7 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), Box<d
 mod tests {
     extern crate tempfile;
 
-    use database_error::DatabaseError;
+    use crate::database_error::DatabaseError;
 
     use self::tempfile::Builder;
 
@@ -476,7 +616,7 @@ mod tests {
     use std::path::PathBuf;
 
     use super::convert_absolute_path_to_relative;
-    use super::search_for_cargo_toml_directory;
+    use super::search_for_directory_containing_file;
 
     #[test]
     fn toml_directory_find_cargo_toml() {
@@ -488,7 +628,7 @@ mod tests {
 
         assert_eq!(
             Ok(temp_path.clone()),
-            search_for_cargo_toml_directory(&temp_path)
+            search_for_directory_containing_file(&temp_path, "Cargo.toml")
         );
     }
 
@@ -498,8 +638,8 @@ mod tests {
         let temp_path = dir.path().canonicalize().unwrap();
 
         assert_eq!(
-            Err(DatabaseError::CargoTomlNotFound),
-            search_for_cargo_toml_directory(&temp_path)
+            Err(DatabaseError::ProjectRootNotFound(temp_path.clone())),
+            search_for_directory_containing_file(&temp_path, "Cargo.toml")
         );
     }
 

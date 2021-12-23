@@ -1,7 +1,5 @@
-use std::io::Write;
-
-use pg::Pg;
-use serialize::{self, Output};
+use crate::pg::Pg;
+use crate::serialize::{self, Output};
 
 /// Helper trait for writing tuples as named composite types
 ///
@@ -14,29 +12,26 @@ use serialize::{self, Output};
 ///
 /// # Example
 ///
-/// ```no_run
-/// # #[macro_use]
-/// # extern crate diesel;
-/// #
+/// ```
 /// # #[cfg(feature = "postgres")]
 /// # mod the_impl {
+/// #     use diesel::prelude::*;
 /// #     use diesel::pg::Pg;
 /// #     use diesel::serialize::{self, ToSql, Output, WriteTuple};
-/// #     use diesel::sql_types::{Integer, Text};
-/// #     use std::io::Write;
+/// #     use diesel::sql_types::{Integer, Text, SqlType};
 /// #
 ///     #[derive(SqlType)]
-///     #[postgres(type_name = "my_type")]
+///     #[diesel(postgres_type(name = "my_type"))]
 ///     struct MyType;
 ///
 ///     #[derive(Debug)]
 ///     struct MyStruct<'a>(i32, &'a str);
 ///
 ///     impl<'a> ToSql<MyType, Pg> for MyStruct<'a> {
-///         fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+///         fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
 ///             WriteTuple::<(Integer, Text)>::write_tuple(
 ///                 &(self.0, self.1),
-///                 out,
+///                 &mut out.reborrow(),
 ///             )
 ///         }
 ///     }
@@ -45,5 +40,5 @@ use serialize::{self, Output};
 /// ```
 pub trait WriteTuple<ST> {
     /// See trait documentation.
-    fn write_tuple<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result;
+    fn write_tuple(&self, out: &mut Output<'_, '_, Pg>) -> serialize::Result;
 }

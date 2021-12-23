@@ -1,8 +1,10 @@
 //! The SQLite query builder
 
 use super::backend::Sqlite;
-use query_builder::QueryBuilder;
-use result::QueryResult;
+use crate::query_builder::QueryBuilder;
+use crate::result::QueryResult;
+
+mod limit_offset;
 
 /// Constructs SQL queries for use with the SQLite backend
 #[allow(missing_debug_implementations)]

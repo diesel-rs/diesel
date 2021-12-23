@@ -1,6 +1,6 @@
 #[cfg(feature = "uses_information_schema")]
 use diesel::backend::Backend;
-use diesel::deserialize::{FromSqlRow, Queryable};
+use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
@@ -12,12 +12,15 @@ use super::table_data::TableName;
 pub struct ColumnInformation {
     pub column_name: String,
     pub type_name: String,
+    pub type_schema: Option<String>,
     pub nullable: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ColumnType {
+    pub schema: Option<String>,
     pub rust_name: String,
+    pub sql_name: String,
     pub is_array: bool,
     pub is_nullable: bool,
     pub is_unsigned: bool,
@@ -53,13 +56,18 @@ impl fmt::Display for ColumnType {
 #[derive(Debug)]
 pub struct ColumnDefinition {
     pub sql_name: String,
+    pub rust_name: String,
     pub ty: ColumnType,
     pub docs: String,
-    pub rust_name: Option<String>,
 }
 
 impl ColumnInformation {
-    pub fn new<T, U>(column_name: T, type_name: U, nullable: bool) -> Self
+    pub fn new<T, U>(
+        column_name: T,
+        type_name: U,
+        type_schema: Option<String>,
+        nullable: bool,
+    ) -> Self
     where
         T: Into<String>,
         U: Into<String>,
@@ -67,6 +75,7 @@ impl ColumnInformation {
         ColumnInformation {
             column_name: column_name.into(),
             type_name: type_name.into(),
+            type_schema,
             nullable,
         }
     }
@@ -76,24 +85,24 @@ impl ColumnInformation {
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation
 where
     DB: Backend + UsesInformationSchema,
-    (String, String, String): FromSqlRow<ST, DB>,
+    (String, String, Option<String>, String): FromStaticSqlRow<ST, DB>,
 {
-    type Row = (String, String, String);
+    type Row = (String, String, Option<String>, String);
 
-    fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.0, row.1, row.2 == "YES")
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(ColumnInformation::new(row.0, row.1, row.2, row.3 == "YES"))
     }
 }
 
 #[cfg(feature = "sqlite")]
 impl<ST> Queryable<ST, Sqlite> for ColumnInformation
 where
-    (i32, String, String, bool, Option<String>, bool): FromSqlRow<ST, Sqlite>,
+    (i32, String, String, bool, Option<String>, bool): FromStaticSqlRow<ST, Sqlite>,
 {
     type Row = (i32, String, String, bool, Option<String>, bool);
 
-    fn build(row: Self::Row) -> Self {
-        ColumnInformation::new(row.1, row.2, !row.3)
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(ColumnInformation::new(row.1, row.2, None, !row.3))
     }
 }
 

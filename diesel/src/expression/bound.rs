@@ -1,11 +1,11 @@
 use std::marker::PhantomData;
 
 use super::*;
-use backend::Backend;
-use query_builder::*;
-use result::QueryResult;
-use serialize::ToSql;
-use sql_types::HasSqlType;
+use crate::backend::Backend;
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::serialize::ToSql;
+use crate::sql_types::{DieselNumericOps, HasSqlType, SqlType};
 
 #[derive(Debug, Clone, Copy, DieselNumericOps)]
 pub struct Bound<T, U> {
@@ -16,13 +16,16 @@ pub struct Bound<T, U> {
 impl<T, U> Bound<T, U> {
     pub fn new(item: U) -> Self {
         Bound {
-            item: item,
+            item,
             _marker: PhantomData,
         }
     }
 }
 
-impl<T, U> Expression for Bound<T, U> {
+impl<T, U> Expression for Bound<T, U>
+where
+    T: SqlType + TypedExpressionType,
+{
     type SqlType = T;
 }
 
@@ -31,7 +34,7 @@ where
     DB: Backend + HasSqlType<T>,
     U: ToSql<T, DB>,
 {
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_bind_param(&self.item)?;
         Ok(())
     }
@@ -47,4 +50,6 @@ impl<T, U, QS> SelectableExpression<QS> for Bound<T, U> where Bound<T, U>: Appea
 
 impl<T, U, QS> AppearsOnTable<QS> for Bound<T, U> where Bound<T, U>: Expression {}
 
-impl<T, U> NonAggregate for Bound<T, U> {}
+impl<T, U, GB> ValidGrouping<GB> for Bound<T, U> {
+    type IsAggregate = is_aggregate::Never;
+}

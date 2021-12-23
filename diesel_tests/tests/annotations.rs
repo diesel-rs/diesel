@@ -1,33 +1,33 @@
+use crate::schema::*;
 use diesel::sql_types::Text;
 use diesel::*;
-use schema::*;
 
 #[test]
 fn association_where_struct_name_doesnt_match_table_name() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-    #[belongs_to(Post)]
-    #[table_name = "comments"]
+    #[diesel(belongs_to(Post))]
+    #[diesel(table_name = comments)]
     struct OtherComment {
         id: i32,
         post_id: i32,
     }
 
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    let sean = find_user_by_name("Sean", &connection);
+    let sean = find_user_by_name("Sean", connection);
     insert_into(posts::table)
         .values(&sean.new_post("Hello", None))
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
-    let post = posts::table.first::<Post>(&connection).unwrap();
+    let post = posts::table.first::<Post>(connection).unwrap();
     insert_into(comments::table)
         .values(&NewComment(post.id, "comment"))
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     let comment_text = OtherComment::belonging_to(&post)
         .select(comments::text)
-        .first::<String>(&connection);
+        .first::<String>(connection);
     assert_eq!(Ok("comment".into()), comment_text);
 }
 
@@ -35,7 +35,7 @@ fn association_where_struct_name_doesnt_match_table_name() {
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn association_where_parent_and_child_have_underscores() {
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-    #[belongs_to(User)]
+    #[diesel(belongs_to(User))]
     pub struct SpecialPost {
         id: i32,
         user_id: i32,
@@ -43,7 +43,7 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     #[derive(Insertable)]
-    #[table_name = "special_posts"]
+    #[diesel(table_name = special_posts)]
     struct NewSpecialPost {
         user_id: i32,
         title: String,
@@ -59,7 +59,7 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-    #[belongs_to(SpecialPost)]
+    #[diesel(belongs_to(SpecialPost))]
     struct SpecialComment {
         id: i32,
         special_post_id: i32,
@@ -74,27 +74,27 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     #[derive(Insertable)]
-    #[table_name = "special_comments"]
+    #[diesel(table_name = special_comments)]
     struct NewSpecialComment {
         special_post_id: i32,
     }
 
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    let sean = find_user_by_name("Sean", &connection);
+    let sean = find_user_by_name("Sean", connection);
     let new_post = SpecialPost::new(sean.id, "title");
     let special_post: SpecialPost = insert_into(special_posts::table)
         .values(&new_post)
-        .get_result(&connection)
+        .get_result(connection)
         .unwrap();
     let new_comment = SpecialComment::new(special_post.id);
     insert_into(special_comments::table)
         .values(&new_comment)
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     let comment: SpecialComment = SpecialComment::belonging_to(&special_post)
-        .first(&connection)
+        .first(connection)
         .unwrap();
 
     assert_eq!(special_post.id, comment.special_post_id);
@@ -122,8 +122,8 @@ mod associations_can_have_nullable_foreign_keys {
         id: i32,
     }
 
-    #[belongs_to(Foo)]
     #[derive(Identifiable, Associations)]
+    #[diesel(belongs_to(Foo))]
     pub struct Bar {
         id: i32,
         foo_id: Option<i32>,
@@ -133,10 +133,10 @@ mod associations_can_have_nullable_foreign_keys {
 // This module has no test functions, as it's only to test compilation.
 mod multiple_lifetimes_in_insertable_struct_definition {
     #![allow(dead_code)]
-    use schema::posts;
+    use crate::schema::posts;
 
     #[derive(Insertable)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     pub struct MyPost<'a> {
         title: &'a str,
         body: &'a str,
@@ -145,10 +145,10 @@ mod multiple_lifetimes_in_insertable_struct_definition {
 
 mod lifetimes_with_names_other_than_a {
     #![allow(dead_code)]
-    use schema::posts;
+    use crate::schema::posts;
 
     #[derive(Insertable)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     pub struct MyPost<'a, 'b> {
         id: i32,
         title: &'b str,
@@ -158,11 +158,11 @@ mod lifetimes_with_names_other_than_a {
 
 mod insertable_with_cow {
     #![allow(dead_code)]
-    use schema::posts;
+    use crate::schema::posts;
     use std::borrow::Cow;
 
     #[derive(Insertable)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     pub struct MyPost<'a> {
         id: i32,
         title: Cow<'a, str>,
@@ -173,12 +173,12 @@ mod insertable_with_cow {
 mod custom_foreign_keys_are_respected_on_belongs_to {
     #![allow(dead_code)]
 
-    use schema::User;
+    use crate::schema::User;
 
     table! { special_posts { id -> Integer, author_id -> Integer, } }
 
     #[derive(Identifiable, Associations)]
-    #[belongs_to(User, foreign_key = "author_id")]
+    #[diesel(belongs_to(User, foreign_key = author_id))]
     pub struct SpecialPost {
         id: i32,
         author_id: i32,
@@ -187,7 +187,7 @@ mod custom_foreign_keys_are_respected_on_belongs_to {
 
 mod derive_identifiable_with_lifetime {
     #![allow(dead_code)]
-    use schema::posts;
+    use crate::schema::posts;
 
     #[derive(Identifiable)]
     pub struct Post<'a> {
@@ -200,8 +200,8 @@ fn derive_identifiable_with_non_standard_pk() {
     use diesel::associations::*;
 
     #[derive(Identifiable)]
-    #[table_name = "posts"]
-    #[primary_key(foo_id)]
+    #[diesel(table_name = posts)]
+    #[diesel(primary_key(foo_id))]
     #[allow(dead_code)]
     struct Foo<'a> {
         id: i32,
@@ -230,8 +230,8 @@ fn derive_identifiable_with_composite_pk() {
     use diesel::associations::Identifiable;
 
     #[derive(Identifiable)]
-    #[primary_key(foo_id, bar_id)]
-    #[table_name = "posts"]
+    #[diesel(primary_key(foo_id, bar_id))]
+    #[diesel(table_name = posts)]
     #[allow(dead_code)]
     struct Foo {
         id: i32,
@@ -259,13 +259,13 @@ fn derive_identifiable_with_composite_pk() {
 #[test]
 fn derive_insertable_with_option_for_not_null_field_with_default() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser {
         id: Option<i32>,
         name: &'static str,
     }
 
-    let conn = connection();
+    let conn = &mut connection();
     let data = vec![
         NewUser {
             id: None,
@@ -276,12 +276,9 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
             name: "Bob",
         },
     ];
-    assert_eq!(
-        Ok(2),
-        insert_into(users::table).values(&data).execute(&conn)
-    );
+    assert_eq!(Ok(2), insert_into(users::table).values(&data).execute(conn));
 
-    let users = users::table.load::<User>(&conn).unwrap();
+    let users = users::table.load::<User>(conn).unwrap();
     let jim = users.iter().find(|u| u.name == "Jim");
     let bob = users.iter().find(|u| u.name == "Bob");
 
@@ -295,23 +292,20 @@ sql_function!(fn nextval(a: Text) -> Integer);
 #[cfg(feature = "postgres")]
 fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
     #[derive(Insertable)]
-    #[table_name = "users"]
+    #[diesel(table_name = users)]
     struct NewUser {
         id: nextval::HelperType<&'static str>,
         name: &'static str,
     }
 
-    let conn = connection();
+    let conn = &mut connection();
     let data = NewUser {
         id: nextval("users_id_seq"),
         name: "Jim",
     };
-    assert_eq!(
-        Ok(1),
-        insert_into(users::table).values(&data).execute(&conn)
-    );
+    assert_eq!(Ok(1), insert_into(users::table).values(&data).execute(conn));
 
-    let users = users::table.load::<User>(&conn).unwrap();
+    let users = users::table.load::<User>(conn).unwrap();
     let jim = users.iter().find(|u| u.name == "Jim");
 
     assert!(jim.is_some());
@@ -325,16 +319,16 @@ fn nested_queryable_derives() {
         post: Post,
     }
 
-    let conn = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &conn);
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", conn);
     insert_into(posts::table)
         .values(&sean.new_post("Hi", None))
-        .execute(&conn)
+        .execute(conn)
         .unwrap();
-    let post = posts::table.first(&conn).unwrap();
+    let post = posts::table.first(conn).unwrap();
 
     let expected = UserAndPost { user: sean, post };
-    let actual = users::table.inner_join(posts::table).get_result(&conn);
+    let actual = users::table.inner_join(posts::table).get_result(conn);
 
     assert_eq!(Ok(expected), actual);
 }

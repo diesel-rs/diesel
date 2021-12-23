@@ -2,10 +2,13 @@
 name = "all_about_inserts_sqlite"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+edition = "2018"
 
 [dependencies]
-diesel = { version = "1.4.0", features = ["sqlite", "chrono"] }
-serde = "1.0"
-serde_derive = "1.0"
-serde_json = "1.0"
-chrono = "0.4"
+diesel = { version = "2.0.0", path = "../../../diesel", features = ["sqlite", "chrono"] }
+serde = { version = "1.0.130", features = ["derive"] }
+serde_json = "1.0.68"
+chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
+
+[lib]
+doc = false

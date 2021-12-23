@@ -1,0 +1,67 @@
+error[E0271]: type mismatch resolving `<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>> as Query>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+  --> $DIR/insert_from_select_requires_valid_column_list.rs:57:10
+   |
+57 |         .execute(&mut conn)
+   |          ^^^^^^^ expected a tuple with 2 elements, found one with 3 elements
+   |
+   = note: expected tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+   = note: required because of the requirements on the impl of `QueryFragment<_>` for `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `QueryFragment<_>` for `InsertStatement<posts::table, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>>`
+   = note: required because of the requirements on the impl of `ExecuteDsl<_, _>` for `InsertStatement<posts::table, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(users::columns::name, users::columns::hair_color)>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>>`
+
+error[E0271]: type mismatch resolving `<comments::columns::post_id as diesel::query_builder::insert_statement::column_list::ColumnList>::Table == posts::table`
+  --> $DIR/insert_from_select_requires_valid_column_list.rs:63:10
+   |
+63 |         .into_columns(comments::post_id);
+   |          ^^^^^^^^^^^^ expected struct `comments::table`, found struct `posts::table`
+
+error[E0271]: type mismatch resolving `<posts::columns::title as diesel::Expression>::SqlType == diesel::sql_types::Integer`
+  --> $DIR/insert_from_select_requires_valid_column_list.rs:68:10
+   |
+68 |         .into_columns(title);
+   |          ^^^^^^^^^^^^ expected struct `diesel::sql_types::Text`, found struct `diesel::sql_types::Integer`
+
+error[E0277]: the trait bound `(comments::columns::post_id, posts::columns::title): diesel::query_builder::insert_statement::column_list::ColumnList` is not satisfied
+  --> $DIR/insert_from_select_requires_valid_column_list.rs:73:23
+   |
+73 |         .into_columns((comments::post_id, title));
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `diesel::query_builder::insert_statement::column_list::ColumnList` is not implemented for `(comments::columns::post_id, posts::columns::title)`
+   |
+   = help: the following implementations were found:
+             <(T0, T1) as diesel::query_builder::insert_statement::column_list::ColumnList>
+
+error[E0271]: type mismatch resolving `<comments::columns::post_id as diesel::query_builder::insert_statement::column_list::ColumnList>::Table == posts::table`
+  --> $DIR/insert_from_select_requires_valid_column_list.rs:78:10
+   |
+78 |         .into_columns((comments::post_id, comments::body));
+   |          ^^^^^^^^^^^^ expected struct `comments::table`, found struct `posts::table`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_builder::insert_statement::column_list::ColumnList` for `(comments::columns::post_id, comments::columns::body)`
+
+error[E0271]: type mismatch resolving `<comments::columns::body as diesel::query_builder::insert_statement::column_list::ColumnList>::Table == posts::table`
+  --> $DIR/insert_from_select_requires_valid_column_list.rs:78:10
+   |
+78 |         .into_columns((comments::post_id, comments::body));
+   |          ^^^^^^^^^^^^ expected struct `comments::table`, found struct `posts::table`
+   |
+   = note: required because of the requirements on the impl of `diesel::query_builder::insert_statement::column_list::ColumnList` for `(comments::columns::post_id, comments::columns::body)`
+
+error[E0271]: type mismatch resolving `<(posts::columns::user_id, posts::columns::body) as diesel::Expression>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text)`
+  --> $DIR/insert_from_select_requires_valid_column_list.rs:83:10
+   |
+83 |         .into_columns((user_id, body));
+   |          ^^^^^^^^^^^^ expected struct `diesel::sql_types::Nullable`, found struct `diesel::sql_types::Text`
+   |
+   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+
+error[E0271]: type mismatch resolving `<(posts::columns::title, posts::columns::body) as diesel::Expression>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text)`
+  --> $DIR/insert_from_select_requires_valid_column_list.rs:88:10
+   |
+88 |         .into_columns((title, body));
+   |          ^^^^^^^^^^^^ expected struct `diesel::sql_types::Text`, found struct `diesel::sql_types::Integer`
+   |
+   = note: expected tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`

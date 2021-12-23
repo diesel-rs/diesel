@@ -1,9 +1,10 @@
 use super::{HasTable, Identifiable};
-use dsl::{Eq, EqAny, Filter, FindBy};
-use expression::array_comparison::AsInExpression;
-use expression::AsExpression;
-use prelude::*;
-use query_dsl::methods::FilterDsl;
+use crate::dsl::{Eq, EqAny, Filter, FindBy};
+use crate::expression::array_comparison::AsInExpression;
+use crate::expression::AsExpression;
+use crate::prelude::*;
+use crate::query_dsl::methods::FilterDsl;
+use crate::sql_types::SqlType;
 
 use std::borrow::Borrow;
 use std::hash::Hash;
@@ -46,7 +47,6 @@ pub trait BelongsTo<Parent> {
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::{posts, users};
 /// #
@@ -58,7 +58,7 @@ pub trait BelongsTo<Parent> {
 /// #
 /// # #[derive(Debug, PartialEq)]
 /// # #[derive(Identifiable, Queryable, Associations)]
-/// # #[belongs_to(User)]
+/// # #[diesel(belongs_to(User))]
 /// # pub struct Post {
 /// #     id: i32,
 /// #     user_id: i32,
@@ -70,10 +70,10 @@ pub trait BelongsTo<Parent> {
 /// # }
 /// #
 /// # fn run_test() -> QueryResult<()> {
-/// #     let connection = establish_connection();
-/// let users = users::table.load::<User>(&connection)?;
+/// #     let connection = &mut establish_connection();
+/// let users = users::table.load::<User>(connection)?;
 /// let posts = Post::belonging_to(&users)
-///     .load::<Post>(&connection)?
+///     .load::<Post>(connection)?
 ///     .grouped_by(&users);
 /// let data = users.into_iter().zip(posts).collect::<Vec<_>>();
 ///
@@ -100,7 +100,7 @@ pub trait BelongsTo<Parent> {
 ///
 /// See [the module documentation] for more examples
 ///
-/// [the module documentation]: index.html
+/// [the module documentation]: super
 pub trait GroupedBy<'a, Parent>: IntoIterator + Sized {
     /// See the trait documentation.
     fn grouped_by(self, parents: &'a [Parent]) -> Vec<Vec<Self::Item>>;
@@ -140,6 +140,7 @@ where
     Id<&'a Parent>: AsExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
     Child::Table: FilterDsl<Eq<Child::ForeignKeyColumn, Id<&'a Parent>>>,
     Child::ForeignKeyColumn: ExpressionMethods,
+    <Child::ForeignKeyColumn as Expression>::SqlType: SqlType,
 {
     type Output = FindBy<Child::Table, Child::ForeignKeyColumn, Id<&'a Parent>>;
 
@@ -155,6 +156,7 @@ where
     Vec<Id<&'a Parent>>: AsInExpression<<Child::ForeignKeyColumn as Expression>::SqlType>,
     <Child as HasTable>::Table: FilterDsl<EqAny<Child::ForeignKeyColumn, Vec<Id<&'a Parent>>>>,
     Child::ForeignKeyColumn: ExpressionMethods,
+    <Child::ForeignKeyColumn as Expression>::SqlType: SqlType,
 {
     type Output = Filter<Child::Table, EqAny<Child::ForeignKeyColumn, Vec<Id<&'a Parent>>>>;
 

@@ -1,0 +1,23 @@
+error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
+  --> tests/fail/custom_returning_requires_nonaggregate.rs:22:68
+   |
+22 |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(count(id));
+   |                                                                    ^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
+   |
+   = help: the following implementations were found:
+             <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
+             <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
+   = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, ReturningClause<diesel::expression::count::count::count<diesel::sql_types::Integer, columns::id>>>`
+
+error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
+  --> tests/fail/custom_returning_requires_nonaggregate.rs:27:53
+   |
+27 |     let stmt = insert_into(users).values(&new_user).returning((name, count(name)));
+   |                                                     ^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
+   |
+   = help: the following implementations were found:
+             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
+             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
+   = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, columns::name>)`
+   = note: required because of the requirements on the impl of `NonAggregate` for `(columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, columns::name>)`
+   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<(columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, columns::name>)>>`

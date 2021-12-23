@@ -8,7 +8,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
-* `NonAggregate` can now be derived for simple cases.
 * `Connection` and `SimpleConnection` traits are implemented for a broader range
   of `r2d2::PooledConnection<M>` types when the `r2d2` feature is enabled.
 
@@ -18,18 +17,76 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * All expression methods can now be called on expressions of nullable types.
 
 * Added `BoxedSqlQuery`. This allows users to do a variable amount of `.sql` or
-
   `.bind` calls without changing the underlying type.
 
 * Added `.sql` to `SqlQuery` and `UncheckedBind` to allow appending SQL code to
-
   an existing query.
 
+* The `MacAddr` SQL type can now be used without enabling the `network-address`
+  feature.
 
+* Added support for SQLite's `UPSERT`.
+  You can use this feature above SQLite version 3.24.0.
+
+* Added ability to create custom aggregate functions in SQLite.
+
+* Multiple aggregate expressions can now appear together in the same select
+  clause. See [the upgrade notes](#2-0-0-upgrade-non-aggregate) for details.
+
+* `ValidGrouping` has been added to represent whether an expression is valid for
+  a given group by clause, and whether or not it's aggregate. It replaces the
+  functionality of `NonAggregate`. See [the upgrade
+  notes](#2-0-0-upgrade-non-aggregate) for details.
+
+* It is now possible to inspect the type of values returned from the database
+  in such a way to support constructing a dynamic value depending on this type.
+
+* Added a `without-deprecated` feature that unconditionally disables deprecated items.
+  Use this feature flag to verify that none of your dependencies is setting 
+  the `with-deprecated` flag internally.
+
+* Added support for PostgreSQL's `SIMILAR TO` and `NOT SIMILAR TO`.
+
+* Added `#[diesel(serialize_as)]` analogous to `#[diesel(deserialize_as)]`. This allows
+  customization of the serialization behaviour of `Insertable` and `AsChangeset` structs.
+
+* Added support for `GROUP BY` clauses
+
+* Added support for `UNION`, `UNION ALL`, `INTERSECT`, `INTERSECT ALL`, `EXCEPT`, `EXCEPT ALL` clauses
+
+* Added the error position for PostgreSQL errors
+
+* Added ability to create custom collation functions in SQLite.
+
+* Added support for SQLite's `IS` and `IS NOT`.
+
+* Add support for HAVING clauses.
+
+* Added support for SQL functions without arguments for SQLite.
+
+* Diesel CLI will now generate SQL type definitions for SQL types that are not supported by diesel out of the box. It's possible to disable this behavior via the `generate_missing_sql_type_definitions` config option.
+
+* Added an option to `#[derive(Insertable)]` that let you insert `NULL` values instead of `DEFAULT` values for `Option<T>` 
+
+* Added support for the `FROM ONLY <table>` clause in Postgresql
+
+* Added support for all the derive attributes being inside `#[diesel(...)]`
 
 ### Removed
 
 * All previously deprecated items have been removed.
+* Support for `uuid` version < 0.7.0 has been removed.
+* Support for `bigdecimal` < 0.0.13 has been removed.
+* Support for `pq-sys` < 0.4.0 has been removed.
+* Support for `mysqlclient-sys` < 0.2.0 has been removed.
+* Support for `time` types has been removed.
+* Support for `chrono` < 0.4.19 has been removed.
+* The `NonNull` trait for sql types has been removed in favour of the new `SqlType` trait.
+* `no_arg_sql_function!` has been deprecated without replacement.
+  [`sql_function!`][sql-function-2-0-0] can now be used for functions with zero
+  arguments. See [the migration guide][2-0-migration] for more details.
+* Support for `barrel` based migrations has been removed for now. We are happy to
+  add this support back as soon as `barrel` integrates with our new migration framework.
 
 ### Changed
 
@@ -43,17 +100,98 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [raw-value-2-0-0]: http://docs.diesel.rs/diesel/backend/type.RawValue.html
 
 * The type metadata for MySQL has been changed to include sign information. If
-  you are implementing `HasSqlType` for `Mysql` manually, or manipulating a
-  `Mysql::TypeMetadata`, you will need to take the new struct
-  `MysqlTypeMetadata` instead.
+  you are implementing `HasSqlType` for `Mysql` manually, you may need to adjust
+  your implementation to fully use the new unsigned variants in `MysqlType`
 
-* The minimal officially supported rustc version is now 1.36.0
+* The minimal officially supported rustc version is now 1.51.0
 
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
   from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
   somewhere you need to change it to `mysql::MysqlValue` or `pg::PgValue`.
-  For the postgres backend additionally type information where added to the `RawValue`
-  type. This allows to dynamically deserialize `RawValues` in container types.
+
+* The uuidv07 feature was renamed to uuid, due to the removal of support for older uuid versions
+
+* Boxed queries (constructed from `.into_boxed()`) are now `Send`.
+
+* The handling of mixed aggregate values is more robust. Invalid queries such as
+  `.select(max(id) + other_column)` are now correctly rejected, and valid
+  queries such as `.select((count_star(), max(other_column)))` are now correctly
+  accepted. For more details, see [the upgrade notes](#2-0-0-upgrade-non-aggregate).
+
+* `NonAggregate` is now a trait alias for `ValidGrouping<()>` for expressions
+  that are not aggregate. On stable this is a normal trait with a blanket impl,
+  but it should never be implemented directly. With the `unstable` feature, it
+  will use trait aliases which prevent manual implementations.
+
+  Due to language limitations, we cannot make the new trait alias by itself
+  represent everything it used to, so in some rare cases code changes may be
+  required. See [the upgrade notes](#2-0-0-upgrade-non-aggregate) for details.
+
+* Various `__NonExhaustive` variants in different (error-) enums are replaced with
+  `#[non_exhaustive]`. If you matched on one of those variants explicitly you need to
+  introduce a wild card match instead.
+
+* `FromSql::from_sql` is changed to construct value from non nullable database values.
+   To construct a rust value for nullable values use the new `FromSql::from_nullable_sql`
+   method instead.
+
+* Custom sql types are now required to implement the new `SqlType` trait. Diesel will
+  automatically create implementations of that trait for all types having a `#[derive(SqlType)]`
+
+* The workflow for manually implementing support custom types has changed. Implementing
+  `FromSqlRow<ST, DB>` is not required anymore, as this is now implied by implementing
+  `FromSql<ST, DB>`. The requirement of implementing `Queryable<ST, DB>` remains
+  unchanged. For types using `#[derive(FromSqlRow)]` no changes are required as the
+  derive automatically generates the correct code
+
+* The structure of our deserialization trait has changed. Loading values from the database
+  requires now that the result type implements `FromSqlRow<ST, DB>`. Diesel provides wild
+  card implementations for types implementing `Queryable<ST, DB>` or `QueryableByName<DB>`
+  so non generic code does not require any change. For generic code you likely need to
+  replace a trait bound on `Queryable<ST, DB>` with a trait bound on `FromSqlRow<ST, DB>`
+  and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`.
+
+* CLI flags of `only-tables` and `except-tables` are now interpreted as regular expressions.
+  Similary, `only_tabels` and `except_tables` in `diesel.toml` are treated as regular expressions.
+
+* Now you can sort column fields by name with the `column-sorting` option. 
+  It can be set to either `ordinal_position` (default) or `name`.
+  This ensures stable sorting even if columns are removed and re-added.
+
+* The `Queryable<ST,DB>` trait was updated to be made faillible, in order to properly handle
+  cases where you detect a data inconsistency between fields on deserialization
+  (that e.g. was supposed to be made impossible by DB `CHECK`s). The `build` function now
+  returns a
+  [`diesel::deserialize::Result<Self>`](https://docs.diesel.rs/master/diesel/deserialize/type.Result.html)
+  instead of a `Self`.
+
+* `TypeMetadata::MetadataLookup` is now `?Sized`.
+
+* Multiple implementations of `Connection<Backend=Pg>` are now possible 
+  because of the new `PgMetadataLookup` trait.
+
+* For the `Pg` backend, `TypeMetadata::MetadataLookup` has changed to `dyn PgMetadataLookup`.
+
+* Diesel's migration framework was rewritten from the ground. Existing migrations continue to 
+  be compatible with the rewrite, but code calling into `diesel_migrations` requires an update.
+  See the [migration guide](#2-0-0-upgrade-migrations) for details.
+
+* The `#[table_name]` attribute for derive macros can now refer to any path and is no
+  longer limited to identifiers from the current scope.
+
+* Interacting with a database requires a mutable connection.
+
+* `eq_any()` now emits a `= ANY()` expression for the postgresql backend instead of `IN()`
+* `ne_all()` now emits a `!= ALL()` expression for the postgresql backend instead of `NOT IN()`
+* The sqlite backend now uses a single batch insert statement if there are now default values present 
+  in the values clause
+
+* The MySQL connection is using the CLIENT_FOUND_ROWS from now on. This means that updating rows without changing any values will return the number of matched rows (like most other SQL servers do), as opposed to the number of changed rows.
+
+* The definition of `ToSql::to_sql` and `QueryFragment::walk_ast` has changed to allow serializing values without 
+  copying the value itself. This is useful for database backends like sqlite where you can directly share a buffer
+  with the database. Beside of the changed signature, existing impls of this trait should remain unchanged in almost 
+  all cases.
 
 ### Fixed
 
@@ -61,15 +199,174 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   have been. All types in Diesel are now correctly only considered
   non-aggregate if their parts are.
 
+* Offset clauses without limit clauses resulted into invalid sql using the mysql or
+  sqlite backend. Both do not support such clauses without a preceding limit clause.
+  For those backend Diesel does now generate a fake limit clause in case no explicit
+  limit clause was given. As consequence of this change generic query code may
+  require additional trait bounds as requested from the compiler. Third party
+  backends are required to explicitly provide `QueryFragment` impls for
+  `LimitOffsetClause<L, O>` now.
+
+* Nullability requirements are now properly enforced for nested joins.
+  Previously, only the rules for the outer-most join were considered. For
+  example, `users.left_join(posts).left_join(comments)` would allow selecting
+  any columns from `posts`. That will now fail to compile, and any selections
+  from `posts` will need to be made explicitly nullable.
+
+* Diesel CLI will now look for `diesel.toml` to determine the project root
+  before looking for `Cargo.toml`.
+
+* Any relative paths in `diesel.toml` will now be treated as relative to the
+  project root (the directory containing either `diesel.toml` or `Cargo.toml`).
+  They are no longer dependent on the current working directory (for all
+  directories in the same project)
+
+* The SQLite backend is now configured to interpret URIs.
+  See [the SQLite URI documentation] for additional details.
+
+[the SQLite URI documentation]: https://www.sqlite.org/uri.html
+
+* We've refactored our type translation layer for Mysql to handle more types now.
+
+* We've refactored our type level representation of nullable values. This allowed us to
+  fix multiple long standing bugs regarding the correct handling of nullable values in some
+  corner cases (#104, #2274)
+  
+* Parenthesis are now inserted around all infix operations provided by diesel's `ExpressionMethods` traits
+
+* Queries containing a `distinct on` clause check now on compile time that a compatible order clause was set.
+
+* Implementations of custom SQLite SQL functions now check for panics
+
 ### Deprecated
 
 * `diesel_(prefix|postfix|infix)_operator!` have been deprecated. These macros
   are now available without the `diesel_` prefix. With Rust 2018 they can be
   invoked as `diesel::infix_operator!` instead.
 
+* `diesel::pg::upsert` has been deprecated to support upsert queries on more than one backend.
+  Please use `diesel::upsert` instead.
+  
+* `diesel::dsl::any` and `diesel::dsl::all` are now deprecated in 
+   favour of `ExpressionMethods::eq_any()` and `ExpressionMethods::ne_all()`
 
+* All the diesel derive attributes that are not inside `#[diesel(...)]`
+
+### Upgrade Notes
+
+### Derive attributes
+<a name="2-0-0-derive-attributes"></a>
+
+We have updated all of our diesel derive attributes to follow the patterns that are used
+widely in the rust ecosystem. This means that all of them need to be wrapped by `#[diesel()]` now. And you can specify multiple attributes on the same line now separated by `,`.
+
+This is backward compatible and thus all of your old attributes will still work, but with
+warnings. The attributes can be upgraded by either looking at the warnings or by reading
+diesel derive documentation reference.
+
+#### Replacement of `NonAggregate` with `ValidGrouping`
+<a name="2-0-0-upgrade-non-aggregate"></a>
+
+FIXME: This should probably be on the website, but I wanted to document it in
+the PR adding the changes.
+
+Key points:
+
+- Rules for aggregation are now correctly enforced. They match the semantics of
+  PG or MySQL with `ONLY_FULL_GROUP_BY` enabled.
+  - As before, `sql` is the escape hatch if needed.
+  - MySQL users can use `ANY_VALUE`, PG users can use `DISTINCT ON`. Also
+    consider using max/min/etc to get deterministic values.
+- Any `impl NonAggregate` must be replaced with `impl ValidGrouping`
+- For most code, `T: NonAggregate` should continue to work. Unless you're
+  getting a compiler error, you most likely don't need to change it.
+- The full equivalent of what `T: NonAggregate` used to mean is:
+
+      where
+          T: ValidGrouping<()>,
+          T::IsAggregate: MixedGrouping<is_aggregate::No, Output = is_aggregate::No>,
+          is_aggregate::No: MixedGrouping<T::IsAggregate, Output = is_aggregate::No>,
+
+- With `feature = "unstable"`, `T: NonAggregate` implies the first two bounds,
+  but not the third. On stable only the first bound is implied. This is a
+  language limitation.
+- `T: NonAggregate` can still be passed everywhere it could before, but `T:
+  NonAggregate` no longer implies `(OtherType, T): NonAggregate`.
+  - With `feature = "unstable"`, `(T, OtherType): NonAggregate` is still implied.
+
+- In diesel v1.4 sql functions without arguments used the `no_arg_sql_function!` macro,
+  which has since been deprecated. The new `sql_function!` macro supports functions without
+  arguments.
+  
+#### `diesel_migration` rewrite
+<a name = "2-0-0-upgrade-migrations"></a>
+
+Key points:
+
+- Functions for interacting with migrations are not any more free standing 
+  functions in `diesel_migration`. They are provided by anything that implements
+  `MigrationHarness` now. Out of the box implementations are provided by any 
+  connection type (for applying migrations without output) and `HarnessWithOutput`
+  (for applying migrations with output)
+- A set of migrations is now provided by a `MigrationSource`. Diesel brings implementations 
+  `FileBasedMigrations` (for migration scripts in a `migration` folder) and `EmbededMigrations`
+  (for migrations embedded at compile time based on an existing `migration` folder)
+- `embed_migrations!` now creates a value of the type `EmbededMigrations` instead of a module. 
+That means code using `embed_migrations!()` needs to be changed from
+```rust
+embed_migrations!()
+
+fn run_migration(conn: &PgConnection) {
+    embedded_migrations::run(conn).unwrap()
+}
+```
+to 
+```rust
+pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
+
+fn run_migration(conn: &PgConnection) {
+    conn.run_pending_migrations(MIGRATIONS).unwrap();
+}
+```
 
 [2-0-migration]: FIXME write a migration guide
+
+## [1.4.6] - 2021-03-05
+
+### Fixed
+
+* Fixed a use-after-free issue in the `QueryableByName` implementation
+  of our `Sqlite` backend
+* Updated several dependencies
+
+## [1.4.5] - 2020-06-09
+
+### Fixed
+
+* Update several dependencies
+* Fixed an issue where transactions that would fail to commit would leave the connection
+  in a broken non-committed non-rolled-back state.
+* Fix a bug that result in leaking sockets/file descriptors on failed connection attempts
+  for postgresql
+* Fix an incompatibility with newer `libmysqlclient` versions
+* Remove some potential harmful usages of `mem::uninitialized`
+
+## [1.4.4] - 2020-03-22
+
+### Fixed
+
+* Update several dependencies
+* Fixed a bug with printing embeded migrations
+
+## [1.4.3] - 2019-10-11
+
+### Fixed
+
+* Updated several dependencies
+* Fixed an issue where the postgresql backend exploits implementation defined behaviour
+* Fixed issue where rustdoc failed to build the documentation
+* `diesel_derives` and `diesel_migrations` are updated to syn 1.0
+
 
 ## [1.4.2] - 2019-03-19
 
@@ -1677,3 +1974,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 [1.4.0]: https://github.com/diesel-rs/diesel/compare/v1.3.0...v1.4.0
 [1.4.1]: https://github.com/diesel-rs/diesel/compare/v1.4.0...v1.4.1
 [1.4.2]: https://github.com/diesel-rs/diesel/compare/v1.4.1...v1.4.2
+[1.4.3]: https://github.com/diesel-rs/diesel/compare/v1.4.2...v1.4.3
+[1.4.4]: https://github.com/diesel-rs/diesel/compare/v1.4.3...v1.4.4
+[1.4.5]: https://github.com/diesel-rs/diesel/compare/v1.4.4...v1.4.5
+[1.4.6]: https://github.com/diesel-rs/diesel/compare/v1.4.5...v1.4.6

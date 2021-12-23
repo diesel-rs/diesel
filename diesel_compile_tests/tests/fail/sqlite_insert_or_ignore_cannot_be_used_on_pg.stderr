@@ -1,0 +1,11 @@
+error[E0277]: the trait bound `diesel::query_builder::insert_statement::InsertOrIgnore: QueryFragment<Pg>` is not satisfied
+  --> $DIR/sqlite_insert_or_ignore_cannot_be_used_on_pg.rs:21:10
+   |
+21 |         .execute(&mut connection)
+   |          ^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::insert_statement::InsertOrIgnore`
+   |
+   = help: the following implementations were found:
+             <diesel::query_builder::insert_statement::InsertOrIgnore as QueryFragment<Mysql>>
+             <diesel::query_builder::insert_statement::InsertOrIgnore as QueryFragment<Sqlite>>
+   = note: required because of the requirements on the impl of `QueryFragment<Pg>` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, diesel::query_builder::insert_statement::InsertOrIgnore>`
+   = note: required because of the requirements on the impl of `ExecuteDsl<diesel::PgConnection, Pg>` for `InsertStatement<users::table, ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>, diesel::query_builder::insert_statement::InsertOrIgnore>`

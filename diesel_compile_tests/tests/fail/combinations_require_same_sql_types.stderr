@@ -1,0 +1,17 @@
+error[E0271]: type mismatch resolving `<comments::table as AsQuery>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text)`
+  --> $DIR/combinations_require_same_sql_types.rs:30:26
+   |
+30 |     let _ = users::table.union(comments::table);
+   |                          ^^^^^ expected struct `diesel::sql_types::Integer`, found struct `diesel::sql_types::Text`
+   |
+   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Integer)`
+              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+
+error[E0271]: type mismatch resolving `<comments::table as AsQuery>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text)`
+  --> $DIR/combinations_require_same_sql_types.rs:35:19
+   |
+35 |     let _ = union.union(comments::table);
+   |                   ^^^^^ expected struct `diesel::sql_types::Integer`, found struct `diesel::sql_types::Text`
+   |
+   = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Integer)`
+              found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`

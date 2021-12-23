@@ -1,12 +1,12 @@
-use backend::Backend;
-use expression::{Expression, NonAggregate};
-use query_builder::*;
-use result::QueryResult;
-use sql_types;
+use crate::backend::Backend;
+use crate::expression::{Expression, TypedExpressionType, ValidGrouping};
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types;
 
 macro_rules! numeric_operation {
     ($name:ident, $op:expr) => {
-        #[derive(Debug, Copy, Clone, QueryId)]
+        #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
         pub struct $name<Lhs, Rhs> {
             lhs: Lhs,
             rhs: Rhs,
@@ -26,6 +26,7 @@ macro_rules! numeric_operation {
             Lhs: Expression,
             Lhs::SqlType: sql_types::ops::$name,
             Rhs: Expression,
+            <Lhs::SqlType as sql_types::ops::$name>::Output: TypedExpressionType,
         {
             type SqlType = <Lhs::SqlType as sql_types::ops::$name>::Output;
         }
@@ -36,7 +37,8 @@ macro_rules! numeric_operation {
             Lhs: QueryFragment<DB>,
             Rhs: QueryFragment<DB>,
         {
-            fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+            fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()>
+            {
                 out.push_sql("(");
                 self.lhs.walk_ast(out.reborrow())?;
                 out.push_sql($op);
@@ -47,15 +49,6 @@ macro_rules! numeric_operation {
         }
 
         impl_selectable_expression!($name<Lhs, Rhs>);
-
-        impl<Lhs, Rhs> NonAggregate for $name<Lhs, Rhs>
-        where
-            Lhs: NonAggregate,
-            Rhs: NonAggregate,
-            $name<Lhs, Rhs>: Expression,
-        {
-        }
-
         generic_numeric_expr!($name, A, B);
     };
 }

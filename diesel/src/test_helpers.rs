@@ -1,6 +1,6 @@
 extern crate dotenv;
 
-use prelude::*;
+use crate::prelude::*;
 
 cfg_if! {
     if #[cfg(feature = "sqlite")] {
@@ -27,7 +27,7 @@ cfg_if! {
         pub type TestConnection = MysqlConnection;
 
         pub fn connection() -> TestConnection {
-            let conn = connection_no_transaction();
+            let mut conn = connection_no_transaction();
             conn.begin_test_transaction().unwrap();
             conn
         }
@@ -53,9 +53,14 @@ cfg_if! {
 
 #[cfg(feature = "postgres")]
 pub fn pg_connection() -> PgConnection {
-    let conn = PgConnection::establish(&pg_database_url()).unwrap();
+    let mut conn = pg_connection_no_transaction();
     conn.begin_test_transaction().unwrap();
     conn
+}
+
+#[cfg(feature = "postgres")]
+pub fn pg_connection_no_transaction() -> PgConnection {
+    PgConnection::establish(&pg_database_url()).unwrap()
 }
 
 #[cfg(feature = "postgres")]

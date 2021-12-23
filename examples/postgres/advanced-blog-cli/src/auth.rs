@@ -1,9 +1,8 @@
 use bcrypt::*;
 use diesel::prelude::*;
 use diesel::{self, insert_into};
-use dotenv;
 
-use schema::users;
+use crate::schema::users;
 
 #[derive(Debug)]
 pub enum AuthenticationError {
@@ -35,20 +34,20 @@ pub struct UserWithPassword {
     password: String,
 }
 
-pub fn current_user_from_env(conn: &PgConnection) -> Result<Option<User>, AuthenticationError> {
+pub fn current_user_from_env(conn: &mut PgConnection) -> Result<Option<User>, AuthenticationError> {
     let username = get_username()?;
     let password = get_password()?;
     find_user(conn, &username, &password)
 }
 
-pub fn register_user_from_env(conn: &PgConnection) -> Result<User, AuthenticationError> {
+pub fn register_user_from_env(conn: &mut PgConnection) -> Result<User, AuthenticationError> {
     let username = get_username()?;
     let password = get_password()?;
     register_user(conn, &username, &password)
 }
 
 fn find_user(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     username: &str,
     password: &str,
 ) -> Result<Option<User>, AuthenticationError> {
@@ -71,7 +70,7 @@ fn find_user(
 }
 
 fn register_user(
-    conn: &PgConnection,
+    conn: &mut PgConnection,
     username: &str,
     password: &str,
 ) -> Result<User, AuthenticationError> {
@@ -98,11 +97,10 @@ fn if_not_present<T>(
     res: Result<T, dotenv::Error>,
     on_not_present: AuthenticationError,
 ) -> Result<T, AuthenticationError> {
-    use dotenv::ErrorKind::EnvVar;
     use std::env::VarError::NotPresent;
 
     res.map_err(|e| match e {
-        dotenv::Error(EnvVar(NotPresent), _) => on_not_present,
+        dotenv::Error::EnvVar(NotPresent) => on_not_present,
         e => AuthenticationError::EnvironmentError(e),
     })
 }
@@ -110,8 +108,9 @@ fn if_not_present<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use test_helpers::*;
+    use crate::test_helpers::*;
 
+    use assert_matches::assert_matches;
     use std::env;
 
     #[test]
@@ -119,9 +118,9 @@ mod tests {
         let _guard = this_test_modifies_env();
         env::remove_var("BLOG_USERNAME");
 
-        let conn = connection();
+        let conn = &mut connection();
 
-        assert_matches!(current_user_from_env(&conn), Err(NoUsernameSet));
+        assert_matches!(current_user_from_env(conn), Err(NoUsernameSet));
     }
 
     #[test]
@@ -130,34 +129,34 @@ mod tests {
         env::remove_var("BLOG_PASSWORD");
         env::set_var("BLOG_USERNAME", "sgrif");
 
-        let conn = connection();
+        let conn = &mut connection();
 
-        assert_matches!(current_user_from_env(&conn), Err(NoPasswordSet));
+        assert_matches!(current_user_from_env(conn), Err(NoPasswordSet));
     }
 
     #[test]
     fn current_user_returns_none_when_no_user_exists_with_username() {
-        let conn = connection();
+        let conn = &mut connection();
 
-        assert_matches!(find_user(&conn, "sgrif", "hunter2"), Ok(None));
+        assert_matches!(find_user(conn, "sgrif", "hunter2"), Ok(None));
     }
 
     #[test]
     fn current_user_returns_the_user_if_it_has_the_same_password() {
-        let conn = connection();
+        let conn = &mut connection();
 
-        let expected_user = register_user(&conn, "sgrif", "hunter2").unwrap();
-        let user = find_user(&conn, "sgrif", "hunter2").unwrap();
+        let expected_user = register_user(conn, "sgrif", "hunter2").unwrap();
+        let user = find_user(conn, "sgrif", "hunter2").unwrap();
 
         assert_eq!(Some(expected_user), user);
     }
 
     #[test]
     fn current_user_fails_if_password_does_not_match() {
-        let conn = connection();
+        let conn = &mut connection();
 
-        register_user(&conn, "sgrif", "letmein").unwrap();
-        let result = find_user(&conn, "sgrif", "hunter2");
+        register_user(conn, "sgrif", "letmein").unwrap();
+        let result = find_user(conn, "sgrif", "hunter2");
 
         assert_matches!(result, Err(IncorrectPassword));
     }

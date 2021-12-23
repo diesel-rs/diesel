@@ -1,35 +1,36 @@
-use expression::Expression;
-use query_builder::{AsQuery, Query};
-use query_source::Table;
+use crate::dsl;
+use crate::expression::Expression;
+use crate::expression::TypedExpressionType;
+use crate::expression::ValidGrouping;
+use crate::query_builder::FromClause;
+use crate::query_builder::{AsQuery, SelectStatement};
+use crate::query_source::Table;
 
-/// This trait is not yet part of Diesel's public API. It may change in the
-/// future without a major version bump.
+/// The `group_by` method
 ///
-/// This trait exists as a stop-gap for users who need to use `GROUP BY` in
-/// their queries, so that they are not forced to drop entirely to raw SQL. The
-/// arguments to `group_by` are not checked, nor is the select statement
-/// forced to be valid.
+/// This trait should not be relied on directly by most apps. Its behavior is
+/// provided by [`QueryDsl`]. However, you may need a where clause on this trait
+/// to call `group_by` from generic code.
 ///
-/// Since Diesel otherwise assumes that you have no `GROUP BY` clause (which
-/// would mean that mixing an aggregate and non aggregate expression in the same
-/// query is an error), you may need to use `sql` for your select clause.
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait GroupByDsl<Expr: Expression> {
     /// The type returned by `.group_by`
-    type Output: Query;
+    type Output;
 
     /// See the trait documentation.
-    fn group_by(self, expr: Expr) -> Self::Output;
+    fn group_by(self, expr: Expr) -> dsl::GroupBy<Self, Expr>;
 }
 
 impl<T, Expr> GroupByDsl<Expr> for T
 where
     Expr: Expression,
-    T: Table + AsQuery,
-    T::Query: GroupByDsl<Expr>,
+    T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
+    T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
+    T::SqlType: TypedExpressionType,
 {
-    type Output = <T::Query as GroupByDsl<Expr>>::Output;
+    type Output = dsl::GroupBy<SelectStatement<FromClause<T>>, Expr>;
 
-    fn group_by(self, expr: Expr) -> Self::Output {
+    fn group_by(self, expr: Expr) -> dsl::GroupBy<Self, Expr> {
         self.as_query().group_by(expr)
     }
 }

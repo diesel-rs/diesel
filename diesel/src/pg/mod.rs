@@ -6,23 +6,30 @@
 
 pub mod expression;
 pub mod types;
-pub mod upsert;
 
-mod backend;
+pub(crate) mod backend;
+#[cfg(feature = "postgres")]
 mod connection;
 mod metadata_lookup;
-mod query_builder;
+pub(crate) mod query_builder;
 pub(crate) mod serialize;
 mod transaction;
 mod value;
 
-pub use self::backend::{Pg, PgTypeMetadata};
+pub use self::backend::{FailedToLookupTypeError, Pg, PgTypeMetadata};
+#[cfg(feature = "postgres")]
 pub use self::connection::PgConnection;
-pub use self::metadata_lookup::PgMetadataLookup;
-pub use self::query_builder::DistinctOnClause;
-pub use self::query_builder::PgQueryBuilder;
+#[doc(hidden)]
+pub use self::metadata_lookup::{
+    GetPgMetadataCache, PgMetadataCache, PgMetadataCacheKey, PgMetadataLookup,
+};
+pub use self::query_builder::{DistinctOnClause, PgQueryBuilder};
 pub use self::transaction::TransactionBuilder;
-pub use self::value::PgValue;
+pub use self::value::{PgValue, TypeOidLookup};
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(since = "2.0.0", note = "Use `diesel::upsert` instead")]
+pub use crate::upsert;
 
 /// Data structures for PG types which have no corresponding Rust type
 ///

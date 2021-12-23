@@ -34,7 +34,7 @@ impl Database {
              AND name = '{}')",
             table
         )))
-        .get_result(&self.conn())
+        .get_result(&mut self.conn())
         .unwrap()
     }
 

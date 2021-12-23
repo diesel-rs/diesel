@@ -1,14 +1,15 @@
-use backend::Backend;
-use expression::coerce::Coerce;
-use expression::{AsExpression, Expression};
-use query_builder::*;
-use result::QueryResult;
-use sql_types::*;
+use crate::backend::Backend;
+use crate::expression::coerce::Coerce;
+use crate::expression::functions::sql_function;
+use crate::expression::{AsExpression, Expression, ValidGrouping};
+use crate::query_builder::*;
+use crate::result::QueryResult;
+use crate::sql_types::*;
 
 /// Represents the SQL `CURRENT_TIMESTAMP` constant. This is equivalent to the
 /// `NOW()` function on backends that support it.
 #[allow(non_camel_case_types)]
-#[derive(Debug, Copy, Clone, QueryId, NonAggregate)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
 pub struct now;
 
 impl Expression for now {
@@ -16,7 +17,7 @@ impl Expression for now {
 }
 
 impl<DB: Backend> QueryFragment<DB> for now {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("CURRENT_TIMESTAMP");
         Ok(())
     }
@@ -33,7 +34,6 @@ sql_function! {
     /// # Examples
 
     /// ```ignore
-    /// # #[macro_use] extern crate diesel;
     /// # extern crate chrono;
     /// # include!("../../doctest_setup.rs");
     /// # use diesel::dsl::*;
@@ -66,6 +66,35 @@ impl AsExpression<Timestamptz> for now {
 #[cfg(feature = "postgres")]
 impl AsExpression<Nullable<Timestamptz>> for now {
     type Expression = Coerce<now, Nullable<Timestamptz>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}
+
+/// Represents the SQL `CURRENT_DATE` constant.
+#[allow(non_camel_case_types)]
+#[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
+pub struct today;
+
+impl Expression for today {
+    type SqlType = Date;
+}
+
+impl<DB: Backend> QueryFragment<DB> for today {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql("CURRENT_DATE");
+        Ok(())
+    }
+}
+
+impl_selectable_expression!(today);
+
+operator_allowed!(today, Add, add);
+operator_allowed!(today, Sub, sub);
+
+impl AsExpression<Nullable<Date>> for today {
+    type Expression = Coerce<today, Nullable<Date>>;
 
     fn as_expression(self) -> Self::Expression {
         Coerce::new(self)

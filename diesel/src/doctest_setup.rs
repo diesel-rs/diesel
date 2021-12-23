@@ -1,10 +1,7 @@
-extern crate dotenv;
-#[macro_use] extern crate cfg_if;
-
 use diesel::prelude::*;
-use self::dotenv::dotenv;
+use dotenv::dotenv;
 
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "postgres")] {
         #[allow(dead_code)]
         type DB = diesel::pg::Pg;
@@ -15,19 +12,20 @@ cfg_if! {
         }
 
         fn connection_no_data() -> PgConnection {
-            let connection = connection_no_transaction();
+            let mut connection = connection_no_transaction();
             connection.begin_test_transaction().unwrap();
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS comments CASCADE").unwrap();
-
+            connection.execute("DROP TABLE IF EXISTS brands CASCADE").unwrap();
+       
             connection
         }
 
         #[allow(dead_code)]
         fn establish_connection() -> PgConnection {
-            let connection = connection_no_data();
+            let mut connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
                 id SERIAL PRIMARY KEY,
@@ -65,6 +63,12 @@ cfg_if! {
                 (2, 'Yay! I am learning Rust'),
                 (3, 'I enjoyed your post')").unwrap();
 
+            connection.execute("CREATE TABLE brands (
+                id SERIAL PRIMARY KEY,
+                color VARCHAR NOT NULL DEFAULT 'Green',
+                accent VARCHAR DEFAULT 'Blue'
+            )").unwrap();
+
             connection
         }
     } else if #[cfg(feature = "sqlite")] {
@@ -77,7 +81,7 @@ cfg_if! {
 
         #[allow(dead_code)]
         fn establish_connection() -> SqliteConnection {
-            let connection = connection_no_data();
+            let mut connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,7 +108,7 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
-            
+
             connection.execute("CREATE TABLE comments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 post_id INTEGER NOT NULL,
@@ -123,18 +127,21 @@ cfg_if! {
 
         fn connection_no_data() -> MysqlConnection {
             let connection_url = database_url_from_env("MYSQL_UNIT_TEST_DATABASE_URL");
-            let connection = MysqlConnection::establish(&connection_url).unwrap();
+            let mut connection = MysqlConnection::establish(&connection_url).unwrap();
+            connection.execute("SET FOREIGN_KEY_CHECKS=0;").unwrap();
             connection.execute("DROP TABLE IF EXISTS users CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS animals CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS posts CASCADE").unwrap();
             connection.execute("DROP TABLE IF EXISTS comments CASCADE").unwrap();
+            connection.execute("DROP TABLE IF EXISTS brands CASCADE").unwrap();
+            connection.execute("SET FOREIGN_KEY_CHECKS=1;").unwrap();
 
             connection
         }
 
         #[allow(dead_code)]
         fn establish_connection() -> MysqlConnection {
-            let connection = connection_no_data();
+            let mut connection = connection_no_data();
 
             connection.execute("CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
@@ -161,7 +168,7 @@ cfg_if! {
                 (1, 'My first post'),
                 (1, 'About Rust'),
                 (2, 'My first post too')").unwrap();
-            
+
             connection.execute("CREATE TABLE comments (
                 id INTEGER PRIMARY KEY AUTO_INCREMENT,
                 post_id INTEGER NOT NULL,
@@ -171,6 +178,12 @@ cfg_if! {
                 (1, 'Great post'),
                 (2, 'Yay! I am learning Rust'),
                 (3, 'I enjoyed your post')").unwrap();
+
+            connection.execute("CREATE TABLE brands (
+                id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                color VARCHAR(255) NOT NULL DEFAULT 'Green',
+                accent VARCHAR(255) DEFAULT 'Blue'
+            )").unwrap();
 
             connection.begin_test_transaction().unwrap();
             connection
@@ -195,8 +208,9 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
         .expect("DATABASE_URL must be set in order to run tests")
 }
 
-
 mod schema {
+    use diesel::prelude::*;
+
     table! {
         animals {
             id -> Integer,
@@ -226,6 +240,15 @@ mod schema {
         users {
             id -> Integer,
             name -> VarChar,
+        }
+    }
+
+    #[cfg(not(feature = "sqlite"))]
+    table! {
+        brands {
+            id -> Integer,
+            color -> VarChar,
+            accent -> Nullable<VarChar>,
         }
     }
 

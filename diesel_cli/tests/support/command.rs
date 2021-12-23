@@ -36,8 +36,16 @@ impl TestCommand {
         self
     }
 
+    pub fn cd<P: AsRef<Path>>(mut self, path: P) -> Self {
+        self.cwd.push(path);
+        self
+    }
+
     pub fn run(self) -> CommandResult {
-        let output = self.build_command().output().unwrap();
+        let output = self
+            .build_command()
+            .output()
+            .expect("failed to execute process");
         CommandResult { output: output }
     }
 
@@ -83,12 +91,16 @@ impl CommandResult {
 }
 
 fn path_to_diesel_cli() -> PathBuf {
-    Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap())
-        .parent()
-        .unwrap()
-        .join("target")
-        .join("debug")
-        .join("diesel")
+    if let Some(path) = env::var_os("DIESEL_TEST_BIN") {
+        Path::new(&path).into()
+    } else {
+        Path::new(&env::var_os("CARGO_MANIFEST_DIR").unwrap())
+            .parent()
+            .unwrap()
+            .join("target")
+            .join("debug")
+            .join("diesel")
+    }
 }
 
 impl Debug for CommandResult {

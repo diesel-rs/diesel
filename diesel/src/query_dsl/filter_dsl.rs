@@ -1,6 +1,6 @@
-use dsl::{Filter, OrFilter};
-use expression_methods::*;
-use query_source::*;
+use crate::dsl::{Filter, OrFilter};
+use crate::expression_methods::*;
+use crate::query_source::*;
 
 /// The `filter` method
 ///
@@ -8,7 +8,7 @@ use query_source::*;
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `filter` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait FilterDsl<Predicate> {
     /// The type returned by `.filter`.
     type Output;
@@ -35,7 +35,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `find` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait FindDsl<PK> {
     /// The type returned by `.find`.
     type Output;
@@ -63,7 +63,7 @@ where
 /// provided by [`QueryDsl`]. However, you may need a where clause on this trait
 /// to call `or_filter` from generic code.
 ///
-/// [`QueryDsl`]: ../trait.QueryDsl.html
+/// [`QueryDsl`]: crate::QueryDsl
 pub trait OrFilterDsl<Predicate> {
     /// The type returned by `.filter`.
     type Output;

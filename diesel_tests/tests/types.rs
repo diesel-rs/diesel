@@ -4,13 +4,14 @@
 extern crate bigdecimal;
 extern crate chrono;
 
-use diesel::deserialize::FromSql;
+use crate::schema::*;
+use diesel::deserialize::FromSqlRow;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
 use diesel::sql_types::*;
 use diesel::*;
-use schema::*;
 
+#[cfg(any(feature = "postgres", feature = "mysql"))]
 use quickcheck::quickcheck;
 
 table! {
@@ -35,7 +36,7 @@ fn errors_during_deserialization_do_not_panic() {
     use self::has_timestamps::dsl::*;
     use diesel::result::Error::DeserializationError;
 
-    let connection = connection();
+    let connection = &mut connection();
     connection
         .execute(
             "CREATE TABLE has_timestamps (
@@ -51,7 +52,7 @@ fn errors_during_deserialization_do_not_panic() {
             valid_pg_date_too_large_for_chrono
         ))
         .unwrap();
-    let values = has_timestamps.select(ts).load::<NaiveDateTime>(&connection);
+    let values = has_timestamps.select(ts).load::<NaiveDateTime>(connection);
 
     match values {
         Err(DeserializationError(_)) => {}
@@ -66,7 +67,7 @@ fn errors_during_deserialization_do_not_panic() {
     use self::has_timestamps::dsl::*;
     use diesel::result::Error::DeserializationError;
 
-    let connection = connection();
+    let connection = &mut connection();
     connection
         .execute(
             "CREATE TABLE has_timestamps (
@@ -83,7 +84,7 @@ fn errors_during_deserialization_do_not_panic() {
             valid_sqlite_date_too_large_for_chrono
         ))
         .unwrap();
-    let values = has_timestamps.select(ts).load::<NaiveDateTime>(&connection);
+    let values = has_timestamps.select(ts).load::<NaiveDateTime>(connection);
 
     match values {
         Err(DeserializationError(_)) => {}
@@ -98,14 +99,14 @@ fn test_chrono_types_sqlite() {
     use self::has_time_types;
 
     #[derive(Queryable, Insertable)]
-    #[table_name = "has_time_types"]
+    #[diesel(table_name = has_time_types)]
     struct NewTimeTypes {
         datetime: NaiveDateTime,
         date: NaiveDate,
         time: NaiveTime,
     }
 
-    let connection = connection();
+    let connection = &mut connection();
     connection
         .execute(
             "CREATE TABLE has_time_types (
@@ -125,11 +126,11 @@ fn test_chrono_types_sqlite() {
 
     insert_into(has_time_types::table)
         .values(&new_time_types)
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     let result = has_time_types::table
-        .first::<NewTimeTypes>(&connection)
+        .first::<NewTimeTypes>(connection)
         .unwrap();
     assert_eq!(result.datetime, dt);
     assert_eq!(result.date, dt.date());
@@ -144,12 +145,11 @@ fn boolean_from_sql() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
-fn boolean_treats_null_as_false_when_predicates_return_null() {
-    let connection = connection();
-    let one = Some(1).into_sql::<Nullable<Integer>>();
+fn nullable_boolean_from_sql() {
+    let connection = &mut connection();
+    let one = Some(1).into_sql::<diesel::sql_types::Nullable<Integer>>();
     let query = select(one.eq(None::<i32>));
-    assert_eq!(Ok(false), query.first(&connection));
+    assert_eq!(Ok(Option::<bool>::None), query.first(connection));
 }
 
 #[test]
@@ -354,6 +354,28 @@ fn i64_to_sql_bigint() {
     ));
 }
 
+#[test]
+#[cfg(feature = "mysql")]
+fn mysql_json_from_sql() {
+    let query = "'true'";
+    let expected_value = serde_json::Value::Bool(true);
+    assert_eq!(
+        expected_value,
+        query_single_value::<Json, serde_json::Value>(query)
+    );
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn mysql_json_to_sql_json() {
+    let expected_value = "'false'";
+    let value = serde_json::Value::Bool(false);
+    assert!(query_to_sql_equality::<Json, serde_json::Value>(
+        expected_value,
+        value
+    ));
+}
+
 use std::{f32, f64};
 
 #[test]
@@ -374,8 +396,22 @@ fn f32_from_sql() {
 }
 
 #[test]
+#[cfg(any(feature = "mysql", feature = "sqlite"))]
+fn f32_from_sql() {
+    assert_eq!(0.0, query_single_value::<Float, f32>("0.0"));
+    assert_eq!(0.5, query_single_value::<Float, f32>("0.5"));
+    // MySQL has no way to represent NaN or Infinity as a literal
+    #[cfg(feature = "sqlite")]
+    {
+        assert_eq!(f32::INFINITY, query_single_value::<Float, f32>("9e999"));
+        assert_eq!(-f32::INFINITY, query_single_value::<Float, f32>("-9e999"));
+        // SQLite has no way to represent NaN
+    }
+}
+
+#[test]
 #[cfg(feature = "postgres")]
-fn f32_to_sql_float() {
+fn f32_to_sql() {
     assert!(query_to_sql_equality::<Float, f32>("0.0::real", 0.0));
     assert!(query_to_sql_equality::<Float, f32>("0.5::real", 0.5));
     assert!(query_to_sql_equality::<Float, f32>("'NaN'::real", f32::NAN));
@@ -397,6 +433,26 @@ fn f32_to_sql_float() {
         "'-Infinity'::real",
         1.0
     ));
+}
+
+#[test]
+#[cfg(any(feature = "mysql", feature = "sqlite"))]
+fn f32_to_sql() {
+    assert!(query_to_sql_equality::<Float, f32>("0.0", 0.0));
+    assert!(query_to_sql_equality::<Float, f32>("0.5", 0.5));
+    // While MySQL will correctly round trip SELECT ? when the bind param is
+    // NaN or Infinity, any attempt to insert those values into a row will
+    // result in an error, and we have no way to write SELECT ? = NaN,
+    // so those cases are untested.
+    #[cfg(feature = "sqlite")]
+    {
+        assert!(query_to_sql_equality::<Float, f32>("9e999", f32::INFINITY));
+        assert!(query_to_sql_equality::<Float, f32>(
+            "-9e999",
+            -f32::INFINITY
+        ));
+        // SQLite has no way to represent NaN
+    }
 }
 
 #[test]
@@ -423,8 +479,22 @@ fn f64_from_sql() {
 }
 
 #[test]
+#[cfg(any(feature = "mysql", feature = "sqlite"))]
+fn f64_from_sql() {
+    assert_eq!(0.0, query_single_value::<Double, f64>("0.0"));
+    assert_eq!(0.5, query_single_value::<Double, f64>("0.5"));
+    // MySQL has no way to represent NaN or Infinity as a literal
+    #[cfg(feature = "sqlite")]
+    {
+        assert_eq!(f64::INFINITY, query_single_value::<Double, f64>("9e999"));
+        assert_eq!(-f64::INFINITY, query_single_value::<Double, f64>("-9e999"));
+        // SQLite has no way to represent NaN
+    }
+}
+
+#[test]
 #[cfg(feature = "postgres")]
-fn f64_to_sql_float() {
+fn f64_to_sql() {
     assert!(query_to_sql_equality::<Double, f64>(
         "0.0::double precision",
         0.0
@@ -461,6 +531,26 @@ fn f64_to_sql_float() {
         "'-Infinity'::double precision",
         1.0
     ));
+}
+
+#[test]
+#[cfg(any(feature = "mysql", feature = "sqlite"))]
+fn f64_to_sql() {
+    assert!(query_to_sql_equality::<Double, f64>("0.0", 0.0));
+    assert!(query_to_sql_equality::<Double, f64>("0.5", 0.5));
+    // While MySQL will correctly round trip SELECT ? when the bind param is
+    // NaN or Infinity, any attempt to insert those values into a row will
+    // result in an error, and we have no way to write SELECT ? = NaN,
+    // so those cases are untested.
+    #[cfg(feature = "sqlite")]
+    {
+        assert!(query_to_sql_equality::<Double, f64>("9e999", f64::INFINITY));
+        assert!(query_to_sql_equality::<Double, f64>(
+            "-9e999",
+            -f64::INFINITY
+        ));
+        // SQLite has no way to represent NaN
+    }
 }
 
 #[test]
@@ -580,16 +670,16 @@ fn pg_specific_option_to_sql() {
         "'t'::bool",
         Some(true)
     ));
-    assert!(!query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
+    assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
         "'f'::bool",
-        Some(true)
+        Some(false)
     ));
     assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
         "NULL", None
     ));
-    assert!(!query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
+    assert!(query_to_sql_equality::<Nullable<Bool>, Option<bool>>(
         "NULL::bool",
-        Some(false)
+        None
     ));
 }
 
@@ -1109,18 +1199,18 @@ fn pg_jsonb_to_sql_jsonb() {
 #[test]
 #[cfg(feature = "postgres")]
 fn text_array_can_be_assigned_to_varchar_array_column() {
-    let conn = connection_with_sean_and_tess_in_users_table();
-    let sean = find_user_by_name("Sean", &conn);
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    let sean = find_user_by_name("Sean", conn);
     let post = insert_into(posts::table)
         .values(&sean.new_post("Hello", None))
-        .get_result::<Post>(&conn)
+        .get_result::<Post>(conn)
         .unwrap();
 
     update(posts::table.find(post.id))
         .set(posts::tags.eq(vec!["tag1", "tag2"]))
-        .execute(&conn)
+        .execute(conn)
         .unwrap();
-    let tags_in_db = posts::table.find(post.id).select(posts::tags).first(&conn);
+    let tags_in_db = posts::table.find(post.id).select(posts::tags).first(conn);
 
     assert_eq!(Ok(vec!["tag1".to_string(), "tag2".to_string()]), tags_in_db);
 }
@@ -1128,19 +1218,20 @@ fn text_array_can_be_assigned_to_varchar_array_column() {
 #[test]
 #[cfg(feature = "postgres")]
 fn third_party_crates_can_add_new_types() {
+    use diesel::deserialize::FromSql;
     use diesel::pg::PgValue;
 
     #[derive(Debug, Clone, Copy, QueryId, SqlType)]
     struct MyInt;
 
     impl HasSqlType<MyInt> for Pg {
-        fn metadata(lookup: &Self::MetadataLookup) -> Self::TypeMetadata {
+        fn metadata(lookup: &mut Self::MetadataLookup) -> Self::TypeMetadata {
             <Pg as HasSqlType<Integer>>::metadata(lookup)
         }
     }
 
     impl FromSql<MyInt, Pg> for i32 {
-        fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+        fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
             FromSql::<Integer, Pg>::from_sql(bytes)
         }
     }
@@ -1150,38 +1241,48 @@ fn third_party_crates_can_add_new_types() {
     assert_eq!(70_000, query_single_value::<MyInt, i32>("70000"));
 }
 
-fn query_single_value<T, U: Queryable<T, TestBackend>>(sql_str: &str) -> U
+fn query_single_value<T, U>(sql_str: &str) -> U
 where
+    U: FromSqlRow<T, TestBackend> + 'static,
     TestBackend: HasSqlType<T>,
-    T: QueryId + SingleValue,
+    T: QueryId + SingleValue + SqlType,
 {
     use diesel::dsl::sql;
-    let connection = connection();
-    select(sql::<T>(sql_str)).first(&connection).unwrap()
+    let connection = &mut connection();
+    select(sql::<T>(sql_str)).first(connection).unwrap()
 }
 
-use diesel::expression::AsExpression;
+use diesel::expression::{is_aggregate, AsExpression, SqlLiteral, ValidGrouping};
 use diesel::query_builder::{QueryFragment, QueryId};
 use std::fmt::Debug;
 
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<(), SqlType = T>,
+    U::Expression: SelectableExpression<diesel::query_builder::NoFromClause, SqlType = T>
+        + ValidGrouping<(), IsAggregate = is_aggregate::Never>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
-    T: QueryId + SingleValue,
+    T: QueryId + SingleValue + SqlType,
+    <T as diesel::sql_types::SqlType>::IsNull:
+        diesel::sql_types::OneIsNullable<<T as diesel::sql_types::SqlType>::IsNull>,
+    <<T as diesel::sql_types::SqlType>::IsNull as diesel::sql_types::OneIsNullable<
+        <T as diesel::sql_types::SqlType>::IsNull,
+    >>::Out: diesel::sql_types::MaybeNullableType<diesel::sql_types::Bool>,
+    diesel::dsl::Nullable<diesel::dsl::Eq<SqlLiteral<T>, U>>:
+        Expression<SqlType = diesel::sql_types::Nullable<diesel::sql_types::Bool>>,
 {
     use diesel::dsl::sql;
-    let connection = connection();
+    let connection = &mut connection();
     let query = select(
         sql::<T>(sql_str)
             .is_null()
             .and(value.clone().as_expression().is_null())
-            .or(sql::<T>(sql_str).eq(value.clone())),
+            .or(sql::<T>(sql_str).eq(value.clone()).nullable()),
     );
     query
-        .get_result(&connection)
+        .get_result::<Option<bool>>(connection)
         .expect(&format!("Error comparing {}, {:?}", sql_str, value))
+        .unwrap_or(false)
 }
 
 #[cfg(feature = "postgres")]
@@ -1191,10 +1292,10 @@ fn debug_check_catches_reading_bigint_as_i32_when_using_raw_sql() {
     use diesel::dsl::sql;
     use diesel::sql_types::Integer;
 
-    let connection = connection();
+    let connection = &mut connection();
     users::table
         .select(sql::<Integer>("COUNT(*)"))
-        .get_result::<i32>(&connection)
+        .get_result::<i32>(connection)
         .unwrap();
 }
 
@@ -1204,7 +1305,7 @@ fn test_range_from_sql() {
     use diesel::dsl::sql;
     use std::collections::Bound;
 
-    let connection = connection();
+    let connection = &mut connection();
 
     let query = "'[1,)'::int4range";
     let expected_value = (Bound::Included(1), Bound::Unbounded);
@@ -1222,7 +1323,7 @@ fn test_range_from_sql() {
 
     let query = "SELECT '(1,1]'::int4range";
     assert!(sql::<Range<Int4>>(query)
-        .load::<(Bound<i32>, Bound<i32>)>(&connection)
+        .load::<(Bound<i32>, Bound<i32>)>(connection)
         .is_err());
 }
 
@@ -1245,7 +1346,7 @@ fn test_range_to_sql() {
 fn test_inserting_ranges() {
     use std::collections::Bound;
 
-    let connection = connection();
+    let connection = &mut connection();
     connection
         .execute(
             "CREATE TABLE has_ranges (
@@ -1266,7 +1367,7 @@ fn test_inserting_ranges() {
 
     let (_, v1, v2): (i32, Option<(_, _)>, (_, _)) = insert_into(has_ranges::table)
         .values((has_ranges::nul_range.eq(value), has_ranges::range.eq(value)))
-        .get_result(&connection)
+        .get_result(connection)
         .unwrap();
     assert_eq!(v1, Some(value));
     assert_eq!(v2, value);

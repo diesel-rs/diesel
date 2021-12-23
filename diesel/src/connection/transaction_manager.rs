@@ -1,77 +1,75 @@
-use backend::UsesAnsiSavepointSyntax;
-use connection::{Connection, SimpleConnection};
-use result::QueryResult;
+use crate::connection::Connection;
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
 /// Manages the internal transaction state for a connection.
 ///
 /// You will not need to interact with this trait, unless you are writing an
-/// implementation of [`Connection`](trait.Connection.html).
+/// implementation of [`Connection`].
 pub trait TransactionManager<Conn: Connection> {
+    /// Data stored as part of the connection implementation
+    /// to track the current transaction state of a connection
+    type TransactionStateData;
+
     /// Begin a new transaction or savepoint
     ///
     /// If the transaction depth is greater than 0,
     /// this should create a savepoint instead.
     /// This function is expected to increment the transaction depth by 1.
-    fn begin_transaction(&self, conn: &Conn) -> QueryResult<()>;
+    fn begin_transaction(conn: &mut Conn) -> QueryResult<()>;
 
     /// Rollback the inner-most transaction or savepoint
     ///
     /// If the transaction depth is greater than 1,
     /// this should rollback to the most recent savepoint.
     /// This function is expected to decrement the transaction depth by 1.
-    fn rollback_transaction(&self, conn: &Conn) -> QueryResult<()>;
+    fn rollback_transaction(conn: &mut Conn) -> QueryResult<()>;
 
     /// Commit the inner-most transaction or savepoint
     ///
     /// If the transaction depth is greater than 1,
     /// this should release the most recent savepoint.
     /// This function is expected to decrement the transaction depth by 1.
-    fn commit_transaction(&self, conn: &Conn) -> QueryResult<()>;
+    fn commit_transaction(conn: &mut Conn) -> QueryResult<()>;
 
     /// Fetch the current transaction depth
     ///
     /// Used to ensure that `begin_test_transaction` is not called when already
     /// inside of a transaction.
-    fn get_transaction_depth(&self) -> u32;
+    fn get_transaction_depth(conn: &mut Conn) -> u32;
 }
-
-use std::cell::Cell;
 
 /// An implementation of `TransactionManager` which can be used for backends
 /// which use ANSI standard syntax for savepoints such as SQLite and PostgreSQL.
-#[allow(missing_debug_implementations)]
+#[allow(missing_debug_implementations, missing_copy_implementations)]
 #[derive(Default)]
 pub struct AnsiTransactionManager {
-    transaction_depth: Cell<i32>,
+    transaction_depth: i32,
 }
 
 impl AnsiTransactionManager {
-    /// Create a new transaction manager
-    pub fn new() -> Self {
-        AnsiTransactionManager::default()
-    }
-
-    fn change_transaction_depth(&self, by: i32, query: QueryResult<()>) -> QueryResult<()> {
+    fn change_transaction_depth(&mut self, by: i32, query: QueryResult<()>) -> QueryResult<()> {
         if query.is_ok() {
-            self.transaction_depth
-                .set(self.transaction_depth.get() + by)
+            self.transaction_depth += by;
         }
         query
     }
+}
 
+impl AnsiTransactionManager {
     /// Begin a transaction with custom SQL
     ///
     /// This is used by connections to implement more complex transaction APIs
     /// to set things such as isolation levels.
     /// Returns an error if already inside of a transaction.
-    pub fn begin_transaction_sql<Conn>(&self, conn: &Conn, sql: &str) -> QueryResult<()>
+    pub fn begin_transaction_sql<Conn>(conn: &mut Conn, sql: &str) -> QueryResult<()>
     where
-        Conn: SimpleConnection,
+        Conn: Connection<TransactionManager = Self>,
     {
-        use result::Error::AlreadyInTransaction;
+        use crate::result::Error::AlreadyInTransaction;
 
-        if self.transaction_depth.get() == 0 {
-            self.change_transaction_depth(1, conn.batch_execute(sql))
+        if conn.transaction_state().transaction_depth == 0 {
+            let r = conn.batch_execute(sql);
+            conn.transaction_state().change_transaction_depth(1, r)
         } else {
             Err(AlreadyInTransaction)
         }
@@ -80,52 +78,185 @@ impl AnsiTransactionManager {
 
 impl<Conn> TransactionManager<Conn> for AnsiTransactionManager
 where
-    Conn: Connection,
-    Conn::Backend: UsesAnsiSavepointSyntax,
+    Conn: Connection<TransactionManager = Self>,
 {
-    fn begin_transaction(&self, conn: &Conn) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(
-            1,
-            if transaction_depth == 0 {
-                conn.batch_execute("BEGIN")
-            } else {
-                conn.batch_execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
-            },
-        )
+    type TransactionStateData = Self;
+
+    fn begin_transaction(conn: &mut Conn) -> QueryResult<()> {
+        let transaction_depth = conn.transaction_state().transaction_depth;
+        let r = if transaction_depth == 0 {
+            conn.batch_execute("BEGIN")
+        } else {
+            conn.batch_execute(&format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
+        };
+        conn.transaction_state().change_transaction_depth(1, r)
     }
 
-    fn rollback_transaction(&self, conn: &Conn) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(
-            -1,
-            if transaction_depth == 1 {
-                conn.batch_execute("ROLLBACK")
-            } else {
-                conn.batch_execute(&format!(
-                    "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                    transaction_depth - 1
-                ))
-            },
-        )
+    fn rollback_transaction(conn: &mut Conn) -> QueryResult<()> {
+        let transaction_depth = conn.transaction_state().transaction_depth;
+        let r = if transaction_depth == 1 {
+            conn.batch_execute("ROLLBACK")
+        } else {
+            conn.batch_execute(&format!(
+                "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                transaction_depth - 1
+            ))
+        };
+        conn.transaction_state().change_transaction_depth(-1, r)
     }
 
-    fn commit_transaction(&self, conn: &Conn) -> QueryResult<()> {
-        let transaction_depth = self.transaction_depth.get();
-        self.change_transaction_depth(
-            -1,
-            if transaction_depth <= 1 {
-                conn.batch_execute("COMMIT")
-            } else {
-                conn.batch_execute(&format!(
-                    "RELEASE SAVEPOINT diesel_savepoint_{}",
-                    transaction_depth - 1
-                ))
-            },
-        )
+    /// If the transaction fails to commit due to a `SerializationFailure` or a
+    /// `ReadOnlyTransaction` a rollback will be attempted. If the rollback succeeds,
+    /// the original error will be returned, otherwise the error generated by the rollback
+    /// will be returned. In the second case the connection should be considered broken
+    /// as it contains a uncommitted unabortable open transaction.
+    fn commit_transaction(conn: &mut Conn) -> QueryResult<()> {
+        let transaction_depth = conn.transaction_state().transaction_depth;
+        if transaction_depth <= 1 {
+            match conn.batch_execute("COMMIT") {
+                // When any of these kinds of error happen on `COMMIT`, it is expected
+                // that a `ROLLBACK` would succeed, leaving the transaction in a non-broken state.
+                // If there are other such errors, it is fine to add them here.
+                e @ Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _))
+                | e @ Err(Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)) => {
+                    let r = conn.batch_execute("ROLLBACK");
+                    conn.transaction_state().change_transaction_depth(-1, r)?;
+                    e
+                }
+                result => conn
+                    .transaction_state()
+                    .change_transaction_depth(-1, result),
+            }
+        } else {
+            match conn.batch_execute(&format!(
+                "RELEASE SAVEPOINT diesel_savepoint_{}",
+                transaction_depth - 1,
+            )) {
+                Ok(_) => conn
+                    .transaction_state()
+                    .change_transaction_depth(-1, Ok(())),
+                // Postgres treats error (like syntax errors, missing tables, …)
+                // as fatal errors and does not accept any new commands till the
+                // transaction is aborted or we've done a rollback
+                // To mirror the behaviour above we attempt to rollback
+                // to the last savepoint if we hit such a case
+                Err(Error::DatabaseError(DatabaseErrorKind::Unknown, msg))
+                    if msg.message().starts_with("current transaction is aborted") =>
+                {
+                    let r = conn.batch_execute(&format!(
+                        "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                        transaction_depth - 1
+                    ));
+                    conn.transaction_state().change_transaction_depth(-1, r)?;
+                    Err(Error::DatabaseError(DatabaseErrorKind::Unknown, msg))
+                }
+                Err(e) => panic!("{}", e),
+            }
+        }
     }
 
-    fn get_transaction_depth(&self) -> u32 {
-        self.transaction_depth.get() as u32
+    fn get_transaction_depth(conn: &mut Conn) -> u32 {
+        conn.transaction_state().transaction_depth as u32
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[cfg(feature = "postgres")]
+    macro_rules! matches {
+        ($expression:expr, $( $pattern:pat )|+ $( if $guard: expr )?) => {
+            match $expression {
+                $( $pattern )|+ $( if $guard )? => true,
+                _ => false
+            }
+        }
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn transaction_depth_is_tracked_properly_on_commit_failure() {
+        use crate::result::DatabaseErrorKind::SerializationFailure;
+        use crate::result::Error::DatabaseError;
+        use crate::*;
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        table! {
+            #[sql_name = "transaction_depth_is_tracked_properly_on_commit_failure"]
+            serialization_example {
+                id -> Serial,
+                class -> Integer,
+            }
+        }
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+
+        sql_query("DROP TABLE IF EXISTS transaction_depth_is_tracked_properly_on_commit_failure;")
+            .execute(conn)
+            .unwrap();
+        sql_query(
+            r#"
+            CREATE TABLE transaction_depth_is_tracked_properly_on_commit_failure (
+                id SERIAL PRIMARY KEY,
+                class INTEGER NOT NULL
+            )
+        "#,
+        )
+        .execute(conn)
+        .unwrap();
+
+        insert_into(serialization_example::table)
+            .values(&vec![
+                serialization_example::class.eq(1),
+                serialization_example::class.eq(2),
+            ])
+            .execute(conn)
+            .unwrap();
+
+        let barrier = Arc::new(Barrier::new(2));
+        let threads = (1..3)
+            .map(|i| {
+                let barrier = barrier.clone();
+                thread::spawn(move || {
+                    use crate::connection::transaction_manager::AnsiTransactionManager;
+                    use crate::connection::transaction_manager::TransactionManager;
+                    let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+                    assert_eq!(0, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(conn));
+
+                    let result =
+                    conn.build_transaction().serializable().run(|conn| {
+                        assert_eq!(1, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(conn));
+
+                        let _ = serialization_example::table
+                            .filter(serialization_example::class.eq(i))
+                            .count()
+                            .execute(conn)?;
+
+                        barrier.wait();
+
+                        let other_i = if i == 1 { 2 } else { 1 };
+                        insert_into(serialization_example::table)
+                            .values(serialization_example::class.eq(other_i))
+                            .execute(conn)
+                    });
+
+                    assert_eq!(0, <AnsiTransactionManager as TransactionManager<PgConnection>>::get_transaction_depth(conn));
+                    result
+                })
+            })
+            .collect::<Vec<_>>();
+
+        let mut results = threads
+            .into_iter()
+            .map(|t| t.join().unwrap())
+            .collect::<Vec<_>>();
+
+        results.sort_by_key(|r| r.is_err());
+
+        assert!(matches!(results[0], Ok(_)));
+        assert!(matches!(
+            results[1],
+            Err(DatabaseError(SerializationFailure, _))
+        ));
     }
 }

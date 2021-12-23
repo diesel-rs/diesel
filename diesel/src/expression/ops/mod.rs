@@ -2,7 +2,8 @@ macro_rules! generic_numeric_expr_inner {
     ($tpe: ident, ($($param: ident),*), $op: ident, $fn_name: ident) => {
         impl<Rhs, $($param),*> ::std::ops::$op<Rhs> for $tpe<$($param),*> where
             $tpe<$($param),*>: $crate::expression::Expression,
-            <$tpe<$($param),*> as $crate::Expression>::SqlType: $crate::sql_types::ops::$op,
+            <$tpe<$($param),*> as $crate::Expression>::SqlType: $crate::sql_types::SqlType + $crate::sql_types::ops::$op,
+            <<$tpe<$($param),*> as $crate::Expression>::SqlType as $crate::sql_types::ops::$op>::Rhs: $crate::expression::TypedExpressionType,
             Rhs: $crate::expression::AsExpression<
                 <<$tpe<$($param),*> as $crate::Expression>::SqlType as $crate::sql_types::ops::$op>::Rhs,
             >,

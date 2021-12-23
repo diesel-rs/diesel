@@ -1,6 +1,8 @@
-use expression::operators::{Concat, Like, NotLike};
-use expression::{AsExpression, Expression};
-use sql_types::{Nullable, Text};
+use crate::dsl;
+use crate::expression::grouped::Grouped;
+use crate::expression::operators::{Concat, Like, NotLike};
+use crate::expression::{AsExpression, Expression};
+use crate::sql_types::{Nullable, SqlType, Text};
 
 /// Methods present on text expressions
 pub trait TextExpressionMethods: Expression + Sized {
@@ -9,7 +11,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # table! {
@@ -24,7 +25,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     use self::users::dsl::*;
     /// #     use diesel::insert_into;
     /// #
-    /// #     let connection = connection_no_data();
+    /// #     let connection = &mut connection_no_data();
     /// #     connection.execute("CREATE TABLE users (
     /// #         id INTEGER PRIMARY KEY,
     /// #         name VARCHAR(255) NOT NULL,
@@ -36,10 +37,10 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #             (id.eq(1), name.eq("Sean"), hair_color.eq(Some("Green"))),
     /// #             (id.eq(2), name.eq("Tess"), hair_color.eq(None)),
     /// #         ])
-    /// #         .execute(&connection)
+    /// #         .execute(connection)
     /// #         .unwrap();
     /// #
-    /// let names = users.select(name.concat(" the Greatest")).load(&connection);
+    /// let names = users.select(name.concat(" the Greatest")).load(connection);
     /// let expected_names = vec![
     ///     "Sean the Greatest".to_string(),
     ///     "Tess the Greatest".to_string(),
@@ -47,7 +48,7 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(expected_names), names);
     ///
     /// // If the value is nullable, the output will be nullable
-    /// let names = users.select(hair_color.concat("ish")).load(&connection);
+    /// let names = users.select(hair_color.concat("ish")).load(connection);
     /// let expected_names = vec![
     ///     Some("Greenish".to_string()),
     ///     None,
@@ -55,8 +56,12 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
-    fn concat<T: AsExpression<Self::SqlType>>(self, other: T) -> Concat<Self, T::Expression> {
-        Concat::new(self, other.as_expression())
+    fn concat<T>(self, other: T) -> dsl::Concat<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        Grouped(Concat::new(self, other.as_expression()))
     }
 
     /// Returns a SQL `LIKE` expression
@@ -69,7 +74,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -78,18 +82,22 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let starts_with_s = users
     ///     .select(name)
     ///     .filter(name.like("S%"))
-    ///     .load::<String>(&connection)?;
+    ///     .load::<String>(connection)?;
     /// assert_eq!(vec!["Sean"], starts_with_s);
     /// #     Ok(())
     /// # }
     /// ```
-    fn like<T: AsExpression<Self::SqlType>>(self, other: T) -> Like<Self, T::Expression> {
-        Like::new(self.as_expression(), other.as_expression())
+    fn like<T>(self, other: T) -> dsl::Like<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        Grouped(Like::new(self, other.as_expression()))
     }
 
     /// Returns a SQL `NOT LIKE` expression
@@ -102,7 +110,6 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// # Examples
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -111,18 +118,22 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #
     /// let doesnt_start_with_s = users
     ///     .select(name)
     ///     .filter(name.not_like("S%"))
-    ///     .load::<String>(&connection)?;
+    ///     .load::<String>(connection)?;
     /// assert_eq!(vec!["Tess"], doesnt_start_with_s);
     /// #     Ok(())
     /// # }
     /// ```
-    fn not_like<T: AsExpression<Self::SqlType>>(self, other: T) -> NotLike<Self, T::Expression> {
-        NotLike::new(self.as_expression(), other.as_expression())
+    fn not_like<T>(self, other: T) -> dsl::NotLike<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        Grouped(NotLike::new(self, other.as_expression()))
     }
 }
 

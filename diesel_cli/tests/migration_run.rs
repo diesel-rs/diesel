@@ -1,8 +1,8 @@
+use crate::support::{database, project};
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
 use diesel::{select, RunQueryDsl};
 use std::path::Path;
-use support::{database, project};
 
 #[test]
 fn migration_run_runs_pending_migrations() {
@@ -50,7 +50,7 @@ fn migration_run_inserts_run_on_timestamps() {
     let migrations_done: bool = select(sql::<Bool>(
         "EXISTS (SELECT * FROM __diesel_schema_migrations WHERE version >= '1')",
     ))
-    .get_result(&db.conn())
+    .get_result(&mut db.conn())
     .unwrap();
     assert!(!migrations_done, "Migrations table should be empty");
 
@@ -68,7 +68,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < DATETIME('now', '+1 hour'))",
         ))
-        .get_result(&db.conn())
+        .get_result(&mut db.conn())
         .unwrap()
     }
 
@@ -78,7 +78,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL '1 hour')",
         ))
-        .get_result(&db.conn())
+        .get_result(&mut db.conn())
         .unwrap()
     }
 
@@ -88,7 +88,7 @@ fn migration_run_inserts_run_on_timestamps() {
             "EXISTS (SELECT 1 FROM __diesel_schema_migrations \
              WHERE run_on < NOW() + INTERVAL 1 HOUR)",
         ))
-        .get_result(&db.conn())
+        .get_result(&mut db.conn())
         .unwrap()
     }
 
@@ -109,9 +109,9 @@ fn empty_migrations_are_not_valid() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(result
-        .stderr()
-        .contains("Failed with: Attempted to run an empty migration."));
+    assert!(result.stderr().contains(
+        "Failed to run 12345_empty_migration with: Attempted to run an empty migration."
+    ));
 }
 
 #[test]
@@ -131,23 +131,38 @@ fn error_migrations_fails() {
     let result = p.command("migration").arg("run").run();
 
     assert!(!result.is_success());
-    assert!(result.stderr().contains("Failed with: "));
+    assert!(result
+        .stderr()
+        .contains("Failed to run run_error_migrations_fails with: "));
 }
 
 #[test]
-fn output_contains_path_to_migration_script() {
-    let p = project("output_contains_path_to_migration_script")
+#[cfg(feature = "postgres")]
+fn error_migrations_when_use_invalid_database_url() {
+    let p = project("error_migrations_when_use_invalid_database_url")
         .folder("migrations")
         .build();
 
+    // Make sure the project is setup
     p.command("setup").run();
 
-    p.create_migration("output_contains_path_to_migration_script", "", "");
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        "DROP TABLE users",
+    );
 
-    let result = p.command("migration").arg("run").run();
+    let result = p
+        .command_without_database_url("migration")
+        .arg("run")
+        .arg("--database-url")
+        .arg("postgres://localhost/lemmy")
+        .run();
 
     assert!(!result.is_success());
-    assert!(result.stdout().contains("up.sql"));
+    assert!(result
+        .stderr()
+        .contains("Could not connect to database via `postgres://localhost/lemmy`:"));
 }
 
 #[test]
@@ -502,7 +517,8 @@ fn verify_schema_errors_if_schema_file_would_change() {
     assert!(
         result
             .stderr()
-            .contains("Command would result in changes to src/my_schema.rs"),
+            .contains("Command would result in changes to")
+            && result.stderr().contains("src/my_schema.rs"),
         "Unexpected stderr {}",
         result.stderr()
     );

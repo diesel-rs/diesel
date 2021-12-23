@@ -1,14 +1,12 @@
-use proc_macro2::*;
+use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::parse::{self, Parse, ParseStream};
+use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
+use syn::{
+    Attribute, GenericArgument, Generics, Ident, Lit, Meta, MetaNameValue, PathArguments, Type,
+};
 
-use meta::*;
-use util::*;
-
-// Extremely curious why this triggers on a nearly branchless function
-#[allow(clippy::cognitive_complexity)]
-pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> {
+pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
     let SqlFunctionDecl {
         mut attributes,
         fn_token,
@@ -18,10 +16,30 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         return_type,
     } = input;
 
-    let sql_name = MetaItem::with_name(&attributes, "sql_name")
-        .map(|m| m.str_value())
-        .unwrap_or_else(|| Ok(fn_name.to_string()))?;
-    let is_aggregate = MetaItem::with_name(&attributes, "aggregate").is_some();
+    let sql_name = attributes
+        .iter()
+        .find(|attr| {
+            attr.parse_meta()
+                .map(|m| m.path().is_ident("sql_name"))
+                .unwrap_or(false)
+        })
+        .and_then(|attr| {
+            if let Ok(Meta::NameValue(MetaNameValue {
+                lit: Lit::Str(lit), ..
+            })) = attr.parse_meta()
+            {
+                Some(lit.value())
+            } else {
+                None
+            }
+        })
+        .unwrap_or_else(|| fn_name.to_string());
+
+    let is_aggregate = attributes.iter().any(|attr| {
+        attr.parse_meta()
+            .map(|m| m.path().is_ident("aggregate"))
+            .unwrap_or(false)
+    });
 
     attributes.retain(|attr| {
         attr.parse_meta()
@@ -47,9 +65,11 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .type_params()
         .map(|type_param| type_param.ident.clone())
         .collect::<Vec<_>>();
+
     for StrictFnArg { name, .. } in args {
         generics.params.push(parse_quote!(#name));
     }
+
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     // Even if we force an empty where clause, it still won't print the where
     // token with no bounds.
@@ -63,15 +83,28 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         .push(parse_quote!(__DieselInternal));
     let (impl_generics_internal, _, _) = generics_with_internal.split_for_impl();
 
+    let sql_type;
+    let numeric_derive;
+
+    if arg_name.is_empty() {
+        sql_type = None;
+        // FIXME: We can always derive once trivial bounds are stable
+        numeric_derive = None;
+    } else {
+        sql_type = Some(quote!((#(#arg_name),*): Expression,));
+        numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
+    }
+
     let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
-        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable};
+        use diesel::expression::{AsExpression, Expression, SelectableExpression, AppearsOnTable, ValidGrouping};
         use diesel::query_builder::{QueryFragment, AstPass};
         use diesel::sql_types::*;
         use super::*;
 
-        #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps)]
+        #[derive(Debug, Clone, Copy, diesel::query_builder::QueryId)]
+        #numeric_derive
         pub struct #fn_name #ty_generics {
             #(pub(in super) #args_iter,)*
             #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*
@@ -84,7 +117,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
 
         impl #impl_generics Expression for #fn_name #ty_generics
         #where_clause
-            (#(#arg_name),*): Expression,
+            #sql_type
         {
             type SqlType = #return_type;
         }
@@ -112,36 +145,140 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
             for #fn_name #ty_generics
         where
             __DieselInternal: diesel::backend::Backend,
-            for<'a> (#(&'a #arg_name),*): QueryFragment<__DieselInternal>,
+            #(#arg_name: QueryFragment<__DieselInternal>,)*
         {
-            fn walk_ast(&self, mut out: AstPass<__DieselInternal>) -> QueryResult<()> {
+            #[allow(unused_assignments)]
+            fn walk_ast<'__b>(&'__b self, mut out: AstPass<'_, '__b, __DieselInternal>) -> QueryResult<()>{
                 out.push_sql(concat!(#sql_name, "("));
-                (#(&self.#arg_name,)*).walk_ast(out.reborrow())?;
+                // we unroll the arguments manually here, to prevent borrow check issues
+                let mut needs_comma = false;
+                #(
+                    if !self.#arg_name.is_noop()? {
+                        if needs_comma {
+                            out.push_sql(", ");
+                        }
+                        self.#arg_name.walk_ast(out.reborrow())?;
+                        needs_comma = true;
+                    }
+                )*
                 out.push_sql(")");
                 Ok(())
             }
         }
     };
 
-    if !is_aggregate {
+    let is_supported_on_sqlite = cfg!(feature = "sqlite")
+        && type_args.is_empty()
+        && is_sqlite_type(&return_type)
+        && arg_type.iter().all(|a| is_sqlite_type(a));
+
+    if is_aggregate {
         tokens = quote! {
             #tokens
 
-            impl #impl_generics diesel::expression::NonAggregate
+            impl #impl_generics_internal ValidGrouping<__DieselInternal>
                 for #fn_name #ty_generics
-            #where_clause
-                #(#arg_name: diesel::expression::NonAggregate,)*
             {
+                type IsAggregate = diesel::expression::is_aggregate::Yes;
             }
         };
-
-        if cfg!(feature = "sqlite") && type_args.is_empty() {
+        if is_supported_on_sqlite {
             tokens = quote! {
                 #tokens
 
                 use diesel::sqlite::{Sqlite, SqliteConnection};
                 use diesel::serialize::ToSql;
-                use diesel::deserialize::Queryable;
+                use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
+                use diesel::sqlite::SqliteAggregateFunction;
+                use diesel::sql_types::IntoNullable;
+            };
+
+            match arg_name.len() {
+                x if x > 1 => {
+                    tokens = quote! {
+                        #tokens
+
+                        #[allow(dead_code)]
+                        /// Registers an implementation for this aggregate function on the given connection
+                        ///
+                        /// This function must be called for every `SqliteConnection` before
+                        /// this SQL function can be used on SQLite. The implementation must be
+                        /// deterministic (returns the same result given the same arguments).
+                        pub fn register_impl<A, #(#arg_name,)*>(
+                            conn: &mut SqliteConnection
+                        ) -> QueryResult<()>
+                            where
+                            A: SqliteAggregateFunction<(#(#arg_name,)*)>
+                                + Send
+                                + 'static
+                                + ::std::panic::UnwindSafe
+                                + ::std::panic::RefUnwindSafe,
+                            A::Output: ToSql<#return_type, Sqlite>,
+                            (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
+                                StaticallySizedRow<(#(#arg_type,)*), Sqlite> +
+                                ::std::panic::UnwindSafe,
+                        {
+                            conn.register_aggregate_function::<(#(#arg_type,)*), #return_type, _, _, A>(#sql_name)
+                        }
+                    };
+                }
+                x if x == 1 => {
+                    let arg_name = arg_name[0];
+                    let arg_type = arg_type[0];
+
+                    tokens = quote! {
+                        #tokens
+
+                        #[allow(dead_code)]
+                        /// Registers an implementation for this aggregate function on the given connection
+                        ///
+                        /// This function must be called for every `SqliteConnection` before
+                        /// this SQL function can be used on SQLite. The implementation must be
+                        /// deterministic (returns the same result given the same arguments).
+                        pub fn register_impl<A, #arg_name>(
+                            conn: &mut SqliteConnection
+                        ) -> QueryResult<()>
+                            where
+                            A: SqliteAggregateFunction<#arg_name>
+                                + Send
+                                + 'static
+                                + std::panic::UnwindSafe
+                                + std::panic::RefUnwindSafe,
+                            A::Output: ToSql<#return_type, Sqlite>,
+                            #arg_name: FromSqlRow<#arg_type, Sqlite> +
+                                StaticallySizedRow<#arg_type, Sqlite> +
+                                ::std::panic::UnwindSafe,
+                            {
+                                conn.register_aggregate_function::<#arg_type, #return_type, _, _, A>(#sql_name)
+                            }
+                    };
+                }
+                _ => (),
+            }
+        }
+    } else {
+        tokens = quote! {
+            #tokens
+
+            #[derive(ValidGrouping)]
+            pub struct __Derived<#(#arg_name,)*>(#(#arg_name,)*);
+
+            impl #impl_generics_internal ValidGrouping<__DieselInternal>
+                for #fn_name #ty_generics
+            where
+                __Derived<#(#arg_name,)*>: ValidGrouping<__DieselInternal>,
+            {
+                type IsAggregate = <__Derived<#(#arg_name,)*> as ValidGrouping<__DieselInternal>>::IsAggregate;
+            }
+        };
+
+        if is_supported_on_sqlite && !arg_name.is_empty() {
+            tokens = quote! {
+                #tokens
+
+                use diesel::sqlite::{Sqlite, SqliteConnection};
+                use diesel::serialize::ToSql;
+                use diesel::deserialize::{FromSqlRow, StaticallySizedRow};
 
                 #[allow(dead_code)]
                 /// Registers an implementation for this function on the given connection
@@ -152,12 +289,13 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 /// the function is nondeterministic, call
                 /// `register_nondeterministic_impl` instead.
                 pub fn register_impl<F, Ret, #(#arg_name,)*>(
-                    conn: &SqliteConnection,
+                    conn: &mut SqliteConnection,
                     f: F,
                 ) -> QueryResult<()>
                 where
-                    F: Fn(#(#arg_name,)*) -> Ret + Send + 'static,
-                    (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                    F: Fn(#(#arg_name,)*) -> Ret + std::panic::UnwindSafe + Send + 'static,
+                    (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
+                        StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                     Ret: ToSql<#return_type, Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
@@ -177,12 +315,13 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 /// `random`). If your function is deterministic, you should call
                 /// `register_impl` instead.
                 pub fn register_nondeterministic_impl<F, Ret, #(#arg_name,)*>(
-                    conn: &SqliteConnection,
+                    conn: &mut SqliteConnection,
                     mut f: F,
                 ) -> QueryResult<()>
                 where
-                    F: FnMut(#(#arg_name,)*) -> Ret + Send + 'static,
-                    (#(#arg_name,)*): Queryable<(#(#arg_type,)*), Sqlite>,
+                    F: FnMut(#(#arg_name,)*) -> Ret + std::panic::UnwindSafe + Send + 'static,
+                    (#(#arg_name,)*): FromSqlRow<(#(#arg_type,)*), Sqlite> +
+                        StaticallySizedRow<(#(#arg_type,)*), Sqlite>,
                     Ret: ToSql<#return_type, Sqlite>,
                 {
                     conn.register_sql_function::<(#(#arg_type,)*), #return_type, _, _, _>(
@@ -193,10 +332,67 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
                 }
             };
         }
+
+        if is_supported_on_sqlite && arg_name.is_empty() {
+            tokens = quote! {
+                #tokens
+
+                use diesel::sqlite::{Sqlite, SqliteConnection};
+                use diesel::serialize::ToSql;
+
+                #[allow(dead_code)]
+                /// Registers an implementation for this function on the given connection
+                ///
+                /// This function must be called for every `SqliteConnection` before
+                /// this SQL function can be used on SQLite. The implementation must be
+                /// deterministic (returns the same result given the same arguments). If
+                /// the function is nondeterministic, call
+                /// `register_nondeterministic_impl` instead.
+                pub fn register_impl<F, Ret>(
+                    conn: &SqliteConnection,
+                    f: F,
+                ) -> QueryResult<()>
+                where
+                    F: Fn() -> Ret + std::panic::UnwindSafe + Send + 'static,
+                    Ret: ToSql<#return_type, Sqlite>,
+                {
+                    conn.register_noarg_sql_function::<#return_type, _, _>(
+                        #sql_name,
+                        true,
+                        f,
+                    )
+                }
+
+                #[allow(dead_code)]
+                /// Registers an implementation for this function on the given connection
+                ///
+                /// This function must be called for every `SqliteConnection` before
+                /// this SQL function can be used on SQLite.
+                /// `register_nondeterministic_impl` should only be used if your
+                /// function can return different results with the same arguments (e.g.
+                /// `random`). If your function is deterministic, you should call
+                /// `register_impl` instead.
+                pub fn register_nondeterministic_impl<F, Ret>(
+                    conn: &SqliteConnection,
+                    mut f: F,
+                ) -> QueryResult<()>
+                where
+                    F: FnMut() -> Ret + std::panic::UnwindSafe + Send + 'static,
+                    Ret: ToSql<#return_type, Sqlite>,
+                {
+                    conn.register_noarg_sql_function::<#return_type, _, _>(
+                        #sql_name,
+                        false,
+                        f,
+                    )
+                }
+            };
+        }
     }
 
     let args_iter = args.iter();
-    tokens = quote! {
+
+    quote! {
         #(#attributes)*
         #[allow(non_camel_case_types)]
         pub #fn_token #fn_name #impl_generics (#(#args_iter,)*)
@@ -215,33 +411,31 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> Result<TokenStream, Diagnostic> 
         pub(crate) mod #fn_name {
             #tokens
         }
-    };
-
-    Ok(tokens)
+    }
 }
 
 pub(crate) struct SqlFunctionDecl {
-    attributes: Vec<syn::Attribute>,
+    attributes: Vec<Attribute>,
     fn_token: Token![fn],
-    fn_name: syn::Ident,
-    generics: syn::Generics,
+    fn_name: Ident,
+    generics: Generics,
     args: Punctuated<StrictFnArg, Token![,]>,
-    return_type: syn::Type,
+    return_type: Type,
 }
 
 impl Parse for SqlFunctionDecl {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
-        let attributes = syn::Attribute::parse_outer(input)?;
+    fn parse(input: ParseStream) -> Result<Self> {
+        let attributes = Attribute::parse_outer(input)?;
         let fn_token: Token![fn] = input.parse()?;
-        let fn_name = syn::Ident::parse(input)?;
-        let generics = syn::Generics::parse(input)?;
+        let fn_name = Ident::parse(input)?;
+        let generics = Generics::parse(input)?;
         let args;
         let _paren = parenthesized!(args in input);
         let args = args.parse_terminated::<_, Token![,]>(StrictFnArg::parse)?;
         let return_type = if Option::<Token![->]>::parse(input)?.is_some() {
-            syn::Type::parse(input)?
+            Type::parse(input)?
         } else {
-            parse_quote!(())
+            parse_quote!(diesel::expression::expression_types::NotSelectable)
         };
         let _semi = Option::<Token![;]>::parse(input)?;
 
@@ -256,15 +450,15 @@ impl Parse for SqlFunctionDecl {
     }
 }
 
-/// Essentially the same as syn::ArgCaptured, but only allowing ident patterns
+/// Essentially the same as ArgCaptured, but only allowing ident patterns
 struct StrictFnArg {
-    name: syn::Ident,
+    name: Ident,
     colon_token: Token![:],
-    ty: syn::Type,
+    ty: Type,
 }
 
 impl Parse for StrictFnArg {
-    fn parse(input: ParseStream) -> parse::Result<Self> {
+    fn parse(input: ParseStream) -> Result<Self> {
         let name = input.parse()?;
         let colon_token = input.parse()?;
         let ty = input.parse()?;
@@ -282,4 +476,42 @@ impl ToTokens for StrictFnArg {
         self.colon_token.to_tokens(tokens);
         self.name.to_tokens(tokens);
     }
+}
+
+fn is_sqlite_type(ty: &Type) -> bool {
+    let last_segment = if let Type::Path(tp) = ty {
+        if let Some(segment) = tp.path.segments.last() {
+            segment
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    };
+
+    let ident = last_segment.ident.to_string();
+    if ident == "Nullable" {
+        if let PathArguments::AngleBracketed(ref ab) = last_segment.arguments {
+            if let Some(GenericArgument::Type(ty)) = ab.args.first() {
+                return is_sqlite_type(&ty);
+            }
+        }
+        return false;
+    }
+
+    [
+        "BigInt",
+        "Binary",
+        "Bool",
+        "Date",
+        "Double",
+        "Float",
+        "Integer",
+        "Numeric",
+        "SmallInt",
+        "Text",
+        "Time",
+        "Timestamp",
+    ]
+    .contains(&ident.as_str())
 }

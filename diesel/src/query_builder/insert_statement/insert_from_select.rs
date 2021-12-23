@@ -1,14 +1,14 @@
-use backend::Backend;
-use expression::{Expression, NonAggregate, SelectableExpression};
-use insertable::*;
-use query_builder::*;
-use query_source::Table;
+use crate::backend::Backend;
+use crate::expression::{Expression, NonAggregate, SelectableExpression};
+use crate::insertable::*;
+use crate::query_builder::*;
+use crate::query_source::Table;
 
 /// Represents `(Columns) SELECT FROM ...` for use in an `INSERT` statement
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, QueryId)]
 pub struct InsertFromSelect<Select, Columns> {
-    query: Select,
-    columns: Columns,
+    pub(in crate::query_builder) query: Select,
+    pub(in crate::query_builder) columns: Columns,
 }
 
 impl<Select, Columns> InsertFromSelect<Select, Columns> {
@@ -46,10 +46,10 @@ where
 impl<DB, Select, Columns> QueryFragment<DB> for InsertFromSelect<Select, Columns>
 where
     DB: Backend,
-    Columns: ColumnList + Expression<SqlType = Select::SqlType>,
-    Select: Query + QueryFragment<DB>,
+    Columns: ColumnList + Expression,
+    Select: Query<SqlType = Columns::SqlType> + QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("(");
         self.columns.walk_ast(out.reborrow())?;
         out.push_sql(") ");
@@ -60,7 +60,7 @@ where
 
 impl<Select, Columns> UndecoratedInsertRecord<Columns::Table> for InsertFromSelect<Select, Columns>
 where
-    Columns: ColumnList + Expression<SqlType = Select::SqlType>,
-    Select: Query,
+    Columns: ColumnList + Expression,
+    Select: Query<SqlType = Columns::SqlType>,
 {
 }

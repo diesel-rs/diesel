@@ -1,0 +1,16 @@
+error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
+  --> $DIR/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:15:22
+   |
+15 |     let pred = id.eq("string");
+   |                      ^^^^^^^^ the trait `diesel::Expression` is not implemented for `str`
+   |
+   = note: required because of the requirements on the impl of `diesel::Expression` for `&str`
+   = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Integer>` for `&str`
+
+error[E0271]: type mismatch resolving `<columns::name as diesel::Expression>::SqlType == diesel::sql_types::Integer`
+  --> $DIR/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:16:19
+   |
+16 |     let pred = id.eq(name);
+   |                   ^^ expected struct `diesel::sql_types::Text`, found struct `diesel::sql_types::Integer`
+   |
+   = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Integer>` for `columns::name`

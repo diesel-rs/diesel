@@ -1,8 +1,8 @@
 use chrono::prelude::*;
 use regex::Regex;
 
-use migrations_internals::TIMESTAMP_FORMAT;
-use support::project;
+use crate::support::project;
+pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 #[test]
 fn migration_generate_creates_a_migration_with_the_proper_name() {

@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate diesel;
-
 use std::time::SystemTime;
 
 #[cfg(test)]
@@ -30,15 +27,15 @@ pub struct Post {
     pub visit_count: i32,
 }
 
-pub fn publish_all_posts(conn: &PgConnection) -> QueryResult<usize> {
-    use posts::dsl::*;
+pub fn publish_all_posts(conn: &mut PgConnection) -> QueryResult<usize> {
+    use crate::posts::dsl::*;
 
     diesel::update(posts).set(draft.eq(false)).execute(conn)
 }
 
 #[test]
 fn examine_sql_from_publish_all_posts() {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 -- binds: [false]",
@@ -46,9 +43,9 @@ fn examine_sql_from_publish_all_posts() {
     );
 }
 
-pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
+pub fn publish_pending_posts(conn: &mut PgConnection) -> QueryResult<usize> {
+    use crate::posts::dsl::*;
     use diesel::dsl::now;
-    use posts::dsl::*;
 
     diesel::update(posts)
         .filter(publish_at.lt(now))
@@ -58,21 +55,21 @@ pub fn publish_pending_posts(conn: &PgConnection) -> QueryResult<usize> {
 
 #[test]
 fn examine_sql_from_publish_pending_posts() {
+    use crate::posts::dsl::*;
     use diesel::dsl::now;
-    use posts::dsl::*;
 
     let query = diesel::update(posts)
         .filter(publish_at.lt(now))
         .set(draft.eq(false));
     assert_eq!(
         "UPDATE \"posts\" SET \"draft\" = $1 \
-         WHERE \"posts\".\"publish_at\" < CURRENT_TIMESTAMP \
+         WHERE (\"posts\".\"publish_at\" < CURRENT_TIMESTAMP) \
          -- binds: [false]",
         debug_query(&query).to_string()
     );
 }
 
-pub fn publish_post(post: &Post, conn: &PgConnection) -> QueryResult<usize> {
+pub fn publish_post(post: &Post, conn: &mut PgConnection) -> QueryResult<usize> {
     diesel::update(post)
         .set(posts::draft.eq(false))
         .execute(conn)
@@ -89,14 +86,14 @@ fn examine_sql_from_publish_post() {
         visit_count: 0,
     };
     assert_eq!(
-        "UPDATE \"posts\" SET \"draft\" = $1 WHERE \"posts\".\"id\" = $2 \
+        "UPDATE \"posts\" SET \"draft\" = $1 WHERE (\"posts\".\"id\" = $2) \
          -- binds: [false, 1]",
         debug_query(&diesel::update(&post).set(posts::draft.eq(false))).to_string()
     );
 }
 
-pub fn increment_visit_counts(conn: &PgConnection) -> QueryResult<usize> {
-    use posts::dsl::*;
+pub fn increment_visit_counts(conn: &mut PgConnection) -> QueryResult<usize> {
+    use crate::posts::dsl::*;
 
     diesel::update(posts)
         .set(visit_count.eq(visit_count + 1))
@@ -105,7 +102,7 @@ pub fn increment_visit_counts(conn: &PgConnection) -> QueryResult<usize> {
 
 #[test]
 fn examine_sql_from_increment_visit_counts() {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     assert_eq!(
         "UPDATE \"posts\" SET \"visit_count\" = (\"posts\".\"visit_count\" + $1) \
@@ -115,8 +112,8 @@ fn examine_sql_from_increment_visit_counts() {
     );
 }
 
-pub fn hide_everything(conn: &PgConnection) -> QueryResult<usize> {
-    use posts::dsl::*;
+pub fn hide_everything(conn: &mut PgConnection) -> QueryResult<usize> {
+    use crate::posts::dsl::*;
 
     diesel::update(posts)
         .set((
@@ -128,7 +125,7 @@ pub fn hide_everything(conn: &PgConnection) -> QueryResult<usize> {
 
 #[test]
 fn examine_sql_from_hide_everything() {
-    use posts::dsl::*;
+    use crate::posts::dsl::*;
 
     let query = diesel::update(posts).set((
         title.eq("[REDACTED]"),
@@ -141,7 +138,7 @@ fn examine_sql_from_hide_everything() {
     );
 }
 
-pub fn update_from_post_fields(post: &Post, conn: &PgConnection) -> QueryResult<usize> {
+pub fn update_from_post_fields(post: &Post, conn: &mut PgConnection) -> QueryResult<usize> {
     diesel::update(posts::table).set(post).execute(conn)
 }
 
@@ -178,9 +175,9 @@ fn examine_sql_from_update_post_fields() {
     );
 }
 
-pub fn update_with_option(conn: &PgConnection) -> QueryResult<usize> {
+pub fn update_with_option(conn: &mut PgConnection) -> QueryResult<usize> {
     #[derive(AsChangeset)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     struct PostForm<'a> {
         title: Option<&'a str>,
         body: Option<&'a str>,
@@ -197,7 +194,7 @@ pub fn update_with_option(conn: &PgConnection) -> QueryResult<usize> {
 #[test]
 fn examine_sql_from_update_with_option() {
     #[derive(AsChangeset)]
-    #[table_name = "posts"]
+    #[diesel(table_name = posts)]
     struct PostForm<'a> {
         title: Option<&'a str>,
         body: Option<&'a str>,

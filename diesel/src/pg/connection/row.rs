@@ -1,56 +1,88 @@
-use super::cursor::NamedCursor;
 use super::result::PgResult;
-use pg::{Pg, PgValue};
-use row::*;
+use crate::pg::value::TypeOidLookup;
+use crate::pg::{Pg, PgValue};
+use crate::row::*;
+use std::rc::Rc;
 
-pub struct PgRow<'a> {
+#[derive(Clone)]
+#[allow(missing_debug_implementations)]
+pub struct PgRow {
+    db_result: Rc<PgResult>,
+    row_idx: usize,
+}
+
+impl PgRow {
+    pub(crate) fn new(db_result: Rc<PgResult>, row_idx: usize) -> Self {
+        PgRow { db_result, row_idx }
+    }
+}
+
+impl<'a> RowGatWorkaround<'a, Pg> for PgRow {
+    type Field = PgField<'a>;
+}
+
+impl<'a> Row<'a, Pg> for PgRow {
+    type InnerPartialRow = Self;
+
+    fn field_count(&self) -> usize {
+        self.db_result.column_count()
+    }
+
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Pg>>::Field>
+    where
+        'a: 'b,
+        Self: RowIndex<I>,
+    {
+        let idx = self.idx(idx)?;
+        Some(PgField {
+            db_result: &self.db_result,
+            row_idx: self.row_idx,
+            col_idx: idx,
+        })
+    }
+
+    fn partial_row(&self, range: std::ops::Range<usize>) -> PartialRow<'_, Self::InnerPartialRow> {
+        PartialRow::new(self, range)
+    }
+}
+
+impl RowIndex<usize> for PgRow {
+    fn idx(&self, idx: usize) -> Option<usize> {
+        if idx < self.field_count() {
+            Some(idx)
+        } else {
+            None
+        }
+    }
+}
+
+impl<'a> RowIndex<&'a str> for PgRow {
+    fn idx(&self, field_name: &'a str) -> Option<usize> {
+        (0..self.field_count()).find(|idx| self.db_result.column_name(*idx) == Some(field_name))
+    }
+}
+
+#[allow(missing_debug_implementations)]
+pub struct PgField<'a> {
     db_result: &'a PgResult,
     row_idx: usize,
     col_idx: usize,
 }
 
-impl<'a> PgRow<'a> {
-    pub fn new(db_result: &'a PgResult, row_idx: usize) -> Self {
-        PgRow {
-            db_result,
-            row_idx,
-            col_idx: 0,
-        }
+impl<'a> Field<'a, Pg> for PgField<'a> {
+    fn field_name(&self) -> Option<&str> {
+        self.db_result.column_name(self.col_idx)
+    }
+
+    fn value(&self) -> Option<crate::backend::RawValue<'_, Pg>> {
+        let raw = self.db_result.get(self.row_idx, self.col_idx)?;
+
+        Some(PgValue::new(raw, self))
     }
 }
 
-impl<'a> Row<Pg> for PgRow<'a> {
-    fn take(&mut self) -> Option<PgValue<'_>> {
-        let current_idx = self.col_idx;
-        self.col_idx += 1;
-        let raw = self.db_result.get(self.row_idx, current_idx)?;
-
-        Some(PgValue::new(raw, self.db_result.column_type(current_idx)))
-    }
-
-    fn next_is_null(&self, count: usize) -> bool {
-        (0..count).all(|i| self.db_result.is_null(self.row_idx, self.col_idx + i))
-    }
-}
-
-pub struct PgNamedRow<'a> {
-    cursor: &'a NamedCursor,
-    idx: usize,
-}
-
-impl<'a> PgNamedRow<'a> {
-    pub fn new(cursor: &'a NamedCursor, idx: usize) -> Self {
-        PgNamedRow { cursor, idx }
-    }
-}
-
-impl<'a> NamedRow<Pg> for PgNamedRow<'a> {
-    fn get_raw_value(&self, index: usize) -> Option<PgValue<'_>> {
-        let raw = self.cursor.get_value(self.idx, index)?;
-        Some(PgValue::new(raw, self.cursor.db_result.column_type(index)))
-    }
-
-    fn index_of(&self, column_name: &str) -> Option<usize> {
-        self.cursor.index_of_column(column_name)
+impl<'a> TypeOidLookup for PgField<'a> {
+    fn lookup(&self) -> std::num::NonZeroU32 {
+        self.db_result.column_type(self.col_idx)
     }
 }

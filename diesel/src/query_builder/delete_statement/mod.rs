@@ -1,15 +1,16 @@
-use backend::Backend;
-use dsl::{Filter, IntoBoxed};
-use expression::{AppearsOnTable, SelectableExpression};
-use query_builder::returning_clause::*;
-use query_builder::where_clause::*;
-use query_builder::*;
-use query_dsl::methods::{BoxedDsl, FilterDsl};
-use query_dsl::RunQueryDsl;
-use query_source::Table;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::dsl::{Filter, IntoBoxed, OrFilter};
+use crate::expression::{AppearsOnTable, SelectableExpression};
+use crate::query_builder::returning_clause::*;
+use crate::query_builder::where_clause::*;
+use crate::query_builder::*;
+use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
+use crate::query_dsl::RunQueryDsl;
+use crate::query_source::{QuerySource, Table};
+use crate::result::QueryResult;
 
-#[derive(Debug, Clone, Copy, QueryId)]
+use super::from_clause::FromClause;
+
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Represents a SQL `DELETE` statement.
 ///
@@ -21,21 +22,65 @@ use result::QueryResult;
 /// - `Ret`: The `RETURNING` clause of this query. The exact types used to
 ///   represent this are private. You can safely rely on the default type
 ///   representing the lack of a `RETURNING` clause.
-pub struct DeleteStatement<T, U, Ret = NoReturningClause> {
-    table: T,
+pub struct DeleteStatement<T: QuerySource, U, Ret = NoReturningClause> {
+    from_clause: FromClause<T>,
     where_clause: U,
     returning: Ret,
+}
+
+impl<T, U, Ret> Clone for DeleteStatement<T, U, Ret>
+where
+    T: QuerySource,
+    FromClause<T>: Clone,
+    U: Clone,
+    Ret: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            from_clause: self.from_clause.clone(),
+            where_clause: self.where_clause.clone(),
+            returning: self.returning.clone(),
+        }
+    }
+}
+
+impl<T, U, Ret> std::fmt::Debug for DeleteStatement<T, U, Ret>
+where
+    T: QuerySource,
+    FromClause<T>: std::fmt::Debug,
+    U: std::fmt::Debug,
+    Ret: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DeleteStatement")
+            .field("from_clause", &self.from_clause)
+            .field("where_clause", &self.where_clause)
+            .field("returning", &self.returning)
+            .finish()
+    }
+}
+
+impl<T, U, Ret> QueryId for DeleteStatement<T, U, Ret>
+where
+    T: QuerySource + QueryId + 'static,
+    U: QueryId,
+    Ret: QueryId,
+{
+    type QueryId = DeleteStatement<T, U::QueryId, Ret::QueryId>;
+
+    const HAS_STATIC_QUERY_ID: bool =
+        T::HAS_STATIC_QUERY_ID && U::HAS_STATIC_QUERY_ID && Ret::HAS_STATIC_QUERY_ID;
 }
 
 /// A `DELETE` statement with a boxed `WHERE` clause
 pub type BoxedDeleteStatement<'a, DB, T, Ret = NoReturningClause> =
     DeleteStatement<T, BoxedWhereClause<'a, DB>, Ret>;
 
-impl<T, U> DeleteStatement<T, U, NoReturningClause> {
+impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     pub(crate) fn new(table: T, where_clause: U) -> Self {
         DeleteStatement {
-            table: table,
-            where_clause: where_clause,
+            from_clause: FromClause::new(table),
+            where_clause,
             returning: NoReturningClause,
         }
     }
@@ -50,19 +95,18 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let deleted_rows = diesel::delete(users)
     ///     .filter(name.eq("Sean"))
-    ///     .execute(&connection);
+    ///     .execute(connection);
     /// assert_eq!(Ok(1), deleted_rows);
     ///
     /// let expected_names = vec!["Tess".to_string()];
-    /// let names = users.select(name).load(&connection);
+    /// let names = users.select(name).load(connection);
     ///
     /// assert_eq!(Ok(expected_names), names);
     /// # }
@@ -72,6 +116,39 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
         Self: FilterDsl<Predicate>,
     {
         FilterDsl::filter(self, predicate)
+    }
+
+    /// Adds to the `WHERE` clause of a query using `OR`
+    ///
+    /// If there is already a `WHERE` clause, the result will be `(old OR new)`.
+    /// Calling `foo.filter(bar).or_filter(baz)`
+    /// is identical to `foo.filter(bar.or(baz))`.
+    /// However, the second form is much harder to do dynamically.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     use schema::users::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// let deleted_rows = diesel::delete(users)
+    ///     .filter(name.eq("Sean"))
+    ///     .or_filter(name.eq("Tess"))
+    ///     .execute(connection);
+    /// assert_eq!(Ok(2), deleted_rows);
+    ///
+    /// let num_users = users.count().first(connection);
+    ///
+    /// assert_eq!(Ok(0), num_users);
+    /// # }
+    /// ```
+    pub fn or_filter<Predicate>(self, predicate: Predicate) -> OrFilter<Self, Predicate>
+    where
+        Self: OrFilterDsl<Predicate>,
+    {
+        OrFilterDsl::or_filter(self, predicate)
     }
 
     /// Boxes the `WHERE` clause of this delete statement.
@@ -88,7 +165,6 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// ### Example
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # fn main() {
@@ -98,7 +174,7 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use std::collections::HashMap;
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// #     let mut params = HashMap::new();
     /// #     params.insert("sean_has_been_a_jerk", true);
     /// let mut query = diesel::delete(users)
@@ -108,11 +184,11 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     ///     query = query.filter(name.eq("Sean"));
     /// }
     ///
-    /// let deleted_rows = query.execute(&connection)?;
+    /// let deleted_rows = query.execute(connection)?;
     /// assert_eq!(1, deleted_rows);
     ///
     /// let expected_names = vec!["Tess"];
-    /// let names = users.select(name).load::<String>(&connection)?;
+    /// let names = users.select(name).load::<String>(connection)?;
     ///
     /// assert_eq!(expected_names, names);
     /// #     Ok(())
@@ -131,13 +207,31 @@ impl<T, U, Ret, Predicate> FilterDsl<Predicate> for DeleteStatement<T, U, Ret>
 where
     U: WhereAnd<Predicate>,
     Predicate: AppearsOnTable<T>,
+    T: QuerySource,
 {
     type Output = DeleteStatement<T, U::Output, Ret>;
 
     fn filter(self, predicate: Predicate) -> Self::Output {
         DeleteStatement {
-            table: self.table,
+            from_clause: self.from_clause,
             where_clause: self.where_clause.and(predicate),
+            returning: self.returning,
+        }
+    }
+}
+
+impl<T, U, Ret, Predicate> OrFilterDsl<Predicate> for DeleteStatement<T, U, Ret>
+where
+    T: QuerySource,
+    U: WhereOr<Predicate>,
+    Predicate: AppearsOnTable<T>,
+{
+    type Output = DeleteStatement<T, U::Output, Ret>;
+
+    fn or_filter(self, predicate: Predicate) -> Self::Output {
+        DeleteStatement {
+            from_clause: self.from_clause,
+            where_clause: self.where_clause.or(predicate),
             returning: self.returning,
         }
     }
@@ -146,14 +240,15 @@ where
 impl<'a, T, U, Ret, DB> BoxedDsl<'a, DB> for DeleteStatement<T, U, Ret>
 where
     U: Into<BoxedWhereClause<'a, DB>>,
+    T: QuerySource,
 {
     type Output = BoxedDeleteStatement<'a, DB, T, Ret>;
 
     fn internal_into_boxed(self) -> Self::Output {
         DeleteStatement {
-            table: self.table,
             where_clause: self.where_clause.into(),
             returning: self.returning,
+            from_clause: self.from_clause,
         }
     }
 }
@@ -162,13 +257,13 @@ impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret>
 where
     DB: Backend,
     T: Table,
-    T::FromClause: QueryFragment<DB>,
+    FromClause<T>: QueryFragment<DB>,
     U: QueryFragment<DB>,
     Ret: QueryFragment<DB>,
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
-        out.push_sql("DELETE FROM ");
-        self.table.from_clause().walk_ast(out.reborrow())?;
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql("DELETE ");
+        self.from_clause.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         self.returning.walk_ast(out.reborrow())?;
         Ok(())
@@ -197,9 +292,9 @@ where
     type SqlType = Ret::SqlType;
 }
 
-impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> {}
+impl<T, U, Ret, Conn> RunQueryDsl<Conn> for DeleteStatement<T, U, Ret> where T: QuerySource {}
 
-impl<T, U> DeleteStatement<T, U, NoReturningClause> {
+impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     /// Specify what expression is returned after execution of the `delete`.
     ///
     /// # Examples
@@ -207,16 +302,15 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
     /// ### Deleting a record:
     ///
     /// ```rust
-    /// # #[macro_use] extern crate diesel;
     /// # include!("../../doctest_setup.rs");
     /// #
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
     /// #     use schema::users::dsl::*;
-    /// #     let connection = establish_connection();
+    /// #     let connection = &mut establish_connection();
     /// let deleted_name = diesel::delete(users.filter(name.eq("Sean")))
     ///     .returning(name)
-    ///     .get_result(&connection);
+    ///     .get_result(connection);
     /// assert_eq!(Ok("Sean".to_string()), deleted_name);
     /// # }
     /// # #[cfg(not(feature = "postgres"))]
@@ -228,8 +322,8 @@ impl<T, U> DeleteStatement<T, U, NoReturningClause> {
         DeleteStatement<T, U, ReturningClause<E>>: Query,
     {
         DeleteStatement {
-            table: self.table,
             where_clause: self.where_clause,
+            from_clause: self.from_clause,
             returning: ReturningClause(returns),
         }
     }

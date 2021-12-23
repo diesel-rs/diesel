@@ -93,19 +93,24 @@
 
 use std::any::TypeId;
 use std::borrow::Cow;
-use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
-use backend::Backend;
-use query_builder::*;
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::query_builder::*;
+use crate::result::QueryResult;
 
 #[doc(hidden)]
 #[allow(missing_debug_implementations)]
 pub struct StatementCache<DB: Backend, Statement> {
-    pub cache: RefCell<HashMap<StatementCacheKey<DB>, Statement>>,
+    pub cache: HashMap<StatementCacheKey<DB>, Statement>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum PrepareForCache {
+    Yes,
+    No,
 }
 
 #[allow(clippy::len_without_is_empty, clippy::new_without_default)]
@@ -118,23 +123,23 @@ where
 {
     pub fn new() -> Self {
         StatementCache {
-            cache: RefCell::new(HashMap::new()),
+            cache: HashMap::new(),
         }
     }
 
     pub fn len(&self) -> usize {
-        self.cache.borrow().len()
+        self.cache.len()
     }
 
     pub fn cached_statement<T, F>(
-        &self,
+        &mut self,
         source: &T,
         bind_types: &[DB::TypeMetadata],
         prepare_fn: F,
-    ) -> QueryResult<MaybeCached<Statement>>
+    ) -> QueryResult<MaybeCached<'_, Statement>>
     where
         T: QueryFragment<DB> + QueryId,
-        F: FnOnce(&str) -> QueryResult<Statement>,
+        F: FnOnce(&str, PrepareForCache) -> QueryResult<Statement>,
     {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
@@ -142,23 +147,22 @@ where
 
         if !source.is_safe_to_cache_prepared()? {
             let sql = cache_key.sql(source)?;
-            return prepare_fn(&sql).map(MaybeCached::CannotCache);
+            return prepare_fn(&sql, PrepareForCache::No).map(MaybeCached::CannotCache);
         }
 
-        refmut_map_result(self.cache.borrow_mut(), |cache| {
-            match cache.entry(cache_key) {
-                Occupied(entry) => Ok(entry.into_mut()),
-                Vacant(entry) => {
-                    let statement = {
-                        let sql = entry.key().sql(source)?;
-                        prepare_fn(&sql)
-                    };
+        let cached_result = match self.cache.entry(cache_key) {
+            Occupied(entry) => entry.into_mut(),
+            Vacant(entry) => {
+                let statement = {
+                    let sql = entry.key().sql(source)?;
+                    prepare_fn(&sql, PrepareForCache::Yes)
+                };
 
-                    Ok(entry.insert(statement?))
-                }
+                entry.insert(statement?)
             }
-        })
-        .map(MaybeCached::Cached)
+        };
+
+        Ok(MaybeCached::Cached(cached_result))
     }
 }
 
@@ -166,7 +170,7 @@ where
 #[allow(missing_debug_implementations)]
 pub enum MaybeCached<'a, T: 'a> {
     CannotCache(T),
-    Cached(RefMut<'a, T>),
+    Cached(&'a mut T),
 }
 
 impl<'a, T> Deref for MaybeCached<'a, T> {
@@ -215,14 +219,14 @@ where
             None => {
                 let sql = Self::construct_sql(source)?;
                 Ok(StatementCacheKey::Sql {
-                    sql: sql,
+                    sql,
                     bind_types: bind_types.into(),
                 })
             }
         }
     }
 
-    pub fn sql<T: QueryFragment<DB>>(&self, source: &T) -> QueryResult<Cow<str>> {
+    pub fn sql<T: QueryFragment<DB>>(&self, source: &T) -> QueryResult<Cow<'_, str>> {
         match *self {
             StatementCacheKey::Type(_) => Self::construct_sql(source).map(Cow::Owned),
             StatementCacheKey::Sql { ref sql, .. } => Ok(Cow::Borrowed(sql)),
@@ -234,23 +238,4 @@ where
         source.to_sql(&mut query_builder)?;
         Ok(query_builder.finish())
     }
-}
-
-/// Similar to `RefMut::map`, but for functions which return `Result`
-///
-/// If we were in Haskell (and if `RefMut` were `Traversable`), this would just be
-/// `traverse`.
-fn refmut_map_result<T, U, F>(mut refmut: RefMut<T>, mapper: F) -> QueryResult<RefMut<U>>
-where
-    F: FnOnce(&mut T) -> QueryResult<&mut U>,
-{
-    // We can't just use `RefMut::map` here, since to lift the error out of that
-    // closure we'd need to return *something*.
-    //
-    // Instead we will very briefly convert to a raw pointer to eliminate
-    // lifetimes from the equation. Ultimately the cast is safe since the input
-    // and output lifetimes are identical. However, without the raw pointer
-    // we would have two live mutable references at the same time.
-    let ptr = mapper(&mut *refmut).map(|x| x as *mut _)?;
-    Ok(RefMut::map(refmut, |_| unsafe { &mut *ptr }))
 }

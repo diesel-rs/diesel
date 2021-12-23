@@ -1,0 +1,27 @@
+error[E0599]: the method `is_not_null` exists for tuple `(columns::id, columns::name)`, but its trait bounds were not satisfied
+  --> $DIR/cannot_use_expression_methods_on_tuples.rs:18:29
+   |
+18 |     users.filter((id, name).is_not_null());
+   |                             ^^^^^^^^^^^ method cannot be called on `(columns::id, columns::name)` due to unsatisfied trait bounds
+   |
+   = note: the following trait bounds were not satisfied:
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
+           which is required by `(columns::id, columns::name): diesel::ExpressionMethods`
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
+           which is required by `&(columns::id, columns::name): diesel::ExpressionMethods`
+           `&mut (columns::id, columns::name): diesel::Expression`
+           which is required by `&mut (columns::id, columns::name): diesel::ExpressionMethods`
+
+error[E0599]: the method `eq_any` exists for tuple `(columns::id, columns::name)`, but its trait bounds were not satisfied
+  --> $DIR/cannot_use_expression_methods_on_tuples.rs:19:29
+   |
+19 |     users.filter((id, name).eq_any(users.find(1)));
+   |                             ^^^^^^ method cannot be called on `(columns::id, columns::name)` due to unsatisfied trait bounds
+   |
+   = note: the following trait bounds were not satisfied:
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
+           which is required by `(columns::id, columns::name): diesel::ExpressionMethods`
+           `(diesel::sql_types::Integer, diesel::sql_types::Text): diesel::sql_types::SingleValue`
+           which is required by `&(columns::id, columns::name): diesel::ExpressionMethods`
+           `&mut (columns::id, columns::name): diesel::Expression`
+           which is required by `&mut (columns::id, columns::name): diesel::ExpressionMethods`

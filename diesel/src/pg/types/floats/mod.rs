@@ -1,17 +1,16 @@
+use crate::deserialize::{self, FromSql, FromSqlRow};
+use crate::expression::AsExpression;
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, IsNull, Output, ToSql};
+use crate::sql_types;
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use std::error::Error;
-use std::io::prelude::*;
-
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types;
 
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 
-#[derive(Debug, Clone, PartialEq, Eq, FromSqlRow, AsExpression)]
-#[sql_type = "sql_types::Numeric"]
+#[derive(Debug, Clone, PartialEq, Eq, AsExpression, FromSqlRow)]
+#[diesel(sql_type = sql_types::Numeric)]
 /// Represents a NUMERIC value, closely mirroring the PG wire protocol
 /// representation
 pub enum PgNumeric {
@@ -41,20 +40,15 @@ pub enum PgNumeric {
 struct InvalidNumericSign(u16);
 
 impl ::std::fmt::Display for InvalidNumericSign {
-    fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        write!(f, "InvalidNumericSign({0:x})", self.0)
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> ::std::fmt::Result {
+        f.write_str("sign for numeric field was not one of 0, 0x4000, 0xC000")
     }
 }
 
-impl Error for InvalidNumericSign {
-    fn description(&self) -> &str {
-        "sign for numeric field was not one of 0, 0x4000, 0xC000"
-    }
-}
+impl Error for InvalidNumericSign {}
 
 impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
-    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
-        let bytes = not_none!(bytes);
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = bytes.as_bytes();
         let digit_count = bytes.read_u16::<NetworkEndian>()?;
         let mut digits = Vec::with_capacity(digit_count as usize);
@@ -83,7 +77,7 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
 }
 
 impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let sign = match *self {
             PgNumeric::Positive { .. } => 0,
             PgNumeric::Negative { .. } => 0x4000,
@@ -113,5 +107,59 @@ impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
         }
 
         Ok(IsNull::No)
+    }
+}
+
+impl FromSql<sql_types::Float, Pg> for f32 {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let mut bytes = value.as_bytes();
+        debug_assert!(
+            bytes.len() <= 4,
+            "Received more than 4 bytes while decoding \
+             an f32. Was a double accidentally marked as float?"
+        );
+        debug_assert!(
+            bytes.len() >= 4,
+            "Received less than 4 bytes while decoding \
+             an f32."
+        );
+        bytes
+            .read_f32::<NetworkEndian>()
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+}
+
+impl FromSql<sql_types::Double, Pg> for f64 {
+    fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
+        let mut bytes = value.as_bytes();
+        debug_assert!(
+            bytes.len() <= 8,
+            "Received less than 8 bytes while decoding \
+             an f64. Was a float accidentally marked as double?"
+        );
+        debug_assert!(
+            bytes.len() >= 8,
+            "Received more than 8 bytes while decoding \
+             an f64. Was a numeric accidentally marked as double?"
+        );
+        bytes
+            .read_f64::<NetworkEndian>()
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+}
+
+impl ToSql<sql_types::Float, Pg> for f32 {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_f32::<NetworkEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
+    }
+}
+
+impl ToSql<sql_types::Double, Pg> for f64 {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_f64::<NetworkEndian>(*self)
+            .map(|_| IsNull::No)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }

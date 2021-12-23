@@ -1,11 +1,8 @@
-extern crate diesel;
-extern crate diesel_demo_step_2_pg;
-
 use diesel_demo_step_2_pg::*;
 use std::io::{stdin, Read};
 
 fn main() {
-    let connection = establish_connection();
+    let connection = &mut establish_connection();
 
     let mut title = String::new();
     let mut body = String::new();
@@ -20,7 +17,7 @@ fn main() {
     );
     stdin().read_to_string(&mut body).unwrap();
 
-    let post = create_post(&connection, title, &body);
+    let post = create_post(connection, title, &body);
     println!("\nSaved draft {} with id {}", title, post.id);
 }
 

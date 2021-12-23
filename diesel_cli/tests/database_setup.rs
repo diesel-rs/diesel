@@ -1,4 +1,4 @@
-use support::{database, project};
+use crate::support::{database, project};
 
 #[test]
 fn database_setup_creates_database() {
@@ -82,6 +82,39 @@ fn database_abbreviated_as_db() {
         result.stdout()
     );
     assert!(db.exists());
+}
+
+#[test]
+fn database_setup_respects_migration_dir_by_arg_to_database() {
+    let p = project("database_setup_respects_migration_dir_by_arg_to_database")
+        .folder("foo")
+        .build();
+
+    let db = database(&p.database_url());
+
+    p.create_migration_in_directory(
+        "foo",
+        "12345_create_users_table",
+        "CREATE TABLE users ( id INTEGER )",
+        "DROP TABLE users",
+    );
+
+    // sanity check
+    assert!(!db.exists());
+
+    let result = p
+        .command("database")
+        .arg("--migration-dir=foo")
+        .arg("setup")
+        .run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
 }
 
 #[test]

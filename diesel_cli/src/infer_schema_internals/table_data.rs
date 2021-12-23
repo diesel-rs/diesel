@@ -1,20 +1,25 @@
 use diesel::backend::Backend;
-use diesel::deserialize::{FromSqlRow, Queryable};
+use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
 use std::fmt;
 use std::str::FromStr;
 
 use super::data_structures::ColumnDefinition;
+use super::inference;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct TableName {
-    pub name: String,
+    pub sql_name: String,
+    pub rust_name: String,
     pub schema: Option<String>,
 }
 
 impl TableName {
     pub fn from_name<T: Into<String>>(name: T) -> Self {
+        let name = name.into();
+
         TableName {
-            name: name.into(),
+            rust_name: inference::rust_name_for_sql_name(&name),
+            sql_name: name,
             schema: None,
         }
     }
@@ -24,37 +29,47 @@ impl TableName {
         T: Into<String>,
         U: Into<String>,
     {
+        let name = name.into();
+
         TableName {
-            name: name.into(),
+            rust_name: inference::rust_name_for_sql_name(&name),
+            sql_name: name,
             schema: Some(schema.into()),
         }
     }
 
     #[cfg(feature = "uses_information_schema")]
     pub fn strip_schema_if_matches(&mut self, schema: &str) {
-        if self.schema.as_ref().map(|s| &**s) == Some(schema) {
+        if self.schema.as_deref() == Some(schema) {
             self.schema = None;
+        }
+    }
+
+    pub fn full_sql_name(&self) -> String {
+        match self.schema {
+            Some(ref schema_name) => format!("{}.{}", schema_name, self.sql_name),
+            None => self.sql_name.to_string(),
         }
     }
 }
 
 impl<ST, DB> Queryable<ST, DB> for TableName
 where
+    (String, String): FromStaticSqlRow<ST, DB>,
     DB: Backend,
-    (String, String): FromSqlRow<ST, DB>,
 {
     type Row = (String, String);
 
-    fn build((name, schema): Self::Row) -> Self {
-        TableName::new(name, schema)
+    fn build((name, schema): Self::Row) -> deserialize::Result<Self> {
+        Ok(TableName::new(name, schema))
     }
 }
 
 impl fmt::Display for TableName {
     fn fmt(&self, out: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self.schema {
-            Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.name),
-            None => write!(out, "{}", self.name),
+            Some(ref schema_name) => write!(out, "{}.{}", schema_name, self.rust_name),
+            None => write!(out, "{}", self.rust_name),
         }
     }
 }

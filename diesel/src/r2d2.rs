@@ -8,30 +8,35 @@ pub use self::r2d2::*;
 
 /// A re-export of [`r2d2::Error`], which is only used by methods on [`r2d2::Pool`].
 ///
-/// [`r2d2::Error`]: ../../r2d2/struct.Error.html
-/// [`r2d2::Pool`]: ../../r2d2/struct.Pool.html
+/// [`r2d2::Error`]: r2d2::Error
+/// [`r2d2::Pool`]: r2d2::Pool
 pub type PoolError = self::r2d2::Error;
 
 use std::convert::Into;
 use std::fmt;
 use std::marker::PhantomData;
 
-use backend::UsesAnsiSavepointSyntax;
-use connection::{AnsiTransactionManager, SimpleConnection};
-use deserialize::{Queryable, QueryableByName};
-use prelude::*;
-use query_builder::{AsQuery, QueryFragment, QueryId};
-use sql_types::HasSqlType;
+use crate::backend::Backend;
+use crate::connection::{ConnectionGatWorkaround, SimpleConnection, TransactionManager};
+use crate::expression::QueryMetadata;
+use crate::prelude::*;
+use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 
 /// An r2d2 connection manager for use with Diesel.
 ///
 /// See the [r2d2 documentation] for usage examples.
 ///
-/// [r2d2 documentation]: ../../r2d2
-#[derive(Debug, Clone)]
+/// [r2d2 documentation]: r2d2
+#[derive(Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,
     _marker: PhantomData<T>,
+}
+
+impl<T> fmt::Debug for ConnectionManager<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ConnectionManager<{}>", std::any::type_name::<T>())
+    }
 }
 
 unsafe impl<T: Send + 'static> Sync for ConnectionManager<T> {}
@@ -54,11 +59,11 @@ pub enum Error {
     ConnectionError(ConnectionError),
 
     /// An error occurred pinging the database
-    QueryError(::result::Error),
+    QueryError(crate::result::Error),
 }
 
 impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Error::ConnectionError(ref e) => e.fmt(f),
             Error::QueryError(ref e) => e.fmt(f),
@@ -66,38 +71,31 @@ impl fmt::Display for Error {
     }
 }
 
-impl ::std::error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::ConnectionError(ref e) => e.description(),
-            Error::QueryError(ref e) => e.description(),
-        }
-    }
-}
+impl ::std::error::Error for Error {}
 
 /// A trait indicating a connection could be used inside a r2d2 pool
 pub trait R2D2Connection: Connection {
     /// Check if a connection is still valid
-    fn ping(&self) -> QueryResult<()>;
+    fn ping(&mut self) -> QueryResult<()>;
 }
 
 #[cfg(feature = "postgres")]
-impl R2D2Connection for ::pg::PgConnection {
-    fn ping(&self) -> QueryResult<()> {
+impl R2D2Connection for crate::pg::PgConnection {
+    fn ping(&mut self) -> QueryResult<()> {
         self.execute("SELECT 1").map(|_| ())
     }
 }
 
 #[cfg(feature = "mysql")]
-impl R2D2Connection for ::mysql::MysqlConnection {
-    fn ping(&self) -> QueryResult<()> {
+impl R2D2Connection for crate::mysql::MysqlConnection {
+    fn ping(&mut self) -> QueryResult<()> {
         self.execute("SELECT 1").map(|_| ())
     }
 }
 
 #[cfg(feature = "sqlite")]
-impl R2D2Connection for ::sqlite::SqliteConnection {
-    fn ping(&self) -> QueryResult<()> {
+impl R2D2Connection for crate::sqlite::SqliteConnection {
+    fn ping(&mut self) -> QueryResult<()> {
         self.execute("SELECT 1").map(|_| ())
     }
 }
@@ -118,7 +116,7 @@ where
     }
 
     fn has_broken(&self, _conn: &mut T) -> bool {
-        false
+        std::thread::panicking()
     }
 }
 
@@ -127,20 +125,29 @@ where
     M: ManageConnection,
     M::Connection: R2D2Connection + Send + 'static,
 {
-    fn batch_execute(&self, query: &str) -> QueryResult<()> {
-        (&**self).batch_execute(query)
+    fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
+        (&mut **self).batch_execute(query)
     }
+}
+
+impl<'conn, 'query, DB, M> ConnectionGatWorkaround<'conn, 'query, DB> for PooledConnection<M>
+where
+    M: ManageConnection,
+    M::Connection: Connection<Backend = DB>,
+    DB: Backend,
+{
+    type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor;
+    type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Row;
 }
 
 impl<M> Connection for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection:
-        Connection<TransactionManager = AnsiTransactionManager> + R2D2Connection + Send + 'static,
-    <M::Connection as Connection>::Backend: UsesAnsiSavepointSyntax,
+    M::Connection: Connection + R2D2Connection + Send + 'static,
 {
     type Backend = <M::Connection as Connection>::Backend;
-    type TransactionManager = <M::Connection as Connection>::TransactionManager;
+    type TransactionManager =
+        PoolTransactionManager<<M::Connection as Connection>::TransactionManager>;
 
     fn establish(_: &str) -> ConnectionResult<Self> {
         Err(ConnectionError::BadConnection(String::from(
@@ -148,37 +155,89 @@ where
         )))
     }
 
-    fn execute(&self, query: &str) -> QueryResult<usize> {
-        (&**self).execute(query)
+    fn execute(&mut self, query: &str) -> QueryResult<usize> {
+        (&mut **self).execute(query)
     }
 
-    fn query_by_index<T, U>(&self, source: T) -> QueryResult<Vec<U>>
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
     where
         T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId,
-        Self::Backend: HasSqlType<T::SqlType>,
-        U: Queryable<T::SqlType, Self::Backend>,
+        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
     {
-        (&**self).query_by_index(source)
+        (&mut **self).load(source)
     }
 
-    fn query_by_name<T, U>(&self, source: &T) -> QueryResult<Vec<U>>
-    where
-        T: QueryFragment<Self::Backend> + QueryId,
-        U: QueryableByName<Self::Backend>,
-    {
-        (&**self).query_by_name(source)
-    }
-
-    fn execute_returning_count<T>(&self, source: &T) -> QueryResult<usize>
+    fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        (&**self).execute_returning_count(source)
+        (&mut **self).execute_returning_count(source)
     }
 
-    fn transaction_manager(&self) -> &Self::TransactionManager {
-        (&**self).transaction_manager()
+    fn transaction_state(
+        &mut self,
+    ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
+        (&mut **self).transaction_state()
+    }
+
+    fn begin_test_transaction(&mut self) -> QueryResult<()> {
+        (&mut **self).begin_test_transaction()
+    }
+}
+
+#[doc(hidden)]
+#[allow(missing_debug_implementations)]
+pub struct PoolTransactionManager<T>(std::marker::PhantomData<T>);
+
+impl<M, T> TransactionManager<PooledConnection<M>> for PoolTransactionManager<T>
+where
+    M: ManageConnection,
+    M::Connection: Connection<TransactionManager = T> + R2D2Connection,
+    T: TransactionManager<M::Connection>,
+{
+    type TransactionStateData = T::TransactionStateData;
+
+    fn begin_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
+        T::begin_transaction(&mut **conn)
+    }
+
+    fn rollback_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
+        T::rollback_transaction(&mut **conn)
+    }
+
+    fn commit_transaction(conn: &mut PooledConnection<M>) -> QueryResult<()> {
+        T::commit_transaction(&mut **conn)
+    }
+
+    fn get_transaction_depth(conn: &mut PooledConnection<M>) -> u32 {
+        T::get_transaction_depth(&mut **conn)
+    }
+}
+
+impl<M> crate::migration::MigrationConnection for PooledConnection<M>
+where
+    M: ManageConnection,
+    M::Connection: crate::migration::MigrationConnection,
+    Self: Connection,
+{
+    fn setup(&mut self) -> QueryResult<usize> {
+        (&mut **self).setup()
+    }
+}
+
+impl<Changes, Output, M> crate::query_dsl::UpdateAndFetchResults<Changes, Output>
+    for PooledConnection<M>
+where
+    M: ManageConnection,
+    M::Connection: crate::query_dsl::UpdateAndFetchResults<Changes, Output>,
+    Self: Connection,
+{
+    fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
+        (&mut **self).update_and_fetch(changeset)
     }
 }
 
@@ -188,8 +247,8 @@ mod tests {
     use std::sync::Arc;
     use std::thread;
 
-    use r2d2::*;
-    use test_helpers::*;
+    use crate::r2d2::*;
+    use crate::test_helpers::*;
 
     #[test]
     fn establish_basic_connection() {
@@ -235,8 +294,8 @@ mod tests {
 
     #[test]
     fn pooled_connection_impls_connection() {
-        use select;
-        use sql_types::Text;
+        use crate::select;
+        use crate::sql_types::Text;
 
         let manager = ConnectionManager::<TestConnection>::new(database_url());
         let pool = Pool::builder()
@@ -244,9 +303,9 @@ mod tests {
             .test_on_check_out(true)
             .build(manager)
             .unwrap();
-        let conn = pool.get().unwrap();
+        let mut conn = pool.get().unwrap();
 
         let query = select("foo".into_sql::<Text>());
-        assert_eq!("foo", query.get_result::<String>(&conn).unwrap());
+        assert_eq!("foo", query.get_result::<String>(&mut conn).unwrap());
     }
 }

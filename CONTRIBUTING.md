@@ -36,17 +36,19 @@ Thank you! We'll try to respond as quickly as possible.
 
 ## Submitting feature requests
 
-If you can't find an issue (open or closed) describing your idea on our [issue
-tracker], open an issue. Adding answers to the following
-questions in your description is +1:
+Diesel's issue tracker is meant to represent our current roadmap. An open issue represents either a bug, or a new feature that a member of the Diesel team is actively working on.
 
-- What do you want to do, and how do you expect Diesel to support you with that?
-- How might this be added to Diesel?
-- What are possible alternatives?
-- Are there any disadvantages?
+This means that you should not submit a feature request to our issue tracker, unless you were asked to do so by a member of the Diesel team. Feature requests should instead be posted in
+our [discussion forum](https://github.com/diesel-rs/diesel/discussions/categories/ideas).
+
+If you can't find thread describing your idea on our forum, create a new one. Adding answers to the following questions in your description is +1:
+
+-   What do you want to do, and how do you expect Diesel to support you with that?
+-   How might this be added to Diesel?
+-   What are possible alternatives?
+-   Are there any disadvantages?
 
 Thank you! We'll try to respond as quickly as possible.
-
 
 ## Contribute code to Diesel
 
@@ -93,7 +95,7 @@ Thank you! We'll try to respond as quickly as possible.
      ! echo 'CREATE DATABASE diesel_test; CREATE DATABASE diesel_unit_test;' | docker exec -i diesel.mysql mysql
    do sleep 1; done
 
-   docker run -d --name diesel.postgres -p 5432:5432 postgres
+   docker run -d --name diesel.postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres postgres
    while
      sleep 1;
      ! echo 'CREATE DATABASE diesel_test;' | docker exec -i diesel.postgres psql -U postgres
@@ -108,7 +110,8 @@ Thank you! We'll try to respond as quickly as possible.
 
 5. Now, try running the test suite to confirm everything works for you locally
    by executing `bin/test`. (Initially, this will take a while to compile
-   everything.)
+   everything.) In addition, if you want to compile and test a crate separately, 
+   you can refer to the commands in `bin/test`.
 
 [rustup]: https://rustup.rs/
 
@@ -128,7 +131,7 @@ To run rustfmt tests locally:
 
 3. Run clippy using cargo from the root of your diesel repo.
    ```
-   cargo clippy
+   cargo clippy --all
    ```
    Each PR needs to compile without warning.
 

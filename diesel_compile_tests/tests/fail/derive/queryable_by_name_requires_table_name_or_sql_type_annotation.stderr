@@ -1,0 +1,17 @@
+error: Cannot determine the SQL type of foo
+
+  = help: Your struct must either be annotated with `#[diesel(table_name = foo)]` or have this field annotated with `#[diesel(sql_type = ...)]`
+
+ --> $DIR/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:6:5
+  |
+6 |     foo: i32,
+  |     ^^^
+
+error: Cannot determine the SQL type of field
+
+  = help: Your struct must either be annotated with `#[diesel(table_name = foo)]` or have this field annotated with `#[diesel(sql_type = ...)]`
+
+  --> $DIR/queryable_by_name_requires_table_name_or_sql_type_annotation.rs:11:12
+   |
+11 | struct Bar(i32, String);
+   |            ^^^

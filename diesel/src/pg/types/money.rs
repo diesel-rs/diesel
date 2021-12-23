@@ -1,12 +1,11 @@
 //! Support for Money values under PostgreSQL.
-
-use std::io::prelude::*;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-use deserialize::{self, FromSql};
-use pg::{Pg, PgValue};
-use serialize::{self, Output, ToSql};
-use sql_types::{BigInt, Money};
+use crate::deserialize::{self, FromSql, FromSqlRow};
+use crate::expression::AsExpression;
+use crate::pg::{Pg, PgValue};
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types::{BigInt, Money};
 
 /// Money is represented in Postgres as a 64 bit signed integer.  This struct is a dumb wrapper
 /// type, meant only to indicate the integer's meaning.  The fractional precision of the value is
@@ -19,18 +18,18 @@ use sql_types::{BigInt, Money};
 /// use diesel::data_types::PgMoney as Pence; // 1/100th unit of Pound
 /// use diesel::data_types::PgMoney as Fils;  // 1/1000th unit of Dinar
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
-#[sql_type = "Money"]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
+#[diesel(sql_type = Money)]
 pub struct PgMoney(pub i64);
 
 impl FromSql<Money, Pg> for PgMoney {
-    fn from_sql(bytes: Option<PgValue<'_>>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         FromSql::<BigInt, Pg>::from_sql(bytes).map(PgMoney)
     }
 }
 
 impl ToSql<Money, Pg> for PgMoney {
-    fn to_sql<W: Write>(&self, out: &mut Output<W, Pg>) -> serialize::Result {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<BigInt, Pg>::to_sql(&self.0, out)
     }
 }
@@ -93,7 +92,7 @@ mod quickcheck_impls {
     use super::PgMoney;
 
     impl Arbitrary for PgMoney {
-        fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        fn arbitrary(g: &mut Gen) -> Self {
             PgMoney(i64::arbitrary(g))
         }
     }

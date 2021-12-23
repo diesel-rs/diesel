@@ -1,11 +1,11 @@
-use query_builder::AsQuery;
-use query_source::joins::OnClauseWrapper;
-use query_source::{JoinTo, QuerySource, Table};
+use crate::query_builder::AsQuery;
+use crate::query_source::joins::OnClauseWrapper;
+use crate::query_source::{JoinTo, QuerySource, Table};
 
 #[doc(hidden)]
 /// `JoinDsl` support trait to emulate associated type constructors
 pub trait InternalJoinDsl<Rhs, Kind, On> {
-    type Output: AsQuery;
+    type Output;
 
     fn join(self, rhs: Rhs, kind: Kind, on: On) -> Self::Output;
 }
@@ -26,7 +26,7 @@ where
 /// `JoinDsl` support trait to emulate associated type constructors and grab
 /// the known on clause from the associations API
 pub trait JoinWithImplicitOnClause<Rhs, Kind> {
-    type Output: AsQuery;
+    type Output;
 
     fn join_with_implicit_on_clause(self, rhs: Rhs, kind: Kind) -> Self::Output;
 }
@@ -47,24 +47,23 @@ where
 /// Specify the `ON` clause for a join statement. This will override
 /// any implicit `ON` clause that would come from [`joinable!`]
 ///
-/// [`joinable!`]: ../macro.joinable.html
+/// [`joinable!`]: crate::joinable!
 ///
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::{users, posts};
 /// #
 /// # fn main() {
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let data = users::table
 ///     .left_join(posts::table.on(
 ///         users::id.eq(posts::user_id).and(
 ///             posts::title.eq("My first post"))
 ///     ))
 ///     .select((users::name, posts::title.nullable()))
-///     .load(&connection);
+///     .load(connection);
 /// let expected = vec![
 ///     ("Sean".to_string(), Some("My first post".to_string())),
 ///     ("Tess".to_string(), None),

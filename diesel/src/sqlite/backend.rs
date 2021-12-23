@@ -1,11 +1,9 @@
 //! The SQLite backend
-use byteorder::NativeEndian;
 
-use super::connection::SqliteValue;
+use super::connection::{SqliteBindCollector, SqliteValue};
 use super::query_builder::SqliteQueryBuilder;
-use backend::*;
-use query_builder::bind_collector::RawBytesBindCollector;
-use sql_types::TypeMetadata;
+use crate::backend::*;
+use crate::sql_types::TypeMetadata;
 
 /// The SQLite backend
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
@@ -20,7 +18,7 @@ pub struct Sqlite;
 /// The variants of this struct determine what bytes are expected from
 /// `ToSql` impls.
 #[allow(missing_debug_implementations)]
-#[derive(Hash, PartialEq, Eq, Clone, Copy)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum SqliteType {
     /// Bind using `sqlite3_bind_blob`
     Binary,
@@ -40,12 +38,14 @@ pub enum SqliteType {
 
 impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
-    type BindCollector = RawBytesBindCollector<Sqlite>;
-    type ByteOrder = NativeEndian;
+}
+
+impl<'a> HasBindCollector<'a> for Sqlite {
+    type BindCollector = SqliteBindCollector<'a>;
 }
 
 impl<'a> HasRawValue<'a> for Sqlite {
-    type RawValue = &'a SqliteValue;
+    type RawValue = SqliteValue<'a, 'a, 'a>;
 }
 
 impl TypeMetadata for Sqlite {
@@ -53,4 +53,25 @@ impl TypeMetadata for Sqlite {
     type MetadataLookup = ();
 }
 
-impl UsesAnsiSavepointSyntax for Sqlite {}
+impl SqlDialect for Sqlite {
+    type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
+
+    type OnConflictClause = SqliteOnConflictClaues;
+
+    type InsertWithDefaultKeyword =
+        sql_dialect::default_keyword_for_insert::DoesNotSupportDefaultKeyword;
+    type BatchInsertSupport = SqliteBatchInsert;
+    type DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause;
+
+    type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
+    type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
+    type ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison;
+}
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteOnConflictClaues;
+
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for SqliteOnConflictClaues {}
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteBatchInsert;

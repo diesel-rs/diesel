@@ -2,7 +2,19 @@
 name = "diesel_demo_step_2_mysql"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+edition = "2018"
 
 [dependencies]
-diesel = { version = "1.4.0", features = ["mysql"] }
-dotenv = "0.10"
+diesel = { version = "2.0.0", path = "../../../diesel", features = ["mysql"] }
+dotenv = "0.15"
+
+[[bin]]
+name = "show_posts"
+doc = false
+
+[[bin]]
+name = "write_post"
+doc = false
+
+[lib]
+doc = false

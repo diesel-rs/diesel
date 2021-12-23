@@ -1,0 +1,23 @@
+error: expected `,`
+  --> $DIR/bad_primary_key.rs:12:30
+   |
+12 | #[diesel(primary_key(id, bar = "baz"))]
+   |                              ^
+
+error: expected `,`
+  --> $DIR/bad_primary_key.rs:19:29
+   |
+19 | #[diesel(primary_key(id, qux(id)))]
+   |                             ^^^^
+
+error: unexpected end of input, expected parentheses
+  --> $DIR/bad_primary_key.rs:26:9
+   |
+26 | #[diesel(primary_key)]
+   |         ^^^^^^^^^^^^^
+
+error: expected parentheses
+  --> $DIR/bad_primary_key.rs:33:22
+   |
+33 | #[diesel(primary_key = id)]
+   |                      ^

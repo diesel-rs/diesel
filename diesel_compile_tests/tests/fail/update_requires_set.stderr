@@ -1,0 +1,8 @@
+error[E0277]: the trait bound `diesel::query_builder::update_statement::SetNotCalled: QueryFragment<_>` is not satisfied
+  --> $DIR/update_requires_set.rs:14:10
+   |
+14 |         .execute(&mut conn);
+   |          ^^^^^^^ the trait `QueryFragment<_>` is not implemented for `diesel::query_builder::update_statement::SetNotCalled`
+   |
+   = note: required because of the requirements on the impl of `QueryFragment<_>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>`
+   = note: required because of the requirements on the impl of `ExecuteDsl<_, _>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>`

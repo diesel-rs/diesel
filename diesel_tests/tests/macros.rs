@@ -3,17 +3,17 @@
 // think we need to generically support creation of these functions, as it's
 // different enough in SQLite to avoid.
 #![cfg(feature = "postgres")]
+use crate::schema::*;
 use diesel::sql_types::{BigInt, VarChar};
 use diesel::*;
-use schema::*;
 
 sql_function!(fn my_lower(x: VarChar) -> VarChar);
 
 #[test]
 fn test_sql_function() {
-    use schema::users::dsl::*;
+    use crate::schema::users::dsl::*;
 
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
     connection
         .execute(
             "CREATE FUNCTION my_lower(varchar) RETURNS varchar
@@ -28,14 +28,14 @@ fn test_sql_function() {
         vec![sean],
         users
             .filter(my_lower(name).eq("sean"))
-            .load(&connection)
+            .load(connection)
             .unwrap()
     );
     assert_eq!(
         vec![tess],
         users
             .filter(my_lower(name).eq("tess"))
-            .load(&connection)
+            .load(connection)
             .unwrap()
     );
 }
@@ -45,11 +45,11 @@ sql_function!(fn currval(x: VarChar) -> BigInt);
 
 #[test]
 fn sql_function_without_return_type() {
-    let connection = connection();
+    let connection = &mut connection();
     select(setval("users_id_seq", 54))
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
-    let seq_val = select(currval("users_id_seq")).get_result::<i64>(&connection);
+    let seq_val = select(currval("users_id_seq")).get_result::<i64>(connection);
     assert_eq!(Ok(54), seq_val);
 }

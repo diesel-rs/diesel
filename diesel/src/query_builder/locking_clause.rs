@@ -1,12 +1,12 @@
-use backend::Backend;
-use query_builder::{AstPass, QueryFragment};
-use result::QueryResult;
+use crate::backend::Backend;
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
+use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoLockingClause;
 
 impl<DB: Backend> QueryFragment<DB> for NoLockingClause {
-    fn walk_ast(&self, _: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -29,7 +29,7 @@ impl<LockMode, Modifier> LockingClause<LockMode, Modifier> {
 impl<DB: Backend, L: QueryFragment<DB>, M: QueryFragment<DB>> QueryFragment<DB>
     for LockingClause<L, M>
 {
-    fn walk_ast(&self, mut out: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.lock_mode.walk_ast(out.reborrow())?;
         self.modifier.walk_ast(out.reborrow())
     }

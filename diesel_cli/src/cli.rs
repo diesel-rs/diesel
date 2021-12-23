@@ -1,3 +1,4 @@
+use crate::validators::num::*;
 use clap::{App, AppSettings, Arg, Shell, SubCommand};
 
 pub fn build_cli() -> App<'static, 'static> {
@@ -17,12 +18,71 @@ pub fn build_cli() -> App<'static, 'static> {
         )
         .setting(AppSettings::VersionlessSubcommands)
         .arg(migration_dir_arg())
-        .subcommand(SubCommand::with_name("run").about("Runs all pending migrations"))
-        .subcommand(SubCommand::with_name("revert").about("Reverts the latest run migration"))
-        .subcommand(SubCommand::with_name("redo").about(
-            "Reverts and re-runs the latest migration. Useful \
-             for testing that a migration can in fact be reverted.",
-        ))
+        .subcommand(SubCommand::with_name("run").about("Runs all pending migrations."))
+        .subcommand(
+            SubCommand::with_name("revert")
+                .about("Reverts the specified migrations.")
+                .arg(
+                    Arg::with_name("REVERT_ALL")
+                        .long("all")
+                        .short("a")
+                        .help("Reverts previously run migration files.")
+                        .takes_value(false)
+                        .conflicts_with("REVERT_NUMBER"),
+                )
+                .arg(
+                    Arg::with_name("REVERT_NUMBER")
+                        .long("number")
+                        .short("n")
+                        .help("Reverts the last `n` migration files.")
+                        .long_help(
+                            "When this option is specified the last `n` migration files \
+                             will be reverted. By default revert the last one.",
+                        )
+                        // TODO : when upgrading to clap 3.0 add default_value("1").
+                        // Then update code in main.rs for the revert subcommand.
+                        // See https://github.com/clap-rs/clap/issues/1605
+                        .takes_value(true)
+                        .validator(is_positive_int)
+                        .conflicts_with("REVERT_ALL"),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("redo")
+                .about(
+                    "Reverts and re-runs the latest migration. Useful \
+                     for testing that a migration can in fact be reverted.",
+                )
+                .arg(
+                    Arg::with_name("REDO_ALL")
+                        .long("all")
+                        .short("a")
+                        .help("Reverts and re-runs all migrations.")
+                        .long_help(
+                            "When this option is specified all migrations \
+                             will be reverted and re-runs. Useful for testing \
+                             that your migrations can be reverted and applied.",
+                        )
+                        .takes_value(false)
+                        .conflicts_with("REDO_NUMBER"),
+                )
+                .arg(
+                    Arg::with_name("REDO_NUMBER")
+                        .long("number")
+                        .short("n")
+                        .help("Redo the last `n` migration files.")
+                        .long_help(
+                            "When this option is specified the last `n` migration files \
+                             will be reverted and re-runs. By default redo the last migration.",
+                        )
+                        // TODO : when upgrading to clap 3.0 add default_value("1").
+                        // Then update code in main.rs for the revert subcommand.
+                        // See https://github.com/clap-rs/clap/issues/1605
+                        .takes_value(true)
+                        .validator(is_positive_int)
+                        .conflicts_with("REDO_ALL"),
+                ),
+        )
         .subcommand(
             SubCommand::with_name("list")
                 .about("Lists all available migrations, marking those that have been applied."),
@@ -35,11 +95,11 @@ pub fn build_cli() -> App<'static, 'static> {
             SubCommand::with_name("generate")
                 .about(
                     "Generate a new migration with the given name, and \
-                     the current timestamp as the version",
+                     the current timestamp as the version.",
                 )
                 .arg(
                     Arg::with_name("MIGRATION_NAME")
-                        .help("The name of the migration to create")
+                        .help("The name of the migration to create.")
                         .required(true),
                 )
                 .arg(
@@ -117,50 +177,39 @@ pub fn build_cli() -> App<'static, 'static> {
                 .index(1)
                 .takes_value(true)
                 .multiple(true)
-                .help("Table names to filter (default only-tables if not empty)"),
+                .help("Table names to filter (default only-tables if not empty)."),
         )
         .arg(
             Arg::with_name("only-tables")
                 .short("o")
                 .long("only-tables")
-                .help("Only include tables from table-name")
-                .conflicts_with("except-tables")
-                .conflicts_with("blacklist"),
-        )
-        .arg(
-            Arg::with_name("whitelist")
-                .short("w")
-                .long("whitelist")
-                .hidden(true)
-                .conflicts_with("blacklist")
+                .help("Only include tables from table-name that matches regexp.")
                 .conflicts_with("except-tables"),
         )
         .arg(
             Arg::with_name("except-tables")
                 .short("e")
                 .long("except-tables")
-                .help("Exclude tables from table-name")
-                .conflicts_with("only-tables")
-                .conflicts_with("whitelist"),
-        )
-        .arg(
-            Arg::with_name("blacklist")
-                .short("b")
-                .long("blacklist")
-                .hidden(true)
-                .conflicts_with("whitelist")
+                .help("Exclude tables from table-name that matches regex.")
                 .conflicts_with("only-tables"),
         )
         .arg(
             Arg::with_name("with-docs")
                 .long("with-docs")
-                .help("Render documentation comments for tables and columns"),
+                .help("Render documentation comments for tables and columns."),
+        )
+        .arg(
+            Arg::with_name("column-sorting")
+                .long("column-sorting")
+                .help("Sort order for table columns.")
+                .takes_value(true)
+                .possible_values(&["ordinal_position", "name"]),
         )
         .arg(
             Arg::with_name("patch-file")
                 .long("patch-file")
                 .takes_value(true)
-                .help("A unified diff file to be applied to the final schema"),
+                .help("A unified diff file to be applied to the final schema."),
         )
         .arg(
             Arg::with_name("import-types")
@@ -168,7 +217,12 @@ pub fn build_cli() -> App<'static, 'static> {
                 .takes_value(true)
                 .multiple(true)
                 .number_of_values(1)
-                .help("A list of types to import for every table, separated by commas"),
+                .help("A list of types to import for every table, separated by commas."),
+        )
+        .arg(
+            Arg::with_name("generate-custom-type-definitions")
+                .long("no-generate-missing-sql-type-definitions")
+                .help("Generate SQL type definitions for types not provided by diesel"),
         );
 
     let config_arg = Arg::with_name("CONFIG_FILE")
@@ -184,7 +238,7 @@ pub fn build_cli() -> App<'static, 'static> {
 
     let locked_schema_arg = Arg::with_name("LOCKED_SCHEMA")
         .long("locked-schema")
-        .help("Require that the schema file is up to date")
+        .help("Require that the schema file is up to date.")
         .long_help(
             "When `print_schema.file` is specified in your config file, this \
              flag will cause Diesel CLI to error if any command would result in \

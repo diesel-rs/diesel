@@ -1,7 +1,8 @@
-use expression::operators::And;
-use expression::Expression;
-use expression_methods::*;
-use sql_types::Bool;
+use crate::expression::grouped::Grouped;
+use crate::expression::operators::And;
+use crate::expression::Expression;
+use crate::expression_methods::*;
+use crate::sql_types::Bool;
 
 /// This method is used by `FindDsl` to work with tuples. Because we cannot
 /// express this without specialization or overlapping impls, it is brute force
@@ -26,10 +27,10 @@ macro_rules! impl_eq_all {
             $Left1: EqAll<$Right1>,
             ($($Left,)+): EqAll<($($Right,)+)>,
         {
-            type Output = And<
+            type Output = Grouped<And<
                 <$Left1 as EqAll<$Right1>>::Output,
                 <($($Left,)+) as EqAll<($($Right,)+)>>::Output,
-            >;
+            >>;
 
             fn eq_all(self, rhs: ($Right1, $($Right,)+)) -> Self::Output {
                 let ($Left1, $($Left,)+) = self;
@@ -68,4 +69,4 @@ macro_rules! impl_eq_all_for_all_tuples {
     };
 }
 
-__diesel_for_each_tuple!(impl_eq_all_for_all_tuples);
+diesel_derives::__diesel_for_each_tuple!(impl_eq_all_for_all_tuples);

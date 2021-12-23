@@ -1,0 +1,25 @@
+error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
+  --> $DIR/insert_cannot_reference_columns_from_other_table.rs:22:10
+   |
+22 |         .values(&posts::id.eq(1));
+   |          ^^^^^^ expected struct `posts::table`, found struct `users::table`
+
+error[E0271]: type mismatch resolving `<&Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>> as diesel::Insertable<users::table>>::Values == ValuesClause<_, users::table>`
+  --> $DIR/insert_cannot_reference_columns_from_other_table.rs:25:10
+   |
+25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
+   |          ^^^^^^ expected struct `posts::table`, found struct `users::table`
+   |
+   = note: expected struct `ValuesClause<ColumnInsertValue<posts::columns::id, &diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, posts::table>`
+              found struct `ValuesClause<_, users::table>`
+   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `(&Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`
+
+error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
+  --> $DIR/insert_cannot_reference_columns_from_other_table.rs:25:10
+   |
+25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
+   |          ^^^^^^ expected struct `posts::table`, found struct `users::table`
+   |
+   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `&diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`
+   = note: 2 redundant requirements hidden
+   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `(&Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`

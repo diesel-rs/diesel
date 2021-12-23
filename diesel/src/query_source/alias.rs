@@ -1,17 +1,21 @@
 #![warn(missing_docs)]
 
 use super::*;
-use associations::HasTable;
-use backend::Backend;
-use dsl::{Filter, Select};
-use expression::{AppearsOnTable, Expression, NonAggregate, SelectableExpression};
-use query_builder::{AsQuery, AstPass, QueryFragment, QueryId, SelectStatement};
-use query_dsl::join_dsl::InternalJoinDsl;
-use query_dsl::methods::*;
-use query_dsl::QueryDsl;
-use query_source::joins::{AppendSelection, Inner, Join, JoinOn, LeftOuter, OnClauseWrapper};
-use query_source::{AppearsInFromClause, Column, Never, Once, QuerySource, Table};
-use result::QueryResult;
+use crate::associations::HasTable;
+use crate::backend::Backend;
+use crate::dsl::{Filter, Select};
+use crate::expression::{
+    is_aggregate, AppearsOnTable, Expression, SelectableExpression, ValidGrouping,
+};
+use crate::query_builder::{AsQuery, AstPass, QueryFragment, QueryId, SelectStatement};
+use crate::query_dsl::join_dsl::InternalJoinDsl;
+use crate::query_dsl::methods::*;
+use crate::query_dsl::QueryDsl;
+use crate::query_source::joins::{
+    AppendSelection, Inner, Join, JoinOn, LeftOuter, OnClauseWrapper,
+};
+use crate::query_source::{AppearsInFromClause, Column, Never, Once, QuerySource, Table};
+use crate::result::QueryResult;
 use std::marker::PhantomData;
 
 #[derive(Debug, Copy)]
@@ -121,7 +125,7 @@ macro_rules! field_alias_mapper {
     }
 }
 
-__diesel_for_each_tuple!(field_alias_mapper);
+diesel_derives::__diesel_for_each_tuple!(field_alias_mapper);
 
 impl<T, F> QuerySource for Alias<T, F>
 where
@@ -148,7 +152,7 @@ where
     T::FromClause: QueryFragment<DB>,
     F: Named,
 {
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         T::from_clause(&T::table()).walk_ast(pass.reborrow())?;
         pass.push_sql(" AS ");
         pass.push_identifier(F::NAME)?;
@@ -163,7 +167,7 @@ where
     C: Column<Table = T>,
     F: Named,
 {
-    fn walk_ast(&self, mut pass: AstPass<DB>) -> QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_identifier(F::NAME)?;
         pass.push_sql(".");
         pass.push_identifier(C::NAME)?;
@@ -187,11 +191,19 @@ where
 {
 }
 
-impl<T, F, C> NonAggregate for AliasedField<Alias<T, F>, C>
+impl<T, F, C> ValidGrouping<()> for AliasedField<Alias<T, F>, C>
 where
     T: Table,
     C: Column<Table = T>,
 {
+    type IsAggregate = is_aggregate::No;
+}
+impl<T, F, C> ValidGrouping<AliasedField<Alias<T, F>, C>> for AliasedField<Alias<T, F>, C>
+where
+    T: Table,
+    C: Column<Table = T>,
+{
+    type IsAggregate = is_aggregate::Yes;
 }
 
 impl<T, F> AsQuery for Alias<T, F>

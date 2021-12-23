@@ -1,11 +1,13 @@
 use super::delete_statement::DeleteStatement;
 use super::insert_statement::{Insert, InsertOrIgnore, Replace};
+use super::select_clause::SelectClause;
 use super::{
-    IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery, UpdateStatement,
+    AsQuery, IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery,
+    UpdateStatement,
 };
-use dsl::Select;
-use expression::Expression;
-use query_dsl::methods::SelectDsl;
+use crate::expression::Expression;
+use crate::query_builder::distinct_clause::NoDistinctClause;
+use crate::Table;
 
 /// Creates an `UPDATE` statement.
 ///
@@ -16,21 +18,20 @@ use query_dsl::methods::SelectDsl;
 /// Passing a type which implements `Identifiable` is the same as passing
 /// `some_table.find(some_struct.id())`.
 ///
-/// [`filter`]: query_builder/struct.UpdateStatement.html#method.filter
+/// [`filter`]: crate::query_builder::UpdateStatement::filter()
 ///
 /// # Examples
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set(name.eq("James"))
-///     .get_result(&connection);
+///     .get_result(connection);
 /// // On backends that support it, you can call `get_result` instead of `execute`
 /// // to have `RETURNING *` automatically appended to the query. Alternatively, you
 /// // can explicitly return an expression by using the `returning` method before
@@ -43,10 +44,9 @@ use query_dsl::methods::SelectDsl;
 ///
 /// To update multiple columns, give [`set`] a tuple argument:
 ///
-/// [`set`]: query_builder/struct.UpdateStatement.html#method.set
+/// [`set`]: crate::query_builder::UpdateStatement::set()
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # table! {
@@ -59,8 +59,8 @@ use query_dsl::methods::SelectDsl;
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
-/// # use users::dsl::*;
-/// # let connection = establish_connection();
+/// # use self::users::dsl::*;
+/// # let connection = &mut establish_connection();
 /// # connection.execute("DROP TABLE users").unwrap();
 /// # connection.execute("CREATE TABLE users (
 /// #     id SERIAL PRIMARY KEY,
@@ -70,7 +70,7 @@ use query_dsl::methods::SelectDsl;
 ///
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set((name.eq("James"), surname.eq("Bond")))
-///     .get_result(&connection);
+///     .get_result(connection);
 ///
 /// assert_eq!(Ok((1, "James".to_string(), "Bond".to_string())), updated_row);
 /// # }
@@ -88,27 +88,26 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// This scope can be narrowed by calling [`filter`]
 /// on the table before it is passed in.
 ///
-/// [`filter`]: query_builder/struct.DeleteStatement.html#method.filter
+/// [`filter`]: crate::query_builder::DeleteStatement::filter()
 ///
 /// # Examples
 ///
 /// ### Deleting a single record:
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
 /// #     delete();
 /// # }
 /// #
+/// #
 /// # fn delete() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// #     let get_count = || users.count().first::<i64>(&connection);
-/// let old_count = get_count();
-/// diesel::delete(users.filter(id.eq(1))).execute(&connection)?;
-/// assert_eq!(old_count.map(|count| count - 1), get_count());
+/// #     let connection = &mut establish_connection();
+/// let old_count = users.count().first::<i64>(connection);
+/// diesel::delete(users.filter(id.eq(1))).execute(connection)?;
+/// assert_eq!(old_count.map(|count| count - 1), users.count().first(connection));
 /// # Ok(())
 /// # }
 /// ```
@@ -116,7 +115,6 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// ### Deleting a whole table:
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -125,10 +123,9 @@ pub fn update<T: IntoUpdateTarget>(source: T) -> UpdateStatement<T::Table, T::Wh
 /// #
 /// # fn delete() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// #     let get_count = || users.count().first::<i64>(&connection);
-/// diesel::delete(users).execute(&connection)?;
-/// assert_eq!(Ok(0), get_count());
+/// #     let connection = &mut establish_connection();
+/// diesel::delete(users).execute(connection)?;
+/// assert_eq!(Ok(0), users.count().first::<i64>(connection));
 /// # Ok(())
 /// # }
 /// ```
@@ -142,27 +139,26 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// You may add data by calling [`values()`] or [`default_values()`]
 /// as shown in the examples.
 ///
-/// [`values()`]: query_builder/struct.IncompleteInsertStatement.html#method.values
-/// [`default_values()`]: query_builder/struct.IncompleteInsertStatement.html#method.default_values
+/// [`values()`]: crate::query_builder::IncompleteInsertStatement::values()
+/// [`default_values()`]: crate::query_builder::IncompleteInsertStatement::default_values()
 ///
 /// Backends that support the `RETURNING` clause, such as PostgreSQL,
 /// can return the inserted rows by calling [`.get_results`] instead of [`.execute`].
 ///
-/// [`.get_results`]: query_dsl/trait.RunQueryDsl.html#method.get_results
-/// [`.execute`]: query_dsl/trait.RunQueryDsl.html#tymethod.execute
+/// [`.get_results`]: crate::query_dsl::RunQueryDsl::get_results()
+/// [`.execute`]: crate::query_dsl::RunQueryDsl::execute
 ///
 /// # Examples
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&name.eq("Sean"))
-///     .execute(&connection);
+///     .execute(connection);
 ///
 /// assert_eq!(Ok(1), rows_inserted);
 ///
@@ -173,7 +169,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_users)
-///     .execute(&connection);
+///     .execute(connection);
 ///
 /// assert_eq!(Ok(2), rows_inserted);
 /// # }
@@ -182,17 +178,16 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// ### Using a tuple for values
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
-/// #     diesel::delete(users).execute(&connection).unwrap();
+/// #     let connection = &mut establish_connection();
+/// #     diesel::delete(users).execute(connection).unwrap();
 /// let new_user = (id.eq(1), name.eq("Sean"));
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_user)
-///     .execute(&connection);
+///     .execute(connection);
 ///
 /// assert_eq!(Ok(1), rows_inserted);
 ///
@@ -203,7 +198,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 ///
 /// let rows_inserted = diesel::insert_into(users)
 ///     .values(&new_users)
-///     .execute(&connection);
+///     .execute(connection);
 ///
 /// assert_eq!(Ok(2), rows_inserted);
 /// # }
@@ -212,40 +207,138 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// ### Using struct for values
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// # use schema::users;
 /// #
 /// #[derive(Insertable)]
-/// #[table_name = "users"]
+/// #[diesel(table_name = users)]
 /// struct NewUser<'a> {
 ///     name: &'a str,
 /// }
 ///
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// // Insert one record at a time
 ///
 /// let new_user = NewUser { name: "Ruby Rhod" };
 ///
 /// diesel::insert_into(users)
 ///     .values(&new_user)
-///     .execute(&connection)
+///     .execute(connection)
 ///     .unwrap();
 ///
 /// // Insert many records
 ///
 /// let new_users = vec![
-///     NewUser { name: "Leeloo Multipass", },
-///     NewUser { name: "Korben Dallas", },
+///     NewUser { name: "Leeloo Multipass" },
+///     NewUser { name: "Korben Dallas" },
 /// ];
 ///
 /// let inserted_names = diesel::insert_into(users)
 ///     .values(&new_users)
-///     .execute(&connection)
+///     .execute(connection)
 ///     .unwrap();
 /// # }
+/// ```
+///
+/// ### Inserting default value for a column
+///
+/// You can use `Option<T>` to allow a column to be set to the default value when needed.
+///
+/// When the field is set to `None`, diesel inserts the default value on supported databases.
+/// When the field is set to `Some(..)`, diesel inserts the given value.
+///
+/// The column `color` in `brands` table is `NOT NULL DEFAULT 'Green'`.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// # #[cfg(not(feature = "sqlite"))]
+/// # use schema::brands;
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// #[derive(Insertable)]
+/// #[diesel(table_name = brands)]
+/// struct NewBrand {
+///     color: Option<String>,
+/// }
+///
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// #     use schema::brands::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// // Insert `Red`
+/// let new_brand = NewBrand { color: Some("Red".into()) };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(connection)
+///     .unwrap();
+///
+/// // Insert the default color
+/// let new_brand = NewBrand { color: None };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(connection)
+///     .unwrap();
+/// # }
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {}
+/// ```
+///
+/// ### Inserting default value for a nullable column
+///
+/// The column `accent` in `brands` table is `DEFAULT 'Green'`. It is a nullable column.
+///
+/// You can use `Option<Option<T>>` in this case.
+///
+/// When the field is set to `None`, diesel inserts the default value on supported databases.
+/// When the field is set to `Some(None)`, diesel inserts `NULL`.
+/// When the field is set to `Some(Some(..))` diesel inserts the given value.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// # #[cfg(not(feature = "sqlite"))]
+/// # use schema::brands;
+/// #
+/// # #[cfg(not(feature = "sqlite"))]
+/// #[derive(Insertable)]
+/// #[diesel(table_name = brands)]
+/// struct NewBrand {
+///     accent: Option<Option<String>>,
+/// }
+///
+/// # #[cfg(not(feature = "sqlite"))]
+/// # fn main() {
+/// #     use schema::brands::dsl::*;
+/// #     let connection = &mut establish_connection();
+/// // Insert `Red`
+/// let new_brand = NewBrand { accent: Some(Some("Red".into())) };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(connection)
+///     .unwrap();
+///
+/// // Insert the default accent
+/// let new_brand = NewBrand { accent: None };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(connection)
+///     .unwrap();
+///
+/// // Insert `NULL`
+/// let new_brand = NewBrand { accent: Some(None) };
+///
+/// diesel::insert_into(brands)
+///     .values(&new_brand)
+///     .execute(connection)
+///     .unwrap();
+/// # }
+/// # #[cfg(feature = "sqlite")]
+/// # fn main() {}
 /// ```
 ///
 /// ### Insert from select
@@ -255,11 +348,10 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// (See also [`SelectStatement::insert_into`], which generally
 /// reads better for select statements)
 ///
-/// [`SelectStatement::insert_into`]: prelude/trait.Insertable.html#method.insert_into
-/// [`.into_columns`]: query_builder/struct.InsertStatement.html#method.into_columns
+/// [`SelectStatement::insert_into`]: crate::prelude::Insertable::insert_into()
+/// [`.into_columns`]: crate::query_builder::InsertStatement::into_columns()
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -268,8 +360,8 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// #
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::{posts, users};
-/// #     let conn = establish_connection();
-/// #     diesel::delete(posts::table).execute(&conn)?;
+/// #     let conn = &mut establish_connection();
+/// #     diesel::delete(posts::table).execute(conn)?;
 /// let new_posts = users::table
 ///     .select((
 ///         users::name.concat("'s First Post"),
@@ -278,11 +370,11 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// diesel::insert_into(posts::table)
 ///     .values(new_posts)
 ///     .into_columns((posts::title, posts::user_id))
-///     .execute(&conn)?;
+///     .execute(conn)?;
 ///
 /// let inserted_posts = posts::table
 ///     .select(posts::title)
-///     .load::<String>(&conn)?;
+///     .load::<String>(conn)?;
 /// let expected = vec!["Sean's First Post", "Tess's First Post"];
 /// assert_eq!(expected, inserted_posts);
 /// #     Ok(())
@@ -292,26 +384,25 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// ### With return value
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # #[cfg(feature = "postgres")]
 /// # fn main() {
 /// #     use schema::users::dsl::*;
-/// #     let connection = establish_connection();
+/// #     let connection = &mut establish_connection();
 /// let inserted_names = diesel::insert_into(users)
 ///     .values(&vec![
 ///         name.eq("Diva Plavalaguna"),
 ///         name.eq("Father Vito Cornelius"),
 ///     ])
 ///     .returning(name)
-///     .get_results(&connection);
+///     .get_results(connection);
 /// assert_eq!(Ok(vec!["Diva Plavalaguna".to_string(), "Father Vito Cornelius".to_string()]), inserted_names);
 /// # }
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
 /// ```
-pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
+pub fn insert_into<T: Table>(target: T) -> IncompleteInsertStatement<T, Insert> {
     IncompleteInsertStatement::new(target, Insert)
 }
 
@@ -323,12 +414,11 @@ pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
 ///
 /// With PostgreSQL, similar functionality is provided by [`on_conflict_do_nothing`].
 ///
-/// [`on_conflict_do_nothing`]: query_builder/insert_statement/struct.InsertStatement.html#method.on_conflict_do_nothing
+/// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
 ///
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # fn main() {
@@ -340,20 +430,20 @@ pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
 /// #     use schema::users::dsl::*;
 /// #     use diesel::{delete, insert_or_ignore_into};
 /// #
-/// #     let connection = establish_connection();
-/// #     diesel::delete(users).execute(&connection)?;
+/// #     let connection = &mut establish_connection();
+/// #     diesel::delete(users).execute(connection)?;
 /// insert_or_ignore_into(users)
 ///     .values((id.eq(1), name.eq("Jim")))
-///     .execute(&connection)?;
+///     .execute(connection)?;
 ///
 /// insert_or_ignore_into(users)
 ///     .values(&vec![
 ///         (id.eq(1), name.eq("Sean")),
 ///         (id.eq(2), name.eq("Tess")),
 ///     ])
-///     .execute(&connection)?;
+///     .execute(connection)?;
 ///
-/// let names = users.select(name).order(id).load::<String>(&connection)?;
+/// let names = users.select(name).order(id).load::<String>(connection)?;
 /// assert_eq!(vec![String::from("Jim"), String::from("Tess")], names);
 /// #     Ok(())
 /// # }
@@ -363,19 +453,32 @@ pub fn insert_into<T>(target: T) -> IncompleteInsertStatement<T, Insert> {
 /// #     Ok(())
 /// # }
 /// ```
-pub fn insert_or_ignore_into<T>(target: T) -> IncompleteInsertStatement<T, InsertOrIgnore> {
+pub fn insert_or_ignore_into<T: Table>(target: T) -> IncompleteInsertStatement<T, InsertOrIgnore> {
     IncompleteInsertStatement::new(target, InsertOrIgnore)
 }
 
 /// Creates a bare select statement, with no from clause. Primarily used for
 /// testing diesel itself, but likely useful for third party crates as well. The
 /// given expressions must be selectable from anywhere.
-pub fn select<T>(expression: T) -> Select<SelectStatement<()>, T>
+pub fn select<T>(expression: T) -> crate::dsl::BareSelect<T>
 where
     T: Expression,
-    SelectStatement<()>: SelectDsl<T>,
+    crate::dsl::BareSelect<T>: AsQuery,
 {
-    SelectStatement::simple(()).select(expression)
+    SelectStatement::new(
+        SelectClause(expression),
+        super::NoFromClause,
+        NoDistinctClause,
+        super::where_clause::NoWhereClause,
+        super::order_clause::NoOrderClause,
+        super::LimitOffsetClause {
+            limit_clause: super::NoLimitClause,
+            offset_clause: super::NoOffsetClause,
+        },
+        super::group_by_clause::NoGroupByClause,
+        super::having_clause::NoHavingClause,
+        super::locking_clause::NoLockingClause,
+    )
 }
 
 /// Creates a `REPLACE` statement.
@@ -387,7 +490,6 @@ where
 /// # Example
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # #[cfg(not(feature = "postgres"))]
@@ -395,26 +497,26 @@ where
 /// #     use schema::users::dsl::*;
 /// #     use diesel::{insert_into, replace_into};
 /// #
-/// #     let conn = establish_connection();
+/// #     let conn = &mut establish_connection();
 /// #     conn.execute("DELETE FROM users").unwrap();
 /// replace_into(users)
 ///     .values(&vec![
 ///         (id.eq(1), name.eq("Sean")),
 ///         (id.eq(2), name.eq("Tess")),
 ///     ])
-///     .execute(&conn)
+///     .execute(conn)
 ///     .unwrap();
 ///
 /// replace_into(users)
 ///     .values((id.eq(1), name.eq("Jim")))
-///     .execute(&conn)
+///     .execute(conn)
 ///     .unwrap();
 ///
-/// let names = users.select(name).order(id).load::<String>(&conn);
+/// let names = users.select(name).order(id).load::<String>(conn);
 /// assert_eq!(Ok(vec!["Jim".into(), "Tess".into()]), names);
 /// # }
 /// # #[cfg(feature = "postgres")] fn main() {}
-pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
+pub fn replace_into<T: Table>(target: T) -> IncompleteInsertStatement<T, Replace> {
     IncompleteInsertStatement::new(target, Replace)
 }
 
@@ -424,7 +526,13 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// supported by the query builder. Unlike most queries in Diesel, `sql_query`
 /// will deserialize its data by name, not by index. That means that you cannot
 /// deserialize into a tuple, and structs which you deserialize from this
-/// function will need to have `#[derive(QueryableByName)]`
+/// function will need to have `#[derive(QueryableByName)]`.
+///
+/// This function is intended for use when you want to write the entire query
+/// using raw SQL. If you only need a small bit of raw SQL in your query, use
+/// [`sql`](crate::dsl::sql()) instead.
+///
+/// Query parameters can be bound into the raw query using [`SqlQuery::bind()`].
 ///
 /// # Safety
 ///
@@ -433,34 +541,67 @@ pub fn replace_into<T>(target: T) -> IncompleteInsertStatement<T, Replace> {
 /// that the given type is correct. If your query returns a column of an
 /// unexpected type, the result may have the wrong value, or return an error.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```rust
-/// # #[macro_use] extern crate diesel;
 /// # include!("../doctest_setup.rs");
 /// #
 /// # use schema::users;
 /// #
 /// # #[derive(QueryableByName, Debug, PartialEq)]
-/// # #[table_name="users"]
+/// # #[diesel(table_name = users)]
 /// # struct User {
 /// #     id: i32,
 /// #     name: String,
 /// # }
 /// #
 /// # fn main() {
-/// #     use diesel::sql_query;
+/// #     run_test_1().unwrap();
+/// #     run_test_2().unwrap();
+/// # }
 /// #
-/// #     let connection = establish_connection();
+/// # fn run_test_1() -> QueryResult<()> {
+/// #     use diesel::sql_query;
+/// #     use diesel::sql_types::{Integer, Text};
+/// #
+/// #     let connection = &mut establish_connection();
 /// let users = sql_query("SELECT * FROM users ORDER BY id")
-///     .load(&connection);
+///     .load(connection);
 /// let expected_users = vec![
 ///     User { id: 1, name: "Sean".into() },
 ///     User { id: 2, name: "Tess".into() },
 /// ];
 /// assert_eq!(Ok(expected_users), users);
+/// #     Ok(())
+/// # }
+///
+/// # fn run_test_2() -> QueryResult<()> {
+/// #     use diesel::sql_query;
+/// #     use diesel::sql_types::{Integer, Text};
+/// #
+/// #     let connection = &mut establish_connection();
+/// #     diesel::insert_into(users::table)
+/// #         .values(users::name.eq("Jim"))
+/// #         .execute(connection).unwrap();
+/// #     #[cfg(feature = "postgres")]
+/// #     let users = sql_query("SELECT * FROM users WHERE id > $1 AND name != $2");
+/// #     #[cfg(not(feature = "postgres"))]
+/// // Checkout the documentation of your database for the correct
+/// // bind placeholder
+/// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
+/// # ;
+/// let users = users
+///     .bind::<Integer, _>(1)
+///     .bind::<Text, _>("Tess")
+///     .get_results(connection);
+/// let expected_users = vec![
+///     User { id: 3, name: "Jim".into() },
+/// ];
+/// assert_eq!(Ok(expected_users), users);
+/// #     Ok(())
 /// # }
 /// ```
+/// [`SqlQuery::bind()`]: crate::query_builder::SqlQuery::bind()
 pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery<()> {
     SqlQuery::new((), query.into())
 }

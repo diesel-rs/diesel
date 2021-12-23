@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Compiler error while compiling diesel
+    url: https://github.com/diesel-rs/diesel/issues?q=is%3Aissue+ld+returned+1+exit+status+
+    about: Failed to compile diesel? Have a look at existing issues. You've likely miss some required dependency.
+  - name: Simple Questions
+    url: https://gitter.im/diesel-rs/diesel
+    about: If you have a simple question please use our gitter channel.
+  - name: Complex Questions
+    url: https://github.com/diesel-rs/diesel/discussions/categories/q-a
+    about: Do you have a larger question? Ask in our forum.
+  - name: Feature Requests
+    url: https://github.com/diesel-rs/diesel/discussions/categories/ideas
+    about: If you want to suggest a new feature please create a new topic in our discussions forum

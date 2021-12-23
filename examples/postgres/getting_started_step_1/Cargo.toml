@@ -2,7 +2,15 @@
 name = "diesel_demo_step_1_pg"
 version = "0.1.0"
 authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+edition = "2018"
 
 [dependencies]
-diesel = { version = "1.4.0", features = ["postgres"] }
-dotenv = "0.10"
+diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres"] }
+dotenv = "0.15"
+
+[[bin]]
+name = "show_posts"
+doc = false
+
+[lib]
+doc = false

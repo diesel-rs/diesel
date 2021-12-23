@@ -1,0 +1,119 @@
+on:
+  schedule:
+    - cron: "23 03 * * *"
+
+name: Metrics
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: ["postgres", "sqlite", "mysql"]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            diesel_bench/target
+          key: metrics-${{matrix.backend}}-cargo-${{ hashFiles('diesel_bench/Cargo.toml')}}
+
+      - name: Install postgres (Linux)
+        if: matrix.backend == 'postgres'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql
+          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
+          sudo service postgresql restart && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart && sleep 3
+          echo 'DATABASE_URL=postgres://postgres:postgres@localhost/' >> $GITHUB_ENV
+
+      - name: Install sqlite (Linux)
+        if: matrix.backend == 'sqlite'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsqlite3-dev
+          echo 'SQLITE_DATABASE_URL=/tmp/test.db' >> $GITHUB_ENV
+          echo 'DATABASE_URL=sqlite:///tmp/test.db' >> $GITHUB_ENV
+
+      - name: Install mysql (Linux)
+        if: matrix.backend == 'mysql'
+        run: |
+          sudo systemctl start mysql.service
+          sudo apt-get update
+          sudo apt-get -y install libmysqlclient-dev
+          mysql -e "create database diesel_test; create database diesel_unit_test; grant all on \`diesel_%\`.* to 'root'@'localhost';" -uroot -proot
+          echo 'DATABASE_URL=mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
+
+      - name: Install rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Run Benchmarks (Postgres)
+        if: matrix.backend == 'postgres'
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} rust_postgres futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde"
+
+      - name: Run Benchmarks (Sqlite)
+        if: matrix.backend == 'sqlite'
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} tokio rusqlite futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/sqlite quaint/serde-support serde"
+
+      - name: Run Benchmarks (Mysql)
+        if: matrix.backend == 'mysql'
+        uses: actions-rs/cargo@v1
+        with:
+          command: bench
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} tokio rustorm rustorm/with-${{matrix.backend}} rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/mysql quaint/serde-support serde"
+
+      - name: Push metrics
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          sudo apt-get -y install git
+
+          mkdir ~/.ssh -p
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          echo "${{ secrets.METRIC_ACCESS_KEY }}" >> ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          git clone --depth 1 git@github.com:diesel-rs/metrics.git
+
+          cd metrics
+          export FOLDER_NAME=$(date +%Y%m%d-%H%M%S)
+          mkdir -p metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
+          mv ../diesel_bench/target/criterion/* metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
+
+          git add metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
+          git -c user.name=Bot -c user.email=dummy@example.com commit --message "📈"
+
+          git push origin master
+
+      - name: cleanup
+        if: always()
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          rm -rf diesel_bench/target/criterion
+          ssh-add -D
+          rm -Rf ~/.ssh

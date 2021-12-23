@@ -1,106 +1,67 @@
-use proc_macro2;
-use syn;
-
-use migrations::migration_directory_from_given_path;
-use migrations_internals::{migration_paths_in_directory, version_from_path};
+use crate::migrations::migration_directory_from_given_path;
+use migrations_internals::{migrations_directories, version_from_string, TomlMetadata};
+use quote::quote;
 use std::error::Error;
 use std::fs::DirEntry;
 use std::path::Path;
 
-use util::{get_option, get_options_from_input};
-
-pub fn derive_embed_migrations(input: &syn::DeriveInput) -> proc_macro2::TokenStream {
-    fn bug() -> ! {
-        panic!(
-            "This is a bug. Please open a Github issue \
-             with your invocation of `embed_migrations!"
-        );
-    }
-
-    let options =
-        get_options_from_input(&parse_quote!(embed_migrations_options), &input.attrs, bug);
-    let migrations_path_opt = options
-        .as_ref()
-        .map(|o| get_option(o, "migrations_path", bug));
-    let migrations_expr =
-        migration_directory_from_given_path(migrations_path_opt.as_ref().map(String::as_str))
-            .and_then(|path| migration_literals_from_path(&path));
-    let migrations_expr = match migrations_expr {
-        Ok(v) => v,
-        Err(e) => panic!("Error reading migrations: {}", e),
+pub fn expand(path: String) -> proc_macro2::TokenStream {
+    let migrations_path_opt = if path.is_empty() {
+        None
+    } else {
+        Some(path.replace("\"", ""))
     };
-
-    // These are split into multiple `quote!` calls to avoid recursion limit
-    let embedded_migration_def = quote!(
-        struct EmbeddedMigration {
-            version: &'static str,
-            up_sql: &'static str,
-        }
-
-        impl Migration for EmbeddedMigration {
-            fn version(&self) -> &str {
-                self.version
-            }
-
-            fn run(&self, conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-                conn.batch_execute(self.up_sql).map_err(Into::into)
-            }
-
-            fn revert(&self, _conn: &SimpleConnection) -> Result<(), RunMigrationsError> {
-                unreachable!()
-            }
-        }
-    );
-
-    let run_fns = quote!(
-        pub fn run<C: MigrationConnection>(conn: &C) -> Result<(), RunMigrationsError> {
-            run_with_output(conn, &mut io::sink())
-        }
-
-        pub fn run_with_output<C: MigrationConnection>(
-            conn: &C,
-            out: &mut io::Write,
-        ) -> Result<(), RunMigrationsError> {
-            run_migrations(conn, ALL_MIGRATIONS.iter().map(|v| *v), out)
-        }
-    );
+    let migrations_expr = migration_directory_from_given_path(migrations_path_opt.as_deref())
+        .unwrap_or_else(|_| {
+            panic!(
+                "Failed to receive migrations dir from {:?}",
+                migrations_path_opt
+            )
+        });
+    let embeded_migrations =
+        migration_literals_from_path(&migrations_expr).expect("Failed to read migration literals");
 
     quote! {
-        extern crate diesel;
-        extern crate diesel_migrations;
-
-        use self::diesel_migrations::*;
-        use self::diesel::connection::SimpleConnection;
-        use std::io;
-
-        const ALL_MIGRATIONS: &[&Migration] = &[#(#migrations_expr),*];
-
-        #embedded_migration_def
-
-        #run_fns
+        diesel_migrations::EmbeddedMigrations::new(&[#(#embeded_migrations,)*])
     }
 }
 
 fn migration_literals_from_path(
     path: &Path,
 ) -> Result<Vec<proc_macro2::TokenStream>, Box<dyn Error>> {
-    let mut migrations = migration_paths_in_directory(path)?;
+    let mut migrations = migrations_directories(path)?.collect::<Result<Vec<_>, _>>()?;
 
     migrations.sort_by_key(DirEntry::path);
 
-    migrations
+    Ok(migrations
         .into_iter()
         .map(|e| migration_literal_from_path(&e.path()))
-        .collect()
+        .collect())
 }
 
-fn migration_literal_from_path(path: &Path) -> Result<proc_macro2::TokenStream, Box<dyn Error>> {
-    let version = version_from_path(path)?;
-    let sql_file = path.join("up.sql");
-    let sql_file_path = sql_file.to_str();
+fn migration_literal_from_path(path: &Path) -> proc_macro2::TokenStream {
+    let name = path
+        .file_name()
+        .unwrap_or_else(|| panic!("Can't get file name from path `{:?}`", path))
+        .to_string_lossy();
+    if version_from_string(&name).is_none() {
+        panic!(
+            "Invalid migration directory, the directory's name should be \
+             <timestamp>_<name_of_migration>, and it should only contain \
+             up.sql and down.sql."
+        );
+    }
+    let up_sql = path.join("up.sql");
+    let up_sql_path = up_sql.to_str();
+    let down_sql = path.join("down.sql");
+    let down_sql_path = down_sql.to_str();
+    let metadata = TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default();
+    let run_in_transaction = metadata.run_in_transaction;
 
-    Ok(quote!(&EmbeddedMigration {
-        version: #version,
-        up_sql: include_str!(#sql_file_path),
-    }))
+    quote!(diesel_migrations::EmbeddedMigration::new(
+        include_str!(#up_sql_path),
+        include_str!(#down_sql_path),
+        diesel_migrations::EmbeddedName::new(#name),
+        diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction)
+    ))
 }

@@ -1,5 +1,6 @@
+#![cfg(not(feature = "mysql"))]
+use crate::schema::{connection_without_transaction, DropTable};
 use diesel::*;
-use schema::{connection_without_transaction, DropTable};
 
 table! {
     auto_time {
@@ -13,12 +14,12 @@ table! {
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn managing_updated_at_for_table() {
     use self::auto_time::dsl::*;
+    use crate::schema_dsl::*;
     use chrono::NaiveDateTime;
-    use schema_dsl::*;
     use std::{thread, time::Duration};
 
     // transactions have frozen time, so we can't use them
-    let connection = connection_without_transaction();
+    let connection = &mut connection_without_transaction();
     create_table(
         "auto_time",
         (
@@ -27,36 +28,39 @@ fn managing_updated_at_for_table() {
             timestamp("updated_at"),
         ),
     )
-    .execute(&connection)
+    .execute(connection)
     .unwrap();
+    let mut _drop_conn = connection_without_transaction();
     let _guard = DropTable {
-        connection: &connection,
+        connection: &mut _drop_conn,
         table_name: "auto_time",
+        can_drop: !cfg!(feature = "sqlite"),
     };
+
     sql_query("SELECT diesel_manage_updated_at('auto_time')")
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     insert_into(auto_time)
         .values(&vec![n.eq(2), n.eq(1), n.eq(5)])
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     let result = auto_time
         .count()
         .filter(updated_at.is_null())
-        .get_result::<i64>(&connection);
+        .get_result::<i64>(connection);
     assert_eq!(Ok(3), result);
 
     update(auto_time)
         .set(n.eq(n + 1))
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
 
     let result = auto_time
         .count()
         .filter(updated_at.is_null())
-        .get_result::<i64>(&connection);
+        .get_result::<i64>(connection);
     assert_eq!(Ok(0), result);
 
     if cfg!(feature = "sqlite") {
@@ -65,12 +69,12 @@ fn managing_updated_at_for_table() {
     }
 
     let query = auto_time.find(2).select(updated_at);
-    let old_time: NaiveDateTime = query.first(&connection).unwrap();
+    let old_time: NaiveDateTime = query.first(connection).unwrap();
     update(auto_time.find(2))
         .set(n.eq(0))
-        .execute(&connection)
+        .execute(connection)
         .unwrap();
-    let new_time: NaiveDateTime = query.first(&connection).unwrap();
+    let new_time: NaiveDateTime = query.first(connection).unwrap();
     assert!(old_time < new_time);
 }
 
@@ -80,4 +84,23 @@ fn strips_sqlite_url_prefix() {
     let mut path = std::env::temp_dir();
     path.push("diesel_test_sqlite.db");
     assert!(SqliteConnection::establish(&format!("sqlite://{}", path.display())).is_ok());
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn file_uri_created_in_memory() {
+    use std::path::Path;
+
+    assert!(SqliteConnection::establish("file::memory:").is_ok());
+    assert!(!Path::new("file::memory:").exists());
+    assert!(!Path::new(":memory:").exists());
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn sqlite_uri_prefix_interpreted_as_file() {
+    let mut path = std::env::temp_dir();
+    path.push("diesel_test_sqlite_readonly.db");
+    assert!(SqliteConnection::establish(&format!("sqlite://{}?mode=rwc", path.display())).is_ok());
+    assert!(path.exists());
 }
