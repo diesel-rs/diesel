@@ -16,7 +16,7 @@ edition = "2018"
 byteorder = { version = "1.0", optional = true }
 chrono = { version = "0.4.19", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
-libsqlite3-sys = { version = ">=0.8.0, <0.24.0", optional = true, features = ["bundled_bindings"] }
+libsqlite3-sys = { version = ">=0.17.2, <0.24.0", optional = true, features = ["bundled_bindings"] }
 mysqlclient-sys = { version = "0.2.0", optional = true }
 pq-sys = { version = "0.4.0", optional = true }
 quickcheck = { version = "1.0.3", optional = true }
