@@ -193,6 +193,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   with the database. Beside of the changed signature, existing impls of this trait should remain unchanged in almost 
   all cases.
 
+* The minimal supported version of libsqlite3-sys is now 0.17.2.
+
 ### Fixed
 
 * Many types were incorrectly considered non-aggregate when they should not
