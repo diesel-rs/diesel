@@ -283,7 +283,7 @@ macro_rules! __internal_alias_helper {
         }}
 
         __internal_alias_helper!($left_table as $left_alias, $($table as $alias,)*);
-        __internal_alias_helper!($right_alias as $right_alias, $($table as $alias,)*);
+        __internal_alias_helper!($right_table as $right_alias, $($table as $alias,)*);
     };
 
     ($table: ident as $alias: ident,) => {}
