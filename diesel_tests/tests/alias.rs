@@ -1,11 +1,9 @@
+use crate::schema::*;
 use diesel::prelude::*;
-use schema::*;
 
 #[test]
 fn selecting_basic_data() {
-    use schema::users;
-
-    let connection = connection();
+    let connection = &mut connection();
     connection
         .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
         .unwrap();
@@ -22,7 +20,7 @@ fn selecting_basic_data() {
             user_alias.field(users::name),
             user_alias.field(users::hair_color),
         ))
-        .load(&connection)
+        .load(connection)
         .unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -30,7 +28,7 @@ fn selecting_basic_data() {
 
 #[test]
 fn select_multiple_from_join() {
-    let connection = connection_with_sean_and_tess_in_users_table();
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
 
     connection
         .execute(
@@ -69,12 +67,12 @@ fn select_multiple_from_join() {
                 .filter(post_alias.field(posts::id).eq(posts::id))
                 .single_value(),
         )
-        .load::<Option<i32>>(&connection)
+        .load::<Option<i32>>(connection)
         .unwrap();
 
     println!("{:?}", diesel::debug_query::<diesel::pg::Pg, _>(&query));
     query
-        .load::<(i32, i32, String, Option<String>, Vec<String>)>(&connection)
+        .load::<(i32, i32, String, Option<String>, Vec<String>)>(connection)
         .unwrap();
 
     post_alias
@@ -93,7 +91,7 @@ fn select_multiple_from_join() {
             users::id.nullable(),
             user_alias.field(users::id),
         ))
-        .load::<(i32, Option<i32>, i32)>(&connection)
+        .load::<(i32, Option<i32>, i32)>(connection)
         .unwrap();
 
     // having the alias on the right side seems to work
@@ -102,7 +100,7 @@ fn select_multiple_from_join() {
         .inner_join(user_alias)
         .inner_join(users::table)
         .select((user_alias.field(users::name), users::name))
-        .load::<(String, String)>(&connection)
+        .load::<(String, String)>(connection)
         .unwrap();
 
     // we could also define and use mutiple aliases for the same table.
@@ -115,7 +113,7 @@ fn select_multiple_from_join() {
         .inner_join(user1_alias)
         .inner_join(user2_alias)
         .select(posts::id)
-        .load::<i32>(&connection)
+        .load::<i32>(connection)
         .unwrap();
 
     // its also possible to do a self join, multiple times
@@ -132,6 +130,6 @@ fn select_multiple_from_join() {
             user1_alias.field(users::id),
             user2_alias.field(users::id),
         ))
-        .load::<(i32, i32, i32)>(&connection)
+        .load::<(i32, i32, i32)>(connection)
         .unwrap();
 }

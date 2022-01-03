@@ -7,10 +7,12 @@ use crate::dsl::{Filter, Select};
 use crate::expression::{
     is_aggregate, AppearsOnTable, Expression, SelectableExpression, ValidGrouping,
 };
-use crate::query_builder::{AsQuery, AstPass, QueryFragment, QueryId, SelectStatement};
+use crate::query_builder::nodes::StaticQueryFragment;
+use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
 use crate::query_dsl::join_dsl::InternalJoinDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::QueryDsl;
+use crate::query_source::joins::ToInnerJoin;
 use crate::query_source::joins::{
     AppendSelection, Inner, Join, JoinOn, LeftOuter, OnClauseWrapper,
 };
@@ -148,12 +150,12 @@ where
 impl<T, F, DB> QueryFragment<DB> for Alias<T, F>
 where
     DB: Backend,
-    T: Table + QuerySource + HasTable<Table = T>,
-    T::FromClause: QueryFragment<DB>,
+    T: Table + StaticQueryFragment,
+    T::Component: QueryFragment<DB>,
     F: Named,
 {
     fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        T::from_clause(&T::table()).walk_ast(pass.reborrow())?;
+        T::STATIC_COMPONENT.walk_ast(pass.reborrow())?;
         pass.push_sql(" AS ");
         pass.push_identifier(F::NAME)?;
         Ok(())
@@ -210,9 +212,10 @@ impl<T, F> AsQuery for Alias<T, F>
 where
     T: AsQuery + Table + HasTable<Table = T>,
     Self: QuerySource,
+    <Self as QuerySource>::DefaultSelection: ValidGrouping<()>,
 {
     type SqlType = <<Self as QuerySource>::DefaultSelection as Expression>::SqlType;
-    type Query = SelectStatement<Self>;
+    type Query = SelectStatement<FromClause<Self>>;
 
     fn as_query(self) -> Self::Query {
         SelectStatement::simple(self)
@@ -322,6 +325,10 @@ macro_rules! alias {
     }};
 }
 
+impl<T: Table, F> ToInnerJoin for Alias<T, F> {
+    type InnerJoin = Self;
+}
+
 impl<T, Rhs, Kind, On, F> InternalJoinDsl<Rhs, Kind, On> for Alias<T, F>
 where
     Self: AsQuery,
@@ -334,33 +341,39 @@ where
     }
 }
 
-// TODO: adjust as soon as seans fix nullable pr is merged
 impl<Left, Right, T, F, C> SelectableExpression<Join<Left, Right, LeftOuter>>
     for AliasedField<Alias<T, F>, C>
 where
     Self: AppearsOnTable<Join<Left, Right, LeftOuter>>,
-    Left: AppearsInFromClause<Alias<T, F>, Count = Once>,
-    Right: AppearsInFromClause<Alias<T, F>, Count = Never>,
+    Self: SelectableExpression<Left>,
+    Left: QuerySource,
+    Right: AppearsInFromClause<Alias<T, F>, Count = Never> + QuerySource,
 {
 }
 
-// TODO: adjust as soon as seans fix nullable pr is merged
 impl<Left, Right, T, F, C> SelectableExpression<Join<Left, Right, Inner>>
     for AliasedField<Alias<T, F>, C>
 where
     Self: AppearsOnTable<Join<Left, Right, Inner>>,
-    Join<Left, Right, Inner>: AppearsInFromClause<Alias<T, F>, Count = Once>,
+    Left: AppearsInFromClause<Alias<T, F>> + QuerySource,
+    Right: AppearsInFromClause<Alias<T, F>> + QuerySource,
+    (Left::Count, Right::Count): Pick<Left, Right>,
+    Self: SelectableExpression<<(Left::Count, Right::Count) as Pick<Left, Right>>::Selection>,
 {
 }
 
+// FIXME: Remove this when overlapping marker traits are stable
 impl<Join, On, T, F, C> SelectableExpression<JoinOn<Join, On>> for AliasedField<Alias<T, F>, C> where
     Self: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>
 {
 }
 
 // FIXME: Remove this when overlapping marker traits are stable
-impl<From, T, F, C> SelectableExpression<SelectStatement<From>> for AliasedField<Alias<T, F>, C> where
-    Self: SelectableExpression<From> + AppearsOnTable<SelectStatement<From>>
+impl<From, T, F, C> SelectableExpression<SelectStatement<FromClause<From>>>
+    for AliasedField<Alias<T, F>, C>
+where
+    Self: SelectableExpression<From> + AppearsOnTable<SelectStatement<FromClause<From>>>,
+    From: QuerySource,
 {
 }
 
