@@ -76,7 +76,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} tokio rusqlite futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/sqlite quaint/serde-support serde"
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} tokio rusqlite futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio"
 
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
