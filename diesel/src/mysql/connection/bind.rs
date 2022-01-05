@@ -28,7 +28,7 @@ struct Binds {
 }
 
 impl PreparedStatementBinds {
-    pub(super) fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
+    pub(super) fn from_input_data<Iter>(input: Iter) -> Self
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
@@ -37,7 +37,7 @@ impl PreparedStatementBinds {
             .map(BindData::for_input)
             .collect::<Vec<_>>();
 
-        Ok(Self(Binds { data }))
+        Self(Binds { data })
     }
 
     pub(super) fn with_mysql_binds<F, T>(&mut self, f: F) -> T

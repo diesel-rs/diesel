@@ -44,7 +44,7 @@ impl Statement {
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
-        let input_binds = PreparedStatementBinds::from_input_data(binds)?;
+        let input_binds = PreparedStatementBinds::from_input_data(binds);
         self.input_bind(input_binds)
     }
 
