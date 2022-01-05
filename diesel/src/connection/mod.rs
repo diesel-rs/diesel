@@ -95,7 +95,7 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// For performance reasons it may also be meaningful to cache already prepared statements.
 /// See [`StatementCache`](self::statement_cache::StatementCache)
 /// for a helper type to implement prepared statement caching. The [statement_cache](self::statement_cache)
-/// modul documentation contains details efficient prepared statement caching
+/// module documentation contains details about efficient prepared statement caching
 /// based on diesels query builder.
 ///
 /// It is required to implement at least the following parts:
@@ -155,12 +155,9 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 ///  Otherwise the implementation used by the corresponding
 ///  `Connection` in diesel can be reused.
 ///
-/// As implementations differ significantly between the supported backends
-/// we cannot give a one for all description here. Generally it's likely a
-/// good idea to follow the implementation of the connection
-/// in diesel, which uses a similar interface internally,
-/// at a heigh level to gain some idea how to implement your
-/// custom implementation.
+/// As these implementations will vary depending on the backend being used,
+/// we cannot give concrete examples here. We recommend looking at our existing
+/// implementations to see how you can implement your own connection.
 pub trait Connection: SimpleConnection + Sized + Send
 where
     Self: for<'a, 'b> ConnectionGatWorkaround<'a, 'b, <Self as Connection>::Backend>,

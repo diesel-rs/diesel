@@ -171,7 +171,7 @@ where
     /// will be called to create a new prepared statement for this query source.
     /// The first parameter of the callback contains the query string, the second
     /// paramater indicates if the constructed prepared statement will be cached or not.
-    /// See the [module](super::statement_cache) documentation for details
+    /// See the [module](self) documentation for details
     /// about which statements are cached and which are not cached.
     #[allow(unreachable_pub)]
     pub fn cached_statement<T, F>(
