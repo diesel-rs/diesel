@@ -64,7 +64,7 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// Implementing a `Connection` in a third party crate requires
 /// enabling the
 /// `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
-/// crate feature to access all nesessary type definitions.
+/// crate feature which grants access to some of diesel's implementation details.
 ///
 ///
 /// ## Wrapping an existing connection impl
