@@ -68,6 +68,12 @@ where
     {
         AliasedField(Alias::new(), PhantomData)
     }
+    pub fn fields<Fields>(&self, fields: Fields) -> <Fields as FieldAliasMapper<Self>>::Out
+    where
+        Fields: FieldAliasMapper<Self>,
+    {
+        fields.map()
+    }
 }
 
 impl<QS, T, F, C> AppearsOnTable<QS> for AliasedField<Alias<T, F>, C>
@@ -114,12 +120,15 @@ macro_rules! field_alias_mapper {
         }
     )+) => {
         $(
-            impl<_T, _F, $($T,)*> FieldAliasMapper<Alias<_T, _F>> for ($($T,)*) {
-                type Out = ($(AliasedField<Alias<_T, _F>, $T>,)*);
+            impl<_T, _F, $($T,)*> FieldAliasMapper<Alias<_T, _F>> for ($($T,)*)
+            where
+                $($T: FieldAliasMapper<Alias<_T, _F>>,)*
+            {
+                type Out = ($(<$T as FieldAliasMapper<Alias<_T, _F>>>::Out,)*);
 
                 fn map(self) -> Self::Out {
                     (
-                        $(AliasedField(Alias::new(), PhantomData::<$T>),)*
+                        $(self.$idx.map(),)*
                     )
                 }
             }

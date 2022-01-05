@@ -45,18 +45,21 @@ fn select_multiple_from_join() {
     use diesel::query_builder::AsQuery;
 
     // Having two different aliases in one query works
-    let query = post_alias.as_query().filter(
-        post_alias.field(posts::user_id).eq_any(
-            user_alias
-                .as_query()
-                .select(user_alias.field(users::id))
-                .filter(
-                    user_alias
-                        .field(users::id)
-                        .eq_any(users::table.select(users::id)),
-                ),
-        ),
-    );
+    let query = post_alias
+        .as_query()
+        .select(post_alias.fields((posts::id, posts::user_id, posts::title, posts::body)))
+        .filter(
+            post_alias.field(posts::user_id).eq_any(
+                user_alias
+                    .as_query()
+                    .select(user_alias.field(users::id))
+                    .filter(
+                        user_alias
+                            .field(users::id)
+                            .eq_any(users::table.select(users::id)),
+                    ),
+            ),
+        );
 
     // using a subquery with an alias seems to work
     post_alias
@@ -70,9 +73,8 @@ fn select_multiple_from_join() {
         .load::<Option<i32>>(connection)
         .unwrap();
 
-    println!("{:?}", diesel::debug_query::<diesel::pg::Pg, _>(&query));
     query
-        .load::<(i32, i32, String, Option<String>, Vec<String>)>(connection)
+        .load::<(i32, i32, String, Option<String>)>(connection)
         .unwrap();
 
     post_alias
