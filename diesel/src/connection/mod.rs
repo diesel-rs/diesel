@@ -131,7 +131,7 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// Additionally to anything mentioned in the previous section the following steps are required:
 ///
 /// * Implement a custom backend type. See the documentation of [`Backend`] for details
-/// * Implement appropiated [`FromSql`](crate::deserialize::FromSql)/
+/// * Implement appropriate [`FromSql`](crate::deserialize::FromSql)/
 /// [`ToSql`](crate::serialize::ToSql) conversions.
 /// At least the following impls should be considered:
 ///     * `i16`: `FromSql<SmallInt, YourBackend>`
