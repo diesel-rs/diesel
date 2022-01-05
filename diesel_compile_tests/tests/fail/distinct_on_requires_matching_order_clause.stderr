@@ -28,7 +28,7 @@ error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<
              <diesel::query_builder::order_clause::OrderClause<(__D, T0, T1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<__D>>>
              <diesel::query_builder::order_clause::OrderClause<(__D, T0, T1, T2)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<__D>>>
            and 14 others
-   = note: required because of the requirements on the impl of `OrderDsl<columns::id>` for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>`
+   = note: required because of the requirements on the impl of `OrderDsl<columns::id>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>`
 
 error[E0308]: mismatched types
   --> tests/fail/distinct_on_requires_matching_order_clause.rs:72:58
@@ -60,4 +60,4 @@ error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<
              <diesel::query_builder::order_clause::OrderClause<(__D, T0, T1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<__D>>>
              <diesel::query_builder::order_clause::OrderClause<(__D, T0, T1, T2)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<__D>>>
            and 14 others
-   = note: required because of the requirements on the impl of `OrderDsl<columns::id>` for `SelectStatement<FromClause<users::table>, DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>`
+   = note: required because of the requirements on the impl of `OrderDsl<columns::id>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, DistinctOnClause<columns::name>>`

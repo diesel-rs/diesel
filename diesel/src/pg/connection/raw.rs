@@ -99,14 +99,14 @@ impl RawConnection {
         RawResult::new(ptr, self)
     }
 
-    pub fn transaction_status(&self) -> PgTransactionStatus {
+    pub(super) fn transaction_status(&self) -> PgTransactionStatus {
         unsafe { PQtransactionStatus(self.internal_connection.as_ptr()) }.into()
     }
 }
 
 /// Represents the current in-transaction status of the connection
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum PgTransactionStatus {
+pub(super) enum PgTransactionStatus {
     /// Currently idle
     Idle,
     /// A command is in progress (sent to the server but not yet completed)

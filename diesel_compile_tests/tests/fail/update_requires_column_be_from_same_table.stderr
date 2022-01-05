@@ -1,11 +1,11 @@
 error[E0271]: type mismatch resolving `<Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as AsChangeset>::Target == users::table`
-  --> tests/fail/update_requires_column_be_from_same_table.rs:22:33
+  --> $DIR/update_requires_column_be_from_same_table.rs:22:33
    |
 22 |     let command = update(users).set(posts::title.eq("Hello"));
    |                                 ^^^ expected struct `posts::table`, found struct `users::table`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
-  --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
+error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
+  --> $DIR/update_requires_column_be_from_same_table.rs:23:33
    |
 23 |     let command = update(users).set(name.eq(posts::title));
    |                                 ^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`

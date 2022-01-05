@@ -39,4 +39,4 @@ error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisf
              <posts::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
            and 2 others
    = note: required because of the requirements on the impl of `JoinTo<users::table>` for `diesel::query_source::joins::Join<posts::table, comments::table, Inner>`
-   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<posts::table, comments::table, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<comments::columns::post_id>, diesel::expression::nullable::Nullable<posts::columns::id>>>>>>, Inner>` for `users::table`
+   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>` for `users::table`
