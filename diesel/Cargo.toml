@@ -68,3 +68,5 @@ doc_cfg = []
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]
 no-default-features = true
+rustc-args = ["--cfg", "doc_cfg"]
+rustdoc-args = ["--cfg", "doc_cfg"]

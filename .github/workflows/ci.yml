@@ -47,7 +47,8 @@ jobs:
         shell: bash
         if: matrix.rust == 'nightly'
         run: |
-          echo "RUSTFLAGS=--cap-lints=warn" >> $GITHUB_ENV
+          echo "RUSTFLAGS=--cap-lints=warn --cfg doc_cfg" >> $GITHUB_ENV
+          echo "RUSTDOCFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
 
       - name: Install postgres (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'postgres'
@@ -299,7 +300,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable doc_cfg i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 
       - name: Run rustdoc
         if: matrix.run != 'nightly'

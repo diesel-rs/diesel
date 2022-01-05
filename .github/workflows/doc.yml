@@ -37,8 +37,11 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install libmysqlclient-dev libsqlite3-dev libpq-dev
     - name: Build documentation
+      env:
+        RUSTFLAGS: "--cfg doc_cfg"
+        RUSTDOCFLAGS: "--cfg doc_cfg"
       run:
-        cargo +nightly doc --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras i-implement-a-third-party-backend-and-opt-into-breaking-changes doc_cfg" --workspace
+        cargo +nightly doc --manifest-path diesel/Cargo.toml --features "postgres sqlite mysql extras i-implement-a-third-party-backend-and-opt-into-breaking-changes" --workspace
 
     - name: Publish documentation
       if: success()
