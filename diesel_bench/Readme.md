@@ -21,6 +21,7 @@ and the following crates:
 * [Postgres](https://github.com/sfackler/rust-postgres)
 * [Rusqlite](https://github.com/rusqlite/rusqlite)
 * [Mysql](https://github.com/blackbeam/rust-mysql-simple)
+* [diesel-async](https://github.com/weiznich/diesel_async)
 
 By default only diesels own benchmarks are executed. To run the benchmark do the following:
 
@@ -38,6 +39,7 @@ To enable other crates add the following features:
 * `Postgres`: `rust_postgres $backend`
 * `Rusqlite`: `rusqlite $backend`
 * `Mysql`: `rust-mysql $backend`
+* `diesel-async`: `diesel-async diesel-async/$backend $backend tokio`
 
 ## Benchmarks
 

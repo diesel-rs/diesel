@@ -1,3 +1,5 @@
+#[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+mod diesel_async_benches;
 mod diesel_benches;
 #[cfg(all(feature = "mysql", feature = "rust_mysql"))]
 mod mysql_benches;
@@ -59,6 +61,27 @@ fn bench_trivial_query(c: &mut Criterion) {
             BenchmarkId::new("diesel_queryable_by_name", size),
             size,
             |b, i| crate::diesel_benches::bench_trivial_query_raw(b, *i),
+        );
+
+        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        group.bench_with_input(BenchmarkId::new("diesel_async", size), size, |b, i| {
+            crate::diesel_async_benches::bench_trivial_query(b, *i);
+        });
+
+        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        group.bench_with_input(
+            BenchmarkId::new("diesel_async_boxed", size),
+            size,
+            |b, i| {
+                crate::diesel_async_benches::bench_trivial_query_boxed(b, *i);
+            },
+        );
+
+        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        group.bench_with_input(
+            BenchmarkId::new("diesel_async_queryable_by_name", size),
+            size,
+            |b, i| crate::diesel_async_benches::bench_trivial_query_raw(b, *i),
         );
 
         #[cfg(feature = "rustorm")]
@@ -143,6 +166,23 @@ fn bench_medium_complex_query(c: &mut Criterion) {
             |b, i| crate::diesel_benches::bench_medium_complex_query_queryable_by_name(b, *i),
         );
 
+        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        group.bench_with_input(BenchmarkId::new("diesel_async", size), size, |b, i| {
+            crate::diesel_async_benches::bench_medium_complex_query(b, *i)
+        });
+        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        group.bench_with_input(
+            BenchmarkId::new("diesel_async_boxed", size),
+            size,
+            |b, i| crate::diesel_async_benches::bench_medium_complex_query_boxed(b, *i),
+        );
+        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        group.bench_with_input(
+            BenchmarkId::new("diesel_async_queryable_by_name", size),
+            size,
+            |b, i| crate::diesel_async_benches::bench_medium_complex_query_queryable_by_name(b, *i),
+        );
+
         #[cfg(feature = "quaint")]
         group.bench_with_input(BenchmarkId::new("quaint", size), size, |b, i| {
             crate::quaint_benches::bench_medium_complex_query(b, *i);
@@ -215,6 +255,12 @@ fn bench_loading_associations_sequentially(c: &mut Criterion) {
         crate::diesel_benches::loading_associations_sequentially(b)
     });
 
+    #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+    group.bench_function(
+        "diesel_async/bench_loading_associations_sequentially",
+        |b| crate::diesel_async_benches::loading_associations_sequentially(b),
+    );
+
     #[cfg(all(feature = "postgres", feature = "rust_postgres"))]
     group.bench_function("postgres", |b| {
         crate::postgres_benches::loading_associations_sequentially(b)
@@ -259,6 +305,11 @@ fn bench_insert(c: &mut Criterion) {
     for size in INSERT_SIZE {
         group.bench_with_input(BenchmarkId::new("diesel", size), size, |b, i| {
             crate::diesel_benches::bench_insert(b, *i);
+        });
+
+        #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
+        group.bench_with_input(BenchmarkId::new("diesel_async", size), size, |b, i| {
+            crate::diesel_async_benches::bench_insert(b, *i);
         });
 
         #[cfg(feature = "sqlx-bench")]
