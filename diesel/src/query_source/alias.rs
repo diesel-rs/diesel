@@ -1,5 +1,3 @@
-#![warn(missing_docs)]
-
 use super::*;
 use crate::associations::HasTable;
 use crate::backend::Backend;
@@ -35,7 +33,6 @@ pub trait AliasSource {
     type Table: Table;
 }
 
-// TODO try to remove phantomdata s
 #[derive(Debug)]
 /// Represents an alias within diesel's query builder
 pub struct Alias<S> {
@@ -136,18 +133,6 @@ pub trait FieldAliasMapper<S> {
     /// Does the mapping
     fn map(self, alias: Alias<S>) -> Self::Out;
 }
-
-/*impl<S, C> FieldAliasMapper<S> for C
-where
-    S: AliasSource,
-    C: Column<Table = S::Table>,
-{
-    type Out = AliasedField<S, C>;
-
-    fn map(self, alias: Alias<S>) -> Self::Out {
-        alias.field(self)
-    }
-}*/
 
 #[doc(hidden)]
 /// Allows implementing `FieldAliasMapper` in external crates without running into conflicting impl
@@ -442,24 +427,23 @@ where
 macro_rules! __internal_alias_helper {
     (
         $left_table: ident as $left_alias: ident,
-        $right_table: ident as $right_alias: ident,
-        $($table: ident as $alias: ident,)*
+        $($right_table: ident as $right_alias: ident,)+
     ) => {
-        static_cond!{if $left_table == $right_table {
-            impl $crate::query_source::AliasAliasAppearsInFromClause<$left_table::table, $right_alias, $left_alias>
-                for $right_table::table
-            {
-                type Count = $crate::query_source::Never;
-            }
-            impl $crate::query_source::AliasAliasAppearsInFromClause<$right_table::table, $left_alias, $right_alias>
-                for $left_table::table
-            {
-                type Count = $crate::query_source::Never;
-            }
-        }}
-
-        __internal_alias_helper!($left_table as $left_alias, $($table as $alias,)*);
-        __internal_alias_helper!($right_table as $right_alias, $($table as $alias,)*);
+        $(
+            static_cond!{if $left_table == $right_table {
+                impl $crate::query_source::AliasAliasAppearsInFromClause<$left_table::table, $right_alias, $left_alias>
+                    for $right_table::table
+                {
+                    type Count = $crate::query_source::Never;
+                }
+                impl $crate::query_source::AliasAliasAppearsInFromClause<$right_table::table, $left_alias, $right_alias>
+                    for $left_table::table
+                {
+                    type Count = $crate::query_source::Never;
+                }
+            }}
+        )+
+        __internal_alias_helper!($($right_table as $right_alias,)+);
     };
 
     ($table: ident as $alias: ident,) => {}
