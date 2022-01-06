@@ -28,14 +28,25 @@ error[E0277]: the trait bound `posts::columns::user_id: SelectableExpression<use
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
    = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<FromClause<users::table>>`
 
-error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
+error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
    |
 21 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |                              ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = help: the following implementations were found:
-             <users::table as AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::user_id)`
+   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::user_id)`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, posts::columns::user_id)>` for `SelectStatement<FromClause<users::table>>`
+
+error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
+   |
+21 |     let stuff = users::table.select((posts::id, posts::user_id));
+   |                              ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   |
+   = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::user_id)`
@@ -57,14 +68,25 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, users::columns::name)`
    = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, users::columns::name)>` for `SelectStatement<FromClause<users::table>>`
 
-error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
+error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
    |
 22 |     let stuff = users::table.select((posts::id, users::name));
-   |                              ^^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |                              ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = help: the following implementations were found:
-             <users::table as AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, users::columns::name)`
+   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, users::columns::name)`
+   = note: required because of the requirements on the impl of `SelectDsl<(posts::columns::id, users::columns::name)>` for `SelectStatement<FromClause<users::table>>`
+
+error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
+  --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
+   |
+22 |     let stuff = users::table.select((posts::id, users::name));
+   |                              ^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   |
+   = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, users::columns::name)`

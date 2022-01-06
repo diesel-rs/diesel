@@ -1,12 +1,11 @@
-error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
+error[E0277]: the trait bound `FromClause<users::table>: AppearsInFromClause<posts::table>` is not satisfied
   --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:21:37
    |
 21 |     users::table.into_boxed::<Pg>().order(posts::title.desc());
-   |                                     ^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |                                     ^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `FromClause<users::table>`
    |
    = help: the following implementations were found:
-             <users::table as AppearsInFromClause<users::table>>
-   = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `FromClause<users::table>`
+             <FromClause<QS2> as AppearsInFromClause<QS1>>
    = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::title`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `diesel::expression::operators::Desc<posts::columns::title>`
