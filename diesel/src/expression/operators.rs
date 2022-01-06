@@ -106,6 +106,20 @@ macro_rules! __diesel_operator_body {
                 Ok(())
             }
         }
+
+        impl<S, $($ty_param,)+> $crate::query_source::FieldAliasMapper<S> for $name<$($ty_param,)+>
+        where
+            $($ty_param: $crate::query_source::FieldAliasMapper<S>,)+
+        {
+            type Out = $name<
+                $(<$ty_param as $crate::query_source::FieldAliasMapper<S>>::Out,)+
+            >;
+            fn map(self, alias: $crate::query_source::Alias<S>) -> Self::Out {
+                $name {
+                    $($field_name: self.$field_name.map(alias),)+
+                }
+            }
+        }
     }
 }
 

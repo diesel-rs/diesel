@@ -231,20 +231,6 @@ where
     }
 }
 
-impl<S, F1, F2> FieldAliasMapper<S> for expression::operators::Eq<F1, F2>
-where
-    F1: FieldAliasMapper<S>,
-    F2: FieldAliasMapper<S>,
-{
-    type Out = expression::operators::Eq<
-        <F1 as FieldAliasMapper<S>>::Out,
-        <F2 as FieldAliasMapper<S>>::Out,
-    >;
-    fn map(self, alias: Alias<S>) -> Self::Out {
-        expression::operators::Eq::new(self.left.map(alias), self.right.map(alias))
-    }
-}
-
 impl<S> QuerySource for Alias<S>
 where
     S: AliasSource,
