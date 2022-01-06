@@ -418,7 +418,6 @@ macro_rules! __internal_alias_helper {
                 type Count = $crate::query_source::Never;
             }
         }}
-        $crate::__internal_alias_helper!($($left_table)::+ as $left_alias, $($($table)::+ as $alias,)*);
         $crate::__internal_alias_helper!($($right_table)::+ as $right_alias, $($($table)::+ as $alias,)*);
     };
 
