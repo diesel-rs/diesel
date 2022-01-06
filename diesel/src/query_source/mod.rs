@@ -11,7 +11,6 @@ mod peano_numbers;
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
 use crate::query_builder::*;
 
-#[doc(hidden)]
 pub use self::alias::{
     Alias, AliasAliasAppearsInFromClause, AliasAppearsInFromClause, AliasSource, AliasedField,
     FieldAliasMapper, FieldAliasMapperAssociatedTypesDisjointnessTrick,
@@ -83,11 +82,19 @@ pub trait AppearsInFromClause<QS> {
     type Count;
 }
 
-/// Allows Diesel to determine whether two tables are equal.
+/// Allows Diesel to implement some internal traits for two tables that are distinct.
 ///
-/// This trait is implemented by the `allow_tables_to_appear_in_same_query!` macro,
-/// and allows diesel to implement a bunch of `AppearsInFromClause` for the tables and their
-/// aliases.
+/// (Notably, a bunch of [`AppearsInFromClause`] for the tables and their aliases.)
+///
+/// This trait is implemented by the [`allow_tables_to_appear_in_same_query!`] macro.
+///
+/// Troubleshooting
+/// ---------------
+/// If you encounter an error mentionning this trait, it could mean that either:
+/// - You are attempting to use tables that don't belong to the same database together
+///   (no call to [`allow_tables_to_appear_in_same_query!`] was made)
+/// - You are attempting to use two aliases to the same table in the same query, but they
+///   were declared through different calls to [`alias!`](crate::alias)
 pub trait TableNotEqual<T: Table>: Table {}
 
 impl<T1, T2> AppearsInFromClause<T2> for T1
