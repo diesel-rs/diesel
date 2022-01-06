@@ -62,7 +62,7 @@ impl<S: AliasSource> Alias<S> {
         F: Column<Table = S::Table>,
     {
         AliasedField {
-            _alias_source: self.source.clone(),
+            _alias_source: self.source,
             _field: field,
         }
     }
@@ -72,6 +72,14 @@ impl<S: AliasSource> Alias<S> {
         Fields: FieldAliasMapper<S>,
     {
         fields.map(self)
+    }
+}
+
+impl<S> Alias<S> {
+    #[doc(hidden)]
+    /// May be used to create an alias. Used by the [`alias!`] macro.
+    pub const fn new(source: S) -> Self {
+        Self { source }
     }
 }
 
@@ -223,7 +231,7 @@ where
         <<S::Table as QuerySource>::DefaultSelection as FieldAliasMapper<S>>::Out;
 
     fn from_clause(&self) -> Self::FromClause {
-        self.clone()
+        *self
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
@@ -398,32 +406,6 @@ where
     type Count = Never;
 }
 
-#[macro_export]
-#[doc(hidden)]
-macro_rules! __internal_alias_helper {
-    (
-        $($left_table: ident)::+ as $left_alias: ident,
-        $($right_table: ident)::+ as $right_alias: ident,
-        $($($table: ident)::+ as $alias: ident,)*
-    ) => {
-        $crate::static_cond!{if ($($left_table)::+) == ($($right_table)::+) {
-            impl $crate::query_source::AliasAliasAppearsInFromClause<$($left_table)::+::table, $right_alias, $left_alias>
-                for $($right_table)::+::table
-            {
-                type Count = $crate::query_source::Never;
-            }
-            impl $crate::query_source::AliasAliasAppearsInFromClause<$($right_table)::+::table, $left_alias, $right_alias>
-                for $($left_table)::+::table
-            {
-                type Count = $crate::query_source::Never;
-            }
-        }}
-        $crate::__internal_alias_helper!($($right_table)::+ as $right_alias, $($($table)::+ as $alias,)*);
-    };
-
-    ($($table: ident)::+ as $alias: ident,) => {}
-}
-
 /// Declare a new alias for a table
 ///
 /// Example usage
@@ -449,6 +431,38 @@ macro_rules! __internal_alias_helper {
 /// }
 /// ```
 ///
+///
+/// Make type expressable
+/// ---------------------
+/// It may sometimes be useful to declare an alias at the module level, in such a way that the type
+/// of a query using it can be expressed (to not declare it anonymously).
+///
+/// This can be achieved in the following way
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use diesel::{query_source::Alias, dsl};
+///
+/// diesel::alias!(schema::users as users_alias: UsersAlias);
+///
+/// fn some_function_that_returns_a_query_fragment(
+/// ) -> dsl::InnerJoin<schema::posts::table, Alias<UsersAlias>>
+/// {
+///     schema::posts::table.inner_join(users_alias)
+/// }
+/// # fn main() {
+/// #     some_function_that_returns_a_query_fragment();
+/// # }
+/// ```
+///
+/// Note that you may also use this form within a function, in the following way:
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// fn main() {
+///     diesel::alias!(schema::users as users_alias: UsersAlias);
+///     users_alias.inner_join(schema::posts);
+/// }
+/// ```
+///
 /// Troubleshooting and limitations
 /// -------------------------------
 /// If you encounter a **compilation error** where "the trait
@@ -462,24 +476,61 @@ macro_rules! __internal_alias_helper {
 #[macro_export]
 macro_rules! alias {
     ($($($table: ident)::+ as $alias: ident),* $(,)?) => {{
+        $crate::alias!(NoConst $($($table)::+ as $alias: $alias,)*);
+        ($($crate::query_source::Alias::<$alias>::default()),*)
+    }};
+    ($($($table: ident)::+ as $alias_name: ident: $alias_ty: ident),* $(,)?) => {
+        $crate::alias!(NoConst $($($table)::+ as $alias_name: $alias_ty,)*);
+        $(
+            #[allow(non_upper_case_globals)]
+            const $alias_name: $crate::query_source::Alias::<$alias_ty> = $crate::query_source::Alias::new($alias_ty);
+        )*
+    };
+    (NoConst $($($table: ident)::+ as $alias_name: ident: $alias_ty: ident),* $(,)?) => {
         $(
             #[allow(non_camel_case_types)]
             #[derive(Debug, Clone, Copy, Default)]
-            struct $alias;
+            struct $alias_ty;
 
-            impl $crate::query_source::AliasSource for $alias {
-                const NAME: &'static str = stringify!($alias);
+            impl $crate::query_source::AliasSource for $alias_ty {
+                const NAME: &'static str = stringify!($alias_name);
                 type Table = $($table)::+::table;
             }
 
             // impl AppearsInFromClause<Alias<$alias>> for Alias<$alias>
-            impl $crate::query_source::AliasAliasAppearsInFromClause<$($table)::+::table, $alias, $alias> for $($table)::+::table {
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$($table)::+::table, $alias_ty, $alias_ty> for $($table)::+::table {
                 type Count = $crate::query_source::Once;
             }
         )*
-        $crate::__internal_alias_helper!($($($table)::+ as $alias,)*);
-        ($($crate::query_source::Alias::<$alias>::default()),*)
-    }};
+        $crate::__internal_alias_helper!($($($table)::+ as $alias_ty,)*);
+    };
+}
+
+#[macro_export]
+#[doc(hidden)]
+/// This only exists to hide internals from the doc
+macro_rules! __internal_alias_helper {
+    (
+        $($left_table: ident)::+ as $left_alias: ident,
+        $($right_table: ident)::+ as $right_alias: ident,
+        $($($table: ident)::+ as $alias: ident,)*
+    ) => {
+        $crate::static_cond!{if ($($left_table)::+) == ($($right_table)::+) {
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$($left_table)::+::table, $right_alias, $left_alias>
+                for $($right_table)::+::table
+            {
+                type Count = $crate::query_source::Never;
+            }
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$($right_table)::+::table, $left_alias, $right_alias>
+                for $($left_table)::+::table
+            {
+                type Count = $crate::query_source::Never;
+            }
+        }}
+        $crate::__internal_alias_helper!($($right_table)::+ as $right_alias, $($($table)::+ as $alias,)*);
+    };
+
+    ($($table: ident)::+ as $alias: ident,) => {}
 }
 
 impl<S: AliasSource> ToInnerJoin for Alias<S> {

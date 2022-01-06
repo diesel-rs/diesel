@@ -39,7 +39,7 @@ fn select_multiple_from_join() {
         )
         .unwrap();
 
-    let user_alias = alias!(users as user_alias);
+    alias!(users as user_alias: UserAlias);
     let post_alias = alias!(posts as post_alias);
 
     use diesel::query_builder::AsQuery;
