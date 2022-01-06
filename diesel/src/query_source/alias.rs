@@ -200,6 +200,17 @@ diesel_derives::__diesel_for_each_tuple!(field_alias_mapper);
 
 // The following `FieldAliasMapper` impls are useful for the generic join implementations.
 // More may be added.
+impl<SPrev, SNew, F> FieldAliasMapper<SNew> for AliasedField<SPrev, F>
+where
+    SNew: AliasSource,
+{
+    type Out = Self;
+    fn map(self, _alias: Alias<SNew>) -> Self::Out {
+        // left untouched because it has already been aliased
+        self
+    }
+}
+
 impl<S, F> FieldAliasMapper<S> for expression::nullable::Nullable<F>
 where
     F: FieldAliasMapper<S>,
@@ -554,6 +565,22 @@ where
 
     fn join_target(rhs: T) -> (Self::FromClause, Self::OnClause) {
         let (from_clause, on_clause) = <S::Table as JoinTo<T>>::join_target(rhs);
+        (from_clause, Self::default().fields(on_clause))
+    }
+}
+
+impl<S2, S> JoinTo<Alias<S2>> for Alias<S>
+where
+    S2: AliasSource,
+    S: AliasSource,
+    S::Table: JoinTo<Alias<S2>>,
+    <S::Table as JoinTo<Alias<S2>>>::OnClause: FieldAliasMapper<S>,
+{
+    type FromClause = <S::Table as JoinTo<Alias<S2>>>::FromClause;
+    type OnClause = <<S::Table as JoinTo<Alias<S2>>>::OnClause as FieldAliasMapper<S>>::Out;
+
+    fn join_target(rhs: Alias<S2>) -> (Self::FromClause, Self::OnClause) {
+        let (from_clause, on_clause) = <S::Table as JoinTo<Alias<S2>>>::join_target(rhs);
         (from_clause, Self::default().fields(on_clause))
     }
 }

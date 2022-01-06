@@ -105,6 +105,13 @@ fn select_multiple_from_join() {
         .load::<(String, String)>(connection)
         .unwrap();
 
+    // Joining alias to alias works
+    post_alias
+        .inner_join(user_alias)
+        .select((user_alias.field(users::name), post_alias.field(posts::id)))
+        .load::<(String, i32)>(connection)
+        .unwrap();
+
     // we could also define and use mutiple aliases for the same table.
     // If you want to use them in the same query it's required to define them
     // in the same macro call
