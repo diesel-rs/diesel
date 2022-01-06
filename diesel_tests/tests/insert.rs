@@ -152,6 +152,26 @@ fn insert_records_as_boxed_static_array() {
 }
 
 #[test]
+#[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
+fn insert_record_using_returning_clause() {
+    use crate::schema::users::table as users;
+    let connection = &mut connection();
+    let new_user = &NewUser::new("Sean", Some("Black"));
+
+    let inserted_user = insert_into(users)
+        .values(new_user)
+        .get_result::<User>(connection)
+        .unwrap();
+    let expected_user = User {
+        id: inserted_user.id,
+        name: "Sean".to_string(),
+        hair_color: Some("Black".to_string()),
+    };
+
+    assert_eq!(expected_user, inserted_user);
+}
+
+#[test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn insert_records_using_returning_clause() {
     use crate::schema::users::table as users;
@@ -179,6 +199,24 @@ fn insert_records_using_returning_clause() {
     ];
 
     assert_eq!(expected_users, inserted_users);
+}
+
+#[test]
+#[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
+fn insert_record_with_custom_returning_clause() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection();
+    let new_users = &NewUser::new("Sean", Some("Black"));
+
+    let inserted_user = insert_into(users)
+        .values(new_users)
+        .returning((name, hair_color))
+        .get_result::<(String, Option<String>)>(connection)
+        .unwrap();
+    let expected_user = ("Sean".to_string(), Some("Black".to_string()));
+
+    assert_eq!(expected_user, inserted_user);
 }
 
 #[test]
@@ -439,7 +477,10 @@ fn upsert_empty_slice() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(
+    feature = "postgres",
+    all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35")
+))]
 fn insert_only_default_values_with_returning() {
     use crate::schema::users::id;
     use crate::schema::users::table as users;

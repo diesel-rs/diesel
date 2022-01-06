@@ -72,6 +72,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for all the derive attributes being inside `#[diesel(...)]`
 
+* Added support for `RETURNING` expressions for Sqlite via the `returning_clauses_for_sqlite_3_35` feature
+
 ### Removed
 
 * All previously deprecated items have been removed.

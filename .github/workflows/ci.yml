@@ -263,8 +263,15 @@ jobs:
           command: test
           args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
 
+      - name: Run diesel_tests (beta)
+        if: matrix.run == 'beta'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }},returning_clauses_for_sqlite_3_35"
+
       - name: Run diesel_tests
-        if: matrix.run != 'nightly'
+        if: matrix.run == 'stable'
         uses: actions-rs/cargo@v1
         with:
           command: test

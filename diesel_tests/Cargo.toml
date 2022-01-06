@@ -27,6 +27,7 @@ unstable = ["diesel/unstable"]
 postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
+returning_clauses_for_sqlite_3_35 = ["diesel/returning_clauses_for_sqlite_3_35"]
 
 [[test]]
 name = "integration_tests"
