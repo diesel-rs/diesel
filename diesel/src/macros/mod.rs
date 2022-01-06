@@ -811,6 +811,31 @@ macro_rules! __diesel_table_impl {
                 type Count = $crate::query_source::Once;
             }
 
+            // impl<S: AliasSource<Table=table>> AppearsInFromClause<table> for Alias<S>
+            impl<S> $crate::query_source::AliasAppearsInFromClause<S, table> for table
+            where S: $crate::query_source::AliasSource<Table=table>,
+            {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl<S> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<S>> for table
+            where S: $crate::query_source::AliasSource,
+            {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl<S, C> $crate::query_source::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
+            where
+                S: $crate::query_source::AliasSource<Table = table>,
+                C: $crate::query_source::Column<Table = table>,
+            {
+                type Out = $crate::query_source::AliasedField<S, C>;
+
+                fn map(column: C, alias: $crate::query_source::Alias<S>) -> Self::Out {
+                    alias.field(column)
+                }
+            }
+
             impl $crate::query_source::AppearsInFromClause<table> for $crate::query_builder::NoFromClause {
                 type Count = $crate::query_source::Never;
             }
@@ -862,6 +887,19 @@ macro_rules! __diesel_table_impl {
                 type OnClause = <$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
                 fn join_target(rhs: $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
                     let (_, on_clause) = $crate::query_builder::BoxedSelectStatement::join_target(table);
+                    (rhs, on_clause)
+                }
+            }
+
+            impl<S> $crate::JoinTo<$crate::query_source::Alias<S>> for table
+            where
+                $crate::query_source::Alias<S>: $crate::JoinTo<table>,
+            {
+                type FromClause = $crate::query_source::Alias<S>;
+                type OnClause = <$crate::query_source::Alias<S> as $crate::JoinTo<table>>::OnClause;
+
+                fn join_target(rhs: $crate::query_source::Alias<S>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::query_source::Alias::<S>::join_target(table);
                     (rhs, on_clause)
                 }
             }
@@ -1132,7 +1170,9 @@ macro_rules! joinable {
             }
         }
 
-        impl<F> $crate::JoinTo<$crate::query_source::Alias<$($parent)::* ::table, F>> for $($child)::* ::table {
+        /*impl<S> $crate::JoinTo<$crate::query_source::Alias<S>> for $($child)::* ::table
+        where S: $crate::query_source::AliasSource<Table = $($parent)::* ::table>,
+        {
             type FromClause = $crate::query_source::Alias<$($parent)::* ::table, F>;
             type OnClause = $crate::dsl::Eq<
                 $crate::expression::nullable::Nullable<$($child)::* ::$source>,
@@ -1209,7 +1249,7 @@ macro_rules! joinable {
                     ),
                 )
             }
-        }
+        }*/
     }
 }
 
@@ -1244,18 +1284,8 @@ macro_rules! joinable {
 macro_rules! allow_tables_to_appear_in_same_query {
     ($left_mod:ident, $($right_mod:ident),+ $(,)*) => {
         $(
-            impl $crate::query_source::AppearsInFromClause<$left_mod::table>
+            /*impl $crate::query_source::AppearsInFromClause<$left_mod::table>
                 for $right_mod::table
-            {
-                type Count = $crate::query_source::Never;
-            }
-
-            impl<F> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<$left_mod::table, F>> for $right_mod::table {
-                type Count = $crate::query_source::Never;
-            }
-
-            impl<F> $crate::query_source::AppearsInFromClause<$left_mod::table>
-                for $crate::query_source::Alias<$right_mod::table, F>
             {
                 type Count = $crate::query_source::Never;
             }
@@ -1266,23 +1296,36 @@ macro_rules! allow_tables_to_appear_in_same_query {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<F> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<$right_mod::table, F>>
-                for $left_mod::table
+            // impl<S1, S2> AppearsInFromClause<Alias<S1>> for Alias<S2>
+            // where S1: AliasSource<Table=$left_mod::table>, S2: AliasSource<Table=$right_mod::table>
+            impl<S1, S2> $crate::query_source::AliasAliasAppearsInFromClause<$left_mod::table, S2, S1> for $right_mod::table
             {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<F> $crate::query_source::AppearsInFromClause<$right_mod::table> for $crate::query_source::Alias<$left_mod::table, F> {
+            // impl<S1, S2> AppearsInFromClause<Alias<S1>> for Alias<S2>
+            // where S1: AliasSource<Table=$right_mod::table>, S2: AliasSource<Table=$left_mod::table>
+            impl<S1, S2> $crate::query_source::AliasAliasAppearsInFromClause<$right_mod::table, S2, S1> for $left_mod::table
+            {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<F1, F2> $crate::query_source::AliasNotEqualHelper<$right_mod::table, F1, F2> for $left_mod::table {
+            // impl<S: AliasSource<Table=$left_mod::table>> AppearsInFromClause<$right_mod::table> for Alias<S>
+            impl<S> $crate::query_source::AliasAppearsInFromClause<S, $right_mod::table> for $left_mod::table
+            where S: $crate::query_source::AliasSource<Table=$left_mod::table>,
+            {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<F1, F2> $crate::query_source::AliasNotEqualHelper<$left_mod::table, F1, F2> for $right_mod::table {
+            // impl<S: AliasSource<Table=$right_mod::table>> AppearsInFromClause<$left_mod::table> for Alias<S>
+            impl<S> $crate::query_source::AliasAppearsInFromClause<S, $left_mod::table> for $right_mod::table
+            where S: $crate::query_source::AliasSource<Table=$right_mod::table>,
+            {
                 type Count = $crate::query_source::Never;
-            }
+            }*/
+
+            $crate::__allow_tables_to_appear_in_same_query_inner!($left_mod, $right_mod);
+            $crate::__allow_tables_to_appear_in_same_query_inner!($right_mod, $left_mod);
 
         )+
         $crate::allow_tables_to_appear_in_same_query!($($right_mod,)+);
@@ -1291,6 +1334,46 @@ macro_rules! allow_tables_to_appear_in_same_query {
     ($last_table:ident,) => {};
 
     () => {};
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __allow_tables_to_appear_in_same_query_inner {
+    ($left_mod: ident, $right_mod: ident) => {
+        impl $crate::query_source::TableNotEqual<$left_mod::table> for $right_mod::table {}
+        /*impl $crate::query_source::AppearsInFromClause<$left_mod::table>
+            for $right_mod::table
+        {
+            type Count = $crate::query_source::Never;
+        }*/
+
+        // impl<S1, S2> AppearsInFromClause<Alias<S1>> for Alias<S2>
+        // where S1: AliasSource<Table=$left_mod::table>, S2: AliasSource<Table=$right_mod::table>
+        /*impl<S1, S2> $crate::query_source::AliasAliasAppearsInFromClause<$left_mod::table, S2, S1> for $right_mod::table
+        {
+            type Count = $crate::query_source::Never;
+        }*/
+
+        // impl<S: AliasSource<Table=$left_mod::table>> AppearsInFromClause<$right_mod::table> for Alias<S>
+        /*impl<S> $crate::query_source::AliasAppearsInFromClause<S, $right_mod::table> for $left_mod::table
+        where S: $crate::query_source::AliasSource<Table=$left_mod::table>,
+        {
+            type Count = $crate::query_source::Never;
+        }*/
+
+        /*impl<S, C> $crate::query_source::FieldAliasMapper<S, C> for $left_mod::table
+        where
+            S: $crate::query_source::AliasSource<Table = $left_mod::table>,
+            C: $crate::query_source::Column<Table = $right_mod::table>,
+        {
+            type Out = $crate::query_source::AliasedField<S, C>;
+
+            fn map(column: C, alias: $crate::query_source::Alias<S>) -> Self::Out {
+                // left untouched because the tables are different
+                column
+            }
+        }*/
+    };
 }
 
 #[doc(hidden)]

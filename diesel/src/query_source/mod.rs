@@ -12,7 +12,10 @@ use crate::expression::{Expression, SelectableExpression, ValidGrouping};
 use crate::query_builder::*;
 
 #[doc(hidden)]
-pub use self::alias::{Alias, AliasNotEqualHelper, AliasedField, FieldAliasMapper, Named};
+pub use self::alias::{
+    Alias, AliasAliasAppearsInFromClause, AliasAppearsInFromClause, AliasSource, AliasedField,
+    FieldAliasMapper, FieldAliasMapperAssociatedTypesDisjointnessTrick,
+};
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
 
@@ -78,6 +81,20 @@ pub trait Table: QuerySource + AsQuery + Sized {
 pub trait AppearsInFromClause<QS> {
     /// How many times does `Self` appear in `QS`?
     type Count;
+}
+
+/// Allows to determine whether two tables are equal.
+///
+/// This trait is implemented by the `allow_tables_to_appear_in_same_query!` macro,
+/// and allows implementing a bunch of `AppearsInFromClause` for the tables and their aliases.
+pub trait TableNotEqual<T: Table>: Table {}
+
+impl<T1, T2> AppearsInFromClause<T2> for T1
+where
+    T1: TableNotEqual<T2> + Table,
+    T2: Table,
+{
+    type Count = Never;
 }
 
 #[doc(hidden)]

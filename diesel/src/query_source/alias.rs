@@ -5,7 +5,7 @@ use crate::associations::HasTable;
 use crate::backend::Backend;
 use crate::dsl::{Filter, Select};
 use crate::expression::{
-    is_aggregate, AppearsOnTable, Expression, SelectableExpression, ValidGrouping,
+    self, is_aggregate, AppearsOnTable, Expression, SelectableExpression, ValidGrouping,
 };
 use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
@@ -20,96 +20,170 @@ use crate::query_source::{AppearsInFromClause, Column, Never, Once, QuerySource,
 use crate::result::QueryResult;
 use std::marker::PhantomData;
 
-#[derive(Debug, Copy)]
-pub struct Alias<T, F>(PhantomData<(T, F)>);
+/// Types created by the `alias!` macro that serve to distinguish between aliases implement
+/// this trait.
+///
+/// In order to be able to implement within diesel a lot of traits on what will represent the alias,
+/// we cannot use directly that new type within the query builder. Instead, we will use `Alias<S>`,
+/// where `S: AliasSource`.
+///
+/// This trait should never be implemented by an end-user directly.
+pub trait AliasSource {
+    /// The name of this alias in the query
+    const NAME: &'static str;
+    /// The table it maps to
+    type Table: Table;
+}
+
+// TODO try to remove phantomdata s
+#[derive(Debug)]
+/// Represents an alias within diesel's query builder
+pub struct Alias<S> {
+    source: PhantomData<S>,
+}
+
+impl<S> Clone for Alias<S> {
+    fn clone(&self) -> Self {
+        Self {
+            source: PhantomData,
+        }
+    }
+}
+impl<S> Copy for Alias<S> {}
+impl<S> Default for Alias<S> {
+    fn default() -> Self {
+        Self {
+            source: PhantomData,
+        }
+    }
+}
 
 #[derive(Debug)]
-pub struct AliasedField<A, F>(A, PhantomData<F>);
-
-pub trait Named {
-    const NAME: &'static str;
+/// Represents an aliased field (column) within diesel's query builder
+pub struct AliasedField<S, F> {
+    alias_source: PhantomData<S>,
+    field: PhantomData<F>,
 }
-
-pub trait AliasNotEqualHelper<Table2, Alias1, Alias2> {
-    type Count;
-}
-
-impl<T, F> Clone for Alias<T, F> {
+impl<S, F> Clone for AliasedField<S, F> {
     fn clone(&self) -> Self {
-        Alias::new()
+        Self {
+            alias_source: self.alias_source.clone(),
+            field: self.field.clone(),
+        }
     }
 }
 
-impl<T, F, C> Clone for AliasedField<Alias<T, F>, C> {
-    fn clone(&self) -> Self {
-        AliasedField(self.0.clone(), PhantomData)
-    }
-}
-
-impl<T, F> QueryId for Alias<T, F> {
+impl<S> QueryId for Alias<S> {
     type QueryId = ();
 
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<T, F> Alias<T, F> {
-    pub fn new() -> Self {
-        Alias(PhantomData)
+impl<S: AliasSource> Alias<S> {
+    /// Maps a single field of the source table in this alias
+    pub fn field<F>(self, _field: F) -> AliasedField<S, F>
+    where
+        F: Column<Table = S::Table>,
+    {
+        AliasedField {
+            alias_source: self.source.clone(),
+            field: PhantomData,
+        }
+    }
+    /// Maps multiple fields of the source table in this alias (takes in tuples)
+    pub fn fields<Fields>(self, fields: Fields) -> <Fields as FieldAliasMapper<S>>::Out
+    where
+        Fields: FieldAliasMapper<S>,
+    {
+        fields.map(self)
     }
 }
 
-impl<T, F> Alias<T, F>
+impl<QS, S, C> AppearsOnTable<QS> for AliasedField<S, C>
 where
-    T: Table,
-{
-    pub fn field<C>(&self, _: C) -> AliasedField<Self, C>
-    where
-        C: Column<Table = T>,
-    {
-        AliasedField(Alias::new(), PhantomData)
-    }
-    pub fn fields<Fields>(&self, fields: Fields) -> <Fields as FieldAliasMapper<Self>>::Out
-    where
-        Fields: FieldAliasMapper<Self>,
-    {
-        fields.map()
-    }
-}
-
-impl<QS, T, F, C> AppearsOnTable<QS> for AliasedField<Alias<T, F>, C>
-where
-    QS: AppearsInFromClause<Alias<T, F>, Count = Once>,
-    T: Table,
-    C: Column<Table = T>,
+    S: AliasSource,
+    QS: AppearsInFromClause<Alias<S>, Count = Once>,
+    C: Column<Table = S::Table>,
 {
 }
 
-impl<T, F, C> QueryId for AliasedField<Alias<T, F>, C>
+impl<S, C> QueryId for AliasedField<S, C>
 where
-    T: Table + 'static,
-    C: Column<Table = T> + 'static,
-    F: 'static,
+    S: AliasSource + 'static,
+    S::Table: 'static,
+    C: Column<Table = S::Table> + 'static,
 {
     type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
 }
 
-#[doc(hidden)]
-pub trait FieldAliasMapper<A> {
+/// Serves to map `Self` to `Alias<S>`
+///
+/// Any column `Self` that belongs to `S::Table` will be transformed into `AliasedField<S, Self>`
+///
+/// Any column `Self` that does not belong to `S::Table` will be left untouched.
+///
+/// This first part is implemented by the `table!` macro.  
+/// The second part is useful to implement the joins, and may be useful to an end-user for
+/// ergonomics.
+pub trait FieldAliasMapper<S> {
+    /// Output type when mapping `C` to `Alias<S>`
+    ///
+    /// If `C: Column<Table = S::Table>`, `Out = AliasedField<S, C>`  
+    /// Otherwise, `Out = C`
     type Out;
 
-    fn map(self) -> Self::Out;
+    /// Does the mapping
+    fn map(self, alias: Alias<S>) -> Self::Out;
 }
 
-impl<T, F, C> FieldAliasMapper<Alias<T, F>> for C
+/*impl<S, C> FieldAliasMapper<S> for C
 where
-    C: Column<Table = T>,
-    T: Table,
+    S: AliasSource,
+    C: Column<Table = S::Table>,
 {
-    type Out = AliasedField<Alias<T, F>, C>;
+    type Out = AliasedField<S, C>;
 
-    fn map(self) -> Self::Out {
-        AliasedField(Alias::new(), PhantomData)
+    fn map(self, alias: Alias<S>) -> Self::Out {
+        alias.field(self)
+    }
+}*/
+
+#[doc(hidden)]
+/// Allows implementing `FieldAliasMapper` in external crates without running into conflicting impl
+/// errors due to https://github.com/rust-lang/rust/issues/20400
+///
+/// We will always have `Self = S::Table` and `CT = C::Table`
+pub trait FieldAliasMapperAssociatedTypesDisjointnessTrick<CT, S, C> {
+    type Out;
+    fn map(column: C, alias: Alias<S>) -> Self::Out;
+}
+impl<S, C> FieldAliasMapper<S> for C
+where
+    S: AliasSource,
+    C: Column,
+    S::Table: FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>,
+{
+    type Out = <S::Table as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::Out;
+    fn map(self, alias: Alias<S>) -> Self::Out {
+        <S::Table as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::map(
+            self, alias,
+        )
+    }
+}
+
+impl<TS, TC, S, C> FieldAliasMapperAssociatedTypesDisjointnessTrick<TC, S, C> for TS
+where
+    S: AliasSource<Table = TS>,
+    C: Column<Table = TC>,
+    TC: Table,
+    TS: TableNotEqual<TC>,
+{
+    type Out = C;
+
+    fn map(column: C, _alias: Alias<S>) -> Self::Out {
+        // left untouched because the tables are different
+        column
     }
 }
 
@@ -120,15 +194,16 @@ macro_rules! field_alias_mapper {
         }
     )+) => {
         $(
-            impl<_T, _F, $($T,)*> FieldAliasMapper<Alias<_T, _F>> for ($($T,)*)
+            impl<_S, $($T,)*> FieldAliasMapper<_S> for ($($T,)*)
             where
-                $($T: FieldAliasMapper<Alias<_T, _F>>,)*
+                _S: AliasSource,
+                $($T: FieldAliasMapper<_S>,)*
             {
-                type Out = ($(<$T as FieldAliasMapper<Alias<_T, _F>>>::Out,)*);
+                type Out = ($(<$T as FieldAliasMapper<_S>>::Out,)*);
 
-                fn map(self) -> Self::Out {
+                fn map(self, alias: Alias<_S>) -> Self::Out {
                     (
-                        $(self.$idx.map(),)*
+                        $(self.$idx.map(alias),)*
                     )
                 }
             }
@@ -138,88 +213,127 @@ macro_rules! field_alias_mapper {
 
 diesel_derives::__diesel_for_each_tuple!(field_alias_mapper);
 
-impl<T, F> QuerySource for Alias<T, F>
+// The following `FieldAliasMapper` impls are useful for the generic join implementations.
+// More may be added.
+impl<S, F> FieldAliasMapper<S> for expression::nullable::Nullable<F>
 where
-    T: Table + QuerySource + HasTable<Table = T>,
-    T::DefaultSelection: FieldAliasMapper<Self>,
-    <T::DefaultSelection as FieldAliasMapper<Self>>::Out: SelectableExpression<Self>,
+    F: FieldAliasMapper<S>,
 {
-    type FromClause = Self;
-    type DefaultSelection = <T::DefaultSelection as FieldAliasMapper<Self>>::Out;
-
-    fn from_clause(&self) -> Self::FromClause {
-        Alias::new()
-    }
-
-    fn default_selection(&self) -> Self::DefaultSelection {
-        T::default_selection(&T::table()).map()
+    type Out = expression::nullable::Nullable<<F as FieldAliasMapper<S>>::Out>;
+    fn map(self, alias: Alias<S>) -> Self::Out {
+        expression::nullable::Nullable::new(self.0.map(alias))
     }
 }
 
-impl<T, F, DB> QueryFragment<DB> for Alias<T, F>
+impl<S, F> FieldAliasMapper<S> for expression::grouped::Grouped<F>
 where
+    F: FieldAliasMapper<S>,
+{
+    type Out = expression::grouped::Grouped<<F as FieldAliasMapper<S>>::Out>;
+    fn map(self, alias: Alias<S>) -> Self::Out {
+        expression::grouped::Grouped(self.0.map(alias))
+    }
+}
+
+impl<S, F1, F2> FieldAliasMapper<S> for expression::operators::Eq<F1, F2>
+where
+    F1: FieldAliasMapper<S>,
+    F2: FieldAliasMapper<S>,
+{
+    type Out = expression::operators::Eq<
+        <F1 as FieldAliasMapper<S>>::Out,
+        <F2 as FieldAliasMapper<S>>::Out,
+    >;
+    fn map(self, alias: Alias<S>) -> Self::Out {
+        expression::operators::Eq::new(self.left.map(alias), self.right.map(alias))
+    }
+}
+
+impl<S> QuerySource for Alias<S>
+where
+    S: AliasSource,
+    S::Table: QuerySource + HasTable<Table = S::Table>,
+    <S::Table as QuerySource>::DefaultSelection: FieldAliasMapper<S>,
+    <<S::Table as QuerySource>::DefaultSelection as FieldAliasMapper<S>>::Out:
+        SelectableExpression<Self>,
+{
+    type FromClause = Self;
+    type DefaultSelection =
+        <<S::Table as QuerySource>::DefaultSelection as FieldAliasMapper<S>>::Out;
+
+    fn from_clause(&self) -> Self::FromClause {
+        self.clone()
+    }
+
+    fn default_selection(&self) -> Self::DefaultSelection {
+        self.fields(S::Table::table().default_selection())
+    }
+}
+
+impl<S, DB> QueryFragment<DB> for Alias<S>
+where
+    S: AliasSource,
     DB: Backend,
-    T: Table + StaticQueryFragment,
-    T::Component: QueryFragment<DB>,
-    F: Named,
+    S::Table: StaticQueryFragment,
+    <S::Table as StaticQueryFragment>::Component: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        T::STATIC_COMPONENT.walk_ast(pass.reborrow())?;
+        <S::Table as StaticQueryFragment>::STATIC_COMPONENT.walk_ast(pass.reborrow())?;
         pass.push_sql(" AS ");
-        pass.push_identifier(F::NAME)?;
+        pass.push_identifier(S::NAME)?;
         Ok(())
     }
 }
 
-impl<T, F, C, DB> QueryFragment<DB> for AliasedField<Alias<T, F>, C>
+impl<S, C, DB> QueryFragment<DB> for AliasedField<S, C>
 where
+    S: AliasSource,
     DB: Backend,
-    T: Table,
-    C: Column<Table = T>,
-    F: Named,
+    C: Column<Table = S::Table>,
 {
     fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        pass.push_identifier(F::NAME)?;
+        pass.push_identifier(S::NAME)?;
         pass.push_sql(".");
         pass.push_identifier(C::NAME)?;
         Ok(())
     }
 }
 
-impl<T, F, C> Expression for AliasedField<Alias<T, F>, C>
+impl<S, C> Expression for AliasedField<S, C>
 where
-    T: Table,
-    C: Column<Table = T> + Expression,
+    S: AliasSource,
+    C: Column<Table = S::Table> + Expression,
 {
     type SqlType = C::SqlType;
 }
 
-impl<T, F, C> SelectableExpression<Alias<T, F>> for AliasedField<Alias<T, F>, C>
+impl<S, C> SelectableExpression<Alias<S>> for AliasedField<S, C>
 where
-    T: Table,
-    C: Column<Table = T>,
-    Self: AppearsOnTable<Alias<T, F>>,
+    S: AliasSource,
+    C: Column<Table = S::Table>,
+    Self: AppearsOnTable<Alias<S>>,
 {
 }
 
-impl<T, F, C> ValidGrouping<()> for AliasedField<Alias<T, F>, C>
+impl<S, C> ValidGrouping<()> for AliasedField<S, C>
 where
-    T: Table,
-    C: Column<Table = T>,
+    S: AliasSource,
+    C: Column<Table = S::Table>,
 {
     type IsAggregate = is_aggregate::No;
 }
-impl<T, F, C> ValidGrouping<AliasedField<Alias<T, F>, C>> for AliasedField<Alias<T, F>, C>
+impl<S, C> ValidGrouping<AliasedField<S, C>> for AliasedField<S, C>
 where
-    T: Table,
-    C: Column<Table = T>,
+    S: AliasSource,
+    C: Column<Table = S::Table>,
 {
     type IsAggregate = is_aggregate::Yes;
 }
 
-impl<T, F> AsQuery for Alias<T, F>
+impl<S> AsQuery for Alias<S>
 where
-    T: AsQuery + Table + HasTable<Table = T>,
+    S: AliasSource,
+    S::Table: AsQuery,
     Self: QuerySource,
     <Self as QuerySource>::DefaultSelection: ValidGrouping<()>,
 {
@@ -231,25 +345,11 @@ where
     }
 }
 
-impl<T1, T2, F1, F2> AppearsInFromClause<Alias<T1, F1>> for Alias<T2, F2>
-where
-    T2: AliasNotEqualHelper<T1, F2, F1>,
-{
-    type Count = T2::Count;
-}
+impl<S: AliasSource> QueryDsl for Alias<S> {}
 
-impl<T, F> AppearsInFromClause<Alias<T, F>> for ()
+impl<S, Predicate> FilterDsl<Predicate> for Alias<S>
 where
-    T: Table,
-{
-    type Count = Never;
-}
-
-impl<T, F> QueryDsl for Alias<T, F> where T: Table {}
-
-impl<T, F, Predicate> FilterDsl<Predicate> for Alias<T, F>
-where
-    T: Table,
+    S: AliasSource,
     Self: AsQuery,
     <Self as AsQuery>::Query: FilterDsl<Predicate>,
 {
@@ -260,11 +360,11 @@ where
     }
 }
 
-impl<T, F, Selection> SelectDsl<Selection> for Alias<T, F>
+impl<S, Selection> SelectDsl<Selection> for Alias<S>
 where
     Selection: Expression,
     Self: AsQuery,
-    T: Table,
+    S: AliasSource,
     <Self as AsQuery>::Query: SelectDsl<Selection>,
 {
     type Output = Select<<Self as AsQuery>::Query, Selection>;
@@ -274,7 +374,71 @@ where
     }
 }
 
+impl<S, QS> AppearsInFromClause<QS> for Alias<S>
+where
+    S: AliasSource,
+    S::Table: AliasAppearsInFromClause<S, QS>,
+{
+    type Count = <S::Table as AliasAppearsInFromClause<S, QS>>::Count;
+}
+#[doc(hidden)]
+/// This trait is used to allow external crates to implement
+/// `AppearsInFromClause<QS> for Alias<S>`
+///
+/// without running in conflicting impl issues
+pub trait AliasAppearsInFromClause<S, QS> {
+    /// Will be passed on to the `impl AppearsInFromClause<QS>`
+    type Count;
+}
+#[doc(hidden)]
+/// This trait is used to allow external crates to implement
+/// `AppearsInFromClause<Alias<S2>> for Alias<S1>`
+///
+/// without running in conflicting impl issues
+pub trait AliasAliasAppearsInFromClause<T2, S1, S2> {
+    /// Will be passed on to the `impl AppearsInFromClause<QS>`
+    type Count;
+}
+impl<T1, S1, S2> AliasAppearsInFromClause<S1, Alias<S2>> for T1
+where
+    S2: AliasSource,
+    T1: AliasAliasAppearsInFromClause<S2::Table, S1, S2>,
+{
+    type Count = <T1 as AliasAliasAppearsInFromClause<S2::Table, S1, S2>>::Count;
+}
+
+// impl<S: AliasSource<Table=T1>> AppearsInFromClause<T2> for Alias<S>
+// where T1 != T2
+impl<T1, T2, S> AliasAppearsInFromClause<S, T2> for T1
+where
+    T1: TableNotEqual<T2> + Table,
+    T2: Table,
+    S: AliasSource<Table = T1>,
+{
+    type Count = Never;
+}
+
+// impl<S1, S2> AppearsInFromClause<Alias<S1>> for Alias<S2>
+// where S1: AliasSource, S2: AliasSource, S1::Table != S2::Table
+impl<T1, T2, S1, S2> AliasAliasAppearsInFromClause<T1, S2, S1> for T2
+where
+    T1: TableNotEqual<T2> + Table,
+    T2: Table,
+    S1: AliasSource<Table = T1>,
+    S2: AliasSource<Table = T2>,
+{
+    type Count = Never;
+}
+
+impl<S> AppearsInFromClause<Alias<S>> for ()
+where
+    S: AliasSource,
+{
+    type Count = Never;
+}
+
 #[macro_export]
+#[doc(hidden)]
 macro_rules! __internal_alias_helper {
     (
         $left_table: ident as $left_alias: ident,
@@ -282,11 +446,14 @@ macro_rules! __internal_alias_helper {
         $($table: ident as $alias: ident,)*
     ) => {
         static_cond!{if $left_table == $right_table {
-            impl $crate::query_source::AliasNotEqualHelper<$left_table::table, $right_alias, $left_alias> for $right_table::table {
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$left_table::table, $right_alias, $left_alias>
+                for $right_table::table
+            {
                 type Count = $crate::query_source::Never;
             }
-
-            impl $crate::query_source::AliasNotEqualHelper<$right_table::table, $left_alias, $right_alias> for $left_table::table {
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$right_table::table, $left_alias, $right_alias>
+                for $left_table::table
+            {
                 type Count = $crate::query_source::Never;
             }
         }}
@@ -298,47 +465,35 @@ macro_rules! __internal_alias_helper {
     ($table: ident as $alias: ident,) => {}
 }
 
-/// TODO
+/// TODO add doc
 #[macro_export]
 macro_rules! alias {
     ($($table: ident as $alias: ident),* $(,)?) => {{
         $(
             #[allow(non_camel_case_types)]
-            #[derive(Debug, Clone, Copy)]
+            #[derive(Debug, Clone, Copy, Default)]
             struct $alias;
 
-            impl $crate::query_source::Named for $alias {
+            impl $crate::query_source::AliasSource for $alias {
                 const NAME: &'static str = stringify!($alias);
+                type Table = $table::table;
             }
 
-            impl
-                $crate::query_source::AppearsInFromClause<
-                $crate::query_source::Alias<$table::table, $alias>,
-            > for $table::table
-            {
-                type Count = $crate::query_source::Never;
-            }
-
-            impl $crate::query_source::AppearsInFromClause<$table::table>
-                for $crate::query_source::Alias<$table::table, $alias>
-            {
-                type Count = $crate::query_source::Never;
-            }
-
-            impl $crate::query_source::AliasNotEqualHelper<$table::table, $alias, $alias> for $table::table {
+            // impl AppearsInFromClause<Alias<$alias>> for Alias<$alias>
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$table::table, $alias, $alias> for $table::table {
                 type Count = $crate::query_source::Once;
             }
         )*
         __internal_alias_helper!($($table as $alias,)*);
-        ($($crate::query_source::Alias::<$table::table, $alias>::new()),*)
+        ($($crate::query_source::Alias::<$alias>::default()),*)
     }};
 }
 
-impl<T: Table, F> ToInnerJoin for Alias<T, F> {
+impl<S: AliasSource> ToInnerJoin for Alias<S> {
     type InnerJoin = Self;
 }
 
-impl<T, Rhs, Kind, On, F> InternalJoinDsl<Rhs, Kind, On> for Alias<T, F>
+impl<S, Rhs, Kind, On> InternalJoinDsl<Rhs, Kind, On> for Alias<S>
 where
     Self: AsQuery,
     <Self as AsQuery>::Query: InternalJoinDsl<Rhs, Kind, On>,
@@ -350,45 +505,41 @@ where
     }
 }
 
-impl<Left, Right, T, F, C> SelectableExpression<Join<Left, Right, LeftOuter>>
-    for AliasedField<Alias<T, F>, C>
+impl<Left, Right, S, C> SelectableExpression<Join<Left, Right, LeftOuter>> for AliasedField<S, C>
 where
     Self: AppearsOnTable<Join<Left, Right, LeftOuter>>,
     Self: SelectableExpression<Left>,
     Left: QuerySource,
-    Right: AppearsInFromClause<Alias<T, F>, Count = Never> + QuerySource,
+    Right: AppearsInFromClause<Alias<S>, Count = Never> + QuerySource,
 {
 }
 
-impl<Left, Right, T, F, C> SelectableExpression<Join<Left, Right, Inner>>
-    for AliasedField<Alias<T, F>, C>
+impl<Left, Right, S, C> SelectableExpression<Join<Left, Right, Inner>> for AliasedField<S, C>
 where
     Self: AppearsOnTable<Join<Left, Right, Inner>>,
-    Left: AppearsInFromClause<Alias<T, F>> + QuerySource,
-    Right: AppearsInFromClause<Alias<T, F>> + QuerySource,
+    Left: AppearsInFromClause<Alias<S>> + QuerySource,
+    Right: AppearsInFromClause<Alias<S>> + QuerySource,
     (Left::Count, Right::Count): Pick<Left, Right>,
     Self: SelectableExpression<<(Left::Count, Right::Count) as Pick<Left, Right>>::Selection>,
 {
 }
 
 // FIXME: Remove this when overlapping marker traits are stable
-impl<Join, On, T, F, C> SelectableExpression<JoinOn<Join, On>> for AliasedField<Alias<T, F>, C> where
+impl<Join, On, S, C> SelectableExpression<JoinOn<Join, On>> for AliasedField<S, C> where
     Self: SelectableExpression<Join> + AppearsOnTable<JoinOn<Join, On>>
 {
 }
 
 // FIXME: Remove this when overlapping marker traits are stable
-impl<From, T, F, C> SelectableExpression<SelectStatement<FromClause<From>>>
-    for AliasedField<Alias<T, F>, C>
+impl<From, S, C> SelectableExpression<SelectStatement<FromClause<From>>> for AliasedField<S, C>
 where
     Self: SelectableExpression<From> + AppearsOnTable<SelectStatement<FromClause<From>>>,
     From: QuerySource,
 {
 }
 
-impl<T, Selection, F> AppendSelection<Selection> for Alias<T, F>
+impl<S, Selection> AppendSelection<Selection> for Alias<S>
 where
-    T: Table,
     Self: QuerySource,
 {
     type Output = (<Self as QuerySource>::DefaultSelection, Selection);
@@ -398,11 +549,27 @@ where
     }
 }
 
-impl<Lhs, Rhs, On, F> JoinTo<OnClauseWrapper<Rhs, On>> for Alias<Lhs, F> {
+impl<S, Rhs, On> JoinTo<OnClauseWrapper<Rhs, On>> for Alias<S> {
     type FromClause = Rhs;
     type OnClause = On;
 
     fn join_target(rhs: OnClauseWrapper<Rhs, On>) -> (Self::FromClause, Self::OnClause) {
         (rhs.source, rhs.on)
+    }
+}
+
+impl<T, S> JoinTo<T> for Alias<S>
+where
+    T: Table,
+    S: AliasSource,
+    S::Table: JoinTo<T>,
+    <S::Table as JoinTo<T>>::OnClause: FieldAliasMapper<S>,
+{
+    type FromClause = <S::Table as JoinTo<T>>::FromClause;
+    type OnClause = <<S::Table as JoinTo<T>>::OnClause as FieldAliasMapper<S>>::Out;
+
+    fn join_target(rhs: T) -> (Self::FromClause, Self::OnClause) {
+        let (from_clause, on_clause) = <S::Table as JoinTo<T>>::join_target(rhs);
+        (from_clause, Self::default().fields(on_clause))
     }
 }

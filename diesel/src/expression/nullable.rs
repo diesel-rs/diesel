@@ -7,7 +7,7 @@ use crate::result::QueryResult;
 use crate::sql_types::{DieselNumericOps, IntoNullable};
 
 #[derive(Debug, Copy, Clone, DieselNumericOps, ValidGrouping)]
-pub struct Nullable<T>(T);
+pub struct Nullable<T>(pub(crate) T);
 
 impl<T> Nullable<T> {
     pub fn new(expr: T) -> Self {
