@@ -7,8 +7,8 @@ use crate::expression::{
 };
 use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
-use crate::query_dsl::join_dsl::InternalJoinDsl;
 use crate::query_dsl::methods::*;
+use crate::query_dsl::InternalJoinDsl;
 use crate::query_dsl::QueryDsl;
 use crate::query_source::joins::ToInnerJoin;
 use crate::query_source::joins::{
@@ -45,8 +45,8 @@ pub struct Alias<S> {
 ///
 /// See [alias!] for more details.
 pub struct AliasedField<S, F> {
-    alias_source: S,
-    field: F,
+    _alias_source: S,
+    _field: F,
 }
 
 impl<S> QueryId for Alias<S> {
@@ -62,8 +62,8 @@ impl<S: AliasSource> Alias<S> {
         F: Column<Table = S::Table>,
     {
         AliasedField {
-            alias_source: self.source.clone(),
-            field,
+            _alias_source: self.source.clone(),
+            _field: field,
         }
     }
     /// Maps multiple fields of the source table in this alias (takes in tuples)
