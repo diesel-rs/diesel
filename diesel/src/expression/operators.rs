@@ -109,6 +109,7 @@ macro_rules! __diesel_operator_body {
 
         impl<S, $($ty_param,)+> $crate::query_source::FieldAliasMapper<S> for $name<$($ty_param,)+>
         where
+            S: $crate::query_source::AliasSource,
             $($ty_param: $crate::query_source::FieldAliasMapper<S>,)+
         {
             type Out = $name<

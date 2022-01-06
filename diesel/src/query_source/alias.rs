@@ -16,7 +16,6 @@ use crate::query_source::joins::{
 };
 use crate::query_source::{AppearsInFromClause, Column, Never, Once, QuerySource, Table};
 use crate::result::QueryResult;
-use std::marker::PhantomData;
 
 /// Types created by the `alias!` macro that serve to distinguish between aliases implement
 /// this trait.
@@ -26,48 +25,24 @@ use std::marker::PhantomData;
 /// where `S: AliasSource`.
 ///
 /// This trait should never be implemented by an end-user directly.
-pub trait AliasSource {
+pub trait AliasSource: Copy + Default {
     /// The name of this alias in the query
     const NAME: &'static str;
     /// The table it maps to
     type Table: Table;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, Default)]
 /// Represents an alias within diesel's query builder
 pub struct Alias<S> {
-    source: PhantomData<S>,
+    source: S,
 }
 
-impl<S> Clone for Alias<S> {
-    fn clone(&self) -> Self {
-        Self {
-            source: PhantomData,
-        }
-    }
-}
-impl<S> Copy for Alias<S> {}
-impl<S> Default for Alias<S> {
-    fn default() -> Self {
-        Self {
-            source: PhantomData,
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, Default)]
 /// Represents an aliased field (column) within diesel's query builder
 pub struct AliasedField<S, F> {
-    alias_source: PhantomData<S>,
-    field: PhantomData<F>,
-}
-impl<S, F> Clone for AliasedField<S, F> {
-    fn clone(&self) -> Self {
-        Self {
-            alias_source: self.alias_source.clone(),
-            field: self.field.clone(),
-        }
-    }
+    alias_source: S,
+    field: F,
 }
 
 impl<S> QueryId for Alias<S> {
@@ -78,13 +53,13 @@ impl<S> QueryId for Alias<S> {
 
 impl<S: AliasSource> Alias<S> {
     /// Maps a single field of the source table in this alias
-    pub fn field<F>(self, _field: F) -> AliasedField<S, F>
+    pub fn field<F>(self, field: F) -> AliasedField<S, F>
     where
         F: Column<Table = S::Table>,
     {
         AliasedField {
             alias_source: self.source.clone(),
-            field: PhantomData,
+            field,
         }
     }
     /// Maps multiple fields of the source table in this alias (takes in tuples)
