@@ -94,7 +94,7 @@
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
-//#![deny(warnings)]
+#![deny(warnings)]
 #![warn(
     missing_debug_implementations,
     missing_copy_implementations,

@@ -47,7 +47,7 @@ where
         G,
         H,
         LC,
-    >: Query,
+    >: AsQuery,
 {
     type Output = SelectStatement<
         FromClause<JoinOn<Join<F, Rhs, Kind>, On>>,

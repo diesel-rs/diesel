@@ -1132,44 +1132,51 @@ macro_rules! __diesel_table_generate_static_query_fragment_for_table {
 #[macro_export]
 macro_rules! joinable {
     ($($child:ident)::* -> $($parent:ident)::* ($source:ident)) => {
-        impl $crate::JoinTo<$($parent)::* ::table> for $($child)::* ::table {
-            type FromClause = $($parent)::* ::table;
-            type OnClause = $crate::dsl::Eq<
-                $crate::expression::nullable::Nullable<$($child)::* ::$source>,
-                $crate::expression::nullable::Nullable<<$($parent)::* ::table as $crate::query_source::Table>::PrimaryKey>,
-            >;
-
-            fn join_target(rhs: $($parent)::* ::table) -> (Self::FromClause, Self::OnClause) {
-                use $crate::{ExpressionMethods, NullableExpressionMethods};
-
-                (
-                    rhs,
-                    $($child)::* ::$source.nullable().eq(
-                        <$($parent)::* ::table as $crate::query_source::Table>::primary_key(&$($parent)::* ::table).nullable()
-                    ),
-                )
-            }
-        }
-
-        impl $crate::JoinTo<$($child)::* ::table> for $($parent)::* ::table {
-            type FromClause = $($child)::* ::table;
-            type OnClause = $crate::dsl::Eq<
-                $crate::expression::nullable::Nullable<$($child)::* ::$source>,
-                $crate::expression::nullable::Nullable<<$($parent)::* ::table as $crate::query_source::Table>::PrimaryKey>,
-            >;
-
-            fn join_target(rhs: $($child)::* ::table) -> (Self::FromClause, Self::OnClause) {
-                use $crate::{ExpressionMethods, NullableExpressionMethods};
-
-                (
-                    rhs,
-                    $($child)::* ::$source.nullable().eq(
-                        <$($parent)::* ::table as $crate::query_source::Table>::primary_key(&$($parent)::* ::table).nullable()
-                    ),
-                )
-            }
-        }
+        $crate::joinable_inner!($($child)::* ::table => $($parent)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
+        $crate::joinable_inner!($($parent)::* ::table => $($child)::* ::table : ($($child)::* ::$source = $($parent)::* ::table));
     }
+}
+
+#[macro_export]
+#[doc(hidden)]
+macro_rules! joinable_inner {
+    ($left_table:path => $right_table:path : ($foreign_key:path = $parent_table:path)) => {
+        $crate::joinable_inner!(
+            left_table_ty = $left_table,
+            right_table_ty = $right_table,
+            right_table_expr = $right_table,
+            foreign_key = $foreign_key,
+            primary_key_ty = <$parent_table as $crate::query_source::Table>::PrimaryKey,
+            primary_key_expr =
+                <$parent_table as $crate::query_source::Table>::primary_key(&$parent_table),
+        );
+    };
+
+    (
+        left_table_ty = $left_table_ty:ty,
+        right_table_ty = $right_table_ty:ty,
+        right_table_expr = $right_table_expr:expr,
+        foreign_key = $foreign_key:path,
+        primary_key_ty = $primary_key_ty:ty,
+        primary_key_expr = $primary_key_expr:expr,
+    ) => {
+        impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
+            type FromClause = $right_table_ty;
+            type OnClause = $crate::dsl::Eq<
+                $crate::expression::nullable::Nullable<$foreign_key>,
+                $crate::expression::nullable::Nullable<$primary_key_ty>,
+            >;
+
+            fn join_target(rhs: $right_table_ty) -> (Self::FromClause, Self::OnClause) {
+                use $crate::{ExpressionMethods, NullableExpressionMethods};
+
+                (
+                    rhs,
+                    $foreign_key.nullable().eq($primary_key_expr.nullable()),
+                )
+            }
+        }
+    };
 }
 
 /// Allow two or more tables which are otherwise unrelated to be used together
