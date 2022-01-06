@@ -402,27 +402,27 @@ where
 #[doc(hidden)]
 macro_rules! __internal_alias_helper {
     (
-        $left_table: ident as $left_alias: ident,
-        $($right_table: ident as $right_alias: ident,)+
+        $($left_table: ident)::+ as $left_alias: ident,
+        $($right_table: ident)::+ as $right_alias: ident,
+        $($($table: ident)::+ as $alias: ident,)*
     ) => {
-        $(
-            $crate::static_cond!{if $left_table == $right_table {
-                impl $crate::query_source::AliasAliasAppearsInFromClause<$left_table::table, $right_alias, $left_alias>
-                    for $right_table::table
-                {
-                    type Count = $crate::query_source::Never;
-                }
-                impl $crate::query_source::AliasAliasAppearsInFromClause<$right_table::table, $left_alias, $right_alias>
-                    for $left_table::table
-                {
-                    type Count = $crate::query_source::Never;
-                }
-            }}
-        )+
-        $crate::__internal_alias_helper!($($right_table as $right_alias,)+);
+        $crate::static_cond!{if ($($left_table)::+) == ($($right_table)::+) {
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$($left_table)::+::table, $right_alias, $left_alias>
+                for $($right_table)::+::table
+            {
+                type Count = $crate::query_source::Never;
+            }
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$($right_table)::+::table, $left_alias, $right_alias>
+                for $($left_table)::+::table
+            {
+                type Count = $crate::query_source::Never;
+            }
+        }}
+        $crate::__internal_alias_helper!($($left_table)::+ as $left_alias, $($($table)::+ as $alias,)*);
+        $crate::__internal_alias_helper!($($right_table)::+ as $right_alias, $($($table)::+ as $alias,)*);
     };
 
-    ($table: ident as $alias: ident,) => {}
+    ($($table: ident)::+ as $alias: ident,) => {}
 }
 
 /// Declare a new alias for a table
@@ -432,9 +432,9 @@ macro_rules! __internal_alias_helper {
 /// ```rust
 /// # include!("../doctest_setup.rs");
 /// fn main() {
-///     use schema::{posts, users};
+///     use schema::users;
 ///     let connection = &mut establish_connection();
-///     let (users1, users2) = diesel::alias!(users as user1, users as user2);
+///     let (users1, users2) = diesel::alias!(schema::users as user1, schema::users as user2);
 ///     let res = users1
 ///         .inner_join(users2.on(users1.field(users::id).eq(users2.field(users::id))))
 ///         .select((users1.fields((users::id, users::name)), users2.field(users::name)))
@@ -449,9 +449,20 @@ macro_rules! __internal_alias_helper {
 ///     );
 /// }
 /// ```
+///
+/// Troubleshooting and limitations
+/// -------------------------------
+/// If you encounter a **compilation error** where "the trait
+/// `AppearsInFromClause<Alias<your_alias>>` is not implemented", when trying to use two aliases to
+/// the same table within a single query note the following two limitations:
+///  - You will need to declare these in a single `alias!` call.
+///  - The path to the table module will have to be expressed in the exact same
+///    manner. (That is, you can do `alias!(schema::users as user1, schema::users as user2)`
+///    or `alias!(users as user1, users as user2)`, but not
+///    `alias!(schema::users as user1, users as user2)`)
 #[macro_export]
 macro_rules! alias {
-    ($($table: ident as $alias: ident),* $(,)?) => {{
+    ($($($table: ident)::+ as $alias: ident),* $(,)?) => {{
         $(
             #[allow(non_camel_case_types)]
             #[derive(Debug, Clone, Copy, Default)]
@@ -459,15 +470,15 @@ macro_rules! alias {
 
             impl $crate::query_source::AliasSource for $alias {
                 const NAME: &'static str = stringify!($alias);
-                type Table = $table::table;
+                type Table = $($table)::+::table;
             }
 
             // impl AppearsInFromClause<Alias<$alias>> for Alias<$alias>
-            impl $crate::query_source::AliasAliasAppearsInFromClause<$table::table, $alias, $alias> for $table::table {
+            impl $crate::query_source::AliasAliasAppearsInFromClause<$($table)::+::table, $alias, $alias> for $($table)::+::table {
                 type Count = $crate::query_source::Once;
             }
         )*
-        $crate::__internal_alias_helper!($($table as $alias,)*);
+        $crate::__internal_alias_helper!($($($table)::+ as $alias,)*);
         ($($crate::query_source::Alias::<$alias>::default()),*)
     }};
 }
