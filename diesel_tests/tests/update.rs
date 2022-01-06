@@ -82,7 +82,10 @@ fn test_updating_multiple_columns() {
 }
 
 #[test]
-#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
+#[cfg(not(any(
+    all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
+    feature = "mysql"
+)))]
 fn update_returning_struct() {
     use crate::schema::users::dsl::*;
 
@@ -97,7 +100,10 @@ fn update_returning_struct() {
 }
 
 #[test]
-#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
+#[cfg(not(any(
+    all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
+    feature = "mysql"
+)))]
 fn update_with_custom_returning_clause() {
     use crate::schema::users::dsl::*;
 

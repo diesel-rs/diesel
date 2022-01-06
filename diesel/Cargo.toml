@@ -61,6 +61,7 @@ network-address = ["ipnetwork", "libc"]
 numeric = ["num-bigint", "bigdecimal", "num-traits", "num-integer"]
 postgres_backend = ["diesel_derives/postgres", "bitflags", "byteorder"]
 mysql_backend = ["diesel_derives/mysql", "byteorder"]
+returning_clauses_for_sqlite_3_35 = []
 
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]

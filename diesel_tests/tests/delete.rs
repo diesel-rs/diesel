@@ -29,7 +29,10 @@ fn delete_single_record() {
 }
 
 #[test]
-#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
+#[cfg(not(any(
+    all(feature = "sqlite", not(feature = "returning_clauses_for_sqlite_3_35")),
+    feature = "mysql"
+)))]
 fn return_deleted_records() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection_with_sean_and_tess_in_users_table();
