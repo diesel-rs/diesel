@@ -34,12 +34,16 @@ pub trait AliasSource: Copy + Default {
 
 #[derive(Debug, Clone, Copy, Default)]
 /// Represents an alias within diesel's query builder
+///
+/// See [alias!] for more details.
 pub struct Alias<S> {
     source: S,
 }
 
 #[derive(Debug, Clone, Copy, Default)]
 /// Represents an aliased field (column) within diesel's query builder
+///
+/// See [alias!] for more details.
 pub struct AliasedField<S, F> {
     alias_source: S,
     field: F,
@@ -95,9 +99,9 @@ where
 ///
 /// Any column `Self` that does not belong to `S::Table` will be left untouched.
 ///
-/// This first part is implemented by the `table!` macro.  
-/// The second part is useful to implement the joins, and may be useful to an end-user for
-/// ergonomics.
+// This first part is implemented by the `table!` macro.
+// The second part is useful to implement the joins, and may be useful to an end-user for
+// ergonomics.
 pub trait FieldAliasMapper<S> {
     /// Output type when mapping `C` to `Alias<S>`
     ///
@@ -402,7 +406,7 @@ macro_rules! __internal_alias_helper {
         $($right_table: ident as $right_alias: ident,)+
     ) => {
         $(
-            static_cond!{if $left_table == $right_table {
+            $crate::static_cond!{if $left_table == $right_table {
                 impl $crate::query_source::AliasAliasAppearsInFromClause<$left_table::table, $right_alias, $left_alias>
                     for $right_table::table
                 {
@@ -415,13 +419,36 @@ macro_rules! __internal_alias_helper {
                 }
             }}
         )+
-        __internal_alias_helper!($($right_table as $right_alias,)+);
+        $crate::__internal_alias_helper!($($right_table as $right_alias,)+);
     };
 
     ($table: ident as $alias: ident,) => {}
 }
 
-/// TODO add doc
+/// Declare a new alias for a table
+///
+/// Example usage
+/// -------------
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// fn main() {
+///     use schema::{posts, users};
+///     let connection = &mut establish_connection();
+///     let (users1, users2) = diesel::alias!(users as user1, users as user2);
+///     let res = users1
+///         .inner_join(users2.on(users1.field(users::id).eq(users2.field(users::id))))
+///         .select((users1.fields((users::id, users::name)), users2.field(users::name)))
+///         .order_by(users2.field(users::id))
+///         .load::<((i32, String), String)>(connection);
+///     assert_eq!(
+///         res,
+///         Ok(vec![
+///             ((1, "Sean".to_owned()), "Sean".to_owned()),
+///             ((2, "Tess".to_owned()), "Tess".to_owned()),
+///         ]),
+///     );
+/// }
+/// ```
 #[macro_export]
 macro_rules! alias {
     ($($table: ident as $alias: ident),* $(,)?) => {{
@@ -440,7 +467,7 @@ macro_rules! alias {
                 type Count = $crate::query_source::Once;
             }
         )*
-        __internal_alias_helper!($($table as $alias,)*);
+        $crate::__internal_alias_helper!($($table as $alias,)*);
         ($($crate::query_source::Alias::<$alias>::default()),*)
     }};
 }

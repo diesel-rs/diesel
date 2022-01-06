@@ -83,10 +83,11 @@ pub trait AppearsInFromClause<QS> {
     type Count;
 }
 
-/// Allows to determine whether two tables are equal.
+/// Allows Diesel to determine whether two tables are equal.
 ///
 /// This trait is implemented by the `allow_tables_to_appear_in_same_query!` macro,
-/// and allows implementing a bunch of `AppearsInFromClause` for the tables and their aliases.
+/// and allows diesel to implement a bunch of `AppearsInFromClause` for the tables and their
+/// aliases.
 pub trait TableNotEqual<T: Table>: Table {}
 
 impl<T1, T2> AppearsInFromClause<T2> for T1
