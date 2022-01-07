@@ -20,7 +20,7 @@ pub trait FieldAliasMapper<S> {
     type Out;
 
     /// Does the mapping
-    fn map(self, alias: Alias<S>) -> Self::Out;
+    fn map(self, alias: &Alias<S>) -> Self::Out;
 }
 
 #[doc(hidden)]
@@ -30,7 +30,7 @@ pub trait FieldAliasMapper<S> {
 /// We will always have `Self = S::Table` and `CT = C::Table`
 pub trait FieldAliasMapperAssociatedTypesDisjointnessTrick<CT, S, C> {
     type Out;
-    fn map(column: C, alias: Alias<S>) -> Self::Out;
+    fn map(column: C, alias: &Alias<S>) -> Self::Out;
 }
 impl<S, C> FieldAliasMapper<S> for C
 where
@@ -39,7 +39,7 @@ where
     S::Table: FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>,
 {
     type Out = <S::Table as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::Out;
-    fn map(self, alias: Alias<S>) -> Self::Out {
+    fn map(self, alias: &Alias<S>) -> Self::Out {
         <S::Table as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::map(
             self, alias,
         )
@@ -55,7 +55,7 @@ where
 {
     type Out = C;
 
-    fn map(column: C, _alias: Alias<S>) -> Self::Out {
+    fn map(column: C, _alias: &Alias<S>) -> Self::Out {
         // left untouched because the tables are different
         column
     }
@@ -75,7 +75,7 @@ macro_rules! field_alias_mapper {
             {
                 type Out = ($(<$T as FieldAliasMapper<_S>>::Out,)*);
 
-                fn map(self, alias: Alias<_S>) -> Self::Out {
+                fn map(self, alias: &Alias<_S>) -> Self::Out {
                     (
                         $(self.$idx.map(alias),)*
                     )
@@ -94,7 +94,7 @@ where
     SNew: AliasSource,
 {
     type Out = Self;
-    fn map(self, _alias: Alias<SNew>) -> Self::Out {
+    fn map(self, _alias: &Alias<SNew>) -> Self::Out {
         // left untouched because it has already been aliased
         self
     }
@@ -105,7 +105,7 @@ where
     F: FieldAliasMapper<S>,
 {
     type Out = expression::nullable::Nullable<<F as FieldAliasMapper<S>>::Out>;
-    fn map(self, alias: Alias<S>) -> Self::Out {
+    fn map(self, alias: &Alias<S>) -> Self::Out {
         expression::nullable::Nullable::new(self.0.map(alias))
     }
 }
@@ -115,7 +115,7 @@ where
     F: FieldAliasMapper<S>,
 {
     type Out = expression::grouped::Grouped<<F as FieldAliasMapper<S>>::Out>;
-    fn map(self, alias: Alias<S>) -> Self::Out {
+    fn map(self, alias: &Alias<S>) -> Self::Out {
         expression::grouped::Grouped(self.0.map(alias))
     }
 }

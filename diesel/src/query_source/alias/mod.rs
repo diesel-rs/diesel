@@ -8,8 +8,6 @@ mod field_alias_mapper;
 mod joins;
 mod macros;
 
-use crate::query_source::Table;
-
 pub use alias::{Alias, AliasAliasAppearsInFromClause, AliasAppearsInFromClause};
 pub use aliased_field::AliasedField;
 pub use field_alias_mapper::{FieldAliasMapper, FieldAliasMapperAssociatedTypesDisjointnessTrick};
@@ -22,9 +20,9 @@ pub use field_alias_mapper::{FieldAliasMapper, FieldAliasMapperAssociatedTypesDi
 /// where `S: AliasSource`.
 ///
 /// This trait should never be implemented by an end-user directly.
-pub trait AliasSource: Copy + Default {
+pub trait AliasSource {
     /// The name of this alias in the query
     const NAME: &'static str;
     /// The table it maps to
-    type Table: Table;
+    type Table;
 }

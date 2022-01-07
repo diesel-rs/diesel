@@ -14,7 +14,7 @@ use crate::query_source::{AppearsInFromClause, Never, Pick, QuerySource, Table};
 impl<T, S> JoinTo<T> for Alias<S>
 where
     T: Table,
-    S: AliasSource,
+    S: AliasSource + Default,
     S::Table: JoinTo<T>,
     <S::Table as JoinTo<T>>::OnClause: FieldAliasMapper<S>,
 {
@@ -30,7 +30,7 @@ where
 impl<S2, S> JoinTo<Alias<S2>> for Alias<S>
 where
     S2: AliasSource,
-    S: AliasSource,
+    S: AliasSource + Default,
     S::Table: JoinTo<Alias<S2>>,
     <S::Table as JoinTo<Alias<S2>>>::OnClause: FieldAliasMapper<S>,
 {

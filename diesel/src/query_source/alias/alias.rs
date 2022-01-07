@@ -21,17 +21,18 @@ pub struct Alias<S> {
 
 impl<S: AliasSource> Alias<S> {
     /// Maps a single field of the source table in this alias
-    pub fn field<F>(self, field: F) -> AliasedField<S, F>
+    pub fn field<F>(&self, field: F) -> AliasedField<S, F>
     where
+        S: Clone,
         F: Column<Table = S::Table>,
     {
         AliasedField {
-            _alias_source: self.source,
+            _alias_source: self.source.clone(),
             _field: field,
         }
     }
     /// Maps multiple fields of the source table in this alias (takes in tuples)
-    pub fn fields<Fields>(self, fields: Fields) -> <Fields as FieldAliasMapper<S>>::Out
+    pub fn fields<Fields>(&self, fields: Fields) -> <Fields as FieldAliasMapper<S>>::Out
     where
         Fields: FieldAliasMapper<S>,
     {
@@ -50,6 +51,8 @@ impl<S> Alias<S> {
 impl<S> QueryId for Alias<S>
 where
     Self: 'static,
+    S: AliasSource,
+    S::Table: Table,
 {
     type QueryId = Self;
     const HAS_STATIC_QUERY_ID: bool = true;
@@ -57,7 +60,7 @@ where
 
 impl<S> QuerySource for Alias<S>
 where
-    S: AliasSource,
+    S: AliasSource + Clone,
     S::Table: QuerySource + HasTable<Table = S::Table>,
     <S::Table as QuerySource>::DefaultSelection: FieldAliasMapper<S>,
     <<S::Table as QuerySource>::DefaultSelection as FieldAliasMapper<S>>::Out:
@@ -68,7 +71,7 @@ where
         <<S::Table as QuerySource>::DefaultSelection as FieldAliasMapper<S>>::Out;
 
     fn from_clause(&self) -> Self::FromClause {
-        *self
+        self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {

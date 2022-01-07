@@ -826,12 +826,12 @@ macro_rules! __diesel_table_impl {
 
             impl<S, C> $crate::query_source::alias::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
             where
-                S: $crate::query_source::alias::AliasSource<Table = table>,
+                S: $crate::query_source::alias::AliasSource<Table = table> + ::std::clone::Clone,
                 C: $crate::query_source::Column<Table = table>,
             {
                 type Out = $crate::query_source::AliasedField<S, C>;
 
-                fn map(column: C, alias: $crate::query_source::Alias<S>) -> Self::Out {
+                fn map(column: C, alias: &$crate::query_source::Alias<S>) -> Self::Out {
                     alias.field(column)
                 }
             }
