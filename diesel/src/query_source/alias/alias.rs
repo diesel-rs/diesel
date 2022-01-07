@@ -47,10 +47,12 @@ impl<S> Alias<S> {
     }
 }
 
-impl<S> QueryId for Alias<S> {
-    type QueryId = ();
-
-    const HAS_STATIC_QUERY_ID: bool = false;
+impl<S> QueryId for Alias<S>
+where
+    Self: 'static,
+{
+    type QueryId = Self;
+    const HAS_STATIC_QUERY_ID: bool = true;
 }
 
 impl<S> QuerySource for Alias<S>
