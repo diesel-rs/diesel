@@ -812,21 +812,21 @@ macro_rules! __diesel_table_impl {
             }
 
             // impl<S: AliasSource<Table=table>> AppearsInFromClause<table> for Alias<S>
-            impl<S> $crate::query_source::AliasAppearsInFromClause<S, table> for table
-            where S: $crate::query_source::AliasSource<Table=table>,
+            impl<S> $crate::query_source::alias::AliasAppearsInFromClause<S, table> for table
+            where S: $crate::query_source::alias::AliasSource<Table=table>,
             {
                 type Count = $crate::query_source::Never;
             }
 
             impl<S> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<S>> for table
-            where S: $crate::query_source::AliasSource,
+            where S: $crate::query_source::alias::AliasSource,
             {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<S, C> $crate::query_source::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
+            impl<S, C> $crate::query_source::alias::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
             where
-                S: $crate::query_source::AliasSource<Table = table>,
+                S: $crate::query_source::alias::AliasSource<Table = table>,
                 C: $crate::query_source::Column<Table = table>,
             {
                 type Out = $crate::query_source::AliasedField<S, C>;

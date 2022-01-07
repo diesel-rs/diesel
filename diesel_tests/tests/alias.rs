@@ -42,28 +42,21 @@ fn select_multiple_from_join() {
     alias!(users as user_alias: UserAlias);
     let post_alias = alias!(posts as post_alias);
 
-    use diesel::query_builder::AsQuery;
-
     // Having two different aliases in one query works
     let query = post_alias
-        .as_query()
         .select(post_alias.fields((posts::id, posts::user_id, posts::title, posts::body)))
         .filter(
             post_alias.field(posts::user_id).eq_any(
-                user_alias
-                    .as_query()
-                    .select(user_alias.field(users::id))
-                    .filter(
-                        user_alias
-                            .field(users::id)
-                            .eq_any(users::table.select(users::id)),
-                    ),
+                user_alias.select(user_alias.field(users::id)).filter(
+                    user_alias
+                        .field(users::id)
+                        .eq_any(users::table.select(users::id)),
+                ),
             ),
         );
 
     // using a subquery with an alias seems to work
     post_alias
-        .as_query()
         .select(
             posts::table
                 .select(posts::id)

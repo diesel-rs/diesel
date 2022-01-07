@@ -107,13 +107,13 @@ macro_rules! __diesel_operator_body {
             }
         }
 
-        impl<S, $($ty_param,)+> $crate::query_source::FieldAliasMapper<S> for $name<$($ty_param,)+>
+        impl<S, $($ty_param,)+> $crate::query_source::alias::FieldAliasMapper<S> for $name<$($ty_param,)+>
         where
-            S: $crate::query_source::AliasSource,
-            $($ty_param: $crate::query_source::FieldAliasMapper<S>,)+
+            S: $crate::query_source::alias::AliasSource,
+            $($ty_param: $crate::query_source::alias::FieldAliasMapper<S>,)+
         {
             type Out = $name<
-                $(<$ty_param as $crate::query_source::FieldAliasMapper<S>>::Out,)+
+                $(<$ty_param as $crate::query_source::alias::FieldAliasMapper<S>>::Out,)+
             >;
             fn map(self, alias: $crate::query_source::Alias<S>) -> Self::Out {
                 $name {
