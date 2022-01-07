@@ -84,13 +84,13 @@ macro_rules! alias {
             #[derive(Debug, Clone, Copy, Default)]
             struct $alias_ty;
 
-            impl $crate::query_source::alias::AliasSource for $alias_ty {
+            impl $crate::query_source::aliasing::AliasSource for $alias_ty {
                 const NAME: &'static str = stringify!($alias_name);
                 type Table = $($table)::+::table;
             }
 
             // impl AppearsInFromClause<Alias<$alias>> for Alias<$alias>
-            impl $crate::query_source::alias::AliasAliasAppearsInFromClause<$($table)::+::table, $alias_ty, $alias_ty> for $($table)::+::table {
+            impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$($table)::+::table, $alias_ty, $alias_ty> for $($table)::+::table {
                 type Count = $crate::query_source::Once;
             }
         )*
@@ -108,12 +108,12 @@ macro_rules! __internal_alias_helper {
     ) => {
         $(
             $crate::static_cond!{if ($left_table_tt) == ($right_table_tt) {
-                impl $crate::query_source::alias::AliasAliasAppearsInFromClause<$left_table_ty, $right_alias, $left_alias>
+                impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$left_table_ty, $right_alias, $left_alias>
                     for $right_table_ty
                 {
                     type Count = $crate::query_source::Never;
                 }
-                impl $crate::query_source::alias::AliasAliasAppearsInFromClause<$right_table_ty, $left_alias, $right_alias>
+                impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$right_table_ty, $left_alias, $right_alias>
                     for $left_table_ty
                 {
                     type Count = $crate::query_source::Never;
