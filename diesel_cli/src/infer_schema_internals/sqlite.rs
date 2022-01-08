@@ -146,7 +146,11 @@ pub fn get_primary_keys(
 pub fn determine_column_type(
     attr: &ColumnInformation,
 ) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
-    let type_name = attr.type_name.to_lowercase();
+    let mut type_name = attr.type_name.to_lowercase();
+    if type_name == "generated always" {
+        type_name.clear();
+    }
+
     let path = if is_bool(&type_name) {
         String::from("Bool")
     } else if is_smallint(&type_name) {
