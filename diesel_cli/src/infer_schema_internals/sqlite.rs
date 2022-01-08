@@ -21,6 +21,7 @@ table! {
         notnull -> Bool,
         dflt_value -> Nullable<VarChar>,
         pk -> Bool,
+        hidden -> Integer,
     }
 }
 
@@ -94,7 +95,7 @@ pub fn get_table_data(
     table: &TableName,
     column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
-    let query = format!("PRAGMA TABLE_INFO('{}')", &table.sql_name);
+    let query = format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name);
     let mut result = sql::<pragma_table_info::SqlType>(&query).load(conn)?;
     match column_sorting {
         ColumnSorting::OrdinalPosition => {}
@@ -115,6 +116,7 @@ struct FullTableInfo {
     _not_null: bool,
     _dflt_value: Option<String>,
     primary_key: bool,
+    _hidden: i32,
 }
 
 #[derive(Queryable)]
@@ -133,7 +135,7 @@ pub fn get_primary_keys(
     conn: &mut SqliteConnection,
     table: &TableName,
 ) -> QueryResult<Vec<String>> {
-    let query = format!("PRAGMA TABLE_INFO('{}')", &table.sql_name);
+    let query = format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name);
     let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
     Ok(results
         .into_iter()
