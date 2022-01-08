@@ -19,10 +19,12 @@ rust_postgres = {version = "0.19", optional = true, package = "postgres"}
 rust_mysql = {version = "21.0.1", optional = true, package = "mysql"}
 rustorm = {version = "0.20", optional = true}
 rustorm_dao = {version = "0.20", optional = true}
-quaint = {version = "0.2.0-alpha.13", optional = true}
+quaint = {version = "=0.2.0-alpha.13", optional = true}
 serde = {version = "1", optional = true, features = ["derive"]}
 sea-orm = {version = "0.5", optional = true, features = ["runtime-tokio-rustls"]}
 futures = {version = "0.3", optional = true}
+diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "06b3416826dbc8ce404f6d613daea989b23549ca", optional = true, default-features = false}
+#diesel-async = {path = "../../diesel-async", optional = true}
 
 [dependencies.diesel]
 path = "../diesel"
@@ -48,5 +50,6 @@ sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
 sqlx-bench = ["sqlx", "tokio", "sqlx/runtime-tokio-rustls"]
 
-[patch.crates-io]
-quaint = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
+[replace]
+"quaint:0.2.0-alpha.13" = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
+"https://github.com/diesel-rs/diesel#2.0.0" = { path = "../diesel"}
