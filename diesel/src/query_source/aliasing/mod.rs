@@ -24,6 +24,10 @@ pub use field_alias_mapper::{FieldAliasMapper, FieldAliasMapperAssociatedTypesDi
 pub trait AliasSource {
     /// The name of this alias in the query
     const NAME: &'static str;
-    /// The table it maps to
-    type Table;
+    /// The table the alias maps to
+    type Target;
+    /// Obtain the table from the source
+    ///
+    /// (used by Diesel to implement some traits)
+    fn target(&self) -> &Self::Target;
 }

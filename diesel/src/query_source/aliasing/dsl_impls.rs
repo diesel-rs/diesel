@@ -1,6 +1,5 @@
 use super::{Alias, AliasSource, FieldAliasMapper};
 
-use crate::associations::HasTable;
 use crate::dsl;
 #[cfg(feature = "postgres_backend")]
 use crate::expression::SelectableExpression;
@@ -41,20 +40,20 @@ where
 impl<S, PK> FindDsl<PK> for Alias<S>
 where
     S: AliasSource,
-    S::Table: Table + HasTable<Table = S::Table>,
-    <S::Table as Table>::PrimaryKey: FieldAliasMapper<S>,
-    <<S::Table as Table>::PrimaryKey as FieldAliasMapper<S>>::Out: EqAll<PK>,
+    S::Target: Table,
+    <S::Target as Table>::PrimaryKey: FieldAliasMapper<S>,
+    <<S::Target as Table>::PrimaryKey as FieldAliasMapper<S>>::Out: EqAll<PK>,
     Self: FilterDsl<
-        <<<S::Table as Table>::PrimaryKey as FieldAliasMapper<S>>::Out as EqAll<PK>>::Output,
+        <<<S::Target as Table>::PrimaryKey as FieldAliasMapper<S>>::Out as EqAll<PK>>::Output,
     >,
 {
     type Output = dsl::Filter<
         Self,
-        <<<S::Table as Table>::PrimaryKey as FieldAliasMapper<S>>::Out as EqAll<PK>>::Output,
+        <<<S::Target as Table>::PrimaryKey as FieldAliasMapper<S>>::Out as EqAll<PK>>::Output,
     >;
 
     fn find(self, id: PK) -> Self::Output {
-        let primary_key = S::Table::table().primary_key();
+        let primary_key = self.source.target().primary_key();
         let predicate = self.fields(primary_key).eq_all(id);
         QueryDsl::filter(self, predicate)
     }
@@ -78,7 +77,7 @@ where
 impl<S> CombineDsl for Alias<S>
 where
     S: AliasSource,
-    S::Table: Table,
+    S::Target: Table,
     Self: AsQuery,
 {
     type Query = <Self as AsQuery>::Query;

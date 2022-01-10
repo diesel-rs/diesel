@@ -38,12 +38,12 @@ impl<S, C> FieldAliasMapper<S> for C
 where
     S: AliasSource,
     C: Column,
-    S::Table: FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>,
+    S::Target: FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>,
 {
-    type Out = <S::Table as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::Out;
+    type Out = <S::Target as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::Out;
 
     fn map(self, alias: &Alias<S>) -> Self::Out {
-        <S::Table as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::map(
+        <S::Target as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::map(
             self, alias,
         )
     }
@@ -51,7 +51,7 @@ where
 
 impl<TS, TC, S, C> FieldAliasMapperAssociatedTypesDisjointnessTrick<TC, S, C> for TS
 where
-    S: AliasSource<Table = TS>,
+    S: AliasSource<Target = TS>,
     C: Column<Table = TC>,
     TC: Table,
     TS: TableNotEqual<TC>,

@@ -15,14 +15,14 @@ impl<T, S> JoinTo<T> for Alias<S>
 where
     T: Table,
     S: AliasSource + Default,
-    S::Table: JoinTo<T>,
-    <S::Table as JoinTo<T>>::OnClause: FieldAliasMapper<S>,
+    S::Target: JoinTo<T>,
+    <S::Target as JoinTo<T>>::OnClause: FieldAliasMapper<S>,
 {
-    type FromClause = <S::Table as JoinTo<T>>::FromClause;
-    type OnClause = <<S::Table as JoinTo<T>>::OnClause as FieldAliasMapper<S>>::Out;
+    type FromClause = <S::Target as JoinTo<T>>::FromClause;
+    type OnClause = <<S::Target as JoinTo<T>>::OnClause as FieldAliasMapper<S>>::Out;
 
     fn join_target(rhs: T) -> (Self::FromClause, Self::OnClause) {
-        let (from_clause, on_clause) = <S::Table as JoinTo<T>>::join_target(rhs);
+        let (from_clause, on_clause) = <S::Target as JoinTo<T>>::join_target(rhs);
         (from_clause, Self::default().fields(on_clause))
     }
 }
@@ -31,14 +31,14 @@ impl<S2, S> JoinTo<Alias<S2>> for Alias<S>
 where
     S2: AliasSource,
     S: AliasSource + Default,
-    S::Table: JoinTo<Alias<S2>>,
-    <S::Table as JoinTo<Alias<S2>>>::OnClause: FieldAliasMapper<S>,
+    S::Target: JoinTo<Alias<S2>>,
+    <S::Target as JoinTo<Alias<S2>>>::OnClause: FieldAliasMapper<S>,
 {
-    type FromClause = <S::Table as JoinTo<Alias<S2>>>::FromClause;
-    type OnClause = <<S::Table as JoinTo<Alias<S2>>>::OnClause as FieldAliasMapper<S>>::Out;
+    type FromClause = <S::Target as JoinTo<Alias<S2>>>::FromClause;
+    type OnClause = <<S::Target as JoinTo<Alias<S2>>>::OnClause as FieldAliasMapper<S>>::Out;
 
     fn join_target(rhs: Alias<S2>) -> (Self::FromClause, Self::OnClause) {
-        let (from_clause, on_clause) = <S::Table as JoinTo<Alias<S2>>>::join_target(rhs);
+        let (from_clause, on_clause) = <S::Target as JoinTo<Alias<S2>>>::join_target(rhs);
         (from_clause, Self::default().fields(on_clause))
     }
 }
