@@ -1,9 +1,12 @@
 use super::{Alias, AliasSource};
 
+use crate::dsl;
 use crate::expression::{
-    is_aggregate, AppearsOnTable, Expression, SelectableExpression, ValidGrouping,
+    is_aggregate, AppearsOnTable, AsExpression, Expression, SelectableExpression, ValidGrouping,
 };
+use crate::expression_methods::{EqAll, ExpressionMethods};
 use crate::query_builder::{AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
+use crate::sql_types;
 
 use crate::backend::Backend;
 use crate::query_source::{AppearsInFromClause, Column, Once, QuerySource};
@@ -87,4 +90,19 @@ where
     Self: SelectableExpression<From> + AppearsOnTable<SelectStatement<FromClause<From>>>,
     From: QuerySource,
 {
+}
+
+impl<S, C, T> EqAll<T> for AliasedField<S, C>
+where
+    S: AliasSource,
+    C: Column<Table = S::Table>,
+    Self: ExpressionMethods,
+    <Self as Expression>::SqlType: sql_types::SqlType,
+    T: AsExpression<<Self as Expression>::SqlType>,
+    dsl::Eq<Self, T>: Expression<SqlType = sql_types::Bool>,
+{
+    type Output = dsl::Eq<Self, T>;
+    fn eq_all(self, rhs: T) -> Self::Output {
+        self.eq(rhs)
+    }
 }

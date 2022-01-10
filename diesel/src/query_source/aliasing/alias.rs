@@ -2,12 +2,9 @@ use super::{AliasSource, AliasedField, FieldAliasMapper};
 
 use crate::associations::HasTable;
 use crate::backend::Backend;
-use crate::dsl::{Filter, Select};
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
 use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
-use crate::query_dsl::methods::*;
-use crate::query_dsl::QueryDsl;
 use crate::query_source::{AppearsInFromClause, Column, Never, QuerySource, Table, TableNotEqual};
 use crate::result::QueryResult;
 
@@ -31,7 +28,8 @@ impl<S: AliasSource> Alias<S> {
             _field: field,
         }
     }
-    /// Maps multiple fields of the source table in this alias (takes in tuples)
+    /// Maps multiple fields of the source table in this alias
+    /// (takes in tuples and some expressions)
     pub fn fields<Fields>(&self, fields: Fields) -> <Fields as FieldAliasMapper<S>>::Out
     where
         Fields: FieldAliasMapper<S>,
@@ -106,35 +104,6 @@ where
 
     fn as_query(self) -> Self::Query {
         SelectStatement::simple(self)
-    }
-}
-
-impl<S: AliasSource> QueryDsl for Alias<S> {}
-
-impl<S, Predicate> FilterDsl<Predicate> for Alias<S>
-where
-    S: AliasSource,
-    Self: AsQuery,
-    <Self as AsQuery>::Query: FilterDsl<Predicate>,
-{
-    type Output = Filter<<Self as AsQuery>::Query, Predicate>;
-
-    fn filter(self, predicate: Predicate) -> Self::Output {
-        self.as_query().filter(predicate)
-    }
-}
-
-impl<S, Selection> SelectDsl<Selection> for Alias<S>
-where
-    Selection: Expression,
-    Self: AsQuery,
-    S: AliasSource,
-    <Self as AsQuery>::Query: SelectDsl<Selection>,
-{
-    type Output = Select<<Self as AsQuery>::Query, Selection>;
-
-    fn select(self, selection: Selection) -> Self::Output {
-        self.as_query().select(selection)
     }
 }
 

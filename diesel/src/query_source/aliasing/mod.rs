@@ -4,6 +4,7 @@
 
 mod alias;
 mod aliased_field;
+mod dsl_impls;
 mod field_alias_mapper;
 mod joins;
 mod macros;

@@ -135,3 +135,16 @@ fn select_multiple_from_join() {
         .load::<(i32, i32, i32)>(connection)
         .unwrap();
 }
+
+#[test]
+fn find_and_first() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let alias = alias!(users as users_alias);
+    assert_eq!(
+        alias
+            .find(1)
+            .select(alias.field(users::name))
+            .first::<String>(connection),
+        Ok("Sean".into()),
+    )
+}
