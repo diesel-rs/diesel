@@ -43,7 +43,7 @@ fn select_multiple_from_join() {
     let post_alias = alias!(posts as post_alias);
 
     // Having two different aliases in one query works
-    let query = post_alias
+    post_alias
         .select(post_alias.fields((posts::id, posts::user_id, posts::title, posts::body)))
         .filter(
             post_alias.field(posts::user_id).eq_any(
@@ -53,7 +53,9 @@ fn select_multiple_from_join() {
                         .eq_any(users::table.select(users::id)),
                 ),
             ),
-        );
+        )
+        .load::<(i32, i32, String, Option<String>)>(connection)
+        .unwrap();
 
     // using a subquery with an alias seems to work
     post_alias
@@ -66,17 +68,10 @@ fn select_multiple_from_join() {
         .load::<Option<i32>>(connection)
         .unwrap();
 
-    query
-        .load::<(i32, i32, String, Option<String>)>(connection)
-        .unwrap();
-
+    // Joining with explicit on clause works
     post_alias
         .left_join(users::table)
         .inner_join(
-            // allowing a plain join here
-            // would require to write an
-            // impl JoinTo<Alias<T1, F1>> for Alias<T2, F2> where T2: JoinTo<T2>
-            // but I found no simple way to modify the `From clause there`
             user_alias.on(post_alias
                 .field(posts::user_id)
                 .eq(user_alias.field(users::id))),
@@ -105,9 +100,7 @@ fn select_multiple_from_join() {
         .load::<(String, i32)>(connection)
         .unwrap();
 
-    // we could also define and use mutiple aliases for the same table.
-    // If you want to use them in the same query it's required to define them
-    // in the same macro call
+    // using mutiple aliases for the same table works if they are declared in the same alias call
     let (user1_alias, user2_alias, _post_alias) =
         alias!(users as user1, users as user2, posts as post1,);
 
