@@ -141,3 +141,22 @@ fn find_and_first() {
         Ok("Sean".into()),
     )
 }
+
+#[test]
+fn boxed() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let (user1_alias, user2_alias, _post_alias) =
+        alias!(users as user1, users as user2, posts as post1,);
+
+    let q = posts::table
+        .inner_join(user1_alias)
+        .inner_join(user2_alias)
+        .into_boxed();
+
+    let res = q
+        .select((posts::user_id, user1_alias.fields((users::id, users::id))))
+        .load::<(i32, (i32, i32))>(connection)
+        .unwrap();
+    assert!(res.into_iter().all(|(a, (b, c))| a == b && a == c));
+}
