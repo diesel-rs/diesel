@@ -2,7 +2,6 @@
 extern crate diesel;
 
 use diesel::prelude::*;
-use diesel::query_builder::AsQuery;
 
 table! {
     users {
@@ -28,7 +27,7 @@ table! {
 allow_tables_to_appear_in_same_query!(users, posts);
 joinable!(posts -> users (author));
 
-pub fn check(conn: &PgConnection) {
+pub fn check(conn: &mut PgConnection) {
     let user_alias = alias!(users as users2);
     let post_alias = alias!(posts as posts2);
 
@@ -45,11 +44,8 @@ pub fn check(conn: &PgConnection) {
         .load::<i32>(conn)
         .unwrap();
 
-    user_alias
-        .as_query()
-        .select(users::id)
-        .load::<i32>(conn)
-        .unwrap();
+    // Selecting the raw field on the aliased table
+    user_alias.select(users::id).load::<i32>(conn).unwrap();
 
     let user2_alias = alias!(users as user3);
 

@@ -1,13 +1,13 @@
 error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
-  --> tests/fail/derive/aliases.rs:37:16
+  --> tests/fail/derive/aliases.rs:36:16
    |
-37 |     user_alias.field(posts::id);
+36 |     user_alias.field(posts::id);
    |                ^^^^^ expected struct `posts::table`, found struct `users::table`
 
 error[E0277]: the trait bound `(diesel::query_source::Once, diesel::query_source::Once): Pick<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>>` is not satisfied
-  --> tests/fail/derive/aliases.rs:43:10
+  --> tests/fail/derive/aliases.rs:42:10
    |
-43 |         .inner_join(post_alias)
+42 |         .inner_join(post_alias)
    |          ^^^^^^^^^^ the trait `Pick<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>>` is not implemented for `(diesel::query_source::Once, diesel::query_source::Once)`
    |
    = help: the following implementations were found:
@@ -25,9 +25,9 @@ error[E0277]: the trait bound `(diesel::query_source::Once, diesel::query_source
    = note: required because of the requirements on the impl of `InternalJoinDsl<Alias<posts2>, Inner, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>>>`
 
 error[E0271]: type mismatch resolving `<diesel::query_source::Once as Plus<diesel::query_source::Once>>::Output == diesel::query_source::Once`
-  --> tests/fail/derive/aliases.rs:43:10
+  --> tests/fail/derive/aliases.rs:42:10
    |
-43 |         .inner_join(post_alias)
+42 |         .inner_join(post_alias)
    |          ^^^^^^^^^^ expected struct `MoreThanOnce`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<diesel::query_source::joins::Join<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>, Inner>>` for `AliasedField<posts2, posts::columns::id>`
@@ -40,9 +40,9 @@ error[E0271]: type mismatch resolving `<diesel::query_source::Once as Plus<diese
    = note: required because of the requirements on the impl of `InternalJoinDsl<Alias<posts2>, Inner, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>>>`
 
 error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>, Inner> as AppearsInFromClause<Alias<posts2>>>::Count == diesel::query_source::Once`
-  --> tests/fail/derive/aliases.rs:43:10
+  --> tests/fail/derive/aliases.rs:42:10
    |
-43 |         .inner_join(post_alias)
+42 |         .inner_join(post_alias)
    |          ^^^^^^^^^^ expected struct `MoreThanOnce`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<diesel::query_source::joins::Join<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>, Inner>>` for `AliasedField<posts2, posts::columns::id>`
@@ -55,9 +55,9 @@ error[E0271]: type mismatch resolving `<diesel::query_source::joins::Join<JoinOn
    = note: required because of the requirements on the impl of `InternalJoinDsl<Alias<posts2>, Inner, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>>>`
 
 error[E0271]: type mismatch resolving `<JoinOn<diesel::query_source::joins::Join<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>> as AppearsInFromClause<Alias<posts2>>>::Count == diesel::query_source::Once`
-  --> tests/fail/derive/aliases.rs:43:10
+  --> tests/fail/derive/aliases.rs:42:10
    |
-43 |         .inner_join(post_alias)
+42 |         .inner_join(post_alias)
    |          ^^^^^^^^^^ expected struct `MoreThanOnce`, found struct `diesel::query_source::Once`
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<JoinOn<diesel::query_source::joins::Join<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>>` for `AliasedField<posts2, posts::columns::id>`
@@ -68,9 +68,9 @@ error[E0271]: type mismatch resolving `<JoinOn<diesel::query_source::joins::Join
    = note: required because of the requirements on the impl of `InternalJoinDsl<Alias<posts2>, Inner, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>>>`
 
 error[E0599]: the method `select` exists for struct `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>>>`, but its trait bounds were not satisfied
-  --> tests/fail/derive/aliases.rs:44:10
+  --> tests/fail/derive/aliases.rs:43:10
    |
-44 |         .select(users::id)
+43 |         .select(users::id)
    |          ^^^^^^ private field, not a method
    |
    = note: the following trait bounds were not satisfied:
@@ -80,10 +80,10 @@ error[E0599]: the method `select` exists for struct `SelectStatement<FromClause<
            which is required by `&mut SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<JoinOn<diesel::query_source::joins::Join<users::table, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>, Alias<posts2>, Inner>, Grouped<diesel::expression::operators::Eq<diesel::expression::nullable::Nullable<AliasedField<posts2, posts::columns::author>>, diesel::expression::nullable::Nullable<users::columns::id>>>>>>: diesel::QueryDsl`
 
 error[E0277]: the trait bound `users::columns::id: SelectableExpression<Alias<users2>>` is not satisfied
-  --> tests/fail/derive/aliases.rs:50:17
+  --> tests/fail/derive/aliases.rs:48:23
    |
-50 |         .select(users::id)
-   |                 ^^^^^^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`
+48 |     user_alias.select(users::id).load::<i32>(conn).unwrap();
+   |                       ^^^^^^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`
    |
    = help: the following implementations were found:
              <users::columns::id as SelectableExpression<JoinOn<Join, On>>>
@@ -94,10 +94,10 @@ error[E0277]: the trait bound `users::columns::id: SelectableExpression<Alias<us
    = note: required because of the requirements on the impl of `SelectDsl<users::columns::id>` for `SelectStatement<FromClause<Alias<users2>>>`
 
 error[E0277]: the trait bound `users::columns::id: SelectableExpression<Alias<users2>>` is not satisfied
-  --> tests/fail/derive/aliases.rs:51:10
+  --> tests/fail/derive/aliases.rs:48:34
    |
-51 |         .load::<i32>(conn)
-   |          ^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`
+48 |     user_alias.select(users::id).load::<i32>(conn).unwrap();
+   |                                  ^^^^ the trait `SelectableExpression<Alias<users2>>` is not implemented for `users::columns::id`
    |
    = help: the following implementations were found:
              <users::columns::id as SelectableExpression<JoinOn<Join, On>>>
@@ -109,19 +109,10 @@ error[E0277]: the trait bound `users::columns::id: SelectableExpression<Alias<us
    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<Alias<users2>>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
    = note: required because of the requirements on the impl of `LoadQuery<'_, _, i32>` for `SelectStatement<FromClause<Alias<users2>>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
 
-error[E0308]: mismatched types
-  --> tests/fail/derive/aliases.rs:51:22
-   |
-51 |         .load::<i32>(conn)
-   |                      ^^^^ types differ in mutability
-   |
-   = note: expected mutable reference `&mut _`
-                      found reference `&diesel::PgConnection`
-
 error[E0277]: the trait bound `Alias<users2>: AppearsInFromClause<pets::table>` is not satisfied
-  --> tests/fail/derive/aliases.rs:58:21
+  --> tests/fail/derive/aliases.rs:54:21
    |
-58 |         .inner_join(user_alias)
+54 |         .inner_join(user_alias)
    |                     ^^^^^^^^^^ the trait `AppearsInFromClause<pets::table>` is not implemented for `Alias<users2>`
    |
    = help: the following implementations were found:
@@ -135,9 +126,9 @@ error[E0277]: the trait bound `Alias<users2>: AppearsInFromClause<pets::table>` 
    = note: required because of the requirements on the impl of `InternalJoinDsl<Alias<users2>, Inner, _>` for `SelectStatement<FromClause<pets::table>>`
 
 error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfied
-  --> tests/fail/derive/aliases.rs:58:10
+  --> tests/fail/derive/aliases.rs:54:10
    |
-58 |         .inner_join(user_alias)
+54 |         .inner_join(user_alias)
    |          ^^^^^^^^^^ the trait `JoinTo<pets::table>` is not implemented for `users::table`
    |
    = help: the following implementations were found:
@@ -150,9 +141,9 @@ error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfi
    = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<Alias<users2>, Inner>` for `pets::table`
 
 error[E0599]: the method `select` exists for struct `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<pets::table, Alias<users2>, Inner>, _>>>`, but its trait bounds were not satisfied
-  --> tests/fail/derive/aliases.rs:59:10
+  --> tests/fail/derive/aliases.rs:55:10
    |
-59 |         .select(pets::id)
+55 |         .select(pets::id)
    |          ^^^^^^ private field, not a method
    |
    = note: the following trait bounds were not satisfied:
