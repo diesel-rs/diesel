@@ -190,4 +190,12 @@ pub trait Connection: SimpleConnection + Sized + Send {
 
     #[doc(hidden)]
     fn transaction_manager(&self) -> &Self::TransactionManager;
+
+    #[doc(hidden)]
+    fn set_timeout(&mut self, _duration: Option<std::time::Duration>) {}
+
+    #[doc(hidden)]
+    fn get_timeout(&self) -> Option<std::time::Duration> {
+        None
+    }
 }

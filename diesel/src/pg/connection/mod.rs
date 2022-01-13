@@ -105,6 +105,14 @@ impl Connection for PgConnection {
     fn transaction_manager(&self) -> &Self::TransactionManager {
         &self.transaction_manager
     }
+
+    fn set_timeout(&mut self, duration: Option<std::time::Duration>) {
+        self.raw_connection.timeout = duration;
+    }
+
+    fn get_timeout(&self) -> Option<std::time::Duration> {
+        self.raw_connection.timeout
+    }
 }
 
 impl PgConnection {

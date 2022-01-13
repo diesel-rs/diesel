@@ -31,6 +31,7 @@ use sql_types::HasSqlType;
 #[derive(Debug, Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,
+    timeout: Option<std::time::Duration>,
     _marker: PhantomData<T>,
 }
 
@@ -42,6 +43,19 @@ impl<T> ConnectionManager<T> {
     pub fn new<S: Into<String>>(database_url: S) -> Self {
         ConnectionManager {
             database_url: database_url.into(),
+            timeout: None,
+            _marker: PhantomData,
+        }
+    }
+
+    #[doc(hidden)]
+    pub fn new_with_timeout<S: Into<String>>(
+        database_url: S,
+        timeout: std::time::Duration,
+    ) -> Self {
+        Self {
+            database_url: database_url.into(),
+            timeout: Some(timeout),
             _marker: PhantomData,
         }
     }
@@ -87,9 +101,14 @@ where
     }
 
     fn is_valid(&self, conn: &mut T) -> Result<(), Error> {
-        conn.execute("SELECT 1")
+        let old_timeout = conn.get_timeout();
+        conn.set_timeout(self.timeout);
+        let res = conn
+            .execute("SELECT 1")
             .map(|_| ())
-            .map_err(Error::QueryError)
+            .map_err(Error::QueryError);
+        conn.set_timeout(old_timeout);
+        res
     }
 
     fn has_broken(&self, _conn: &mut T) -> bool {

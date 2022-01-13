@@ -13,6 +13,7 @@ use result::*;
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub struct RawConnection {
     internal_connection: NonNull<PGconn>,
+    pub(crate) timeout: Option<std::time::Duration>,
 }
 
 impl RawConnection {
@@ -28,6 +29,7 @@ impl RawConnection {
                 let connection_ptr = unsafe { NonNull::new_unchecked(connection_ptr) };
                 Ok(RawConnection {
                     internal_connection: connection_ptr,
+                    timeout: None,
                 })
             }
             _ => {
@@ -72,7 +74,10 @@ impl RawConnection {
         param_formats: *const libc::c_int,
         result_format: libc::c_int,
     ) -> QueryResult<RawResult> {
-        let ptr = PQexecPrepared(
+        if self.timeout.is_some() {
+            PQsetnonblocking(self.internal_connection.as_ptr(), 1);
+        }
+        let res = PQsendQueryPrepared(
             self.internal_connection.as_ptr(),
             stmt_name,
             param_count,
@@ -81,7 +86,17 @@ impl RawConnection {
             param_formats,
             result_format,
         );
-        RawResult::new(ptr, self)
+        if res != 1 {
+            return Err(Error::DatabaseError(
+                DatabaseErrorKind::UnableToSendCommand,
+                Box::new(self.last_error_message()),
+            ));
+        }
+        let res = self.pq_exec_finish();
+        if self.timeout.is_some() {
+            PQsetnonblocking(self.internal_connection.as_ptr(), 0);
+        }
+        res
     }
 
     pub unsafe fn prepare(
@@ -91,14 +106,79 @@ impl RawConnection {
         param_count: libc::c_int,
         param_types: *const Oid,
     ) -> QueryResult<RawResult> {
-        let ptr = PQprepare(
+        if self.timeout.is_some() {
+            PQsetnonblocking(self.internal_connection.as_ptr(), 1);
+        }
+        let res = PQsendPrepare(
             self.internal_connection.as_ptr(),
             stmt_name,
             query,
             param_count,
             param_types,
         );
-        RawResult::new(ptr, self)
+        if res != 1 {
+            return Err(Error::DatabaseError(
+                DatabaseErrorKind::UnableToSendCommand,
+                Box::new(self.last_error_message()),
+            ));
+        }
+        let res = self.pq_exec_finish();
+        if self.timeout.is_some() {
+            PQsetnonblocking(self.internal_connection.as_ptr(), 0);
+        }
+        res
+    }
+
+    // This is essentially a reimplementation of PQexecFinish
+    // that allows to stop polling after a fixed amount of time
+    // https://github.com/postgres/postgres/blob/27b77ecf9f4d5be211900eda54d8155ada50d696/src/interfaces/libpq/fe-exec.c#L2340
+    unsafe fn pq_exec_finish(&self) -> QueryResult<RawResult> {
+        let mut last_result: *mut pg_result = ptr::null_mut();
+        let started = std::time::Instant::now();
+
+        'outer_loop: loop {
+            // This block ensures that we busy poll for cases where
+            // we have a timeout set. This allows us to stop polling
+            // as soon as the timeout is reached. This might not be
+            // efficient, so we shouldn't do that for all queries?
+            if let Some(timeout) = self.timeout {
+                if started.elapsed() > timeout {
+                    return Err(Error::DatabaseError(
+                        DatabaseErrorKind::UnableToSendCommand,
+                        Box::new(String::from("Timout")),
+                    ));
+                }
+                let res = PQconsumeInput(self.internal_connection.as_ptr());
+                if res != 1 {
+                    return Err(Error::DatabaseError(
+                        DatabaseErrorKind::UnableToSendCommand,
+                        Box::new(self.last_error_message()),
+                    ));
+                }
+
+                let is_busy = PQisBusy(self.internal_connection.as_ptr());
+                if is_busy == 1 {
+                    // We just poll again here to see if we got any new results
+                    // This ensures that we bail out as soon as the timeout is reached
+                    continue 'outer_loop;
+                }
+            }
+
+            let result = PQgetResult(self.internal_connection.as_ptr());
+            if result.is_null() {
+                break 'outer_loop;
+            }
+            if !last_result.is_null() {
+                PQclear(last_result);
+            }
+            last_result = result;
+            let status = PQstatus(self.internal_connection.as_ptr());
+            if status == ConnStatusType::CONNECTION_BAD {
+                break 'outer_loop;
+            }
+        }
+
+        RawResult::new(last_result, self)
     }
 }
 
