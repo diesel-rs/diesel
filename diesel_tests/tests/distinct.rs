@@ -66,3 +66,28 @@ fn distinct_on_select_by() {
 
     assert_eq!(expected_data, data);
 }
+
+#[cfg(feature = "postgres")]
+#[test]
+fn distinct_on_select_order_by_two_columns() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection();
+    connection
+        .execute(
+            "INSERT INTO users (name, hair_color) VALUES ('Sean', 'black'), ('Sean', 'aqua'), ('Tess', 'bronze'), ('Tess', 'champagne')",
+        )
+        .unwrap();
+
+    let source = users
+        .select((name, hair_color))
+        .order((name, hair_color.desc()))
+        .distinct_on(name);
+    let expected_data = vec![
+        NewUser::new("Sean", Some("black")),
+        NewUser::new("Tess", Some("champagne")),
+    ];
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+}
