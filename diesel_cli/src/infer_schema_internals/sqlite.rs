@@ -107,21 +107,15 @@ impl SqliteVersion {
     }
 }
 
-fn get_sqlite_version(
-    conn: &mut SqliteConnection
-) -> SqliteVersion {
+fn get_sqlite_version(conn: &mut SqliteConnection) -> SqliteVersion {
     let query = "SELECT sqlite_version()";
     let result = sql::<sql_types::Text>(&query).load::<String>(conn).unwrap();
     let parts = result[0]
         .split('.')
-        .map(|part| { part.parse().unwrap() })
+        .map(|part| part.parse().unwrap())
         .collect::<Vec<u32>>();
     assert_eq!(parts.len(), 3);
-    SqliteVersion::new(
-        parts[0],
-        parts[1],
-        parts[2],
-    )
+    SqliteVersion::new(parts[0], parts[1], parts[2])
 }
 
 pub fn get_table_data(
