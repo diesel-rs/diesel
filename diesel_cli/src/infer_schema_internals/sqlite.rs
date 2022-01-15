@@ -90,12 +90,51 @@ pub fn load_foreign_key_constraints(
     Ok(rows.into_iter().flatten().collect())
 }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+struct SqliteVersion {
+    major: u32,
+    minor: u32,
+    patch: u32,
+}
+
+impl SqliteVersion {
+    pub fn new(major: u32, minor: u32, patch: u32) -> SqliteVersion {
+        SqliteVersion {
+            major,
+            minor,
+            patch,
+        }
+    }
+}
+
+fn get_sqlite_version(
+    conn: &mut SqliteConnection
+) -> SqliteVersion {
+    let query = "SELECT sqlite_version()";
+    let result = sql::<sql_types::Text>(&query).load::<String>(conn).unwrap();
+    let parts = result[0]
+        .split('.')
+        .map(|part| { part.parse().unwrap() })
+        .collect::<Vec<u32>>();
+    assert_eq!(parts.len(), 3);
+    SqliteVersion::new(
+        parts[0],
+        parts[1],
+        parts[2],
+    )
+}
+
 pub fn get_table_data(
     conn: &mut SqliteConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
-    let query = format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name);
+    let sqlite_version = get_sqlite_version(conn);
+    let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
+        format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name)
+    } else {
+        format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
+    };
     let mut result = sql::<pragma_table_info::SqlType>(&query).load(conn)?;
     match column_sorting {
         ColumnSorting::OrdinalPosition => {}
@@ -135,7 +174,12 @@ pub fn get_primary_keys(
     conn: &mut SqliteConnection,
     table: &TableName,
 ) -> QueryResult<Vec<String>> {
-    let query = format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name);
+    let sqlite_version = get_sqlite_version(conn);
+    let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
+        format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name)
+    } else {
+        format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
+    };
     let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
     Ok(results
         .into_iter()
