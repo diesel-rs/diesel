@@ -125,6 +125,11 @@ pub fn get_table_data(
 ) -> QueryResult<Vec<ColumnInformation>> {
     let sqlite_version = get_sqlite_version(conn);
     let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
+        /*
+         * To get generated columns we need to use TABLE_XINFO
+         * This would return hidden columns as well, but those would need to be created at runtime
+         * therefore they aren't an issue.
+         */
         format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name)
     } else {
         format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
