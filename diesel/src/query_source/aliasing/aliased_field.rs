@@ -25,10 +25,10 @@ impl<S, C> QueryId for AliasedField<S, C>
 where
     S: AliasSource + 'static,
     S::Table: 'static,
-    C: Column<Table = S::Table> + 'static,
+    C: Column<Table = S::Table> + 'static + QueryId,
 {
     type QueryId = Self;
-    const HAS_STATIC_QUERY_ID: bool = true;
+    const HAS_STATIC_QUERY_ID: bool = <C as QueryId>::HAS_STATIC_QUERY_ID;
 }
 
 impl<QS, S, C> AppearsOnTable<QS> for AliasedField<S, C>
@@ -102,6 +102,7 @@ where
     dsl::Eq<Self, T>: Expression<SqlType = sql_types::Bool>,
 {
     type Output = dsl::Eq<Self, T>;
+
     fn eq_all(self, rhs: T) -> Self::Output {
         self.eq(rhs)
     }

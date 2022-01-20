@@ -9,6 +9,8 @@ use crate::query_source::{Column, Table, TableNotEqual};
 ///
 /// Any column `Self` that does not belong to `S::Table` will be left untouched.
 ///
+/// This also works with tuples and some expressions.
+///
 // This first part is implemented by the `table!` macro.
 // The second part is useful to implement the joins, and may be useful to an end-user for
 // ergonomics.
@@ -39,6 +41,7 @@ where
     S::Table: FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>,
 {
     type Out = <S::Table as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::Out;
+
     fn map(self, alias: &Alias<S>) -> Self::Out {
         <S::Table as FieldAliasMapperAssociatedTypesDisjointnessTrick<C::Table, S, C>>::map(
             self, alias,
@@ -94,6 +97,7 @@ where
     SNew: AliasSource,
 {
     type Out = Self;
+
     fn map(self, _alias: &Alias<SNew>) -> Self::Out {
         // left untouched because it has already been aliased
         self
@@ -105,6 +109,7 @@ where
     F: FieldAliasMapper<S>,
 {
     type Out = expression::nullable::Nullable<<F as FieldAliasMapper<S>>::Out>;
+
     fn map(self, alias: &Alias<S>) -> Self::Out {
         expression::nullable::Nullable::new(self.0.map(alias))
     }
@@ -115,6 +120,7 @@ where
     F: FieldAliasMapper<S>,
 {
     type Out = expression::grouped::Grouped<<F as FieldAliasMapper<S>>::Out>;
+
     fn map(self, alias: &Alias<S>) -> Self::Out {
         expression::grouped::Grouped(self.0.map(alias))
     }

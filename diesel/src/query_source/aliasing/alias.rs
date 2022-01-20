@@ -50,10 +50,10 @@ impl<S> QueryId for Alias<S>
 where
     Self: 'static,
     S: AliasSource,
-    S::Table: Table,
+    S::Table: Table + QueryId,
 {
     type QueryId = Self;
-    const HAS_STATIC_QUERY_ID: bool = true;
+    const HAS_STATIC_QUERY_ID: bool = <S::Table as QueryId>::HAS_STATIC_QUERY_ID;
 }
 
 impl<S> QuerySource for Alias<S>
@@ -159,13 +159,6 @@ where
     T2: Table,
     S1: AliasSource<Table = T1>,
     S2: AliasSource<Table = T2>,
-{
-    type Count = Never;
-}
-
-impl<S> AppearsInFromClause<Alias<S>> for ()
-where
-    S: AliasSource,
 {
     type Count = Never;
 }
