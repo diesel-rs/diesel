@@ -3,6 +3,7 @@ use super::{AliasSource, AliasedField, FieldAliasMapper};
 use crate::associations::HasTable;
 use crate::backend::Backend;
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
+use crate::helper_types::AliasedFields;
 use crate::query_builder::nodes::StaticQueryFragment;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
 use crate::query_source::{AppearsInFromClause, Column, Never, QuerySource, Table, TableNotEqual};
@@ -30,7 +31,7 @@ impl<S: AliasSource> Alias<S> {
     }
     /// Maps multiple fields of the source table in this alias
     /// (takes in tuples and some expressions)
-    pub fn fields<Fields>(&self, fields: Fields) -> <Fields as FieldAliasMapper<S>>::Out
+    pub fn fields<Fields>(&self, fields: Fields) -> AliasedFields<S, Fields>
     where
         Fields: FieldAliasMapper<S>,
     {

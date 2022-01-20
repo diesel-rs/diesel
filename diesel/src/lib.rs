@@ -209,7 +209,7 @@ pub mod helper_types {
     use super::query_builder::{locking_clause as lock, AsQuery};
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
-    use super::query_source::joins;
+    use super::query_source::{aliasing, joins};
 
     #[doc(inline)]
     pub use crate::expression::helper_types::*;
@@ -388,6 +388,15 @@ pub mod helper_types {
     /// See [`RunQueryDsl::load_iter`] for more information
     pub type LoadIter<'conn, 'query, Q, Conn, U> =
         <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret;
+
+    /// Maps `F` to `Alias<S>`
+    ///
+    /// Any column `F` that belongs to `S::Table` will be transformed into `AliasedField<S, Self>`
+    ///
+    /// Any column `F` that does not belong to `S::Table` will be left untouched.
+    ///
+    /// This also works with tuples and some expressions.
+    pub type AliasedFields<S, F> = <F as aliasing::FieldAliasMapper<S>>::Out;
 }
 
 pub mod prelude {
