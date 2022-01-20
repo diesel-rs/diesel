@@ -106,35 +106,41 @@ macro_rules! alias {
                 type Count = $crate::query_source::Once;
             }
         )*
-        $crate::__internal_alias_helper!($(table_ty = $($table)::+::table, table_tt = ($($table)::+), alias_ty = $alias_ty;)*);
+        $crate::__internal_alias_helper!($(table_ty = $($table)::+::table, table_tt = ($($table)::+), alias_ty = $alias_ty, alias_sql_name = $alias_sql_name;)*);
     };
 }
 
 #[macro_export]
 #[doc(hidden)]
 /// This only exists to hide internals from the doc
+// The `($left_sql_name) != ($right_sql_name)` condition is not perfect because a user could still
+// cause runtime errors by declaring two aliases to different tables with the same name then use
+// them in the same query, but that would almost have to be voluntary, so this alone should prevent
+// most mistakes.
 macro_rules! __internal_alias_helper {
     (
-        table_ty = $left_table_ty: ty, table_tt = $left_table_tt: tt, alias_ty = $left_alias: ident;
-        $(table_ty = $right_table_ty: ty, table_tt = $right_table_tt: tt, alias_ty = $right_alias: ident;)+
+        table_ty = $left_table_ty: ty, table_tt = $left_table_tt: tt, alias_ty = $left_alias: ident, alias_sql_name = $left_sql_name: ident;
+        $(table_ty = $right_table_ty: ty, table_tt = $right_table_tt: tt, alias_ty = $right_alias: ident, alias_sql_name = $right_sql_name: ident;)+
     ) => {
         $(
             $crate::static_cond!{if ($left_table_tt) == ($right_table_tt) {
-                impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$left_table_ty, $right_alias, $left_alias>
-                    for $right_table_ty
-                {
-                    type Count = $crate::query_source::Never;
-                }
-                impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$right_table_ty, $left_alias, $right_alias>
-                    for $left_table_ty
-                {
-                    type Count = $crate::query_source::Never;
-                }
+                $crate::static_cond!{if ($left_sql_name) != ($right_sql_name) {
+                    impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$left_table_ty, $right_alias, $left_alias>
+                        for $right_table_ty
+                    {
+                        type Count = $crate::query_source::Never;
+                    }
+                    impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$right_table_ty, $left_alias, $right_alias>
+                        for $left_table_ty
+                    {
+                        type Count = $crate::query_source::Never;
+                    }
+                }}
             }}
         )*
-        $crate::__internal_alias_helper!($(table_ty = $right_table_ty, table_tt = $right_table_tt, alias_ty = $right_alias;)+);
+        $crate::__internal_alias_helper!($(table_ty = $right_table_ty, table_tt = $right_table_tt, alias_ty = $right_alias, alias_sql_name = $right_sql_name;)+);
     };
 
-    (table_ty = $left_table_ty: ty, table_tt = $left_table_tt: tt, alias_ty = $left_alias: ident;) => {};
+    (table_ty = $left_table_ty: ty, table_tt = $left_table_tt: tt, alias_ty = $left_alias: ident, alias_sql_name = $left_sql_name: ident;) => {};
     () => {};
 }
