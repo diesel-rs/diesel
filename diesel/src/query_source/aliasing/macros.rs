@@ -35,6 +35,10 @@
 /// use diesel::{query_source::Alias, dsl};
 ///
 /// diesel::alias!(schema::users as users_alias: UsersAlias);
+/// // or
+/// diesel::alias!{
+///     const USERS_ALIAS_2: Alias<UsersAlias2> = schema::users as users_alias_2;
+/// }
 ///
 /// fn some_function_that_returns_a_query_fragment(
 /// ) -> dsl::InnerJoin<schema::posts::table, Alias<UsersAlias>>
@@ -43,6 +47,7 @@
 /// }
 /// # fn main() {
 /// #     some_function_that_returns_a_query_fragment();
+/// #     schema::posts::table.inner_join(USERS_ALIAS_2);
 /// # }
 /// ```
 ///
@@ -72,20 +77,27 @@ macro_rules! alias {
         ($($crate::query_source::Alias::<$alias>::default()),*)
     }};
     ($($($table: ident)::+ as $alias_name: ident: $alias_ty: ident),* $(,)?) => {
-        $crate::alias!(NoConst $($($table)::+ as $alias_name: $alias_ty,)*);
+        $crate::alias! {
+            $(
+                const $alias_name: Alias<$alias_ty> = $($table)::+ as $alias_name;
+            )*
+        }
+    };
+    ($(const $const_name: ident: Alias<$alias_ty: ident> = $($table: ident)::+ as $alias_sql_name: ident);* $(;)?) => {
+        $crate::alias!(NoConst $($($table)::+ as $alias_sql_name: $alias_ty,)*);
         $(
             #[allow(non_upper_case_globals)]
-            const $alias_name: $crate::query_source::Alias::<$alias_ty> = $crate::query_source::Alias::new($alias_ty);
+            const $const_name: $crate::query_source::Alias::<$alias_ty> = $crate::query_source::Alias::new($alias_ty);
         )*
     };
-    (NoConst $($($table: ident)::+ as $alias_name: ident: $alias_ty: ident),* $(,)?) => {
+    (NoConst $($($table: ident)::+ as $alias_sql_name: ident: $alias_ty: ident),* $(,)?) => {
         $(
             #[allow(non_camel_case_types)]
             #[derive(Debug, Clone, Copy, Default)]
             struct $alias_ty;
 
             impl $crate::query_source::aliasing::AliasSource for $alias_ty {
-                const NAME: &'static str = stringify!($alias_name);
+                const NAME: &'static str = stringify!($alias_sql_name);
                 type Table = $($table)::+::table;
             }
 
