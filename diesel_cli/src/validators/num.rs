@@ -8,34 +8,34 @@ pub fn is_positive_int(val: &str) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
-    // use super::is_positive_int;
+    use super::is_positive_int;
 
-    // #[test]
-    // fn is_positive_int_should_parse_a_positive_integer_from_input_string() {
-    //     assert_eq!(is_positive_int("1"), Ok(()))
-    // }
+    #[test]
+    fn is_positive_int_should_parse_a_positive_integer_from_input_string() {
+        assert_eq!(is_positive_int("1"), Ok(()))
+    }
 
-    // #[test]
-    // fn is_positive_int_should_throw_an_error_with_zero() {
-    //     assert_eq!(
-    //         is_positive_int("0"),
-    //         Err("0 isn't a positive integer.".to_string())
-    //     )
-    // }
+    #[test]
+    fn is_positive_int_should_throw_an_error_with_zero() {
+        assert_eq!(
+            is_positive_int("0"),
+            Err("0 isn't a positive integer.".to_string())
+        )
+    }
 
-    // #[test]
-    // fn is_positive_int_should_throw_an_error_with_negative_integer() {
-    //     assert_eq!(
-    //         is_positive_int("-5"),
-    //         Err("-5 isn't a positive integer.".to_string())
-    //     )
-    // }
+    #[test]
+    fn is_positive_int_should_throw_an_error_with_negative_integer() {
+        assert_eq!(
+            is_positive_int("-5"),
+            Err("-5 isn't a positive integer.".to_string())
+        )
+    }
 
-    // #[test]
-    // fn is_positive_int_should_throw_an_error_with_float() {
-    //     assert_eq!(
-    //         is_positive_int("5.2"),
-    //         Err("5.2 isn't a positive integer.".to_string())
-    //     )
-    // }
+    #[test]
+    fn is_positive_int_should_throw_an_error_with_float() {
+        assert_eq!(
+            is_positive_int("5.2"),
+            Err("5.2 isn't a positive integer.".to_string())
+        )
+    }
 }
