@@ -89,6 +89,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   arguments. See [the migration guide][2-0-migration] for more details.
 * Support for `barrel` based migrations has been removed for now. We are happy to
   add this support back as soon as `barrel` integrates with our new migration framework.
+* Deprecated bash completions command (`diesel bash-completions`) has been removed.
+  Use `diesel completions <shell>` instead.
 
 ### Changed
 
@@ -105,7 +107,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   you are implementing `HasSqlType` for `Mysql` manually, you may need to adjust
   your implementation to fully use the new unsigned variants in `MysqlType`
 
-* The minimal officially supported rustc version is now 1.51.0
+* The minimal officially supported rustc version is now 1.54.0
 
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
   from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
