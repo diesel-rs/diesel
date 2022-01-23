@@ -27,7 +27,8 @@ mod query_helper;
 mod validators;
 
 use chrono::*;
-use clap::{ArgMatches, Shell};
+use clap::ArgMatches;
+use clap_complete::{generate, Shell};
 use diesel::backend::Backend;
 use diesel::migration::MigrationSource;
 use diesel::Connection;
@@ -51,13 +52,12 @@ fn main() {
 
     let matches = cli::build_cli().get_matches();
 
-    match matches.subcommand() {
-        ("migration", Some(matches)) => run_migration_command(matches).unwrap_or_else(handle_error),
-        ("setup", Some(matches)) => run_setup_command(matches),
-        ("database", Some(matches)) => run_database_command(matches).unwrap_or_else(handle_error),
-        ("bash-completion", Some(matches)) => generate_bash_completion_command(matches),
-        ("completions", Some(matches)) => generate_completions_command(matches),
-        ("print-schema", Some(matches)) => run_infer_schema(matches).unwrap_or_else(handle_error),
+    match matches.subcommand().unwrap() {
+        ("migration", matches) => run_migration_command(matches).unwrap_or_else(handle_error),
+        ("setup", matches) => run_setup_command(matches),
+        ("database", matches) => run_database_command(matches).unwrap_or_else(handle_error),
+        ("completions", matches) => generate_completions_command(matches),
+        ("print-schema", matches) => run_infer_schema(matches).unwrap_or_else(handle_error),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -65,27 +65,22 @@ fn main() {
 fn run_migration_command(
     matches: &ArgMatches,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-    match matches.subcommand() {
-        ("run", Some(_)) => {
+    match matches.subcommand().unwrap() {
+        ("run", _) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
             call_with_conn!(database_url, run_migrations_with_output(dir))?;
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("revert", Some(args)) => {
+        ("revert", args) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
             if args.is_present("REVERT_ALL") {
                 call_with_conn!(database_url, revert_all_migrations_with_output(dir))?;
             } else {
-                // TODO : remove this logic when upgrading to clap 3.0.
-                // We handle the default_value here instead of doing it
-                // in the cli. This is because arguments with default
-                // values conflict even if not used.
-                // See https://github.com/clap-rs/clap/issues/1605
-                let number = args.value_of("REVERT_NUMBER").unwrap_or("1");
+                let number = args.value_of("REVERT_NUMBER").unwrap();
                 for _ in 0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected.") {
                         match call_with_conn!(
                             database_url,
@@ -107,20 +102,20 @@ fn run_migration_command(
 
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("redo", Some(args)) => {
+        ("redo", args) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
             call_with_conn!(database_url, redo_migrations(dir, args));
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("list", Some(_)) => {
+        ("list", _) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
             call_with_conn!(database_url, list_migrations(dir))?;
         }
-        ("pending", Some(_)) => {
+        ("pending", _) => {
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
@@ -128,7 +123,7 @@ fn run_migration_command(
                 call_with_conn!(database_url, MigrationHarness::has_pending_migration(dir))?;
             println!("{:?}", result);
         }
-        ("generate", Some(args)) => {
+        ("generate", args) => {
             let migration_name = args.value_of("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
@@ -187,8 +182,7 @@ fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
         .or_else(|| {
             matches
                 .subcommand()
-                .1
-                .and_then(|s| migrations_dir_from_cli(s))
+                .and_then(|s| migrations_dir_from_cli(s.1))
         })
 }
 
@@ -344,35 +338,29 @@ fn create_config_file(matches: &ArgMatches) -> DatabaseResult<()> {
 fn run_database_command(
     matches: &ArgMatches,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-    match matches.subcommand() {
-        ("setup", Some(args)) => {
+    match matches.subcommand().unwrap() {
+        ("setup", args) => {
             let migrations_dir = migrations_dir(matches).unwrap_or_else(handle_error);
             database::setup_database(args, &migrations_dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("reset", Some(args)) => {
+        ("reset", args) => {
             let migrations_dir = migrations_dir(matches).unwrap_or_else(handle_error);
             database::reset_database(args, &migrations_dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
-        ("drop", Some(args)) => database::drop_database_command(args)?,
+        ("drop", args) => database::drop_database_command(args)?,
         _ => unreachable!("The cli parser should prevent reaching here"),
     };
     Ok(())
 }
 
-fn generate_bash_completion_command(_: &ArgMatches) {
-    eprintln!(
-        "WARNING: `diesel bash-completion` is deprecated, use `diesel completions bash` instead"
-    );
-    cli::build_cli().gen_completions_to("diesel", Shell::Bash, &mut stdout());
-}
-
 fn generate_completions_command(matches: &ArgMatches) {
-    use clap::value_t;
-
-    let shell = value_t!(matches, "SHELL", Shell).unwrap_or_else(|e| e.exit());
-    cli::build_cli().gen_completions_to("diesel", shell, &mut stdout());
+    let shell: Shell = matches.value_of_t("SHELL").unwrap_or_else(|e| e.exit());
+    let mut app = cli::build_cli();
+    let name = app.get_name().to_string();
+    generate(shell, &mut app, name, &mut stdout());
+    // cli::build_cli().gen_completions_to("diesel", shell, &mut stdout());
 }
 
 /// Looks for a migrations directory in the current path and all parent paths,
@@ -423,13 +411,7 @@ fn redo_migrations<Conn, DB>(
         let reverted_versions = if args.is_present("REDO_ALL") {
             harness.revert_all_migrations(migrations_dir.clone())?
         } else {
-            // TODO : remove this logic when upgrading to clap 3.0.
-            // We handle the default_value here instead of doing it
-            // in the cli. This is because arguments with default
-            // values conflict even if not used.
-            // See https://github.com/clap-rs/clap/issues/1605
-            let number = args.value_of("REDO_NUMBER").unwrap_or("1");
-
+            let number = args.value_of("REDO_NUMBER").unwrap();
             (0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected."))
                 .filter_map(|_|{
                     match harness.revert_last_migration(migrations_dir.clone()) {
