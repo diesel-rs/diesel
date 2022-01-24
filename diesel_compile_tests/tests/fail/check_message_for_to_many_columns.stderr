@@ -10,4 +10,4 @@ error: Table contains more than 16 columns. Consider enabling the `32-column-tab
 23 | | }
    | |_^
    |
-   = note: this error originates in a macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::__diesel_error_table_size` (in Nightly builds, run with -Z macro-backtrace for more info)

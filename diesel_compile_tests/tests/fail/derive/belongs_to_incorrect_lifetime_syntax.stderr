@@ -1,7 +1,7 @@
 error[E0261]: use of undeclared lifetime name `'a`
-  --> $DIR/belongs_to_incorrect_lifetime_syntax.rs:25:25
+  --> tests/fail/derive/belongs_to_incorrect_lifetime_syntax.rs:25:25
    |
 24 | #[derive(Associations)]
-   |          - help: consider introducing lifetime `'a` here: `'a,`
+   |          - lifetime `'a` is missing in item created through this procedural macro
 25 | #[diesel(belongs_to(Foo<'a>))]
    |                         ^^ undeclared lifetime

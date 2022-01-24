@@ -1,55 +1,55 @@
 error: This derive can only be used on non-unit structs
-  --> $DIR/empty_struct.rs:10:10
+  --> tests/fail/derive/empty_struct.rs:10:10
    |
 10 | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: This derive can only be used on non-unit structs
-  --> $DIR/empty_struct.rs:14:10
+  --> tests/fail/derive/empty_struct.rs:14:10
    |
 14 | #[derive(Identifiable)]
    |          ^^^^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `Identifiable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: This derive can only be used on non-unit structs
-  --> $DIR/empty_struct.rs:18:10
+  --> tests/fail/derive/empty_struct.rs:18:10
    |
 18 | #[derive(Insertable)]
    |          ^^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `Insertable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: This derive can only be used on non-unit structs
-  --> $DIR/empty_struct.rs:22:10
+  --> tests/fail/derive/empty_struct.rs:22:10
    |
 22 | #[derive(Queryable)]
    |          ^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `Queryable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: This derive can only be used on non-unit structs
-  --> $DIR/empty_struct.rs:25:10
+  --> tests/fail/derive/empty_struct.rs:25:10
    |
 25 | #[derive(QueryableByName)]
    |          ^^^^^^^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `QueryableByName` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: This derive can only be used on non-unit structs
-  --> $DIR/empty_struct.rs:28:10
+  --> tests/fail/derive/empty_struct.rs:28:10
    |
 28 | #[derive(Selectable)]
    |          ^^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `Selectable` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: This derive can only be used on non-unit structs
-  --> $DIR/empty_struct.rs:31:10
+  --> tests/fail/derive/empty_struct.rs:31:10
    |
 31 | #[derive(Associations)]
    |          ^^^^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `Associations` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -2,19 +2,19 @@ error: unexpected end of input, expected `=`
 
   = help: The correct format looks like `#[diesel(sqlite_type(name = "foo"))]`
 
- --> $DIR/deprecated_sqlite_type.rs:6:3
+ --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:6:3
   |
 6 | #[sqlite_type]
   |   ^^^^^^^^^^^
 
 error: expected `=`
-  --> $DIR/deprecated_sqlite_type.rs:10:14
+  --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:10:14
    |
 10 | #[sqlite_type()]
    |              ^^
 
 error: expected string literal
-  --> $DIR/deprecated_sqlite_type.rs:14:17
+  --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:14:17
    |
 14 | #[sqlite_type = 1]
    |                 ^
@@ -23,9 +23,9 @@ warning: #[sqlite_type] attribute form is deprecated
   = help: use `#[diesel(sqlite_type(name = "foo"))]` instead
 
 error[E0599]: no variant or associated item named `foo` found for enum `SqliteType` in the current scope
-  --> $DIR/deprecated_sqlite_type.rs:17:10
+  --> tests/fail/derive_deprecated/deprecated_sqlite_type.rs:17:10
    |
 17 | #[derive(SqlType)]
    |          ^^^^^^^ variant or associated item not found in `SqliteType`
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `SqlType` (in Nightly builds, run with -Z macro-backtrace for more info)
