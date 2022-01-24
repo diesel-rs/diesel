@@ -8,3 +8,4 @@ doc-valid-idents = [
   "JavaScript", "NaN", "OAuth",
   "SQLite", "PostgreSQL", "MySQL"
 ]
+avoid-breaking-exported-api = false

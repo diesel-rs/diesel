@@ -204,7 +204,7 @@ pub fn load_table_data(
     let primary_key = get_primary_keys(&mut connection, &name)?;
     let primary_key = primary_key
         .iter()
-        .map(|k| rust_name_for_sql_name(&k))
+        .map(|k| rust_name_for_sql_name(k))
         .collect();
 
     let column_data = get_column_information(&mut connection, &name, column_sorting)?

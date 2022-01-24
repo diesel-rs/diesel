@@ -3,21 +3,21 @@ error: Deriving `AsChangeset` on a structure that only contains primary keys isn
   = help: If you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.
   = note: `#[derive(AsChangeset)]` never changes the primary key of a row.
 
-  --> $DIR/as_changeset_struct_with_only_primary_key.rs:18:10
+  --> tests/fail/derive/as_changeset_struct_with_only_primary_key.rs:18:10
    |
 18 | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error: Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
 
   = help: If you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.
   = note: `#[derive(AsChangeset)]` never changes the primary key of a row.
 
-  --> $DIR/as_changeset_struct_with_only_primary_key.rs:24:10
+  --> tests/fail/derive/as_changeset_struct_with_only_primary_key.rs:24:10
    |
 24 | #[derive(AsChangeset)]
    |          ^^^^^^^^^^^
    |
-   = note: this error originates in a derive macro (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the derive macro `AsChangeset` (in Nightly builds, run with -Z macro-backtrace for more info)

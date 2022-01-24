@@ -84,7 +84,7 @@ impl<T> OnceCell<T> {
         // `assert`, while keeping `set/get` would be sound, but it seems
         // better to panic, rather than to silently use an old value.
         assert!(self.set(val).is_ok(), "reentrant init");
-        self.get().unwrap()
+        self.get().expect("We set the value in the line above")
     }
 
     pub(crate) fn get(&self) -> Option<&T> {

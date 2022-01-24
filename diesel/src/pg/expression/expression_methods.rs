@@ -27,7 +27,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), not_distinct.first(connection));
     /// # }
     /// ```
-    #[allow(clippy::clippy::wrong_self_convention)] // This is named after the sql operator
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
     fn is_not_distinct_from<T>(self, other: T) -> dsl::IsNotDistinctFrom<Self, T>
     where
         Self::SqlType: SqlType,
@@ -55,7 +55,7 @@ pub trait PgExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), not_distinct.first(connection));
     /// # }
     /// ```
-    #[allow(clippy::clippy::wrong_self_convention)] // This is named after the sql operator
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
     fn is_distinct_from<T>(self, other: T) -> dsl::IsDistinctFrom<Self, T>
     where
         Self::SqlType: SqlType,
@@ -292,7 +292,7 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    #[allow(clippy::clippy::wrong_self_convention)] // This is named after the sql operator
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
     fn is_contained_by<T>(self, other: T) -> dsl::IsContainedBy<Self, T>
     where
         Self::SqlType: SqlType,
@@ -870,7 +870,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    #[allow(clippy::clippy::wrong_self_convention)] // This is named after the sql operator
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
     fn is_contained_by<T>(self, other: T) -> dsl::IsContainedByNet<Self, T>
     where
         T: AsExpression<Inet>,
@@ -928,7 +928,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    #[allow(clippy::clippy::wrong_self_convention)] // This is named after the sql operator
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
     fn is_contained_by_or_eq<T>(self, other: T) -> dsl::IsContainedByNetLoose<Self, T>
     where
         T: AsExpression<Inet>,

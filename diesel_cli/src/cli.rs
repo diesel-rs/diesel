@@ -1,8 +1,13 @@
 use crate::validators::num::*;
-use clap::{App, AppSettings, Arg, Shell, SubCommand};
+use clap::{App, AppSettings, Arg};
+use clap_complete::Shell;
 
-pub fn build_cli() -> App<'static, 'static> {
-    let database_arg = Arg::with_name("DATABASE_URL")
+fn str_as_char(str: &str) -> char {
+    str.chars().next().unwrap()
+}
+
+pub fn build_cli() -> App<'static> {
+    let database_arg = Arg::new("DATABASE_URL")
         .long("database-url")
         .help(
             "Specifies the database URL to connect to. Falls back to \
@@ -11,52 +16,49 @@ pub fn build_cli() -> App<'static, 'static> {
         .global(true)
         .takes_value(true);
 
-    let migration_subcommand = SubCommand::with_name("migration")
+    let migration_subcommand = App::new("migration")
         .about(
             "A group of commands for generating, running, and reverting \
              migrations.",
         )
-        .setting(AppSettings::VersionlessSubcommands)
         .arg(migration_dir_arg())
-        .subcommand(SubCommand::with_name("run").about("Runs all pending migrations."))
+        .subcommand(App::new("run").about("Runs all pending migrations."))
         .subcommand(
-            SubCommand::with_name("revert")
+            App::new("revert")
                 .about("Reverts the specified migrations.")
                 .arg(
-                    Arg::with_name("REVERT_ALL")
+                    Arg::new("REVERT_ALL")
                         .long("all")
-                        .short("a")
+                        .short(str_as_char("a"))
                         .help("Reverts previously run migration files.")
                         .takes_value(false)
                         .conflicts_with("REVERT_NUMBER"),
                 )
                 .arg(
-                    Arg::with_name("REVERT_NUMBER")
+                    Arg::new("REVERT_NUMBER")
                         .long("number")
-                        .short("n")
+                        .short(str_as_char("n"))
                         .help("Reverts the last `n` migration files.")
                         .long_help(
                             "When this option is specified the last `n` migration files \
                              will be reverted. By default revert the last one.",
                         )
-                        // TODO : when upgrading to clap 3.0 add default_value("1").
-                        // Then update code in main.rs for the revert subcommand.
-                        // See https://github.com/clap-rs/clap/issues/1605
+                        .default_value("1")
                         .takes_value(true)
                         .validator(is_positive_int)
                         .conflicts_with("REVERT_ALL"),
                 ),
         )
         .subcommand(
-            SubCommand::with_name("redo")
+            App::new("redo")
                 .about(
                     "Reverts and re-runs the latest migration. Useful \
                      for testing that a migration can in fact be reverted.",
                 )
                 .arg(
-                    Arg::with_name("REDO_ALL")
+                    Arg::new("REDO_ALL")
                         .long("all")
-                        .short("a")
+                        .short(str_as_char("a"))
                         .help("Reverts and re-runs all migrations.")
                         .long_help(
                             "When this option is specified all migrations \
@@ -67,43 +69,38 @@ pub fn build_cli() -> App<'static, 'static> {
                         .conflicts_with("REDO_NUMBER"),
                 )
                 .arg(
-                    Arg::with_name("REDO_NUMBER")
+                    Arg::new("REDO_NUMBER")
                         .long("number")
-                        .short("n")
+                        .short(str_as_char("n"))
                         .help("Redo the last `n` migration files.")
                         .long_help(
                             "When this option is specified the last `n` migration files \
                              will be reverted and re-runs. By default redo the last migration.",
                         )
-                        // TODO : when upgrading to clap 3.0 add default_value("1").
-                        // Then update code in main.rs for the revert subcommand.
-                        // See https://github.com/clap-rs/clap/issues/1605
+                        .default_value("1")
                         .takes_value(true)
                         .validator(is_positive_int)
                         .conflicts_with("REDO_ALL"),
                 ),
         )
         .subcommand(
-            SubCommand::with_name("list")
+            App::new("list")
                 .about("Lists all available migrations, marking those that have been applied."),
         )
+        .subcommand(App::new("pending").about("Returns true if there are any pending migrations."))
         .subcommand(
-            SubCommand::with_name("pending")
-                .about("Returns true if there are any pending migrations."),
-        )
-        .subcommand(
-            SubCommand::with_name("generate")
+            App::new("generate")
                 .about(
                     "Generate a new migration with the given name, and \
                      the current timestamp as the version.",
                 )
                 .arg(
-                    Arg::with_name("MIGRATION_NAME")
+                    Arg::new("MIGRATION_NAME")
                         .help("The name of the migration to create.")
                         .required(true),
                 )
                 .arg(
-                    Arg::with_name("MIGRATION_VERSION")
+                    Arg::new("MIGRATION_VERSION")
                         .long("version")
                         .help(
                             "The version number to use when generating the migration. \
@@ -113,7 +110,7 @@ pub fn build_cli() -> App<'static, 'static> {
                         .takes_value(true),
                 )
                 .arg(
-                    Arg::with_name("MIGRATION_FORMAT")
+                    Arg::new("MIGRATION_FORMAT")
                         .long("format")
                         .possible_values(&["sql", "barrel"])
                         .default_value("sql")
@@ -123,109 +120,104 @@ pub fn build_cli() -> App<'static, 'static> {
         )
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
-    let setup_subcommand = SubCommand::with_name("setup")
-        .arg(migration_dir_arg())
-        .about(
-            "Creates the migrations directory, creates the database \
+    let setup_subcommand = App::new("setup").arg(migration_dir_arg()).about(
+        "Creates the migrations directory, creates the database \
              specified in your DATABASE_URL, and runs existing migrations.",
-        );
+    );
 
-    let database_subcommand = SubCommand::with_name("database")
+    let database_subcommand = App::new("database")
         .alias("db")
         .arg(migration_dir_arg())
         .about("A group of commands for setting up and resetting your database.")
-        .setting(AppSettings::VersionlessSubcommands)
-        .subcommand(SubCommand::with_name("setup").about(
+        .subcommand(App::new("setup").about(
             "Creates the database specified in your DATABASE_URL, \
              and then runs any existing migrations.",
         ))
-        .subcommand(SubCommand::with_name("reset").about(
+        .subcommand(App::new("reset").about(
             "Resets your database by dropping the database specified \
              in your DATABASE_URL and then running `diesel database setup`.",
         ))
         .subcommand(
-            SubCommand::with_name("drop")
+            App::new("drop")
                 .about("Drops the database specified in your DATABASE_URL.")
                 .setting(AppSettings::Hidden),
         )
         .setting(AppSettings::SubcommandRequiredElseHelp);
 
-    let generate_bash_completion_subcommand = SubCommand::with_name("bash-completion")
-        .about("DEPRECATED: Generate bash completion script for the diesel command.");
-
-    let generate_completions_subcommand = SubCommand::with_name("completions")
+    let generate_completions_subcommand = App::new("completions")
         .about("Generate shell completion scripts for the diesel command.")
         .arg(
-            Arg::with_name("SHELL")
+            Arg::new("SHELL")
                 .index(1)
                 .required(true)
-                .possible_values(&Shell::variants()),
+                .possible_values(Shell::possible_values()),
         );
 
-    let infer_schema_subcommand = SubCommand::with_name("print-schema")
-        .setting(AppSettings::VersionlessSubcommands)
+    let infer_schema_subcommand = App::new("print-schema")
         .about("Print table definitions for database schema.")
         .arg(
-            Arg::with_name("schema")
+            Arg::new("schema")
                 .long("schema")
-                .short("s")
+                .short(str_as_char("s"))
                 .takes_value(true)
                 .help("The name of the schema."),
         )
         .arg(
-            Arg::with_name("table-name")
+            Arg::new("table-name")
                 .index(1)
                 .takes_value(true)
-                .multiple(true)
+                .multiple_values(true)
+                .multiple_occurrences(true)
                 .help("Table names to filter (default only-tables if not empty)."),
         )
         .arg(
-            Arg::with_name("only-tables")
-                .short("o")
+            Arg::new("only-tables")
+                .short(str_as_char("o"))
                 .long("only-tables")
                 .help("Only include tables from table-name that matches regexp.")
                 .conflicts_with("except-tables"),
         )
         .arg(
-            Arg::with_name("except-tables")
-                .short("e")
+            Arg::new("except-tables")
+                .short(str_as_char("e"))
                 .long("except-tables")
                 .help("Exclude tables from table-name that matches regex.")
                 .conflicts_with("only-tables"),
         )
         .arg(
-            Arg::with_name("with-docs")
+            Arg::new("with-docs")
                 .long("with-docs")
                 .help("Render documentation comments for tables and columns."),
         )
         .arg(
-            Arg::with_name("column-sorting")
+            Arg::new("column-sorting")
                 .long("column-sorting")
                 .help("Sort order for table columns.")
                 .takes_value(true)
                 .possible_values(&["ordinal_position", "name"]),
         )
         .arg(
-            Arg::with_name("patch-file")
+            Arg::new("patch-file")
                 .long("patch-file")
                 .takes_value(true)
                 .help("A unified diff file to be applied to the final schema."),
         )
         .arg(
-            Arg::with_name("import-types")
+            Arg::new("import-types")
                 .long("import-types")
                 .takes_value(true)
-                .multiple(true)
+                .multiple_values(true)
+                .multiple_occurrences(true)
                 .number_of_values(1)
                 .help("A list of types to import for every table, separated by commas."),
         )
         .arg(
-            Arg::with_name("generate-custom-type-definitions")
+            Arg::new("generate-custom-type-definitions")
                 .long("no-generate-missing-sql-type-definitions")
                 .help("Generate SQL type definitions for types not provided by diesel"),
         );
 
-    let config_arg = Arg::with_name("CONFIG_FILE")
+    let config_arg = Arg::new("CONFIG_FILE")
         .long("config-file")
         .help(
             "The location of the configuration file to use. Falls back to the \
@@ -236,7 +228,7 @@ pub fn build_cli() -> App<'static, 'static> {
         .global(true)
         .takes_value(true);
 
-    let locked_schema_arg = Arg::with_name("LOCKED_SCHEMA")
+    let locked_schema_arg = Arg::new("LOCKED_SCHEMA")
         .long("locked-schema")
         .help("Require that the schema file is up to date.")
         .long_help(
@@ -249,7 +241,6 @@ pub fn build_cli() -> App<'static, 'static> {
 
     App::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
-        .setting(AppSettings::VersionlessSubcommands)
         .after_help(
             "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.",
         )
@@ -259,14 +250,13 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(migration_subcommand)
         .subcommand(setup_subcommand)
         .subcommand(database_subcommand)
-        .subcommand(generate_bash_completion_subcommand)
         .subcommand(generate_completions_subcommand)
         .subcommand(infer_schema_subcommand)
         .setting(AppSettings::SubcommandRequiredElseHelp)
 }
 
-fn migration_dir_arg<'a, 'b>() -> Arg<'a, 'b> {
-    Arg::with_name("MIGRATION_DIRECTORY")
+fn migration_dir_arg<'a>() -> Arg<'a> {
+    Arg::new("MIGRATION_DIRECTORY")
         .long("migration-dir")
         .help(
             "The location of your migration directory. By default this \

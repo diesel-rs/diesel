@@ -109,7 +109,7 @@ impl SqliteVersion {
 
 fn get_sqlite_version(conn: &mut SqliteConnection) -> SqliteVersion {
     let query = "SELECT sqlite_version()";
-    let result = sql::<sql_types::Text>(&query).load::<String>(conn).unwrap();
+    let result = sql::<sql_types::Text>(query).load::<String>(conn).unwrap();
     let parts = result[0]
         .split('.')
         .map(|part| part.parse().unwrap())

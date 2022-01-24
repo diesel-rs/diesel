@@ -8,7 +8,6 @@
     clippy::map_unwrap_or
 )]
 #![warn(
-    clippy::wrong_pub_self_convention,
     clippy::mut_mut,
     clippy::non_ascii_literal,
     clippy::similar_names,

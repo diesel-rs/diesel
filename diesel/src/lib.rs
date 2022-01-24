@@ -113,7 +113,6 @@
 #![warn(
     clippy::unwrap_used,
     clippy::print_stdout,
-    clippy::wrong_pub_self_convention,
     clippy::mut_mut,
     clippy::non_ascii_literal,
     clippy::similar_names,

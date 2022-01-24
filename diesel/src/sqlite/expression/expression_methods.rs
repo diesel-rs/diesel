@@ -70,7 +70,7 @@ pub trait SqliteExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    #[allow(clippy::clippy::wrong_self_convention)] // This is named after the sql operator
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
     fn is_not<T>(self, other: T) -> dsl::IsNot<Self, T>
     where
         Self::SqlType: SqlType,
