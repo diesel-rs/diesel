@@ -4,7 +4,6 @@
 #![allow(clippy::needless_pass_by_value, clippy::map_unwrap_or)]
 #![warn(
     missing_docs,
-    clippy::wrong_pub_self_convention,
     clippy::mut_mut,
     clippy::non_ascii_literal,
     clippy::similar_names,

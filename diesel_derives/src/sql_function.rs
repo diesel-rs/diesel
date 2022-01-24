@@ -493,7 +493,7 @@ fn is_sqlite_type(ty: &Type) -> bool {
     if ident == "Nullable" {
         if let PathArguments::AngleBracketed(ref ab) = last_segment.arguments {
             if let Some(GenericArgument::Type(ty)) = ab.args.first() {
-                return is_sqlite_type(&ty);
+                return is_sqlite_type(ty);
             }
         }
         return false;

@@ -9,8 +9,7 @@
     clippy::non_ascii_literal,
     clippy::similar_names,
     clippy::unicode_not_nfc,
-    clippy::used_underscore_binding,
-    clippy::wrong_pub_self_convention
+    clippy::used_underscore_binding
 )]
 #![cfg_attr(test, allow(clippy::result_unwrap_used))]
 

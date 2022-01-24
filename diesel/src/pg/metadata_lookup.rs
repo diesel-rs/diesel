@@ -46,7 +46,7 @@ where
             }
         }
 
-        let r = lookup_type(&&cache_key, self);
+        let r = lookup_type(&cache_key, self);
 
         match r {
             Ok(type_metadata) => {

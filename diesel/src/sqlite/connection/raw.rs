@@ -245,7 +245,7 @@ impl SqliteCallbackError {
                 s = e.to_string();
                 &s
             }
-            SqliteCallbackError::Panic(_, msg) => &msg,
+            SqliteCallbackError::Panic(_, msg) => msg,
         };
         unsafe {
             context_error_str(ctx, msg);

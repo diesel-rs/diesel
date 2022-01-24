@@ -48,7 +48,7 @@ impl CommitErrorProcessor for MysqlConnection {
             }
             TransactionManagerStatus::Valid(ref v) => v,
         };
-        default_process_commit_error(&state, error)
+        default_process_commit_error(state, error)
     }
 }
 

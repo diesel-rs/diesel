@@ -226,7 +226,7 @@ impl DieselMigrationName {
     }
 
     pub(crate) fn from_name(name: &str) -> Result<Self, MigrationError> {
-        let version = migrations_internals::version_from_string(&name)
+        let version = migrations_internals::version_from_string(name)
             .ok_or_else(|| MigrationError::UnknownMigrationFormat(PathBuf::from(name)))?;
         Ok(Self {
             name: name.to_owned(),
