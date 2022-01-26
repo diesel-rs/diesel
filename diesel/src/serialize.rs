@@ -186,7 +186,8 @@ where
 /// database, you should use `i32::to_sql(x, out)` instead of writing to `out`
 /// yourself.)
 ///
-/// Any types which implement this trait should also [`#[derive(AsExpression)]`].
+/// Any types which implement this trait should also
+/// [`#[derive(AsExpression)]`](crate::AsExpression).
 ///
 /// ### Backend specific details
 ///
@@ -198,7 +199,6 @@ where
 /// - For third party backends, consult that backend's documentation.
 ///
 /// [`MysqlType`]: ../mysql/enum.MysqlType.html
-/// [`#[derive(AsExpression)]`]: ../expression/derive.AsExpression.html;
 ///
 /// ### Examples
 ///
