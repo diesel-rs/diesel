@@ -187,7 +187,7 @@ where
 /// yourself.)
 ///
 /// Any types which implement this trait should also
-/// [`#[derive(AsExpression)]`](derive@crate::AsExpression).
+/// [`#[derive(AsExpression)]`](derive@crate::expression::AsExpression).
 ///
 /// ### Backend specific details
 ///
