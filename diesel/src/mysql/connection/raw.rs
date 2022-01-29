@@ -48,13 +48,8 @@ impl RawConnection {
         let unix_socket = connection_options.unix_socket();
         let client_flags = connection_options.client_flags();
 
-        #[cfg(not(windows))]
-        // allow single_match because compiler complains about if after cfg
-        // error: attributes are not yet allowed on `if` expressions
-        #[allow(clippy::single_match)]
-        match connection_options.ssl_mode() {
-            Some(ssl_mode) => self.set_ssl_mode(ssl_mode),
-            _ => (),
+        if let Some(ssl_mode) = connection_options.ssl_mode() {
+            self.set_ssl_mode(ssl_mode)
         }
 
         unsafe {
@@ -190,7 +185,6 @@ impl RawConnection {
         self.did_an_error_occur()
     }
 
-    #[cfg(not(windows))]
     fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::mysql_ssl_mode) {
         let v = ssl_mode as u32;
         let v_ptr: *const u32 = &v;
