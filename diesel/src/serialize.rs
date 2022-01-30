@@ -96,19 +96,19 @@ impl<'a, DB: Backend> Output<'a, 'static, DB> {
 
 impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Write for Output<'a, 'b, DB> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.out.write(buf)
+        self.out.0.write(buf)
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.out.flush()
+        self.out.0.flush()
     }
 
     fn write_all(&mut self, buf: &[u8]) -> io::Result<()> {
-        self.out.write_all(buf)
+        self.out.0.write_all(buf)
     }
 
     fn write_fmt(&mut self, fmt: fmt::Arguments<'_>) -> io::Result<()> {
-        self.out.write_fmt(fmt)
+        self.out.0.write_fmt(fmt)
     }
 }
 
@@ -127,7 +127,7 @@ impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Output<'a, 
         'a: 'c,
     {
         Output {
-            out: RawBytesBindCollector::<DB>::reborrow_buffer(self.out),
+            out: RawBytesBindCollector::<DB>::reborrow_buffer(&mut self.out),
             metadata_lookup: match &mut self.metadata_lookup {
                 None => None,
                 Some(m) => Some(&mut **m),

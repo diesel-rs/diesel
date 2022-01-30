@@ -7,6 +7,8 @@ use std::net::{Ipv4Addr, Ipv6Addr};
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::pg::{Pg, PgValue};
+#[cfg(test)]
+use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Cidr, Inet};
 
@@ -140,7 +142,7 @@ fn v4address_to_sql() {
         ($ty:ty, $net_type:expr) => {
             let mut buffer = Vec::new();
             {
-                let mut bytes = Output::test(&mut buffer);
+                let mut bytes = Output::test(ByteWrapper(&mut buffer));
                 let test_address =
                     IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
                 ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
@@ -161,7 +163,7 @@ fn some_v4address_from_sql() {
                 IpNetwork::V4(Ipv4Network::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
             let mut buffer = Vec::new();
             {
-                let mut bytes = Output::test(&mut buffer);
+                let mut bytes = Output::test(ByteWrapper(&mut buffer));
                 ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             }
             let output_address = FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();
@@ -179,7 +181,7 @@ fn v6address_to_sql() {
         ($ty:ty, $net_type:expr) => {
             let mut buffer = Vec::new();
             {
-                let mut bytes = Output::test(&mut buffer);
+                let mut bytes = Output::test(ByteWrapper(&mut buffer));
                 let test_address = IpNetwork::V6(
                     Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
                 );
@@ -225,7 +227,7 @@ fn some_v6address_from_sql() {
                 IpNetwork::V6(Ipv6Network::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
             let mut buffer = Vec::new();
             {
-                let mut bytes = Output::test(&mut buffer);
+                let mut bytes = Output::test(ByteWrapper(&mut buffer));
                 ToSql::<$ty, Pg>::to_sql(&input_address, &mut bytes).unwrap();
             }
             let output_address = FromSql::<$ty, Pg>::from_sql(PgValue::for_test(&buffer)).unwrap();

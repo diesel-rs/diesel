@@ -69,44 +69,43 @@ pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::offset_clause::{NoOffsetClause, OffsetClause};
 
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::insert_statement::batch_insert::BatchInsert;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
+
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::insert_statement::batch_insert::BatchInsert;
-#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-pub(crate) use self::insert_statement::{BatchInsert, UndecoratedInsertRecord, ValuesClause};
-#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-#[doc(inline)]
-pub use self::insert_statement::{DefaultValues, UndecoratedInsertRecord, ValuesClause};
+pub use self::insert_statement::DefaultValues;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
 pub use self::returning_clause::ReturningClause;
 
-#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 pub(crate) use self::select_clause::SelectClauseExpression;
-#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-#[doc(inline)]
-pub use self::select_clause::SelectClauseExpression;
 
-#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-pub(crate) use self::from_clause::NoFromClause;
-#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::from_clause::NoFromClause;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::from_clause::{FromClause, NoFromClause};
 
-#[cfg(all(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    feature = "postgres_backend"
-))]
+#[cfg(feature = "postgres_backend")]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 #[doc(inline)]
-pub use crate::pg::query_builder::only_clause::Only;
-#[cfg(all(
-    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-    feature = "postgres_backend"
-))]
 pub(crate) use crate::pg::query_builder::only_clause::Only;
 
-pub(crate) use self::from_clause::FromClause;
 pub(crate) use self::insert_statement::ColumnList;
 pub(crate) use self::select_statement::BoxedSelectStatement;
 pub(crate) use self::select_statement::SelectStatement;
@@ -205,8 +204,11 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// Converts this `QueryFragment` to its SQL representation.
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
-        self.walk_ast(AstPass::to_sql(out))
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn to_sql(&self, out: &mut DB::QueryBuilder, backend: &DB) -> QueryResult<()> {
+        self.walk_ast(AstPass::to_sql(out, backend))
     }
 
     /// Serializes all bind parameters in this query.
@@ -215,12 +217,16 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// itself. It is represented in SQL with a placeholder such as `?` or `$1`.
     ///
     /// This method should only be called by implementations of `Connection`.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     fn collect_binds<'b>(
         &'b self,
         out: &mut <DB as HasBindCollector<'b>>::BindCollector,
         metadata_lookup: &mut DB::MetadataLookup,
+        backend: &'b DB,
     ) -> QueryResult<()> {
-        self.walk_ast(AstPass::collect_binds(out, metadata_lookup))
+        self.walk_ast(AstPass::collect_binds(out, metadata_lookup, backend))
     }
 
     /// Is this query safe to store in the prepared statement cache?
@@ -238,17 +244,22 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     ///   placeholder)
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn is_safe_to_cache_prepared(&self) -> QueryResult<bool> {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool> {
         let mut result = true;
-        self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result))?;
+        self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result, backend))?;
         Ok(result)
     }
 
-    #[doc(hidden)]
     /// Does walking this AST have any effect?
-    fn is_noop(&self) -> QueryResult<bool> {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn is_noop(&self, backend: &DB) -> QueryResult<bool> {
         let mut result = true;
-        self.walk_ast(AstPass::is_noop(&mut result))?;
+        self.walk_ast(AstPass::is_noop(&mut result, backend))?;
         Ok(result)
     }
 }

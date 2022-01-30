@@ -153,7 +153,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
                 // we unroll the arguments manually here, to prevent borrow check issues
                 let mut needs_comma = false;
                 #(
-                    if !self.#arg_name.is_noop()? {
+                    if !self.#arg_name.is_noop(out.backend())? {
                         if needs_comma {
                             out.push_sql(", ");
                         }

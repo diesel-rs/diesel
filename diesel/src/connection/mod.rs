@@ -23,11 +23,9 @@ pub use self::transaction_manager::{
     ValidTransactionManagerStatus,
 };
 
-#[doc(inline)]
-#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-pub use self::private::ConnectionGatWorkaround;
-
-#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 pub(crate) use self::private::ConnectionGatWorkaround;
 
 /// Perform simple operations on a backend.
@@ -166,13 +164,8 @@ where
     type Backend: Backend;
 
     /// The transaction manager implementation used by this connection
-    #[cfg_attr(
-        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-        doc(hidden)
-    )]
-    #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     type TransactionManager: TransactionManager<Self>;
 
@@ -335,13 +328,8 @@ where
 
     /// Execute a single SQL statements within the same string and return the
     /// number of affected rows
-    #[cfg_attr(
-        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-        doc(hidden)
-    )]
-    #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     fn execute(&mut self, query: &str) -> QueryResult<usize>;
 
@@ -356,6 +344,9 @@ where
     /// dsl on top of diesel. It returns an [ `LoadRowIter`], which
     /// is essentially an [`Iterator<Item = QueryResult<&impl Row<Self::Backend>>`].
     /// This type can be used to iterate over all rows returned by the database.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
@@ -366,13 +357,8 @@ where
 
     /// Execute a single SQL statements given by a query and return
     /// number of affected rows
-    #[cfg_attr(
-        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-        doc(hidden)
-    )]
-    #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
@@ -382,13 +368,8 @@ where
     ///
     /// This function should be used from [`TransactionManager`] to access
     /// internally required state.
-    #[cfg_attr(
-        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-        doc(hidden)
-    )]
-    #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     fn transaction_state(
         &mut self,
@@ -404,7 +385,10 @@ where
 /// need to use this trait if you are interacting with a connection
 /// passed to a [`Migration`](../migration/trait.Migration.html)
 pub trait BoxableConnection<DB: Backend>: SimpleConnection + std::any::Any {
-    #[doc(hidden)]
+    /// Maps the current connection to `std::any::Any`
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     fn as_any(&self) -> &dyn std::any::Any;
 }
 
@@ -455,10 +439,9 @@ mod private {
     ///
     /// [`Connection`]: super::Connection
     #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-
     pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend> {
         /// The cursor type returned by [`Connection::load`]
         ///

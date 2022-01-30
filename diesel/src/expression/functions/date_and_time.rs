@@ -30,17 +30,21 @@ operator_allowed!(now, Sub, sub);
 sql_function! {
     /// Represents the SQL `DATE` function. The argument should be a Timestamp
     /// expression, and the return value will be an expression of type Date.
-
+    ///
     /// # Examples
-
-    /// ```ignore
-    /// # extern crate chrono;
+    ///
+    /// ```
     /// # include!("../../doctest_setup.rs");
-    /// # use diesel::dsl::*;
+    /// # use diesel::dsl::{now, date};
+    /// # use diesel::deserialize::Queryable;
     /// #
+    /// # fn test<R: Queryable<diesel::sql_types::Date, DB> + 'static>() -> QueryResult<R> {
+    /// #     let connection = &mut establish_connection();
+    /// let today = diesel::select(date(now)).first(connection)?;
+    /// #     Ok(today)
+    /// # }
     /// # fn main() {
-    /// #     let connection = establish_connection();
-    /// let today: chrono::NaiveDate = diesel::select(date(now)).first(&connection).unwrap();
+    /// #
     /// # }
     /// ```
     fn date(expr: Timestamp) -> Date;

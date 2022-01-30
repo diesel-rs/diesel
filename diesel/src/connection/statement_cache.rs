@@ -105,8 +105,8 @@ use crate::result::QueryResult;
 /// A prepared statement cache
 #[allow(missing_debug_implementations, unreachable_pub)]
 #[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 pub struct StatementCache<DB: Backend, Statement> {
     pub(crate) cache: HashMap<StatementCacheKey<DB>, Statement>,
@@ -120,8 +120,8 @@ pub struct StatementCache<DB: Backend, Statement> {
 /// perparing the statement
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 #[allow(unreachable_pub)]
 pub enum PrepareForCache {
@@ -177,6 +177,7 @@ where
     pub fn cached_statement<T, F>(
         &mut self,
         source: &T,
+        backend: &DB,
         bind_types: &[DB::TypeMetadata],
         prepare_fn: F,
     ) -> QueryResult<MaybeCached<'_, Statement>>
@@ -186,10 +187,10 @@ where
     {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
-        let cache_key = StatementCacheKey::for_source(source, bind_types)?;
+        let cache_key = StatementCacheKey::for_source(source, bind_types, backend)?;
 
-        if !source.is_safe_to_cache_prepared()? {
-            let sql = cache_key.sql(source)?;
+        if !source.is_safe_to_cache_prepared(backend)? {
+            let sql = cache_key.sql(source, backend)?;
             return prepare_fn(&sql, PrepareForCache::No).map(MaybeCached::CannotCache);
         }
 
@@ -197,7 +198,7 @@ where
             Occupied(entry) => entry.into_mut(),
             Vacant(entry) => {
                 let statement = {
-                    let sql = entry.key().sql(source)?;
+                    let sql = entry.key().sql(source, backend)?;
                     prepare_fn(&sql, PrepareForCache::Yes)
                 };
 
@@ -215,8 +216,8 @@ where
 /// that does not depend on [`ToOwned`](std::borrow::ToOwned)
 #[allow(missing_debug_implementations, unreachable_pub)]
 #[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 #[non_exhaustive]
 pub enum MaybeCached<'a, T: 'a> {
@@ -255,8 +256,8 @@ impl<'a, T> DerefMut for MaybeCached<'a, T> {
 #[allow(missing_debug_implementations, unreachable_pub)]
 #[derive(Hash, PartialEq, Eq)]
 #[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 pub enum StatementCacheKey<DB: Backend> {
     /// Represents a at compile time known query
@@ -284,14 +285,18 @@ where
 {
     /// Create a new statement cache key for the given query source
     #[allow(unreachable_pub)]
-    pub fn for_source<T>(source: &T, bind_types: &[DB::TypeMetadata]) -> QueryResult<Self>
+    pub fn for_source<T>(
+        source: &T,
+        bind_types: &[DB::TypeMetadata],
+        backend: &DB,
+    ) -> QueryResult<Self>
     where
         T: QueryFragment<DB> + QueryId,
     {
         match T::query_id() {
             Some(id) => Ok(StatementCacheKey::Type(id)),
             None => {
-                let sql = Self::construct_sql(source)?;
+                let sql = Self::construct_sql(source, backend)?;
                 Ok(StatementCacheKey::Sql {
                     sql,
                     bind_types: bind_types.into(),
@@ -305,16 +310,16 @@ where
     /// This is an optimization that may skip constructing the query string
     /// twice if it's already part of the current cache key
     #[allow(unreachable_pub)]
-    pub fn sql<T: QueryFragment<DB>>(&self, source: &T) -> QueryResult<Cow<'_, str>> {
+    pub fn sql<T: QueryFragment<DB>>(&self, source: &T, backend: &DB) -> QueryResult<Cow<'_, str>> {
         match *self {
-            StatementCacheKey::Type(_) => Self::construct_sql(source).map(Cow::Owned),
+            StatementCacheKey::Type(_) => Self::construct_sql(source, backend).map(Cow::Owned),
             StatementCacheKey::Sql { ref sql, .. } => Ok(Cow::Borrowed(sql)),
         }
     }
 
-    fn construct_sql<T: QueryFragment<DB>>(source: &T) -> QueryResult<String> {
+    fn construct_sql<T: QueryFragment<DB>>(source: &T, backend: &DB) -> QueryResult<String> {
         let mut query_builder = DB::QueryBuilder::default();
-        source.to_sql(&mut query_builder)?;
+        source.to_sql(&mut query_builder, backend)?;
         Ok(query_builder.finish())
     }
 }

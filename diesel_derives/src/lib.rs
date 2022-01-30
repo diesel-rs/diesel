@@ -39,6 +39,7 @@ mod as_expression;
 mod associations;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
+mod diesel_public_if;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
@@ -1290,4 +1291,13 @@ pub fn sql_function_proc(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn __diesel_for_each_tuple(input: TokenStream) -> TokenStream {
     diesel_for_each_tuple::expand(parse_macro_input!(input)).into()
+}
+
+/// This is an internal diesel macro that
+/// helps to restrict the visibility of an item based
+/// on a feature flag
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream {
+    diesel_public_if::expand(parse_macro_input!(attrs), parse_macro_input!(input)).into()
 }

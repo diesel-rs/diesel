@@ -9,7 +9,7 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
 
 /// The PostgreSQL backend
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
 pub struct Pg;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Queryable)]

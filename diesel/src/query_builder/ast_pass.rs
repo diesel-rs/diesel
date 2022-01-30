@@ -30,6 +30,7 @@ where
     'b: 'a,
 {
     internals: AstPassInternals<'a, 'b, DB>,
+    backend: &'b DB,
 }
 
 impl<'a, 'b, DB> AstPass<'a, 'b, DB>
@@ -37,38 +38,38 @@ where
     DB: Backend,
     'b: 'a,
 {
-    #[doc(hidden)]
-    #[allow(clippy::wrong_self_convention)]
-    pub fn to_sql(query_builder: &'a mut DB::QueryBuilder) -> Self {
+    pub(crate) fn to_sql(query_builder: &'a mut DB::QueryBuilder, backend: &'b DB) -> Self {
         AstPass {
             internals: AstPassInternals::ToSql(query_builder),
+            backend,
         }
     }
 
-    #[doc(hidden)]
-    pub fn collect_binds(
+    pub(crate) fn collect_binds(
         collector: &'a mut <DB as HasBindCollector<'b>>::BindCollector,
         metadata_lookup: &'a mut DB::MetadataLookup,
+        backend: &'b DB,
     ) -> Self {
         AstPass {
             internals: AstPassInternals::CollectBinds {
                 collector,
                 metadata_lookup,
             },
+            backend,
         }
     }
 
-    #[doc(hidden)]
-    pub fn is_safe_to_cache_prepared(result: &'a mut bool) -> Self {
+    pub(crate) fn is_safe_to_cache_prepared(result: &'a mut bool, backend: &'b DB) -> Self {
         AstPass {
             internals: AstPassInternals::IsSafeToCachePrepared(result),
+            backend,
         }
     }
 
-    #[doc(hidden)]
-    pub fn debug_binds(formatter: &'a mut Vec<&'b dyn fmt::Debug>) -> Self {
+    pub(crate) fn debug_binds(formatter: &'a mut Vec<&'b dyn fmt::Debug>, backend: &'b DB) -> Self {
         AstPass {
             internals: AstPassInternals::DebugBinds(formatter),
+            backend,
         }
     }
 
@@ -76,9 +77,10 @@ where
     ///
     /// The result will be set to `false` if any method that generates SQL
     /// is called.
-    pub(crate) fn is_noop(result: &'a mut bool) -> Self {
+    pub(crate) fn is_noop(result: &'a mut bool, backend: &'b DB) -> Self {
         AstPass {
             internals: AstPassInternals::IsNoop(result),
+            backend,
         }
     }
 
@@ -107,7 +109,10 @@ where
             AstPassInternals::DebugBinds(ref mut f) => AstPassInternals::DebugBinds(&mut **f),
             AstPassInternals::IsNoop(ref mut result) => AstPassInternals::IsNoop(&mut **result),
         };
-        AstPass { internals }
+        AstPass {
+            internals,
+            backend: &self.backend,
+        }
     }
 
     /// Mark the current query being constructed as unsafe to store in the
@@ -206,8 +211,7 @@ where
         Ok(())
     }
 
-    #[doc(hidden)]
-    pub fn push_bind_param_value_only<T, U>(&mut self, bind: &'b U) -> QueryResult<()>
+    pub(crate) fn push_bind_param_value_only<T, U>(&mut self, bind: &'b U) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
         U: ToSql<T, DB>,
@@ -222,6 +226,19 @@ where
             _ => {}
         }
         Ok(())
+    }
+
+    /// Get information about the backend that will consume this query
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc(hidden)
+    )] // This is used by the `sql_function` macro
+    #[cfg_attr(
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+    )]
+    pub fn backend(&self) -> &DB {
+        self.backend
     }
 }
 

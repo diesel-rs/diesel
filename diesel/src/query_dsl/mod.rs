@@ -998,9 +998,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE`
-    /// users.for_update().load(connection)
+    /// let users_for_update = users::table.for_update().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_update;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_update(self) -> ForUpdate<Self>
     where
@@ -1021,9 +1035,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR NO KEY UPDATE`
-    /// users.for_no_key_update().load(connection)
+    /// let users_for_no_key_update = users::table.for_no_key_update().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_no_key_update;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_no_key_update(self) -> ForNoKeyUpdate<Self>
     where
@@ -1043,9 +1071,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR SHARE`
-    /// users.for_share().load(connection)
+    /// let users_for_share = users::table.for_share().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_share;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_share(self) -> ForShare<Self>
     where
@@ -1066,9 +1108,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    ///
+    /// # #[cfg(feature = "postgres")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR KEY SHARE`
-    /// users.for_key_share().load(connection)
+    /// let users_for_key_share = users::table.for_key_share().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_key_share;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_key_share(self) -> ForKeyShare<Self>
     where
@@ -1083,9 +1139,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE SKIP LOCKED`
-    /// users.for_update().skip_locked().load(connection)
+    /// let user_skiped_locked = users::table.for_update().skip_locked().load(connection)?;
+    /// # let u: Vec<(i32, String)> = user_skiped_locked;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn skip_locked(self) -> SkipLocked<Self>
     where
@@ -1100,9 +1170,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE NOWAIT`
-    /// users.for_update().no_wait().load(connection)
+    /// let users_no_wait = users::table.for_update().no_wait().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_no_wait;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn no_wait(self) -> NoWait<Self>
     where

@@ -263,7 +263,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         let query = Box::new(query);
 
         let mut bind_collector = SqliteBindCollector::new();
-        query.collect_binds(&mut bind_collector, &mut ())?;
+        query.collect_binds(&mut bind_collector, &mut (), &Sqlite)?;
         let SqliteBindCollector { binds } = bind_collector;
 
         let mut ret = BoundStatement {

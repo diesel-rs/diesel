@@ -3,20 +3,13 @@
 use crate::query_builder::QueryBuilder;
 use crate::sql_types::{self, HasSqlType, TypeMetadata};
 
-#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::private::{
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::private::{
     DieselReserveSpecialization, HasBindCollector, HasRawValue, TrustedBackend,
 };
-
-#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-pub(crate) use self::private::{DieselReserveSpecialization, HasBindCollector, HasRawValue};
-
-#[cfg(all(
-    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-    any(feature = "postgres", feature = "sqlite", feature = "mysql")
-))]
-pub(crate) use self::private::TrustedBackend;
 
 /// A database backend
 ///
@@ -291,8 +284,8 @@ mod private {
     /// should only be referenced directly by implementors. Users of this type
     /// should instead use the [`RawValue`](super::RawValue) helper type instead.
     #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait HasRawValue<'a> {
         /// The actual type given to `FromSql`, with lifetimes applied. This type
@@ -315,8 +308,8 @@ mod private {
     /// diesel reserves the right to specialize any generic `QueryFragment` impl via
     /// [`SqlDialect`](super::SqlDialect) in a later minor version release
     #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait DieselReserveSpecialization {}
 
@@ -328,8 +321,8 @@ mod private {
     ///
     /// [`BindCollector`]: super::BindCollector
     #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait HasBindCollector<'a>: TypeMetadata + Sized {
         /// The concrete `BindCollector` implementation for this backend.
@@ -345,8 +338,8 @@ mod private {
     /// `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
     /// feature flag.
     #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait TrustedBackend {}
 }

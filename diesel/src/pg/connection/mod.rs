@@ -227,15 +227,15 @@ impl PgConnection {
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        source.collect_binds(&mut bind_collector, self)?;
+        source.collect_binds(&mut bind_collector, self, &Pg)?;
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
         let cache_len = self.statement_cache.len();
         let cache = &mut self.statement_cache;
         let raw_conn = &mut self.raw_connection;
-        let query = cache.cached_statement(source, &metadata, |sql, _| {
-            let query_name = if source.is_safe_to_cache_prepared()? {
+        let query = cache.cached_statement(source, &Pg, &metadata, |sql, _| {
+            let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
                 Some(format!("__diesel_stmt_{}", cache_len))
             } else {
                 None

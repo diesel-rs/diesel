@@ -14,6 +14,7 @@ use crate::query_builder::*;
 pub use self::aliasing::{Alias, AliasedField};
 pub use self::joins::JoinTo;
 pub use self::peano_numbers::*;
+pub(crate) use self::private::Pick;
 
 /// Represents a type which can appear in the `FROM` clause. Apps should not
 /// need to concern themselves with this trait.
@@ -102,48 +103,53 @@ where
     type Count = Never;
 }
 
-#[doc(hidden)]
-/// Used to determine which of two from clauses contains a given table.
-///
-/// This trait can be used to emulate "or" conditions in where clauses when
-/// we want a trait to be implemented with one of two type parameters.
-///
-/// For example, if we wanted to write:
-///
-/// ```rust,ignore
-/// where
-///     T: SelectableExpression<Left> | SelectableExpression<Right>,
-/// ```
-///
-/// we can emulate this by writing:
-///
-/// ```rust,ignore
-/// where
-///     Left: AppearsInFromClause<T::Table>,
-///     Right: AppearsInFromClause<T::Table>,
-///     (Left::Count, Right::Count): Pick<Left, Right>,
-///     T: SelectableExpression<
-///         <(Left::Count, Right::Count) as Pick<Left, Right>>::Selection,
-///     >,
-/// ```
-///
-/// In order to aquire the counts in the first place, we must already know
-/// the table we're searching for.
-pub trait Pick<Left, Right> {
-    /// The selected type.
+pub(crate) mod private {
+    use super::{Never, Once};
+
+    /// Used to determine which of two from clauses contains a given table.
     ///
-    /// For `(Once, Never)` this type will be `Left`. For `(Never, Once)`, this type will be
-    /// `Right`
-    type Selection;
+    /// This trait can be used to emulate "or" conditions in where clauses when
+    /// we want a trait to be implemented with one of two type parameters.
+    ///
+    /// For example, if we wanted to write:
+    ///
+    /// ```rust,ignore
+    /// where
+    ///     T: SelectableExpression<Left> | SelectableExpression<Right>,
+    /// ```
+    ///
+    /// we can emulate this by writing:
+    ///
+    /// ```rust,ignore
+    /// where
+    ///     Left: AppearsInFromClause<T::Table>,
+    ///     Right: AppearsInFromClause<T::Table>,
+    ///     (Left::Count, Right::Count): Pick<Left, Right>,
+    ///     T: SelectableExpression<
+    ///         <(Left::Count, Right::Count) as Pick<Left, Right>>::Selection,
+    ///     >,
+    /// ```
+    ///
+    /// In order to aquire the counts in the first place, we must already know
+    /// the table we're searching for.
+    #[doc(hidden)] // This is used as part of the `table!` implementation
+    pub trait Pick<Left, Right> {
+        /// The selected type.
+        ///
+        /// For `(Once, Never)` this type will be `Left`. For `(Never, Once)`, this type will be
+        /// `Right`
+        type Selection;
+    }
+
+    impl<Left, Right> Pick<Left, Right> for (Once, Never) {
+        type Selection = Left;
+    }
+
+    impl<Left, Right> Pick<Left, Right> for (Never, Once) {
+        type Selection = Right;
+    }
 }
 
-impl<Left, Right> Pick<Left, Right> for (Once, Never) {
-    type Selection = Left;
-}
-
-impl<Left, Right> Pick<Left, Right> for (Never, Once) {
-    type Selection = Right;
-}
 
 #[doc(hidden)]
 #[allow(

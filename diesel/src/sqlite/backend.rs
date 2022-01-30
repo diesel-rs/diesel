@@ -6,7 +6,7 @@ use crate::backend::*;
 use crate::sql_types::TypeMetadata;
 
 /// The SQLite backend
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Sqlite;
 
 /// Determines how a bind parameter is given to SQLite

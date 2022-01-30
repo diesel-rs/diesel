@@ -440,7 +440,7 @@ where
     DefaultValues: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if self.values.is_noop()? {
+        if self.values.is_noop(out.backend())? {
             DefaultValues.walk_ast(out)?;
         } else {
             out.push_sql("(");

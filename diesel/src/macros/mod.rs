@@ -114,9 +114,9 @@ macro_rules! __diesel_column {
             $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>>,
             Left: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
             Right: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
-            (Left::Count, Right::Count): $crate::query_source::Pick<Left, Right>,
+            (Left::Count, Right::Count): $crate::internal::table_macro::Pick<Left, Right>,
             Self: $crate::SelectableExpression<
-                <(Left::Count, Right::Count) as $crate::query_source::Pick<Left, Right>>::Selection,
+                <(Left::Count, Right::Count) as $crate::internal::table_macro::Pick<Left, Right>>::Selection,
             >,
         {
         }
@@ -1211,19 +1211,70 @@ macro_rules! joinable_inner {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// #
 /// // This would be required to do `users.inner_join(posts.inner_join(comments))`
 /// allow_tables_to_appear_in_same_query!(comments, posts, users);
+///
+/// table! {
+///     comments {
+///         id -> Integer,
+///         post_id -> Integer,
+///         body -> VarChar,
+///     }
+/// }
+///
+/// table! {
+///    posts {
+///        id -> Integer,
+///        user_id -> Integer,
+///        title -> VarChar,
+///    }
+/// }
+///
+/// table! {
+///     users {
+///        id -> Integer,
+///        name -> VarChar,
+///     }
+/// }
 /// ```
 ///
 /// When more than two tables are passed, the relevant code is generated for
 /// every combination of those tables. This code would be equivalent to the
 /// previous example.
 ///
-/// ```ignore
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// # table! {
+/// #    comments {
+/// #        id -> Integer,
+/// #        post_id -> Integer,
+/// #        body -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #    posts {
+/// #        id -> Integer,
+/// #        user_id -> Integer,
+/// #        title -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #     users {
+/// #        id -> Integer,
+/// #        name -> VarChar,
+/// #     }
+/// # }
+/// #
 /// allow_tables_to_appear_in_same_query!(comments, posts);
 /// allow_tables_to_appear_in_same_query!(comments, users);
 /// allow_tables_to_appear_in_same_query!(posts, users);
+/// #
+/// # fn main() {}
 /// ```
 #[macro_export]
 macro_rules! allow_tables_to_appear_in_same_query {
@@ -1367,20 +1418,31 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
 ///
 /// # Example
 ///
-/// ```ignore
-/// // This would be required to do
-/// // `users::table.inner_join(posts::table).group_by((users::name, users::hair_color, posts::id))`
-/// allow_columns_to_appear_in_same_group_by_clause!(users::name, users::hair_color, posts::id);
+/// ```
+/// # include!("../doctest_setup.rs");
+/// # use crate::schema::{users, posts};
+/// // This would be required
+///
+/// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::id, posts::title);
+/// # fn main() {
+/// // to do implement the following join
+/// users::table.inner_join(posts::table).group_by((users::name, posts::id, posts::title))
+/// # ;
+/// # }
 /// ```
 ///
 /// When more than two columns are passed, the relevant code is generated for
 /// every combination of those columns. This code would be equivalent to the
 /// previous example.
 ///
-/// ```ignore
-/// allow_columns_to_appear_in_same_group_by_clause!(users::name, users::hair_color);
+/// ```
+/// # include!("../doctest_setup.rs");
+/// # use crate::schema::{users, posts};
+/// #
+/// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::title);
 /// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::id);
-/// allow_columns_to_appear_in_same_group_by_clause!(users::hair_color, posts::id);
+/// allow_columns_to_appear_in_same_group_by_clause!(posts::title, posts::id);
+/// # fn main() {}
 /// ```
 #[macro_export]
 macro_rules! allow_columns_to_appear_in_same_group_by_clause {

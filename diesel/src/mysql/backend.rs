@@ -7,7 +7,7 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
 
 /// The MySQL backend
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Mysql;
 
 #[allow(missing_debug_implementations)]

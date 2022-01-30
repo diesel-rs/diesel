@@ -19,8 +19,10 @@ impl ToSql<sql_types::Json, Mysql> for serde_json::Value {
 
 #[test]
 fn json_to_sql() {
+    use crate::query_builder::bind_collector::ByteWrapper;
+
     let mut buffer = Vec::new();
-    let mut bytes = Output::test(&mut buffer);
+    let mut bytes = Output::test(ByteWrapper(&mut buffer));
     let test_json = serde_json::Value::Bool(true);
     ToSql::<sql_types::Json, Mysql>::to_sql(&test_json, &mut bytes).unwrap();
     assert_eq!(buffer, b"true");

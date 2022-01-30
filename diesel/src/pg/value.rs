@@ -22,8 +22,8 @@ pub struct PgValue<'a> {
 /// the implementation for `NonZeroU32` here instead
 /// of providing their own custom implementation
 #[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 #[allow(unreachable_pub)]
 pub trait TypeOidLookup {
