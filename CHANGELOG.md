@@ -8,6 +8,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* `MysqlConnection::establish` is able to initiate SSL connection. The database URL should contain `ssl_mode` parameter with a value of the [MySQL client command option `--ssl-mode`](https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode) if desired.
+
 * `Connection` and `SimpleConnection` traits are implemented for a broader range
   of `r2d2::PooledConnection<M>` types when the `r2d2` feature is enabled.
 
@@ -80,7 +82,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Support for `uuid` version < 0.7.0 has been removed.
 * Support for `bigdecimal` < 0.0.13 has been removed.
 * Support for `pq-sys` < 0.4.0 has been removed.
-* Support for `mysqlclient-sys` < 0.2.0 has been removed.
+* Support for `mysqlclient-sys` < 0.2.5 has been removed.
 * Support for `time` types has been removed.
 * Support for `chrono` < 0.4.19 has been removed.
 * The `NonNull` trait for sql types has been removed in favour of the new `SqlType` trait.
