@@ -111,7 +111,7 @@ where
         };
         AstPass {
             internals,
-            backend: &self.backend,
+            backend: self.backend,
         }
     }
 

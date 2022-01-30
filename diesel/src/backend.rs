@@ -3,6 +3,15 @@
 use crate::query_builder::QueryBuilder;
 use crate::sql_types::{self, HasSqlType, TypeMetadata};
 
+#[cfg_attr(
+    not(any(
+        feature = "postgres_backend",
+        feature = "mysql_backend",
+        feature = "sqlite",
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )),
+    allow(unused_imports)
+)]
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"

@@ -1,6 +1,11 @@
 //! Types related to database connections
 
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub mod commit_error_processor;
+
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod commit_error_processor;
+
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
     any(feature = "sqlite", feature = "postgres", feature = "mysql")
@@ -16,8 +21,6 @@ use crate::query_builder::{Query, QueryFragment, QueryId};
 use crate::result::*;
 use std::fmt::Debug;
 
-#[doc(hidden)]
-pub use self::statement_cache::{MaybeCached, PrepareForCache, StatementCache, StatementCacheKey};
 pub use self::transaction_manager::{
     AnsiTransactionManager, TransactionManager, TransactionManagerStatus,
     ValidTransactionManagerStatus,
@@ -137,7 +140,7 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 ///     * `i64`: `FromSql<BigInt, YourBackend>`
 ///     * `f32`: `FromSql<Float, YourBackend>`
 ///     * `f64`: `FromSql<Double, YourBackend>`
-///     * `bool`: FromSql<Bool, YourBackend>`
+///     * `bool`: `FromSql<Bool, YourBackend>`
 ///     * `String`: `FromSql<Text, YourBackend>`
 ///     * `Vec<u8>`: `FromSql<Binary, YourBackend>`
 ///     * `i16`: `ToSql<SmallInt, YourBackend>`
@@ -145,7 +148,7 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 ///     * `i64`: `ToSql<BigInt, YourBackend>`
 ///     * `f32`: `ToSql<Float, YourBackend>`
 ///     * `f64`: `ToSql<Double, YourBackend>`
-///     * `bool`: ToSql<Bool, YourBackend>`
+///     * `bool`: `ToSql<Bool, YourBackend>`
 ///     * `String`: `ToSql<Text, YourBackend>`
 ///     * `Vec<u8>`: `ToSql<Binary, YourBackend>`
 /// * Maybe a [`TransactionManager`] implementation matching
@@ -342,7 +345,7 @@ where
     ///
     /// This function is useful for people trying to build an alternative
     /// dsl on top of diesel. It returns an [ `LoadRowIter`], which
-    /// is essentially an [`Iterator<Item = QueryResult<&impl Row<Self::Backend>>`].
+    /// is essentially an [`Iterator<Item = QueryResult<&impl Row<Self::Backend>>`](Iterator).
     /// This type can be used to iterate over all rows returned by the database.
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"

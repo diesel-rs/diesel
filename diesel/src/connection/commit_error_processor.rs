@@ -1,11 +1,13 @@
 //! A module to evaluate what to do when a commit triggers an error.
-use crate::result::{DatabaseErrorKind, Error};
-
-use super::ValidTransactionManagerStatus;
+use crate::result::Error;
 
 /// Transaction status returned upon error on commit.
 #[derive(Debug)]
 #[non_exhaustive]
+#[cfg_attr(
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+)]
 pub enum CommitErrorOutcome {
     /// Necessitates a rollback to return to a valid transaction
     RollbackAndThrow(Error),
@@ -17,6 +19,10 @@ pub enum CommitErrorOutcome {
 }
 
 /// Trait needed for the transaction manager.
+#[cfg_attr(
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+)]
 pub trait CommitErrorProcessor {
     /// Returns the status of the transaction following an error upon commit.
     /// When any of these kinds of error happen on `COMMIT`, it is expected
@@ -29,10 +35,21 @@ pub trait CommitErrorProcessor {
 /// Sqlite connections. Returns `CommitErrorOutcome::RollbackAndThrow` if the transaction depth is
 /// greater than 1, the error is a `DatabaseError` and the error kind is either
 /// `DatabaseErrorKind::SerializationFailure` or `DatabaseErrorKind::ReadOnlyTransaction`
+#[cfg_attr(
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+)]
+#[cfg(any(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    feature = "mysql",
+    feature = "sqlite"
+))]
 pub fn default_process_commit_error(
-    transaction_state: &ValidTransactionManagerStatus,
+    transaction_state: &super::ValidTransactionManagerStatus,
     error: Error,
 ) -> CommitErrorOutcome {
+    use crate::result::DatabaseErrorKind;
+
     if let Some(transaction_depth) = transaction_state.transaction_depth() {
         match error {
             // Neither mysql nor sqlite do currently produce these errors
