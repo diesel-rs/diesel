@@ -56,6 +56,13 @@ impl Connection for MysqlConnection {
     type Backend = Mysql;
     type TransactionManager = AnsiTransactionManager;
 
+    /// Establishes a new connection to the MySQL database
+    /// `database_url` may be enhanced by GET parameters
+    /// `mysql://[user[:password]@]host/database_name[?unix_socket=socket-path&ssl_mode=SSL_MODE*]`
+    ///
+    /// * `unix_socket` excepts the path to the unix socket
+    /// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
+    /// See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         use crate::result::ConnectionError::CouldntSetupConfiguration;
 
