@@ -48,6 +48,10 @@ impl RawConnection {
         let unix_socket = connection_options.unix_socket();
         let client_flags = connection_options.client_flags();
 
+        if let Some(ssl_mode) = connection_options.ssl_mode() {
+            self.set_ssl_mode(ssl_mode)
+        }
+
         unsafe {
             // Make sure you don't use the fake one!
             ffi::mysql_real_connect(
@@ -179,6 +183,19 @@ impl RawConnection {
     fn next_result(&self) -> QueryResult<()> {
         unsafe { ffi::mysql_next_result(self.0.as_ptr()) };
         self.did_an_error_occur()
+    }
+
+    fn set_ssl_mode(&self, ssl_mode: mysqlclient_sys::mysql_ssl_mode) {
+        let v = ssl_mode as u32;
+        let v_ptr: *const u32 = &v;
+        let n = ptr::NonNull::new(v_ptr as *mut u32).expect("NonNull::new failed");
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_MODE,
+                n.as_ptr() as *const std::ffi::c_void,
+            )
+        };
     }
 }
 
