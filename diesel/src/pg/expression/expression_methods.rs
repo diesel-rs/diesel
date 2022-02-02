@@ -1191,7 +1191,7 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #     run_test().unwrap();
     /// # }
     ///
-    /// # #[cfg(feature = "serde_json")]    
+    /// # #[cfg(feature = "serde_json")]
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -1202,29 +1202,29 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #         address JSONB NOT NULL
     /// #     )").unwrap();
     /// #
-    /// let santas_address: serde_json::Value = serde_json::from_str(r#"{
+    /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
     ///     "city": "North Pole",
     ///     "postcode": "99705",
     ///     "state": "Alaska"
-    /// }"#).unwrap();
+    /// });
     /// diesel::insert_into(contacts)
     ///     .values((name.eq("Claus"), address.eq(&santas_address)))
     ///     .execute(conn)?;
     ///
-    /// let to_concatenate: serde_json::Value = serde_json::from_str(r#"{
+    /// let to_concatenate: serde_json::Value = serde_json::json!({
     ///     "continent": "NA",
     ///     "planet": "Earth"
-    /// }"#).unwrap();
+    /// });
     ///
-    /// let final_address: serde_json::Value = serde_json::from_str(r#"{
+    /// let final_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
     ///     "city": "North Pole",
     ///     "postcode": "99705",
     ///     "state": "Alaska",
     ///     "continent": "NA",
     ///     "planet": "Earth"
-    /// }"#).unwrap();
+    /// });
     ///
     /// let final_address_db = contacts.select(address.concat(&to_concatenate)).get_result::<serde_json::Value>(conn)?;
     /// assert_eq!(final_address, final_address_db);
@@ -1246,11 +1246,11 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
 impl<T> PgJsonbExpressionMethods for T
 where
     T: Expression,
-    T::SqlType: JsonB,
+    T::SqlType: JsonbOrNullableJsonb,
 {
 }
 #[doc(hidden)]
 /// Marker trait used to implement `PgJsonbExpressionMethods` on the appropriate types.
-pub trait JsonB {}
-
-impl JsonB for Jsonb {}
+pub trait JsonbOrNullableJsonb {}
+impl JsonbOrNullableJsonb for Jsonb {}
+impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
