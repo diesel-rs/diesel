@@ -1,14 +1,15 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, InetOrCidr, RangeHelper, RangeOrNullableRange, TextOrNullableText,
+    ArrayOrNullableArray, InetOrCidr, JsonbOrNullableJsonb, RangeHelper, RangeOrNullableRange,
+    TextOrNullableText,
 };
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Desc};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
+use crate::sql_types::{Inet, Jsonb, SqlType, Text};
 use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
@@ -1128,6 +1129,7 @@ where
 }
 
 /// PostgreSQL specific methods present on JSONB expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `||` expression.
     ///
@@ -1516,14 +1518,9 @@ where
     T::SqlType: JsonbOrNullableJsonb,
 {
 }
-#[doc(hidden)]
-/// Marker trait used to implement `PgJsonbExpressionMethods` on the appropriate types.
-pub trait JsonbOrNullableJsonb {}
-impl JsonbOrNullableJsonb for Jsonb {}
-impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
 
 mod private {
-    use crate::sql_types::{Array, Cidr, Inet, Nullable, Range, SqlType, Text};
+    use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
 
     /// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
     /// types. Once coherence takes associated types into account, we can remove
@@ -1569,4 +1566,10 @@ mod private {
 
     impl<ST> RangeOrNullableRange for Range<ST> {}
     impl<ST> RangeOrNullableRange for Nullable<Range<ST>> {}
+
+    /// Marker trait used to implement `PgJsonbExpressionMethods` on the appropriate types.
+    pub trait JsonbOrNullableJsonb {}
+
+    impl JsonbOrNullableJsonb for Jsonb {}
+    impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
 }
