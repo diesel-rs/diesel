@@ -154,9 +154,9 @@ where
     /// Get the current lenght of the statement cache
     #[allow(unreachable_pub)]
     #[cfg(any(
-        test,
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        feature = "postgres"
+        feature = "postgres",
+        all(feature = "sqlite", test)
     ))]
     pub fn len(&self) -> usize {
         self.cache.len()

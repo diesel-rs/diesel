@@ -44,7 +44,10 @@ pub trait CommitErrorProcessor {
     feature = "mysql",
     feature = "sqlite"
 ))]
-pub fn default_process_commit_error(
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) fn default_process_commit_error(
     transaction_state: &super::ValidTransactionManagerStatus,
     error: Error,
 ) -> CommitErrorOutcome {
@@ -92,6 +95,11 @@ pub fn default_process_commit_error(
 }
 
 #[cfg(test)]
+#[cfg(any(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    feature = "mysql",
+    feature = "sqlite"
+))]
 mod tests {
     use super::CommitErrorOutcome;
     use crate::connection::ValidTransactionManagerStatus;

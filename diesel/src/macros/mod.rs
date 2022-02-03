@@ -334,8 +334,8 @@ macro_rules! __diesel_column {
 /// ```
 
 #[allow(deprecated)]
-#[cfg_attr(feature="huge-tables", deprecated="`huge-tables` is deprecated in favor of `64-column-tables`")]
-#[cfg_attr(feature="large-tables", deprecated="`large-tables` is deprecated in favor of `32-column-tables`")]
+//#[cfg_attr(feature="huge-tables", deprecated="`huge-tables` is deprecated in favor of `64-column-tables`")]
+//#[cfg_attr(feature="large-tables", deprecated="`large-tables` is deprecated in favor of `32-column-tables`")]
 #[macro_export]
 macro_rules! table {
     ($($tokens:tt)*) => {
