@@ -81,3 +81,7 @@ pub type DifferenceNet<Lhs, Rhs> =
 
 /// The return type of `lsh.concat(rhs)`
 pub type ConcatJsonb<Lhs, Rhs> = Grouped<super::operators::ConcatJsonb<Lhs, AsExprOf<Rhs, Jsonb>>>;
+
+/// The return type of `lsh.contains(rhs)`
+pub type HasKeyJsonb<Lhs, Rhs> =
+    Grouped<super::operators::HasKeyJsonb<Lhs, AsExprOf<Rhs, VarChar>>>;
