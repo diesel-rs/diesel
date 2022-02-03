@@ -39,21 +39,65 @@ pub(crate) use self::private::{
 /// Implementations of this trait can and should care about details of the wire
 /// protocol used to communicated with the database.
 ///
+/// Implementing support for a new backend is a complex topic and depends on the
+/// details how the newly implemented backend may communicate with diesel. As of this
+/// we cannot provide concrete examples here and only present a general outline of
+/// the required steps. Existing backend implementations provide a good starting point
+/// to see how certain things are solve for other backend implementations.
+///
 /// Types implementing `Backend` should generally be zero sized structs.
 ///
-/// The `Backend` trait allows you to:
+/// To implement the `Backend` trait you need to:
 ///
 /// * Specify how a query should be build from string parts by providing a [`QueryBuilder`]
 /// matching your backend
 /// * Specify the bind value format used by your database connection library by providing
-/// a [`BindCollector`] matching your backend
+/// a [`BindCollector`] matching your backend via
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    doc = "[`HasBindCollector`]"
+)]
+#[cfg_attr(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    doc = "`HasBindCollector`"
+)]
 /// * Specify  how values are receive from the database by providing a corresponding raw value
-/// definition via `HasRawValue`
+/// definition via
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    doc = "[`HasRawValue`]"
+)]
+#[cfg_attr(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    doc = "`HasRawValue`"
+)]
 /// * Control sql dialect specific parts of diesels query dsl implementation by providing a
-/// matching `SqlDialect` implementation
+/// matching [`SqlDialect`] implementation
+/// * Implement [`TypeMetadata`] to specify how your backend identifies types
+/// * Specify support for common datatypes by implementing [`HasSqlType`] for the following sql types:
+///     + [`SmallInt`](sql_types::SmallInt)
+///     + [`Integer`](sql_types::Integer)
+///     + [`BigInt`](sql_types::BigInt)
+///     + [`Float`](sql_types::Float)
+///     + [`Double`](sql_types::Double)
+///     + [`Text`](sql_types::Text)
+///     + [`Binary`](sql_types::Binary)
+///     + [`Date`](sql_types::Date)
+///     + [`Time`](sql_types::Time)
+///     + [`Timestamp`](sql_types::Timestamp)
 ///
-/// Additionally to the listed required trait bounds you may want to implement `DieselReserveSpecialization`
-/// to opt in existing wild card `QueryFragment` impls for large parts of the dsl.
+/// Additionally to the listed required trait bounds you may want to implement
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    doc = "[`DieselReserveSpecialization`]"
+)]
+#[cfg_attr(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    doc = "`DieselReserveSpecialization`"
+)]
+/// to opt in existing wild card [`QueryFragment`] impls for large parts of the dsl.
+///
+/// [`QueryFragment`]: crate::query_builder::QueryFragment
 pub trait Backend
 where
     Self: Sized + SqlDialect,
@@ -62,7 +106,6 @@ where
     Self: HasSqlType<sql_types::BigInt>,
     Self: HasSqlType<sql_types::Float>,
     Self: HasSqlType<sql_types::Double>,
-    Self: HasSqlType<sql_types::VarChar>,
     Self: HasSqlType<sql_types::Text>,
     Self: HasSqlType<sql_types::Binary>,
     Self: HasSqlType<sql_types::Date>,
@@ -71,12 +114,14 @@ where
     Self: for<'a> HasRawValue<'a>,
     Self: for<'a> HasBindCollector<'a>,
 {
-    /// The concrete `QueryBuilder` implementation for this backend.
+    /// The concrete [`QueryBuilder`] implementation for this backend.
     type QueryBuilder: QueryBuilder<Self>;
 }
 
 /// A helper type to get the raw representation of a database type given to
-/// `FromSql`. Equivalent to `<DB as Backend>::RawValue<'a>`.
+/// [`FromSql`]. Equivalent to `<DB as Backend>::RawValue<'a>`.
+///
+/// [`FromSql`]: crate::deserialize::FromSql
 pub type RawValue<'a, DB> = <DB as HasRawValue<'a>>::RawValue;
 
 /// A helper type to get the bind collector for a database backend.
@@ -111,16 +156,22 @@ pub trait SqlDialect: self::private::TrustedBackend {
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc = "implementation for `ReturningClause`"
     )]
+    ///
+    /// See [`sql_dialect::returning_clause`] for provided default implementations
     type ReturningClause;
     /// Configures how this backend supports `ON CONFLICT` clauses
     ///
     /// This allows backends to opt in `ON CONFLICT` clause support
+    ///
+    /// See [`sql_dialect::on_conflict_clause`] for provided default implementations
     type OnConflictClause;
     /// Configures how this backend handles the bare `DEFAULT` keyword for
     /// inserting the default value in a `INSERT INTO` `VALUES` clause
     ///
     /// This allows backends to opt in support for `DEFAULT` value expressions
     /// for insert statements
+    ///
+    /// See [`sql_dialect::default_keyword_for_insert`] for provided default implementations
     type InsertWithDefaultKeyword;
     /// Configures how this backend handles Batch insert statements
     ///
@@ -133,6 +184,8 @@ pub trait SqlDialect: self::private::TrustedBackend {
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc = "implementation for `BatchInsert`"
     )]
+    ///
+    /// See [`sql_dialect::batch_insert_support`] for provided default implementations
     type BatchInsertSupport;
     /// Configures how this backend handles the `DEFAULT VALUES` clause for
     /// insert statements.
@@ -146,6 +199,8 @@ pub trait SqlDialect: self::private::TrustedBackend {
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc = "implementation for `DefaultValues`"
     )]
+    ///
+    /// See [`sql_dialect::default_value_clause`] for provided default implementations
     type DefaultValueClauseForInsert;
     /// Configures how this backend handles empty `FROM` clauses for select statements.
     ///
@@ -158,6 +213,8 @@ pub trait SqlDialect: self::private::TrustedBackend {
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc = "implementation for `NoFromClause`"
     )]
+    ///
+    /// See [`sql_dialect::from_clause_syntax`] for provided default implementations
     type EmptyFromClauseSyntax;
     /// Configures how this backend handles `EXISTS()` expressions.
     ///
@@ -170,6 +227,8 @@ pub trait SqlDialect: self::private::TrustedBackend {
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc = "implementation for `Exists`"
     )]
+    ///
+    /// See [`sql_dialect::exists_syntax`] for provided default implementations
     type ExistsSyntax;
 
     /// Configures how this backend handles `IN()` and `NOT IN()` expressions.
@@ -185,6 +244,8 @@ pub trait SqlDialect: self::private::TrustedBackend {
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc = "implementations for `In`, `NotIn` and `Many`"
     )]
+    ///
+    /// See `[sql_dialect::array_comparison`] for provided default implementations
     type ArrayComparision;
 }
 
@@ -331,7 +392,7 @@ mod private {
 
     /// The raw representation of a database value given to `FromSql`.
     ///
-    /// This trait is separate from `Backend` to imitate `type RawValue<'a>`. It
+    /// This trait is separate from [`Backend`](super::Backend) to imitate `type RawValue<'a>`. It
     /// should only be referenced directly by implementors. Users of this type
     /// should instead use the [`RawValue`](super::RawValue) helper type instead.
     #[cfg_attr(
@@ -339,14 +400,16 @@ mod private {
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait HasRawValue<'a> {
-        /// The actual type given to `FromSql`, with lifetimes applied. This type
+        /// The actual type given to [`FromSql`], with lifetimes applied. This type
         /// should not be used directly. Use the [`RawValue`](super::RawValue)
         /// helper type instead.
+        ///
+        /// [`FromSql`]: crate::deserialize::FromSql
         type RawValue;
     }
 
     /// This is a marker trait which indicates that
-    /// diesel may specialize a certain [`QueryFragment`](crate::query_builder::QueryFragment)
+    /// diesel may specialize a certain [`QueryFragment`]
     /// impl in a later version. If you as a user encounter, where rustc
     /// suggests adding this a bound to a type implementing `Backend`
     /// consider adding the following bound instead
@@ -354,10 +417,12 @@ mod private {
     /// is likely mentioned by rustc as part of a `note: …`
     ///
     /// For any user implementing a custom backend: You likely want to implement
-    /// this trait for your custom backend type to opt in the existing `QueryFragment` impls in diesel.
+    /// this trait for your custom backend type to opt in the existing [`QueryFragment`] impls in diesel.
     /// As indicated by the `i-implement-a-third-party-backend-and-opt-into-breaking-changes` feature
-    /// diesel reserves the right to specialize any generic `QueryFragment` impl via
-    /// [`SqlDialect`](super::SqlDialect) in a later minor version release
+    /// diesel reserves the right to specialize any generic [`QueryFragment`](crate::query_builder::QueryFragment)
+    /// impl via [`SqlDialect`](super::SqlDialect) in a later minor version release
+    ///
+    /// [`QueryFragment`]: crate::query_builder::QueryFragment
     #[cfg_attr(
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
@@ -366,7 +431,7 @@ mod private {
 
     /// The bind collector type used to collect query binds for this backend
     ///
-    /// This trait is separate from `Backend` to imitate `type BindCollector<'a>`. It
+    /// This trait is separate from [`Backend`](super::Backend) to imitate `type BindCollector<'a>`. It
     /// should only be referenced directly by implementors. Users of this type
     /// should instead use the [`BindCollector`] helper type instead.
     ///
@@ -376,7 +441,8 @@ mod private {
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait HasBindCollector<'a>: TypeMetadata + Sized {
-        /// The concrete `BindCollector` implementation for this backend.
+        /// The concrete [`BindCollector`](crate::query_builder::bind_collector::BindCollector)
+        /// implementation for this backend.
         ///
         /// Most backends should use [`RawBytesBindCollector`].
         ///
