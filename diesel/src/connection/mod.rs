@@ -78,7 +78,14 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// wrapped connection implementation may contain a customized implementation.
 ///
 /// To allow the integration of your new connection type with other diesel features
-/// it may be useful to also implement [`R2D2Connection`](crate::r2d2::R2D2Connection)
+#[cfg_attr(
+    feature = "r2d2",
+    doc = "it may be useful to also implement [`R2D2Connection`](crate::r2d2::R2D2Connection)"
+)]
+#[cfg_attr(
+    not(feature = "r2d2"),
+    doc = "it may be useful to also implement `R2D2Connection`"
+)]
 /// and [`MigrationConnection`](crate::migration::MigrationConnection).
 ///
 /// ## Provide a new connection implementation for an existing backend
@@ -94,8 +101,23 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// * [`Connection::execute`]
 ///
 /// For performance reasons it may also be meaningful to cache already prepared statements.
-/// See [`StatementCache`](self::statement_cache::StatementCache)
-/// for a helper type to implement prepared statement caching. The [statement_cache](self::statement_cache)
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    doc = "See [`StatementCache`](self::statement_cache::StatementCache)"
+)]
+#[cfg_attr(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    doc = "See `StatementCache`"
+)]
+/// for a helper type to implement prepared statement caching.
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    doc = "The [statement_cache](self::statement_cache)"
+)]
+#[cfg_attr(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    doc = "The statement_cache"
+)]
 /// module documentation contains details about efficient prepared statement caching
 /// based on diesels query builder.
 ///
@@ -113,12 +135,26 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 ///  `Connection` in diesel can be reused.
 ///
 /// To allow the integration of your new connection type with other diesel features
-/// it may be useful to also implement [`R2D2Connection`](crate::r2d2::R2D2Connection)
+#[cfg_attr(
+    feature = "r2d2",
+    doc = "it may be useful to also implement [`R2D2Connection`](crate::r2d2::R2D2Connection)"
+)]
+#[cfg_attr(
+    not(feature = "r2d2"),
+    doc = "it may be useful to also implement `R2D2Connection`"
+)]
 /// and [`MigrationConnection`](crate::migration::MigrationConnection).
 ///
 /// The exact implementation of the `Connection` trait depends on the interface provided
 /// by the connection crate/library. A struct implementing `Connection` should
-/// likely contain a [`StatementCache`](self::statement_cache::StatementCache)
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    doc = "likely contain a [`StatementCache`](self::statement_cache::StatementCache)"
+)]
+#[cfg_attr(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    doc = "likely contain a `StatementCache`"
+)]
 /// to cache prepared statements efficiently.
 ///
 /// As implementations differ significantly between the supported backends

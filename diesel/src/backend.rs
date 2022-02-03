@@ -103,7 +103,14 @@ pub trait SqlDialect: self::private::TrustedBackend {
     ///
     /// This allows backends to opt in  `RETURNING` clause support and to
     /// provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
-    /// implementation for [`ReturningClause`](crate::query_builder::ReturningClause)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementation for [`ReturningClause`](crate::query_builder::ReturningClause)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementation for `ReturningClause`"
+    )]
     type ReturningClause;
     /// Configures how this backend supports `ON CONFLICT` clauses
     ///
@@ -118,31 +125,66 @@ pub trait SqlDialect: self::private::TrustedBackend {
     /// Configures how this backend handles Batch insert statements
     ///
     /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
-    /// implementation for [`BatchInsert`](crate::query_builder::BatchInsert)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementation for [`BatchInsert`](crate::query_builder::BatchInsert)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementation for `BatchInsert`"
+    )]
     type BatchInsertSupport;
     /// Configures how this backend handles the `DEFAULT VALUES` clause for
     /// insert statements.
     ///
     /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
-    /// implementation for [`DefaultValues`](crate::query_builder::DefaultValues)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementation for [`DefaultValues`](crate::query_builder::DefaultValues)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementation for `DefaultValues`"
+    )]
     type DefaultValueClauseForInsert;
     /// Configures how this backend handles empty `FROM` clauses for select statements.
     ///
     /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
-    /// implementation for [`NoFromClause`](crate::query_builder::NoFromClause)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementation for [`NoFromClause`](crate::query_builder::NoFromClause)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementation for `NoFromClause`"
+    )]
     type EmptyFromClauseSyntax;
     /// Configures how this backend handles `EXISTS()` expressions.
     ///
     /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
-    /// implementation for [`Exists`](crate::expression::exists::Exists)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementation for [`Exists`](crate::expression::exists::Exists)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementation for `Exists`"
+    )]
     type ExistsSyntax;
 
     /// Configures how this backend handles `IN()` and `NOT IN()` expressions.
     ///
     /// This allows backends to provide custom [`QueryFragment`](crate::query_builder::QueryFragment)
-    /// implementations for [`In`](crate::expression::array_comparison::In),
-    /// [`NotIn`](crate::expression::array_comparison::NotIn) and
-    /// [`Many`](crate::expression::array_comparison::Many)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementations for [`In`](crate::expression::array_comparison::In),
+    [`NotIn`](crate::expression::array_comparison::NotIn) and
+    [`Many`](crate::expression::array_comparison::Many)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementations for `In`, `NotIn` and `Many`"
+    )]
     type ArrayComparision;
 }
 
