@@ -4,7 +4,7 @@ use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Cidr, Inet, Nullable, Range, SqlType, Text};
+use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -1167,3 +1167,90 @@ impl InetOrCidr for Inet {}
 impl InetOrCidr for Cidr {}
 impl InetOrCidr for Nullable<Inet> {}
 impl InetOrCidr for Nullable<Cidr> {}
+
+/// PostgreSQL specific methods present on JSONB expressions.
+pub trait PgJsonbExpressionMethods: Expression + Sized {
+    /// Creates a PostgreSQL `||` expression.
+    ///
+    /// This operator concatenates two JSONB values and returns JSONB value
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
+    /// #     conn.execute("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").unwrap();
+    /// #
+    /// let santas_address: serde_json::Value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let to_concatenate: serde_json::Value = serde_json::json!({
+    ///     "continent": "NA",
+    ///     "planet": "Earth"
+    /// });
+    ///
+    /// let final_address: serde_json::Value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska",
+    ///     "continent": "NA",
+    ///     "planet": "Earth"
+    /// });
+    ///
+    /// let final_address_db = contacts.select(address.concat(&to_concatenate)).get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(final_address, final_address_db);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn concat<T>(self, other: T) -> dsl::ConcatJsonb<Self, T>
+    where
+        T: AsExpression<Jsonb>,
+    {
+        Grouped(ConcatJsonb::new(self, other.as_expression()))
+    }
+}
+
+impl<T> PgJsonbExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: JsonbOrNullableJsonb,
+{
+}
+#[doc(hidden)]
+/// Marker trait used to implement `PgJsonbExpressionMethods` on the appropriate types.
+pub trait JsonbOrNullableJsonb {}
+impl JsonbOrNullableJsonb for Jsonb {}
+impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
