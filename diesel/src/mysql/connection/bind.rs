@@ -7,7 +7,7 @@ use std::ptr::NonNull;
 
 use super::stmt::{MysqlFieldMetadata, Statement};
 use crate::mysql::connection::stmt::StatementMetadata;
-use crate::mysql::types::MysqlTime;
+use crate::mysql::types::date_and_time::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 

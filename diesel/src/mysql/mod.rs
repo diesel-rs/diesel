@@ -10,7 +10,7 @@ mod connection;
 mod value;
 
 mod query_builder;
-pub mod types;
+mod types;
 
 pub use self::backend::{Mysql, MysqlType};
 #[cfg(feature = "mysql")]
@@ -24,5 +24,11 @@ pub use self::value::{MysqlValue, NumericRepresentation};
 /// level types.
 pub mod data_types {
     #[doc(inline)]
-    pub use super::types::{MysqlTime, MysqlTimestampType};
+    pub use super::types::date_and_time::{MysqlTime, MysqlTimestampType};
+}
+
+/// MySQL specific sql types
+pub mod sql_types {
+    #[doc(inline)]
+    pub use super::types::{Datetime, Unsigned};
 }

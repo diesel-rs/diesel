@@ -2,15 +2,15 @@
 
 mod array;
 #[doc(hidden)]
-pub mod date_and_time;
+pub(in crate::pg) mod date_and_time;
 #[doc(hidden)]
-pub mod floats;
+pub(in crate::pg) mod floats;
 mod integers;
 #[cfg(feature = "serde_json")]
 mod json;
 mod mac_addr;
 #[doc(hidden)]
-pub mod money;
+pub(in crate::pg) mod money;
 #[cfg(feature = "network-address")]
 mod network_address;
 mod numeric;
@@ -27,7 +27,7 @@ pub mod sql_types {
     use crate::query_builder::QueryId;
     use crate::sql_types::SqlType;
 
-    /// The `OID` SQL type. This is a PostgreSQL specific type.
+    /// The [`OID`] SQL type. This is a PostgreSQL specific type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -40,12 +40,13 @@ pub mod sql_types {
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [`u32`]: https://doc.rust-lang.org/nightly/std/primitive.u32.html
+    /// [`OID`]: https://www.postgresql.org/docs/current/datatype-oid.html
     #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 26, array_oid = 1018))]
     pub struct Oid;
 
-    /// The "timestamp with time zone" SQL type, which PostgreSQL abbreviates
+    /// The ["timestamp with time zone" SQL type][tz], which PostgreSQL abbreviates
     /// to `timestamptz`.
     ///
     /// ### [`ToSql`] impls
@@ -63,6 +64,7 @@ pub mod sql_types {
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
+    /// [tz]: https://www.postgresql.org/docs/current/datatype-datetime.html
     #[cfg_attr(
         feature = "chrono",
         doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
@@ -81,7 +83,7 @@ pub mod sql_types {
     #[diesel(postgres_type(oid = 1184, array_oid = 1185))]
     pub struct Timestamptz;
 
-    /// The `Array` SQL type.
+    /// The [`Array`] SQL type.
     ///
     /// This wraps another type to represent a SQL array of that type.
     /// Multidimensional arrays are not supported,
@@ -100,11 +102,12 @@ pub mod sql_types {
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [Vec]: std::vec::Vec
     /// [slice]: https://doc.rust-lang.org/nightly/std/primitive.slice.html
+    /// [`Array`]: https://www.postgresql.org/docs/current/arrays.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[cfg(feature = "postgres_backend")]
     pub struct Array<ST: 'static>(ST);
 
-    /// The `Range` SQL type.
+    /// The [`Range`] SQL type.
     ///
     /// This wraps another type to represent a SQL range of that type.
     ///
@@ -119,6 +122,7 @@ pub mod sql_types {
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [bound]: std::collections::Bound
+    /// [`Range`]: https://www.postgresql.org/docs/current/rangetypes.html
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[cfg(feature = "postgres_backend")]
     pub struct Range<ST: 'static>(ST);
@@ -136,7 +140,7 @@ pub mod sql_types {
     #[doc(hidden)]
     pub type Tstzrange = Range<crate::sql_types::Timestamptz>;
 
-    /// The `Record` (a.k.a. tuple) SQL type.
+    /// The [`Record`] (a.k.a. tuple) SQL type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -173,6 +177,7 @@ pub mod sql_types {
     /// for details.
     ///
     /// [`WriteTuple`]: super::super::super::serialize::WriteTuple
+    /// [`Record`]: https://www.postgresql.org/docs/current/rowtypes.html
     #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 2249, array_oid = 2287))]
@@ -190,7 +195,7 @@ pub mod sql_types {
     #[cfg(feature = "postgres_backend")]
     pub type BigSerial = crate::sql_types::BigInt;
 
-    /// The `UUID` SQL type. This type can only be used with `feature = "uuid"`
+    /// The [`UUID`] SQL type. This type can only be used with `feature = "uuid"`
     ///
     /// ### [`ToSql`] impls
     ///
@@ -203,6 +208,7 @@ pub mod sql_types {
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     /// [Uuid]: https://docs.rs/uuid/*/uuid/struct.Uuid.html
+    /// [`UUID`]: https://www.postgresql.org/docs/current/datatype-uuid.html
     #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 2950, array_oid = 2951))]
@@ -215,7 +221,7 @@ pub mod sql_types {
     #[doc(hidden)]
     pub type Bpchar = crate::sql_types::VarChar;
 
-    /// The `jsonb` SQL type.  This type can only be used with `feature =
+    /// The [`jsonb`] SQL type.  This type can only be used with `feature =
     /// "serde_json"`
     ///
     /// `jsonb` offers [several advantages][adv] over regular JSON:
@@ -234,7 +240,7 @@ pub mod sql_types {
     /// > `jsonb`, unless there are quite specialized needs, such as legacy
     /// > assumptions about ordering of object keys.
     ///
-    /// [adv]: https://www.postgresql.org/docs/9.6/static/datatype-json.html
+    /// [adv]: https://www.postgresql.org/docs/current/static/datatype-json.html
     ///
     /// ### [`ToSql`] impls
     ///
@@ -246,6 +252,7 @@ pub mod sql_types {
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`jsonb`]: https://www.postgresql.org/docs/current/datatype-json.html
     #[cfg_attr(
         feature = "serde_json",
         doc = "[`serde_json::Value`]: serde_json::value::Value"
@@ -300,7 +307,7 @@ pub mod sql_types {
     #[diesel(postgres_type(oid = 3802, array_oid = 3807))]
     pub struct Jsonb;
 
-    /// The PostgreSQL [Money](https://www.postgresql.org/docs/9.1/static/datatype-money.html) type.
+    /// The PostgreSQL [Money](https://www.postgresql.org/docs/current/static/datatype-money.html) type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -349,7 +356,7 @@ pub mod sql_types {
     #[diesel(postgres_type(oid = 790, array_oid = 791))]
     pub struct Money;
 
-    /// The [`MACADDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type.
+    /// The [`MACADDR`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type.
     ///
     /// ### [`ToSql`] impls
     ///
@@ -398,7 +405,7 @@ pub mod sql_types {
     /// Alias for `MacAddr` to be able to use it with `infer_schema`.
     pub type Macaddr = MacAddr;
 
-    /// The [`INET`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    /// The [`INET`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
     /// ### [`ToSql`] impls
     ///
@@ -456,7 +463,7 @@ pub mod sql_types {
     #[diesel(postgres_type(oid = 869, array_oid = 1041))]
     pub struct Inet;
 
-    /// The [`CIDR`](https://www.postgresql.org/docs/9.6/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    /// The [`CIDR`](https://www.postgresql.org/docs/postgresql/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
     ///
     /// ### [`ToSql`] impls
     ///

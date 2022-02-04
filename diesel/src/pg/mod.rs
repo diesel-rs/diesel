@@ -5,7 +5,7 @@
 //! PostgreSQL, you may need to work with this module directly.
 
 pub mod expression;
-pub mod types;
+mod types;
 
 pub(crate) mod backend;
 #[cfg(feature = "postgres")]
@@ -58,3 +58,6 @@ pub mod data_types {
     pub use super::types::money::PgMoney;
     pub use super::types::money::PgMoney as Cents;
 }
+
+#[doc(inline)]
+pub use self::types::sql_types;

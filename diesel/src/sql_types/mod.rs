@@ -396,11 +396,11 @@ where
 
 #[doc(inline)]
 #[cfg(feature = "postgres_backend")]
-pub use crate::pg::types::sql_types::*;
+pub use crate::pg::sql_types::*;
 
 #[doc(inline)]
 #[cfg(feature = "mysql_backend")]
-pub use crate::mysql::types::{Datetime, Unsigned};
+pub use crate::mysql::sql_types::{Datetime, Unsigned};
 
 /// Indicates that a SQL type exists for a backend.
 ///

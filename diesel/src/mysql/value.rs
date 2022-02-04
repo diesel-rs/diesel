@@ -1,4 +1,4 @@
-use super::types::MysqlTime;
+use super::types::date_and_time::MysqlTime;
 use super::MysqlType;
 use crate::deserialize;
 use std::error::Error;

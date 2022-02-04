@@ -158,6 +158,10 @@ where
         feature = "postgres",
         all(feature = "sqlite", test)
     ))]
+    #[cfg_attr(
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+    )]
     pub fn len(&self) -> usize {
         self.cache.len()
     }
