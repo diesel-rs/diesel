@@ -1241,6 +1241,66 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     {
         Grouped(ConcatJsonb::new(self, other.as_expression()))
     }
+    /// Creates a PostgreSQL `?` expression.
+    ///
+    /// This operator checks if the right hand side string exists as a top-level key within the JSON
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
+    /// #     conn.execute("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").unwrap();
+    /// #
+    /// let santas_address: serde_json::Value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let key_exists = contacts.select(address.has_key("street")).get_result::<bool>(conn)?;
+    /// assert!(key_exists);
+    ///
+    /// let santas_with_address_postcode = contacts.select(id).filter(address.has_key("postcode")).get_result::<i32>(conn)?;
+    /// assert_eq!(1, santas_with_address_postcode);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn has_key<T>(self, other: T) -> dsl::HasKeyJsonb<Self, T>
+    where
+        T: AsExpression<VarChar>,
+    {
+        Grouped(HasKeyJsonb::new(self, other.as_expression()))
+    }
 }
 
 impl<T> PgJsonbExpressionMethods for T

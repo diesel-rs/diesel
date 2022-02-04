@@ -21,3 +21,4 @@ infix_operator!(AndNet, " & ", Inet, backend: Pg);
 infix_operator!(OrNet, " | ", Inet, backend: Pg);
 infix_operator!(DifferenceNet, " - ", Bigint, backend: Pg);
 infix_operator!(ConcatJsonb, " || ", Jsonb, backend: Pg);
+infix_operator!(HasKeyJsonb, " ? ", backend: Pg);
