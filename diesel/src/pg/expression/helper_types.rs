@@ -94,3 +94,11 @@ pub type HasAnyKeyJsonb<Lhs, Rhs> =
 /// The return type of `lsh.has_all_keys(rhs)`
 pub type HasAllKeysJsonb<Lhs, Rhs> =
     Grouped<super::operators::HasAllKeysJsonb<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;
+
+/// The return type of `lsh.contains(rhs)`
+pub type ContainsJsonb<Lhs, Rhs> =
+    Grouped<super::operators::ContainsJsonb<Lhs, AsExprOf<Rhs, Jsonb>>>;
+
+/// The return type of `lsh.is_contained_by(rhs)`
+pub type IsContainedByJsonb<Lhs, Rhs> =
+    Grouped<super::operators::IsContainedByJsonb<Lhs, AsExprOf<Rhs, Jsonb>>>;
