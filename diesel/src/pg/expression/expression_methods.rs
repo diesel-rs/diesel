@@ -1241,9 +1241,10 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     {
         Grouped(ConcatJsonb::new(self, other.as_expression()))
     }
+
     /// Creates a PostgreSQL `?` expression.
     ///
-    /// This operator checks if the right hand side string exists as a top-level key within the JSON
+    /// This operator checks if the right hand side string exists as a top-level key within the JSONB
     ///
     /// # Example
     ///
