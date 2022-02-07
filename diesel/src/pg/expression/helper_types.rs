@@ -1,5 +1,6 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
+use crate::pg::types::sql_types::Array;
 use crate::sql_types::{Inet, Jsonb, VarChar};
 
 /// The return type of `lhs.ilike(rhs)`
@@ -85,3 +86,11 @@ pub type ConcatJsonb<Lhs, Rhs> = Grouped<super::operators::ConcatJsonb<Lhs, AsEx
 /// The return type of `lsh.has_key(rhs)`
 pub type HasKeyJsonb<Lhs, Rhs> =
     Grouped<super::operators::HasKeyJsonb<Lhs, AsExprOf<Rhs, VarChar>>>;
+
+/// The return type of `lsh.has_any_key(rhs)`
+pub type HasAnyKeyJsonb<Lhs, Rhs> =
+    Grouped<super::operators::HasAnyKeyJsonb<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;
+
+/// The return type of `lsh.has_all_keys(rhs)`
+pub type HasAllKeysJsonb<Lhs, Rhs> =
+    Grouped<super::operators::HasAllKeysJsonb<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;
