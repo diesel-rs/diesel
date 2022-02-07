@@ -1302,6 +1302,7 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     {
         Grouped(HasKeyJsonb::new(self, other.as_expression()))
     }
+
     /// Creates a PostgreSQL `?|` expression.
     ///
     /// This operator checks if any of the strings in the right hand side array exists as top level key in the given JSONB
@@ -1362,6 +1363,7 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     {
         Grouped(HasAnyKeyJsonb::new(self, other.as_expression()))
     }
+
     /// Creates a PostgreSQL `?&` expression.
     ///
     /// This operator checks if all the strings in the right hand side array exist as top level keys in the given JSONB
@@ -1423,7 +1425,6 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
         Grouped(HasAllKeysJsonb::new(self, other.as_expression()))
     }
 }
-
 
 impl<T> PgJsonbExpressionMethods for T
 where
