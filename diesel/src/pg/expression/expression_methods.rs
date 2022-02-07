@@ -693,7 +693,7 @@ where
 pub trait PgNetExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `>>` expression.
     ///
-    /// This operator returns wether a subnet strictly contains another subnet or address.
+    /// This operator returns whether a subnet strictly contains another subnet or address.
     ///
     /// # Example
     ///
@@ -755,7 +755,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `>>=` expression.
     ///
-    /// This operator returns wether a subnet contains or is equal to another subnet.
+    /// This operator returns whether a subnet contains or is equal to another subnet.
     ///
     /// # Example
     ///
@@ -817,7 +817,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `<<` expression.
     ///
-    /// This operator returns wether a subnet or address is strictly contained by another subnet.
+    /// This operator returns whether a subnet or address is strictly contained by another subnet.
     ///
     /// # Example
     ///
@@ -880,7 +880,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `>>=` expression.
     ///
-    /// This operator returns wether a subnet is contained by or equal to another subnet.
+    /// This operator returns whether a subnet is contained by or equal to another subnet.
     ///
     /// # Example
     ///
@@ -938,7 +938,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `&&` expression.
     ///
-    /// This operator returns wether a subnet contains or is contained by another subnet.
+    /// This operator returns whether a subnet contains or is contained by another subnet.
     ///
     /// # Example
     ///
