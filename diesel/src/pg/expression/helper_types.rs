@@ -109,3 +109,7 @@ pub type ArrayIndex<Lhs, Rhs> = super::operators::ArrayIndex<Lhs, AsExprOf<Rhs, 
 /// The return type of `lsh.remove(rhs)`
 pub type RemoveFromJsonb<Lhs, Rhs, St> =
     Grouped<super::operators::RemoveFromJsonb<Lhs, AsExprOf<Rhs, St>>>;
+
+/// The return type of `lsh.retrieve_as_object(rhs)`
+pub type RetrieveAsObjectJsonb<Lhs, Rhs, ST> =
+    Grouped<super::operators::RetrieveAsObjectJsonb<Lhs, AsExprOf<Rhs, ST>>>;

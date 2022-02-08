@@ -273,7 +273,15 @@ macro_rules! __diesel_infix_operator {
             backend_ty = DB,
         );
     };
-
+    ($name:ident, $operator:expr, __diesel_internal_SameResultAsInput, backend: $backend:ty) => {
+        $crate::__diesel_infix_operator!(
+            name = $name,
+            operator = $operator,
+            return_ty = (<T as $crate::expression::Expression>::SqlType),
+            backend_ty_params = (),
+            backend_ty = $backend,
+        );
+    };
     ($name:ident, $operator:expr, ConstantNullability $($return_ty:tt)::*, backend: $backend:ty) => {
         $crate::__diesel_infix_operator!(
             name = $name,
