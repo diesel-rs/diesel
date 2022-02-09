@@ -1424,6 +1424,131 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     {
         Grouped(HasAllKeysJsonb::new(self, other.as_expression()))
     }
+
+    /// Creates a PostgreSQL `@>` expression.
+    ///
+    /// This operator checks whether left hand side JSONB value contains right hand side JSONB value
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
+    /// #     conn.execute("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").unwrap();
+    /// #
+    /// let easter_bunny_address: serde_json::Value = serde_json::json!({
+    ///     "street": "123 Carrot Road",
+    ///     "province": "Easter Island",
+    ///     "region": "Valparaíso",
+    ///     "country": "Chile",
+    ///     "postcode": "88888",
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Bunny"), address.eq(&easter_bunny_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let country_chile: serde_json::Value = serde_json::json!({"country": "Chile"});
+    /// let contains_country_chile = contacts.select(address.contains(&country_chile)).get_result::<bool>(conn)?;
+    /// assert!(contains_country_chile);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn contains<T>(self, other: T) -> dsl::ContainsJsonb<Self, T>
+    where
+        T: AsExpression<Jsonb>,
+    {
+        Grouped(ContainsJsonb::new(self, other.as_expression()))
+    }
+
+    /// Creates a PostgreSQL `<@` expression.
+    ///
+    /// This operator checks whether left hand side JSONB value is contained by right hand side JSON value.
+    /// `foo.contains(bar)` is the same as `bar.is_contained_by(foo)`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
+    /// #     conn.execute("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").unwrap();
+    /// #
+    /// let partial_easter_bunny_address: serde_json::Value = serde_json::json!({
+    ///     "street": "123 Carrot Road",
+    ///     "country": "Chile",
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Bunny"), address.eq(&partial_easter_bunny_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let full_easter_bunny_address: serde_json::Value = serde_json::json!({
+    ///     "street": "123 Carrot Road",
+    ///     "province": "Easter Island",
+    ///     "region": "Valparaíso",
+    ///     "country": "Chile",
+    ///     "postcode": "88888",
+    /// });
+    /// let address_is_contained_by = contacts.select(address.is_contained_by(&full_easter_bunny_address)).get_result::<bool>(conn)?;
+    /// assert!(address_is_contained_by);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
+    fn is_contained_by<T>(self, other: T) -> dsl::IsContainedByJsonb<Self, T>
+    where
+        T: AsExpression<Jsonb>,
+    {
+        Grouped(IsContainedByJsonb::new(self, other.as_expression()))
+    }
 }
 
 impl<T> PgJsonbExpressionMethods for T
