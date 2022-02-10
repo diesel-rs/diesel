@@ -395,6 +395,7 @@ jobs:
 
       - name: Setup environment
         run: |
+          echo "RUSTFLAGS=--cap-lints=warn" >> $GITHUB_ENV
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Test diesel-cli
