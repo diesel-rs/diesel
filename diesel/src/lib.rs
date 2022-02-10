@@ -117,6 +117,8 @@
 //! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
 //! mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
 //! mysql backend
+//! - `returning_clauses_for_sqlite_3_35`: This feature enables support for `RETURNING` clauses in the sqlite backend.
+//! Enabling this feature requires sqlite 3.35.0 or newer.
 //! - `32-column-tables`: This feature enables support for tables with up to 32 columns.
 //! This feature is enabled by default. Consider disabling this feature if you write a library crate
 //! providing general extensions for diesel or if you do not need to support tables with more than 16 columns
