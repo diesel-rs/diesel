@@ -37,7 +37,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<bad:
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
-   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<(users::columns::name, bad::columns::age)>>`
+   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not satisfied
   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53

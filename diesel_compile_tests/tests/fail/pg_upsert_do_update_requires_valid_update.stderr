@@ -1,5 +1,5 @@
-error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>`, but its trait bounds were not satisfied
-   --> $DIR/pg_upsert_do_update_requires_valid_update.rs:42:10
+error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>`, but its trait bounds were not satisfied
+   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:42:10
     |
 42  |         .execute(&mut connection);
     |          ^^^^^^^ method cannot be called on `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>` due to unsatisfied trait bounds
@@ -20,20 +20,28 @@ error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertS
             `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: Table`
             which is required by `&mut IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: diesel::RunQueryDsl<_>`
 
-error[E0271]: type mismatch resolving `<Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as AsChangeset>::Target == users::table`
-  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:49:10
+error[E0271]: type mismatch resolving `<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>> as AsChangeset>::Target == users::table`
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:49:10
    |
 49 |         .set(posts::title.eq("Sean"));
    |          ^^^ expected struct `posts::table`, found struct `users::table`
 
-error[E0277]: the trait bound `users::table: AppearsInFromClause<posts::table>` is not satisfied
-  --> $DIR/pg_upsert_do_update_requires_valid_update.rs:56:10
+error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:56:10
    |
 56 |         .set(name.eq(posts::title));
-   |          ^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `users::table`
+   |          ^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = help: the following implementations were found:
-             <users::table as AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+   = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
+
+error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
+  --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:56:10
+   |
+56 |         .set(name.eq(posts::title));
+   |          ^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   |
+   = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
    = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
 

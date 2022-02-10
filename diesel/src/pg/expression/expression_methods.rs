@@ -9,7 +9,7 @@ use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Desc};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Inet, Jsonb, SqlType, Text};
+use crate::sql_types::{Array, Inet, Jsonb, SqlType, Text};
 use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
