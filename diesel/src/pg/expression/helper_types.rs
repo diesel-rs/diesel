@@ -105,3 +105,7 @@ pub type IsContainedByJsonb<Lhs, Rhs> =
 
 /// The return type of `lhs.index(rhs)`
 pub type ArrayIndex<Lhs, Rhs> = super::operators::ArrayIndex<Lhs, AsExprOf<Rhs, Integer>>;
+
+/// The return type of `lsh.remove(rhs)`
+pub type RemoveFromJsonb<Lhs, Rhs, St> =
+    Grouped<super::operators::RemoveFromJsonb<Lhs, AsExprOf<Rhs, St>>>;
