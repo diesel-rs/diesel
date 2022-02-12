@@ -26,3 +26,4 @@ infix_operator!(HasAnyKeyJsonb, " ?| ", backend: Pg);
 infix_operator!(HasAllKeysJsonb, " ?& ", backend: Pg);
 infix_operator!(ContainsJsonb, " @> ", backend: Pg);
 infix_operator!(IsContainedByJsonb, " <@ ", backend: Pg);
+infix_operator!(RemoveFromJsonb, " - ", Jsonb, backend: Pg);

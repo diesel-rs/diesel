@@ -102,3 +102,7 @@ pub type ContainsJsonb<Lhs, Rhs> =
 /// The return type of `lsh.is_contained_by(rhs)`
 pub type IsContainedByJsonb<Lhs, Rhs> =
     Grouped<super::operators::IsContainedByJsonb<Lhs, AsExprOf<Rhs, Jsonb>>>;
+
+/// The return type of `lsh.remove(rhs)`
+pub type RemoveFromJsonb<Lhs, Rhs, St> =
+    Grouped<super::operators::RemoveFromJsonb<Lhs, AsExprOf<Rhs, St>>>;
