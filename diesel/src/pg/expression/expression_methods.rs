@@ -4,7 +4,7 @@ use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text, Integer};
+use crate::sql_types::{Array, Cidr, Inet, Integer, Jsonb, Nullable, Range, SqlType, Text};
 
 /// PostgreSQL specific methods which are present on all expressions.
 pub trait PgExpressionMethods: Expression + Sized {
@@ -1628,18 +1628,18 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
     ///     .execute(conn)?;
     ///
-    /// let roberts_second_address_in_db = contacts
+    /// let roberts_address_in_db = contacts
     ///                             .filter(name.eq("Robert Downey Jr."))
     ///                             .select(address.remove::<diesel::sql_types::Integer, _>(1))
     ///                             .get_result::<serde_json::Value>(conn)?;
     ///
-    /// let roberts_second_address = serde_json::json!({
-    ///         "street": "Somewhere In Ny 251",
-    ///         "city": "New York",
-    ///         "postcode": "3213212",
-    ///         "state": "New York"
-    /// });
-    /// assert_eq!(roberts_second_address, roberts_second_address_in_db);
+    /// let roberts_first_address = serde_json::json!([{
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    /// }]);
+    /// assert_eq!(roberts_first_address, roberts_address_in_db);
     /// #     Ok(())
     /// # }
     /// # #[cfg(not(feature = "serde_json"))]
@@ -1667,7 +1667,6 @@ where
 pub trait JsonbOrNullableJsonb {}
 impl JsonbOrNullableJsonb for Jsonb {}
 impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
-
 
 #[doc(hidden)]
 /// Marker trait used to implement `PgAnyJsonExpressionMethods` on the appropriate types.
