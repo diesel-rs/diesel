@@ -76,6 +76,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for `RETURNING` expressions for Sqlite via the `returning_clauses_for_sqlite_3_35` feature
 
+* Added support for table aliasing via the `alias!` macro
+
 ### Removed
 
 * All previously deprecated items have been removed.
