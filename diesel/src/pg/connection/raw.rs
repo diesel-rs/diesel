@@ -98,6 +98,37 @@ impl RawConnection {
         );
         RawResult::new(ptr, self)
     }
+
+    pub fn transaction_status(&self) -> PgTransactionStatus {
+        unsafe { PQtransactionStatus(self.internal_connection.as_ptr()) }.into()
+    }
+}
+
+/// Represents the current in-transaction status of the connection
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum PgTransactionStatus {
+    /// Currently idle
+    Idle,
+    /// A command is in progress (sent to the server but not yet completed)
+    Active,
+    /// Idle, in a valid transaction block
+    InTransaction,
+    /// Idle, in a failed transaction block
+    InError,
+    /// Bad connection
+    Unknown,
+}
+
+impl From<PGTransactionStatusType> for PgTransactionStatus {
+    fn from(trans_status_type: PGTransactionStatusType) -> Self {
+        match trans_status_type {
+            PGTransactionStatusType::PQTRANS_IDLE => PgTransactionStatus::Idle,
+            PGTransactionStatusType::PQTRANS_ACTIVE => PgTransactionStatus::Active,
+            PGTransactionStatusType::PQTRANS_INTRANS => PgTransactionStatus::InTransaction,
+            PGTransactionStatusType::PQTRANS_INERROR => PgTransactionStatus::InError,
+            PGTransactionStatusType::PQTRANS_UNKNOWN => PgTransactionStatus::Unknown,
+        }
+    }
 }
 
 pub type NoticeProcessor = extern "C" fn(arg: *mut libc::c_void, message: *const libc::c_char);

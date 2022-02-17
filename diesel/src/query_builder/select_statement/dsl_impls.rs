@@ -264,9 +264,10 @@ where
 impl<ST, F, S, D, W, O, LOf, G, H, LC, Expr> OrderDsl<Expr>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
-    Expr: AppearsOnTable<F> + ValidOrderingForDistinct<D>,
+    Expr: AppearsOnTable<F>,
     Self: SelectQuery<SqlType = ST>,
     SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, H, LC>: SelectQuery<SqlType = ST>,
+    OrderClause<Expr>: ValidOrderingForDistinct<D>,
 {
     type Output = SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, H, LC>;
 

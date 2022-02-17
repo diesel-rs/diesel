@@ -8,6 +8,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Added
 
+* `MysqlConnection::establish` is able to initiate SSL connection. The database URL should contain `ssl_mode` parameter with a value of the [MySQL client command option `--ssl-mode`](https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode) if desired.
+
 * `Connection` and `SimpleConnection` traits are implemented for a broader range
   of `r2d2::PooledConnection<M>` types when the `r2d2` feature is enabled.
 
@@ -72,13 +74,15 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for all the derive attributes being inside `#[diesel(...)]`
 
+* Added support for `RETURNING` expressions for Sqlite via the `returning_clauses_for_sqlite_3_35` feature
+
 ### Removed
 
 * All previously deprecated items have been removed.
 * Support for `uuid` version < 0.7.0 has been removed.
 * Support for `bigdecimal` < 0.0.13 has been removed.
 * Support for `pq-sys` < 0.4.0 has been removed.
-* Support for `mysqlclient-sys` < 0.2.0 has been removed.
+* Support for `mysqlclient-sys` < 0.2.5 has been removed.
 * Support for `time` types has been removed.
 * Support for `chrono` < 0.4.19 has been removed.
 * The `NonNull` trait for sql types has been removed in favour of the new `SqlType` trait.
@@ -87,6 +91,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   arguments. See [the migration guide][2-0-migration] for more details.
 * Support for `barrel` based migrations has been removed for now. We are happy to
   add this support back as soon as `barrel` integrates with our new migration framework.
+* Deprecated bash completions command (`diesel bash-completions`) has been removed.
+  Use `diesel completions <shell>` instead.
 
 ### Changed
 
@@ -103,7 +109,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   you are implementing `HasSqlType` for `Mysql` manually, you may need to adjust
   your implementation to fully use the new unsigned variants in `MysqlType`
 
-* The minimal officially supported rustc version is now 1.51.0
+* The minimal officially supported rustc version is now 1.54.0
 
 * The `RawValue` types for the `Mysql` and `Postgresql` backend where changed
   from `[u8]` to distinct opaque types. If you used the concrete `RawValue` type
@@ -192,6 +198,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
   copying the value itself. This is useful for database backends like sqlite where you can directly share a buffer
   with the database. Beside of the changed signature, existing impls of this trait should remain unchanged in almost 
   all cases.
+
+* The minimal supported version of libsqlite3-sys is now 0.17.2.
 
 ### Fixed
 

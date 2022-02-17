@@ -21,6 +21,12 @@ fn main() {
     // verify that we could use distinct on with an order clause that contains also a different column
     let _ = users::table.order_by((users::name, users::id)).distinct_on(users::name);
 
+    // verify that we could use distinct on with a select expression and an order clause that contains a different column
+    let _ = users::table
+        .distinct_on(users::id)
+        .select(users::id)
+        .order_by((users::id, users::name));
+
     // verify that this works also with `then_order_by`
     let _ = users::table
         .order_by(users::name)
@@ -44,7 +50,7 @@ fn main() {
         .into_boxed();
 
     // compile fail section
-    // 
+    //
     // we do not allow queries with order clauses that does not contain the distinct value
     let _ = users::table.order_by(users::id).distinct_on(users::name);
 

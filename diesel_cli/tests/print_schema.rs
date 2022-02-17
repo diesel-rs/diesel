@@ -198,6 +198,18 @@ fn print_schema_specifying_schema_name_with_custom_type() {
     )
 }
 
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_generated_columns() {
+    test_print_schema("print_schema_generated_columns", vec![])
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_generated_columns_with_generated_always() {
+    test_print_schema("print_schema_generated_columns_generated_always", vec![])
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

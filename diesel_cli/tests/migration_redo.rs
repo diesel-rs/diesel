@@ -337,7 +337,7 @@ fn migration_redo_n_with_a_string_should_throw_an_error() {
     assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
 
     assert!(
-        result.stderr() == "error: Invalid value for '--number <REDO_NUMBER>': infinite isn't a positive integer.\n",
+        result.stderr() == "error: Invalid value for '--number <REDO_NUMBER>': infinite isn't a positive integer.\n\nFor more information try --help\n",
         "Unexpected stderr : {}",
         result.stderr()
     );

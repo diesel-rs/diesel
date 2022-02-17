@@ -151,7 +151,7 @@ fn field_ty_serialize_as(
     let column_name = field.column_name();
 
     if treat_none_as_default_value {
-        let inner_ty = inner_of_option_ty(&ty);
+        let inner_ty = inner_of_option_ty(ty);
 
         quote!(
             std::option::Option<diesel::dsl::Eq<
@@ -180,7 +180,7 @@ fn field_expr_serialize_as(
     let column = quote!(#table_name::#column_name);
 
     if treat_none_as_default_value {
-        if is_option_ty(&ty) {
+        if is_option_ty(ty) {
             quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x))))
         } else {
             quote!(std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name))))

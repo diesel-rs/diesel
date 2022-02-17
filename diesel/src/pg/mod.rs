@@ -9,7 +9,7 @@ pub mod types;
 
 pub(crate) mod backend;
 #[cfg(feature = "postgres")]
-mod connection;
+pub(crate) mod connection;
 mod metadata_lookup;
 pub(crate) mod query_builder;
 pub(crate) mod serialize;

@@ -54,7 +54,10 @@ impl TypeMetadata for Sqlite {
 }
 
 impl SqlDialect for Sqlite {
+    #[cfg(not(feature = "returning_clauses_for_sqlite_3_35"))]
     type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
+    #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
+    type ReturningClause = sql_dialect::returning_clause::PgLikeReturningClause;
 
     type OnConflictClause = SqliteOnConflictClaues;
 

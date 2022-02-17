@@ -12,11 +12,11 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
            and 2 others
    = note: required because of the requirements on the impl of `DistinctOnDsl<posts::columns::id>` for `users::table`
 
-error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text): diesel::sql_types::SingleValue` is not satisfied
+error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text): SingleValue` is not satisfied
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:25:18
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
-   |                  ^^^^^^^^^^^ the trait `diesel::sql_types::SingleValue` is not implemented for `(diesel::sql_types::Text, diesel::sql_types::Text)`
+   |                  ^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Text, diesel::sql_types::Text)`
    |
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
 

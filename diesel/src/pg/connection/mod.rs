@@ -9,9 +9,10 @@ use std::ffi::CString;
 use std::os::raw as libc;
 
 use self::cursor::*;
-use self::raw::RawConnection;
+use self::raw::{PgTransactionStatus, RawConnection};
 use self::result::PgResult;
 use self::stmt::Statement;
+use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
@@ -46,6 +47,67 @@ impl SimpleConnection for PgConnection {
 impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection {
     type Cursor = Cursor;
     type Row = self::row::PgRow;
+}
+
+impl CommitErrorProcessor for PgConnection {
+    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
+        let transaction_depth = match self.transaction_state.status.transaction_depth() {
+            Ok(d) => d,
+            Err(e) => return CommitErrorOutcome::Throw(e),
+        };
+        let transaction_status = self.raw_connection.transaction_status();
+        if transaction_status == PgTransactionStatus::Unknown {
+            return CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error);
+        }
+        if matches!(
+            error,
+            Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
+        ) {
+            return CommitErrorOutcome::Throw(error);
+        }
+        if let Some(transaction_depth) = transaction_depth {
+            match error {
+                Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
+                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
+                    if transaction_depth.get() == 1 =>
+                {
+                    CommitErrorOutcome::RollbackAndThrow(error)
+                }
+                Error::DatabaseError(DatabaseErrorKind::Unknown, _)
+                    if transaction_status == PgTransactionStatus::InError
+                        && transaction_depth.get() > 1 =>
+                {
+                    CommitErrorOutcome::RollbackAndThrow(error)
+                }
+                Error::AlreadyInTransaction
+                | Error::DatabaseError(DatabaseErrorKind::CheckViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
+                | Error::DatabaseError(DatabaseErrorKind::ForeignKeyViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::NotNullViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::UnableToSendCommand, _)
+                | Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)
+                | Error::DatabaseError(DatabaseErrorKind::Unknown, _)
+                | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
+                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
+                | Error::DeserializationError(_)
+                | Error::InvalidCString(_)
+                | Error::NotFound
+                | Error::QueryBuilderError(_)
+                | Error::RollbackError(_)
+                | Error::NotInTransaction
+                | Error::RollbackTransaction
+                | Error::SerializationError(_)
+                | Error::BrokenTransaction
+                | Error::CommitTransactionFailed { .. } => CommitErrorOutcome::Throw(error),
+            }
+        } else {
+            unreachable!(
+                "Calling commit_error_processor outside of a transaction is implementation error.\
+                 If you ever see this error message outside implementing a custom transaction manager\
+                 please open a new issue at diesels issue tracker."
+            )
+        }
+    }
 }
 
 impl Connection for PgConnection {
@@ -110,6 +172,21 @@ impl Connection for PgConnection {
 impl GetPgMetadataCache for PgConnection {
     fn get_metadata_cache(&mut self) -> &mut PgMetadataCache {
         &mut self.metadata_cache
+    }
+}
+
+#[cfg(feature = "r2d2")]
+impl crate::r2d2::R2D2Connection for PgConnection {
+    fn ping(&mut self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
+    }
+
+    fn is_broken(&mut self) -> bool {
+        self.transaction_state
+            .status
+            .transaction_depth()
+            .map(|d| d.is_none())
+            .unwrap_or(true)
     }
 }
 

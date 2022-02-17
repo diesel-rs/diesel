@@ -263,8 +263,15 @@ jobs:
           command: test
           args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
 
+      - name: Run diesel_tests (beta)
+        if: matrix.run == 'beta'
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }},returning_clauses_for_sqlite_3_35"
+
       - name: Run diesel_tests
-        if: matrix.run != 'nightly'
+        if: matrix.run == 'stable'
         uses: actions-rs/cargo@v1
         with:
           command: test
@@ -303,7 +310,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.51.0
+          toolchain: 1.54.0
           profile: minimal
           override: true
       - name: Cache cargo registry
@@ -332,7 +339,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.51.0
+          toolchain: 1.54.0
           profile: minimal
           components: clippy, rustfmt
           override: true
@@ -388,6 +395,7 @@ jobs:
 
       - name: Setup environment
         run: |
+          echo "RUSTFLAGS=--cap-lints=warn" >> $GITHUB_ENV
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Test diesel-cli
@@ -411,13 +419,13 @@ jobs:
 
 
   minimal_rust_version:
-    name: Check Minimal supported rust version (1.51.0)
+    name: Check Minimal supported rust version (1.54.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.51.0
+          toolchain: 1.54.0
           profile: minimal
           override: true
       - name: Cache cargo registry
@@ -435,7 +443,7 @@ jobs:
         run: |
           RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
 
-      - name: Check building with rust 1.51.0
+      - name: Check building with rust 1.54.0
         uses: actions-rs/cargo@v1
         with:
           command: check

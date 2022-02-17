@@ -97,9 +97,9 @@ where
 #[cfg(feature = "sqlite")]
 impl<ST> Queryable<ST, Sqlite> for ColumnInformation
 where
-    (i32, String, String, bool, Option<String>, bool): FromStaticSqlRow<ST, Sqlite>,
+    (i32, String, String, bool, Option<String>, bool, i32): FromStaticSqlRow<ST, Sqlite>,
 {
-    type Row = (i32, String, String, bool, Option<String>, bool);
+    type Row = (i32, String, String, bool, Option<String>, bool, i32);
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {
         Ok(ColumnInformation::new(row.1, row.2, None, !row.3))

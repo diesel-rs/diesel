@@ -8,6 +8,9 @@ use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
+use crate::connection::commit_error_processor::{
+    default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
+};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
@@ -37,10 +40,29 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Mysql> for MysqlConne
     type Row = self::stmt::iterator::MysqlRow;
 }
 
+impl CommitErrorProcessor for MysqlConnection {
+    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
+        let state = match self.transaction_state.status {
+            TransactionManagerStatus::InError => {
+                return CommitErrorOutcome::Throw(Error::BrokenTransaction)
+            }
+            TransactionManagerStatus::Valid(ref v) => v,
+        };
+        default_process_commit_error(state, error)
+    }
+}
+
 impl Connection for MysqlConnection {
     type Backend = Mysql;
     type TransactionManager = AnsiTransactionManager;
 
+    /// Establishes a new connection to the MySQL database
+    /// `database_url` may be enhanced by GET parameters
+    /// `mysql://[user[:password]@]host/database_name[?unix_socket=socket-path&ssl_mode=SSL_MODE*]`
+    ///
+    /// * `unix_socket` excepts the path to the unix socket
+    /// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
+    /// See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
     fn establish(database_url: &str) -> ConnectionResult<Self> {
         use crate::result::ConnectionError::CouldntSetupConfiguration;
 
@@ -97,6 +119,21 @@ impl Connection for MysqlConnection {
     #[doc(hidden)]
     fn transaction_state(&mut self) -> &mut AnsiTransactionManager {
         &mut self.transaction_state
+    }
+}
+
+#[cfg(feature = "r2d2")]
+impl crate::r2d2::R2D2Connection for MysqlConnection {
+    fn ping(&mut self) -> QueryResult<()> {
+        self.execute("SELECT 1").map(|_| ())
+    }
+
+    fn is_broken(&mut self) -> bool {
+        self.transaction_state
+            .status
+            .transaction_depth()
+            .map(|d| d.is_none())
+            .unwrap_or(true)
     }
 }
 

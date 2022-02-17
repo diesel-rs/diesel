@@ -69,21 +69,21 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} rust_postgres futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde"
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} rust_postgres futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde diesel-async diesel-async/${{matrix.backend}}"
 
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} tokio rusqlite futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/sqlite quaint/serde-support serde"
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} tokio rusqlite futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio"
 
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
         uses: actions-rs/cargo@v1
         with:
           command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} tokio rustorm rustorm/with-${{matrix.backend}} rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/mysql quaint/serde-support serde"
+          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}} sqlx-bench sqlx/${{matrix.backend}} tokio rustorm rustorm/with-${{matrix.backend}} rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-${{matrix.backend}} criterion/async_tokio quaint quaint/mysql quaint/serde-support serde diesel-async diesel-async/${{matrix.backend}}"
 
       - name: Push metrics
         env:
