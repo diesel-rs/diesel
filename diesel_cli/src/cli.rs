@@ -1,12 +1,12 @@
 use crate::validators::num::*;
-use clap::{App, AppSettings, Arg};
+use clap::{Arg, Command};
 use clap_complete::Shell;
 
 fn str_as_char(str: &str) -> char {
     str.chars().next().unwrap()
 }
 
-pub fn build_cli() -> App<'static> {
+pub fn build_cli() -> Command<'static> {
     let database_arg = Arg::new("DATABASE_URL")
         .long("database-url")
         .help(
@@ -16,15 +16,15 @@ pub fn build_cli() -> App<'static> {
         .global(true)
         .takes_value(true);
 
-    let migration_subcommand = App::new("migration")
+    let migration_subcommand = Command::new("migration")
         .about(
             "A group of commands for generating, running, and reverting \
              migrations.",
         )
         .arg(migration_dir_arg())
-        .subcommand(App::new("run").about("Runs all pending migrations."))
+        .subcommand(Command::new("run").about("Runs all pending migrations."))
         .subcommand(
-            App::new("revert")
+            Command::new("revert")
                 .about("Reverts the specified migrations.")
                 .arg(
                     Arg::new("REVERT_ALL")
@@ -50,7 +50,7 @@ pub fn build_cli() -> App<'static> {
                 ),
         )
         .subcommand(
-            App::new("redo")
+            Command::new("redo")
                 .about(
                     "Reverts and re-runs the latest migration. Useful \
                      for testing that a migration can in fact be reverted.",
@@ -84,12 +84,14 @@ pub fn build_cli() -> App<'static> {
                 ),
         )
         .subcommand(
-            App::new("list")
+            Command::new("list")
                 .about("Lists all available migrations, marking those that have been applied."),
         )
-        .subcommand(App::new("pending").about("Returns true if there are any pending migrations."))
         .subcommand(
-            App::new("generate")
+            Command::new("pending").about("Returns true if there are any pending migrations."),
+        )
+        .subcommand(
+            Command::new("generate")
                 .about(
                     "Generate a new migration with the given name, and \
                      the current timestamp as the version.",
@@ -118,33 +120,35 @@ pub fn build_cli() -> App<'static> {
                         .help("The format of the migration to be generated."),
                 ),
         )
-        .setting(AppSettings::SubcommandRequiredElseHelp);
+        .subcommand_required(true)
+        .arg_required_else_help(true);
 
-    let setup_subcommand = App::new("setup").arg(migration_dir_arg()).about(
+    let setup_subcommand = Command::new("setup").arg(migration_dir_arg()).about(
         "Creates the migrations directory, creates the database \
              specified in your DATABASE_URL, and runs existing migrations.",
     );
 
-    let database_subcommand = App::new("database")
+    let database_subcommand = Command::new("database")
         .alias("db")
         .arg(migration_dir_arg())
         .about("A group of commands for setting up and resetting your database.")
-        .subcommand(App::new("setup").about(
+        .subcommand(Command::new("setup").about(
             "Creates the database specified in your DATABASE_URL, \
              and then runs any existing migrations.",
         ))
-        .subcommand(App::new("reset").about(
+        .subcommand(Command::new("reset").about(
             "Resets your database by dropping the database specified \
              in your DATABASE_URL and then running `diesel database setup`.",
         ))
         .subcommand(
-            App::new("drop")
+            Command::new("drop")
                 .about("Drops the database specified in your DATABASE_URL.")
-                .setting(AppSettings::Hidden),
+                .hide(true),
         )
-        .setting(AppSettings::SubcommandRequiredElseHelp);
+        .subcommand_required(true)
+        .arg_required_else_help(true);
 
-    let generate_completions_subcommand = App::new("completions")
+    let generate_completions_subcommand = Command::new("completions")
         .about("Generate shell completion scripts for the diesel command.")
         .arg(
             Arg::new("SHELL")
@@ -153,7 +157,7 @@ pub fn build_cli() -> App<'static> {
                 .possible_values(Shell::possible_values()),
         );
 
-    let infer_schema_subcommand = App::new("print-schema")
+    let infer_schema_subcommand = Command::new("print-schema")
         .about("Print table definitions for database schema.")
         .arg(
             Arg::new("schema")
@@ -239,7 +243,7 @@ pub fn build_cli() -> App<'static> {
         )
         .global(true);
 
-    App::new("diesel")
+    Command::new("diesel")
         .version(env!("CARGO_PKG_VERSION"))
         .after_help(
             "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.",
@@ -252,7 +256,8 @@ pub fn build_cli() -> App<'static> {
         .subcommand(database_subcommand)
         .subcommand(generate_completions_subcommand)
         .subcommand(infer_schema_subcommand)
-        .setting(AppSettings::SubcommandRequiredElseHelp)
+        .subcommand_required(true)
+        .arg_required_else_help(true)
 }
 
 fn migration_dir_arg<'a>() -> Arg<'a> {
