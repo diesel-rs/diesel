@@ -1,19 +1,31 @@
 warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::eq_any` instead
-  --> $DIR/any_is_only_selectable_if_inner_expr_is_selectable.rs:30:34
+  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:30:34
    |
 30 |     let _ = stuff.filter(name.eq(any(more_stuff::names)))
    |                                  ^^^
    |
    = note: `#[warn(deprecated)]` on by default
 
-error[E0277]: the trait bound `stuff::table: AppearsInFromClause<more_stuff::table>` is not satisfied
-  --> $DIR/any_is_only_selectable_if_inner_expr_is_selectable.rs:31:10
+error[E0271]: type mismatch resolving `<stuff::table as AppearsInFromClause<more_stuff::table>>::Count == diesel::query_source::Once`
+  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:31:10
    |
 31 |         .load(&mut conn);
-   |          ^^^^ the trait `AppearsInFromClause<more_stuff::table>` is not implemented for `stuff::table`
+   |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = help: the following implementations were found:
-             <stuff::table as AppearsInFromClause<stuff::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<stuff::table>` for `more_stuff::columns::names`
+   = note: 3 redundant requirements hidden
+   = note: required because of the requirements on the impl of `AppearsOnTable<stuff::table>` for `Grouped<diesel::expression::operators::Eq<stuff::columns::name, diesel::pg::expression::array_comparison::Any<more_stuff::columns::names>>>`
+   = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<stuff::table>>` for `diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<stuff::columns::name, diesel::pg::expression::array_comparison::Any<more_stuff::columns::names>>>>`
+   = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<stuff::table>, DefaultSelectClause<FromClause<stuff::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<stuff::columns::name, diesel::pg::expression::array_comparison::Any<more_stuff::columns::names>>>>>`
+   = note: required because of the requirements on the impl of `LoadQuery<'_, _, _>` for `SelectStatement<FromClause<stuff::table>, DefaultSelectClause<FromClause<stuff::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<Grouped<diesel::expression::operators::Eq<stuff::columns::name, diesel::pg::expression::array_comparison::Any<more_stuff::columns::names>>>>>`
+
+error[E0277]: the trait bound `stuff::table: TableNotEqual<more_stuff::table>` is not satisfied
+  --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:31:10
+   |
+31 |         .load(&mut conn);
+   |          ^^^^ the trait `TableNotEqual<more_stuff::table>` is not implemented for `stuff::table`
+   |
+   = note: required because of the requirements on the impl of `AppearsInFromClause<more_stuff::table>` for `stuff::table`
    = note: required because of the requirements on the impl of `AppearsOnTable<stuff::table>` for `more_stuff::columns::names`
    = note: 3 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<stuff::table>` for `Grouped<diesel::expression::operators::Eq<stuff::columns::name, diesel::pg::expression::array_comparison::Any<more_stuff::columns::names>>>`

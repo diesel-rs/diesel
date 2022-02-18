@@ -765,6 +765,12 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
+            impl<DB> $crate::query_builder::QueryFragment<DB> for table where DB: $crate::backend::Backend {
+                fn walk_ast<'b>(&'b self, pass: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()> {
+                    <table as $crate::query_builder::nodes::StaticQueryFragment>::STATIC_COMPONENT.walk_ast(pass)
+                }
+            }
+
             $crate::__diesel_table_generate_static_query_fragment_for_table!($schema, table, $sql_name);
 
             impl $crate::query_builder::AsQuery for table {
@@ -809,6 +815,31 @@ macro_rules! __diesel_table_impl {
 
             impl $crate::query_source::AppearsInFromClause<table> for table {
                 type Count = $crate::query_source::Once;
+            }
+
+            // impl<S: AliasSource<Table=table>> AppearsInFromClause<table> for Alias<S>
+            impl<S> $crate::query_source::aliasing::AliasAppearsInFromClause<S, table> for table
+            where S: $crate::query_source::aliasing::AliasSource<Target=table>,
+            {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl<S> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<S>> for table
+            where S: $crate::query_source::aliasing::AliasSource,
+            {
+                type Count = $crate::query_source::Never;
+            }
+
+            impl<S, C> $crate::query_source::aliasing::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
+            where
+                S: $crate::query_source::aliasing::AliasSource<Target = table> + ::std::clone::Clone,
+                C: $crate::query_source::Column<Table = table>,
+            {
+                type Out = $crate::query_source::AliasedField<S, C>;
+
+                fn map(column: C, alias: &$crate::query_source::Alias<S>) -> Self::Out {
+                    alias.field(column)
+                }
             }
 
             impl $crate::query_source::AppearsInFromClause<table> for $crate::query_builder::NoFromClause {
@@ -862,6 +893,19 @@ macro_rules! __diesel_table_impl {
                 type OnClause = <$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
                 fn join_target(rhs: $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
                     let (_, on_clause) = $crate::query_builder::BoxedSelectStatement::join_target(table);
+                    (rhs, on_clause)
+                }
+            }
+
+            impl<S> $crate::JoinTo<$crate::query_source::Alias<S>> for table
+            where
+                $crate::query_source::Alias<S>: $crate::JoinTo<table>,
+            {
+                type FromClause = $crate::query_source::Alias<S>;
+                type OnClause = <$crate::query_source::Alias<S> as $crate::JoinTo<table>>::OnClause;
+
+                fn join_target(rhs: $crate::query_source::Alias<S>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::query_source::Alias::<S>::join_target(table);
                     (rhs, on_clause)
                 }
             }
@@ -1172,17 +1216,8 @@ macro_rules! joinable_inner {
 macro_rules! allow_tables_to_appear_in_same_query {
     ($left_mod:ident, $($right_mod:ident),+ $(,)*) => {
         $(
-            impl $crate::query_source::AppearsInFromClause<$left_mod::table>
-                for $right_mod::table
-            {
-                type Count = $crate::query_source::Never;
-            }
-
-            impl $crate::query_source::AppearsInFromClause<$right_mod::table>
-                for $left_mod::table
-            {
-                type Count = $crate::query_source::Never;
-            }
+            impl $crate::query_source::TableNotEqual<$left_mod::table> for $right_mod::table {}
+            impl $crate::query_source::TableNotEqual<$right_mod::table> for $left_mod::table {}
         )+
         $crate::allow_tables_to_appear_in_same_query!($($right_mod,)+);
     };

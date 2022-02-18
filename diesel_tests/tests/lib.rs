@@ -11,6 +11,7 @@ extern crate diesel_migrations;
 extern crate dotenv;
 extern crate quickcheck;
 
+mod alias;
 #[cfg(not(feature = "sqlite"))]
 mod annotations;
 mod associations;
