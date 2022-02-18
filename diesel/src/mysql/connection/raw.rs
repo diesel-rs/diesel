@@ -51,6 +51,9 @@ impl RawConnection {
         if let Some(ssl_mode) = connection_options.ssl_mode() {
             self.set_ssl_mode(ssl_mode)
         }
+        if let Some(ssl_ca) = connection_options.ssl_ca() {
+            self.set_ssl_ca(ssl_ca)
+        }
 
         unsafe {
             // Make sure you don't use the fake one!
@@ -194,6 +197,16 @@ impl RawConnection {
                 self.0.as_ptr(),
                 mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_MODE,
                 n.as_ptr() as *const std::ffi::c_void,
+            )
+        };
+    }
+
+    fn set_ssl_ca(&self, ssl_ca: &CStr) {
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_CA,
+                ssl_ca.as_ptr() as *const std::ffi::c_void,
             )
         };
     }
