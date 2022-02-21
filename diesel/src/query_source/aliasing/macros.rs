@@ -112,7 +112,7 @@ macro_rules! alias {
             }
 
             // impl AppearsInFromClause<Alias<$alias>> for Alias<$alias>
-            impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$($table)::+::table, $alias_ty, $alias_ty> for $($table)::+::table {
+            impl $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<$alias_ty, $($table)::+::table> for $alias_ty {
                 type Count = $crate::query_source::Once;
             }
         )*
@@ -135,13 +135,13 @@ macro_rules! __internal_alias_helper {
         $(
             $crate::static_cond!{if ($left_table_tt) == ($right_table_tt) {
                 $crate::static_cond!{if ($left_sql_name) != ($right_sql_name) {
-                    impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$left_table_ty, $right_alias, $left_alias>
-                        for $right_table_ty
+                    impl $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<$left_alias, $left_table_ty>
+                        for $right_alias
                     {
                         type Count = $crate::query_source::Never;
                     }
-                    impl $crate::query_source::aliasing::AliasAliasAppearsInFromClause<$right_table_ty, $left_alias, $right_alias>
-                        for $left_table_ty
+                    impl $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<$right_alias, $left_table_ty>
+                        for $left_alias
                     {
                         type Count = $crate::query_source::Never;
                     }

@@ -107,6 +107,19 @@ where
     }
 }
 
+#[doc(hidden)]
+/// This trait is used to allow external crates to implement
+/// `AppearsInFromClause<QS> for Alias<S>`
+///
+/// at the table level without running in conflicting impl issues
+///
+/// Implementing this at the table level (in the crate that defines the tables)
+/// does not result in conflicting impl issues because the table is the struct
+/// we're implementing on.
+pub trait AliasAppearsInFromClause<S, QS> {
+    /// Will be passed on to the `impl AppearsInFromClause<QS>`
+    type Count;
+}
 impl<S, QS> AppearsInFromClause<QS> for Alias<S>
 where
     S: AliasSource,
@@ -114,20 +127,16 @@ where
 {
     type Count = <S::Target as AliasAppearsInFromClause<S, QS>>::Count;
 }
-#[doc(hidden)]
-/// This trait is used to allow external crates to implement
-/// `AppearsInFromClause<QS> for Alias<S>`
-///
-/// without running in conflicting impl issues
-pub trait AliasAppearsInFromClause<S, QS> {
-    /// Will be passed on to the `impl AppearsInFromClause<QS>`
-    type Count;
-}
+
 #[doc(hidden)]
 /// This trait is used to allow external crates to implement
 /// `AppearsInFromClause<Alias<S2>> for Alias<S1>`
 ///
-/// without running in conflicting impl issues
+/// at the table level without running in conflicting impl issues
+///
+/// Implementing this at the table level (in the crate that defines the tables)
+/// does not result in conflicting impl issues because the tables are specified as both first
+/// argument of the trait and struct we're implementing on.
 pub trait AliasAliasAppearsInFromClause<T2, S1, S2> {
     /// Will be passed on to the `impl AppearsInFromClause<QS>`
     type Count;
@@ -138,6 +147,24 @@ where
     T1: AliasAliasAppearsInFromClause<S2::Target, S1, S2>,
 {
     type Count = <T1 as AliasAliasAppearsInFromClause<S2::Target, S1, S2>>::Count;
+}
+
+#[doc(hidden)]
+/// This trait is used to allow external crates to implement
+/// `AppearsInFromClause<Alias<S2>> for Alias<S1>`
+///
+/// at the alias level without running in conflicting impl issues
+///
+/// Implementing this at the alias level (in the crate that defines the aliases)
+/// does not result in conflicting impl issues because the aliases are specified as both first
+/// argument of the trait and struct we're implementing on.
+///
+/// The corresponding implementation of `AliasAliasAppearsInFromClause` for implementors of this
+/// trait is done at the table level, to avoid conflict with the implementation for distinct tables
+/// below.
+pub trait AliasAliasAppearsInFromClauseSameTable<S2, T> {
+    /// Will be passed on to the `impl AppearsInFromClause<QS>`
+    type Count;
 }
 
 // impl<S: AliasSource<Table=T1>> AppearsInFromClause<T2> for Alias<S>

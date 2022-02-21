@@ -9,7 +9,10 @@ mod field_alias_mapper;
 mod joins;
 mod macros;
 
-pub use alias::{Alias, AliasAliasAppearsInFromClause, AliasAppearsInFromClause};
+pub use alias::{
+    Alias, AliasAliasAppearsInFromClause, AliasAliasAppearsInFromClauseSameTable,
+    AliasAppearsInFromClause,
+};
 pub use aliased_field::AliasedField;
 pub use field_alias_mapper::{FieldAliasMapper, FieldAliasMapperAssociatedTypesDisjointnessTrick};
 
