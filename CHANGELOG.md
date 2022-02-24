@@ -248,7 +248,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Implementations of custom SQLite SQL functions now check for panics
 
-* `infer_schema!` now generates `Array<Nullable<ST>>` rather than `Array<ST>` for Postgres Array types. Existence of 
+* `diesel print-schema` now generates `Array<Nullable<ST>>` rather than `Array<ST>` for Postgres Array types. Existence of 
   `NULL` values in database arrays would previously result in deserialization errors. Non-nullable arrays are now opt
   in (by schema patching).
 
