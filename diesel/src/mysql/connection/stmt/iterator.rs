@@ -1,7 +1,7 @@
 use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
-use super::{OutputBinds, Statement, StatementMetadata};
+use super::{OutputBinds, Statement, StatementMetadata, StatementUse};
 use crate::connection::statement_cache::MaybeCached;
 use crate::mysql::{Mysql, MysqlType};
 use crate::result::QueryResult;
@@ -9,7 +9,7 @@ use crate::row::*;
 
 #[allow(missing_debug_implementations)]
 pub struct StatementIterator<'a> {
-    stmt: MaybeCached<'a, Statement>,
+    stmt: StatementUse<'a>,
     last_row: Rc<RefCell<PrivateMysqlRow>>,
     metadata: Rc<StatementMetadata>,
     len: usize,
@@ -17,14 +17,14 @@ pub struct StatementIterator<'a> {
 
 impl<'a> StatementIterator<'a> {
     pub fn from_stmt(
-        mut stmt: MaybeCached<'a, Statement>,
+        stmt: MaybeCached<'a, Statement>,
         types: &[Option<MysqlType>],
     ) -> QueryResult<Self> {
         let metadata = stmt.metadata()?;
 
         let mut output_binds = OutputBinds::from_output_types(types, &metadata);
 
-        stmt.execute_statement(&mut output_binds)?;
+        let mut stmt = stmt.execute_statement(&mut output_binds)?;
         let size = unsafe { stmt.result_size() }?;
 
         Ok(StatementIterator {

@@ -5,7 +5,8 @@ use std::ops::Index;
 use std::os::raw as libc;
 use std::ptr::NonNull;
 
-use super::stmt::{MysqlFieldMetadata, Statement};
+use super::stmt::MysqlFieldMetadata;
+use super::stmt::StatementUse;
 use crate::mysql::connection::stmt::StatementMetadata;
 use crate::mysql::types::date_and_time::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
@@ -63,7 +64,7 @@ impl OutputBinds {
         Self(Binds { data })
     }
 
-    pub(super) fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
+    pub(super) fn populate_dynamic_buffers(&mut self, stmt: &StatementUse<'_>) -> QueryResult<()> {
         for (i, data) in self.0.data.iter_mut().enumerate() {
             data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers
@@ -736,7 +737,9 @@ mod tests {
 
     use super::MysqlValue;
     use super::*;
+    use crate::connection::statement_cache::MaybeCached;
     use crate::deserialize::FromSql;
+    use crate::mysql::connection::stmt::Statement;
     use crate::prelude::*;
     use crate::sql_types::*;
 
@@ -843,7 +846,7 @@ mod tests {
             ).execute(conn)
             .unwrap();
 
-        let mut stmt = conn.prepared_query(&crate::sql_query(
+        let stmt = conn.prepared_query(&crate::sql_query(
             "SELECT
                     tiny_int, small_int, medium_int, int_col,
                     big_int, unsigned_int, zero_fill_int,
@@ -859,7 +862,7 @@ mod tests {
         let metadata = stmt.metadata().unwrap();
         let mut output_binds =
             OutputBinds::from_output_types(&vec![None; metadata.fields().len()], &metadata);
-        stmt.execute_statement(&mut output_binds).unwrap();
+        let stmt = stmt.execute_statement(&mut output_binds).unwrap();
         stmt.populate_row_buffers(&mut output_binds).unwrap();
 
         let results: Vec<(BindData, &_)> = output_binds
@@ -1221,13 +1224,14 @@ mod tests {
         conn: &MysqlConnection,
         bind_tpe: impl Into<(ffi::enum_field_types, Flags)>,
     ) -> BindData {
-        let mut stmt: Statement = conn.raw_connection.prepare(query).unwrap();
+        let stmt: Statement = conn.raw_connection.prepare(query).unwrap();
+        let stmt = MaybeCached::CannotCache(stmt);
 
         let bind = BindData::from_tpe_and_flags(bind_tpe.into());
 
         let mut binds = OutputBinds(Binds { data: vec![bind] });
 
-        stmt.execute_statement(&mut binds).unwrap();
+        let stmt = stmt.execute_statement(&mut binds).unwrap();
         stmt.populate_row_buffers(&mut binds).unwrap();
 
         binds.0.data.remove(0)
@@ -1277,6 +1281,7 @@ mod tests {
         });
         stmt.input_bind(binds).unwrap();
         stmt.did_an_error_occur().unwrap();
+        let stmt = MaybeCached::CannotCache(stmt);
         unsafe {
             stmt.execute().unwrap();
         }
