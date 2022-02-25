@@ -37,7 +37,7 @@
 /// diesel::alias!(schema::users as users_alias: UsersAlias);
 /// // or
 /// diesel::alias!{
-///     const USERS_ALIAS_2: Alias<UsersAlias2> = schema::users as users_alias_2;
+///     pub const USERS_ALIAS_2: Alias<UsersAlias2> = schema::users as users_alias_2;
 /// }
 ///
 /// fn some_function_that_returns_a_query_fragment(
@@ -79,23 +79,23 @@ macro_rules! alias {
     ($($($table: ident)::+ as $alias_name: ident: $alias_ty: ident),* $(,)?) => {
         $crate::alias! {
             $(
-                const $alias_name: Alias<$alias_ty> = $($table)::+ as $alias_name;
+                pub const $alias_name: Alias<$alias_ty> = $($table)::+ as $alias_name;
             )*
         }
     };
-    ($(const $const_name: ident: Alias<$alias_ty: ident> = $($table: ident)::+ as $alias_sql_name: ident);* $(;)?) => {
-        $crate::alias!(NoConst $($($table)::+ as $alias_sql_name: $alias_ty,)*);
+    ($($vis: vis const $const_name: ident: Alias<$alias_ty: ident> = $($table: ident)::+ as $alias_sql_name: ident);* $(;)?) => {
+        $crate::alias!(NoConst $($($table)::+ as $alias_sql_name: $vis $alias_ty,)*);
         $(
             #[allow(non_upper_case_globals)]
-            const $const_name: $crate::query_source::Alias::<$alias_ty> =
+            $vis const $const_name: $crate::query_source::Alias::<$alias_ty> =
                 $crate::query_source::Alias::new($alias_ty { table: $($table)::+::table });
         )*
     };
-    (NoConst $($($table: ident)::+ as $alias_sql_name: ident: $alias_ty: ident),* $(,)?) => {
+    (NoConst $($($table: ident)::+ as $alias_sql_name: ident: $vis: vis $alias_ty: ident),* $(,)?) => {
         $(
             #[allow(non_camel_case_types)]
             #[derive(Debug, Clone, Copy)]
-            struct $alias_ty {
+            $vis struct $alias_ty {
                 table: $($table)::+::table,
             }
 

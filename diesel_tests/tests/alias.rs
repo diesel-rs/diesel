@@ -160,3 +160,16 @@ fn boxed() {
         .unwrap();
     assert!(res.into_iter().all(|(a, (b, c))| a == b && a == c));
 }
+
+#[test]
+fn visibility() {
+    mod submodule {
+        use super::*;
+        alias! { users as user1: User1Alias }
+    }
+    let _user1 = submodule::user1;
+
+    alias! {
+        const USERS_ALIAS_2: Alias<UsersAlias2> = users as users_alias_2;
+    }
+}
