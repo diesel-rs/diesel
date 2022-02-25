@@ -824,6 +824,17 @@ macro_rules! __diesel_table_impl {
                 type Count = $crate::query_source::Never;
             }
 
+            // impl<S1: AliasSource<Table=table>, S2: AliasSource<Table=table>> AppearsInFromClause<Alias<S1>> for Alias<S2>
+            // Those are specified by the `alias!` macro, but this impl will allow it to implement this trait even in downstream
+            // crates from the schema
+            impl<S1, S2> $crate::query_source::aliasing::AliasAliasAppearsInFromClause<table, S2, S1> for table
+            where S1: $crate::query_source::aliasing::AliasSource<Target=table>,
+                  S2: $crate::query_source::aliasing::AliasSource<Target=table>,
+                  S1: $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<S2, table>,
+            {
+                type Count = <S1 as $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<S2, table>>::Count;
+            }
+
             impl<S> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<S>> for table
             where S: $crate::query_source::aliasing::AliasSource,
             {
