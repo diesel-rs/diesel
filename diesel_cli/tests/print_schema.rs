@@ -210,6 +210,12 @@ fn print_schema_generated_columns_with_generated_always() {
     test_print_schema("print_schema_generated_columns_generated_always", vec![])
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_array_type() {
+    test_print_schema("print_schema_array_type", vec![])
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]

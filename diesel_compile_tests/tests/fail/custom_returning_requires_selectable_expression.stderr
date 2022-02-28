@@ -27,14 +27,25 @@ error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::ta
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<(users::columns::name, bad::columns::age)>>`
 
-error[E0277]: the trait bound `users::table: AppearsInFromClause<bad::table>` is not satisfied
+error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<bad::table>>::Count == diesel::query_source::Once`
   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
    |
 33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
-   |                                                     ^^^^^^^^^ the trait `AppearsInFromClause<bad::table>` is not implemented for `users::table`
+   |                                                     ^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = help: the following implementations were found:
-             <users::table as AppearsInFromClause<users::table>>
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
+   = note: 1 redundant requirements hidden
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
+   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
+   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::Insert, ReturningClause<(users::columns::name, bad::columns::age)>>`
+
+error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not satisfied
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
+   |
+33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+   |                                                     ^^^^^^^^^ the trait `TableNotEqual<bad::table>` is not implemented for `users::table`
+   |
+   = note: required because of the requirements on the impl of `AppearsInFromClause<bad::table>` for `users::table`
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`

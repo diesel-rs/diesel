@@ -22,3 +22,7 @@ infix_operator!(OrNet, " | ", Inet, backend: Pg);
 infix_operator!(DifferenceNet, " - ", Bigint, backend: Pg);
 infix_operator!(ConcatJsonb, " || ", Jsonb, backend: Pg);
 infix_operator!(HasKeyJsonb, " ? ", backend: Pg);
+infix_operator!(HasAnyKeyJsonb, " ?| ", backend: Pg);
+infix_operator!(HasAllKeysJsonb, " ?& ", backend: Pg);
+infix_operator!(ContainsJsonb, " @> ", backend: Pg);
+infix_operator!(IsContainedByJsonb, " <@ ", backend: Pg);

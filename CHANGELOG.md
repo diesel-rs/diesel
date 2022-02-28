@@ -78,6 +78,8 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added support for `RETURNING` expressions for Sqlite via the `returning_clauses_for_sqlite_3_35` feature
 
+* Added support for table aliasing via the `alias!` macro
+
 ### Removed
 
 * All previously deprecated items have been removed.
@@ -247,6 +249,10 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 * Queries containing a `distinct on` clause check now on compile time that a compatible order clause was set.
 
 * Implementations of custom SQLite SQL functions now check for panics
+
+* `diesel print-schema` now generates `Array<Nullable<ST>>` rather than `Array<ST>` for Postgres Array types. Existence of 
+  `NULL` values in database arrays would previously result in deserialization errors. Non-nullable arrays are now opt
+  in (by schema patching).
 
 ### Deprecated
 
