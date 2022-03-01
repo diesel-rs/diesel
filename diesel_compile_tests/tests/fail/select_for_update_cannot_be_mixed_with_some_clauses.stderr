@@ -90,7 +90,7 @@ error[E0277]: the trait bound `columns::id: SelectableExpression<SelectStatement
              <columns::id as SelectableExpression<JoinOn<Join, On>>>
              <columns::id as SelectableExpression<Only<users::table>>>
              <columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
            and 2 others
    = note: required because of the requirements on the impl of `DistinctOnDsl<columns::id>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::NoGroupByClause, diesel::query_builder::having_clause::NoHavingClause, diesel::query_builder::locking_clause::LockingClause>`
 

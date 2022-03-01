@@ -22,10 +22,10 @@ error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<post
 149 |         .select(UserWithEmbeddedPost::as_select())
     |          ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
     |
-    = note: required because of the requirements on the impl of `SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
+    = note: required because of the requirements on the impl of `SelectableExpression<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
     = note: 4 redundant requirements hidden
-    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:149:10
@@ -37,12 +37,12 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
-    = note: required because of the requirements on the impl of `SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
+    = note: required because of the requirements on the impl of `SelectableExpression<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
     = note: 4 redundant requirements hidden
-    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
 
 error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:149:10
@@ -54,12 +54,12 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::title as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
-    = note: required because of the requirements on the impl of `SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::title`
+    = note: required because of the requirements on the impl of `SelectableExpression<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::title`
     = note: 4 redundant requirements hidden
-    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
 
 error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
    --> tests/fail/selectable.rs:150:10
@@ -67,12 +67,12 @@ error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<post
 150 |         .load(&mut conn)
     |          ^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
     |
-    = note: required because of the requirements on the impl of `SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
+    = note: required because of the requirements on the impl of `SelectableExpression<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
     = note: 4 redundant requirements hidden
-    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
+    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:150:10
@@ -84,14 +84,14 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
-    = note: required because of the requirements on the impl of `SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
+    = note: required because of the requirements on the impl of `SelectableExpression<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
     = note: 4 redundant requirements hidden
-    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
+    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:150:10
@@ -103,14 +103,14 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::title as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
-    = note: required because of the requirements on the impl of `SelectableExpression<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::title`
+    = note: required because of the requirements on the impl of `SelectableExpression<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::title`
     = note: 4 redundant requirements hidden
-    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
+    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
 
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
    --> tests/fail/selectable.rs:157:10
@@ -125,7 +125,7 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::id`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
 
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::name>` is not satisfied
    --> tests/fail/selectable.rs:157:10
@@ -140,7 +140,7 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::name`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
 
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
    --> tests/fail/selectable.rs:158:10
@@ -155,8 +155,8 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::id`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
 
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::name>` is not satisfied
    --> tests/fail/selectable.rs:158:10
@@ -171,8 +171,8 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::name`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
    --> tests/fail/selectable.rs:164:10
@@ -186,7 +186,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(users::columns::id, users::columns::name, diesel::expression::count::count::count<diesel::sql_types::Integer, posts::columns::id>)`
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>`
-    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
+    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
    --> tests/fail/selectable.rs:165:10
@@ -200,8 +200,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(users::columns::id, users::columns::name, diesel::expression::count::count::count<diesel::sql_types::Integer, posts::columns::id>)`
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithPostCount>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>>`
+    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>>`
+    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithPostCount>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>>`
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:172:10
@@ -213,7 +213,7 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -230,7 +230,7 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::title as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -261,7 +261,7 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -279,7 +279,7 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::title as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -312,7 +312,7 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -329,7 +329,7 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::title as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -360,7 +360,7 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -378,7 +378,7 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::title as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -411,7 +411,7 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -427,7 +427,7 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::title as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -456,7 +456,7 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::id as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -474,7 +474,7 @@ error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
-              <posts::columns::title as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+              <posts::columns::title as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
             and 2 others
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
@@ -602,4 +602,4 @@ error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Conn
 210 |         .load(&mut conn)
     |          ^^^^ expected struct `Sqlite`, found struct `Pg`
     |
-    = note: required because of the requirements on the impl of `LoadQuery<'_, diesel::SqliteConnection, UserWithPostCount>` for `SelectStatement<FromClause<JoinOn<diesel::query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
+    = note: required because of the requirements on the impl of `LoadQuery<'_, diesel::SqliteConnection, UserWithPostCount>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`

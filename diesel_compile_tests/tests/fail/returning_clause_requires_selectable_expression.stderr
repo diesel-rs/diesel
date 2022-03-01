@@ -8,7 +8,7 @@ error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<
              <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
              <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
              <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <non_users::columns::noname as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
            and 2 others
 
 error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<users::table>` is not satisfied
@@ -21,7 +21,7 @@ error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<
              <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
              <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
              <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <non_users::columns::noname as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
            and 2 others
    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`
 
@@ -35,6 +35,6 @@ error[E0277]: the trait bound `non_users::columns::noname: SelectableExpression<
              <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
              <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
              <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <non_users::columns::noname as SelectableExpression<diesel::query_source::joins::Join<Left, Right, Inner>>>
+             <non_users::columns::noname as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
            and 2 others
    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<non_users::columns::noname>>`

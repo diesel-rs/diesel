@@ -42,16 +42,16 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, diesel::sql_types::Text,
 73 |         .inner_join(posts::table)
    |          ^^^^^^^^^^ the trait `Table` is not implemented for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`
    |
-   = note: required because of the requirements on the impl of `JoinTo<OnClauseWrapper<_, _>>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`
-   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<OnClauseWrapper<_, _>, Inner>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`
+   = note: required because of the requirements on the impl of `JoinTo<query_source::joins::OnClauseWrapper<_, _>>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`
+   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<query_source::joins::OnClauseWrapper<_, _>, Inner>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`
 
 error[E0308]: mismatched types
   --> tests/fail/boxed_queries_and_group_by.rs:73:21
    |
 73 |         .inner_join(posts::table)
-   |                     ^^^^^^^^^^^^ expected struct `OnClauseWrapper`, found struct `posts::table`
+   |                     ^^^^^^^^^^^^ expected struct `query_source::joins::OnClauseWrapper`, found struct `posts::table`
    |
-   = note: expected struct `OnClauseWrapper<_, _>`
+   = note: expected struct `query_source::joins::OnClauseWrapper<_, _>`
               found struct `posts::table`
 
 error[E0308]: mismatched types
