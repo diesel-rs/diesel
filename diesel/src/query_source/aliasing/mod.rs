@@ -9,11 +9,19 @@ mod field_alias_mapper;
 mod joins;
 mod macros;
 
+// This is reexported from the parent module
+#[allow(unreachable_pub)]
+pub use alias::Alias;
+// This is reexported from the parent module
+#[allow(unreachable_pub)]
+#[doc(hidden)] // This is used by the table macro
 pub use alias::{
-    Alias, AliasAliasAppearsInFromClause, AliasAliasAppearsInFromClauseSameTable,
-    AliasAppearsInFromClause,
+    AliasAliasAppearsInFromClause, AliasAliasAppearsInFromClauseSameTable, AliasAppearsInFromClause,
 };
+#[allow(unreachable_pub)]
 pub use aliased_field::AliasedField;
+#[allow(unreachable_pub)]
+#[doc(hidden)] // This is used by the table macro
 pub use field_alias_mapper::{FieldAliasMapper, FieldAliasMapperAssociatedTypesDisjointnessTrick};
 
 /// Types created by the `alias!` macro that serve to distinguish between aliases implement

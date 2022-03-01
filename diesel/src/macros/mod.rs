@@ -97,9 +97,9 @@ macro_rules! __diesel_column {
         }
 
         impl<Left, Right> $crate::SelectableExpression<
-                $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>,
+                $crate::internal::table_macro::Join<Left, Right, $crate::internal::table_macro::LeftOuter>,
         > for $column_name where
-            $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>>,
+            $column_name: $crate::AppearsOnTable<$crate::internal::table_macro::Join<Left, Right, $crate::internal::table_macro::LeftOuter>>,
             Self: $crate::SelectableExpression<Left>,
             // If our table is on the right side of this join, only
             // `Nullable<Self>` can be selected
@@ -109,9 +109,9 @@ macro_rules! __diesel_column {
         }
 
         impl<Left, Right> $crate::SelectableExpression<
-                $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>,
+                $crate::internal::table_macro::Join<Left, Right, $crate::internal::table_macro::Inner>,
         > for $column_name where
-            $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>>,
+            $column_name: $crate::AppearsOnTable<$crate::internal::table_macro::Join<Left, Right, $crate::internal::table_macro::Inner>>,
             Left: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
             Right: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
             (Left::Count, Right::Count): $crate::internal::table_macro::Pick<Left, Right>,
@@ -122,8 +122,8 @@ macro_rules! __diesel_column {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<Join, On> $crate::SelectableExpression<$crate::query_source::joins::JoinOn<Join, On>> for $column_name where
-            $column_name: $crate::SelectableExpression<Join> + $crate::AppearsOnTable<$crate::query_source::joins::JoinOn<Join, On>>,
+        impl<Join, On> $crate::SelectableExpression<$crate::internal::table_macro::JoinOn<Join, On>> for $column_name where
+            $column_name: $crate::SelectableExpression<Join> + $crate::AppearsOnTable<$crate::internal::table_macro::JoinOn<Join, On>>,
         {
         }
 
@@ -820,8 +820,8 @@ macro_rules! __diesel_table_impl {
             }
 
             // impl<S: AliasSource<Table=table>> AppearsInFromClause<table> for Alias<S>
-            impl<S> $crate::query_source::aliasing::AliasAppearsInFromClause<S, table> for table
-            where S: $crate::query_source::aliasing::AliasSource<Target=table>,
+            impl<S> $crate::internal::table_macro::AliasAppearsInFromClause<S, table> for table
+            where S: $crate::query_source::AliasSource<Target=table>,
             {
                 type Count = $crate::query_source::Never;
             }
@@ -829,23 +829,23 @@ macro_rules! __diesel_table_impl {
             // impl<S1: AliasSource<Table=table>, S2: AliasSource<Table=table>> AppearsInFromClause<Alias<S1>> for Alias<S2>
             // Those are specified by the `alias!` macro, but this impl will allow it to implement this trait even in downstream
             // crates from the schema
-            impl<S1, S2> $crate::query_source::aliasing::AliasAliasAppearsInFromClause<table, S2, S1> for table
-            where S1: $crate::query_source::aliasing::AliasSource<Target=table>,
-                  S2: $crate::query_source::aliasing::AliasSource<Target=table>,
-                  S1: $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<S2, table>,
+            impl<S1, S2> $crate::internal::table_macro::AliasAliasAppearsInFromClause<table, S2, S1> for table
+            where S1: $crate::query_source::AliasSource<Target=table>,
+                  S2: $crate::query_source::AliasSource<Target=table>,
+                  S1: $crate::internal::table_macro::AliasAliasAppearsInFromClauseSameTable<S2, table>,
             {
-                type Count = <S1 as $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<S2, table>>::Count;
+                type Count = <S1 as $crate::internal::table_macro::AliasAliasAppearsInFromClauseSameTable<S2, table>>::Count;
             }
 
             impl<S> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<S>> for table
-            where S: $crate::query_source::aliasing::AliasSource,
+            where S: $crate::query_source::AliasSource,
             {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<S, C> $crate::query_source::aliasing::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
+            impl<S, C> $crate::internal::table_macro::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
             where
-                S: $crate::query_source::aliasing::AliasSource<Target = table> + ::std::clone::Clone,
+                S: $crate::query_source::AliasSource<Target = table> + ::std::clone::Clone,
                 C: $crate::query_source::Column<Table = table>,
             {
                 type Out = $crate::query_source::AliasedField<S, C>;
@@ -859,28 +859,28 @@ macro_rules! __diesel_table_impl {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<Left, Right, Kind> $crate::JoinTo<$crate::query_source::joins::Join<Left, Right, Kind>> for table where
-                $crate::query_source::joins::Join<Left, Right, Kind>: $crate::JoinTo<table>,
+            impl<Left, Right, Kind> $crate::JoinTo<$crate::internal::table_macro::Join<Left, Right, Kind>> for table where
+                $crate::internal::table_macro::Join<Left, Right, Kind>: $crate::JoinTo<table>,
                 Left: $crate::query_source::QuerySource,
                 Right: $crate::query_source::QuerySource,
             {
-                type FromClause = $crate::query_source::joins::Join<Left, Right, Kind>;
-                type OnClause = <$crate::query_source::joins::Join<Left, Right, Kind> as $crate::JoinTo<table>>::OnClause;
+                type FromClause = $crate::internal::table_macro::Join<Left, Right, Kind>;
+                type OnClause = <$crate::internal::table_macro::Join<Left, Right, Kind> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::query_source::joins::Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_source::joins::Join::join_target(table);
+                fn join_target(rhs: $crate::internal::table_macro::Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::internal::table_macro::Join::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<Join, On> $crate::JoinTo<$crate::query_source::joins::JoinOn<Join, On>> for table where
-                $crate::query_source::joins::JoinOn<Join, On>: $crate::JoinTo<table>,
+            impl<Join, On> $crate::JoinTo<$crate::internal::table_macro::JoinOn<Join, On>> for table where
+                $crate::internal::table_macro::JoinOn<Join, On>: $crate::JoinTo<table>,
             {
-                type FromClause = $crate::query_source::joins::JoinOn<Join, On>;
-                type OnClause = <$crate::query_source::joins::JoinOn<Join, On> as $crate::JoinTo<table>>::OnClause;
+                type FromClause = $crate::internal::table_macro::JoinOn<Join, On>;
+                type OnClause = <$crate::internal::table_macro::JoinOn<Join, On> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::query_source::joins::JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_source::joins::JoinOn::join_target(table);
+                fn join_target(rhs: $crate::internal::table_macro::JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::internal::table_macro::JoinOn::join_target(table);
                     (rhs, on_clause)
                 }
             }

@@ -89,7 +89,7 @@ where
     Left: QuerySource,
     Right: QuerySource,
 {
-    pub fn new(left: Left, right: Right, kind: Kind) -> Self {
+    pub(crate) fn new(left: Left, right: Right, kind: Kind) -> Self {
         Join {
             left: FromClause::new(left),
             right: FromClause::new(right),
@@ -97,8 +97,7 @@ where
         }
     }
 
-    #[doc(hidden)]
-    pub fn on<On>(self, on: On) -> JoinOn<Self, On> {
+    pub(crate) fn on<On>(self, on: On) -> JoinOn<Self, On> {
         JoinOn { join: self, on: on }
     }
 }

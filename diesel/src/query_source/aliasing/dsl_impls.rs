@@ -1,4 +1,5 @@
-use super::{Alias, AliasSource, FieldAliasMapper};
+use super::field_alias_mapper::FieldAliasMapper;
+use super::{Alias, AliasSource};
 
 use crate::dsl;
 #[cfg(feature = "postgres_backend")]
