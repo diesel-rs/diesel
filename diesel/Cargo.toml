@@ -1,14 +1,14 @@
 [package]
 name = "diesel"
 version = "2.0.0"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
 documentation = "https://docs.rs/diesel/"
 homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel"
-keywords = ["orm", "database", "blockchain", "sql"]
+keywords = ["orm", "database", "sql"]
 categories = ["database"]
 edition = "2018"
 

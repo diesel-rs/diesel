@@ -1,7 +1,7 @@
 [package]
 name = "diesel_demo_step_1_mysql"
 version = "0.1.0"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 edition = "2018"
 
 [dependencies]
