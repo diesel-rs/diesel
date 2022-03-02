@@ -365,13 +365,6 @@ where
         user_result.expect("Transaction did not succeed")
     }
 
-    /// Execute a single SQL statements within the same string and return the
-    /// number of affected rows
-    #[diesel_derives::__diesel_public_if(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-    )]
-    fn execute(&mut self, query: &str) -> QueryResult<usize>;
-
     /// Executes a given query and returns any requested values
     ///
     /// This function executes a given query and returns the

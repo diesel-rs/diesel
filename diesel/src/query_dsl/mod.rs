@@ -97,7 +97,7 @@ pub trait QueryDsl: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM users").unwrap();
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection).unwrap();
     /// diesel::insert_into(users)
     ///     .values(&vec![name.eq("Sean"); 3])
     ///     .execute(connection)?;
@@ -144,7 +144,7 @@ pub trait QueryDsl: Sized {
     /// # fn main() {
     /// #     use self::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM animals").unwrap();
+    /// #     diesel::sql_query("DELETE FROM animals").execute(connection).unwrap();
     /// diesel::insert_into(animals)
     ///     .values(&vec![
     ///         (species.eq("dog"), name.eq(Some("Jack")), legs.eq(4)),
@@ -260,7 +260,7 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM posts")?;
+    /// #     diesel::sql_query("DELETE FROM posts").execute(connection)?;
     /// #     diesel::insert_into(posts::table)
     /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
     /// #         .execute(connection)?;
@@ -546,7 +546,7 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM posts")?;
+    /// #     diesel::sql_query("DELETE FROM posts").execute(connection)?;
     /// #     diesel::insert_into(posts::table)
     /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
     /// #         .execute(connection)?;
@@ -710,7 +710,7 @@ pub trait QueryDsl: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM users")?;
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection)?;
     /// diesel::insert_into(users)
     ///     .values(&vec![
     ///         name.eq("Saul"),
@@ -777,7 +777,7 @@ pub trait QueryDsl: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM users")?;
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection)?;
     /// diesel::insert_into(users)
     ///     .values(&vec![
     ///         name.eq("Saul"),

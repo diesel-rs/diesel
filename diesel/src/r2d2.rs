@@ -156,10 +156,6 @@ where
         )))
     }
 
-    fn execute(&mut self, query: &str) -> QueryResult<usize> {
-        (&mut **self).execute(query)
-    }
-
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
@@ -311,3 +307,25 @@ mod tests {
         assert_eq!("foo", query.get_result::<String>(&mut conn).unwrap());
     }
 }
+
+#[derive(QueryId)]
+pub(crate) struct CheckConnectionQuery;
+
+impl<DB> QueryFragment<DB> for CheckConnectionQuery
+where
+    DB: Backend,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut pass: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> QueryResult<()> {
+        pass.push_sql("SELECT 1");
+        Ok(())
+    }
+}
+
+impl Query for CheckConnectionQuery {
+    type SqlType = crate::sql_types::Integer;
+}
+
+impl<C> RunQueryDsl<C> for CheckConnectionQuery {}

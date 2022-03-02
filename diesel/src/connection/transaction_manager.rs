@@ -358,10 +358,6 @@ mod test {
                 })
             }
 
-            fn execute(&mut self, _query: &str) -> QueryResult<usize> {
-                self.next_result.take().expect("No next result")
-            }
-
             fn load<'conn, 'query, T>(
                 &'conn mut self,
                 _source: T,

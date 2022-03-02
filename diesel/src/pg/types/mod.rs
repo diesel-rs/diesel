@@ -339,11 +339,11 @@ pub mod sql_types {
     /// #     use diesel::insert_into;
     /// #     use self::items::dsl::*;
     /// #     let connection = &mut connection_no_data();
-    /// #     connection.execute("CREATE TABLE items (
+    /// #     diesel::sql_query("CREATE TABLE items (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         price MONEY NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(connection).unwrap();
     /// let inserted_price = insert_into(items)
     ///     .values((name.eq("Shiny Thing"), price.eq(Cents(123_456))))
     ///     .returning(price)

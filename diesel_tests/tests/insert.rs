@@ -373,15 +373,15 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
     use crate::schema::users::table as users;
     let connection = &mut connection();
     drop_table_cascade(connection, "users");
-    connection
-        .execute(
-            "CREATE TABLE users (
+    diesel::sql_query(
+        "CREATE TABLE users (
         id SERIAL PRIMARY KEY,
         name VARCHAR NOT NULL,
         hair_color VARCHAR NOT NULL DEFAULT 'Green'
     )",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
     let new_users: &[_] = &[
         BaldUser {
             name: "Sean".to_string(),

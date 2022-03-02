@@ -110,8 +110,8 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// #     use self::timestamps::dsl::*;
     /// #     use chrono::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("CREATE TABLE timestamps (\"timestamp\"
-    /// #         timestamp NOT NULL)")?;
+    /// #     diesel::sql_query("CREATE TABLE timestamps (\"timestamp\"
+    /// #         timestamp NOT NULL)").execute(connection)?;
     /// let christmas_morning = NaiveDate::from_ymd(2017, 12, 25)
     ///     .and_hms(8, 0, 0);
     /// diesel::insert_into(timestamps)
@@ -172,8 +172,10 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #           .execute(conn)
+    /// #           .unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(&vec![
@@ -231,8 +233,10 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(tags.eq(vec!["cool", "awesome"]))
@@ -282,8 +286,10 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(tags.eq(vec!["cool", "awesome"]))
@@ -348,7 +354,7 @@ pub trait PgSortExpressionMethods: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::nullable_numbers::dsl::*;
     /// #     let connection = &mut connection_no_data();
-    /// #     connection.execute("CREATE TABLE nullable_numbers (nullable_number INTEGER)")?;
+    /// #     diesel::sql_query("CREATE TABLE nullable_numbers (nullable_number INTEGER)").execute(connection)?;
     /// diesel::insert_into(nullable_numbers)
     ///     .values(&vec![
     ///         nullable_number.eq(None),
@@ -396,7 +402,7 @@ pub trait PgSortExpressionMethods: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::nullable_numbers::dsl::*;
     /// #     let connection = &mut connection_no_data();
-    /// #     connection.execute("CREATE TABLE nullable_numbers (nullable_number INTEGER)")?;
+    /// #     diesel::sql_query("CREATE TABLE nullable_numbers (nullable_number INTEGER)").execute(connection)?;
     /// diesel::insert_into(nullable_numbers)
     ///     .values(&vec![
     ///         nullable_number.eq(None),
@@ -621,8 +627,8 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
@@ -686,8 +692,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -748,8 +754,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -810,8 +816,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -873,8 +879,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -931,8 +937,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -993,8 +999,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
     ///     .execute(conn)?;
@@ -1044,8 +1050,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
     ///     .execute(conn)?;
@@ -1095,8 +1101,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.53").unwrap())])
     ///     .execute(conn)?;
@@ -1156,12 +1162,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1228,12 +1234,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1289,12 +1295,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1350,12 +1356,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1411,12 +1417,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let easter_bunny_address: serde_json::Value = serde_json::json!({
     ///     "street": "123 Carrot Road",
@@ -1472,12 +1478,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let partial_easter_bunny_address: serde_json::Value = serde_json::json!({
     ///     "street": "123 Carrot Road",

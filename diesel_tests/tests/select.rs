@@ -7,8 +7,8 @@ fn selecting_basic_data() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![
@@ -23,8 +23,8 @@ fn selecting_basic_data() {
 fn selecting_a_struct() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let expected_users = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
@@ -37,8 +37,8 @@ fn with_safe_select() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let select_name = users.select(name);
@@ -52,16 +52,16 @@ fn with_select_sql() {
     use diesel::dsl::sql;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let select_count = users::table.select(sql::<sql_types::BigInt>("COUNT(*)"));
 
     assert_eq!(Ok(2), select_count.clone().first(connection));
 
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Jim')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')")
+        .execute(connection)
         .unwrap();
 
     assert_eq!(Ok(3), select_count.clone().first(connection));
@@ -72,8 +72,8 @@ fn selecting_nullable_followed_by_non_null() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean')")
+        .execute(connection)
         .unwrap();
 
     let source = users.select((hair_color, name));
@@ -88,8 +88,8 @@ fn selecting_expression_with_bind_param() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let source = users.select(name.eq("Sean".to_string()));
@@ -121,8 +121,8 @@ fn selecting_columns_and_tables_with_reserved_names() {
     )
     .execute(connection)
     .unwrap();
-    connection
-        .execute("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
+    diesel::sql_query("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![(1, 1), (2, 2), (3, 3)];
@@ -169,7 +169,7 @@ fn selection_using_subselect() {
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
         ids[0], ids[1]
     );
-    connection.execute(&query).unwrap();
+    diesel::sql_query(&query).execute(connection).unwrap();
 
     let users = users::table
         .filter(users::name.eq("Sean"))
@@ -225,8 +225,8 @@ fn select_for_update_locks_selected_rows() {
     use std::time::Duration;
 
     let mut conn_1 = connection_without_transaction();
-    conn_1
-        .execute("DROP TABLE IF EXISTS users_select_for_update")
+    diesel::sql_query("DROP TABLE IF EXISTS users_select_for_update")
+        .execute(&mut conn_1)
         .unwrap();
     create_table(
         "users_select_for_update",
@@ -301,8 +301,8 @@ fn select_for_update_modifiers() {
     let conn_3 = &mut connection();
 
     // Recreate the table
-    conn_1
-        .execute("DROP TABLE IF EXISTS users_select_for_update_modifieres")
+    diesel::sql_query("DROP TABLE IF EXISTS users_select_for_update_modifieres")
+        .execute(conn_1)
         .unwrap();
     create_table(
         "users_select_for_update_modifieres",
@@ -316,14 +316,14 @@ fn select_for_update_modifiers() {
     .unwrap();
 
     // Add some test data
-    conn_1
-        .execute(
-            "
+    diesel::sql_query(
+        "
             INSERT INTO users_select_for_update_modifieres (name)
             VALUES ('Sean'), ('Tess')
             ",
-        )
-        .unwrap();
+    )
+    .execute(conn_1)
+    .unwrap();
 
     // Now both connections have begun a transaction
     conn_1.begin_test_transaction().unwrap();
@@ -336,7 +336,9 @@ fn select_for_update_modifiers() {
         .unwrap();
 
     // Try to access the "Sean" row with `NOWAIT`
-    conn_2.execute("SET STATEMENT_TIMEOUT TO 1000").unwrap();
+    diesel::sql_query("SET STATEMENT_TIMEOUT TO 1000")
+        .execute(conn_2)
+        .unwrap();
     let result = users_select_for_update_modifieres
         .order(name)
         .for_update()
@@ -375,11 +377,11 @@ fn select_for_no_key_update_modifiers() {
     let conn_4 = &mut connection();
 
     // Recreate the table
-    conn_1
-        .execute("DROP TABLE IF EXISTS users_fk_for_no_key_update")
+    diesel::sql_query("DROP TABLE IF EXISTS users_fk_for_no_key_update")
+        .execute(conn_1)
         .unwrap();
-    conn_1
-        .execute("DROP TABLE IF EXISTS users_select_for_no_key_update")
+    diesel::sql_query("DROP TABLE IF EXISTS users_select_for_no_key_update")
+        .execute(conn_1)
         .unwrap();
 
     create_table(
@@ -404,19 +406,19 @@ fn select_for_no_key_update_modifiers() {
     .unwrap();
 
     // Add a foreign key
-    conn_1
-        .execute(
-            "ALTER TABLE users_fk_for_no_key_update ADD CONSTRAINT users_fk \
+    diesel::sql_query(
+        "ALTER TABLE users_fk_for_no_key_update ADD CONSTRAINT users_fk \
              FOREIGN KEY (users_fk) REFERENCES users_select_for_no_key_update(id)",
-        )
-        .unwrap();
+    )
+    .execute(conn_1)
+    .unwrap();
 
     // Add some test data
-    conn_1
-        .execute(
-            "INSERT INTO users_select_for_no_key_update (name) VALUES ('Sean'), ('Tess'), ('Will')",
-        )
-        .unwrap();
+    diesel::sql_query(
+        "INSERT INTO users_select_for_no_key_update (name) VALUES ('Sean'), ('Tess'), ('Will')",
+    )
+    .execute(conn_1)
+    .unwrap();
 
     conn_1.begin_test_transaction().unwrap();
 
@@ -428,12 +430,12 @@ fn select_for_no_key_update_modifiers() {
         .unwrap();
 
     // Try to add an object referencing the "Sean" row
-    conn_2
-        .execute(
-            "INSERT INTO users_fk_for_no_key_update (users_fk) \
+    diesel::sql_query(
+        "INSERT INTO users_fk_for_no_key_update (users_fk) \
              SELECT id FROM users_select_for_no_key_update where name='Sean'",
-        )
-        .unwrap();
+    )
+    .execute(conn_2)
+    .unwrap();
 
     // Check that it was successfully added
     let expected_data = vec![(1, 1)];
@@ -461,11 +463,14 @@ fn select_for_no_key_update_modifiers() {
 
     assert_eq!(will.name, "Will");
 
-    conn_2.execute("SET STATEMENT_TIMEOUT TO 1000").unwrap();
-    let result = conn_2.execute(
+    diesel::sql_query("SET STATEMENT_TIMEOUT TO 1000")
+        .execute(conn_2)
+        .unwrap();
+    let result = diesel::sql_query(
         "INSERT INTO users_fk_for_no_key_update (users_fk) \
          SELECT id FROM users_select_for_no_key_update where name='Will'",
-    );
+    )
+    .execute(conn_2);
 
     // Times out instead of inserting row
     assert!(result.is_err());

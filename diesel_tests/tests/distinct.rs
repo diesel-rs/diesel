@@ -6,8 +6,8 @@ fn simple_distinct() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let source = users.select(name).distinct().order(name);
@@ -23,10 +23,9 @@ fn distinct_on() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute(
+    diesel::sql_query(
             "INSERT INTO users (name, hair_color) VALUES ('Sean', 'black'), ('Sean', NULL), ('Tess', NULL), ('Tess', NULL)",
-        )
+        ).execute(connection)
         .unwrap();
 
     let source = users
@@ -48,10 +47,9 @@ fn distinct_on_select_by() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute(
+    diesel::sql_query(
             "INSERT INTO users (name, hair_color) VALUES ('Sean', 'black'), ('Sean', NULL), ('Tess', NULL), ('Tess', NULL)",
-        )
+        ).execute(connection)
         .unwrap();
 
     let source = users
@@ -73,10 +71,9 @@ fn distinct_on_select_order_by_two_columns() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute(
+    diesel::sql_query(
             "INSERT INTO users (name, hair_color) VALUES ('Sean', 'black'), ('Sean', 'aqua'), ('Tess', 'bronze'), ('Tess', 'champagne')",
-        )
+        ).execute(connection)
         .unwrap();
 
     let source = users

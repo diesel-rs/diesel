@@ -100,12 +100,6 @@ impl Connection for SqliteConnection {
         Ok(conn)
     }
 
-    #[doc(hidden)]
-    fn execute(&mut self, query: &str) -> QueryResult<usize> {
-        self.batch_execute(query)?;
-        Ok(self.raw_connection.rows_affected_by_last_query())
-    }
-
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
@@ -141,7 +135,9 @@ impl Connection for SqliteConnection {
 #[cfg(feature = "r2d2")]
 impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
     fn ping(&mut self) -> QueryResult<()> {
-        self.execute("SELECT 1").map(|_| ())
+        use crate::RunQueryDsl;
+
+        crate::r2d2::CheckConnectionQuery.execute(self).map(|_| ())
     }
 
     fn is_broken(&mut self) -> bool {
@@ -525,13 +521,13 @@ mod tests {
         use self::my_sum_example::dsl::*;
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
-            )
-            .unwrap();
-        connection
-            .execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
+        crate::sql_query(
+            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+        )
+        .execute(connection)
+        .unwrap();
+        crate::sql_query("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
+            .execute(connection)
             .unwrap();
 
         my_sum::register_impl::<MySum, _>(connection).unwrap();
@@ -547,11 +543,11 @@ mod tests {
         use self::my_sum_example::dsl::*;
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
-            )
-            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+        )
+        .execute(connection)
+        .unwrap();
 
         my_sum::register_impl::<MySum, _>(connection).unwrap();
 
@@ -609,17 +605,21 @@ mod tests {
         use self::range_max_example::dsl::*;
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                r#"CREATE TABLE range_max_example (
+        crate::sql_query(
+            r#"CREATE TABLE range_max_example (
                 id integer primary key autoincrement,
                 value1 integer,
                 value2 integer,
                 value3 integer
             )"#,
-            )
-            .unwrap();
-        connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)").unwrap();
+        )
+        .execute(connection)
+        .unwrap();
+        crate::sql_query(
+            "INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)",
+        )
+        .execute(connection)
+        .unwrap();
 
         range_max::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
         let result = range_max_example
@@ -648,14 +648,15 @@ mod tests {
             })
             .unwrap();
 
-        connection
-            .execute(
+        crate::sql_query(
                 "CREATE TABLE my_collation_example (id integer primary key autoincrement, value text collate RUSTNOCASE)",
-            )
+            ).execute(connection)
             .unwrap();
-        connection
-            .execute("INSERT INTO my_collation_example (value) VALUES ('foo'), ('FOo'), ('f00')")
-            .unwrap();
+        crate::sql_query(
+            "INSERT INTO my_collation_example (value) VALUES ('foo'), ('FOo'), ('f00')",
+        )
+        .execute(connection)
+        .unwrap();
 
         let result = my_collation_example
             .filter(value.eq("foo"))

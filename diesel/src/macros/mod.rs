@@ -74,12 +74,11 @@ macro_rules! __diesel_column {
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
             DB: $crate::backend::Backend,
-            <$table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
+            $crate::query_builder::nodes::StaticQueryFragmentInstance<table>: $crate::query_builder::QueryFragment<DB>,
         {
             #[allow(non_snake_case)]
             fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
             {
-                use $crate::QuerySource;
                 const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
 
                 FROM_CLAUSE.walk_ast(__out.reborrow())?;
@@ -767,7 +766,10 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
-            impl<DB> $crate::query_builder::QueryFragment<DB> for table where DB: $crate::backend::Backend {
+            impl<DB> $crate::query_builder::QueryFragment<DB> for table where
+                DB: $crate::backend::Backend,
+                <table as $crate::query_builder::nodes::StaticQueryFragment>::Component: $crate::query_builder::QueryFragment<DB>
+            {
                 fn walk_ast<'b>(&'b self, pass: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()> {
                     <table as $crate::query_builder::nodes::StaticQueryFragment>::STATIC_COMPONENT.walk_ast(pass)
                 }

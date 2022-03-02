@@ -364,7 +364,9 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut connection_no_data();
-/// #     connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)").unwrap();
+/// #     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)")
+/// #         .execute(connection)
+/// #         .unwrap();
 /// let user = InsertableUser {
 ///     id: 1,
 ///     name: "thomas".to_string(),
@@ -1187,8 +1189,12 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
 /// #    use self::players::dsl::*;
 ///     let connection = &mut SqliteConnection::establish(":memory:")?;
-/// #    connection.execute("create table players (id integer primary key autoincrement, score integer)").unwrap();
-/// #    connection.execute("insert into players (score) values (10), (20), (30)").unwrap();
+/// #    diesel::sql_query("create table players (id integer primary key autoincrement, score integer)")
+/// #        .execute(connection)
+/// #        .unwrap();
+/// #    diesel::sql_query("insert into players (score) values (10), (20), (30)")
+/// #        .execute(connection)
+/// #        .unwrap();
 ///
 ///     my_sum::register_impl::<MySum, _>(connection)?;
 ///
@@ -1263,8 +1269,12 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
 /// #    use self::student_avgs::dsl::*;
 ///     let connection = &mut SqliteConnection::establish(":memory:")?;
-/// #    connection.execute("create table student_avgs (id integer primary key autoincrement, s1_avg float, s2_avg float)").unwrap();
-/// #    connection.execute("insert into student_avgs (s1_avg, s2_avg) values (85.5, 90), (79.8, 80.1)").unwrap();
+/// #    diesel::sql_query("create table student_avgs (id integer primary key autoincrement, s1_avg float, s2_avg float)")
+/// #       .execute(connection)
+/// #       .unwrap();
+/// #    diesel::sql_query("insert into student_avgs (s1_avg, s2_avg) values (85.5, 90), (79.8, 80.1)")
+/// #        .execute(connection)
+/// #        .unwrap();
 ///
 ///     range_max::register_impl::<RangeMax<f32>, _, _>(connection)?;
 ///

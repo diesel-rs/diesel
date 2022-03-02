@@ -28,9 +28,9 @@ where
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
-    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
-    /// #     conn.execute("DELETE FROM users").unwrap();
+    /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean" };
     ///
     /// let inserted_row_count = diesel::insert_into(users)
@@ -59,7 +59,7 @@ where
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
-    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// # #[cfg(feature = "postgres")]
     /// let user = User { id: 1, name: "Sean" };
     ///
@@ -102,10 +102,10 @@ where
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
-    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
-    /// #     conn.execute("DELETE FROM users").unwrap();
-    /// conn.execute("CREATE UNIQUE INDEX users_name ON users (name)").unwrap();
+    /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
+    /// diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean" };
     /// let same_name_different_id = User { id: 2, name: "Sean" };
     /// let same_id_different_name = User { id: 1, name: "Pascal" };
@@ -157,9 +157,9 @@ where
     /// use diesel::upsert::*;
     ///
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE users").unwrap();
-    /// #     conn.execute("CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT, hair_color TEXT)").unwrap();
-    /// conn.execute("CREATE UNIQUE INDEX users_name_hair_color ON users (name, hair_color)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE users").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT, hair_color TEXT)").execute(conn).unwrap();
+    /// diesel::sql_query("CREATE UNIQUE INDEX users_name_hair_color ON users (name, hair_color)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean", hair_color: "black" };
     /// let same_name_different_hair_color = User { id: 2, name: "Sean", hair_color: "brown" };
     /// let same_name_same_hair_color = User { id: 3, name: "Sean", hair_color: "black" };
@@ -265,9 +265,9 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
-    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
-    /// #     conn.execute("DELETE FROM users").unwrap();
+    /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Pascal" };
     /// let user2 = User { id: 1, name: "Sean" };
     ///
@@ -298,9 +298,9 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
-    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
-    /// #     conn.execute("DELETE FROM users").unwrap();
+    /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Pascal" };
     /// let user2 = User { id: 1, name: "Sean" };
     ///
@@ -333,7 +333,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
-    /// #     conn.execute("TRUNCATE TABLE users").unwrap();
+    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Pascal" };
     /// let user2 = User { id: 1, name: "Sean" };
     /// let user3 = User { id: 2, name: "Tess" };

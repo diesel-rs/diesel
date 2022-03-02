@@ -58,17 +58,19 @@ fn test_count_max() {
     use self::numbers::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+    diesel::sql_query("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+        .execute(connection)
         .unwrap();
     let source = numbers.select(max(n));
 
     assert_eq!(Ok(Some(5)), source.first(connection));
-    connection
-        .execute("DELETE FROM numbers WHERE n = 5")
+    diesel::sql_query("DELETE FROM numbers WHERE n = 5")
+        .execute(connection)
         .unwrap();
     assert_eq!(Ok(Some(2)), source.first(connection));
-    connection.execute("DELETE FROM numbers").unwrap();
+    diesel::sql_query("DELETE FROM numbers")
+        .execute(connection)
+        .unwrap();
     assert_eq!(Ok(None::<i32>), source.first(connection));
 }
 
@@ -85,8 +87,8 @@ fn test_min_max_of_array() {
     use self::number_arrays::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("CREATE TABLE number_arrays ( na INTEGER[] PRIMARY KEY )")
+    diesel::sql_query("CREATE TABLE number_arrays ( na INTEGER[] PRIMARY KEY )")
+        .execute(connection)
         .unwrap();
 
     insert_into(number_arrays)
@@ -132,11 +134,13 @@ fn max_returns_same_type_as_expression_being_maximized() {
     ];
     insert_into(users).values(data).execute(connection).unwrap();
     assert_eq!(Ok(Some("C".to_string())), source.first(connection));
-    connection
-        .execute("DELETE FROM users WHERE name = 'C'")
+    diesel::sql_query("DELETE FROM users WHERE name = 'C'")
+        .execute(connection)
         .unwrap();
     assert_eq!(Ok(Some("B".to_string())), source.first(connection));
-    connection.execute("DELETE FROM users").unwrap();
+    diesel::sql_query("DELETE FROM users")
+        .execute(connection)
+        .unwrap();
     assert_eq!(Ok(None::<String>), source.first(connection));
 }
 
@@ -199,17 +203,19 @@ fn test_min() {
     use self::numbers::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+    diesel::sql_query("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+        .execute(connection)
         .unwrap();
     let source = numbers.select(min(n));
 
     assert_eq!(Ok(Some(1)), source.first(connection));
-    connection
-        .execute("DELETE FROM numbers WHERE n = 1")
+    diesel::sql_query("DELETE FROM numbers WHERE n = 1")
+        .execute(connection)
         .unwrap();
     assert_eq!(Ok(Some(2)), source.first(connection));
-    connection.execute("DELETE FROM numbers").unwrap();
+    diesel::sql_query("DELETE FROM numbers")
+        .execute(connection)
+        .unwrap();
     assert_eq!(Ok(None::<i32>), source.first(connection));
 }
 
@@ -243,17 +249,19 @@ fn test_sum() {
     use self::numbers::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+    diesel::sql_query("INSERT INTO numbers (n) VALUES (2), (1), (5)")
+        .execute(connection)
         .unwrap();
     let source = numbers.select(sum(n));
 
     assert_eq!(Ok(Some(8)), source.first(connection));
-    connection
-        .execute("DELETE FROM numbers WHERE n = 2")
+    diesel::sql_query("DELETE FROM numbers WHERE n = 2")
+        .execute(connection)
         .unwrap();
     assert_eq!(Ok(Some(6)), source.first(connection));
-    connection.execute("DELETE FROM numbers").unwrap();
+    diesel::sql_query("DELETE FROM numbers")
+        .execute(connection)
+        .unwrap();
     assert_eq!(Ok(None::<i64>), source.first(connection));
 }
 
@@ -269,17 +277,19 @@ fn test_sum_for_double() {
     use self::precision_numbers::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (5.5)")
+    diesel::sql_query("INSERT INTO precision_numbers (n) VALUES (2), (1), (5.5)")
+        .execute(connection)
         .unwrap();
     let source = numbers.select(sum(n));
 
     assert_eq!(Ok(Some(8.5f64)), source.first(connection));
-    connection
-        .execute("DELETE FROM precision_numbers WHERE n = 2")
+    diesel::sql_query("DELETE FROM precision_numbers WHERE n = 2")
+        .execute(connection)
         .unwrap();
     assert_eq!(Ok(Some(6.5f64)), source.first(connection));
-    connection.execute("DELETE FROM precision_numbers").unwrap();
+    diesel::sql_query("DELETE FROM precision_numbers")
+        .execute(connection)
+        .unwrap();
     assert_eq!(Ok(None::<f64>), source.first(connection));
 }
 
@@ -296,14 +306,14 @@ fn test_sum_for_nullable() {
     use self::nullable_doubles::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (5.5)")
+    diesel::sql_query("INSERT INTO nullable_doubles (n) VALUES (null), (null), (5.5)")
+        .execute(connection)
         .unwrap();
     let source = numbers.select(sum(n));
 
     assert_eq!(Ok(Some(5.5f64)), source.first(connection));
-    connection
-        .execute("DELETE FROM nullable_doubles WHERE n = 5.5")
+    diesel::sql_query("DELETE FROM nullable_doubles WHERE n = 5.5")
+        .execute(connection)
         .unwrap();
     assert_eq!(Ok(None), source.first::<Option<f64>>(connection));
 }
@@ -314,17 +324,19 @@ fn test_avg() {
     use self::precision_numbers::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO precision_numbers (n) VALUES (2), (1), (6)")
+    diesel::sql_query("INSERT INTO precision_numbers (n) VALUES (2), (1), (6)")
+        .execute(connection)
         .unwrap();
     let source = numbers.select(avg(n));
 
     assert_eq!(Ok(Some(3f64)), source.first(connection));
-    connection
-        .execute("DELETE FROM precision_numbers WHERE n = 2")
+    diesel::sql_query("DELETE FROM precision_numbers WHERE n = 2")
+        .execute(connection)
         .unwrap();
     assert_eq!(Ok(Some(3.5f64)), source.first(connection));
-    connection.execute("DELETE FROM precision_numbers").unwrap();
+    diesel::sql_query("DELETE FROM precision_numbers")
+        .execute(connection)
+        .unwrap();
     assert_eq!(Ok(None::<f64>), source.first(connection));
 }
 
@@ -342,14 +354,14 @@ fn test_avg_for_nullable() {
     use self::nullable_doubles::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO nullable_doubles (n) VALUES (null), (null), (6)")
+    diesel::sql_query("INSERT INTO nullable_doubles (n) VALUES (null), (null), (6)")
+        .execute(connection)
         .unwrap();
     let source = numbers.select(avg(n));
 
     assert_eq!(Ok(Some(6f64)), source.first(connection));
-    connection
-        .execute("DELETE FROM nullable_doubles WHERE n = 6")
+    diesel::sql_query("DELETE FROM nullable_doubles WHERE n = 6")
+        .execute(connection)
         .unwrap();
     assert_eq!(Ok(None), source.first::<Option<f64>>(connection));
 }
@@ -361,8 +373,8 @@ fn test_avg_for_integer() {
     use self::numbers::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO numbers (n) VALUES (2), (1), (6)")
+    diesel::sql_query("INSERT INTO numbers (n) VALUES (2), (1), (6)")
+        .execute(connection)
         .unwrap();
     let source = numbers.select(avg(n));
 
@@ -374,8 +386,8 @@ fn test_avg_for_integer() {
     };
     assert_eq!(Ok(Some(expected_result)), result);
 
-    connection
-        .execute("DELETE FROM numbers WHERE n = 2")
+    diesel::sql_query("DELETE FROM numbers WHERE n = 2")
+        .execute(connection)
         .unwrap();
     let result = source.first(connection);
     let expected_result = data_types::PgNumeric::Positive {
@@ -399,11 +411,11 @@ fn test_avg_for_numeric() {
     use self::numeric::table as numeric;
 
     let connection = &mut connection();
-    connection
-        .execute("CREATE TABLE numeric (n NUMERIC(8,2))")
+    diesel::sql_query("CREATE TABLE numeric (n NUMERIC(8,2))")
+        .execute(connection)
         .unwrap();
-    connection
-        .execute("INSERT INTO numeric (n) VALUES (2), (1), (6)")
+    diesel::sql_query("INSERT INTO numeric (n) VALUES (2), (1), (6)")
+        .execute(connection)
         .unwrap();
     let source = numeric.select(avg(n));
 
@@ -441,8 +453,8 @@ fn test_arrays_b() {
     use self::numbers::table as numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO numbers (n) VALUES (7)")
+    diesel::sql_query("INSERT INTO numbers (n) VALUES (7)")
+        .execute(connection)
         .unwrap();
 
     let value = numbers
@@ -458,8 +470,8 @@ fn test_operator_precedence() {
     use self::numbers;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO numbers (n) VALUES (2)")
+    diesel::sql_query("INSERT INTO numbers (n) VALUES (2)")
+        .execute(connection)
         .unwrap();
     let source = numbers::table.select(numbers::n.gt(0).eq(true));
 

@@ -116,11 +116,21 @@ fn connection() -> TestConnection {
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = MysqlConnection::establish(&connection_url).unwrap();
-    conn.execute("SET FOREIGN_KEY_CHECKS = 0;").unwrap();
-    conn.execute("TRUNCATE TABLE comments").unwrap();
-    conn.execute("TRUNCATE TABLE posts").unwrap();
-    conn.execute("TRUNCATE TABLE users").unwrap();
-    conn.execute("SET FOREIGN_KEY_CHECKS = 1;").unwrap();
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE comments")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE posts")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE users")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 1")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 
@@ -131,9 +141,15 @@ fn connection() -> TestConnection {
         .or_else(|_| dotenv::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = PgConnection::establish(&connection_url).unwrap();
-    conn.execute("TRUNCATE TABLE comments CASCADE").unwrap();
-    conn.execute("TRUNCATE TABLE posts CASCADE").unwrap();
-    conn.execute("TRUNCATE TABLE users CASCADE").unwrap();
+    diesel::sql_query("TRUNCATE TABLE comments CASCADE")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE posts CASCADE")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("TRUNCATE TABLE users CASCADE")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 
@@ -142,11 +158,17 @@ fn connection() -> TestConnection {
     dotenv::dotenv().ok();
     let mut conn = diesel::SqliteConnection::establish(":memory:").unwrap();
     for migration in super::SQLITE_MIGRATION_SQL {
-        conn.execute(migration).unwrap();
+        diesel::sql_query(*migration).execute(&mut conn).unwrap();
     }
-    conn.execute("DELETE FROM comments").unwrap();
-    conn.execute("DELETE FROM posts").unwrap();
-    conn.execute("DELETE FROM users").unwrap();
+    diesel::sql_query("DELETE FROM comments")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("DELETE FROM posts")
+        .execute(&mut conn)
+        .unwrap();
+    diesel::sql_query("DELETE FROM users")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 

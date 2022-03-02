@@ -61,12 +61,12 @@ use crate::Table;
 /// # fn main() {
 /// # use self::users::dsl::*;
 /// # let connection = &mut establish_connection();
-/// # connection.execute("DROP TABLE users").unwrap();
-/// # connection.execute("CREATE TABLE users (
+/// # diesel::sql_query("DROP TABLE users").execute(connection).unwrap();
+/// # diesel::sql_query("CREATE TABLE users (
 /// #     id SERIAL PRIMARY KEY,
 /// #     name VARCHAR,
-/// #     surname VARCHAR)").unwrap();
-/// # connection.execute("INSERT INTO users(name, surname) VALUES('Sean', 'Griffin')").unwrap();
+/// #     surname VARCHAR)").execute(connection).unwrap();
+/// # diesel::sql_query("INSERT INTO users(name, surname) VALUES('Sage', 'Griffin')").execute(connection).unwrap();
 ///
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set((name.eq("James"), surname.eq("Bond")))
@@ -498,7 +498,7 @@ where
 /// #     use diesel::{insert_into, replace_into};
 /// #
 /// #     let conn = &mut establish_connection();
-/// #     conn.execute("DELETE FROM users").unwrap();
+/// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
 /// replace_into(users)
 ///     .values(&vec![
 ///         (id.eq(1), name.eq("Sean")),

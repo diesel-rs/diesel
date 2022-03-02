@@ -268,8 +268,8 @@ fn filter_by_in() {
 
 fn connection_with_3_users() -> TestConnection {
     let mut connection = connection_with_sean_and_tess_in_users_table();
-    connection
-        .execute("INSERT INTO users (id, name) VALUES (3, 'Jim')")
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (3, 'Jim')")
+        .execute(&mut connection)
         .unwrap();
     connection
 }

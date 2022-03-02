@@ -127,12 +127,12 @@ fn filter_after_joining() {
     use crate::schema::users::name;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
-    connection
-        .execute(
-            "INSERT INTO posts (id, title, user_id) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (id, title, user_id) VALUES
                        (1, 'Hello', 1), (2, 'World', 2)",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -330,8 +330,8 @@ fn filter_on_column_equality() {
     use self::points::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO points (x, y) VALUES (1, 1), (1, 2), (2, 2)")
+    diesel::sql_query("INSERT INTO points (x, y) VALUES (1, 1), (1, 2), (2, 2)")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![(1, 1), (2, 2)];

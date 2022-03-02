@@ -760,9 +760,10 @@ mod tests {
     fn check_all_the_types() {
         let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS all_mysql_types CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS all_mysql_types CASCADE")
+            .execute(conn)
             .unwrap();
-        conn.execute(
+        crate::sql_query(
             "CREATE TABLE all_mysql_types (
                     tiny_int TINYINT NOT NULL,
                     small_int SMALLINT NOT NULL,
@@ -800,9 +801,9 @@ mod tests {
                     json_col JSON NOT NULL
             )",
         )
+        .execute(conn)
         .unwrap();
-        conn
-            .execute(
+        crate::sql_query(
                 "INSERT INTO all_mysql_types VALUES (
                     0, -- tiny_int
                     1, -- small_int
@@ -839,7 +840,7 @@ mod tests {
                     ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(1 1),LINESTRING(0 0,1 1,2 2,3 3,4 4))'), -- geometry_collection
                     '{\"key1\": \"value1\", \"key2\": \"value2\"}' -- json_col
 )",
-            )
+            ).execute(conn)
             .unwrap();
 
         let mut stmt = conn.prepared_query(&crate::sql_query(
@@ -1292,13 +1293,17 @@ mod tests {
             }
         }
 
-        conn.execute("DROP TABLE IF EXISTS json_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS json_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE json_test(id INTEGER PRIMARY KEY, json_field JSON NOT NULL)")
-            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE json_test(id INTEGER PRIMARY KEY, json_field JSON NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
 
-        conn.execute("INSERT INTO json_test(id, json_field) VALUES (1, '{\"key1\": \"value1\", \"key2\": \"value2\"}')").unwrap();
+        crate::sql_query("INSERT INTO json_test(id, json_field) VALUES (1, '{\"key1\": \"value1\", \"key2\": \"value2\"}')").execute(conn).unwrap();
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
@@ -1338,7 +1343,9 @@ mod tests {
             json_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM json_test").unwrap();
+        crate::sql_query("DELETE FROM json_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
@@ -1389,7 +1396,9 @@ mod tests {
             json_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM json_test").unwrap();
+        crate::sql_query("DELETE FROM json_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
@@ -1441,13 +1450,15 @@ mod tests {
     fn check_enum_bind() {
         let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS enum_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS enum_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE enum_test(id INTEGER PRIMARY KEY, enum_field ENUM('red', 'green', 'blue') NOT NULL)")
+        crate::sql_query("CREATE TABLE enum_test(id INTEGER PRIMARY KEY, enum_field ENUM('red', 'green', 'blue') NOT NULL)").execute(conn)
             .unwrap();
 
-        conn.execute("INSERT INTO enum_test(id, enum_field) VALUES (1, 'green')")
+        crate::sql_query("INSERT INTO enum_test(id, enum_field) VALUES (1, 'green')")
+            .execute(conn)
             .unwrap();
 
         let enum_col_as_enum: BindData =
@@ -1517,7 +1528,9 @@ mod tests {
             enum_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM enum_test").unwrap();
+        crate::sql_query("DELETE FROM enum_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
@@ -1576,7 +1589,9 @@ mod tests {
             enum_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM enum_test").unwrap();
+        crate::sql_query("DELETE FROM enum_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
@@ -1625,13 +1640,15 @@ mod tests {
     fn check_set_bind() {
         let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS set_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS set_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE set_test(id INTEGER PRIMARY KEY, set_field SET('red', 'green', 'blue') NOT NULL)")
+        crate::sql_query("CREATE TABLE set_test(id INTEGER PRIMARY KEY, set_field SET('red', 'green', 'blue') NOT NULL)").execute(conn)
             .unwrap();
 
-        conn.execute("INSERT INTO set_test(id, set_field) VALUES (1, 'green')")
+        crate::sql_query("INSERT INTO set_test(id, set_field) VALUES (1, 'green')")
+            .execute(conn)
             .unwrap();
 
         let set_col_as_set: BindData =
@@ -1688,7 +1705,9 @@ mod tests {
             set_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM set_test").unwrap();
+        crate::sql_query("DELETE FROM set_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",
@@ -1726,7 +1745,9 @@ mod tests {
             set_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM set_test").unwrap();
+        crate::sql_query("DELETE FROM set_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",

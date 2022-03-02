@@ -19,8 +19,10 @@ use crate::result::QueryResult;
 /// use diesel::upsert::*;
 ///
 /// #     let conn = &mut establish_connection();
-/// #     conn.execute("TRUNCATE TABLE users").unwrap();
-/// conn.execute("ALTER TABLE users ADD CONSTRAINT users_name UNIQUE (name)").unwrap();
+/// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
+/// diesel::sql_query("ALTER TABLE users ADD CONSTRAINT users_name UNIQUE (name)")
+///     .execute(conn)
+///     .unwrap();
 /// let user = User { id: 1, name: "Sean" };
 /// let same_name_different_id = User { id: 2, name: "Sean" };
 /// let same_id_different_name = User { id: 1, name: "Pascal" };

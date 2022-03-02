@@ -282,8 +282,8 @@ fn upsert_with_sql_literal_for_target() {
     let connection = &mut connection();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
-    connection
-        .execute("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
+    diesel::sql_query("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
+        .execute(connection)
         .unwrap();
     insert_sean_and_tess_into_users_table(connection);
 

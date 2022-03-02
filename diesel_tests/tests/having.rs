@@ -32,20 +32,20 @@ fn having_generates_having_sql() {
 #[test]
 fn simple_having_with_group_by() {
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+        .execute(connection)
         .unwrap();
-    connection
-        .execute(
-            "INSERT INTO posts (id, user_id, title) VALUES (1, 1, 'Hi Sean'), (2, 2, 'Hi Tess')",
-        )
-        .unwrap();
-    connection
-        .execute(
-            "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES (1, 1, 'Hi Sean'), (2, 2, 'Hi Tess')",
+    )
+    .execute(connection)
+    .unwrap();
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
         (2, 2, 'Comment for Hi Tess'), (3, 2, 'Another comment for Hi Tess')",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let source = users::table
         .inner_join(posts::table.inner_join(comments::table))
@@ -62,20 +62,20 @@ fn simple_having_with_group_by() {
 #[test]
 fn boxed_simple_having_with_group_by() {
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+        .execute(connection)
         .unwrap();
-    connection
-        .execute(
-            "INSERT INTO posts (id, user_id, title) VALUES (1, 1, 'Hi Sean'), (2, 2, 'Hi Tess')",
-        )
-        .unwrap();
-    connection
-        .execute(
-            "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES (1, 1, 'Hi Sean'), (2, 2, 'Hi Tess')",
+    )
+    .execute(connection)
+    .unwrap();
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
         (2, 2, 'Comment for Hi Tess'), (3, 2, 'Another comment for Hi Tess')",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let source = users::table
         .inner_join(posts::table.inner_join(comments::table))
@@ -93,21 +93,20 @@ fn boxed_simple_having_with_group_by() {
 #[test]
 fn multi_condition_having_with_group_by() {
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
+        .execute(connection)
         .unwrap();
-    connection
-        .execute(
+    diesel::sql_query(
             "INSERT INTO posts (id, user_id, title) VALUES (1, 1, 'Hi Sean'), (2, 2, 'Hi Tess'), (3, 3, 'Hi Nick')",
-        )
+        ).execute(connection)
         .unwrap();
-    connection
-        .execute(
-            "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
         (2, 2, 'Comment for Hi Tess'), (3, 2, 'Another comment for Hi Tess'), \
         (4, 3, 'Comment for Hi Nick'), (5, 3, 'Another comment for Hi Nick')",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let source = users::table
         .inner_join(posts::table.inner_join(comments::table))
@@ -124,21 +123,20 @@ fn multi_condition_having_with_group_by() {
 #[test]
 fn boxed_multi_condition_having_with_group_by() {
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess'), (3, 'Nick')")
+        .execute(connection)
         .unwrap();
-    connection
-        .execute(
+    diesel::sql_query(
             "INSERT INTO posts (id, user_id, title) VALUES (1, 1, 'Hi Sean'), (2, 2, 'Hi Tess'), (3, 3, 'Hi Nick')",
-        )
+        ).execute(connection)
         .unwrap();
-    connection
-        .execute(
-            "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
+    diesel::sql_query(
+        "INSERT INTO comments (id, post_id, text) VALUES (1, 1, 'Comment for Hi Sean'), \
         (2, 2, 'Comment for Hi Tess'), (3, 2, 'Another comment for Hi Tess'), \
         (4, 3, 'Comment for Hi Nick'), (5, 3, 'Another comment for Hi Nick')",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let source = users::table
         .inner_join(posts::table.inner_join(comments::table))

@@ -109,8 +109,8 @@ macro_rules! __diesel_operator_body {
 
         impl<S, $($ty_param,)+> $crate::internal::operators_macro::FieldAliasMapper<S> for $name<$($ty_param,)+>
         where
-            S: $crate::query_source::aliasing::AliasSource,
-            $($ty_param: $crate::query_source::aliasing::FieldAliasMapper<S>,)+
+            S: $crate::query_source::AliasSource,
+            $($ty_param: $crate::internal::operators_macro::FieldAliasMapper<S>,)+
         {
             type Out = $name<
                 $(<$ty_param as $crate::internal::operators_macro::FieldAliasMapper<S>>::Out,)+

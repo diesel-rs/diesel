@@ -21,6 +21,7 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
 use crate::result::*;
+use crate::RunQueryDsl;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -129,11 +130,6 @@ impl Connection for PgConnection {
         })
     }
 
-    #[doc(hidden)]
-    fn execute(&mut self, query: &str) -> QueryResult<usize> {
-        self.execute_inner(query).map(|res| res.rows_affected())
-    }
-
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
@@ -177,7 +173,7 @@ impl GetPgMetadataCache for PgConnection {
 #[cfg(feature = "r2d2")]
 impl crate::r2d2::R2D2Connection for PgConnection {
     fn ping(&mut self) -> QueryResult<()> {
-        self.execute("SELECT 1").map(|_| ())
+        crate::r2d2::CheckConnectionQuery.execute(self).map(|_| ())
     }
 
     fn is_broken(&mut self) -> bool {
@@ -246,14 +242,9 @@ impl PgConnection {
         f(query?, binds, raw_conn)
     }
 
-    fn execute_inner(&mut self, query: &str) -> QueryResult<PgResult> {
-        let query = Statement::prepare(&mut self.raw_connection, query, None, &[])?;
-        query.execute(&mut self.raw_connection, &Vec::new())
-    }
-
     fn set_config_options(&mut self) -> QueryResult<()> {
-        self.execute("SET TIME ZONE 'UTC'")?;
-        self.execute("SET CLIENT_ENCODING TO 'UTF8'")?;
+        crate::sql_query("SET TIME ZONE 'UTC'").execute(self)?;
+        crate::sql_query("SET CLIENT_ENCODING TO 'UTF8'").execute(self)?;
         self.raw_connection
             .set_notice_processor(noop_notice_processor);
         Ok(())

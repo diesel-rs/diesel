@@ -18,7 +18,8 @@ fn transaction_executes_fn_in_a_sql_transaction() {
         .transaction::<_, Error, _>(|conn1| {
             assert_eq!(0, get_count(conn1));
             assert_eq!(0, get_count(conn2));
-            conn1.execute(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))?;
+            diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+                .execute(conn1)?;
             assert_eq!(1, get_count(conn1));
             assert_eq!(0, get_count(conn2));
             Ok(())
@@ -45,8 +46,8 @@ fn transaction_is_rolled_back_when_returned_an_error() {
     setup_test_table(connection, test_name);
 
     let _ = connection.transaction::<(), _, _>(|connection| {
-        connection
-            .execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+        diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+            .execute(connection)
             .unwrap();
         Err(Error::RollbackTransaction)
     });
@@ -75,12 +76,12 @@ fn transaction_rollback_returns_error() {
 
     // Create a transaction that will fail to rollback.
     let r = connection.transaction::<usize, _, _>(|connection| {
-        connection
-            .execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+        diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+            .execute(connection)
             .unwrap();
 
         // This rollback would succeed, and cause any rollback later to fail.
-        connection.execute("ROLLBACK").unwrap();
+        diesel::sql_query("ROLLBACK").execute(connection).unwrap();
 
         // Return any error to trigger a rollback that fails in this case.
         Err(Error::NotFound)
@@ -104,21 +105,21 @@ fn transactions_can_be_nested() {
     }
 
     let _ = connection.transaction::<(), _, _>(|connection| {
-        connection
-            .execute(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+        diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+            .execute(connection)
             .unwrap();
         assert_eq!(1, get_count(connection));
         let _ = connection.transaction::<(), _, _>(|connection| {
-            connection
-                .execute(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+            diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+                .execute(connection)
                 .unwrap();
             assert_eq!(2, get_count(connection));
             Err(Error::RollbackTransaction)
         });
         assert_eq!(1, get_count(connection));
         let _ = connection.transaction::<(), Error, _>(|connection| {
-            connection
-                .execute(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+            diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+                .execute(connection)
                 .unwrap();
             assert_eq!(2, get_count(connection));
             Ok(())
@@ -138,7 +139,8 @@ fn test_transaction_always_rolls_back() {
     setup_test_table(connection, test_name);
 
     let result = connection.test_transaction::<_, Error, _>(|connection| {
-        connection.execute(&format!("INSERT INTO {} DEFAULT VALUES", test_name))?;
+        diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+            .execute(connection)?;
         assert_eq!(1, count_test_table(connection, test_name));
         Ok("success")
     });
@@ -163,8 +165,8 @@ fn setup_test_table(connection: &mut TestConnection, table_name: &str) {
 }
 
 fn drop_test_table(connection: &mut TestConnection, table_name: &str) {
-    connection
-        .execute(&format!("DROP TABLE {}", table_name))
+    diesel::sql_query(&format!("DROP TABLE {}", table_name))
+        .execute(connection)
         .unwrap();
 }
 
@@ -186,7 +188,7 @@ fn regression_test_for_2123() {
     let ret = conn.transaction(|conn| {
         let _ = conn.transaction(|conn| {
             // handling error
-            match conn.execute("SELECT foo") {
+            match diesel::sql_query("SELECT foo").execute(conn) {
                 // do nothing
                 Ok(_) => unreachable!("This query should fail"),
                 // ignore the error
@@ -196,7 +198,7 @@ fn regression_test_for_2123() {
         });
 
         conn.transaction(|conn| {
-            let ret = conn.execute("SELECT 1");
+            let ret = diesel::sql_query("SELECT 1").execute(conn);
             assert_eq!(Ok(1), ret);
             Ok::<_, Error>(())
         })
@@ -206,7 +208,7 @@ fn regression_test_for_2123() {
     let ret = conn
         .build_transaction()
         .serializable()
-        .run(|conn| conn.execute("SELECT 1"));
+        .run(|conn| diesel::sql_query("SELECT 1").execute(conn));
     // must be Ok(1), but get Err(AlreadyInTransaction)
     println!("{:?}", ret);
     assert_eq!(Ok(1), ret);

@@ -24,11 +24,15 @@ use crate::data_types::PgInterval;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = &mut connection_no_data();
-/// #     connection.execute("CREATE TABLE users (id serial primary key, name
-/// #        varchar not null, created_at timestamp not null)").unwrap();
-/// connection.execute("INSERT INTO users (name, created_at) VALUES
+/// #     diesel::sql_query("CREATE TABLE users (id serial primary key, name
+/// #        varchar not null, created_at timestamp not null)")
+/// #     .execute(connection)
+/// #     .unwrap();
+/// diesel::sql_query("INSERT INTO users (name, created_at) VALUES
 ///     ('Sean', NOW()), ('Tess', NOW() - '5 minutes'::interval),
-///     ('Jim', NOW() - '10 minutes'::interval)").unwrap();
+///     ('Jim', NOW() - '10 minutes'::interval)")
+///     .execute(connection)
+///     .unwrap();
 ///
 /// let mut data: Vec<String> = users
 ///     .select(name)
@@ -55,11 +59,15 @@ use crate::data_types::PgInterval;
 /// # fn main() {
 /// #     use self::users::dsl::*;
 /// #     let connection = &mut connection_no_data();
-/// #     connection.execute("CREATE TABLE users (id serial primary key, name
-/// #        varchar not null, created_at timestamp not null)").unwrap();
-/// connection.execute("INSERT INTO users (name, created_at) VALUES
+/// #     diesel::sql_query("CREATE TABLE users (id serial primary key, name
+/// #        varchar not null, created_at timestamp not null)")
+/// #     .execute(connection)
+/// #     .unwrap();
+/// diesel::sql_query("INSERT INTO users (name, created_at) VALUES
 ///     ('Sean', NOW()), ('Tess', NOW() - '5 days'::interval),
-///     ('Jim', NOW() - '10 days'::interval)").unwrap();
+///     ('Jim', NOW() - '10 days'::interval)")
+///     .execute(connection)
+///     .unwrap();
 ///
 /// let mut data: Vec<String> = users
 ///     .select(name)

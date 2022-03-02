@@ -125,11 +125,6 @@ impl RawConnection {
         result
     }
 
-    pub(super) fn affected_rows(&self) -> usize {
-        let affected_rows = unsafe { ffi::mysql_affected_rows(self.0.as_ptr()) };
-        affected_rows as usize
-    }
-
     pub(super) fn prepare(&self, query: &str) -> QueryResult<Statement> {
         let stmt = unsafe { ffi::mysql_stmt_init(self.0.as_ptr()) };
         // It is documented that the only reason `mysql_stmt_init` will fail
