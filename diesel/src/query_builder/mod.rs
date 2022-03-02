@@ -23,8 +23,7 @@ pub(crate) mod insert_statement;
 pub(crate) mod limit_clause;
 pub(crate) mod limit_offset_clause;
 pub(crate) mod locking_clause;
-#[doc(hidden)]
-pub mod nodes;
+pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
 mod returning_clause;

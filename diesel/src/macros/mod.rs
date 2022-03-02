@@ -74,12 +74,12 @@ macro_rules! __diesel_column {
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
             DB: $crate::backend::Backend,
-            $crate::query_builder::nodes::StaticQueryFragmentInstance<table>: $crate::query_builder::QueryFragment<DB>,
+            $crate::internal::table_macro::StaticQueryFragmentInstance<table>: $crate::query_builder::QueryFragment<DB>,
         {
             #[allow(non_snake_case)]
             fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
             {
-                const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
+                const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
 
                 FROM_CLAUSE.walk_ast(__out.reborrow())?;
                 __out.push_sql(".");
@@ -753,11 +753,11 @@ macro_rules! __diesel_table_impl {
             pub type BoxedQuery<'a, DB, ST = SqlType> = $crate::internal::table_macro::BoxedSelectStatement<'a, ST, $crate::internal::table_macro::FromClause<table>, DB>;
 
             impl $crate::QuerySource for table {
-                type FromClause = $crate::query_builder::nodes::StaticQueryFragmentInstance<table>;
+                type FromClause = $crate::internal::table_macro::StaticQueryFragmentInstance<table>;
                 type DefaultSelection = <Self as $crate::Table>::AllColumns;
 
                 fn from_clause(&self) -> Self::FromClause {
-                    $crate::query_builder::nodes::StaticQueryFragmentInstance::new()
+                    $crate::internal::table_macro::StaticQueryFragmentInstance::new()
                 }
 
                 fn default_selection(&self) -> Self::DefaultSelection {
@@ -768,10 +768,10 @@ macro_rules! __diesel_table_impl {
 
             impl<DB> $crate::query_builder::QueryFragment<DB> for table where
                 DB: $crate::backend::Backend,
-                <table as $crate::query_builder::nodes::StaticQueryFragment>::Component: $crate::query_builder::QueryFragment<DB>
+                <table as $crate::internal::table_macro::StaticQueryFragment>::Component: $crate::query_builder::QueryFragment<DB>
             {
                 fn walk_ast<'b>(&'b self, pass: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()> {
-                    <table as $crate::query_builder::nodes::StaticQueryFragment>::STATIC_COMPONENT.walk_ast(pass)
+                    <table as $crate::internal::table_macro::StaticQueryFragment>::STATIC_COMPONENT.walk_ast(pass)
                 }
             }
 
@@ -981,7 +981,7 @@ macro_rules! __diesel_table_impl {
                     fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
                     {
                         use $crate::QuerySource;
-                        const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
+                        const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
 
                         FROM_CLAUSE.walk_ast(__out.reborrow())?;
                         __out.push_sql(".*");
@@ -1061,22 +1061,22 @@ macro_rules! __diesel_valid_grouping_for_table_columns {
 #[doc(hidden)]
 macro_rules! __diesel_table_generate_static_query_fragment_for_table {
     (public, $table: ident, $table_name:expr) => {
-        impl $crate::query_builder::nodes::StaticQueryFragment for table {
-            type Component = $crate::query_builder::nodes::Identifier<'static>;
-            const STATIC_COMPONENT: &'static Self::Component = &$crate::query_builder::nodes::Identifier($table_name);
+        impl $crate::internal::table_macro::StaticQueryFragment for table {
+            type Component = $crate::internal::table_macro::Identifier<'static>;
+            const STATIC_COMPONENT: &'static Self::Component = &$crate::internal::table_macro::Identifier($table_name);
         }
 
     };
     ($schema_name:ident, $table: ident, $table_name:expr) => {
-        impl $crate::query_builder::nodes::StaticQueryFragment for table {
-            type Component = $crate::query_builder::nodes::InfixNode<
-                    $crate::query_builder::nodes::Identifier<'static>,
-                    $crate::query_builder::nodes::Identifier<'static>,
+        impl $crate::internal::table_macro::StaticQueryFragment for table {
+            type Component = $crate::internal::table_macro::InfixNode<
+                    $crate::internal::table_macro::Identifier<'static>,
+                    $crate::internal::table_macro::Identifier<'static>,
                     &'static str
                 >;
-            const STATIC_COMPONENT: &'static Self::Component = &$crate::query_builder::nodes::InfixNode::new(
-                $crate::query_builder::nodes::Identifier(stringify!($schema_name)),
-                $crate::query_builder::nodes::Identifier($table_name),
+            const STATIC_COMPONENT: &'static Self::Component = &$crate::internal::table_macro::InfixNode::new(
+                $crate::internal::table_macro::Identifier(stringify!($schema_name)),
+                $crate::internal::table_macro::Identifier($table_name),
                 "."
             );
         }

@@ -6,6 +6,10 @@ pub use crate::pg::query_builder::only_clause::Only;
 #[doc(hidden)]
 pub use crate::query_builder::from_clause::{FromClause, NoFromClause};
 #[doc(hidden)]
+pub use crate::query_builder::nodes::{
+    Identifier, InfixNode, StaticQueryFragment, StaticQueryFragmentInstance,
+};
+#[doc(hidden)]
 pub use crate::query_builder::select_statement::boxed::BoxedSelectStatement;
 #[doc(hidden)]
 pub use crate::query_builder::select_statement::SelectStatement;

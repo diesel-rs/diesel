@@ -98,7 +98,6 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// **It's important to use prepared statements to implement the following methods:**
 /// * [`Connection::load`]
 /// * [`Connection::execute_returning_count`]
-/// * [`Connection::execute`]
 ///
 /// For performance reasons it may also be meaningful to cache already prepared statements.
 #[cfg_attr(
