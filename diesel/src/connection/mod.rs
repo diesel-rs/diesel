@@ -246,6 +246,9 @@ where
 pub trait BoxableConnection<DB: Backend>: SimpleConnection + std::any::Any {
     #[doc(hidden)]
     fn as_any(&self) -> &dyn std::any::Any;
+
+    #[doc(hidden)]
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }
 
 impl<C> BoxableConnection<C::Backend> for C
@@ -253,6 +256,10 @@ where
     C: Connection + std::any::Any,
 {
     fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
         self
     }
 }
@@ -269,6 +276,19 @@ impl<DB: Backend> dyn BoxableConnection<DB> {
         T: Connection<Backend = DB> + 'static,
     {
         self.as_any().downcast_ref::<T>()
+    }
+
+    /// Downcast the current connection to a specific mutable connection
+    /// type.
+    ///
+    /// This will return `None` if the underlying
+    /// connection does not match the corresponding
+    /// type, otherwise a mutable reference to the underlying connection is returned
+    pub fn downcast_mut<T>(&mut self) -> Option<&mut T>
+    where
+        T: Connection<Backend = DB> + 'static,
+    {
+        self.as_any_mut().downcast_mut::<T>()
     }
 
     /// Check if the current connection is
