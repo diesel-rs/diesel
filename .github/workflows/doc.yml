@@ -4,7 +4,6 @@ on:
       - master
       - '0.[0-9]+.x'
       - '1.[0-9]+.x'
-      - 'diesel_2.0_documentation_update'
 
 name: Publish Docs
 jobs:
