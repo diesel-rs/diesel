@@ -15,7 +15,8 @@ impl Database {
     pub fn create(self) -> Self {
         let (database, mysql_url) = self.split_url();
         let mut conn = MysqlConnection::establish(&mysql_url).unwrap();
-        conn.execute(&format!("CREATE DATABASE `{}`", database))
+        diesel::sql_query(&format!("CREATE DATABASE `{}`", database))
+            .execute(&mut conn)
             .unwrap();
         self
     }
@@ -64,7 +65,8 @@ impl Drop for Database {
             "Couldn't connect to database"
         );
         try_drop!(
-            conn.execute(&format!("DROP DATABASE IF EXISTS `{}`", database)),
+            diesel::sql_query(&format!("DROP DATABASE IF EXISTS `{}`", database))
+                .execute(&mut conn),
             "Couldn't drop database"
         );
     }

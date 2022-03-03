@@ -15,7 +15,8 @@ impl Database {
     pub fn create(self) -> Self {
         let (database, postgres_url) = self.split_url();
         let mut conn = PgConnection::establish(&postgres_url).unwrap();
-        conn.execute(&format!(r#"CREATE DATABASE "{}""#, database))
+        diesel::sql_query(&format!(r#"CREATE DATABASE "{}""#, database))
+            .execute(&mut conn)
             .unwrap();
         self
     }
@@ -63,7 +64,8 @@ impl Drop for Database {
             "Couldn't connect to database"
         );
         try_drop!(
-            conn.execute(&format!(r#"DROP DATABASE IF EXISTS "{}""#, database)),
+            diesel::sql_query(&format!(r#"DROP DATABASE IF EXISTS "{}""#, database))
+                .execute(&mut conn),
             "Couldn't drop database"
         );
     }
