@@ -1,5 +1,5 @@
-#![cfg(not(feature = "mysql"))]
-use crate::schema::{connection_without_transaction, DropTable};
+use crate::schema::*;
+use diesel::connection::BoxableConnection;
 use diesel::*;
 
 table! {
@@ -103,4 +103,16 @@ fn sqlite_uri_prefix_interpreted_as_file() {
     path.push("diesel_test_sqlite_readonly.db");
     assert!(SqliteConnection::establish(&format!("sqlite://{}?mode=rwc", path.display())).is_ok());
     assert!(path.exists());
+}
+
+#[test]
+fn boxable_connection_downcast_mut_usable() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let boxable = connection as &mut dyn BoxableConnection<TestBackend>;
+    let connection = boxable.downcast_mut::<TestConnection>().unwrap();
+    let sean = users.select(name).find(1).first(connection);
+
+    assert_eq!(Ok(String::from("Sean")), sean);
 }
