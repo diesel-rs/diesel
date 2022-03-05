@@ -315,7 +315,7 @@ fn ssl_ca_tests() {
     );
     let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
     let cstring = |s| CString::new(s).unwrap();
-    assert_eq!(Some("localhost"), conn_opts.host);
+    assert_eq!(Some(cstring("localhost")), conn_opts.host);
     assert_eq!(None, conn_opts.port);
     assert_eq!(cstring(username), conn_opts.user);
     assert_eq!(cstring(password), conn_opts.password.unwrap());
