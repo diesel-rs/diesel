@@ -9,7 +9,7 @@ use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Desc};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Inet, Jsonb, SqlType, Text};
+use crate::sql_types::{Array, Inet, Integer, Jsonb, SqlType, Text};
 use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
@@ -314,6 +314,62 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
         T: AsExpression<Self::SqlType>,
     {
         Grouped(IsContainedBy::new(self, other.as_expression()))
+    }
+    /// Indexes a PostgreSQL array.
+    ///
+    /// This operator indexes in to an array to access a single element.
+    ///
+    /// Note that PostgreSQL arrays are 1-indexed, so `foo.index(1)` is the
+    /// first element in the array.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(&vec![
+    ///         tags.eq(vec!["cool", "awesome"]),
+    ///         tags.eq(vec!["splendid", "marvellous"]),
+    ///    ])
+    ///     .execute(conn)?;
+    ///
+    /// let data = posts.select(tags.index(id))
+    ///     .load::<String>(conn)?;
+    /// assert_eq!(vec!["cool", "marvellous"], data);
+    ///
+    /// let data = posts.select(id)
+    ///     .filter(tags.index(1).eq("splendid"))
+    ///     .load::<i32>(conn)?;
+    /// assert_eq!(vec![2], data);
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn index<T>(self, other: T) -> dsl::ArrayIndex<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Integer>,
+    {
+        ArrayIndex::new(self, other.as_expression())
     }
 }
 

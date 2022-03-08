@@ -1,6 +1,8 @@
 use crate::expression::expression_types::NotSelectable;
+use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
-use crate::sql_types::{Bigint, Bool, Inet, Jsonb};
+use crate::query_builder::{QueryFragment, QueryId};
+use crate::sql_types::{Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType};
 
 __diesel_infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
 __diesel_infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
@@ -26,3 +28,44 @@ infix_operator!(HasAnyKeyJsonb, " ?| ", backend: Pg);
 infix_operator!(HasAllKeysJsonb, " ?& ", backend: Pg);
 infix_operator!(ContainsJsonb, " @> ", backend: Pg);
 infix_operator!(IsContainedByJsonb, " <@ ", backend: Pg);
+
+#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
+#[doc(hidden)]
+pub struct ArrayIndex<L, R> {
+    pub(crate) left: L,
+    pub(crate) right: R,
+}
+
+impl<L, R> ArrayIndex<L, R> {
+    pub fn new(left: L, right: R) -> Self {
+        Self { left, right }
+    }
+}
+
+impl<L, R, ST> crate::expression::Expression for ArrayIndex<L, R>
+where
+    L: crate::expression::Expression<SqlType = Array<ST>>,
+    R: crate::expression::Expression<SqlType = Integer>,
+    ST: SqlType + TypedExpressionType,
+{
+    type SqlType = ST;
+}
+
+impl_selectable_expression!(ArrayIndex<L, R>);
+
+impl<L, R> QueryFragment<Pg> for ArrayIndex<L, R>
+where
+    L: QueryFragment<Pg>,
+    R: QueryFragment<Pg>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: crate::query_builder::AstPass<'_, 'b, Pg>,
+    ) -> crate::result::QueryResult<()> {
+        self.left.walk_ast(out.reborrow())?;
+        out.push_sql("[");
+        self.right.walk_ast(out.reborrow())?;
+        out.push_sql("]");
+        Ok(())
+    }
+}
