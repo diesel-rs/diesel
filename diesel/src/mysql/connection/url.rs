@@ -126,6 +126,9 @@ impl ConnectionOptions {
             password,
             database,
             port: url.port(),
+            client_flags,
+            ssl_mode,
+            unix_socket,
             ssl_ca,
         })
     }
