@@ -1,27 +1,23 @@
-mod batch_insert;
+pub(super) mod batch_insert;
 mod column_list;
 mod insert_from_select;
 
-pub use self::batch_insert::BatchInsert;
+pub(crate) use self::batch_insert::BatchInsert;
 pub(crate) use self::column_list::ColumnList;
 pub(crate) use self::insert_from_select::InsertFromSelect;
-
-use std::marker::PhantomData;
+pub(crate) use self::private::{Insert, InsertOrIgnore, Replace};
 
 use super::returning_clause::*;
-use crate::backend::{sql_dialect, Backend, SqlDialect};
+use crate::backend::{sql_dialect, Backend, DieselReserveSpecialization, SqlDialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
-#[cfg(feature = "mysql")]
-use crate::mysql::Mysql;
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
 use crate::result::QueryResult;
-#[cfg(feature = "sqlite")]
-use crate::sqlite::Sqlite;
 use crate::{insertable::*, QuerySource};
+use std::marker::PhantomData;
 
 #[cfg(feature = "sqlite")]
 mod insert_with_default_for_sqlite;
@@ -36,12 +32,28 @@ mod insert_with_default_for_sqlite;
 /// [`default_values`]: IncompleteInsertStatement::default_values()
 #[derive(Debug, Clone, Copy)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
-pub struct IncompleteInsertStatement<T, Op> {
+pub struct IncompleteInsertStatement<T, Op = Insert> {
     target: T,
     operator: Op,
 }
 
-impl<T: QuerySource, Op> IncompleteInsertStatement<T, Op> {
+/// Represents the return type of [`diesel::insert_or_ignore_into`](crate::insert_or_ignore_into)
+pub type IncompleteInsertOrIgnoreStatement<T> = IncompleteInsertStatement<T, InsertOrIgnore>;
+
+/// Represents a complete `INSERT OR IGNORE` statement.
+pub type InsertOrIgnoreStatement<T, U, Ret = NoReturningClause> =
+    InsertStatement<T, U, InsertOrIgnore, Ret>;
+
+/// Represents the return type of [`diesel::replace_into`](crate::replace_into)
+pub type IncompleteReplaceStatement<T> = IncompleteInsertStatement<T, Replace>;
+
+/// Represents a complete `INSERT OR REPLACE` statement.
+pub type ReplaceStatement<T, U, Ret = NoReturningClause> = InsertStatement<T, U, Replace, Ret>;
+
+impl<T, Op> IncompleteInsertStatement<T, Op>
+where
+    T: QuerySource,
+{
     pub(crate) fn new(target: T, operator: Op) -> Self {
         IncompleteInsertStatement { target, operator }
     }
@@ -66,10 +78,10 @@ impl<T: QuerySource, Op> IncompleteInsertStatement<T, Op> {
     /// #     use diesel::insert_into;
     /// #     use self::users::dsl::*;
     /// #     let connection = &mut connection_no_data();
-    /// connection.execute("CREATE TABLE users (
+    /// diesel::sql_query("CREATE TABLE users (
     ///     name VARCHAR(255) NOT NULL DEFAULT 'Sean',
     ///     hair_color VARCHAR(255) NOT NULL DEFAULT 'Green'
-    /// )")?;
+    /// )").execute(connection)?;
     ///
     /// insert_into(users)
     ///     .default_values()
@@ -191,7 +203,7 @@ impl<T: QuerySource, U, C, Op, Ret> InsertStatement<T, InsertFromSelect<U, C>, O
 
 impl<T, U, Op, Ret, DB> QueryFragment<DB> for InsertStatement<T, U, Op, Ret>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: Table,
     T::FromClause: QueryFragment<DB>,
     U: QueryFragment<DB> + CanInsertInSingleQuery<DB>,
@@ -274,63 +286,16 @@ impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
     }
 }
 
-#[derive(Debug, Copy, Clone, QueryId)]
-#[doc(hidden)]
-pub struct Insert;
-
-impl<DB: Backend> QueryFragment<DB> for Insert {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_sql("INSERT");
-        Ok(())
-    }
-}
-
-#[derive(Debug, Copy, Clone, QueryId)]
-#[doc(hidden)]
-pub struct InsertOrIgnore;
-
-#[cfg(feature = "sqlite")]
-impl QueryFragment<Sqlite> for InsertOrIgnore {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-        out.push_sql("INSERT OR IGNORE");
-        Ok(())
-    }
-}
-
-#[cfg(feature = "mysql")]
-impl QueryFragment<Mysql> for InsertOrIgnore {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
-        out.push_sql("INSERT IGNORE");
-        Ok(())
-    }
-}
-
-#[derive(Debug, Copy, Clone, QueryId)]
-#[doc(hidden)]
-pub struct Replace;
-
-#[cfg(feature = "sqlite")]
-impl QueryFragment<Sqlite> for Replace {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-        out.push_sql("REPLACE");
-        Ok(())
-    }
-}
-
-#[cfg(feature = "mysql")]
-impl QueryFragment<Mysql> for Replace {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
-        out.push_sql("REPLACE");
-        Ok(())
-    }
-}
-
 /// Marker trait to indicate that no additional operations have been added
 /// to a record for insert.
 ///
 /// This is used to prevent things like
 /// `.on_conflict_do_nothing().on_conflict_do_nothing()`
 /// from compiling.
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub trait UndecoratedInsertRecord<Table> {}
 
 impl<'a, T, Tab> UndecoratedInsertRecord<Tab> for &'a T where
@@ -427,9 +392,17 @@ where
     }
 }
 
-#[doc(hidden)]
+/// This type represents a values clause used as part of insert statements
+///
+/// Diesel exposes this type for third party backends so that
+/// they can implement batch insert support
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct ValuesClause<T, Tab> {
+    /// Values to insert
     pub values: T,
     _marker: PhantomData<Tab>,
 }
@@ -467,7 +440,7 @@ where
     DefaultValues: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        if self.values.is_noop()? {
+        if self.values.is_noop(out.backend())? {
             DefaultValues.walk_ast(out)?;
         } else {
             out.push_sql("(");
@@ -477,5 +450,74 @@ where
             out.push_sql(")");
         }
         Ok(())
+    }
+}
+
+mod private {
+    use crate::backend::{Backend, DieselReserveSpecialization};
+    use crate::query_builder::{AstPass, QueryFragment, QueryId};
+    use crate::QueryResult;
+
+    #[derive(Debug, Copy, Clone, QueryId)]
+    pub struct Insert;
+
+    impl<DB> QueryFragment<DB> for Insert
+    where
+        DB: Backend + DieselReserveSpecialization,
+    {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+            out.push_sql("INSERT");
+            Ok(())
+        }
+    }
+
+    #[derive(Debug, Copy, Clone, QueryId)]
+    pub struct InsertOrIgnore;
+
+    #[cfg(feature = "sqlite")]
+    impl QueryFragment<crate::sqlite::Sqlite> for InsertOrIgnore {
+        fn walk_ast<'b>(
+            &'b self,
+            mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>,
+        ) -> QueryResult<()> {
+            out.push_sql("INSERT OR IGNORE");
+            Ok(())
+        }
+    }
+
+    #[cfg(feature = "mysql")]
+    impl QueryFragment<crate::mysql::Mysql> for InsertOrIgnore {
+        fn walk_ast<'b>(
+            &'b self,
+            mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
+        ) -> QueryResult<()> {
+            out.push_sql("INSERT IGNORE");
+            Ok(())
+        }
+    }
+
+    #[derive(Debug, Copy, Clone, QueryId)]
+    pub struct Replace;
+
+    #[cfg(feature = "sqlite")]
+    impl QueryFragment<crate::sqlite::Sqlite> for Replace {
+        fn walk_ast<'b>(
+            &'b self,
+            mut out: AstPass<'_, 'b, crate::sqlite::Sqlite>,
+        ) -> QueryResult<()> {
+            out.push_sql("REPLACE");
+            Ok(())
+        }
+    }
+
+    #[cfg(feature = "mysql")]
+    impl QueryFragment<crate::mysql::Mysql> for Replace {
+        fn walk_ast<'b>(
+            &'b self,
+            mut out: AstPass<'_, 'b, crate::mysql::Mysql>,
+        ) -> QueryResult<()> {
+            out.push_sql("REPLACE");
+            Ok(())
+        }
     }
 }

@@ -64,12 +64,12 @@ fn now_executes_sql_function_now() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_timestamps (created_at) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_timestamps (created_at) VALUES
                        (NOW() - '1 day'::interval), (NOW() + '1 day'::interval)",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let before_today = has_timestamps
         .select(id)
@@ -92,12 +92,12 @@ fn now_can_be_used_as_timestamptz() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_timestamps (created_at) VALUES \
+    diesel::sql_query(
+        "INSERT INTO has_timestamps (created_at) VALUES \
              (NOW() - '1 day'::interval)",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let created_at_tz = sql::<Timestamptz>("created_at");
     let before_now = has_timestamps
@@ -116,12 +116,12 @@ fn now_can_be_used_as_nullable_timestamptz() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_timestamps (created_at) VALUES \
+    diesel::sql_query(
+        "INSERT INTO has_timestamps (created_at) VALUES \
              (NOW() - '1 day'::interval)",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let created_at_tz = sql::<Nullable<Timestamptz>>("created_at");
     let before_now = has_timestamps
@@ -158,12 +158,12 @@ fn today_executes_sql_function_current_date() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_date (date) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_date (date) VALUES
                 (current_date - '1 day'::interval), (current_date + '1 day'::interval);",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let before_today = has_date
         .select(id)
@@ -184,12 +184,12 @@ fn today_executes_sql_function_current_date() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_date (date) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_date (date) VALUES
                 (DATE('now', '-1 day')), (DATE('now', '+1 day'));",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let before_today = has_date
         .select(id)
@@ -210,12 +210,12 @@ fn today_executes_sql_function_current_date() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_date (id, date) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_date (id, date) VALUES
                 (42, current_date - interval 1 day), (43, current_date + interval 1 day);",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let before_today = has_date
         .select(id)
@@ -236,21 +236,19 @@ fn now_executes_sql_function_now() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_timestamps (id, created_at) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_timestamps (id, created_at) VALUES
                        (42, NOW() - interval 1 day), (43, NOW() + interval 1 day)",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let before_today = has_timestamps.select(id).filter(created_at.lt(now));
 
-    dbg!(diesel::debug_query(&before_today));
     let before_today = before_today.load::<i32>(connection);
 
     let after_today = has_timestamps.select(id).filter(created_at.gt(now));
 
-    dbg!(diesel::debug_query(&after_today));
     let after_today = after_today.load::<i32>(connection);
 
     assert_eq!(Ok(vec![42]), before_today);
@@ -264,12 +262,12 @@ fn now_executes_sql_function_now() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_timestamps (created_at) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_timestamps (created_at) VALUES
                         (DATETIME('now', '-1 day')), (DATETIME('now', '+1 day'))",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let before_today = has_timestamps
         .select(id)
@@ -289,15 +287,15 @@ fn date_uses_sql_function_date() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_timestamps (created_at, updated_at) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_timestamps (created_at, updated_at) VALUES
                        ('2015-11-15 06:07:41', '2015-11-15 20:07:41'),
                        ('2015-11-16 06:07:41', '2015-11-17 20:07:41'),
                        ('2015-11-16 06:07:41', '2015-11-16 02:07:41')
                        ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let expected_data = vec![1, 3];
     let actual_data = has_timestamps
@@ -314,13 +312,13 @@ fn time_is_deserialized_properly() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_time (\"time\") VALUES
+    diesel::sql_query(
+        "INSERT INTO has_time (\"time\") VALUES
                        ('00:00:01'), ('00:02:00'), ('03:00:00')
                        ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
     let one_second = PgTime(1_000_000);
     let two_minutes = PgTime(120_000_000);
     let three_hours = PgTime(10_800_000_000);
@@ -363,12 +361,12 @@ fn adding_interval_to_timestamp() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_timestamps (created_at, updated_at) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_timestamps (created_at, updated_at) VALUES
                        ('2015-11-15 06:07:41', '2015-11-15 20:07:41')",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let expected_data = select(sql::<sql_types::Timestamp>(
         "'2015-11-16 06:07:41'::timestamp",
@@ -388,12 +386,12 @@ fn adding_interval_to_timestamptz() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
-            "INSERT INTO has_timestamptzs (created_at, updated_at) VALUES
+    diesel::sql_query(
+        "INSERT INTO has_timestamptzs (created_at, updated_at) VALUES
                        ('2015-11-15 06:07:41+0100', '2015-11-15 20:07:41+0100')",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let expected_data = select(sql::<sql_types::Timestamptz>(
         "'2015-11-16 06:07:41+0100'::timestamptz",
@@ -413,11 +411,10 @@ fn adding_interval_to_nullable_things() {
 
     let connection = &mut connection();
     setup_test_table(connection);
-    connection
-        .execute(
+    diesel::sql_query(
             "INSERT INTO nullable_date_and_time (timestamp, timestamptz, date, time) VALUES
                        ('2017-08-20 18:13:37', '2017-08-20 18:13:37+0100', '2017-08-20', '18:13:37')",
-        )
+        ).execute(connection)
         .unwrap();
 
     let expected_data = select(sql::<Nullable<sql_types::Timestamp>>(

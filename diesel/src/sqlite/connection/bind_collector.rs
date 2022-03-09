@@ -95,7 +95,7 @@ impl<'a> From<&'a [u8]> for SqliteBindValue<'a> {
 }
 
 #[derive(Debug)]
-pub enum InternalSqliteBindValue<'a> {
+pub(crate) enum InternalSqliteBindValue<'a> {
     BorrowedString(&'a str),
     String(Box<str>),
     BorrowedBinary(&'a [u8]),

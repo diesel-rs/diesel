@@ -3,7 +3,7 @@ extern crate libsqlite3_sys as ffi;
 use super::bind_collector::{InternalSqliteBindValue, SqliteBindCollector};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
-use crate::connection::{MaybeCached, PrepareForCache};
+use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -14,13 +14,12 @@ use std::io::{stderr, Write};
 use std::os::raw as libc;
 use std::ptr::{self, NonNull};
 
-#[allow(missing_debug_implementations)]
-pub(in crate::sqlite) struct Statement {
+pub(super) struct Statement {
     inner_statement: NonNull<ffi::sqlite3_stmt>,
 }
 
 impl Statement {
-    pub fn prepare(
+    pub(super) fn prepare(
         raw_connection: &RawConnection,
         sql: &str,
         is_cached: PrepareForCache,
@@ -264,7 +263,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         let query = Box::new(query);
 
         let mut bind_collector = SqliteBindCollector::new();
-        query.collect_binds(&mut bind_collector, &mut ())?;
+        query.collect_binds(&mut bind_collector, &mut (), &Sqlite)?;
         let SqliteBindCollector { binds } = bind_collector;
 
         let mut ret = BoundStatement {
@@ -392,11 +391,11 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         })
     }
 
-    pub(in crate::sqlite::connection) fn run(self) -> QueryResult<()> {
+    pub(super) fn run(self) -> QueryResult<()> {
         self.step().map(|_| ())
     }
 
-    pub(in crate::sqlite::connection) fn step(self) -> QueryResult<Option<Self>> {
+    pub(super) fn step(self) -> QueryResult<Option<Self>> {
         let res = unsafe {
             match ffi::sqlite3_step(self.statement.statement.inner_statement.as_ptr()) {
                 ffi::SQLITE_DONE => Ok(None),

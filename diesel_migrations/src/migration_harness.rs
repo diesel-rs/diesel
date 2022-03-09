@@ -1,12 +1,11 @@
+use diesel::associations::HasTable;
 use diesel::backend::Backend;
 use diesel::dsl;
-use diesel::expression::bound::Bound;
-use diesel::insertable::ColumnInsertValue;
 use diesel::migration::{
     Migration, MigrationConnection, MigrationSource, MigrationVersion, Result,
 };
 use diesel::prelude::*;
-use diesel::query_builder::{InsertStatement, ValuesClause};
+use diesel::query_builder::{DeleteStatement, InsertStatement, IntoUpdateTarget};
 use diesel::query_dsl::methods::ExecuteDsl;
 use diesel::query_dsl::LoadQuery;
 use diesel::serialize::ToSql;
@@ -164,13 +163,19 @@ where
     >: LoadQuery<'b, C, MigrationVersion<'static>>,
     for<'a> InsertStatement<
         __diesel_schema_migrations::table,
-        ValuesClause<
-            ColumnInsertValue<
-                __diesel_schema_migrations::version,
-                Bound<Text, MigrationVersion<'a>>,
-            >,
+        <dsl::Eq<__diesel_schema_migrations::version, MigrationVersion<'static>> as Insertable<
             __diesel_schema_migrations::table,
-        >,
+        >>::Values,
+    >: diesel::query_builder::QueryFragment<DB> + ExecuteDsl<C, DB>,
+    DeleteStatement<
+        <dsl::Find<
+            __diesel_schema_migrations::table,
+            MigrationVersion<'static>,
+        > as HasTable>::Table,
+        <dsl::Find<
+            __diesel_schema_migrations::table,
+            MigrationVersion<'static>,
+        > as IntoUpdateTarget>::WhereClause,
     >: ExecuteDsl<C>,
     str: ToSql<Text, DB>,
 {
@@ -181,8 +186,7 @@ where
         let apply_migration = |conn: &mut C| -> Result<()> {
             migration.run(conn)?;
             diesel::insert_into(__diesel_schema_migrations::table)
-                .values(__diesel_schema_migrations::version.eq(migration.name().version()))
-                .execute(conn)?;
+                .values(__diesel_schema_migrations::version.eq(migration.name().version().as_owned())).execute(conn)?;
             Ok(())
         };
 
@@ -200,8 +204,8 @@ where
     ) -> Result<MigrationVersion<'static>> {
         let revert_migration = |conn: &mut C| -> Result<()> {
             migration.revert(conn)?;
-            diesel::delete(__diesel_schema_migrations::table.find(migration.name().version()))
-                .execute(conn)?;
+            diesel::delete(__diesel_schema_migrations::table.find(migration.name().version().as_owned()))
+               .execute(conn)?;
             Ok(())
         };
 

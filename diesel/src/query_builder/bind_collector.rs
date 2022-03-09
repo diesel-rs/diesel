@@ -6,6 +6,12 @@ use crate::result::QueryResult;
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::{HasSqlType, TypeMetadata};
 
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::private::ByteWrapper;
+
 /// A type which manages serializing bind parameters during query construction.
 ///
 /// The only reason you would ever need to interact with this trait is if you
@@ -38,11 +44,11 @@ pub struct RawBytesBindCollector<DB: Backend + TypeMetadata> {
     /// The metadata associated with each bind parameter.
     ///
     /// This vec is guaranteed to be the same length as `binds`.
-    pub metadata: Vec<DB::TypeMetadata>,
+    pub(crate) metadata: Vec<DB::TypeMetadata>,
     /// The serialized bytes for each bind parameter.
     ///
     /// This vec is guaranteed to be the same length as `metadata`.
-    pub binds: Vec<Option<Vec<u8>>>,
+    pub(crate) binds: Vec<Option<Vec<u8>>>,
 }
 
 #[allow(clippy::new_without_default)]
@@ -55,8 +61,8 @@ impl<DB: Backend + TypeMetadata> RawBytesBindCollector<DB> {
         }
     }
 
-    pub(crate) fn reborrow_buffer<'a: 'b, 'b>(b: &'a mut Vec<u8>) -> &'b mut Vec<u8> {
-        b
+    pub(crate) fn reborrow_buffer<'a: 'b, 'b>(b: &'b mut ByteWrapper<'a>) -> ByteWrapper<'b> {
+        ByteWrapper(b.0)
     }
 }
 
@@ -64,7 +70,7 @@ impl<'a, DB> BindCollector<'a, DB> for RawBytesBindCollector<DB>
 where
     DB: Backend<BindCollector = Self> + TypeMetadata,
 {
-    type Buffer = &'a mut Vec<u8>;
+    type Buffer = ByteWrapper<'a>;
 
     fn push_bound_value<T, U>(
         &mut self,
@@ -77,7 +83,7 @@ where
     {
         let mut bytes = Vec::new();
         let is_null = {
-            let mut to_sql_output = Output::new(&mut bytes, metadata_lookup);
+            let mut to_sql_output = Output::new(ByteWrapper(&mut bytes), metadata_lookup);
             bind.to_sql(&mut to_sql_output)
                 .map_err(SerializationError)?
         };
@@ -89,4 +95,12 @@ where
         self.metadata.push(metadata);
         Ok(())
     }
+}
+
+// This is private for now as we may want to add `Into` impls for the wrapper type
+// later on
+mod private {
+    /// A type wrapper for raw bytes
+    #[derive(Debug)]
+    pub struct ByteWrapper<'a>(pub(crate) &'a mut Vec<u8>);
 }

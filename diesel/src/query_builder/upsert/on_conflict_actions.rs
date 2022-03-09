@@ -59,7 +59,7 @@ where
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
-        if self.changeset.is_noop()? {
+        if self.changeset.is_noop(out.backend())? {
             out.push_sql(" DO NOTHING");
         } else {
             out.push_sql(" DO UPDATE SET ");

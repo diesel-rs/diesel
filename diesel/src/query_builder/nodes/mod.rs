@@ -1,18 +1,20 @@
-use std::marker::PhantomData;
-
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::query_builder::*;
 use crate::result::QueryResult;
+use std::marker::PhantomData;
 
+#[doc(hidden)] // used by the table macro
 pub trait StaticQueryFragment {
     type Component: 'static;
     const STATIC_COMPONENT: &'static Self::Component;
 }
 
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)] // used by the table macro
 pub struct StaticQueryFragmentInstance<T>(PhantomData<T>);
 
 impl<T> StaticQueryFragmentInstance<T> {
+    #[doc(hidden)] // used by the table macro
     pub const fn new() -> Self {
         Self(PhantomData)
     }
@@ -20,7 +22,7 @@ impl<T> StaticQueryFragmentInstance<T> {
 
 impl<T, DB> QueryFragment<DB> for StaticQueryFragmentInstance<T>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: StaticQueryFragment,
     T::Component: QueryFragment<DB>,
 {
@@ -30,6 +32,7 @@ where
 }
 
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)] // used by the table macro
 pub struct Identifier<'a>(pub &'a str);
 
 impl<'a, DB: Backend> QueryFragment<DB> for Identifier<'a> {
@@ -49,6 +52,7 @@ impl<'a, DB: Backend> MiddleFragment<DB> for &'a str {
 }
 
 #[derive(Debug, Copy, Clone)]
+#[doc(hidden)] // used by the table macro
 pub struct InfixNode<T, U, M> {
     lhs: T,
     rhs: U,
@@ -56,6 +60,7 @@ pub struct InfixNode<T, U, M> {
 }
 
 impl<T, U, M> InfixNode<T, U, M> {
+    #[doc(hidden)] // used by the table macro
     pub const fn new(lhs: T, rhs: U, middle: M) -> Self {
         InfixNode { lhs, rhs, middle }
     }
@@ -63,7 +68,7 @@ impl<T, U, M> InfixNode<T, U, M> {
 
 impl<T, U, DB, M> QueryFragment<DB> for InfixNode<T, U, M>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: QueryFragment<DB>,
     U: QueryFragment<DB>,
     M: MiddleFragment<DB>,

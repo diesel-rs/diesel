@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::dsl::SqlTypeOf;
 use crate::expression::{
     AppearsOnTable, Expression, QueryMetadata, Selectable, SelectableExpression,
@@ -100,7 +100,7 @@ impl<T, DB> QueryFragment<DB> for SelectBy<T, DB>
 where
     T: Selectable<DB>,
     T::SelectExpression: QueryFragment<DB>,
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
 {
     fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.selection.walk_ast(out)

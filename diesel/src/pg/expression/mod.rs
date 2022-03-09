@@ -5,16 +5,13 @@
 //! kept separate purely for documentation purposes.
 
 pub(crate) mod array;
-#[doc(hidden)]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
-pub mod array_comparison;
+pub(crate) mod array_comparison;
 pub(crate) mod expression_methods;
 pub mod extensions;
 pub mod functions;
-#[doc(hidden)]
-pub mod helper_types;
-#[doc(hidden)]
-pub mod operators;
+pub(crate) mod helper_types;
+pub(crate) mod operators;
 
 mod date_and_time;
 
@@ -32,8 +29,9 @@ pub mod dsl {
     #[doc(inline)]
     pub use super::array::array;
 
+    #[doc(inline)]
     pub use super::extensions::*;
 
-    #[cfg(not(feature = "sqlite"))]
+    #[doc(inline)]
     pub use super::functions::*;
 }

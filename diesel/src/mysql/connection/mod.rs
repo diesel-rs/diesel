@@ -11,12 +11,15 @@ use super::backend::Mysql;
 use crate::connection::commit_error_processor::{
     default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
 };
+use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::*;
+use crate::RunQueryDsl;
 
+#[cfg(feature = "mysql")]
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
 /// `mysql://[user[:password]@]host/database_name`
@@ -80,24 +83,15 @@ impl Connection for MysqlConnection {
         Ok(conn)
     }
 
-    #[doc(hidden)]
-    fn execute(&mut self, query: &str) -> QueryResult<usize> {
-        self.raw_connection
-            .execute(query)
-            .map(|_| self.raw_connection.affected_rows())
-    }
-
-    #[doc(hidden)]
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
     where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let stmt = self.prepared_query(&source.as_query())?;
+        let stmt = self.prepared_query(&source)?;
 
         let mut metadata = Vec::new();
         Mysql::row_metadata(&mut (), &mut metadata);
@@ -126,7 +120,7 @@ impl Connection for MysqlConnection {
 #[cfg(feature = "r2d2")]
 impl crate::r2d2::R2D2Connection for MysqlConnection {
     fn ping(&mut self) -> QueryResult<()> {
-        self.execute("SELECT 1").map(|_| ())
+        crate::r2d2::CheckConnectionQuery.execute(self).map(|_| ())
     }
 
     fn is_broken(&mut self) -> bool {
@@ -146,9 +140,9 @@ impl MysqlConnection {
         let cache = &mut self.statement_cache;
         let conn = &mut self.raw_connection;
 
-        let mut stmt = cache.cached_statement(source, &[], |sql, _| conn.prepare(sql))?;
+        let mut stmt = cache.cached_statement(source, &Mysql, &[], |sql, _| conn.prepare(sql))?;
         let mut bind_collector = RawBytesBindCollector::new();
-        source.collect_binds(&mut bind_collector, &mut ())?;
+        source.collect_binds(&mut bind_collector, &mut (), &Mysql)?;
         let binds = bind_collector
             .metadata
             .into_iter()
@@ -158,11 +152,12 @@ impl MysqlConnection {
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {
-        self.execute("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))")?;
-        self.execute("SET time_zone = '+00:00';")?;
-        self.execute("SET character_set_client = 'utf8mb4'")?;
-        self.execute("SET character_set_connection = 'utf8mb4'")?;
-        self.execute("SET character_set_results = 'utf8mb4'")?;
+        crate::sql_query("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))")
+            .execute(self)?;
+        crate::sql_query("SET time_zone = '+00:00';").execute(self)?;
+        crate::sql_query("SET character_set_client = 'utf8mb4'").execute(self)?;
+        crate::sql_query("SET character_set_connection = 'utf8mb4'").execute(self)?;
+        crate::sql_query("SET character_set_results = 'utf8mb4'").execute(self)?;
         Ok(())
     }
 }
@@ -201,24 +196,27 @@ mod tests {
     #[test]
     fn execute_handles_queries_which_return_results() {
         let connection = &mut connection();
-        assert!(connection.execute("SELECT 1").is_ok());
-        assert!(connection.execute("SELECT 1").is_ok());
+        assert!(crate::sql_query("SELECT 1").execute(connection).is_ok());
+        assert!(crate::sql_query("SELECT 1").execute(connection).is_ok());
     }
 
     #[test]
     fn check_client_found_rows_flag() {
         let conn = &mut crate::test_helpers::connection();
-        conn.execute("DROP TABLE IF EXISTS update_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS update_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE update_test(id INTEGER PRIMARY KEY, num INTEGER NOT NULL)")
+        crate::sql_query("CREATE TABLE update_test(id INTEGER PRIMARY KEY, num INTEGER NOT NULL)")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("INSERT INTO update_test(id, num) VALUES (1, 5)")
+        crate::sql_query("INSERT INTO update_test(id, num) VALUES (1, 5)")
+            .execute(conn)
             .unwrap();
 
-        let output = conn
-            .execute("UPDATE update_test SET num = 5 WHERE id = 1")
+        let output = crate::sql_query("UPDATE update_test SET num = 5 WHERE id = 1")
+            .execute(conn)
             .unwrap();
 
         assert_eq!(output, 1);

@@ -48,10 +48,10 @@ mod single_value_dsl;
 pub use self::belonging_to_dsl::BelongingToDsl;
 pub use self::combine_dsl::CombineDsl;
 pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
-#[doc(hidden)]
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
-pub use self::load_dsl::LoadQuery;
+pub use self::load_dsl::{LoadQuery, LoadRet};
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
@@ -68,7 +68,7 @@ pub mod methods {
     pub use super::group_by_dsl::GroupByDsl;
     pub use super::having_dsl::HavingDsl;
     pub use super::limit_dsl::LimitDsl;
-    pub use super::load_dsl::{ExecuteDsl, LoadQuery};
+    pub use super::load_dsl::{ExecuteDsl, LoadQuery, LoadRet};
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
     pub use super::nullable_select_dsl::SelectNullableDsl;
     pub use super::offset_dsl::OffsetDsl;
@@ -97,7 +97,7 @@ pub trait QueryDsl: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM users").unwrap();
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection).unwrap();
     /// diesel::insert_into(users)
     ///     .values(&vec![name.eq("Sean"); 3])
     ///     .execute(connection)?;
@@ -144,7 +144,7 @@ pub trait QueryDsl: Sized {
     /// # fn main() {
     /// #     use self::animals::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM animals").unwrap();
+    /// #     diesel::sql_query("DELETE FROM animals").execute(connection).unwrap();
     /// diesel::insert_into(animals)
     ///     .values(&vec![
     ///         (species.eq("dog"), name.eq(Some("Jack")), legs.eq(4)),
@@ -260,7 +260,7 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM posts")?;
+    /// #     diesel::sql_query("DELETE FROM posts").execute(connection)?;
     /// #     diesel::insert_into(posts::table)
     /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
     /// #         .execute(connection)?;
@@ -546,7 +546,7 @@ pub trait QueryDsl: Sized {
     /// #
     /// # fn run_test() -> QueryResult<()> {
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM posts")?;
+    /// #     diesel::sql_query("DELETE FROM posts").execute(connection)?;
     /// #     diesel::insert_into(posts::table)
     /// #         .values((posts::user_id.eq(1), posts::title.eq("Sean's Post")))
     /// #         .execute(connection)?;
@@ -710,7 +710,7 @@ pub trait QueryDsl: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM users")?;
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection)?;
     /// diesel::insert_into(users)
     ///     .values(&vec![
     ///         name.eq("Saul"),
@@ -777,7 +777,7 @@ pub trait QueryDsl: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("DELETE FROM users")?;
+    /// #     diesel::sql_query("DELETE FROM users").execute(connection)?;
     /// diesel::insert_into(users)
     ///     .values(&vec![
     ///         name.eq("Saul"),
@@ -998,9 +998,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE`
-    /// users.for_update().load(connection)
+    /// let users_for_update = users::table.for_update().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_update;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_update(self) -> ForUpdate<Self>
     where
@@ -1021,9 +1035,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR NO KEY UPDATE`
-    /// users.for_no_key_update().load(connection)
+    /// let users_for_no_key_update = users::table.for_no_key_update().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_no_key_update;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_no_key_update(self) -> ForNoKeyUpdate<Self>
     where
@@ -1043,9 +1071,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR SHARE`
-    /// users.for_share().load(connection)
+    /// let users_for_share = users::table.for_share().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_share;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_share(self) -> ForShare<Self>
     where
@@ -1066,9 +1108,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    ///
+    /// # #[cfg(feature = "postgres")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR KEY SHARE`
-    /// users.for_key_share().load(connection)
+    /// let users_for_key_share = users::table.for_key_share().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_for_key_share;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn for_key_share(self) -> ForKeyShare<Self>
     where
@@ -1083,9 +1139,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE SKIP LOCKED`
-    /// users.for_update().skip_locked().load(connection)
+    /// let user_skiped_locked = users::table.for_update().skip_locked().load(connection)?;
+    /// # let u: Vec<(i32, String)> = user_skiped_locked;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn skip_locked(self) -> SkipLocked<Self>
     where
@@ -1100,9 +1170,23 @@ pub trait QueryDsl: Sized {
     ///
     /// # Example
     ///
-    /// ```ignore
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// # fn main() {
+    /// #     run_test();
+    /// # }
+    /// #
+    /// # #[cfg(any(feature = "mysql", feature = "postgres"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use crate::schema::users;
+    /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE NOWAIT`
-    /// users.for_update().no_wait().load(connection)
+    /// let users_no_wait = users::table.for_update().no_wait().load(connection)?;
+    /// # let u: Vec<(i32, String)> = users_no_wait;
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(feature = "sqlite")]
+    /// # fn run_test() -> QueryResult<()> { Ok(()) }
     /// ```
     fn no_wait(self) -> NoWait<Self>
     where

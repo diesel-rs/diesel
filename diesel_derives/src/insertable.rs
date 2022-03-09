@@ -115,7 +115,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 
     wrap_in_dummy_mod(quote! {
         use diesel::insertable::Insertable;
-        use diesel::query_builder::UndecoratedInsertRecord;
+        use diesel::internal::derives::insertable::UndecoratedInsertRecord;
         use diesel::prelude::*;
 
         #insert_owned

@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::{Expression, ValidGrouping};
 use crate::query_builder::*;
 use crate::result::QueryResult;
@@ -11,7 +11,11 @@ impl<T: Expression> Expression for Grouped<T> {
     type SqlType = T::SqlType;
 }
 
-impl<T: QueryFragment<DB>, DB: Backend> QueryFragment<DB> for Grouped<T> {
+impl<T, DB> QueryFragment<DB> for Grouped<T>
+where
+    T: QueryFragment<DB>,
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("(");
         self.0.walk_ast(out.reborrow())?;

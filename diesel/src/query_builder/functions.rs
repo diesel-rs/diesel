@@ -1,12 +1,12 @@
 use super::delete_statement::DeleteStatement;
+use super::distinct_clause::NoDistinctClause;
 use super::insert_statement::{Insert, InsertOrIgnore, Replace};
 use super::select_clause::SelectClause;
 use super::{
-    AsQuery, IncompleteInsertStatement, IntoUpdateTarget, SelectStatement, SqlQuery,
-    UpdateStatement,
+    AsQuery, IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement,
+    IncompleteReplaceStatement, IntoUpdateTarget, SelectStatement, SqlQuery, UpdateStatement,
 };
 use crate::expression::Expression;
-use crate::query_builder::distinct_clause::NoDistinctClause;
 use crate::Table;
 
 /// Creates an `UPDATE` statement.
@@ -61,12 +61,12 @@ use crate::Table;
 /// # fn main() {
 /// # use self::users::dsl::*;
 /// # let connection = &mut establish_connection();
-/// # connection.execute("DROP TABLE users").unwrap();
-/// # connection.execute("CREATE TABLE users (
+/// # diesel::sql_query("DROP TABLE users").execute(connection).unwrap();
+/// # diesel::sql_query("CREATE TABLE users (
 /// #     id SERIAL PRIMARY KEY,
 /// #     name VARCHAR,
-/// #     surname VARCHAR)").unwrap();
-/// # connection.execute("INSERT INTO users(name, surname) VALUES('Sean', 'Griffin')").unwrap();
+/// #     surname VARCHAR)").execute(connection).unwrap();
+/// # diesel::sql_query("INSERT INTO users(name, surname) VALUES('Sage', 'Griffin')").execute(connection).unwrap();
 ///
 /// let updated_row = diesel::update(users.filter(id.eq(1)))
 ///     .set((name.eq("James"), surname.eq("Bond")))
@@ -402,7 +402,7 @@ pub fn delete<T: IntoUpdateTarget>(source: T) -> DeleteStatement<T::Table, T::Wh
 /// # #[cfg(not(feature = "postgres"))]
 /// # fn main() {}
 /// ```
-pub fn insert_into<T: Table>(target: T) -> IncompleteInsertStatement<T, Insert> {
+pub fn insert_into<T: Table>(target: T) -> IncompleteInsertStatement<T> {
     IncompleteInsertStatement::new(target, Insert)
 }
 
@@ -453,7 +453,7 @@ pub fn insert_into<T: Table>(target: T) -> IncompleteInsertStatement<T, Insert> 
 /// #     Ok(())
 /// # }
 /// ```
-pub fn insert_or_ignore_into<T: Table>(target: T) -> IncompleteInsertStatement<T, InsertOrIgnore> {
+pub fn insert_or_ignore_into<T: Table>(target: T) -> IncompleteInsertOrIgnoreStatement<T> {
     IncompleteInsertStatement::new(target, InsertOrIgnore)
 }
 
@@ -471,9 +471,9 @@ where
         NoDistinctClause,
         super::where_clause::NoWhereClause,
         super::order_clause::NoOrderClause,
-        super::LimitOffsetClause {
-            limit_clause: super::NoLimitClause,
-            offset_clause: super::NoOffsetClause,
+        super::limit_offset_clause::LimitOffsetClause {
+            limit_clause: super::limit_clause::NoLimitClause,
+            offset_clause: super::offset_clause::NoOffsetClause,
         },
         super::group_by_clause::NoGroupByClause,
         super::having_clause::NoHavingClause,
@@ -498,7 +498,7 @@ where
 /// #     use diesel::{insert_into, replace_into};
 /// #
 /// #     let conn = &mut establish_connection();
-/// #     conn.execute("DELETE FROM users").unwrap();
+/// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
 /// replace_into(users)
 ///     .values(&vec![
 ///         (id.eq(1), name.eq("Sean")),
@@ -516,7 +516,7 @@ where
 /// assert_eq!(Ok(vec!["Jim".into(), "Tess".into()]), names);
 /// # }
 /// # #[cfg(feature = "postgres")] fn main() {}
-pub fn replace_into<T: Table>(target: T) -> IncompleteInsertStatement<T, Replace> {
+pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
     IncompleteInsertStatement::new(target, Replace)
 }
 
@@ -602,6 +602,6 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteInsertStatement<T, Replace
 /// # }
 /// ```
 /// [`SqlQuery::bind()`]: crate::query_builder::SqlQuery::bind()
-pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery<()> {
-    SqlQuery::new((), query.into())
+pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery {
+    SqlQuery::from_sql(query.into())
 }

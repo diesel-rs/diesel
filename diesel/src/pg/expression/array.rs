@@ -1,7 +1,7 @@
-use crate::backend::Backend;
 use crate::expression::{
     AppearsOnTable, AsExpressionList, Expression, SelectableExpression, ValidGrouping,
 };
+use crate::pg::Pg;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::sql_types;
 use std::marker::PhantomData;
@@ -46,6 +46,7 @@ pub struct ArrayLiteral<T, ST> {
 /// #     Ok(())
 /// # }
 /// ```
+#[cfg(feature = "postgres_backend")]
 pub fn array<ST, T>(elements: T) -> ArrayLiteral<T::Expression, ST>
 where
     T: AsExpressionList<ST>,
@@ -64,12 +65,11 @@ where
     type SqlType = sql_types::Array<ST>;
 }
 
-impl<T, ST, DB> QueryFragment<DB> for ArrayLiteral<T, ST>
+impl<T, ST> QueryFragment<Pg> for ArrayLiteral<T, ST>
 where
-    DB: Backend,
-    T: QueryFragment<DB>,
+    T: QueryFragment<Pg>,
 {
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> crate::result::QueryResult<()> {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> crate::result::QueryResult<()> {
         out.push_sql("ARRAY[");
         QueryFragment::walk_ast(&self.elements, out.reborrow())?;
         out.push_sql("]");

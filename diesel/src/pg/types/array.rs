@@ -4,6 +4,7 @@ use std::io::Write;
 
 use crate::deserialize::{self, FromSql};
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
+use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Array, HasSqlType, Nullable};
 
@@ -48,7 +49,7 @@ where
                 } else {
                     let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
                     bytes = new_bytes;
-                    T::from_sql(PgValue::new(elem_bytes, &value))
+                    T::from_sql(PgValue::new_internal(elem_bytes, &value))
                 }
             })
             .collect()
@@ -103,7 +104,7 @@ where
 
         for elem in self.iter() {
             let is_null = {
-                let mut temp_buffer = Output::new(&mut buffer, out.metadata_lookup());
+                let mut temp_buffer = Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
                 let is_null = elem.to_sql(&mut temp_buffer)?;
                 is_null
             };

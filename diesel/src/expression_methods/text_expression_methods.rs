@@ -1,8 +1,9 @@
+use self::private::TextOrNullableText;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Concat, Like, NotLike};
 use crate::expression::{AsExpression, Expression};
-use crate::sql_types::{Nullable, SqlType, Text};
+use crate::sql_types::SqlType;
 
 /// Methods present on text expressions
 pub trait TextExpressionMethods: Expression + Sized {
@@ -26,11 +27,11 @@ pub trait TextExpressionMethods: Expression + Sized {
     /// #     use diesel::insert_into;
     /// #
     /// #     let connection = &mut connection_no_data();
-    /// #     connection.execute("CREATE TABLE users (
+    /// #     diesel::sql_query("CREATE TABLE users (
     /// #         id INTEGER PRIMARY KEY,
     /// #         name VARCHAR(255) NOT NULL,
     /// #         hair_color VARCHAR(255)
-    /// #     )").unwrap();
+    /// #     )").execute(connection).unwrap();
     /// #
     /// #     insert_into(users)
     /// #         .values(&vec![
@@ -137,18 +138,21 @@ pub trait TextExpressionMethods: Expression + Sized {
     }
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `TextExpressionMethods` on the appropriate
-/// types. Once coherence takes associated types into account, we can remove
-/// this trait.
-pub trait TextOrNullableText {}
-
-impl TextOrNullableText for Text {}
-impl TextOrNullableText for Nullable<Text> {}
-
 impl<T> TextExpressionMethods for T
 where
     T: Expression,
     T::SqlType: TextOrNullableText,
 {
+}
+
+mod private {
+    use crate::sql_types::{Nullable, Text};
+
+    /// Marker trait used to implement `TextExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    pub trait TextOrNullableText {}
+
+    impl TextOrNullableText for Text {}
+    impl TextOrNullableText for Nullable<Text> {}
 }

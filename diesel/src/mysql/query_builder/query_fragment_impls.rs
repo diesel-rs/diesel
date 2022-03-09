@@ -1,6 +1,7 @@
 use crate::mysql::Mysql;
+use crate::query_builder::insert_statement::DefaultValues;
 use crate::query_builder::locking_clause::{ForShare, ForUpdate, NoModifier, NoWait, SkipLocked};
-use crate::query_builder::{AstPass, DefaultValues, QueryFragment};
+use crate::query_builder::{AstPass, QueryFragment};
 use crate::result::QueryResult;
 
 impl QueryFragment<Mysql> for ForUpdate {

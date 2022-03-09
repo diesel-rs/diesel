@@ -2,8 +2,7 @@ extern crate libsqlite3_sys as ffi;
 
 mod bind_collector;
 mod functions;
-#[doc(hidden)]
-pub mod raw;
+mod raw;
 mod row;
 mod sqlite_value;
 mod statement_iterator;
@@ -22,6 +21,7 @@ use super::SqliteAggregateFunction;
 use crate::connection::commit_error_processor::{
     default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
 };
+use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::expression::QueryMetadata;
@@ -38,6 +38,7 @@ use crate::sqlite::Sqlite;
 /// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
 /// - Special identifiers (`:memory:`)
 #[allow(missing_debug_implementations)]
+#[cfg(feature = "sqlite")]
 pub struct SqliteConnection {
     // statement_cache needs to be before raw_connection
     // otherwise we will get errors about open statements before closing the
@@ -99,23 +100,15 @@ impl Connection for SqliteConnection {
         Ok(conn)
     }
 
-    #[doc(hidden)]
-    fn execute(&mut self, query: &str) -> QueryResult<usize> {
-        self.batch_execute(query)?;
-        Ok(self.raw_connection.rows_affected_by_last_query())
-    }
-
-    #[doc(hidden)]
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
     where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let statement_use = self.prepared_query(source.as_query())?;
+        let statement_use = self.prepared_query(source)?;
 
         Ok(StatementIterator::new(statement_use))
     }
@@ -142,7 +135,9 @@ impl Connection for SqliteConnection {
 #[cfg(feature = "r2d2")]
 impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
     fn ping(&mut self) -> QueryResult<()> {
-        self.execute("SELECT 1").map(|_| ())
+        use crate::RunQueryDsl;
+
+        crate::r2d2::CheckConnectionQuery.execute(self).map(|_| ())
     }
 
     fn is_broken(&mut self) -> bool {
@@ -237,7 +232,7 @@ impl SqliteConnection {
     {
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
-        let statement = cache.cached_statement(&source, &[], |sql, is_cached| {
+        let statement = cache.cached_statement(&source, &Sqlite, &[], |sql, is_cached| {
             Statement::prepare(raw_connection, sql, is_cached)
         })?;
 
@@ -526,13 +521,13 @@ mod tests {
         use self::my_sum_example::dsl::*;
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
-            )
-            .unwrap();
-        connection
-            .execute("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
+        crate::sql_query(
+            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+        )
+        .execute(connection)
+        .unwrap();
+        crate::sql_query("INSERT INTO my_sum_example (value) VALUES (1), (2), (3)")
+            .execute(connection)
             .unwrap();
 
         my_sum::register_impl::<MySum, _>(connection).unwrap();
@@ -548,11 +543,11 @@ mod tests {
         use self::my_sum_example::dsl::*;
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
-            )
-            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE my_sum_example (id integer primary key autoincrement, value integer)",
+        )
+        .execute(connection)
+        .unwrap();
 
         my_sum::register_impl::<MySum, _>(connection).unwrap();
 
@@ -610,17 +605,21 @@ mod tests {
         use self::range_max_example::dsl::*;
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        connection
-            .execute(
-                r#"CREATE TABLE range_max_example (
+        crate::sql_query(
+            r#"CREATE TABLE range_max_example (
                 id integer primary key autoincrement,
                 value1 integer,
                 value2 integer,
                 value3 integer
             )"#,
-            )
-            .unwrap();
-        connection.execute("INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)").unwrap();
+        )
+        .execute(connection)
+        .unwrap();
+        crate::sql_query(
+            "INSERT INTO range_max_example (value1, value2, value3) VALUES (3, 2, 1), (2, 2, 2)",
+        )
+        .execute(connection)
+        .unwrap();
 
         range_max::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
         let result = range_max_example
@@ -649,14 +648,15 @@ mod tests {
             })
             .unwrap();
 
-        connection
-            .execute(
+        crate::sql_query(
                 "CREATE TABLE my_collation_example (id integer primary key autoincrement, value text collate RUSTNOCASE)",
-            )
+            ).execute(connection)
             .unwrap();
-        connection
-            .execute("INSERT INTO my_collation_example (value) VALUES ('foo'), ('FOo'), ('f00')")
-            .unwrap();
+        crate::sql_query(
+            "INSERT INTO my_collation_example (value) VALUES ('foo'), ('FOo'), ('f00')",
+        )
+        .execute(connection)
+        .unwrap();
 
         let result = my_collation_example
             .filter(value.eq("foo"))

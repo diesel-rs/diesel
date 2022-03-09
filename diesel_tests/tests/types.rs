@@ -1,5 +1,5 @@
 // FIXME: Review this module to see if we can do these casts in a more backend agnostic way
-
+#![allow(warnings)]
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 extern crate bigdecimal;
 extern crate chrono;
@@ -8,6 +8,7 @@ use crate::schema::*;
 use diesel::deserialize::FromSqlRow;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
+use diesel::query_dsl::LoadQuery;
 use diesel::sql_types::*;
 use diesel::*;
 
@@ -37,21 +38,21 @@ fn errors_during_deserialization_do_not_panic() {
     use diesel::result::Error::DeserializationError;
 
     let connection = &mut connection();
-    connection
-        .execute(
-            "CREATE TABLE has_timestamps (
+    diesel::sql_query(
+        "CREATE TABLE has_timestamps (
         id SERIAL PRIMARY KEY,
         ts TIMESTAMP NOT NULL
     )",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
     let valid_pg_date_too_large_for_chrono = "'294276/01/01'";
-    connection
-        .execute(&format!(
-            "INSERT INTO has_timestamps (ts) VALUES ({})",
-            valid_pg_date_too_large_for_chrono
-        ))
-        .unwrap();
+    diesel::sql_query(&format!(
+        "INSERT INTO has_timestamps (ts) VALUES ({})",
+        valid_pg_date_too_large_for_chrono
+    ))
+    .execute(connection)
+    .unwrap();
     let values = has_timestamps.select(ts).load::<NaiveDateTime>(connection);
 
     match values {
@@ -68,22 +69,22 @@ fn errors_during_deserialization_do_not_panic() {
     use diesel::result::Error::DeserializationError;
 
     let connection = &mut connection();
-    connection
-        .execute(
-            "CREATE TABLE has_timestamps (
+    diesel::sql_query(
+        "CREATE TABLE has_timestamps (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         ts VARCHAR NOT NULL
     )",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let valid_sqlite_date_too_large_for_chrono = "'294276-01-01 00:00:00'";
-    connection
-        .execute(&format!(
-            "INSERT INTO has_timestamps (ts) VALUES ({})",
-            valid_sqlite_date_too_large_for_chrono
-        ))
-        .unwrap();
+    diesel::sql_query(&format!(
+        "INSERT INTO has_timestamps (ts) VALUES ({})",
+        valid_sqlite_date_too_large_for_chrono
+    ))
+    .execute(connection)
+    .unwrap();
     let values = has_timestamps.select(ts).load::<NaiveDateTime>(connection);
 
     match values {
@@ -107,15 +108,15 @@ fn test_chrono_types_sqlite() {
     }
 
     let connection = &mut connection();
-    connection
-        .execute(
-            "CREATE TABLE has_time_types (
+    diesel::sql_query(
+        "CREATE TABLE has_time_types (
         datetime DATETIME PRIMARY KEY,
         date DATE,
         time TIME
     )",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
     let new_time_types = NewTimeTypes {
@@ -1259,7 +1260,7 @@ use std::fmt::Debug;
 fn query_to_sql_equality<T, U>(sql_str: &str, value: U) -> bool
 where
     U: AsExpression<T> + Debug + Clone,
-    U::Expression: SelectableExpression<diesel::query_builder::NoFromClause, SqlType = T>
+    U::Expression: SelectableExpression<diesel::internal::table_macro::NoFromClause, SqlType = T>
         + ValidGrouping<(), IsAggregate = is_aggregate::Never>,
     U::Expression: QueryFragment<TestBackend> + QueryId,
     T: QueryId + SingleValue + SqlType,
@@ -1347,14 +1348,14 @@ fn test_inserting_ranges() {
     use std::collections::Bound;
 
     let connection = &mut connection();
-    connection
-        .execute(
-            "CREATE TABLE has_ranges (
+    diesel::sql_query(
+        "CREATE TABLE has_ranges (
                         id SERIAL PRIMARY KEY,
                         nul_range INT4RANGE,
                         range INT4RANGE NOT NULL)",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
     table!(
         has_ranges(id) {
             id -> Int4,

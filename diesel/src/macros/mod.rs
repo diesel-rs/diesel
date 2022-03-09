@@ -6,6 +6,8 @@ pub(crate) mod prelude {
         any(feature = "huge-tables", feature = "large-tables"),
         allow(deprecated)
     )]
+    // This is a false positive, we reexport it later
+    #[allow(unreachable_pub)]
     #[doc(inline)]
     pub use crate::{
         allow_columns_to_appear_in_same_group_by_clause,
@@ -36,9 +38,9 @@ macro_rules! __diesel_fix_sql_type_import {
 #[cfg(feature = "postgres_backend")]
 macro_rules! __diesel_internal_table_backend_specific_impls {
     ($table:ident, $column_name:ident) => { 
-        impl $crate::expression::AppearsOnTable<$crate::query_builder::Only<$table>>
+        impl $crate::expression::AppearsOnTable<$crate::internal::table_macro::Only<$table>>
             for $column_name {}
-        impl $crate::expression::SelectableExpression<$crate::query_builder::Only<$table>>
+        impl $crate::expression::SelectableExpression<$crate::internal::table_macro::Only<$table>>
             for $column_name {}
     };
 }
@@ -72,13 +74,12 @@ macro_rules! __diesel_column {
 
         impl<DB> $crate::query_builder::QueryFragment<DB> for $column_name where
             DB: $crate::backend::Backend,
-            <$table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
+            $crate::internal::table_macro::StaticQueryFragmentInstance<table>: $crate::query_builder::QueryFragment<DB>,
         {
             #[allow(non_snake_case)]
             fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
             {
-                use $crate::QuerySource;
-                const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
+                const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
 
                 FROM_CLAUSE.walk_ast(__out.reborrow())?;
                 __out.push_sql(".");
@@ -95,9 +96,9 @@ macro_rules! __diesel_column {
         }
 
         impl<Left, Right> $crate::SelectableExpression<
-                $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>,
+                $crate::internal::table_macro::Join<Left, Right, $crate::internal::table_macro::LeftOuter>,
         > for $column_name where
-            $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::LeftOuter>>,
+            $column_name: $crate::AppearsOnTable<$crate::internal::table_macro::Join<Left, Right, $crate::internal::table_macro::LeftOuter>>,
             Self: $crate::SelectableExpression<Left>,
             // If our table is on the right side of this join, only
             // `Nullable<Self>` can be selected
@@ -107,28 +108,28 @@ macro_rules! __diesel_column {
         }
 
         impl<Left, Right> $crate::SelectableExpression<
-                $crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>,
+                $crate::internal::table_macro::Join<Left, Right, $crate::internal::table_macro::Inner>,
         > for $column_name where
-            $column_name: $crate::AppearsOnTable<$crate::query_source::joins::Join<Left, Right, $crate::query_source::joins::Inner>>,
+            $column_name: $crate::AppearsOnTable<$crate::internal::table_macro::Join<Left, Right, $crate::internal::table_macro::Inner>>,
             Left: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
             Right: $crate::query_source::AppearsInFromClause<$table> + $crate::query_source::QuerySource,
-            (Left::Count, Right::Count): $crate::query_source::Pick<Left, Right>,
+            (Left::Count, Right::Count): $crate::internal::table_macro::Pick<Left, Right>,
             Self: $crate::SelectableExpression<
-                <(Left::Count, Right::Count) as $crate::query_source::Pick<Left, Right>>::Selection,
+                <(Left::Count, Right::Count) as $crate::internal::table_macro::Pick<Left, Right>>::Selection,
             >,
         {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<Join, On> $crate::SelectableExpression<$crate::query_source::joins::JoinOn<Join, On>> for $column_name where
-            $column_name: $crate::SelectableExpression<Join> + $crate::AppearsOnTable<$crate::query_source::joins::JoinOn<Join, On>>,
+        impl<Join, On> $crate::SelectableExpression<$crate::internal::table_macro::JoinOn<Join, On>> for $column_name where
+            $column_name: $crate::SelectableExpression<Join> + $crate::AppearsOnTable<$crate::internal::table_macro::JoinOn<Join, On>>,
         {
         }
 
         // FIXME: Remove this when overlapping marker traits are stable
-        impl<From> $crate::SelectableExpression<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<From>>> for $column_name where
+        impl<From> $crate::SelectableExpression<$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<From>>> for $column_name where
             From: $crate::query_source::QuerySource,
-            $column_name: $crate::SelectableExpression<From> + $crate::AppearsOnTable<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<From>>>,
+            $column_name: $crate::SelectableExpression<From> + $crate::AppearsOnTable<$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<From>>>,
         {
         }
 
@@ -332,8 +333,8 @@ macro_rules! __diesel_column {
 /// ```
 
 #[allow(deprecated)]
-#[cfg_attr(feature="huge-tables", deprecated="`huge-tables` is deprecated in favor of `64-column-tables`")]
-#[cfg_attr(feature="large-tables", deprecated="`large-tables` is deprecated in favor of `32-column-tables`")]
+//#[cfg_attr(feature="huge-tables", deprecated="`huge-tables` is deprecated in favor of `64-column-tables`")]
+//#[cfg_attr(feature="large-tables", deprecated="`large-tables` is deprecated in favor of `32-column-tables`")]
 #[macro_export]
 macro_rules! table {
     ($($tokens:tt)*) => {
@@ -694,7 +695,7 @@ macro_rules! __diesel_table_impl {
         },)+],
     ) => {
         $($meta)*
-        #[allow(unused_imports, dead_code)]
+        #[allow(unused_imports, dead_code, unreachable_pub)]
         pub mod $table_name {
             pub use self::columns::*;
             $($imports)*
@@ -749,14 +750,14 @@ macro_rules! __diesel_table_impl {
             pub type SqlType = ($($($column_ty)*,)+);
 
             /// Helper type for representing a boxed query from this table
-            pub type BoxedQuery<'a, DB, ST = SqlType> = $crate::query_builder::BoxedSelectStatement<'a, ST, $crate::query_builder::FromClause<table>, DB>;
+            pub type BoxedQuery<'a, DB, ST = SqlType> = $crate::internal::table_macro::BoxedSelectStatement<'a, ST, $crate::internal::table_macro::FromClause<table>, DB>;
 
             impl $crate::QuerySource for table {
-                type FromClause = $crate::query_builder::nodes::StaticQueryFragmentInstance<table>;
+                type FromClause = $crate::internal::table_macro::StaticQueryFragmentInstance<table>;
                 type DefaultSelection = <Self as $crate::Table>::AllColumns;
 
                 fn from_clause(&self) -> Self::FromClause {
-                    $crate::query_builder::nodes::StaticQueryFragmentInstance::new()
+                    $crate::internal::table_macro::StaticQueryFragmentInstance::new()
                 }
 
                 fn default_selection(&self) -> Self::DefaultSelection {
@@ -765,9 +766,12 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
-            impl<DB> $crate::query_builder::QueryFragment<DB> for table where DB: $crate::backend::Backend {
+            impl<DB> $crate::query_builder::QueryFragment<DB> for table where
+                DB: $crate::backend::Backend,
+                <table as $crate::internal::table_macro::StaticQueryFragment>::Component: $crate::query_builder::QueryFragment<DB>
+            {
                 fn walk_ast<'b>(&'b self, pass: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()> {
-                    <table as $crate::query_builder::nodes::StaticQueryFragment>::STATIC_COMPONENT.walk_ast(pass)
+                    <table as $crate::internal::table_macro::StaticQueryFragment>::STATIC_COMPONENT.walk_ast(pass)
                 }
             }
 
@@ -775,10 +779,10 @@ macro_rules! __diesel_table_impl {
 
             impl $crate::query_builder::AsQuery for table {
                 type SqlType = SqlType;
-                type Query = $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<Self>>;
+                type Query = $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<Self>>;
 
                 fn as_query(self) -> Self::Query {
-                    $crate::query_builder::SelectStatement::simple(self)
+                    $crate::internal::table_macro::SelectStatement::simple(self)
                 }
             }
 
@@ -808,7 +812,7 @@ macro_rules! __diesel_table_impl {
 
                 fn into_update_target(self) -> $crate::query_builder::UpdateTarget<Self::Table, Self::WhereClause> {
                     use $crate::query_builder::AsQuery;
-                    let q: $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<table>> = self.as_query();
+                    let q: $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<table>> = self.as_query();
                     q.into_update_target()
                 }
             }
@@ -818,8 +822,8 @@ macro_rules! __diesel_table_impl {
             }
 
             // impl<S: AliasSource<Table=table>> AppearsInFromClause<table> for Alias<S>
-            impl<S> $crate::query_source::aliasing::AliasAppearsInFromClause<S, table> for table
-            where S: $crate::query_source::aliasing::AliasSource<Target=table>,
+            impl<S> $crate::internal::table_macro::AliasAppearsInFromClause<S, table> for table
+            where S: $crate::query_source::AliasSource<Target=table>,
             {
                 type Count = $crate::query_source::Never;
             }
@@ -827,23 +831,23 @@ macro_rules! __diesel_table_impl {
             // impl<S1: AliasSource<Table=table>, S2: AliasSource<Table=table>> AppearsInFromClause<Alias<S1>> for Alias<S2>
             // Those are specified by the `alias!` macro, but this impl will allow it to implement this trait even in downstream
             // crates from the schema
-            impl<S1, S2> $crate::query_source::aliasing::AliasAliasAppearsInFromClause<table, S2, S1> for table
-            where S1: $crate::query_source::aliasing::AliasSource<Target=table>,
-                  S2: $crate::query_source::aliasing::AliasSource<Target=table>,
-                  S1: $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<S2, table>,
+            impl<S1, S2> $crate::internal::table_macro::AliasAliasAppearsInFromClause<table, S2, S1> for table
+            where S1: $crate::query_source::AliasSource<Target=table>,
+                  S2: $crate::query_source::AliasSource<Target=table>,
+                  S1: $crate::internal::table_macro::AliasAliasAppearsInFromClauseSameTable<S2, table>,
             {
-                type Count = <S1 as $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<S2, table>>::Count;
+                type Count = <S1 as $crate::internal::table_macro::AliasAliasAppearsInFromClauseSameTable<S2, table>>::Count;
             }
 
             impl<S> $crate::query_source::AppearsInFromClause<$crate::query_source::Alias<S>> for table
-            where S: $crate::query_source::aliasing::AliasSource,
+            where S: $crate::query_source::AliasSource,
             {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<S, C> $crate::query_source::aliasing::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
+            impl<S, C> $crate::internal::table_macro::FieldAliasMapperAssociatedTypesDisjointnessTrick<table, S, C> for table
             where
-                S: $crate::query_source::aliasing::AliasSource<Target = table> + ::std::clone::Clone,
+                S: $crate::query_source::AliasSource<Target = table> + ::std::clone::Clone,
                 C: $crate::query_source::Column<Table = table>,
             {
                 type Out = $crate::query_source::AliasedField<S, C>;
@@ -853,57 +857,57 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
-            impl $crate::query_source::AppearsInFromClause<table> for $crate::query_builder::NoFromClause {
+            impl $crate::query_source::AppearsInFromClause<table> for $crate::internal::table_macro::NoFromClause {
                 type Count = $crate::query_source::Never;
             }
 
-            impl<Left, Right, Kind> $crate::JoinTo<$crate::query_source::joins::Join<Left, Right, Kind>> for table where
-                $crate::query_source::joins::Join<Left, Right, Kind>: $crate::JoinTo<table>,
+            impl<Left, Right, Kind> $crate::JoinTo<$crate::internal::table_macro::Join<Left, Right, Kind>> for table where
+                $crate::internal::table_macro::Join<Left, Right, Kind>: $crate::JoinTo<table>,
                 Left: $crate::query_source::QuerySource,
                 Right: $crate::query_source::QuerySource,
             {
-                type FromClause = $crate::query_source::joins::Join<Left, Right, Kind>;
-                type OnClause = <$crate::query_source::joins::Join<Left, Right, Kind> as $crate::JoinTo<table>>::OnClause;
+                type FromClause = $crate::internal::table_macro::Join<Left, Right, Kind>;
+                type OnClause = <$crate::internal::table_macro::Join<Left, Right, Kind> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::query_source::joins::Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_source::joins::Join::join_target(table);
+                fn join_target(rhs: $crate::internal::table_macro::Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::internal::table_macro::Join::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<Join, On> $crate::JoinTo<$crate::query_source::joins::JoinOn<Join, On>> for table where
-                $crate::query_source::joins::JoinOn<Join, On>: $crate::JoinTo<table>,
+            impl<Join, On> $crate::JoinTo<$crate::internal::table_macro::JoinOn<Join, On>> for table where
+                $crate::internal::table_macro::JoinOn<Join, On>: $crate::JoinTo<table>,
             {
-                type FromClause = $crate::query_source::joins::JoinOn<Join, On>;
-                type OnClause = <$crate::query_source::joins::JoinOn<Join, On> as $crate::JoinTo<table>>::OnClause;
+                type FromClause = $crate::internal::table_macro::JoinOn<Join, On>;
+                type OnClause = <$crate::internal::table_macro::JoinOn<Join, On> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::query_source::joins::JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_source::joins::JoinOn::join_target(table);
+                fn join_target(rhs: $crate::internal::table_macro::JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::internal::table_macro::JoinOn::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<F, S, D, W, O, L, Of, G> $crate::JoinTo<$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>> for table where
-                $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>: $crate::JoinTo<table>,
+            impl<F, S, D, W, O, L, Of, G> $crate::JoinTo<$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>> for table where
+                $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>: $crate::JoinTo<table>,
                 F: $crate::query_source::QuerySource
             {
-                type FromClause = $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>;
-                type OnClause = <$crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G> as $crate::JoinTo<table>>::OnClause;
+                type FromClause = $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>;
+                type OnClause = <$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::query_builder::SelectStatement<$crate::query_builder::FromClause<F>, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_builder::SelectStatement::join_target(table);
+                fn join_target(rhs: $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::internal::table_macro::SelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
             }
 
-            impl<'a, QS, ST, DB> $crate::JoinTo<$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>> for table where
-                $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>: $crate::JoinTo<table>,
+            impl<'a, QS, ST, DB> $crate::JoinTo<$crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>> for table where
+                $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>: $crate::JoinTo<table>,
                 QS: $crate::query_source::QuerySource,
             {
-                type FromClause = $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>;
-                type OnClause = <$crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
-                fn join_target(rhs: $crate::query_builder::BoxedSelectStatement<'a, $crate::query_builder::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_builder::BoxedSelectStatement::join_target(table);
+                type FromClause = $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>;
+                type OnClause = <$crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
+                fn join_target(rhs: $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, on_clause) = $crate::internal::table_macro::BoxedSelectStatement::join_target(table);
                     (rhs, on_clause)
                 }
             }
@@ -977,7 +981,7 @@ macro_rules! __diesel_table_impl {
                     fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
                     {
                         use $crate::QuerySource;
-                        const FROM_CLAUSE: $crate::query_builder::nodes::StaticQueryFragmentInstance<table> = $crate::query_builder::nodes::StaticQueryFragmentInstance::new();
+                        const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
 
                         FROM_CLAUSE.walk_ast(__out.reborrow())?;
                         __out.push_sql(".*");
@@ -1057,22 +1061,22 @@ macro_rules! __diesel_valid_grouping_for_table_columns {
 #[doc(hidden)]
 macro_rules! __diesel_table_generate_static_query_fragment_for_table {
     (public, $table: ident, $table_name:expr) => {
-        impl $crate::query_builder::nodes::StaticQueryFragment for table {
-            type Component = $crate::query_builder::nodes::Identifier<'static>;
-            const STATIC_COMPONENT: &'static Self::Component = &$crate::query_builder::nodes::Identifier($table_name);
+        impl $crate::internal::table_macro::StaticQueryFragment for table {
+            type Component = $crate::internal::table_macro::Identifier<'static>;
+            const STATIC_COMPONENT: &'static Self::Component = &$crate::internal::table_macro::Identifier($table_name);
         }
 
     };
     ($schema_name:ident, $table: ident, $table_name:expr) => {
-        impl $crate::query_builder::nodes::StaticQueryFragment for table {
-            type Component = $crate::query_builder::nodes::InfixNode<
-                    $crate::query_builder::nodes::Identifier<'static>,
-                    $crate::query_builder::nodes::Identifier<'static>,
+        impl $crate::internal::table_macro::StaticQueryFragment for table {
+            type Component = $crate::internal::table_macro::InfixNode<
+                    $crate::internal::table_macro::Identifier<'static>,
+                    $crate::internal::table_macro::Identifier<'static>,
                     &'static str
                 >;
-            const STATIC_COMPONENT: &'static Self::Component = &$crate::query_builder::nodes::InfixNode::new(
-                $crate::query_builder::nodes::Identifier(stringify!($schema_name)),
-                $crate::query_builder::nodes::Identifier($table_name),
+            const STATIC_COMPONENT: &'static Self::Component = &$crate::internal::table_macro::InfixNode::new(
+                $crate::internal::table_macro::Identifier(stringify!($schema_name)),
+                $crate::internal::table_macro::Identifier($table_name),
                 "."
             );
         }
@@ -1180,8 +1184,8 @@ macro_rules! joinable_inner {
         impl $crate::JoinTo<$right_table_ty> for $left_table_ty {
             type FromClause = $right_table_ty;
             type OnClause = $crate::dsl::Eq<
-                $crate::expression::nullable::Nullable<$foreign_key>,
-                $crate::expression::nullable::Nullable<$primary_key_ty>,
+                $crate::internal::table_macro::NullableExpression<$foreign_key>,
+                $crate::internal::table_macro::NullableExpression<$primary_key_ty>,
             >;
 
             fn join_target(rhs: $right_table_ty) -> (Self::FromClause, Self::OnClause) {
@@ -1209,19 +1213,70 @@ macro_rules! joinable_inner {
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// #
 /// // This would be required to do `users.inner_join(posts.inner_join(comments))`
 /// allow_tables_to_appear_in_same_query!(comments, posts, users);
+///
+/// table! {
+///     comments {
+///         id -> Integer,
+///         post_id -> Integer,
+///         body -> VarChar,
+///     }
+/// }
+///
+/// table! {
+///    posts {
+///        id -> Integer,
+///        user_id -> Integer,
+///        title -> VarChar,
+///    }
+/// }
+///
+/// table! {
+///     users {
+///        id -> Integer,
+///        name -> VarChar,
+///     }
+/// }
 /// ```
 ///
 /// When more than two tables are passed, the relevant code is generated for
 /// every combination of those tables. This code would be equivalent to the
 /// previous example.
 ///
-/// ```ignore
+/// ```
+/// # use diesel::{allow_tables_to_appear_in_same_query, table};
+/// # table! {
+/// #    comments {
+/// #        id -> Integer,
+/// #        post_id -> Integer,
+/// #        body -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #    posts {
+/// #        id -> Integer,
+/// #        user_id -> Integer,
+/// #        title -> VarChar,
+/// #    }
+/// # }
+/// #
+/// # table! {
+/// #     users {
+/// #        id -> Integer,
+/// #        name -> VarChar,
+/// #     }
+/// # }
+/// #
 /// allow_tables_to_appear_in_same_query!(comments, posts);
 /// allow_tables_to_appear_in_same_query!(comments, users);
 /// allow_tables_to_appear_in_same_query!(posts, users);
+/// #
+/// # fn main() {}
 /// ```
 #[macro_export]
 macro_rules! allow_tables_to_appear_in_same_query {
@@ -1365,20 +1420,31 @@ macro_rules! __diesel_impl_allow_in_same_group_by_clause {
 ///
 /// # Example
 ///
-/// ```ignore
-/// // This would be required to do
-/// // `users::table.inner_join(posts::table).group_by((users::name, users::hair_color, posts::id))`
-/// allow_columns_to_appear_in_same_group_by_clause!(users::name, users::hair_color, posts::id);
+/// ```
+/// # include!("../doctest_setup.rs");
+/// # use crate::schema::{users, posts};
+/// // This would be required
+///
+/// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::id, posts::title);
+/// # fn main() {
+/// // to do implement the following join
+/// users::table.inner_join(posts::table).group_by((users::name, posts::id, posts::title))
+/// # ;
+/// # }
 /// ```
 ///
 /// When more than two columns are passed, the relevant code is generated for
 /// every combination of those columns. This code would be equivalent to the
 /// previous example.
 ///
-/// ```ignore
-/// allow_columns_to_appear_in_same_group_by_clause!(users::name, users::hair_color);
+/// ```
+/// # include!("../doctest_setup.rs");
+/// # use crate::schema::{users, posts};
+/// #
+/// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::title);
 /// allow_columns_to_appear_in_same_group_by_clause!(users::name, posts::id);
-/// allow_columns_to_appear_in_same_group_by_clause!(users::hair_color, posts::id);
+/// allow_columns_to_appear_in_same_group_by_clause!(posts::title, posts::id);
+/// # fn main() {}
 /// ```
 #[macro_export]
 macro_rules! allow_columns_to_appear_in_same_group_by_clause {

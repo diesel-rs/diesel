@@ -1,7 +1,6 @@
 pub(crate) mod cursor;
-pub mod raw;
-#[doc(hidden)]
-pub mod result;
+mod raw;
+mod result;
 mod row;
 mod stmt;
 
@@ -13,6 +12,7 @@ use self::raw::{PgTransactionStatus, RawConnection};
 use self::result::PgResult;
 use self::stmt::Statement;
 use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
+use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
@@ -21,13 +21,15 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
 use crate::result::*;
+use crate::RunQueryDsl;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
 /// <https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING>
 #[allow(missing_debug_implementations)]
+#[cfg(feature = "postgres")]
 pub struct PgConnection {
-    pub(crate) raw_connection: RawConnection,
+    raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
@@ -45,7 +47,7 @@ impl SimpleConnection for PgConnection {
 }
 
 impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection {
-    type Cursor = Cursor;
+    type Cursor = Cursor<'conn>;
     type Row = self::row::PgRow;
 }
 
@@ -128,22 +130,15 @@ impl Connection for PgConnection {
         })
     }
 
-    #[doc(hidden)]
-    fn execute(&mut self, query: &str) -> QueryResult<usize> {
-        self.execute_inner(query).map(|res| res.rows_affected())
-    }
-
-    #[doc(hidden)]
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg>>::Cursor>
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
     where
-        T: AsQuery,
-        T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source.as_query(), |stmt, params, conn| {
+        self.with_prepared_query(&source, |stmt, params, conn| {
             let result = stmt.execute(conn, &params)?;
             let cursor = Cursor::new(result);
 
@@ -178,7 +173,7 @@ impl GetPgMetadataCache for PgConnection {
 #[cfg(feature = "r2d2")]
 impl crate::r2d2::R2D2Connection for PgConnection {
     fn ping(&mut self) -> QueryResult<()> {
-        self.execute("SELECT 1").map(|_| ())
+        crate::r2d2::CheckConnectionQuery.execute(self).map(|_| ())
     }
 
     fn is_broken(&mut self) -> bool {
@@ -228,15 +223,15 @@ impl PgConnection {
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
-        source.collect_binds(&mut bind_collector, self)?;
+        source.collect_binds(&mut bind_collector, self, &Pg)?;
         let binds = bind_collector.binds;
         let metadata = bind_collector.metadata;
 
         let cache_len = self.statement_cache.len();
         let cache = &mut self.statement_cache;
         let raw_conn = &mut self.raw_connection;
-        let query = cache.cached_statement(source, &metadata, |sql, _| {
-            let query_name = if source.is_safe_to_cache_prepared()? {
+        let query = cache.cached_statement(source, &Pg, &metadata, |sql, _| {
+            let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
                 Some(format!("__diesel_stmt_{}", cache_len))
             } else {
                 None
@@ -247,14 +242,9 @@ impl PgConnection {
         f(query?, binds, raw_conn)
     }
 
-    fn execute_inner(&mut self, query: &str) -> QueryResult<PgResult> {
-        let query = Statement::prepare(&mut self.raw_connection, query, None, &[])?;
-        query.execute(&mut self.raw_connection, &Vec::new())
-    }
-
     fn set_config_options(&mut self) -> QueryResult<()> {
-        self.execute("SET TIME ZONE 'UTC'")?;
-        self.execute("SET CLIENT_ENCODING TO 'UTF8'")?;
+        crate::sql_query("SET TIME ZONE 'UTC'").execute(self)?;
+        crate::sql_query("SET CLIENT_ENCODING TO 'UTF8'").execute(self)?;
         self.raw_connection
             .set_notice_processor(noop_notice_processor);
         Ok(())
@@ -272,6 +262,7 @@ mod tests {
     use crate::prelude::*;
     use crate::result::Error::DatabaseError;
     use crate::sql_types::{Integer, VarChar};
+    use std::num::NonZeroU32;
 
     #[test]
     fn malformed_sql_query() {
@@ -450,5 +441,631 @@ mod tests {
 
     fn connection() -> PgConnection {
         crate::test_helpers::pg_connection_no_transaction()
+    }
+
+    #[test]
+    fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
+        use crate::connection::AnsiTransactionManager;
+        use crate::connection::TransactionManager;
+        use crate::result::Error;
+        use crate::PgConnection;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result = AnsiTransactionManager::commit_transaction(conn);
+        assert!(matches!(result, Err(Error::NotInTransaction)))
+    }
+
+    #[test]
+    fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
+        use crate::connection::AnsiTransactionManager;
+        use crate::connection::TransactionManager;
+        use crate::result::Error;
+        use crate::PgConnection;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result = AnsiTransactionManager::rollback_transaction(conn);
+        assert!(matches!(result, Err(Error::NotInTransaction)))
+    }
+
+    #[test]
+    fn postgres_transaction_is_rolled_back_upon_syntax_error() {
+        use std::num::NonZeroU32;
+
+        use crate::connection::AnsiTransactionManager;
+        use crate::connection::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
+        use crate::*;
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let _result = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                NonZeroU32::new(1),
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+                ).transaction_depth().expect("Transaction depth")
+            );
+            // In Postgres, a syntax error breaks the transaction block
+            let query_result = sql_query("SELECT_SYNTAX_ERROR 1").execute(conn);
+            assert!(query_result.is_err());
+            assert_eq!(
+                PgTransactionStatus::InError,
+                conn.raw_connection.transaction_status()
+            );
+            query_result
+        });
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
+    }
+
+    #[test]
+    fn nested_postgres_transaction_is_rolled_back_upon_syntax_error() {
+        use std::num::NonZeroU32;
+
+        use crate::connection::AnsiTransactionManager;
+        use crate::connection::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
+        use crate::*;
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                NonZeroU32::new(1),
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+            ).transaction_depth().expect("Transaction depth")
+            );
+            let result = conn.build_transaction().run(|conn| {
+                assert_eq!(
+                    NonZeroU32::new(2),
+                    <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                        conn
+            ).transaction_depth().expect("Transaction depth")
+                );
+                sql_query("SELECT_SYNTAX_ERROR 1").execute(conn)
+            });
+            assert!(result.is_err());
+            assert_eq!(
+                NonZeroU32::new(1),
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+            ).transaction_depth().expect("Transaction depth")
+            );
+            let query_result = sql_query("SELECT 1").execute(conn);
+            assert!(query_result.is_ok());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
+            query_result
+        });
+        assert!(result.is_ok());
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+    }
+
+    #[test]
+    fn postgres_transaction_depth_is_tracked_properly_on_serialization_failure() {
+        use crate::pg::connection::raw::PgTransactionStatus;
+        use crate::result::DatabaseErrorKind::SerializationFailure;
+        use crate::result::Error::{self, DatabaseError};
+        use crate::*;
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        table! {
+            #[sql_name = "pg_transaction_depth_is_tracked_properly_on_commit_failure"]
+            serialization_example {
+                id -> Serial,
+                class -> Integer,
+            }
+        }
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+
+        sql_query(
+            "DROP TABLE IF EXISTS pg_transaction_depth_is_tracked_properly_on_commit_failure;",
+        )
+        .execute(conn)
+        .unwrap();
+        sql_query(
+            r#"
+            CREATE TABLE pg_transaction_depth_is_tracked_properly_on_commit_failure (
+                id SERIAL PRIMARY KEY,
+                class INTEGER NOT NULL
+            )
+        "#,
+        )
+        .execute(conn)
+        .unwrap();
+
+        insert_into(serialization_example::table)
+            .values(&vec![
+                serialization_example::class.eq(1),
+                serialization_example::class.eq(2),
+            ])
+            .execute(conn)
+            .unwrap();
+
+        let before_barrier = Arc::new(Barrier::new(2));
+        let after_barrier = Arc::new(Barrier::new(2));
+        let threads = (1..3)
+            .map(|i| {
+                let before_barrier = before_barrier.clone();
+                let after_barrier = after_barrier.clone();
+                thread::spawn(move || {
+                    use crate::connection::AnsiTransactionManager;
+                    use crate::connection::TransactionManager;
+                    let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+
+                    let result = conn.build_transaction().serializable().run(|conn| {
+                        assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+
+                        let _ = serialization_example::table
+                            .filter(serialization_example::class.eq(i))
+                            .count()
+                            .execute(conn)?;
+
+                        let other_i = if i == 1 { 2 } else { 1 };
+                        let q = insert_into(serialization_example::table)
+                            .values(serialization_example::class.eq(other_i));
+                        before_barrier.wait();
+
+                        let r = q.execute(conn);
+                        after_barrier.wait();
+                        r
+                    });
+                    assert_eq!(
+                        PgTransactionStatus::Idle,
+                        conn.raw_connection.transaction_status()
+                    );
+
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                    result
+                })
+            })
+            .collect::<Vec<_>>();
+
+        let mut results = threads
+            .into_iter()
+            .map(|t| t.join().unwrap())
+            .collect::<Vec<_>>();
+
+        results.sort_by_key(|r| r.is_err());
+
+        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        assert!(
+            matches!(
+                &results[1],
+                Err(Error::CommitTransactionFailed {
+                    ref commit_error, ..
+                }) if matches!(&**commit_error, DatabaseError(SerializationFailure, _))
+            ),
+            "Got {:?} instead",
+            results
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
+    }
+
+    #[test]
+    fn postgres_transaction_depth_is_tracked_properly_on_nested_serialization_failure() {
+        use crate::pg::connection::raw::PgTransactionStatus;
+        use crate::result::DatabaseErrorKind::SerializationFailure;
+        use crate::result::Error::{self, DatabaseError};
+        use crate::*;
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        table! {
+            #[sql_name = "pg_nested_transaction_depth_is_tracked_properly_on_commit_failure"]
+            serialization_example {
+                id -> Serial,
+                class -> Integer,
+            }
+        }
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+
+        sql_query(
+            "DROP TABLE IF EXISTS pg_nested_transaction_depth_is_tracked_properly_on_commit_failure;",
+        )
+        .execute(conn)
+        .unwrap();
+        sql_query(
+            r#"
+            CREATE TABLE pg_nested_transaction_depth_is_tracked_properly_on_commit_failure (
+                id SERIAL PRIMARY KEY,
+                class INTEGER NOT NULL
+            )
+        "#,
+        )
+        .execute(conn)
+        .unwrap();
+
+        insert_into(serialization_example::table)
+            .values(&vec![
+                serialization_example::class.eq(1),
+                serialization_example::class.eq(2),
+            ])
+            .execute(conn)
+            .unwrap();
+
+        let before_barrier = Arc::new(Barrier::new(2));
+        let after_barrier = Arc::new(Barrier::new(2));
+        let threads = (1..3)
+            .map(|i| {
+                let before_barrier = before_barrier.clone();
+                let after_barrier = after_barrier.clone();
+                thread::spawn(move || {
+                    use crate::connection::AnsiTransactionManager;
+                    use crate::connection::TransactionManager;
+                    let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+
+                    let result = conn.build_transaction().serializable().run(|conn| {
+                        assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                        let r = conn.transaction(|conn| {
+                            assert_eq!(NonZeroU32::new(2), <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+
+                            let _ = serialization_example::table
+                                .filter(serialization_example::class.eq(i))
+                                .count()
+                                .execute(conn)?;
+
+                            let other_i = if i == 1 { 2 } else { 1 };
+                            let q = insert_into(serialization_example::table)
+                                .values(serialization_example::class.eq(other_i));
+                            before_barrier.wait();
+
+                            let r = q.execute(conn);
+                            after_barrier.wait();
+                            r
+                        });
+                        assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                        assert_eq!(
+                            PgTransactionStatus::InTransaction,
+                            conn.raw_connection.transaction_status()
+                        );
+                        r
+                    });
+                    assert_eq!(
+                        PgTransactionStatus::Idle,
+                        conn.raw_connection.transaction_status()
+                    );
+
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                    result
+                })
+            })
+            .collect::<Vec<_>>();
+
+        let mut results = threads
+            .into_iter()
+            .map(|t| t.join().unwrap())
+            .collect::<Vec<_>>();
+
+        results.sort_by_key(|r| r.is_err());
+
+        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        assert!(
+            matches!(
+                &results[1],
+                Err(Error::CommitTransactionFailed {
+                    ref commit_error, ..
+                }) if matches!(&**commit_error, DatabaseError(SerializationFailure, _))
+            ),
+            "Got {:?} instead",
+            results
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
+    }
+
+    #[test]
+    fn postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
+        use crate::connection::AnsiTransactionManager;
+        use crate::connection::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
+        use crate::result::Error;
+        use crate::*;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result: Result<_, Error> = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                NonZeroU32::new(1),
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+            ).transaction_depth().expect("Transaction depth")
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_constraint_commit").execute(conn)?;
+            sql_query("CREATE TABLE deferred_constraint_commit(id INT UNIQUE INITIALLY DEFERRED)")
+                .execute(conn)?;
+            sql_query("INSERT INTO deferred_constraint_commit VALUES(1)").execute(conn)?;
+            let result =
+                sql_query("INSERT INTO deferred_constraint_commit VALUES(1)").execute(conn);
+            assert!(result.is_ok());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
+            Ok(())
+        });
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
+        use crate::connection::AnsiTransactionManager;
+        use crate::connection::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
+        use crate::result::Error;
+        use crate::*;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result: Result<_, Error> = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                NonZeroU32::new(1),
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+            ).transaction_depth().expect("Transaction depth")
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_trigger_commit").execute(conn)?;
+            sql_query("CREATE TABLE deferred_trigger_commit(id INT UNIQUE INITIALLY DEFERRED)")
+                .execute(conn)?;
+            sql_query(
+                r#"
+                    CREATE OR REPLACE FUNCTION transaction_depth_blow_up()
+                        RETURNS trigger
+                        LANGUAGE plpgsql
+                        AS $$
+                    DECLARE
+                    BEGIN
+                        IF NEW.value = 42 THEN
+                            RAISE EXCEPTION 'Transaction kaboom';
+                        END IF;
+                    RETURN NEW;
+
+                    END;$$;
+                "#,
+            )
+            .execute(conn)?;
+
+            sql_query(
+                r#"
+                    CREATE CONSTRAINT TRIGGER transaction_depth_trigger
+                        AFTER INSERT ON "deferred_trigger_commit"
+                        DEFERRABLE INITIALLY DEFERRED
+                        FOR EACH ROW
+                        EXECUTE PROCEDURE transaction_depth_blow_up()
+            "#,
+            )
+            .execute(conn)?;
+            let result = sql_query("INSERT INTO deferred_trigger_commit VALUES(42)").execute(conn);
+            assert!(result.is_ok());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
+            Ok(())
+        });
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn nested_postgres_transaction_is_rolled_back_upon_deferred_trigger_failure() {
+        use crate::connection::AnsiTransactionManager;
+        use crate::connection::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
+        use crate::result::Error;
+        use crate::*;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result: Result<_, Error> = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                NonZeroU32::new(1),
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+            ).transaction_depth().expect("Transaction depth")
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_trigger_nested_commit").execute(conn)?;
+            sql_query(
+                "CREATE TABLE deferred_trigger_nested_commit(id INT UNIQUE INITIALLY DEFERRED)",
+            )
+            .execute(conn)?;
+            sql_query(
+                r#"
+                    CREATE OR REPLACE FUNCTION transaction_depth_blow_up()
+                        RETURNS trigger
+                        LANGUAGE plpgsql
+                        AS $$
+                    DECLARE
+                    BEGIN
+                        IF NEW.value = 42 THEN
+                            RAISE EXCEPTION 'Transaction kaboom';
+                        END IF;
+                    RETURN NEW;
+
+                    END;$$;
+                "#,
+            )
+            .execute(conn)?;
+
+            sql_query(
+                r#"
+                    CREATE CONSTRAINT TRIGGER transaction_depth_trigger
+                        AFTER INSERT ON "deferred_trigger_nested_commit"
+                        DEFERRABLE INITIALLY DEFERRED
+                        FOR EACH ROW
+                        EXECUTE PROCEDURE transaction_depth_blow_up()
+            "#,
+            )
+            .execute(conn)?;
+            let inner_result: Result<_, Error> = conn.build_transaction().run(|conn| {
+                let result = sql_query("INSERT INTO deferred_trigger_nested_commit VALUES(42)")
+                    .execute(conn);
+                assert!(result.is_ok());
+                Ok(())
+            });
+            assert!(inner_result.is_err());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
+            Ok(())
+        });
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
+        assert!(result.is_ok(), "Expected success, got {:?}", result);
+    }
+
+    #[test]
+    fn nested_postgres_transaction_is_rolled_back_upon_deferred_constraint_failure() {
+        use crate::connection::AnsiTransactionManager;
+        use crate::connection::TransactionManager;
+        use crate::pg::connection::raw::PgTransactionStatus;
+        use crate::result::Error;
+        use crate::*;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result: Result<_, Error> = conn.build_transaction().run(|conn| {
+            assert_eq!(
+                NonZeroU32::new(1),
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+            ).transaction_depth().expect("Transaction depth")
+            );
+            sql_query("DROP TABLE IF EXISTS deferred_constraint_nested_commit").execute(conn)?;
+            sql_query("CREATE TABLE deferred_constraint_nested_commit(id INT UNIQUE INITIALLY DEFERRED)").execute(conn)?;
+            let inner_result: Result<_, Error> = conn.build_transaction().run(|conn| {
+                assert_eq!(
+                    NonZeroU32::new(2),
+                    <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                        conn
+                    ).transaction_depth().expect("Transaction depth")
+                );
+                sql_query("INSERT INTO deferred_constraint_nested_commit VALUES(1)").execute(conn)?;
+                let result = sql_query("INSERT INTO deferred_constraint_nested_commit VALUES(1)").execute(conn);
+                assert!(result.is_ok());
+                Ok(())
+            });
+            assert!(inner_result.is_err());
+            assert_eq!(
+                PgTransactionStatus::InTransaction,
+                conn.raw_connection.transaction_status()
+            );
+            assert_eq!(
+                NonZeroU32::new(1),
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+            ).transaction_depth().expect("Transaction depth")
+            );
+            sql_query("INSERT INTO deferred_constraint_nested_commit VALUES(1)").execute(conn)
+        });
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        assert_eq!(
+            PgTransactionStatus::Idle,
+            conn.raw_connection.transaction_status()
+        );
+        assert!(result.is_ok());
     }
 }

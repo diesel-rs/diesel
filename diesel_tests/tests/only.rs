@@ -33,12 +33,12 @@ fn select_from_only_with_inherited_table() {
     .execute(connection)
     .unwrap();
 
-    connection
-        .execute("CREATE TABLE users2 (check (table_nr = 2)) inherits (users)")
+    diesel::sql_query("CREATE TABLE users2 (check (table_nr = 2)) inherits (users)")
+        .execute(connection)
         .unwrap();
 
-    connection
-        .execute("INSERT INTO users2 (name, table_nr) VALUES ('hello', 2)")
+    diesel::sql_query("INSERT INTO users2 (name, table_nr) VALUES ('hello', 2)")
+        .execute(connection)
         .unwrap();
 
     // There is now only one entry in the users2 table, none in the users table.

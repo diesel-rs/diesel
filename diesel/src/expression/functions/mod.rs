@@ -90,11 +90,7 @@ macro_rules! no_arg_sql_function {
     };
 }
 
-#[doc(hidden)]
-pub mod aggregate_folding;
-#[doc(hidden)]
-pub mod aggregate_ordering;
-#[doc(hidden)]
-pub mod date_and_time;
-#[doc(hidden)]
-pub mod helper_types;
+pub(crate) mod aggregate_folding;
+pub(crate) mod aggregate_ordering;
+pub(crate) mod date_and_time;
+pub(crate) mod helper_types;

@@ -368,8 +368,8 @@ mod tests {
             query.get_result::<NaiveDate>(connection)
         );
 
-        connection
-            .execute("SET sql_mode = (SELECT REPLACE(@@sql_mode, 'NO_ZERO_DATE,', ''))")
+        crate::sql_query("SET sql_mode = (SELECT REPLACE(@@sql_mode, 'NO_ZERO_DATE,', ''))")
+            .execute(connection)
             .unwrap();
         let query = select(sql::<Date>("CAST('0000-00-00' AS DATE)"));
         assert!(query.get_result::<NaiveDate>(connection).is_err());

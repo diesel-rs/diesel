@@ -1,11 +1,16 @@
 //! Contains the `Row` trait
 
-use crate::{
-    backend::{self, Backend},
-    deserialize,
-};
+use crate::backend::{self, Backend};
+use crate::deserialize;
 use deserialize::FromSql;
 use std::ops::Range;
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::private::{PartialRow, RowGatWorkaround};
+
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) use self::private::{PartialRow, RowGatWorkaround};
 
 /// Representing a way to index into database rows
 ///
@@ -21,18 +26,10 @@ pub trait RowIndex<I> {
     fn idx(&self, idx: I) -> Option<usize>;
 }
 
-/// A helper trait to indicate the life time bound for a field returned
-/// by [`Row::get`]
-pub trait RowGatWorkaround<'a, DB: Backend> {
-    /// Field type returned by a `Row` implementation
-    ///
-    /// * Crates using existing backend should not concern themself with the
-    ///   concrete type of this associated type.
-    ///
-    /// * Crates implementing custom backends should provide their own type
-    ///   meeting the required trait bounds
-    type Field: Field<'a, DB>;
-}
+/// Return type of [`Row::get`]
+///
+/// Users should threat this as opaque [`impl Field<DB>`](Field) type.
+pub type FieldRet<'a, R, DB> = <R as RowGatWorkaround<'a, DB>>::Field;
 
 /// Represents a single database row.
 ///
@@ -46,7 +43,10 @@ pub trait Row<'a, DB: Backend>:
     ///
     /// For all implementations, beside of the `Row` implementation on `PartialRow` itself
     /// this should be `Self`.
-    #[doc(hidden)]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc(hidden)
+    )]
     type InnerPartialRow: Row<'a, DB>;
 
     /// Get the number of fields in the current row
@@ -55,7 +55,7 @@ pub trait Row<'a, DB: Backend>:
     /// Get the field with the provided index from the row.
     ///
     /// Returns `None` if there is no matching field for the given index
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, DB>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<FieldRet<'b, Self, DB>>
     where
         'a: 'b,
         Self: RowIndex<I>;
@@ -72,7 +72,10 @@ pub trait Row<'a, DB: Backend>:
 
     /// Returns a wrapping row that allows only to access fields, where the index is part of
     /// the provided range.
-    #[doc(hidden)]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc(hidden)
+    )]
     fn partial_row(&self, range: Range<usize>) -> PartialRow<'_, Self::InnerPartialRow>;
 }
 
@@ -96,36 +99,6 @@ pub trait Field<'a, DB: Backend> {
     }
 }
 
-/// A row type that wraps an inner row
-///
-/// This type only allows to access fields of the inner row, whose index is
-/// part of `range`.
-///
-/// Indexing via `usize` starts with 0 for this row type. The index is then shifted
-/// by `self.range.start` to match the corresponding field in the underlying row.
-#[derive(Debug)]
-#[doc(hidden)]
-pub struct PartialRow<'a, R> {
-    inner: &'a R,
-    range: Range<usize>,
-}
-
-impl<'a, R> PartialRow<'a, R> {
-    #[doc(hidden)]
-    pub fn new<'b, DB>(inner: &'a R, range: Range<usize>) -> Self
-    where
-        R: Row<'b, DB>,
-        DB: Backend,
-    {
-        let range_lower = std::cmp::min(range.start, inner.field_count());
-        let range_upper = std::cmp::min(range.end, inner.field_count());
-        Self {
-            inner,
-            range: range_lower..range_upper,
-        }
-    }
-}
-
 impl<'a, 'b, DB, R> RowGatWorkaround<'a, DB> for PartialRow<'b, R>
 where
     DB: Backend,
@@ -133,65 +106,6 @@ where
 {
     type Field = R::Field;
 }
-
-impl<'a, 'b, DB, R> Row<'a, DB> for PartialRow<'b, R>
-where
-    DB: Backend,
-    R: Row<'a, DB>,
-{
-    type InnerPartialRow = R;
-
-    fn field_count(&self) -> usize {
-        self.range.len()
-    }
-
-    fn get<'c, I>(&'c self, idx: I) -> Option<<Self as RowGatWorkaround<'c, DB>>::Field>
-    where
-        'a: 'c,
-        Self: RowIndex<I>,
-    {
-        let idx = self.idx(idx)?;
-        self.inner.get(idx)
-    }
-
-    fn partial_row(&self, range: Range<usize>) -> PartialRow<'_, R> {
-        let range_upper_bound = std::cmp::min(self.range.end, self.range.start + range.end);
-        let range = (self.range.start + range.start)..range_upper_bound;
-        PartialRow {
-            inner: self.inner,
-            range,
-        }
-    }
-}
-
-impl<'a, 'b, R> RowIndex<&'a str> for PartialRow<'b, R>
-where
-    R: RowIndex<&'a str>,
-{
-    fn idx(&self, idx: &'a str) -> Option<usize> {
-        let idx = self.inner.idx(idx)?;
-        if self.range.contains(&idx) {
-            Some(idx)
-        } else {
-            None
-        }
-    }
-}
-
-impl<'a, R> RowIndex<usize> for PartialRow<'a, R>
-where
-    R: RowIndex<usize>,
-{
-    fn idx(&self, idx: usize) -> Option<usize> {
-        let idx = self.inner.idx(idx + self.range.start)?;
-        if self.range.contains(&idx) {
-            Some(idx)
-        } else {
-            None
-        }
-    }
-}
-
 /// Represents a row of a SQL query, where the values are accessed by name
 /// rather than by index.
 ///
@@ -225,5 +139,125 @@ where
             .ok_or_else(|| format!("Column `{}` was not present in query", column_name))?;
 
         T::from_nullable_sql(field.value())
+    }
+}
+
+// These traits are not part of the public API
+// because we want to replace them by with an associated type
+// in the child trait later if GAT's are finally stable
+mod private {
+    use super::*;
+
+    /// A helper trait to indicate the life time bound for a field returned
+    /// by [`Row::get`]
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+    pub trait RowGatWorkaround<'a, DB: Backend> {
+        /// Field type returned by a `Row` implementation
+        ///
+        /// * Crates using existing backend should not concern themself with the
+        ///   concrete type of this associated type.
+        ///
+        /// * Crates implementing custom backends should provide their own type
+        ///   meeting the required trait bounds
+        type Field: Field<'a, DB>;
+    }
+
+    /// A row type that wraps an inner row
+    ///
+    /// This type only allows to access fields of the inner row, whose index is
+    /// part of `range`. This type is used by diesel internally to implement
+    /// [`FromStaticSqlRow`](crate::deserialize::FromStaticSqlRow).
+    ///
+    /// Indexing via `usize` starts with 0 for this row type. The index is then shifted
+    /// by `self.range.start` to match the corresponding field in the underlying row.
+    #[derive(Debug)]
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+    pub struct PartialRow<'a, R> {
+        inner: &'a R,
+        range: Range<usize>,
+    }
+
+    impl<'a, R> PartialRow<'a, R> {
+        /// Create a new [`PartialRow`] instance based on an inner
+        /// row and a range of field that should be part of the constructed
+        /// wrapper.
+        ///
+        /// See the documentation of [`PartialRow`] for details.
+        pub fn new<'b, DB>(inner: &'a R, range: Range<usize>) -> Self
+        where
+            R: Row<'b, DB>,
+            DB: Backend,
+        {
+            let range_lower = std::cmp::min(range.start, inner.field_count());
+            let range_upper = std::cmp::min(range.end, inner.field_count());
+            Self {
+                inner,
+                range: range_lower..range_upper,
+            }
+        }
+    }
+
+    impl<'a, 'b, DB, R> Row<'a, DB> for PartialRow<'b, R>
+    where
+        DB: Backend,
+        R: Row<'a, DB>,
+    {
+        type InnerPartialRow = R;
+
+        fn field_count(&self) -> usize {
+            self.range.len()
+        }
+
+        fn get<'c, I>(&'c self, idx: I) -> Option<<Self as RowGatWorkaround<'c, DB>>::Field>
+        where
+            'a: 'c,
+            Self: RowIndex<I>,
+        {
+            let idx = self.idx(idx)?;
+            self.inner.get(idx)
+        }
+
+        fn partial_row(&self, range: Range<usize>) -> PartialRow<'_, R> {
+            let range_upper_bound = std::cmp::min(self.range.end, self.range.start + range.end);
+            let range = (self.range.start + range.start)..range_upper_bound;
+            PartialRow {
+                inner: self.inner,
+                range,
+            }
+        }
+    }
+
+    impl<'a, 'b, R> RowIndex<&'a str> for PartialRow<'b, R>
+    where
+        R: RowIndex<&'a str>,
+    {
+        fn idx(&self, idx: &'a str) -> Option<usize> {
+            let idx = self.inner.idx(idx)?;
+            if self.range.contains(&idx) {
+                Some(idx)
+            } else {
+                None
+            }
+        }
+    }
+
+    impl<'a, R> RowIndex<usize> for PartialRow<'a, R>
+    where
+        R: RowIndex<usize>,
+    {
+        fn idx(&self, idx: usize) -> Option<usize> {
+            let idx = self.inner.idx(idx + self.range.start)?;
+            if self.range.contains(&idx) {
+                Some(idx)
+            } else {
+                None
+            }
+        }
     }
 }

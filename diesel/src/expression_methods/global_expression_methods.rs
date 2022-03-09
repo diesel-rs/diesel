@@ -72,8 +72,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// #     use schema::users;
     /// #     use schema::posts;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("INSERT INTO users (name) VALUES
-    /// #         ('Jim')").unwrap();
+    /// #     diesel::sql_query("INSERT INTO users (name) VALUES
+    /// #         ('Jim')").execute(connection).unwrap();
     /// let data = users::table.select(users::id).filter(users::name.eq_any(vec!["Sean", "Jim"]));
     /// assert_eq!(Ok(vec![1, 3]), data.load(connection));
     ///
@@ -113,8 +113,8 @@ pub trait ExpressionMethods: Expression + Sized {
     /// # fn main() {
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("INSERT INTO users (name) VALUES
-    /// #         ('Jim')").unwrap();
+    /// #     diesel::sql_query("INSERT INTO users (name) VALUES
+    /// #         ('Jim')").execute(connection).unwrap();
     /// let data = users.select(id).filter(name.ne_all(vec!["Sean", "Jim"]));
     /// assert_eq!(Ok(vec![2]), data.load(connection));
     ///
@@ -538,7 +538,9 @@ pub trait ExpressionMethods: Expression + Sized {
     ///     use self::users;
     ///     let connection = &mut establish_connection();
     ///
-    /// #   connection.execute("ALTER TABLE posts ADD COLUMN author_name Text").unwrap();
+    /// #   diesel::sql_query("ALTER TABLE posts ADD COLUMN author_name Text")
+    /// #       .execute(connection)
+    /// #       .unwrap();
     /// #   diesel::update(posts::table.filter(posts::user_id.eq(1)))
     /// #       .set(posts::author_name.eq("Sean"))
     /// #       .execute(connection);

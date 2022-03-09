@@ -1,6 +1,7 @@
 //! Implements all the traits related to being able to join from/to aliases
 
-use super::{Alias, AliasSource, AliasedField, FieldAliasMapper};
+use super::field_alias_mapper::FieldAliasMapper;
+use super::{Alias, AliasSource, AliasedField};
 
 use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::AsQuery;

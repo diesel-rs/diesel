@@ -7,7 +7,7 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
 
 /// The MySQL backend
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Mysql;
 
 #[allow(missing_debug_implementations)]
@@ -91,6 +91,9 @@ impl SqlDialect for Mysql {
 
     type ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison;
 }
+
+impl DieselReserveSpecialization for Mysql {}
+impl TrustedBackend for Mysql {}
 
 #[derive(Debug, Clone, Copy)]
 pub struct MysqlStyleDefaultValueClause;

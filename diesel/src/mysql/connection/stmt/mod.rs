@@ -12,7 +12,7 @@ use super::bind::{OutputBinds, PreparedStatementBinds};
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
-pub use self::metadata::{MysqlFieldMetadata, StatementMetadata};
+pub(super) use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 
 #[allow(dead_code, missing_debug_implementations)]
 // https://github.com/rust-lang/rust/issues/81658
@@ -44,7 +44,7 @@ impl Statement {
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
-        let input_binds = PreparedStatementBinds::from_input_data(binds)?;
+        let input_binds = PreparedStatementBinds::from_input_data(binds);
         self.input_bind(input_binds)
     }
 

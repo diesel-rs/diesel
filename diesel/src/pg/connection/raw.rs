@@ -11,12 +11,12 @@ use std::{ptr, str};
 use crate::result::*;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct RawConnection {
+pub(super) struct RawConnection {
     internal_connection: NonNull<PGconn>,
 }
 
 impl RawConnection {
-    pub fn establish(database_url: &str) -> ConnectionResult<Self> {
+    pub(super) fn establish(database_url: &str) -> ConnectionResult<Self> {
         let connection_string = CString::new(database_url)?;
         let connection_ptr = unsafe { PQconnectdb(connection_string.as_ptr()) };
         let connection_status = unsafe { PQstatus(connection_ptr) };
@@ -43,11 +43,11 @@ impl RawConnection {
         }
     }
 
-    pub fn last_error_message(&self) -> String {
+    pub(super) fn last_error_message(&self) -> String {
         last_error_message(self.internal_connection.as_ptr())
     }
 
-    pub fn set_notice_processor(&self, notice_processor: NoticeProcessor) {
+    pub(super) fn set_notice_processor(&self, notice_processor: NoticeProcessor) {
         unsafe {
             PQsetNoticeProcessor(
                 self.internal_connection.as_ptr(),
@@ -57,11 +57,11 @@ impl RawConnection {
         }
     }
 
-    pub unsafe fn exec(&self, query: *const libc::c_char) -> QueryResult<RawResult> {
+    pub(super) unsafe fn exec(&self, query: *const libc::c_char) -> QueryResult<RawResult> {
         RawResult::new(PQexec(self.internal_connection.as_ptr(), query), self)
     }
 
-    pub unsafe fn exec_prepared(
+    pub(super) unsafe fn exec_prepared(
         &self,
         stmt_name: *const libc::c_char,
         param_count: libc::c_int,
@@ -82,7 +82,7 @@ impl RawConnection {
         RawResult::new(ptr, self)
     }
 
-    pub unsafe fn prepare(
+    pub(super) unsafe fn prepare(
         &self,
         stmt_name: *const libc::c_char,
         query: *const libc::c_char,
@@ -99,14 +99,14 @@ impl RawConnection {
         RawResult::new(ptr, self)
     }
 
-    pub fn transaction_status(&self) -> PgTransactionStatus {
+    pub(super) fn transaction_status(&self) -> PgTransactionStatus {
         unsafe { PQtransactionStatus(self.internal_connection.as_ptr()) }.into()
     }
 }
 
 /// Represents the current in-transaction status of the connection
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum PgTransactionStatus {
+pub(super) enum PgTransactionStatus {
     /// Currently idle
     Idle,
     /// A command is in progress (sent to the server but not yet completed)
@@ -131,7 +131,8 @@ impl From<PGTransactionStatusType> for PgTransactionStatus {
     }
 }
 
-pub type NoticeProcessor = extern "C" fn(arg: *mut libc::c_void, message: *const libc::c_char);
+pub(super) type NoticeProcessor =
+    extern "C" fn(arg: *mut libc::c_void, message: *const libc::c_char);
 
 impl Drop for RawConnection {
     fn drop(&mut self) {
@@ -153,7 +154,7 @@ fn last_error_message(conn: *const PGconn) -> String {
 ///
 /// If `Unique` is ever stabilized, we should use it here.
 #[allow(missing_debug_implementations)]
-pub struct RawResult(NonNull<PGresult>);
+pub(super) struct RawResult(NonNull<PGresult>);
 
 unsafe impl Send for RawResult {}
 unsafe impl Sync for RawResult {}
@@ -169,11 +170,11 @@ impl RawResult {
         })
     }
 
-    pub fn as_ptr(&self) -> *mut PGresult {
+    pub(super) fn as_ptr(&self) -> *mut PGresult {
         self.0.as_ptr()
     }
 
-    pub fn error_message(&self) -> &str {
+    pub(super) fn error_message(&self) -> &str {
         let ptr = unsafe { PQresultErrorMessage(self.0.as_ptr()) };
         let cstr = unsafe { CStr::from_ptr(ptr) };
         cstr.to_str().unwrap_or_default()

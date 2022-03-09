@@ -12,6 +12,7 @@ mod chrono;
 mod quickcheck_impls;
 mod std_time;
 
+#[cfg(feature = "postgres_backend")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Timestamp)]
 #[diesel(sql_type = Timestamptz)]
@@ -20,6 +21,7 @@ mod std_time;
 /// the integer's meaning.
 pub struct PgTimestamp(pub i64);
 
+#[cfg(feature = "postgres_backend")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Date)]
 /// Dates are represented in Postgres as a 32 bit signed integer representing the number of julian
@@ -30,6 +32,7 @@ pub struct PgDate(pub i32);
 /// Time is represented in Postgres as a 64 bit signed integer representing the number of
 /// microseconds since midnight. This struct is a dumb wrapper type, meant only to indicate the
 /// integer's meaning.
+#[cfg(feature = "postgres_backend")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Time)]
 pub struct PgTime(pub i64);
@@ -38,6 +41,7 @@ pub struct PgTime(pub i64);
 /// microseconds, a 32 bit integer representing number of days, and a 32 bit integer
 /// representing number of months. This struct is a dumb wrapper type, meant only to indicate the
 /// meaning of these parts.
+#[cfg(feature = "postgres_backend")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, AsExpression, FromSqlRow)]
 #[diesel(sql_type = Interval)]
 pub struct PgInterval {

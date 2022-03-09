@@ -12,10 +12,10 @@ macro_rules! operator_allowed {
                 <<$tpe as $crate::Expression>::SqlType as $crate::sql_types::ops::$op>::Rhs,
             >,
         {
-            type Output = $crate::expression::ops::$op<Self, Rhs::Expression>;
+            type Output = $crate::internal::table_macro::ops::$op<Self, Rhs::Expression>;
 
             fn $fn_name(self, rhs: Rhs) -> Self::Output {
-                $crate::expression::ops::$op::new(self, rhs.as_expression())
+                $crate::internal::table_macro::ops::$op::new(self, rhs.as_expression())
             }
         }
     };

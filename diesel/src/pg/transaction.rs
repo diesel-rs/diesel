@@ -18,6 +18,7 @@ use crate::result::Error;
 /// [pg-docs]: https://www.postgresql.org/docs/current/static/sql-set-transaction.html
 #[allow(missing_debug_implementations)] // False positive. Connection isn't Debug.
 #[must_use = "Transaction builder does nothing unless you call `run` on it"]
+#[cfg(feature = "postgres_backend")]
 pub struct TransactionBuilder<'a, C> {
     connection: &'a mut C,
     isolation_level: Option<IsolationLevel>,
@@ -289,7 +290,7 @@ where
         E: From<Error>,
     {
         let mut query_builder = <Pg as Backend>::QueryBuilder::default();
-        self.to_sql(&mut query_builder)?;
+        self.to_sql(&mut query_builder, &Pg)?;
         let sql = query_builder.finish();
 
         AnsiTransactionManager::begin_transaction_sql(&mut *self.connection, &sql)?;
@@ -381,7 +382,7 @@ fn test_transaction_builder_generates_correct_sql() {
     macro_rules! assert_sql {
         ($query:expr, $sql:expr) => {
             let mut query_builder = <Pg as Backend>::QueryBuilder::default();
-            $query.to_sql(&mut query_builder).unwrap();
+            $query.to_sql(&mut query_builder, &Pg).unwrap();
             let sql = query_builder.finish();
             assert_eq!(sql, $sql);
         };

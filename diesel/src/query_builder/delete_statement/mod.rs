@@ -1,4 +1,4 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::dsl::{Filter, IntoBoxed, OrFilter};
 use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::returning_clause::*;
@@ -255,7 +255,7 @@ where
 
 impl<T, U, Ret, DB> QueryFragment<DB> for DeleteStatement<T, U, Ret>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     T: Table,
     FromClause<T>: QueryFragment<DB>,
     U: QueryFragment<DB>,

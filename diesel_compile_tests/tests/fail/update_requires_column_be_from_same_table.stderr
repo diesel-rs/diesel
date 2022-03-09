@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as AsChangeset>::Target == users::table`
+error[E0271]: type mismatch resolving `<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>> as AsChangeset>::Target == users::table`
   --> tests/fail/update_requires_column_be_from_same_table.rs:22:33
    |
 22 |     let command = update(users).set(posts::title.eq("Hello"));

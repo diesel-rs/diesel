@@ -1,5 +1,6 @@
 use super::{AppearsInFromClause, Plus, QuerySource};
 use crate::backend::Backend;
+use crate::backend::DieselReserveSpecialization;
 use crate::expression::grouped::Grouped;
 use crate::expression::nullable::Nullable;
 use crate::expression::SelectableExpression;
@@ -88,7 +89,7 @@ where
     Left: QuerySource,
     Right: QuerySource,
 {
-    pub fn new(left: Left, right: Right, kind: Kind) -> Self {
+    pub(crate) fn new(left: Left, right: Right, kind: Kind) -> Self {
         Join {
             left: FromClause::new(left),
             right: FromClause::new(right),
@@ -96,8 +97,7 @@ where
         }
     }
 
-    #[doc(hidden)]
-    pub fn on<On>(self, on: On) -> JoinOn<Self, On> {
+    pub(crate) fn on<On>(self, on: On) -> JoinOn<Self, On> {
         JoinOn { join: self, on: on }
     }
 }
@@ -178,7 +178,7 @@ where
 
 impl<Left, Right, Kind, DB> QueryFragment<DB> for Join<Left, Right, Kind>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Left: QuerySource,
     Left::FromClause: QueryFragment<DB>,
     Right: QuerySource,
@@ -264,7 +264,10 @@ where
 #[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct Inner;
 
-impl<DB: Backend> QueryFragment<DB> for Inner {
+impl<DB> QueryFragment<DB> for Inner
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" INNER");
         Ok(())
@@ -275,7 +278,10 @@ impl<DB: Backend> QueryFragment<DB> for Inner {
 #[derive(Debug, Clone, Copy, Default, QueryId)]
 pub struct LeftOuter;
 
-impl<DB: Backend> QueryFragment<DB> for LeftOuter {
+impl<DB> QueryFragment<DB> for LeftOuter
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" LEFT OUTER");
         Ok(())

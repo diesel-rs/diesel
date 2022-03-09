@@ -1,17 +1,5 @@
+use self::private::SqlOrdAggregate;
 use crate::expression::functions::sql_function;
-use crate::sql_types::{IntoNullable, SingleValue, SqlOrd, SqlType};
-
-pub trait SqlOrdAggregate: SingleValue {
-    type Ret: SqlType + SingleValue;
-}
-
-impl<T> SqlOrdAggregate for T
-where
-    T: SqlOrd + IntoNullable + SingleValue,
-    T::Nullable: SqlType + SingleValue,
-{
-    type Ret = T::Nullable;
-}
 
 sql_function! {
     /// Represents a SQL `MAX` function. This function can only take types which are
@@ -49,4 +37,19 @@ sql_function! {
     /// # }
     #[aggregate]
     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
+}
+
+mod private {
+    use crate::sql_types::{IntoNullable, SingleValue, SqlOrd, SqlType};
+    pub trait SqlOrdAggregate: SingleValue {
+        type Ret: SqlType + SingleValue;
+    }
+
+    impl<T> SqlOrdAggregate for T
+    where
+        T: SqlOrd + IntoNullable + SingleValue,
+        T::Nullable: SqlType + SingleValue,
+    {
+        type Ret = T::Nullable;
+    }
 }

@@ -1,12 +1,19 @@
 //! PostgreSQL specific expression methods
 
+pub(in crate::pg) use self::private::{
+    ArrayOrNullableArray, InetOrCidr, JsonbOrNullableJsonb, RangeHelper, RangeOrNullableRange,
+    TextOrNullableText,
+};
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
+use crate::expression::operators::{Asc, Desc};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
+use crate::sql_types::{Array, Inet, Jsonb, SqlType, Text};
+use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `IS NOT DISTINCT FROM` expression.
     ///
@@ -71,6 +78,7 @@ use super::date_and_time::{AtTimeZone, DateTimeLike};
 use crate::sql_types::VarChar;
 
 /// PostgreSQL specific methods present on timestamp expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL "AT TIME ZONE" expression.
     ///
@@ -102,8 +110,8 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
     /// #     use self::timestamps::dsl::*;
     /// #     use chrono::*;
     /// #     let connection = &mut establish_connection();
-    /// #     connection.execute("CREATE TABLE timestamps (\"timestamp\"
-    /// #         timestamp NOT NULL)")?;
+    /// #     diesel::sql_query("CREATE TABLE timestamps (\"timestamp\"
+    /// #         timestamp NOT NULL)").execute(connection)?;
     /// let christmas_morning = NaiveDate::from_ymd(2017, 12, 25)
     ///     .and_hms(8, 0, 0);
     /// diesel::insert_into(timestamps)
@@ -139,6 +147,7 @@ pub trait PgTimestampExpressionMethods: Expression + Sized {
 impl<T: Expression> PgTimestampExpressionMethods for T where T::SqlType: DateTimeLike {}
 
 /// PostgreSQL specific methods present on array expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgArrayExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `&&` expression.
     ///
@@ -163,8 +172,10 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #           .execute(conn)
+    /// #           .unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(&vec![
@@ -222,8 +233,10 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(tags.eq(vec!["cool", "awesome"]))
@@ -273,8 +286,10 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::posts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(tags.eq(vec!["cool", "awesome"]))
@@ -309,23 +324,12 @@ where
 {
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
-/// types. Once coherence takes associated types into account, we can remove
-/// this trait.
-pub trait ArrayOrNullableArray {}
-
-impl<T> ArrayOrNullableArray for Array<T> {}
-impl<T> ArrayOrNullableArray for Nullable<Array<T>> {}
-
-use crate::expression::operators::{Asc, Desc};
-use crate::EscapeExpressionMethods;
-
 /// PostgreSQL expression methods related to sorting.
 ///
 /// This trait is only implemented for `Asc` and `Desc`. Although `.asc` is
 /// implicit if no order is given, you will need to call `.asc()` explicitly in
 /// order to call these methods.
+#[cfg(feature = "postgres_backend")]
 pub trait PgSortExpressionMethods: Sized {
     /// Specify that nulls should come before other values in this ordering.
     ///
@@ -350,7 +354,7 @@ pub trait PgSortExpressionMethods: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::nullable_numbers::dsl::*;
     /// #     let connection = &mut connection_no_data();
-    /// #     connection.execute("CREATE TABLE nullable_numbers (nullable_number INTEGER)")?;
+    /// #     diesel::sql_query("CREATE TABLE nullable_numbers (nullable_number INTEGER)").execute(connection)?;
     /// diesel::insert_into(nullable_numbers)
     ///     .values(&vec![
     ///         nullable_number.eq(None),
@@ -398,7 +402,7 @@ pub trait PgSortExpressionMethods: Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::nullable_numbers::dsl::*;
     /// #     let connection = &mut connection_no_data();
-    /// #     connection.execute("CREATE TABLE nullable_numbers (nullable_number INTEGER)")?;
+    /// #     diesel::sql_query("CREATE TABLE nullable_numbers (nullable_number INTEGER)").execute(connection)?;
     /// diesel::insert_into(nullable_numbers)
     ///     .values(&vec![
     ///         nullable_number.eq(None),
@@ -428,6 +432,7 @@ impl<T> PgSortExpressionMethods for Asc<T> {}
 impl<T> PgSortExpressionMethods for Desc<T> {}
 
 /// PostgreSQL specific methods present on text expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgTextExpressionMethods: Expression + Sized {
     /// Creates a  PostgreSQL `ILIKE` expression
     ///
@@ -544,15 +549,6 @@ pub trait PgTextExpressionMethods: Expression + Sized {
     }
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `PgTextExpressionMethods` on the appropriate
-/// types. Once coherence takes associated types into account, we can remove
-/// this trait.
-pub trait TextOrNullableText {}
-
-impl TextOrNullableText for Text {}
-impl TextOrNullableText for Nullable<Text> {}
-
 impl<T> PgTextExpressionMethods for T
 where
     T: Expression,
@@ -604,21 +600,8 @@ impl<T, U> EscapeExpressionMethods for Grouped<NotSimilarTo<T, U>> {
     }
 }
 
-#[doc(hidden)]
-/// Marker trait used to extract the inner type
-/// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
-pub trait RangeHelper: SqlType {
-    type Inner;
-}
-
-impl<ST> RangeHelper for Range<ST>
-where
-    Self: 'static,
-{
-    type Inner = ST;
-}
-
 /// PostgreSQL specific methods present on range expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgRangeExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `@>` expression.
     ///
@@ -644,8 +627,8 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     /// #     use self::posts::dsl::*;
     /// #     use std::collections::Bound;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS posts").unwrap();
-    /// #     conn.execute("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, versions INT4RANGE NOT NULL)").execute(conn).unwrap();
     /// #
     /// diesel::insert_into(posts)
     ///     .values(versions.eq((Bound::Included(5), Bound::Unbounded)))
@@ -673,15 +656,6 @@ pub trait PgRangeExpressionMethods: Expression + Sized {
     }
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `PgRangeExpressionMethods` on the appropriate
-/// types. Once coherence takes associated types into account, we can remove
-/// this trait.
-pub trait RangeOrNullableRange {}
-
-impl<ST> RangeOrNullableRange for Range<ST> {}
-impl<ST> RangeOrNullableRange for Nullable<Range<ST>> {}
-
 impl<T> PgRangeExpressionMethods for T
 where
     T: Expression,
@@ -690,6 +664,7 @@ where
 }
 
 /// PostgreSQL specific methods present between CIDR/INET expressions
+#[cfg(feature = "postgres_backend")]
 pub trait PgNetExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `>>` expression.
     ///
@@ -717,8 +692,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -779,8 +754,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -841,8 +816,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -904,8 +879,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -962,8 +937,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3/24").unwrap()),
     ///                  address.eq(IpNetwork::from_str("10.0.3.4/23").unwrap())])
@@ -1024,8 +999,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
     ///     .execute(conn)?;
@@ -1075,8 +1050,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.3").unwrap())])
     ///     .execute(conn)?;
@@ -1126,8 +1101,8 @@ pub trait PgNetExpressionMethods: Expression + Sized {
     /// #     use ipnetwork::IpNetwork;
     /// #     use std::str::FromStr;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS hosts").unwrap();
-    /// #     conn.execute("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").unwrap();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS hosts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE hosts (id SERIAL PRIMARY KEY, address INET NOT NULL)").execute(conn).unwrap();
     /// diesel::insert_into(hosts)
     ///     .values(vec![address.eq(IpNetwork::from_str("10.0.2.53").unwrap())])
     ///     .execute(conn)?;
@@ -1159,16 +1134,8 @@ where
 {
 }
 
-#[doc(hidden)]
-/// Marker trait used to implement `PgNetExpressionMethods` on the appropriate types.
-pub trait InetOrCidr {}
-
-impl InetOrCidr for Inet {}
-impl InetOrCidr for Cidr {}
-impl InetOrCidr for Nullable<Inet> {}
-impl InetOrCidr for Nullable<Cidr> {}
-
 /// PostgreSQL specific methods present on JSONB expressions.
+#[cfg(feature = "postgres_backend")]
 pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// Creates a PostgreSQL `||` expression.
     ///
@@ -1195,12 +1162,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1267,12 +1234,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1328,12 +1295,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1389,12 +1356,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1450,12 +1417,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let easter_bunny_address: serde_json::Value = serde_json::json!({
     ///     "street": "123 Carrot Road",
@@ -1511,12 +1478,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn).unwrap();
     /// #
     /// let partial_easter_bunny_address: serde_json::Value = serde_json::json!({
     ///     "street": "123 Carrot Road",
@@ -1557,8 +1524,58 @@ where
     T::SqlType: JsonbOrNullableJsonb,
 {
 }
-#[doc(hidden)]
-/// Marker trait used to implement `PgJsonbExpressionMethods` on the appropriate types.
-pub trait JsonbOrNullableJsonb {}
-impl JsonbOrNullableJsonb for Jsonb {}
-impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+mod private {
+    use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
+
+    /// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    pub trait ArrayOrNullableArray {}
+
+    impl<T> ArrayOrNullableArray for Array<T> {}
+    impl<T> ArrayOrNullableArray for Nullable<Array<T>> {}
+
+    /// Marker trait used to implement `PgNetExpressionMethods` on the appropriate types.
+    pub trait InetOrCidr {}
+
+    impl InetOrCidr for Inet {}
+    impl InetOrCidr for Cidr {}
+    impl InetOrCidr for Nullable<Inet> {}
+    impl InetOrCidr for Nullable<Cidr> {}
+
+    /// Marker trait used to implement `PgTextExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    pub trait TextOrNullableText {}
+
+    impl TextOrNullableText for Text {}
+    impl TextOrNullableText for Nullable<Text> {}
+
+    /// Marker trait used to extract the inner type
+    /// of our `Range<T>` sql type, used to implement `PgRangeExpressionMethods`
+    pub trait RangeHelper: SqlType {
+        type Inner;
+    }
+
+    impl<ST> RangeHelper for Range<ST>
+    where
+        Self: 'static,
+    {
+        type Inner = ST;
+    }
+
+    /// Marker trait used to implement `PgRangeExpressionMethods` on the appropriate
+    /// types. Once coherence takes associated types into account, we can remove
+    /// this trait.
+    pub trait RangeOrNullableRange {}
+
+    impl<ST> RangeOrNullableRange for Range<ST> {}
+    impl<ST> RangeOrNullableRange for Nullable<Range<ST>> {}
+
+    /// Marker trait used to implement `PgJsonbExpressionMethods` on the appropriate types.
+    pub trait JsonbOrNullableJsonb {}
+
+    impl JsonbOrNullableJsonb for Jsonb {}
+    impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
+}

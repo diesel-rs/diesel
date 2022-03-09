@@ -5,7 +5,5 @@
 //! kept separate purely for documentation purposes.
 
 pub(crate) mod expression_methods;
-#[doc(hidden)]
-pub mod helper_types;
-#[doc(hidden)]
-pub mod operators;
+pub(crate) mod helper_types;
+mod operators;

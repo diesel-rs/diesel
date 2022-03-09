@@ -79,7 +79,7 @@ macro_rules! tuple_impls {
                 {
                     let mut needs_comma = false;
                     $(
-                        if !self.$idx.is_noop()? {
+                        if !self.$idx.is_noop(out.backend())? {
                             if needs_comma {
                                 out.push_sql(", ");
                             }
@@ -171,7 +171,7 @@ macro_rules! tuple_impls {
                 fn column_names(&self, mut out: AstPass<'_, '_, __DB>) -> QueryResult<()> {
                     let mut needs_comma = false;
                     $(
-                        let noop_element = self.$idx.is_noop()?;
+                        let noop_element = self.$idx.is_noop(out.backend())?;
                         if !noop_element {
                             if needs_comma {
                                 out.push_sql(", ");

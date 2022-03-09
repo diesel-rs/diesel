@@ -23,8 +23,8 @@ fn unique_constraints_are_detected() {
 #[cfg(feature = "postgres")]
 fn unique_constraints_report_correct_constraint_name() {
     let connection = &mut connection();
-    connection
-        .execute("CREATE UNIQUE INDEX users_name ON users (name)")
+    diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)")
+        .execute(connection)
         .unwrap();
     insert_into(users::table)
         .values(&User::new(1, "Sean"))
@@ -193,7 +193,9 @@ fn read_only_errors_are_detected() {
     use diesel::result::DatabaseErrorKind::ReadOnlyTransaction;
 
     let conn = &mut connection_without_transaction();
-    conn.execute("START TRANSACTION READ ONLY").unwrap();
+    diesel::sql_query("START TRANSACTION READ ONLY")
+        .execute(conn)
+        .unwrap();
 
     let result = users::table.for_update().load::<User>(conn);
 

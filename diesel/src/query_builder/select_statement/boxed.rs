@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
@@ -15,7 +15,7 @@ use crate::query_builder::limit_clause::LimitClause;
 use crate::query_builder::limit_offset_clause::BoxedLimitOffsetClause;
 use crate::query_builder::offset_clause::OffsetClause;
 use crate::query_builder::order_clause::OrderClause;
-use crate::query_builder::where_clause::*;
+use crate::query_builder::where_clause::{BoxedWhereClause, WhereAnd, WhereOr};
 use crate::query_builder::*;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::*;
@@ -24,6 +24,8 @@ use crate::query_source::{QuerySource, Table};
 use crate::result::QueryResult;
 use crate::sql_types::{BigInt, BoolOrNullableBool, IntoNullable};
 
+// This is used by the table macro internally
+#[doc(hidden)]
 #[allow(missing_debug_implementations)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB, GB = ()> {
     select: Box<dyn QueryFragment<DB> + Send + 'a>,
@@ -160,7 +162,7 @@ impl<'a, ST, QS, QS2, DB, GB> ValidSubselect<QS2> for BoxedSelectStatement<'a, S
 
 impl<'a, ST, QS, DB, GB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     QS: QueryFragment<DB>,
     BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
 {

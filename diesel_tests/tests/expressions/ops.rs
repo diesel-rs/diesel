@@ -180,12 +180,12 @@ fn mix_and_match_all_numeric_ops() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
-    connection
-        .execute(
-            "INSERT INTO users (id, name) VALUES
+    diesel::sql_query(
+        "INSERT INTO users (id, name) VALUES
         (3, 'Jim'), (4, 'Bob')",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let expected_data = vec![4, 6, 7, 9];
     let data = users.select(id * 3 / 2 + 4 - 1).load(connection);

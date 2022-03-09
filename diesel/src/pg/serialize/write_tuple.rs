@@ -38,6 +38,7 @@ use crate::serialize::{self, Output};
 /// # }
 /// # fn main() {}
 /// ```
+#[cfg(feature = "postgres_backend")]
 pub trait WriteTuple<ST> {
     /// See trait documentation.
     fn write_tuple(&self, out: &mut Output<'_, '_, Pg>) -> serialize::Result;

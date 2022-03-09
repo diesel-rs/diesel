@@ -5,14 +5,14 @@ use diesel::*;
 fn belongs_to() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (id, user_id, title, body) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title, body) VALUES
         (1, 1, 'Hello', 'Content'),
         (2, 2, 'World', NULL)
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -30,14 +30,14 @@ fn belongs_to() {
 fn select_single_from_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (id, user_id, title) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
         (1, 1, 'Hello'),
         (2, 2, 'World')
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let source = posts::table.inner_join(users::table);
     let select_name = source.select(users::name);
@@ -58,14 +58,14 @@ fn select_single_from_join() {
 fn select_multiple_from_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (id, user_id, title) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
         (1, 1, 'Hello'),
         (2, 2, 'World')
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let source = posts::table
         .inner_join(users::table)
@@ -84,14 +84,14 @@ fn select_multiple_from_join() {
 fn join_boxed_query() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (id, user_id, title) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
         (1, 1, 'Hello'),
         (2, 2, 'World')
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let source = posts::table
         .into_boxed()
@@ -111,8 +111,8 @@ fn join_boxed_query() {
 fn select_only_one_side_of_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute("INSERT INTO posts (user_id, title) VALUES (2, 'Hello')")
+    diesel::sql_query("INSERT INTO posts (user_id, title) VALUES (2, 'Hello')")
+        .execute(connection)
         .unwrap();
 
     let source = users::table
@@ -129,14 +129,14 @@ fn select_only_one_side_of_join() {
 fn left_outer_joins() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (id, user_id, title) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
         (1, 1, 'Hello'),
         (2, 1, 'World')
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -160,14 +160,14 @@ fn left_outer_joins() {
 fn columns_on_right_side_of_left_outer_joins_are_nullable() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (user_id, title) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (user_id, title) VALUES
         (1, 'Hello'),
         (1, 'World')
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let expected_data = vec![
         ("Sean".to_string(), Some("Hello".to_string())),
@@ -187,14 +187,14 @@ fn columns_on_right_side_of_left_outer_joins_are_nullable() {
 fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (user_id, title) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (user_id, title) VALUES
         (1, 'Hello'),
         (1, 'World')
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let expected_data = vec![("Sean".to_string(), Some("Hello".to_string()))];
     let source = users::table
@@ -210,14 +210,14 @@ fn columns_on_right_side_of_left_outer_joins_can_be_used_in_filter() {
 fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_called() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (user_id, title, body) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
         (1, 'World', NULL)
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let expected_data = vec![
         Some(("Hello".to_string(), Some("Content".to_string()))),
@@ -238,14 +238,14 @@ fn select_multiple_from_right_side_returns_optional_tuple_when_nullable_is_calle
 fn select_complex_from_left_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (user_id, title, body) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
         (1, 'World', NULL)
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -271,14 +271,14 @@ fn select_complex_from_left_join() {
 fn select_right_side_with_nullable_column_first() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (user_id, title, body) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content'),
         (1, 'World', NULL)
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
@@ -304,13 +304,13 @@ fn select_right_side_with_nullable_column_first() {
 fn select_left_join_right_side_with_non_null_inside() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (user_id, title, body) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (user_id, title, body) VALUES
         (1, 'Hello', 'Content')
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     let expected_data = vec![
         (None, 2),
@@ -334,8 +334,8 @@ fn select_then_join() {
     use crate::schema::users::dsl::*;
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute("INSERT INTO posts (user_id, title) VALUES (1, 'Hello')")
+    diesel::sql_query("INSERT INTO posts (user_id, title) VALUES (1, 'Hello')")
+        .execute(connection)
         .unwrap();
     let expected_data = vec![1];
     let data: Vec<i32> = users

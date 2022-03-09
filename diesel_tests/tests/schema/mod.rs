@@ -206,8 +206,8 @@ pub struct DropTable<'a> {
 impl<'a> Drop for DropTable<'a> {
     fn drop(&mut self) {
         if self.can_drop {
-            self.connection
-                .execute(&format!("DROP TABLE {}", self.table_name))
+            diesel::sql_query(&format!("DROP TABLE {}", self.table_name))
+                .execute(self.connection)
                 .unwrap();
         }
     }
@@ -259,14 +259,18 @@ pub fn backend_specific_connection() -> TestConnection {
     // we do match the error messages in some tests and depending on your
     // operating system configuration postgres may return localized error messages
     // This forces the language to english
-    conn.execute("SET lc_messages TO 'en_US.UTF-8';").unwrap();
+    diesel::sql_query("SET lc_messages TO 'en_US.UTF-8'")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 
 #[cfg(feature = "sqlite")]
 pub fn backend_specific_connection() -> TestConnection {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("PRAGMA foreign_keys = ON").unwrap();
+    diesel::sql_query("PRAGMA foreign_keys = ON")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 
@@ -280,32 +284,36 @@ pub fn backend_specific_connection() -> TestConnection {
 
 #[cfg(feature = "postgres")]
 pub fn disable_foreign_keys(connection: &mut TestConnection) {
-    connection.execute("SET CONSTRAINTS ALL DEFERRED").unwrap();
+    diesel::sql_query("SET CONSTRAINTS ALL DEFERRED")
+        .execute(connection)
+        .unwrap();
 }
 
 #[cfg(feature = "mysql")]
 pub fn disable_foreign_keys(connection: &mut TestConnection) {
-    connection.execute("SET FOREIGN_KEY_CHECKS = 0").unwrap();
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
+        .execute(connection)
+        .unwrap();
 }
 
 #[cfg(feature = "sqlite")]
 pub fn disable_foreign_keys(connection: &mut TestConnection) {
-    connection
-        .execute("PRAGMA defer_foreign_keys = ON")
+    diesel::sql_query("PRAGMA defer_foreign_keys = ON")
+        .execute(connection)
         .unwrap();
 }
 
 #[cfg(feature = "sqlite")]
 pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    connection
-        .execute(&format!("DROP TABLE {}", table))
+    diesel::sql_query(&format!("DROP TABLE {}", table))
+        .execute(connection)
         .unwrap();
 }
 
 #[cfg(feature = "postgres")]
 pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    connection
-        .execute(&format!("DROP TABLE {} CASCADE", table))
+    diesel::sql_query(&format!("DROP TABLE {} CASCADE", table))
+        .execute(connection)
         .unwrap();
 }
 
@@ -318,8 +326,8 @@ pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
 }
 
 pub fn insert_sean_and_tess_into_users_table(connection: &mut TestConnection) {
-    connection
-        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+        .execute(connection)
         .unwrap();
     ensure_primary_key_seq_greater_than(2, connection);
 }

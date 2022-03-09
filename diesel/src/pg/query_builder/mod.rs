@@ -12,6 +12,7 @@ pub use self::distinct_on::DistinctOnClause;
 /// The PostgreSQL query builder
 #[allow(missing_debug_implementations)]
 #[derive(Default)]
+#[cfg(feature = "postgres_backend")]
 pub struct PgQueryBuilder {
     sql: String,
     bind_idx: u32,
@@ -64,7 +65,7 @@ fn check_sql_query_increments_bind_count() {
     let mut query_builder = PgQueryBuilder::default();
 
     {
-        let ast_pass = AstPass::<crate::pg::Pg>::to_sql(&mut query_builder);
+        let ast_pass = AstPass::<crate::pg::Pg>::to_sql(&mut query_builder, &Pg);
 
         query.walk_ast(ast_pass).unwrap();
     }

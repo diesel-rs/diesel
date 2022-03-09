@@ -1,5 +1,7 @@
 /// Declare a new alias for a table
 ///
+/// This macro creates a value of the type [`Alias`](super::Alias)
+///
 /// Example usage
 /// -------------
 /// ```rust
@@ -99,7 +101,7 @@ macro_rules! alias {
                 table: $($table)::+::table,
             }
 
-            impl $crate::query_source::aliasing::AliasSource for $alias_ty {
+            impl $crate::query_source::AliasSource for $alias_ty {
                 const NAME: &'static str = stringify!($alias_sql_name);
                 type Target = $($table)::+::table;
                 fn target(&self) -> &Self::Target { &self.table }
@@ -112,7 +114,7 @@ macro_rules! alias {
             }
 
             // impl AppearsInFromClause<Alias<$alias>> for Alias<$alias>
-            impl $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<$alias_ty, $($table)::+::table> for $alias_ty {
+            impl $crate::internal::alias_macro::AliasAliasAppearsInFromClauseSameTable<$alias_ty, $($table)::+::table> for $alias_ty {
                 type Count = $crate::query_source::Once;
             }
         )*
@@ -135,12 +137,12 @@ macro_rules! __internal_alias_helper {
         $(
             $crate::static_cond!{if ($left_table_tt) == ($right_table_tt) {
                 $crate::static_cond!{if ($left_sql_name) != ($right_sql_name) {
-                    impl $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<$left_alias, $left_table_ty>
+                    impl $crate::internal::alias_macro::AliasAliasAppearsInFromClauseSameTable<$left_alias, $left_table_ty>
                         for $right_alias
                     {
                         type Count = $crate::query_source::Never;
                     }
-                    impl $crate::query_source::aliasing::AliasAliasAppearsInFromClauseSameTable<$right_alias, $left_table_ty>
+                    impl $crate::internal::alias_macro::AliasAliasAppearsInFromClauseSameTable<$right_alias, $left_table_ty>
                         for $left_alias
                     {
                         type Count = $crate::query_source::Never;

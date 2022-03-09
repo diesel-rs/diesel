@@ -24,6 +24,8 @@ pub trait AsChangeset {
     fn as_changeset(self) -> Self::Changeset;
 }
 
+// This is a false positive, we reexport it later
+#[allow(unreachable_pub)]
 #[doc(inline)]
 pub use diesel_derives::AsChangeset;
 

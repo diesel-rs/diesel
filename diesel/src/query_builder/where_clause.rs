@@ -1,6 +1,6 @@
 use super::from_clause::AsQuerySource;
 use super::*;
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{And, Or};
 use crate::expression::*;
@@ -31,7 +31,10 @@ pub trait WhereOr<Predicate> {
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoWhereClause;
 
-impl<DB: Backend> QueryFragment<DB> for NoWhereClause {
+impl<DB> QueryFragment<DB> for NoWhereClause
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
@@ -73,7 +76,7 @@ pub struct WhereClause<Expr>(Expr);
 
 impl<DB, Expr> QueryFragment<DB> for WhereClause<Expr>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Expr: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -147,7 +150,7 @@ pub enum BoxedWhereClause<'a, DB> {
 
 impl<'a, DB> QueryFragment<DB> for BoxedWhereClause<'a, DB>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         match *self {
@@ -170,6 +173,7 @@ impl<'a, DB, Predicate> WhereAnd<Predicate> for BoxedWhereClause<'a, DB>
 where
     DB: Backend + 'a,
     Predicate: QueryFragment<DB> + Send + 'a,
+    Grouped<And<Box<dyn QueryFragment<DB> + Send + 'a>, Predicate>>: QueryFragment<DB>,
 {
     type Output = Self;
 
@@ -187,6 +191,7 @@ impl<'a, DB, Predicate> WhereOr<Predicate> for BoxedWhereClause<'a, DB>
 where
     DB: Backend + 'a,
     Predicate: QueryFragment<DB> + Send + 'a,
+    Grouped<Or<Box<dyn QueryFragment<DB> + Send + 'a>, Predicate>>: QueryFragment<DB>,
 {
     type Output = Self;
 

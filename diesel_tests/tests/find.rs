@@ -7,8 +7,8 @@ fn find() {
 
     let connection = &mut connection();
 
-    connection
-        .execute("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+    diesel::sql_query("INSERT INTO users (id, name) VALUES (1, 'Sean'), (2, 'Tess')")
+        .execute(connection)
         .unwrap();
 
     assert_eq!(Ok(User::new(1, "Sean")), users.find(1).first(connection));
@@ -27,8 +27,8 @@ fn find_with_non_serial_pk() {
     use self::users_with_name_pk::table as users;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users_with_name_pk (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users_with_name_pk (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     assert_eq!(

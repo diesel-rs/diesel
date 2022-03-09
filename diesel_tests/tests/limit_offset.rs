@@ -6,8 +6,8 @@ fn limit() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![("Sean".to_string(), None::<String>)];
@@ -25,8 +25,8 @@ fn offset() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![("Tess".to_string(), None::<String>)];
@@ -40,8 +40,8 @@ fn limit_offset() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess'), ('Ruby')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess'), ('Ruby')")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![("Ruby".to_string(), None::<String>)];
@@ -55,8 +55,8 @@ fn boxed_limit() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![("Sean".to_string(), None::<String>)];
@@ -82,8 +82,8 @@ fn boxed_offset() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![("Tess".to_string(), None::<String>)];
@@ -113,8 +113,8 @@ fn boxed_limit_offset() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess'), ('Ruby')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess'), ('Ruby')")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![("Ruby".to_string(), None::<String>)];

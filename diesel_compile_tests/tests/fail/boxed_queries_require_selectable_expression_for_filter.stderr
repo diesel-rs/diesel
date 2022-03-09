@@ -6,8 +6,8 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
    |
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
    = note: 2 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
-   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>`
+   = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:21:37
@@ -18,5 +18,5 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
    = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
    = note: 2 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
-   = note: required because of the requirements on the impl of `FilterDsl<Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
+   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>`
+   = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`

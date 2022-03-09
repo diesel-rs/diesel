@@ -1,3 +1,6 @@
+//! This module contains the query dsl node definition
+//! for `EXISTS` expressions
+
 use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression, ValidGrouping};
@@ -30,11 +33,24 @@ use crate::sql_types::Bool;
 /// # }
 /// ```
 pub fn exists<T>(query: T) -> exists<T> {
-    Exists(Subselect::new(query))
+    Exists {
+        subselect: Subselect::new(query),
+    }
 }
 
+/// The query dsl node that represents a SQL `EXISTS (subselect)` expression.
+///
+/// Third party backend can customize the [`QueryFragment`]
+/// implementation of this query dsl node via
+/// [`SqlDialect::ExistsSyntax`]. A customized implementation
+/// is expected to provide the same sematics as a ANSI SQL
+/// `EXIST (subselect)` expression.
 #[derive(Clone, Copy, QueryId, Debug)]
-pub struct Exists<T>(pub Subselect<T, Bool>);
+#[non_exhaustive]
+pub struct Exists<T> {
+    /// The inner subselect
+    pub subselect: Subselect<T, Bool>,
+}
 
 impl<T> Expression for Exists<T>
 where
@@ -67,7 +83,7 @@ where
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("EXISTS (");
-        self.0.walk_ast(out.reborrow())?;
+        self.subselect.walk_ast(out.reborrow())?;
         out.push_sql(")");
         Ok(())
     }

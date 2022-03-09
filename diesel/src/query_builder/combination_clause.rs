@@ -1,16 +1,19 @@
 //! Combine queries using a combinator like `UNION`, `INTERSECT` or `EXPECT`
 //! with or without `ALL` rule for duplicates
 
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::NonAggregate;
 use crate::query_builder::insert_statement::InsertFromSelect;
 use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId};
 use crate::{CombineDsl, Insertable, QueryResult, RunQueryDsl, Table};
 
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct NoCombinationClause;
+pub(crate) struct NoCombinationClause;
 
-impl<DB: Backend> QueryFragment<DB> for NoCombinationClause {
+impl<DB> QueryFragment<DB> for NoCombinationClause
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
@@ -128,7 +131,7 @@ where
     Rule: QueryFragment<DB>,
     Source: QueryFragment<DB>,
     RhsParenthesisWrapper<Rhs>: QueryFragment<DB>,
-    DB: Backend + SupportsCombinationClause<Combinator, Rule>,
+    DB: Backend + SupportsCombinationClause<Combinator, Rule> + DieselReserveSpecialization,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.source.walk_ast(out.reborrow())?;
@@ -142,7 +145,10 @@ where
 /// Computes the set union of the rows returned by the involved `SELECT` statements using SQL `UNION`
 pub struct Union;
 
-impl<DB: Backend> QueryFragment<DB> for Union {
+impl<DB> QueryFragment<DB> for Union
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" UNION ");
         Ok(())
@@ -153,7 +159,10 @@ impl<DB: Backend> QueryFragment<DB> for Union {
 /// Computes the set intersection of the rows returned by the involved `SELECT` statements using SQL `INTERSECT`
 pub struct Intersect;
 
-impl<DB: Backend> QueryFragment<DB> for Intersect {
+impl<DB> QueryFragment<DB> for Intersect
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" INTERSECT ");
         Ok(())
@@ -164,7 +173,10 @@ impl<DB: Backend> QueryFragment<DB> for Intersect {
 /// Computes the set difference of the rows returned by the involved `SELECT` statements using SQL `EXCEPT`
 pub struct Except;
 
-impl<DB: Backend> QueryFragment<DB> for Except {
+impl<DB> QueryFragment<DB> for Except
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" EXCEPT ");
         Ok(())
@@ -175,8 +187,11 @@ impl<DB: Backend> QueryFragment<DB> for Except {
 /// Remove duplicate rows in the result, this is the default behavior of `UNION`, `INTERSECT` and `EXCEPT`
 pub struct Distinct;
 
-impl<DB: Backend> QueryFragment<DB> for Distinct {
-    fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+impl<DB> QueryFragment<DB> for Distinct
+where
+    DB: Backend + DieselReserveSpecialization,
+{
+    fn walk_ast<'b>(&'b self, _: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         Ok(())
     }
 }
@@ -185,7 +200,10 @@ impl<DB: Backend> QueryFragment<DB> for Distinct {
 /// Keep duplicate rows in the result
 pub struct All;
 
-impl<DB: Backend> QueryFragment<DB> for All {
+impl<DB> QueryFragment<DB> for All
+where
+    DB: Backend + DieselReserveSpecialization,
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("ALL ");
         Ok(())

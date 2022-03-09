@@ -28,8 +28,8 @@ fn with_safe_select() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let select_name = users.select(UserName::as_select());
@@ -59,8 +59,8 @@ fn selecting_columns_and_tables_with_reserved_names() {
     )
     .execute(connection)
     .unwrap();
-    connection
-        .execute("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
+    diesel::sql_query("INSERT INTO \"select\" (\"join\") VALUES (1), (2), (3)")
+        .execute(connection)
         .unwrap();
 
     #[derive(Debug, PartialEq, Queryable, Selectable)]
@@ -114,7 +114,7 @@ fn selection_using_subselect() {
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
         ids[0], ids[1]
     );
-    connection.execute(&query).unwrap();
+    diesel::sql_query(&query).execute(connection).unwrap();
 
     #[derive(Debug, PartialEq, Queryable, Selectable)]
     struct Post(#[diesel(column_name = title)] String);

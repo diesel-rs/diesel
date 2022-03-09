@@ -117,25 +117,27 @@ use crate::sql_types;
 #[test]
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
+    use crate::query_builder::bind_collector::ByteWrapper;
+
     type Type = sql_types::Nullable<sql_types::VarChar>;
 
     let mut buffer = Vec::new();
     let is_null = {
-        let mut bytes = Output::test(&mut buffer);
+        let mut bytes = Output::test(ByteWrapper(&mut buffer));
         ToSql::<Type, Pg>::to_sql(&None::<String>, &mut bytes).unwrap()
     };
     assert_eq!(IsNull::Yes, is_null);
     assert!(buffer.is_empty());
 
     let is_null = {
-        let mut bytes = Output::test(&mut buffer);
+        let mut bytes = Output::test(ByteWrapper(&mut buffer));
         ToSql::<Type, Pg>::to_sql(&Some(""), &mut bytes).unwrap()
     };
     assert_eq!(IsNull::No, is_null);
     assert!(buffer.is_empty());
 
     let is_null = {
-        let mut bytes = Output::test(&mut buffer);
+        let mut bytes = Output::test(ByteWrapper(&mut buffer));
         ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap()
     };
     let expectd_bytes = b"Sean".to_vec();

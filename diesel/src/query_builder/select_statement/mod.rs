@@ -10,12 +10,10 @@
 //! G: Group By Clause
 //! H: Having clause
 //! LC: For Update Clause
-#![allow(missing_docs)] // The missing_docs lint triggers even though this is hidden
 
-mod boxed;
+pub(crate) mod boxed;
 mod dsl_impls;
-
-pub use self::boxed::BoxedSelectStatement;
+pub(crate) use self::boxed::BoxedSelectStatement;
 
 use super::distinct_clause::NoDistinctClause;
 use super::from_clause::AsQuerySource;
@@ -30,6 +28,7 @@ use super::where_clause::*;
 use super::NoFromClause;
 use super::{AstPass, Query, QueryFragment};
 use crate::backend::Backend;
+use crate::backend::DieselReserveSpecialization;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::having_clause::NoHavingClause;
@@ -67,7 +66,7 @@ pub struct SelectStatement<
 
 impl<F, S, D, W, O, LOf, G, H, LC> SelectStatement<F, S, D, W, O, LOf, G, H, LC> {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
+    pub(crate) fn new(
         select: S,
         from: F,
         distinct: D,
@@ -93,6 +92,8 @@ impl<F, S, D, W, O, LOf, G, H, LC> SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 }
 
 impl<F: QuerySource> SelectStatement<FromClause<F>> {
+    // This is used by the `table!` macro
+    #[doc(hidden)]
     pub fn simple(from: F) -> Self {
         let from = FromClause::new(from);
         SelectStatement::new(
@@ -133,7 +134,7 @@ where
 impl<F, S, D, W, O, LOf, G, H, LC, DB> QueryFragment<DB>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     S: QueryFragment<DB>,
     F: QueryFragment<DB>,
     D: QueryFragment<DB>,

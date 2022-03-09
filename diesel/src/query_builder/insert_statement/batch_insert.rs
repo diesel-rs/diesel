@@ -5,9 +5,20 @@ use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::QueryResult;
 use std::marker::PhantomData;
 
-#[doc(hidden)]
+/// This type represents a batch insert clause, which allows
+/// to insert multiple rows at once.
+///
+/// Custom backends can specialize the [`QueryFragment`]
+/// implementation via [`SqlDialect::BatchInsertSupport`]
+/// or provide fully custom [`ExecuteDsl`](crate::query_dsl::methods::ExecuteDsl)
+/// and [`LoadQuery`](crate::query_dsl::methods::LoadQuery) implementations
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 #[derive(Debug)]
 pub struct BatchInsert<V, Tab, QId, const STABLE_QUERY_ID: bool> {
+    /// List of values that should be inserted
     pub values: V,
     _marker: PhantomData<(QId, Tab)>,
 }

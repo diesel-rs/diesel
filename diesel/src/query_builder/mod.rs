@@ -15,17 +15,15 @@ pub(crate) mod combination_clause;
 mod debug_query;
 mod delete_statement;
 mod distinct_clause;
-mod from_clause;
-#[doc(hidden)]
-pub mod functions;
+pub(crate) mod from_clause;
+pub(crate) mod functions;
 mod group_by_clause;
 mod having_clause;
-mod insert_statement;
+pub(crate) mod insert_statement;
 pub(crate) mod limit_clause;
 pub(crate) mod limit_offset_clause;
 pub(crate) mod locking_clause;
-#[doc(hidden)]
-pub mod nodes;
+pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
 mod returning_clause;
@@ -36,52 +34,84 @@ mod update_statement;
 pub(crate) mod upsert;
 mod where_clause;
 
+#[doc(inline)]
 pub use self::ast_pass::AstPass;
+#[doc(inline)]
 pub use self::bind_collector::BindCollector;
+#[doc(inline)]
 pub use self::debug_query::DebugQuery;
+#[doc(inline)]
 pub use self::delete_statement::{BoxedDeleteStatement, DeleteStatement};
-#[doc(hidden)]
-pub use self::insert_statement::{BatchInsert, DefaultValues};
 #[doc(inline)]
 pub use self::insert_statement::{
-    IncompleteInsertStatement, InsertStatement, UndecoratedInsertRecord, ValuesClause,
+    IncompleteInsertOrIgnoreStatement, IncompleteInsertStatement, IncompleteReplaceStatement,
+    InsertOrIgnoreStatement, InsertStatement, ReplaceStatement,
 };
+#[doc(inline)]
 pub use self::query_id::QueryId;
 #[doc(inline)]
-pub use self::select_clause::SelectClauseExpression;
-#[doc(hidden)]
-pub use self::select_statement::{BoxedSelectStatement, SelectStatement};
 pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 #[doc(inline)]
-pub use self::update_statement::{
-    AsChangeset, BoxedUpdateStatement, IntoUpdateTarget, UpdateStatement, UpdateTarget,
-};
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
-#[doc(hidden)]
-pub use self::from_clause::{FromClause, NoFromClause};
-pub use self::limit_clause::{LimitClause, NoLimitClause};
-pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
-pub use self::offset_clause::{NoOffsetClause, OffsetClause};
-#[doc(hidden)]
-pub use self::returning_clause::ReturningClause;
-#[doc(hidden)]
-pub use self::select_clause::DefaultSelectClause;
+#[doc(inline)]
+pub use self::update_statement::changeset::AsChangeset;
+#[doc(inline)]
+pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
+#[doc(inline)]
+pub use self::update_statement::{BoxedUpdateStatement, UpdateStatement};
 
-pub(crate) use self::insert_statement::ColumnList;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::limit_clause::{LimitClause, NoLimitClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::limit_offset_clause::{BoxedLimitOffsetClause, LimitOffsetClause};
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::offset_clause::{NoOffsetClause, OffsetClause};
+
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::insert_statement::batch_insert::BatchInsert;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::insert_statement::{UndecoratedInsertRecord, ValuesClause};
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::insert_statement::DefaultValues;
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[doc(inline)]
+pub use self::returning_clause::ReturningClause;
+
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::select_clause::SelectClauseExpression;
+
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::from_clause::{FromClause, NoFromClause};
 
 #[cfg(feature = "postgres_backend")]
-pub use crate::pg::query_builder::only_clause::Only;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use crate::pg::query_builder::only_clause::Only;
 
-use std::error::Error;
+pub(crate) use self::insert_statement::ColumnList;
+pub(crate) use self::select_statement::BoxedSelectStatement;
+pub(crate) use self::select_statement::SelectStatement;
 
 use crate::backend::{Backend, HasBindCollector};
 use crate::result::QueryResult;
-
-mod private {
-    #[allow(missing_debug_implementations, missing_copy_implementations)]
-    pub struct NotSpecialized;
-}
+use std::error::Error;
 
 #[doc(hidden)]
 pub type Binds = Vec<Option<Vec<u8>>>;
@@ -173,8 +203,11 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// Converts this `QueryFragment` to its SQL representation.
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn to_sql(&self, out: &mut DB::QueryBuilder) -> QueryResult<()> {
-        self.walk_ast(AstPass::to_sql(out))
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn to_sql(&self, out: &mut DB::QueryBuilder, backend: &DB) -> QueryResult<()> {
+        self.walk_ast(AstPass::to_sql(out, backend))
     }
 
     /// Serializes all bind parameters in this query.
@@ -183,12 +216,16 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     /// itself. It is represented in SQL with a placeholder such as `?` or `$1`.
     ///
     /// This method should only be called by implementations of `Connection`.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     fn collect_binds<'b>(
         &'b self,
         out: &mut <DB as HasBindCollector<'b>>::BindCollector,
         metadata_lookup: &mut DB::MetadataLookup,
+        backend: &'b DB,
     ) -> QueryResult<()> {
-        self.walk_ast(AstPass::collect_binds(out, metadata_lookup))
+        self.walk_ast(AstPass::collect_binds(out, metadata_lookup, backend))
     }
 
     /// Is this query safe to store in the prepared statement cache?
@@ -206,17 +243,22 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     ///   placeholder)
     ///
     /// This method should only be called by implementations of `Connection`.
-    fn is_safe_to_cache_prepared(&self) -> QueryResult<bool> {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool> {
         let mut result = true;
-        self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result))?;
+        self.walk_ast(AstPass::is_safe_to_cache_prepared(&mut result, backend))?;
         Ok(result)
     }
 
-    #[doc(hidden)]
     /// Does walking this AST have any effect?
-    fn is_noop(&self) -> QueryResult<bool> {
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn is_noop(&self, backend: &DB) -> QueryResult<bool> {
         let mut result = true;
-        self.walk_ast(AstPass::is_noop(&mut result))?;
+        self.walk_ast(AstPass::is_noop(&mut result, backend))?;
         Ok(result)
     }
 }
@@ -353,4 +395,9 @@ impl<T: Query> AsQuery for T {
 /// ```
 pub fn debug_query<DB, T>(query: &T) -> DebugQuery<'_, T, DB> {
     DebugQuery::new(query)
+}
+
+mod private {
+    #[allow(missing_debug_implementations, missing_copy_implementations)]
+    pub struct NotSpecialized;
 }

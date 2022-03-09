@@ -28,9 +28,11 @@ impl ToSql<Uuid, Pg> for uuid::Uuid {
 
 #[test]
 fn uuid_to_sql() {
+    use crate::query_builder::bind_collector::ByteWrapper;
+
     let mut buffer = Vec::new();
     let test_uuid = uuid::Uuid::from_fields(0xFFFF_FFFF, 0xFFFF, 0xFFFF, b"abcdef12").unwrap();
-    let mut bytes = Output::test(&mut buffer);
+    let mut bytes = Output::test(ByteWrapper(&mut buffer));
     ToSql::<Uuid, Pg>::to_sql(&test_uuid, &mut bytes).unwrap();
     assert_eq!(buffer, test_uuid.as_bytes());
 }

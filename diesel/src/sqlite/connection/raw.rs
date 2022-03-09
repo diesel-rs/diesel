@@ -29,12 +29,12 @@ macro_rules! assert_fail {
 }
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct RawConnection {
-    pub(crate) internal_connection: NonNull<ffi::sqlite3>,
+pub(super) struct RawConnection {
+    pub(super) internal_connection: NonNull<ffi::sqlite3>,
 }
 
 impl RawConnection {
-    pub fn establish(database_url: &str) -> ConnectionResult<Self> {
+    pub(super) fn establish(database_url: &str) -> ConnectionResult<Self> {
         let mut conn_pointer = ptr::null_mut();
 
         let database_url = if database_url.starts_with("sqlite://") {
@@ -61,7 +61,7 @@ impl RawConnection {
         }
     }
 
-    pub fn exec(&self, query: &str) -> QueryResult<()> {
+    pub(super) fn exec(&self, query: &str) -> QueryResult<()> {
         let query = CString::new(query)?;
         let callback_fn = None;
         let callback_arg = ptr::null_mut();
@@ -78,11 +78,11 @@ impl RawConnection {
         ensure_sqlite_ok(result, self.internal_connection.as_ptr())
     }
 
-    pub fn rows_affected_by_last_query(&self) -> usize {
+    pub(super) fn rows_affected_by_last_query(&self) -> usize {
         unsafe { ffi::sqlite3_changes(self.internal_connection.as_ptr()) as usize }
     }
 
-    pub fn register_sql_function<F, Ret, RetSqlType>(
+    pub(super) fn register_sql_function<F, Ret, RetSqlType>(
         &self,
         fn_name: &str,
         num_args: usize,
@@ -121,7 +121,7 @@ impl RawConnection {
         Self::process_sql_function_result(result)
     }
 
-    pub fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
+    pub(super) fn register_aggregate_function<ArgsSqlType, RetSqlType, Args, Ret, A>(
         &self,
         fn_name: &str,
         num_args: usize,
@@ -152,7 +152,7 @@ impl RawConnection {
         Self::process_sql_function_result(result)
     }
 
-    pub fn register_collation_function<F>(
+    pub(super) fn register_collation_function<F>(
         &self,
         collation_name: &str,
         collation: F,

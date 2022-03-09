@@ -75,7 +75,7 @@ macro_rules! __diesel_operator_body {
         }
 
         impl<$($ty_param,)+> $name<$($ty_param,)+> {
-            pub fn new($($field_name: $ty_param,)+) -> Self {
+            pub(crate) fn new($($field_name: $ty_param,)+) -> Self {
                 $name { $($field_name,)+ }
             }
         }
@@ -107,13 +107,13 @@ macro_rules! __diesel_operator_body {
             }
         }
 
-        impl<S, $($ty_param,)+> $crate::query_source::aliasing::FieldAliasMapper<S> for $name<$($ty_param,)+>
+        impl<S, $($ty_param,)+> $crate::internal::operators_macro::FieldAliasMapper<S> for $name<$($ty_param,)+>
         where
-            S: $crate::query_source::aliasing::AliasSource,
-            $($ty_param: $crate::query_source::aliasing::FieldAliasMapper<S>,)+
+            S: $crate::query_source::AliasSource,
+            $($ty_param: $crate::internal::operators_macro::FieldAliasMapper<S>,)+
         {
             type Out = $name<
-                $(<$ty_param as $crate::query_source::aliasing::FieldAliasMapper<S>>::Out,)+
+                $(<$ty_param as $crate::internal::operators_macro::FieldAliasMapper<S>>::Out,)+
             >;
             fn map(self, alias: &$crate::query_source::Alias<S>) -> Self::Out {
                 $name {
@@ -575,14 +575,13 @@ where
 }
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
-#[doc(hidden)]
 pub struct Concat<L, R> {
     pub(crate) left: L,
     pub(crate) right: R,
 }
 
 impl<L, R> Concat<L, R> {
-    pub fn new(left: L, right: R) -> Self {
+    pub(crate) fn new(left: L, right: R) -> Self {
         Self { left, right }
     }
 }

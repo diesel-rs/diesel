@@ -106,7 +106,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 
     wrap_in_dummy_mod(quote! {
         use diesel::expression::AsExpression;
-        use diesel::expression::bound::Bound;
+        use diesel::internal::derives::as_expression::Bound;
         use diesel::sql_types::Nullable;
         use diesel::serialize::{self, ToSql, Output};
 

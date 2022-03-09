@@ -17,7 +17,7 @@ use std::mem::ManuallyDrop;
 use std::ops::DerefMut;
 use std::rc::Rc;
 
-pub fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
+pub(super) fn register<ArgsSqlType, RetSqlType, Args, Ret, F>(
     conn: &RawConnection,
     fn_name: &str,
     deterministic: bool,
@@ -45,7 +45,7 @@ where
     Ok(())
 }
 
-pub fn register_noargs<RetSqlType, Ret, F>(
+pub(super) fn register_noargs<RetSqlType, Ret, F>(
     conn: &RawConnection,
     fn_name: &str,
     deterministic: bool,
@@ -60,7 +60,7 @@ where
     Ok(())
 }
 
-pub fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
+pub(super) fn register_aggregate<ArgsSqlType, RetSqlType, Args, Ret, A>(
     conn: &RawConnection,
     fn_name: &str,
 ) -> QueryResult<()>
@@ -86,7 +86,7 @@ where
     Ok(())
 }
 
-pub(crate) fn build_sql_function_args<ArgsSqlType, Args>(
+pub(super) fn build_sql_function_args<ArgsSqlType, Args>(
     args: &mut [*mut ffi::sqlite3_value],
 ) -> Result<Args, Error>
 where
@@ -96,7 +96,7 @@ where
     Args::build_from_row(&row).map_err(Error::DeserializationError)
 }
 
-pub(crate) fn process_sql_function_result<RetSqlType, Ret>(
+pub(super) fn process_sql_function_result<RetSqlType, Ret>(
     result: &'_ Ret,
 ) -> QueryResult<InternalSqliteBindValue<'_>>
 where

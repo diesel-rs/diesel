@@ -8,6 +8,7 @@ use crate::expression::{
     ValidGrouping,
 };
 use crate::pg::{Pg, PgValue};
+use crate::query_builder::bind_collector::ByteWrapper;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::result::QueryResult;
 use crate::serialize::{self, IsNull, Output, ToSql, WriteTuple};
@@ -52,7 +53,7 @@ macro_rules! tuple_impls {
                     } else {
                         let (elem_bytes, new_bytes) = bytes.split_at(num_bytes as usize);
                         bytes = new_bytes;
-                        $T::from_sql(PgValue::new(
+                        $T::from_sql(PgValue::new_internal(
                             elem_bytes,
                             &oid,
                         ))?
@@ -106,7 +107,7 @@ macro_rules! tuple_impls {
                     let oid = <Pg as HasSqlType<$ST>>::metadata(out.metadata_lookup()).oid()?;
                     out.write_u32::<NetworkEndian>(oid)?;
                     let is_null = {
-                        let mut temp_buffer = Output::new(&mut buffer, out.metadata_lookup());
+                        let mut temp_buffer = Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
                         let is_null = self.$idx.to_sql(&mut temp_buffer)?;
                         is_null
                     };

@@ -14,13 +14,13 @@ fn test_sql_function() {
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
-    connection
-        .execute(
-            "CREATE FUNCTION my_lower(varchar) RETURNS varchar
+    diesel::sql_query(
+        "CREATE FUNCTION my_lower(varchar) RETURNS varchar
         AS $$ SELECT LOWER($1) $$
         LANGUAGE SQL",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
     let sean = User::new(1, "Sean");
     let tess = User::new(2, "Tess");
 

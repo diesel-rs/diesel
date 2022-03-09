@@ -87,15 +87,85 @@
 //!
 //! ## Getting help
 //!
-//! If you run into problems, Diesel has a very active Gitter room.
-//! You can come ask for help at
+//! If you run into problems, Diesel has an active community.
+//! Either open a new [discussion] thread at diesel github repository or
+//! use the active Gitter room at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
+//!
+//! [discussion]: https://github.com/diesel-rs/diesel/discussions/categories/q-a
+//!
+//! # Crate feature flags
+//!
+//! The following feature flags are considered to be part of diesels public
+//! API. Any feature flag that is not listed here is **not** considered to
+//! be part of the public API and can disappear at any point in time:
+
+//!
+//! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires a compatible copy
+//! of `libsqlite3` for your target architecture.
+//! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
+//! copy of `libpq` for your target architecture. This features implies `postgres_backend`
+//! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
+//! of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
+//! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependend
+//! on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
+//! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//! postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//! postgres backend
+//! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependend
+//! on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
+//! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
+//! mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
+//! mysql backend
+//! - `returning_clauses_for_sqlite_3_35`: This feature enables support for `RETURNING` clauses in the sqlite backend.
+//! Enabling this feature requires sqlite 3.35.0 or newer.
+//! - `32-column-tables`: This feature enables support for tables with up to 32 columns.
+//! This feature is enabled by default. Consider disabling this feature if you write a library crate
+//! providing general extensions for diesel or if you do not need to support tables with more than 16 columns
+//! and you want to minimize your compile times.
+//! - `64-column-tables`: This feature enables support for tables with up to 64 columns. It implies the
+//! `32-column-tables` feature. Enabling this feature will increase your compile times.
+//! - `128-column-tables`: This feature enables support for tables with up to 128 columns. It implies the
+//! `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
+//! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
+//! private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
+//! or write a custom [`Connection`](crate::connection::Connection) implementation. **Do not use this feature for
+//! any other usecase**. By enabling this feature you explicitly opt out diesel stability gurantees. We explicitly
+//! reserve us the right to break API's exported under this feature flag in any upcomming minor version release.
+//! If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
+//! currently released minor version.
+//! - `serde_json`: This feature flag enables support for (de)serializing json values from the database using
+//! types provided by `serde_json`.
+//! - `chrono`: This feature flags enables support for (de)serializing date/time values from the database using
+//! types provided by `chrono`
+//! - `uuid`: This feature flag enables support for (de)serializing uuid values from the database using types
+//! provided by `uuid`
+//! - `network-address`: This feature flag enables support for (de)serializing IP and Macadresse values from the
+//! database using types provided by `ipnetwork`
+//! - `numeric`: This feature flag enables support for (de)support numeric values from the database using types
+//! provided by `bigdecimal`
+//! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
+//! - `extras`: This feature enables the feature flaged support for any third party crate. This implies the
+//! following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
+//! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
+//! disabling this feature explicitly opts out diesels stability gurantee.
+//! - `without-deprecated`: This feature disables any item marked as `#[deprecated]`. Enabling this feature
+//! explicitly opts out the stability gurantee given by diesel. This feature overrides the `with-deprecated`.
+//! Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
+//! various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
+//!
+//! By default the following features are enabled:
+//!
+//! - `with-deprecated`
+//! - `32-column-tables`
 
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
+#![cfg_attr(doc_cfg, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
 #![deny(warnings)]
 #![warn(
+    unreachable_pub,
     missing_debug_implementations,
     missing_copy_implementations,
     elided_lifetimes_in_paths,
@@ -128,6 +198,8 @@ extern crate diesel_derives;
 #[macro_use]
 #[doc(hidden)]
 pub mod macros;
+#[doc(hidden)]
+pub mod internal;
 
 #[cfg(test)]
 #[macro_use]
@@ -209,6 +281,7 @@ pub mod helper_types {
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
+    use crate::query_builder::select_clause::SelectClause;
 
     #[doc(inline)]
     pub use crate::expression::helper_types::*;
@@ -217,9 +290,9 @@ pub mod helper_types {
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
 
     /// Represents the return type of `diesel::select(selection)`
-    pub type BareSelect<T> = crate::query_builder::SelectStatement<
+    pub type BareSelect<Selection> = crate::query_builder::SelectStatement<
         crate::query_builder::NoFromClause,
-        crate::query_builder::select_clause::SelectClause<T>,
+        SelectClause<Selection>,
     >;
 
     /// Represents the return type of `.filter(predicate)`
@@ -416,6 +489,8 @@ pub mod prelude {
     pub use crate::expression::functions::sql_function;
 
     #[doc(inline)]
+    pub use crate::expression::SelectableHelper;
+    #[doc(inline)]
     pub use crate::expression_methods::*;
     #[doc(inline)]
     pub use crate::insertable::Insertable;
@@ -433,8 +508,6 @@ pub mod prelude {
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
-
-    pub use crate::expression::SelectableHelper;
 
     #[cfg(feature = "mysql")]
     #[doc(inline)]
@@ -457,7 +530,7 @@ pub use crate::query_builder::functions::{
 pub use crate::result::Error::NotFound;
 
 pub(crate) mod diesel {
-    pub use super::*;
+    pub(crate) use super::*;
 }
 
 // workaround https://github.com/rust-lang/rust/pull/52234

@@ -15,42 +15,37 @@
 //! also implement [`AsExpression`], allowing it to be
 //! used as an argument to any of the methods described here.
 #[macro_use]
-#[doc(hidden)]
-pub mod ops;
+pub(crate) mod ops;
 pub mod functions;
 
-#[doc(hidden)]
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) mod array_comparison;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub mod array_comparison;
-#[doc(hidden)]
-pub mod assume_not_null;
-#[doc(hidden)]
-pub mod bound;
-#[doc(hidden)]
-pub mod coerce;
-#[doc(hidden)]
-pub mod count;
-#[doc(hidden)]
+pub(crate) mod assume_not_null;
+pub(crate) mod bound;
+mod coerce;
+pub(crate) mod count;
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+mod exists;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub mod exists;
-#[doc(hidden)]
-pub mod grouped;
-#[doc(hidden)]
-pub mod helper_types;
+pub(crate) mod grouped;
+pub(crate) mod helper_types;
 mod not;
-#[doc(hidden)]
-pub mod nullable;
-#[doc(hidden)]
+pub(crate) mod nullable;
 #[macro_use]
-pub mod operators;
-#[doc(hidden)]
-pub mod select_by;
-#[doc(hidden)]
-pub mod sql_literal;
-#[doc(hidden)]
-pub mod subselect;
+pub(crate) mod operators;
+pub(crate) mod select_by;
+mod sql_literal;
+pub(crate) mod subselect;
 
-#[doc(hidden)]
-#[allow(non_camel_case_types)]
-pub mod dsl {
+// we allow unreachable_pub here
+// as rustc otherwise shows false positives
+// for every item in this module. We reexport
+// everything from `crate::helper_types::`
+#[allow(non_camel_case_types, unreachable_pub)]
+pub(crate) mod dsl {
     use crate::dsl::SqlTypeOf;
 
     #[doc(inline)]
@@ -196,7 +191,6 @@ where
 ///   [`ToSql`]: crate::serialize::ToSql
 ///
 ///  This trait could be [derived](derive@AsExpression)
-
 pub trait AsExpression<T>
 where
     T: SqlType + TypedExpressionType,

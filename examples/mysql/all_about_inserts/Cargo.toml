@@ -1,7 +1,7 @@
 [package]
 name = "all_about_inserts_mysql"
 version = "0.1.0"
-authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
+authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 edition = "2018"
 
 [dependencies]

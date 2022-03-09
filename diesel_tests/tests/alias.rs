@@ -4,8 +4,8 @@ use diesel::prelude::*;
 #[test]
 fn selecting_basic_data() {
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+    diesel::sql_query("INSERT INTO users (name) VALUES ('Sean'), ('Tess')")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![
@@ -30,14 +30,14 @@ fn selecting_basic_data() {
 fn select_multiple_from_join() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-    connection
-        .execute(
-            "INSERT INTO posts (id, user_id, title) VALUES
+    diesel::sql_query(
+        "INSERT INTO posts (id, user_id, title) VALUES
         (1, 1, 'Hello'),
         (2, 2, 'World')
     ",
-        )
-        .unwrap();
+    )
+    .execute(connection)
+    .unwrap();
 
     alias!(users as user_alias: UserAlias);
     let post_alias = alias!(posts as post_alias);

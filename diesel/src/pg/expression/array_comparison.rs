@@ -19,7 +19,7 @@ use crate::sql_types::{Array, SqlType};
 /// # fn main() {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
-/// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
+/// #     diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')").execute(connection).unwrap();
 /// let sean = (1, "Sean".to_string());
 /// let jim = (3, "Jim".to_string());
 /// let data = users.filter(name.eq(any(vec!["Sean", "Jim"])));
@@ -48,7 +48,7 @@ where
 /// # fn main() {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut establish_connection();
-/// #     connection.execute("INSERT INTO users (name) VALUES ('Jim')").unwrap();
+/// #     diesel::sql_query("INSERT INTO users (name) VALUES ('Jim')").execute(connection).unwrap();
 /// let tess = (2, "Tess".to_string());
 /// let data = users.filter(name.ne(all(vec!["Sean", "Jim"])));
 /// assert_eq!(Ok(vec![tess]), data.load(connection));

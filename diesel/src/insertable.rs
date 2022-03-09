@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::backend::{sql_dialect, Backend, SqlDialect};
+use crate::backend::{sql_dialect, Backend, DieselReserveSpecialization, SqlDialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::{AppearsOnTable, Expression};
 use crate::query_builder::{
@@ -208,7 +208,7 @@ where
 
 impl<Col, Expr, DB> QueryFragment<DB> for ColumnInsertValue<Col, Expr>
 where
-    DB: Backend,
+    DB: Backend + DieselReserveSpecialization,
     Expr: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {

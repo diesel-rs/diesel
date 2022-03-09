@@ -117,13 +117,20 @@ pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlT
 /// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
+// we allow unreachable_pub here
+// as rustc otherwise shows false positives
+// for every item in this module. We reexport
+// everything from `crate::helper_types::`
 #[doc(inline)]
+#[allow(unreachable_pub)]
 pub use super::functions::helper_types::*;
 
 #[doc(inline)]
 #[cfg(feature = "postgres_backend")]
+#[allow(unreachable_pub)]
 pub use crate::pg::expression::helper_types::*;
 
 #[doc(inline)]
 #[cfg(feature = "sqlite")]
+#[allow(unreachable_pub)]
 pub use crate::sqlite::expression::helper_types::*;

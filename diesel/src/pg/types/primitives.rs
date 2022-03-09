@@ -45,8 +45,10 @@ impl FromSql<sql_types::Binary, Pg> for *const [u8] {
 
 #[test]
 fn bool_to_sql() {
+    use crate::query_builder::bind_collector::ByteWrapper;
+
     let mut buffer = Vec::new();
-    let mut bytes = Output::test(&mut buffer);
+    let mut bytes = Output::test(ByteWrapper(&mut buffer));
     ToSql::<sql_types::Bool, Pg>::to_sql(&true, &mut bytes).unwrap();
     ToSql::<sql_types::Bool, Pg>::to_sql(&false, &mut bytes).unwrap();
     assert_eq!(buffer, vec![1u8, 0u8]);

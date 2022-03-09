@@ -8,7 +8,7 @@ use super::result::PgResult;
 use crate::pg::PgTypeMetadata;
 use crate::result::QueryResult;
 
-pub use super::raw::RawConnection;
+use super::raw::RawConnection;
 
 pub(crate) struct Statement {
     name: CString,
@@ -16,7 +16,7 @@ pub(crate) struct Statement {
 }
 
 impl Statement {
-    pub fn execute(
+    pub(super) fn execute(
         &self,
         raw_connection: &mut RawConnection,
         param_data: &[Option<Vec<u8>>],
@@ -47,7 +47,7 @@ impl Statement {
         PgResult::new(internal_res?)
     }
 
-    pub fn prepare(
+    pub(super) fn prepare(
         raw_connection: &mut RawConnection,
         sql: &str,
         name: Option<&str>,

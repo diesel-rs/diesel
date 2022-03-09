@@ -270,7 +270,8 @@ fn load_table_names_returns_nothing_when_no_tables_exist() {
 #[test]
 fn load_table_names_includes_tables_that_exist() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .execute(&mut conn)
         .unwrap();
     let table_names = load_table_names(&mut conn, None).unwrap();
     assert!(table_names.contains(&TableName::from_name("users")));
@@ -279,7 +280,8 @@ fn load_table_names_includes_tables_that_exist() {
 #[test]
 fn load_table_names_excludes_diesel_metadata_tables() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    diesel::sql_query("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .execute(&mut conn)
         .unwrap();
     let table_names = load_table_names(&mut conn, None).unwrap();
     assert!(!table_names.contains(&TableName::from_name("__diesel_metadata")));
@@ -288,9 +290,11 @@ fn load_table_names_excludes_diesel_metadata_tables() {
 #[test]
 fn load_table_names_excludes_sqlite_metadata_tables() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    diesel::sql_query("CREATE TABLE __diesel_metadata (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .execute(&mut conn)
         .unwrap();
-    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .execute(&mut conn)
         .unwrap();
     let table_names = load_table_names(&mut conn, None);
     assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
@@ -299,9 +303,12 @@ fn load_table_names_excludes_sqlite_metadata_tables() {
 #[test]
 fn load_table_names_excludes_views() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .execute(&mut conn)
         .unwrap();
-    conn.execute("CREATE VIEW answer AS SELECT 42").unwrap();
+    diesel::sql_query("CREATE VIEW answer AS SELECT 42")
+        .execute(&mut conn)
+        .unwrap();
     let table_names = load_table_names(&mut conn, None);
     assert_eq!(vec![TableName::from_name("users")], table_names.unwrap());
 }
@@ -324,11 +331,14 @@ fn load_table_names_returns_error_when_given_schema_name() {
 #[test]
 fn load_table_names_output_is_ordered() {
     let mut conn = SqliteConnection::establish(":memory:").unwrap();
-    conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    diesel::sql_query("CREATE TABLE bbb (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .execute(&mut conn)
         .unwrap();
-    conn.execute("CREATE TABLE aaa (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    diesel::sql_query("CREATE TABLE aaa (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .execute(&mut conn)
         .unwrap();
-    conn.execute("CREATE TABLE ccc (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+    diesel::sql_query("CREATE TABLE ccc (id INTEGER PRIMARY KEY AUTOINCREMENT)")
+        .execute(&mut conn)
         .unwrap();
 
     let table_names = load_table_names(&mut conn, None)
@@ -343,12 +353,14 @@ fn load_table_names_output_is_ordered() {
 fn load_foreign_key_constraints_loads_foreign_keys() {
     let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
-    connection.execute("CREATE TABLE table_1 (id)").unwrap();
-    connection
-        .execute("CREATE TABLE table_2 (id, fk_one REFERENCES table_1(id))")
+    diesel::sql_query("CREATE TABLE table_1 (id)")
+        .execute(&mut connection)
         .unwrap();
-    connection
-        .execute("CREATE TABLE table_3 (id, fk_two REFERENCES table_2(id))")
+    diesel::sql_query("CREATE TABLE table_2 (id, fk_one REFERENCES table_1(id))")
+        .execute(&mut connection)
+        .unwrap();
+    diesel::sql_query("CREATE TABLE table_3 (id, fk_two REFERENCES table_2(id))")
+        .execute(&mut connection)
         .unwrap();
 
     let table_1 = TableName::from_name("table_1");

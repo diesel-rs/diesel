@@ -5,16 +5,15 @@ use std::ops::Index;
 use std::os::raw as libc;
 use std::ptr::NonNull;
 
-use super::stmt::MysqlFieldMetadata;
-use super::stmt::Statement;
+use super::stmt::{MysqlFieldMetadata, Statement};
 use crate::mysql::connection::stmt::StatementMetadata;
-use crate::mysql::types::MysqlTime;
+use crate::mysql::types::date_and_time::MysqlTime;
 use crate::mysql::{MysqlType, MysqlValue};
 use crate::result::QueryResult;
 
-pub struct PreparedStatementBinds(Binds);
+pub(super) struct PreparedStatementBinds(Binds);
 
-pub struct OutputBinds(Binds);
+pub(super) struct OutputBinds(Binds);
 
 impl Clone for OutputBinds {
     fn clone(&self) -> Self {
@@ -29,7 +28,7 @@ struct Binds {
 }
 
 impl PreparedStatementBinds {
-    pub fn from_input_data<Iter>(input: Iter) -> QueryResult<Self>
+    pub(super) fn from_input_data<Iter>(input: Iter) -> Self
     where
         Iter: IntoIterator<Item = (MysqlType, Option<Vec<u8>>)>,
     {
@@ -38,10 +37,10 @@ impl PreparedStatementBinds {
             .map(BindData::for_input)
             .collect::<Vec<_>>();
 
-        Ok(Self(Binds { data }))
+        Self(Binds { data })
     }
 
-    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    pub(super) fn with_mysql_binds<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
@@ -50,7 +49,10 @@ impl PreparedStatementBinds {
 }
 
 impl OutputBinds {
-    pub fn from_output_types(types: &[Option<MysqlType>], metadata: &StatementMetadata) -> Self {
+    pub(super) fn from_output_types(
+        types: &[Option<MysqlType>],
+        metadata: &StatementMetadata,
+    ) -> Self {
         let data = metadata
             .fields()
             .iter()
@@ -61,7 +63,7 @@ impl OutputBinds {
         Self(Binds { data })
     }
 
-    pub fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
+    pub(super) fn populate_dynamic_buffers(&mut self, stmt: &Statement) -> QueryResult<()> {
         for (i, data) in self.0.data.iter_mut().enumerate() {
             data.did_numeric_overflow_occur()?;
             // This is safe because we are re-binding the invalidated buffers
@@ -78,13 +80,13 @@ impl OutputBinds {
         unsafe { self.with_mysql_binds(|bind_ptr| stmt.bind_result(bind_ptr)) }
     }
 
-    pub fn update_buffer_lengths(&mut self) {
+    pub(super) fn update_buffer_lengths(&mut self) {
         for data in &mut self.0.data {
             data.update_buffer_length();
         }
     }
 
-    pub fn with_mysql_binds<F, T>(&mut self, f: F) -> T
+    pub(super) fn with_mysql_binds<F, T>(&mut self, f: F) -> T
     where
         F: FnOnce(*mut ffi::MYSQL_BIND) -> T,
     {
@@ -150,7 +152,7 @@ impl From<u32> for Flags {
 }
 
 #[derive(Debug)]
-pub struct BindData {
+pub(super) struct BindData {
     tpe: ffi::enum_field_types,
     bytes: Option<NonNull<u8>>,
     length: libc::c_ulong,
@@ -397,7 +399,7 @@ impl BindData {
         known_buffer_size_for_ffi_type(self.tpe).is_some()
     }
 
-    pub fn value(&'_ self) -> Option<MysqlValue<'_>> {
+    pub(super) fn value(&'_ self) -> Option<MysqlValue<'_>> {
         if self.is_null() {
             None
         } else {
@@ -413,11 +415,11 @@ impl BindData {
                 // invariant.
                 std::slice::from_raw_parts(data.as_ptr(), self.length as usize)
             };
-            Some(MysqlValue::new(slice, tpe))
+            Some(MysqlValue::new_internal(slice, tpe))
         }
     }
 
-    pub fn is_null(&self) -> bool {
+    pub(super) fn is_null(&self) -> bool {
         self.is_null != 0
     }
 
@@ -748,7 +750,7 @@ mod tests {
         dbg!(meta);
 
         let value = bind.value().expect("Is not null");
-        let value = MysqlValue::new(value.as_bytes(), meta);
+        let value = MysqlValue::new_internal(value.as_bytes(), meta);
 
         dbg!(T::from_sql(value))
     }
@@ -758,9 +760,10 @@ mod tests {
     fn check_all_the_types() {
         let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS all_mysql_types CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS all_mysql_types CASCADE")
+            .execute(conn)
             .unwrap();
-        conn.execute(
+        crate::sql_query(
             "CREATE TABLE all_mysql_types (
                     tiny_int TINYINT NOT NULL,
                     small_int SMALLINT NOT NULL,
@@ -798,9 +801,9 @@ mod tests {
                     json_col JSON NOT NULL
             )",
         )
+        .execute(conn)
         .unwrap();
-        conn
-            .execute(
+        crate::sql_query(
                 "INSERT INTO all_mysql_types VALUES (
                     0, -- tiny_int
                     1, -- small_int
@@ -837,7 +840,7 @@ mod tests {
                     ST_GeomCollFromText('GEOMETRYCOLLECTION(POINT(1 1),LINESTRING(0 0,1 1,2 2,3 3,4 4))'), -- geometry_collection
                     '{\"key1\": \"value1\", \"key2\": \"value2\"}' -- json_col
 )",
-            )
+            ).execute(conn)
             .unwrap();
 
         let mut stmt = conn.prepared_query(&crate::sql_query(
@@ -1290,13 +1293,17 @@ mod tests {
             }
         }
 
-        conn.execute("DROP TABLE IF EXISTS json_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS json_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE json_test(id INTEGER PRIMARY KEY, json_field JSON NOT NULL)")
-            .unwrap();
+        crate::sql_query(
+            "CREATE TABLE json_test(id INTEGER PRIMARY KEY, json_field JSON NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
 
-        conn.execute("INSERT INTO json_test(id, json_field) VALUES (1, '{\"key1\": \"value1\", \"key2\": \"value2\"}')").unwrap();
+        crate::sql_query("INSERT INTO json_test(id, json_field) VALUES (1, '{\"key1\": \"value1\", \"key2\": \"value2\"}')").execute(conn).unwrap();
 
         let json_col_as_json = query_single_table(
             "SELECT json_field FROM json_test",
@@ -1336,7 +1343,9 @@ mod tests {
             json_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM json_test").unwrap();
+        crate::sql_query("DELETE FROM json_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
@@ -1387,7 +1396,9 @@ mod tests {
             json_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM json_test").unwrap();
+        crate::sql_query("DELETE FROM json_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO json_test(id, json_field) VALUES (?, ?)",
@@ -1439,13 +1450,15 @@ mod tests {
     fn check_enum_bind() {
         let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS enum_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS enum_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE enum_test(id INTEGER PRIMARY KEY, enum_field ENUM('red', 'green', 'blue') NOT NULL)")
+        crate::sql_query("CREATE TABLE enum_test(id INTEGER PRIMARY KEY, enum_field ENUM('red', 'green', 'blue') NOT NULL)").execute(conn)
             .unwrap();
 
-        conn.execute("INSERT INTO enum_test(id, enum_field) VALUES (1, 'green')")
+        crate::sql_query("INSERT INTO enum_test(id, enum_field) VALUES (1, 'green')")
+            .execute(conn)
             .unwrap();
 
         let enum_col_as_enum: BindData =
@@ -1515,7 +1528,9 @@ mod tests {
             enum_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM enum_test").unwrap();
+        crate::sql_query("DELETE FROM enum_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
@@ -1574,7 +1589,9 @@ mod tests {
             enum_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM enum_test").unwrap();
+        crate::sql_query("DELETE FROM enum_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO enum_test(id, enum_field) VALUES (?, ?)",
@@ -1623,13 +1640,15 @@ mod tests {
     fn check_set_bind() {
         let conn = &mut crate::test_helpers::connection();
 
-        conn.execute("DROP TABLE IF EXISTS set_test CASCADE")
+        crate::sql_query("DROP TABLE IF EXISTS set_test CASCADE")
+            .execute(conn)
             .unwrap();
 
-        conn.execute("CREATE TABLE set_test(id INTEGER PRIMARY KEY, set_field SET('red', 'green', 'blue') NOT NULL)")
+        crate::sql_query("CREATE TABLE set_test(id INTEGER PRIMARY KEY, set_field SET('red', 'green', 'blue') NOT NULL)").execute(conn)
             .unwrap();
 
-        conn.execute("INSERT INTO set_test(id, set_field) VALUES (1, 'green')")
+        crate::sql_query("INSERT INTO set_test(id, set_field) VALUES (1, 'green')")
+            .execute(conn)
             .unwrap();
 
         let set_col_as_set: BindData =
@@ -1686,7 +1705,9 @@ mod tests {
             set_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM set_test").unwrap();
+        crate::sql_query("DELETE FROM set_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",
@@ -1724,7 +1745,9 @@ mod tests {
             set_col_as_text.value().unwrap().as_bytes()
         );
 
-        conn.execute("DELETE FROM set_test").unwrap();
+        crate::sql_query("DELETE FROM set_test")
+            .execute(conn)
+            .unwrap();
 
         input_bind(
             "INSERT INTO set_test(id, set_field) VALUES (?, ?)",

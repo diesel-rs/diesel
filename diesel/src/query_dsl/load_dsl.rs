@@ -1,10 +1,17 @@
+use self::private::LoadIter;
 use super::RunQueryDsl;
 use crate::backend::Backend;
 use crate::connection::{Connection, ConnectionGatWorkaround};
 use crate::deserialize::FromSqlRow;
-use crate::expression::{select_by::SelectBy, Expression, QueryMetadata, Selectable};
+use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 use crate::result::QueryResult;
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::private::{CompatibleType, LoadQueryGatWorkaround};
+
+#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+pub(crate) use self::private::{CompatibleType, LoadQueryGatWorkaround};
 
 /// The `load` method
 ///
@@ -24,50 +31,10 @@ where
     ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret>;
 }
 
-pub trait LoadQueryGatWorkaround<'conn, 'query, Conn, U> {
-    type Ret: Iterator<Item = QueryResult<U>>;
-}
-
-use crate::expression::TypedExpressionType;
-use crate::sql_types::{SqlType, Untyped};
-
-pub trait CompatibleType<U, DB> {
-    type SqlType;
-}
-
-impl<ST, U, DB> CompatibleType<U, DB> for ST
-where
-    DB: Backend,
-    ST: SqlType + crate::sql_types::SingleValue,
-    U: FromSqlRow<ST, DB>,
-{
-    type SqlType = ST;
-}
-
-impl<U, DB> CompatibleType<U, DB> for Untyped
-where
-    U: FromSqlRow<Untyped, DB>,
-    DB: Backend,
-{
-    type SqlType = Untyped;
-}
-
-impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
-where
-    DB: Backend,
-    ST: SqlType + TypedExpressionType,
-    U: Selectable<DB, SelectExpression = E>,
-    E: Expression<SqlType = ST>,
-    U: FromSqlRow<ST, DB>,
-{
-    type SqlType = ST;
-}
-
-#[allow(missing_debug_implementations)]
-pub struct LoadIter<'conn, U, C, ST, DB> {
-    cursor: C,
-    _marker: std::marker::PhantomData<&'conn (ST, U, DB)>,
-}
+/// The return type of [`LoadQuery<C, U>::internal_load()`]
+///
+/// Users should thread this type as `impl Iterator<Item = QueryResult<U>>`
+pub type LoadRet<'conn, 'query, Q, C, U> = <Q as LoadQueryGatWorkaround<'conn, 'query, C, U>>::Ret;
 
 impl<'conn, 'query, Conn, T, U, DB> LoadQueryGatWorkaround<'conn, 'query, Conn, U> for T
 where
@@ -103,7 +70,7 @@ where
         conn: &'conn mut Conn,
     ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret> {
         Ok(LoadIter {
-            cursor: conn.load(self)?,
+            cursor: conn.load(self.as_query())?,
             _marker: Default::default(),
         })
     }
@@ -134,67 +101,132 @@ where
     }
 }
 
-impl<'conn, C, U, ST, DB, R> LoadIter<'conn, U, C, ST, DB>
-where
-    DB: Backend,
-    C: Iterator<Item = QueryResult<R>>,
-    R: crate::row::Row<'conn, DB>,
-    U: FromSqlRow<ST, DB>,
-{
-    fn map_row(row: Option<QueryResult<R>>) -> Option<QueryResult<U>> {
-        match row? {
-            Ok(row) => {
-                Some(U::build_from_row(&row).map_err(crate::result::Error::DeserializationError))
+// These types and traits are not part of the public API.
+//
+// * LoadQueryGatWorkaround to allow us replacing it with real GAT later on
+// * CompatibleType as we consider this as "sealed" trait. It shouldn't
+// be implemented by a third party
+// * LoadIter as it's an implementation detail
+mod private {
+    use crate::backend::Backend;
+    use crate::deserialize::FromSqlRow;
+    use crate::expression::select_by::SelectBy;
+    use crate::expression::{Expression, TypedExpressionType};
+    use crate::sql_types::{SqlType, Untyped};
+    use crate::{QueryResult, Selectable};
+
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+    pub trait LoadQueryGatWorkaround<'conn, 'query, Conn, U> {
+        type Ret: Iterator<Item = QueryResult<U>>;
+    }
+
+    #[allow(missing_debug_implementations)]
+    pub struct LoadIter<'a, U, C, ST, DB> {
+        pub(super) cursor: C,
+        pub(super) _marker: std::marker::PhantomData<&'a (ST, U, DB)>,
+    }
+
+    impl<'a, C, U, ST, DB, R> LoadIter<'a, U, C, ST, DB>
+    where
+        DB: Backend,
+        C: Iterator<Item = QueryResult<R>>,
+        R: crate::row::Row<'a, DB>,
+        U: FromSqlRow<ST, DB>,
+    {
+        pub(super) fn map_row(row: Option<QueryResult<R>>) -> Option<QueryResult<U>> {
+            match row? {
+                Ok(row) => Some(
+                    U::build_from_row(&row).map_err(crate::result::Error::DeserializationError),
+                ),
+                Err(e) => Some(Err(e)),
             }
-            Err(e) => Some(Err(e)),
         }
     }
-}
 
-impl<'conn, C, U, ST, DB, R> Iterator for LoadIter<'conn, U, C, ST, DB>
-where
-    DB: Backend,
-    C: Iterator<Item = QueryResult<R>>,
-    R: crate::row::Row<'conn, DB>,
-    U: FromSqlRow<ST, DB>,
-{
-    type Item = QueryResult<U>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        Self::map_row(self.cursor.next())
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.cursor.size_hint()
-    }
-
-    fn count(self) -> usize
+    impl<'a, C, U, ST, DB, R> Iterator for LoadIter<'a, U, C, ST, DB>
     where
-        Self: Sized,
+        DB: Backend,
+        C: Iterator<Item = QueryResult<R>>,
+        R: crate::row::Row<'a, DB>,
+        U: FromSqlRow<ST, DB>,
     {
-        self.cursor.count()
+        type Item = QueryResult<U>;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            Self::map_row(self.cursor.next())
+        }
+
+        fn size_hint(&self) -> (usize, Option<usize>) {
+            self.cursor.size_hint()
+        }
+
+        fn count(self) -> usize
+        where
+            Self: Sized,
+        {
+            self.cursor.count()
+        }
+
+        fn last(self) -> Option<Self::Item>
+        where
+            Self: Sized,
+        {
+            Self::map_row(self.cursor.last())
+        }
+
+        fn nth(&mut self, n: usize) -> Option<Self::Item> {
+            Self::map_row(self.cursor.nth(n))
+        }
     }
 
-    fn last(self) -> Option<Self::Item>
+    impl<'a, C, U, ST, DB, R> ExactSizeIterator for LoadIter<'a, U, C, ST, DB>
     where
-        Self: Sized,
+        DB: Backend,
+        C: ExactSizeIterator + Iterator<Item = QueryResult<R>>,
+        R: crate::row::Row<'a, DB>,
+        U: FromSqlRow<ST, DB>,
     {
-        Self::map_row(self.cursor.last())
+        fn len(&self) -> usize {
+            self.cursor.len()
+        }
     }
 
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        Self::map_row(self.cursor.nth(n))
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+    )]
+    pub trait CompatibleType<U, DB> {
+        type SqlType;
     }
-}
 
-impl<'conn, C, U, ST, DB, R> ExactSizeIterator for LoadIter<'conn, U, C, ST, DB>
-where
-    DB: Backend,
-    C: ExactSizeIterator + Iterator<Item = QueryResult<R>>,
-    R: crate::row::Row<'conn, DB>,
-    U: FromSqlRow<ST, DB>,
-{
-    fn len(&self) -> usize {
-        self.cursor.len()
+    impl<ST, U, DB> CompatibleType<U, DB> for ST
+    where
+        DB: Backend,
+        ST: SqlType + crate::sql_types::SingleValue,
+        U: FromSqlRow<ST, DB>,
+    {
+        type SqlType = ST;
+    }
+
+    impl<U, DB> CompatibleType<U, DB> for Untyped
+    where
+        U: FromSqlRow<Untyped, DB>,
+        DB: Backend,
+    {
+        type SqlType = Untyped;
+    }
+
+    impl<U, DB, E, ST> CompatibleType<U, DB> for SelectBy<U, DB>
+    where
+        DB: Backend,
+        ST: SqlType + TypedExpressionType,
+        U: Selectable<DB, SelectExpression = E>,
+        E: Expression<SqlType = ST>,
+        U: FromSqlRow<ST, DB>,
+    {
+        type SqlType = ST;
     }
 }

@@ -9,10 +9,10 @@ use super::stmt::Statement;
 use super::url::ConnectionOptions;
 use crate::result::{ConnectionError, ConnectionResult, QueryResult};
 
-pub struct RawConnection(NonNull<ffi::MYSQL>);
+pub(super) struct RawConnection(NonNull<ffi::MYSQL>);
 
 impl RawConnection {
-    pub fn new() -> Self {
+    pub(super) fn new() -> Self {
         perform_thread_unsafe_library_initialization();
         let raw_connection = unsafe { ffi::mysql_init(ptr::null_mut()) };
         // We're trusting https://dev.mysql.com/doc/refman/5.7/en/mysql-init.html
@@ -39,7 +39,7 @@ impl RawConnection {
         result
     }
 
-    pub fn connect(&self, connection_options: &ConnectionOptions) -> ConnectionResult<()> {
+    pub(super) fn connect(&self, connection_options: &ConnectionOptions) -> ConnectionResult<()> {
         let host = connection_options.host();
         let user = connection_options.user();
         let password = connection_options.password();
@@ -83,13 +83,13 @@ impl RawConnection {
         }
     }
 
-    pub fn last_error_message(&self) -> String {
+    pub(super) fn last_error_message(&self) -> String {
         unsafe { CStr::from_ptr(ffi::mysql_error(self.0.as_ptr())) }
             .to_string_lossy()
             .into_owned()
     }
 
-    pub fn execute(&self, query: &str) -> QueryResult<()> {
+    pub(super) fn execute(&self, query: &str) -> QueryResult<()> {
         unsafe {
             // Make sure you don't use the fake one!
             ffi::mysql_real_query(
@@ -103,7 +103,7 @@ impl RawConnection {
         Ok(())
     }
 
-    pub fn enable_multi_statements<T, F>(&self, f: F) -> QueryResult<T>
+    pub(super) fn enable_multi_statements<T, F>(&self, f: F) -> QueryResult<T>
     where
         F: FnOnce() -> QueryResult<T>,
     {
@@ -128,12 +128,7 @@ impl RawConnection {
         result
     }
 
-    pub fn affected_rows(&self) -> usize {
-        let affected_rows = unsafe { ffi::mysql_affected_rows(self.0.as_ptr()) };
-        affected_rows as usize
-    }
-
-    pub fn prepare(&self, query: &str) -> QueryResult<Statement> {
+    pub(super) fn prepare(&self, query: &str) -> QueryResult<Statement> {
         let stmt = unsafe { ffi::mysql_stmt_init(self.0.as_ptr()) };
         // It is documented that the only reason `mysql_stmt_init` will fail
         // is because of OOM.

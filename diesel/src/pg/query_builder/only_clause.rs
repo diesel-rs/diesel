@@ -9,6 +9,11 @@ use crate::query_builder::{AstPass, QueryFragment, QueryId};
 
 /// Represents a query with an `ONLY` clause.
 #[derive(Debug, QueryId)]
+#[cfg(feature = "postgres_backend")]
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub struct Only<T> {
     pub(crate) query: T,
 }

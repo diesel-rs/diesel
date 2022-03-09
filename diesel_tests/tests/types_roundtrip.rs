@@ -1,8 +1,5 @@
-#[cfg(any(feature = "postgres", feature = "mysql"))]
-extern crate bigdecimal;
-extern crate chrono;
-
-use self::chrono::*;
+use chrono::*;
+use diesel::query_dsl::LoadQuery;
 pub use quickcheck::quickcheck;
 
 pub use crate::schema::{connection_without_transaction, TestConnection};
@@ -13,8 +10,8 @@ pub use diesel::sql_types::{HasSqlType, SingleValue, SqlType};
 pub use diesel::*;
 
 use deserialize::FromSqlRow;
-use diesel::expression::{AsExpression, NonAggregate, TypedExpressionType};
-use diesel::query_builder::{QueryFragment, QueryId};
+use diesel::expression::{AsExpression, TypedExpressionType};
+use diesel::query_builder::{AsQuery, QueryId};
 #[cfg(feature = "postgres")]
 use std::collections::Bound;
 
@@ -25,13 +22,12 @@ where
     <TestConnection as Connection>::Backend: HasSqlType<ST>,
     T: AsExpression<ST>
         + FromSqlRow<ST, <TestConnection as Connection>::Backend>
+        + Queryable<ST, <TestConnection as Connection>::Backend>
         + Clone
         + ::std::fmt::Debug
         + 'static,
-    <T as AsExpression<ST>>::Expression: SelectableExpression<diesel::query_builder::NoFromClause, SqlType = ST>
-        + NonAggregate
-        + QueryFragment<<TestConnection as Connection>::Backend>
-        + QueryId,
+    for<'a> dsl::BareSelect<<T as AsExpression<ST>>::Expression>:
+        AsQuery + LoadQuery<'a, TestConnection, T>,
 {
     let connection = &mut connection_without_transaction();
     let query = select(value.clone().into_sql::<ST>());
@@ -143,8 +139,8 @@ mod pg_types {
     extern crate ipnetwork;
     extern crate uuid;
 
-    use self::bigdecimal::BigDecimal;
     use super::*;
+    use bigdecimal::BigDecimal;
 
     test_round_trip!(date_roundtrips, Date, PgDate);
     test_round_trip!(time_roundtrips, Time, PgTime);
@@ -592,7 +588,7 @@ fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
 
 #[cfg(feature = "postgres")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    use self::chrono::naive::MAX_DATE;
+    use chrono::naive::MAX_DATE;
 
     let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
     let latest_chrono_date = MAX_DATE;
@@ -614,7 +610,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 
 #[cfg(feature = "sqlite")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    use self::chrono::naive::{MAX_DATE, MIN_DATE};
+    use chrono::naive::{MAX_DATE, MIN_DATE};
 
     let earliest_sqlite_date = MIN_DATE;
     let latest_sqlite_date = MAX_DATE;

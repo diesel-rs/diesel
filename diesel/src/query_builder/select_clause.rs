@@ -66,6 +66,10 @@ pub struct SelectClause<T>(pub T);
 ///
 /// The difference to the normal `Expression` trait is the query source (`QS`)
 /// generic type parameter. This allows to access the query source in generic code.
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
 pub trait SelectClauseExpression<QS> {
     /// The expression represented by the given select clause
     type Selection;

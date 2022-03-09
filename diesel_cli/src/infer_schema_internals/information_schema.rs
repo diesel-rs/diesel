@@ -404,11 +404,11 @@ mod tests {
     fn skip_views() {
         let mut connection = connection();
 
-        connection
-            .execute("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("CREATE TABLE a_regular_table (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
             .unwrap();
-        connection
-            .execute("CREATE VIEW a_view AS SELECT 42")
+        diesel::sql_query("CREATE VIEW a_view AS SELECT 42")
+            .execute(&mut connection)
             .unwrap();
 
         let table_names = load_table_names(&mut connection, None).unwrap();
@@ -421,10 +421,9 @@ mod tests {
     fn load_table_names_loads_from_public_schema_if_none_given() {
         let mut connection = connection();
 
-        connection
-            .execute(
+        diesel::sql_query(
                 "CREATE TABLE load_table_names_loads_from_public_schema_if_none_given (id SERIAL PRIMARY KEY)",
-            )
+            ).execute(&mut connection)
             .unwrap();
 
         let table_names = load_table_names(&mut connection, None).unwrap();
@@ -440,16 +439,18 @@ mod tests {
     fn load_table_names_loads_from_custom_schema() {
         let mut connection = connection();
 
-        connection.execute("CREATE SCHEMA test_schema").unwrap();
-        connection
-            .execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
             .unwrap();
 
         let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
         assert_eq!(vec![TableName::new("table_1", "test_schema")], table_names);
 
-        connection
-            .execute("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
             .unwrap();
 
         let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
@@ -459,11 +460,11 @@ mod tests {
         ];
         assert_eq!(expected, table_names);
 
-        connection
-            .execute("CREATE SCHEMA other_test_schema")
+        diesel::sql_query("CREATE SCHEMA other_test_schema")
+            .execute(&mut connection)
             .unwrap();
-        connection
-            .execute("CREATE TABLE other_test_schema.table_1 (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("CREATE TABLE other_test_schema.table_1 (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
             .unwrap();
 
         let table_names = load_table_names(&mut connection, Some("test_schema")).unwrap();
@@ -482,15 +483,17 @@ mod tests {
     #[test]
     fn load_table_names_output_is_ordered() {
         let mut connection = connection();
-        connection.execute("CREATE SCHEMA test_schema").unwrap();
-        connection
-            .execute("CREATE TABLE test_schema.ccc (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
             .unwrap();
-        connection
-            .execute("CREATE TABLE test_schema.aaa (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("CREATE TABLE test_schema.ccc (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
             .unwrap();
-        connection
-            .execute("CREATE TABLE test_schema.bbb (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("CREATE TABLE test_schema.aaa (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE test_schema.bbb (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
             .unwrap();
 
         let table_names = load_table_names(&mut connection, Some("test_schema"))
@@ -508,14 +511,17 @@ mod tests {
     fn get_primary_keys_only_includes_primary_key() {
         let mut connection = connection();
 
-        connection.execute("CREATE SCHEMA test_schema").unwrap();
-        connection
-            .execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, not_id INTEGER)")
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
             .unwrap();
-        connection
-            .execute(
+        diesel::sql_query(
+            "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, not_id INTEGER)",
+        )
+        .execute(&mut connection)
+        .unwrap();
+        diesel::sql_query(
                 "CREATE TABLE test_schema.table_2 (id INTEGER, id2 INTEGER, not_id INTEGER, PRIMARY KEY (id, id2))",
-            )
+            ).execute(&mut connection)
             .unwrap();
 
         let table_1 = TableName::new("table_1", "test_schema");
@@ -534,14 +540,15 @@ mod tests {
     fn get_table_data_loads_column_information() {
         let mut connection = connection();
 
-        connection.execute("CREATE SCHEMA test_schema").unwrap();
-        connection
-            .execute(
-                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)",
-            )
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
             .unwrap();
-        connection
-            .execute("CREATE TABLE test_schema.table_2 (array_col VARCHAR[] NOT NULL)")
+        diesel::sql_query(
+                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)",
+            ).execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE test_schema.table_2 (array_col VARCHAR[] NOT NULL)")
+            .execute(&mut connection)
             .unwrap();
 
         let table_1 = TableName::new("table_1", "test_schema");
@@ -565,19 +572,19 @@ mod tests {
     fn get_foreign_keys_loads_foreign_keys() {
         let mut connection = connection();
 
-        connection.execute("CREATE SCHEMA test_schema").unwrap();
-        connection
-            .execute("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
             .unwrap();
-        connection
-            .execute(
+        diesel::sql_query("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query(
                 "CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY, fk_one INTEGER NOT NULL REFERENCES test_schema.table_1)",
-            )
+            ).execute(&mut connection)
             .unwrap();
-        connection
-            .execute(
+        diesel::sql_query(
                 "CREATE TABLE test_schema.table_3 (id SERIAL PRIMARY KEY, fk_two INTEGER NOT NULL REFERENCES test_schema.table_2)",
-            )
+            ).execute(&mut connection)
             .unwrap();
 
         let table_1 = TableName::new("table_1", "test_schema");

@@ -28,7 +28,7 @@ pub(crate) struct PgResult {
 
 impl PgResult {
     #[allow(clippy::new_ret_no_self)]
-    pub fn new(internal_result: RawResult) -> QueryResult<Self> {
+    pub(super) fn new(internal_result: RawResult) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
             ExecStatusType::PGRES_COMMAND_OK | ExecStatusType::PGRES_TUPLES_OK => {
@@ -89,7 +89,7 @@ impl PgResult {
         }
     }
 
-    pub fn rows_affected(&self) -> usize {
+    pub(super) fn rows_affected(&self) -> usize {
         unsafe {
             let count_char_ptr = PQcmdTuples(self.internal_result.as_ptr());
             let count_bytes = CStr::from_ptr(count_char_ptr).to_bytes();
@@ -105,15 +105,15 @@ impl PgResult {
         }
     }
 
-    pub fn num_rows(&self) -> usize {
+    pub(super) fn num_rows(&self) -> usize {
         self.row_count
     }
 
-    pub fn get_row(self: Rc<Self>, idx: usize) -> PgRow {
+    pub(super) fn get_row(self: Rc<Self>, idx: usize) -> PgRow {
         PgRow::new(self, idx)
     }
 
-    pub fn get(&self, row_idx: usize, col_idx: usize) -> Option<&[u8]> {
+    pub(super) fn get(&self, row_idx: usize, col_idx: usize) -> Option<&[u8]> {
         if self.is_null(row_idx, col_idx) {
             None
         } else {
@@ -128,7 +128,7 @@ impl PgResult {
         }
     }
 
-    pub fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
+    pub(super) fn is_null(&self, row_idx: usize, col_idx: usize) -> bool {
         unsafe {
             0 != PQgetisnull(
                 self.internal_result.as_ptr(),
@@ -138,7 +138,7 @@ impl PgResult {
         }
     }
 
-    pub fn column_type(&self, col_idx: usize) -> NonZeroU32 {
+    pub(super) fn column_type(&self, col_idx: usize) -> NonZeroU32 {
         let type_oid = unsafe { PQftype(self.internal_result.as_ptr(), col_idx as libc::c_int) };
         NonZeroU32::new(type_oid).expect(
             "Got a zero oid from postgres. If you see this error message \
@@ -146,7 +146,7 @@ impl PgResult {
         )
     }
 
-    pub fn column_name(&self, col_idx: usize) -> Option<&str> {
+    pub(super) fn column_name(&self, col_idx: usize) -> Option<&str> {
         self.column_name_map
             .get_or_init(|| {
                 (0..self.column_count)
@@ -176,7 +176,7 @@ impl PgResult {
             })
     }
 
-    pub fn column_count(&self) -> usize {
+    pub(super) fn column_count(&self) -> usize {
         self.column_count
     }
 }
@@ -246,14 +246,15 @@ mod error_codes {
     //! <https://www.postgresql.org/docs/current/errcodes-appendix.html>
     //!
     //! They are not exposed programmatically through libpq.
-    pub const CONNECTION_EXCEPTION: &str = "08000";
-    pub const CONNECTION_FAILURE: &str = "08006";
-    pub const SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: &str = "08001";
-    pub const SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: &str = "08004";
-    pub const NOT_NULL_VIOLATION: &str = "23502";
-    pub const FOREIGN_KEY_VIOLATION: &str = "23503";
-    pub const UNIQUE_VIOLATION: &str = "23505";
-    pub const CHECK_VIOLATION: &str = "23514";
-    pub const READ_ONLY_TRANSACTION: &str = "25006";
-    pub const SERIALIZATION_FAILURE: &str = "40001";
+    pub(in crate::pg::connection) const CONNECTION_EXCEPTION: &str = "08000";
+    pub(in crate::pg::connection) const CONNECTION_FAILURE: &str = "08006";
+    pub(in crate::pg::connection) const SQLCLIENT_UNABLE_TO_ESTABLISH_SQLCONNECTION: &str = "08001";
+    pub(in crate::pg::connection) const SQLSERVER_REJECTED_ESTABLISHMENT_OF_SQLCONNECTION: &str =
+        "08004";
+    pub(in crate::pg::connection) const NOT_NULL_VIOLATION: &str = "23502";
+    pub(in crate::pg::connection) const FOREIGN_KEY_VIOLATION: &str = "23503";
+    pub(in crate::pg::connection) const UNIQUE_VIOLATION: &str = "23505";
+    pub(in crate::pg::connection) const CHECK_VIOLATION: &str = "23514";
+    pub(in crate::pg::connection) const READ_ONLY_TRANSACTION: &str = "25006";
+    pub(in crate::pg::connection) const SERIALIZATION_FAILURE: &str = "40001";
 }

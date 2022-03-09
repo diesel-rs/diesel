@@ -1,4 +1,5 @@
-use super::{AliasSource, AliasedField, FieldAliasMapper};
+use super::field_alias_mapper::FieldAliasMapper;
+use super::{AliasSource, AliasedField};
 
 use crate::backend::Backend;
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
@@ -107,7 +108,6 @@ where
     }
 }
 
-#[doc(hidden)]
 /// This trait is used to allow external crates to implement
 /// `AppearsInFromClause<QS> for Alias<S>`
 ///
@@ -128,7 +128,6 @@ where
     type Count = <S::Target as AliasAppearsInFromClause<S, QS>>::Count;
 }
 
-#[doc(hidden)]
 /// This trait is used to allow external crates to implement
 /// `AppearsInFromClause<Alias<S2>> for Alias<S1>`
 ///
@@ -149,7 +148,6 @@ where
     type Count = <T1 as AliasAliasAppearsInFromClause<S2::Target, S1, S2>>::Count;
 }
 
-#[doc(hidden)]
 /// This trait is used to allow external crates to implement
 /// `AppearsInFromClause<Alias<S2>> for Alias<S1>`
 ///

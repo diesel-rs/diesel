@@ -26,6 +26,6 @@ macro_rules! generic_numeric_expr {
     }
 }
 
-mod numeric;
+pub(crate) mod numeric;
 
-pub use self::numeric::{Add, Div, Mul, Sub};
+pub(crate) use self::numeric::{Add, Div, Mul, Sub};

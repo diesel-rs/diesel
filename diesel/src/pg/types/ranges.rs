@@ -6,6 +6,7 @@ use crate::deserialize::{self, FromSql, Queryable};
 use crate::expression::bound::Bound as SqlBound;
 use crate::expression::AsExpression;
 use crate::pg::{Pg, PgTypeMetadata, PgValue};
+use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
 
@@ -69,7 +70,7 @@ where
             let elem_size = bytes.read_i32::<NetworkEndian>()?;
             let (elem_bytes, new_bytes) = bytes.split_at(elem_size as usize);
             bytes = new_bytes;
-            let value = T::from_sql(PgValue::new(elem_bytes, &value))?;
+            let value = T::from_sql(PgValue::new_internal(elem_bytes, &value))?;
 
             lower_bound = if flags.contains(RangeFlags::LB_INC) {
                 Bound::Included(value)
@@ -80,7 +81,7 @@ where
 
         if !flags.contains(RangeFlags::UB_INF) {
             let _size = bytes.read_i32::<NetworkEndian>()?;
-            let value = T::from_sql(PgValue::new(bytes, &value))?;
+            let value = T::from_sql(PgValue::new_internal(bytes, &value))?;
 
             upper_bound = if flags.contains(RangeFlags::UB_INC) {
                 Bound::Included(value)
@@ -128,7 +129,8 @@ where
         match self.0 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
                 {
-                    let mut inner_buffer = Output::new(&mut buffer, out.metadata_lookup());
+                    let mut inner_buffer =
+                        Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
                     value.to_sql(&mut inner_buffer)?;
                 }
                 out.write_u32::<NetworkEndian>(buffer.len() as u32)?;
@@ -141,7 +143,8 @@ where
         match self.1 {
             Bound::Included(ref value) | Bound::Excluded(ref value) => {
                 {
-                    let mut inner_buffer = Output::new(&mut buffer, out.metadata_lookup());
+                    let mut inner_buffer =
+                        Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
                     value.to_sql(&mut inner_buffer)?;
                 }
                 out.write_u32::<NetworkEndian>(buffer.len() as u32)?;

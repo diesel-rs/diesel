@@ -1,6 +1,6 @@
 //! MySQL specific types
 
-mod date_and_time;
+pub(super) mod date_and_time;
 #[cfg(feature = "serde_json")]
 mod json;
 mod numeric;
@@ -13,8 +13,6 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::*;
 use crate::sql_types::{self, ops::*};
 use byteorder::{NativeEndian, WriteBytesExt};
-
-pub use date_and_time::{MysqlTime, MysqlTimestampType};
 
 impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
@@ -31,6 +29,7 @@ impl FromSql<TinyInt, Mysql> for i8 {
 
 /// Represents the MySQL unsigned type.
 #[derive(Debug, Clone, Copy, Default, SqlType, QueryId)]
+#[cfg(feature = "mysql_backend")]
 pub struct Unsigned<ST: 'static>(ST);
 
 impl<T> Add for Unsigned<T>
@@ -216,4 +215,5 @@ impl HasSqlType<Unsigned<BigInt>> for Mysql {
 )]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(mysql_type(name = "DateTime"))]
+#[cfg(feature = "mysql_backend")]
 pub struct Datetime;

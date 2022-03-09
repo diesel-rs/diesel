@@ -21,7 +21,8 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
     let (impl_generics, _, _) = impl_generics.split_for_impl();
 
     wrap_in_dummy_mod(quote! {
-        use diesel::expression::{ops, Expression, AsExpression};
+        use diesel::internal::derives::numeric_ops as ops;
+        use diesel::expression::{Expression, AsExpression};
         use diesel::sql_types::ops::{Add, Sub, Mul, Div};
         use diesel::sql_types::{SqlType, SingleValue};
 

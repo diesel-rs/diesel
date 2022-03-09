@@ -94,7 +94,7 @@ where
     Pg: HasSqlType<ST>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
-        out.push_bind_param::<Array<ST>, Vec<I>>(&self.0)
+        out.push_bind_param::<Array<ST>, Vec<I>>(&self.values)
     }
 }
 

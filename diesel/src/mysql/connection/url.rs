@@ -40,7 +40,7 @@ bitflags::bitflags! {
     }
 }
 
-pub struct ConnectionOptions {
+pub(super) struct ConnectionOptions {
     host: Option<CString>,
     user: CString,
     password: Option<CString>,
@@ -53,7 +53,7 @@ pub struct ConnectionOptions {
 }
 
 impl ConnectionOptions {
-    pub fn parse(database_url: &str) -> ConnectionResult<Self> {
+    pub(super) fn parse(database_url: &str) -> ConnectionResult<Self> {
         let url = match Url::parse(database_url) {
             Ok(url) => url,
             Err(_) => return Err(connection_url_error()),
@@ -121,51 +121,51 @@ impl ConnectionOptions {
         let client_flags = CapabilityFlags::CLIENT_FOUND_ROWS;
 
         Ok(ConnectionOptions {
-            host: host,
-            user: user,
-            password: password,
-            database: database,
+            host,
+            user,
+            password,
+            database,
             port: url.port(),
-            unix_socket: unix_socket,
-            client_flags: client_flags,
-            ssl_mode: ssl_mode,
-            ssl_ca: ssl_ca,
+            client_flags,
+            ssl_mode,
+            unix_socket,
+            ssl_ca,
         })
     }
 
-    pub fn host(&self) -> Option<&CStr> {
+    pub(super) fn host(&self) -> Option<&CStr> {
         self.host.as_deref()
     }
 
-    pub fn user(&self) -> &CStr {
+    pub(super) fn user(&self) -> &CStr {
         &self.user
     }
 
-    pub fn password(&self) -> Option<&CStr> {
+    pub(super) fn password(&self) -> Option<&CStr> {
         self.password.as_deref()
     }
 
-    pub fn database(&self) -> Option<&CStr> {
+    pub(super) fn database(&self) -> Option<&CStr> {
         self.database.as_deref()
     }
 
-    pub fn port(&self) -> Option<u16> {
+    pub(super) fn port(&self) -> Option<u16> {
         self.port
     }
 
-    pub fn unix_socket(&self) -> Option<&CStr> {
+    pub(super) fn unix_socket(&self) -> Option<&CStr> {
         self.unix_socket.as_deref()
     }
 
-    pub fn ssl_ca(&self) -> Option<&CStr> {
+    pub(super) fn ssl_ca(&self) -> Option<&CStr> {
         self.ssl_ca.as_deref()
     }
 
-    pub fn client_flags(&self) -> CapabilityFlags {
+    pub(super) fn client_flags(&self) -> CapabilityFlags {
         self.client_flags
     }
 
-    pub fn ssl_mode(&self) -> Option<mysql_ssl_mode> {
+    pub(super) fn ssl_mode(&self) -> Option<mysql_ssl_mode> {
         self.ssl_mode
     }
 }

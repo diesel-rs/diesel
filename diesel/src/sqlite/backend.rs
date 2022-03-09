@@ -6,7 +6,7 @@ use crate::backend::*;
 use crate::sql_types::TypeMetadata;
 
 /// The SQLite backend
-#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Default)]
 pub struct Sqlite;
 
 /// Determines how a bind parameter is given to SQLite
@@ -70,6 +70,9 @@ impl SqlDialect for Sqlite {
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
     type ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison;
 }
+
+impl DieselReserveSpecialization for Sqlite {}
+impl TrustedBackend for Sqlite {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct SqliteOnConflictClaues;

@@ -39,6 +39,7 @@ mod as_expression;
 mod associations;
 mod diesel_for_each_tuple;
 mod diesel_numeric_ops;
+mod diesel_public_if;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
@@ -102,9 +103,16 @@ mod valid_grouping;
 ///    serialize that instead. By default this derive will serialize directly using
 ///    the actual field type.
 #[proc_macro_error]
-#[proc_macro_derive(
-    AsChangeset,
-    attributes(diesel, table_name, column_name, primary_key, changeset_options)
+#[cfg_attr(
+    all(not(feature = "without-deprecated"), feature = "with-deprecated"),
+    proc_macro_derive(
+        AsChangeset,
+        attributes(diesel, table_name, column_name, primary_key, changeset_options)
+    )
+)]
+#[cfg_attr(
+    any(feature = "without-deprecated", not(feature = "with-deprecated")),
+    proc_macro_derive(AsChangeset, attributes(diesel))
 )]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     as_changeset::derive(parse_macro_input!(input)).into()
@@ -138,7 +146,14 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
 ///    that the type is `Sized`
 #[proc_macro_error]
-#[proc_macro_derive(AsExpression, attributes(diesel, sql_type))]
+#[cfg_attr(
+    all(not(feature = "without-deprecated"), feature = "with-deprecated"),
+    proc_macro_derive(AsExpression, attributes(diesel, sql_type))
+)]
+#[cfg_attr(
+    any(feature = "without-deprecated", not(feature = "with-deprecated")),
+    proc_macro_derive(AsExpression, attributes(diesel))
+)]
 pub fn derive_as_expression(input: TokenStream) -> TokenStream {
     as_expression::derive(parse_macro_input!(input)).into()
 }
@@ -174,7 +189,14 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 ///    field maps to to `some_column_name`. By default the field name is used
 ///    as column name.
 #[proc_macro_error]
-#[proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))]
+#[cfg_attr(
+    all(not(feature = "without-deprecated"), feature = "with-deprecated"),
+    proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))
+)]
+#[cfg_attr(
+    any(feature = "without-deprecated", not(feature = "with-deprecated")),
+    proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))
+)]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
     associations::derive(parse_macro_input!(input)).into()
 }
@@ -230,7 +252,14 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 ///    field maps to to `some_column_name`. By default the field name is used
 ///    as column name.
 #[proc_macro_error]
-#[proc_macro_derive(Identifiable, attributes(diesel, table_name, column_name, primary_key))]
+#[cfg_attr(
+    all(not(feature = "without-deprecated"), feature = "with-deprecated"),
+    proc_macro_derive(Identifiable, attributes(diesel, table_name, column_name, primary_key))
+)]
+#[cfg_attr(
+    any(feature = "without-deprecated", not(feature = "with-deprecated")),
+    proc_macro_derive(Identifiable, attributes(diesel))
+)]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     identifiable::derive(parse_macro_input!(input)).into()
 }
@@ -335,7 +364,9 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// # fn run_test() -> QueryResult<()> {
 /// #     use schema::users::dsl::*;
 /// #     let connection = &mut connection_no_data();
-/// #     connection.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)").unwrap();
+/// #     diesel::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name VARCHAR(255) NOT NULL)")
+/// #         .execute(connection)
+/// #         .unwrap();
 /// let user = InsertableUser {
 ///     id: 1,
 ///     name: "thomas".to_string(),
@@ -354,7 +385,14 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// # }
 /// ```
 #[proc_macro_error]
-#[proc_macro_derive(Insertable, attributes(diesel, table_name, column_name))]
+#[cfg_attr(
+    all(not(feature = "without-deprecated"), feature = "with-deprecated"),
+    proc_macro_derive(Insertable, attributes(diesel, table_name, column_name))
+)]
+#[cfg_attr(
+    any(feature = "without-deprecated", not(feature = "with-deprecated")),
+    proc_macro_derive(Insertable, attributes(diesel))
+)]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
     insertable::derive(parse_macro_input!(input)).into()
 }
@@ -558,7 +596,14 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// # }
 /// ```
 #[proc_macro_error]
-#[proc_macro_derive(Queryable, attributes(diesel, column_name))]
+#[cfg_attr(
+    all(not(feature = "without-deprecated"), feature = "with-deprecated"),
+    proc_macro_derive(Queryable, attributes(diesel, column_name))
+)]
+#[cfg_attr(
+    any(feature = "without-deprecated", not(feature = "with-deprecated")),
+    proc_macro_derive(Queryable, attributes(diesel))
+)]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
     queryable::derive(parse_macro_input!(input)).into()
 }
@@ -746,7 +791,14 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// # }
 /// ```
 #[proc_macro_error]
-#[proc_macro_derive(QueryableByName, attributes(diesel, table_name, column_name, sql_type))]
+#[cfg_attr(
+    all(not(feature = "without-deprecated"), feature = "with-deprecated"),
+    proc_macro_derive(QueryableByName, attributes(diesel, table_name, column_name, sql_type))
+)]
+#[cfg_attr(
+    any(feature = "without-deprecated", not(feature = "with-deprecated")),
+    proc_macro_derive(QueryableByName, attributes(diesel))
+)]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
     queryable_by_name::derive(parse_macro_input!(input)).into()
 }
@@ -834,7 +886,14 @@ pub fn derive_selectable(input: TokenStream) -> TokenStream {
 ///    with the given name. `TypeName` needs to be one of the possible values
 ///    in `MysqlType`
 #[proc_macro_error]
-#[proc_macro_derive(SqlType, attributes(diesel, postgres, sqlite_type, mysql_type))]
+#[cfg_attr(
+    all(not(feature = "without-deprecated"), feature = "with-deprecated"),
+    proc_macro_derive(SqlType, attributes(diesel, postgres, sqlite_type, mysql_type))
+)]
+#[cfg_attr(
+    any(feature = "without-deprecated", not(feature = "with-deprecated")),
+    proc_macro_derive(SqlType, attributes(diesel))
+)]
 pub fn derive_sql_type(input: TokenStream) -> TokenStream {
     sql_type::derive(parse_macro_input!(input)).into()
 }
@@ -1130,8 +1189,12 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
 /// #    use self::players::dsl::*;
 ///     let connection = &mut SqliteConnection::establish(":memory:")?;
-/// #    connection.execute("create table players (id integer primary key autoincrement, score integer)").unwrap();
-/// #    connection.execute("insert into players (score) values (10), (20), (30)").unwrap();
+/// #    diesel::sql_query("create table players (id integer primary key autoincrement, score integer)")
+/// #        .execute(connection)
+/// #        .unwrap();
+/// #    diesel::sql_query("insert into players (score) values (10), (20), (30)")
+/// #        .execute(connection)
+/// #        .unwrap();
 ///
 ///     my_sum::register_impl::<MySum, _>(connection)?;
 ///
@@ -1206,8 +1269,12 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// fn run() -> Result<(), Box<dyn (::std::error::Error)>> {
 /// #    use self::student_avgs::dsl::*;
 ///     let connection = &mut SqliteConnection::establish(":memory:")?;
-/// #    connection.execute("create table student_avgs (id integer primary key autoincrement, s1_avg float, s2_avg float)").unwrap();
-/// #    connection.execute("insert into student_avgs (s1_avg, s2_avg) values (85.5, 90), (79.8, 80.1)").unwrap();
+/// #    diesel::sql_query("create table student_avgs (id integer primary key autoincrement, s1_avg float, s2_avg float)")
+/// #       .execute(connection)
+/// #       .unwrap();
+/// #    diesel::sql_query("insert into student_avgs (s1_avg, s2_avg) values (85.5, 90), (79.8, 80.1)")
+/// #        .execute(connection)
+/// #        .unwrap();
 ///
 ///     range_max::register_impl::<RangeMax<f32>, _, _>(connection)?;
 ///
@@ -1234,4 +1301,13 @@ pub fn sql_function_proc(input: TokenStream) -> TokenStream {
 #[proc_macro]
 pub fn __diesel_for_each_tuple(input: TokenStream) -> TokenStream {
     diesel_for_each_tuple::expand(parse_macro_input!(input)).into()
+}
+
+/// This is an internal diesel macro that
+/// helps to restrict the visibility of an item based
+/// on a feature flag
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream {
+    diesel_public_if::expand(parse_macro_input!(attrs), parse_macro_input!(input)).into()
 }

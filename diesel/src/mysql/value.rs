@@ -1,4 +1,4 @@
-use super::types::MysqlTime;
+use super::types::date_and_time::MysqlTime;
 use super::MysqlType;
 use crate::deserialize;
 use std::error::Error;
@@ -11,8 +11,15 @@ pub struct MysqlValue<'a> {
 }
 
 impl<'a> MysqlValue<'a> {
-    #[doc(hidden)]
+    /// Create a new instance of [MysqlValue] based on a byte buffer
+    /// and information about the type of the value represented by the
+    /// given buffer
+    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
     pub fn new(raw: &'a [u8], tpe: MysqlType) -> Self {
+        Self::new_internal(raw, tpe)
+    }
+
+    pub(in crate::mysql) fn new_internal(raw: &'a [u8], tpe: MysqlType) -> Self {
         Self { raw, tpe }
     }
 

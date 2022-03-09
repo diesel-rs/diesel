@@ -9,7 +9,7 @@ use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
 
 /// The PostgreSQL backend
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Default)]
 pub struct Pg;
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, Queryable)]
@@ -27,12 +27,22 @@ impl From<(u32, u32)> for InnerPgTypeMetadata {
 /// This error indicates that a type lookup for a custom
 /// postgres type failed
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+#[cfg_attr(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+)]
+#[allow(unreachable_pub)]
 pub struct FailedToLookupTypeError(Box<PgMetadataCacheKey<'static>>);
 
 impl FailedToLookupTypeError {
     /// Construct a new instance of this error type
     /// containing information about which type lookup failed
+    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
     pub fn new(cache_key: PgMetadataCacheKey<'static>) -> Self {
+        Self::new_internal(cache_key)
+    }
+
+    pub(in crate::pg) fn new_internal(cache_key: PgMetadataCacheKey<'static>) -> Self {
         Self(Box::new(cache_key))
     }
 }
@@ -82,6 +92,7 @@ impl PgTypeMetadata {
     ///
     /// Otherwise refer to [PgMetadataLookup] for a way to automatically
     /// implement the corresponding lookup functionality
+    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
     pub fn from_result(r: Result<(u32, u32), FailedToLookupTypeError>) -> Self {
         Self(r.map(|(oid, array_oid)| InnerPgTypeMetadata { oid, array_oid }))
     }
@@ -131,6 +142,9 @@ impl SqlDialect for Pg {
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
     type ArrayComparision = PgStyleArrayComparision;
 }
+
+impl DieselReserveSpecialization for Pg {}
+impl TrustedBackend for Pg {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct PgOnConflictClaues;

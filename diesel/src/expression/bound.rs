@@ -7,6 +7,7 @@ use crate::result::QueryResult;
 use crate::serialize::ToSql;
 use crate::sql_types::{DieselNumericOps, HasSqlType, SqlType};
 
+#[doc(hidden)] // This is used by the `AsExpression` derive
 #[derive(Debug, Clone, Copy, DieselNumericOps)]
 pub struct Bound<T, U> {
     item: U,
@@ -14,6 +15,7 @@ pub struct Bound<T, U> {
 }
 
 impl<T, U> Bound<T, U> {
+    #[doc(hidden)] // This is used by the `AsExpression` derive
     pub fn new(item: U) -> Self {
         Bound {
             item,
