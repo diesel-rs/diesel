@@ -49,6 +49,7 @@ pub(super) struct ConnectionOptions {
     unix_socket: Option<CString>,
     client_flags: CapabilityFlags,
     ssl_mode: Option<mysql_ssl_mode>,
+    ssl_ca: Option<CString>,
 }
 
 impl ConnectionOptions {
@@ -72,6 +73,11 @@ impl ConnectionOptions {
         }
 
         let unix_socket = match query_pairs.get("unix_socket") {
+            Some(v) => Some(CString::new(v.as_bytes())?),
+            _ => None,
+        };
+
+        let ssl_ca = match query_pairs.get("ssl_ca") {
             Some(v) => Some(CString::new(v.as_bytes())?),
             _ => None,
         };
@@ -120,9 +126,7 @@ impl ConnectionOptions {
             password,
             database,
             port: url.port(),
-            unix_socket,
-            client_flags,
-            ssl_mode,
+            ssl_ca,
         })
     }
 
@@ -148,6 +152,10 @@ impl ConnectionOptions {
 
     pub(super) fn unix_socket(&self) -> Option<&CStr> {
         self.unix_socket.as_deref()
+    }
+
+    pub(super) fn ssl_ca(&self) -> Option<&CStr> {
+        self.ssl_ca.as_deref()
     }
 
     pub(super) fn client_flags(&self) -> CapabilityFlags {
@@ -291,6 +299,34 @@ fn unix_socket_tests() {
         CString::new(unix_socket).unwrap(),
         conn_opts.unix_socket.unwrap()
     );
+}
+
+#[test]
+fn ssl_ca_tests() {
+    let ssl_ca = "/etc/ssl/certs/ca-certificates.crt";
+    let username = "foo";
+    let password = "bar";
+    let db_url = format!(
+        "mysql://{}:{}@localhost?ssl_ca={}",
+        username, password, ssl_ca
+    );
+    let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
+    let cstring = |s| CString::new(s).unwrap();
+    assert_eq!(Some(cstring("localhost")), conn_opts.host);
+    assert_eq!(None, conn_opts.port);
+    assert_eq!(cstring(username), conn_opts.user);
+    assert_eq!(cstring(password), conn_opts.password.unwrap());
+    assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts.ssl_ca.unwrap());
+
+    let url_with_unix_str_and_ssl_ca = format!(
+        "mysql://{}:{}@localhost?unix_socket=/var/run/mysqld.sock&ssl_ca={}",
+        username, password, ssl_ca
+    );
+
+    let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_ca.as_str()).unwrap();
+    assert_eq!(None, conn_opts2.host);
+    assert_eq!(None, conn_opts2.port);
+    assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts2.ssl_ca.unwrap());
 }
 
 #[test]
