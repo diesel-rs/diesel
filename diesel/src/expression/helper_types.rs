@@ -3,6 +3,7 @@
 //! a boxed trait object, these can be useful for writing concise return types.
 use super::array_comparison::{AsInExpression, In, NotIn};
 use super::grouped::Grouped;
+use super::select_by::SelectBy;
 use super::{AsExpression, Expression};
 use crate::sql_types;
 
@@ -116,6 +117,9 @@ pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlT
 /// The return type of
 /// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
+
+/// Represents the return type of `.as_select()`
+pub type AsSelect<Source, DB> = SelectBy<Source, DB>;
 
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
