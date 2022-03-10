@@ -1,3 +1,4 @@
+use crate::helper_types;
 use crate::query_builder::AsQuery;
 use crate::query_source::joins::OnClauseWrapper;
 use crate::query_source::{JoinTo, QuerySource, Table};
@@ -72,7 +73,7 @@ where
 /// # }
 pub trait JoinOnDsl: Sized {
     /// See the trait documentation.
-    fn on<On>(self, on: On) -> OnClauseWrapper<Self, On> {
+    fn on<On>(self, on: On) -> helper_types::On<Self, On> {
         OnClauseWrapper::new(self, on)
     }
 }
