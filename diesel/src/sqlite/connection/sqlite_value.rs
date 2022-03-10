@@ -45,7 +45,13 @@ impl SqliteValue {
         unsafe {
             let ptr = ffi::sqlite3_value_blob(self.value());
             let len = ffi::sqlite3_value_bytes(self.value());
-            slice::from_raw_parts(ptr as *const u8, len as usize)
+            if len == 0 {
+                // rusts std-lib has an debug_assert that prevents creating
+                // slices without elements from a pointer
+                &[]
+            } else {
+                slice::from_raw_parts(ptr as *const u8, len as usize)
+            }
         }
     }
 
