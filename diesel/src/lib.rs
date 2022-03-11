@@ -353,6 +353,9 @@ pub mod helper_types {
     pub type LeftJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::LeftOuter, On>>::Output;
 
+    /// Represents the return type of `rhs.on(on)`
+    pub type On<Source, On> = joins::OnClauseWrapper<Source, On>;
+
     use super::associations::HasTable;
     use super::query_builder::{AsChangeset, IntoUpdateTarget, UpdateStatement};
 
