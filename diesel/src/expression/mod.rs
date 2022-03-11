@@ -83,7 +83,7 @@ pub(crate) mod dsl {
 pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 
 use crate::backend::Backend;
-use crate::dsl::AsExprOf;
+use crate::dsl::{AsExprOf, AsSelect};
 use crate::sql_types::{HasSqlType, SingleValue, SqlType};
 
 /// Represents a typed fragment of SQL.
@@ -423,10 +423,10 @@ pub trait SelectableHelper<DB: Backend>: Selectable<DB> + Sized {
     ///
     /// The returned select clause enforces that you use the same type
     /// for constructing the select clause and for loading the query result into.
-    fn as_select() -> select_by::SelectBy<Self, DB>;
+    fn as_select() -> AsSelect<Self, DB>;
 
     /// An alias for `as_select` that can be used with returning clauses
-    fn as_returning() -> select_by::SelectBy<Self, DB> {
+    fn as_returning() -> AsSelect<Self, DB> {
         Self::as_select()
     }
 }
@@ -436,7 +436,7 @@ where
     T: Selectable<DB>,
     DB: Backend,
 {
-    fn as_select() -> select_by::SelectBy<Self, DB> {
+    fn as_select() -> AsSelect<Self, DB> {
         select_by::SelectBy::new()
     }
 }
