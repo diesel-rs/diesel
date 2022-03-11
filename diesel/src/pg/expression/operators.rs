@@ -32,13 +32,16 @@ infix_operator!(IsContainedByJsonb, " <@ ", backend: Pg);
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]
 pub struct ArrayIndex<L, R> {
-    pub(crate) left: L,
-    pub(crate) right: R,
+    pub(crate) array_expr: L,
+    pub(crate) index_expr: R,
 }
 
 impl<L, R> ArrayIndex<L, R> {
-    pub fn new(left: L, right: R) -> Self {
-        Self { left, right }
+    pub fn new(array_expr: L, index_expr: R) -> Self {
+        Self {
+            array_expr,
+            index_expr,
+        }
     }
 }
 
@@ -62,9 +65,9 @@ where
         &'b self,
         mut out: crate::query_builder::AstPass<'_, 'b, Pg>,
     ) -> crate::result::QueryResult<()> {
-        self.left.walk_ast(out.reborrow())?;
+        self.array_expr.walk_ast(out.reborrow())?;
         out.push_sql("[");
-        self.right.walk_ast(out.reborrow())?;
+        self.index_expr.walk_ast(out.reborrow())?;
         out.push_sql("]");
         Ok(())
     }
