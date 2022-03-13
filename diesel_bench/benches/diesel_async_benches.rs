@@ -116,9 +116,9 @@ pub struct NewComment<'a>(
 
 #[cfg(feature = "mysql")]
 async fn connection() -> TestConnection {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("MYSQL_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = diesel_async::AsyncMysqlConnection::establish(&connection_url)
         .await
@@ -143,9 +143,9 @@ async fn connection() -> TestConnection {
 
 #[cfg(feature = "postgres")]
 async fn connection() -> TestConnection {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("PG_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = diesel_async::AsyncPgConnection::establish(&connection_url)
         .await

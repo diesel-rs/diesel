@@ -243,7 +243,7 @@ impl IntervalDsl for f64 {
 
 #[cfg(test)]
 mod tests {
-    extern crate dotenv;
+    extern crate dotenvy;
     extern crate quickcheck;
 
     use self::quickcheck::quickcheck;

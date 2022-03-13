@@ -39,7 +39,7 @@ path = "../diesel_derives"
 
 [dev-dependencies]
 cfg-if = "1"
-dotenv = "0.15"
+dotenvy = "0.15"
 ipnetwork = ">=0.12.2, <0.19.0"
 quickcheck = "1.0.3"
 

@@ -259,7 +259,7 @@ impl FromSql<Date, Mysql> for NaiveDate {
 #[cfg(all(test, feature = "chrono"))]
 mod tests {
     extern crate chrono;
-    extern crate dotenv;
+    extern crate dotenvy;
 
     use self::chrono::{Duration, NaiveDate, NaiveTime, Utc};
 

@@ -10,7 +10,7 @@ autobenches = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dotenv = "0.15"
+dotenvy = "0.15"
 criterion = "0.3.2"
 sqlx = {version = "0.5.0", features = ["runtime-tokio-rustls"], optional = true}
 tokio = {version = "1", optional = true}
@@ -34,7 +34,7 @@ features = []
 [build-dependencies]
 diesel = { path = "../diesel", default-features = false }
 diesel_migrations = { path = "../diesel_migrations" }
-dotenv = "0.15"
+dotenvy = "0.15"
 
 
 [[bench]]

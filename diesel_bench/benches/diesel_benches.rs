@@ -111,9 +111,9 @@ pub struct NewComment<'a>(
 
 #[cfg(feature = "mysql")]
 fn connection() -> TestConnection {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("MYSQL_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = MysqlConnection::establish(&connection_url).unwrap();
     diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0")
@@ -136,9 +136,9 @@ fn connection() -> TestConnection {
 
 #[cfg(feature = "postgres")]
 fn connection() -> TestConnection {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("PG_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = PgConnection::establish(&connection_url).unwrap();
     diesel::sql_query("TRUNCATE TABLE comments CASCADE")
@@ -155,7 +155,7 @@ fn connection() -> TestConnection {
 
 #[cfg(feature = "sqlite")]
 fn connection() -> TestConnection {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
     let mut conn = diesel::SqliteConnection::establish(":memory:").unwrap();
     for migration in super::SQLITE_MIGRATION_SQL {
         diesel::sql_query(*migration).execute(&mut conn).unwrap();

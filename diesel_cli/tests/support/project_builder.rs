@@ -1,5 +1,5 @@
 #[cfg(not(feature = "sqlite"))]
-extern crate dotenv;
+extern crate dotenvy;
 #[cfg(not(feature = "sqlite"))]
 extern crate url;
 
@@ -96,7 +96,7 @@ impl Project {
 
     #[cfg(any(feature = "postgres", feature = "mysql"))]
     fn database_url_from_env(&self, var: &str) -> url::Url {
-        use self::dotenv::dotenv;
+        use self::dotenvy::dotenv;
         use std::env;
         dotenv().ok();
 

@@ -26,9 +26,9 @@ pub struct Comment {
 }
 
 fn connection() -> Client {
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("POSTGRES_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("POSTGRES_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut client = Client::connect(&connection_url, NoTls).unwrap();
 

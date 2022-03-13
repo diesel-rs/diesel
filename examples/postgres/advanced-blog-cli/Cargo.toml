@@ -8,7 +8,7 @@ edition = "2018"
 bcrypt = "0.10.1"
 chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
 diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres", "chrono"] }
-dotenv = "0.15"
+dotenvy = "0.15"
 structopt = "0.3"
 tempfile = "3.1.0"
 

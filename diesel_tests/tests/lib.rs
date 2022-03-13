@@ -8,7 +8,7 @@ extern crate chrono;
 extern crate diesel;
 #[cfg(feature = "sqlite")]
 extern crate diesel_migrations;
-extern crate dotenv;
+extern crate dotenvy;
 extern crate quickcheck;
 
 mod alias;

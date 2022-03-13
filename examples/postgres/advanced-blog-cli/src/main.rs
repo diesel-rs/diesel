@@ -24,7 +24,7 @@ use self::schema::*;
 fn main() {
     let matches = Cli::from_args();
 
-    let database_url = dotenv::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
     handle_error(run_cli(&database_url, matches));
 }

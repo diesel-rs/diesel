@@ -323,7 +323,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// # extern crate diesel;
-/// # extern crate dotenv;
+/// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// # use diesel::{prelude::*, serialize::{ToSql, Output, self}, deserialize::{FromSqlRow}, expression::AsExpression, sql_types, backend::Backend};
 /// # use schema::users;
@@ -472,7 +472,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// # extern crate diesel;
-/// # extern crate dotenv;
+/// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// #
 /// #[derive(Queryable, PartialEq, Debug)]
@@ -500,7 +500,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// # extern crate diesel;
-/// # extern crate dotenv;
+/// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// #
 /// # use schema::users;
@@ -554,7 +554,7 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// # extern crate diesel;
-/// # extern crate dotenv;
+/// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// #
 /// use schema::users;
@@ -666,7 +666,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// # extern crate diesel;
-/// # extern crate dotenv;
+/// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// # use schema::users;
 /// # use diesel::sql_query;
@@ -697,7 +697,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// # extern crate diesel;
-/// # extern crate dotenv;
+/// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// # use diesel::sql_query;
 /// # use schema::users;
@@ -749,7 +749,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///
 /// ```rust
 /// # extern crate diesel;
-/// # extern crate dotenv;
+/// # extern crate dotenvy;
 /// # include!("../../diesel/src/doctest_setup.rs");
 /// # use schema::users;
 /// # use diesel::sql_query;

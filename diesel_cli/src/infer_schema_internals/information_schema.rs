@@ -383,9 +383,9 @@ pub fn load_foreign_key_constraints(
 
 #[cfg(all(test, feature = "postgres"))]
 mod tests {
-    extern crate dotenv;
+    extern crate dotenvy;
 
-    use self::dotenv::dotenv;
+    use self::dotenvy::dotenv;
     use super::*;
     use std::env;
 

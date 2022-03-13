@@ -377,7 +377,7 @@ impl QueryFragment<Pg> for Deferrable {
 
 #[test]
 fn test_transaction_builder_generates_correct_sql() {
-    extern crate dotenv;
+    extern crate dotenvy;
 
     macro_rules! assert_sql {
         ($query:expr, $sql:expr) => {
@@ -388,8 +388,8 @@ fn test_transaction_builder_generates_correct_sql() {
         };
     }
 
-    let database_url = dotenv::var("PG_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    let database_url = dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = PgConnection::establish(&database_url).unwrap();
 

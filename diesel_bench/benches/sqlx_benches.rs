@@ -72,9 +72,9 @@ fn connection() -> (Runtime, Connection) {
 
     let runtime = Runtime::new().expect("Failed to create runtime");
 
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("POSTGRES_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("POSTGRES_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
 
     let conn = runtime.block_on(async {
@@ -103,9 +103,9 @@ fn connection() -> (Runtime, Connection) {
 
     let runtime = Runtime::new().expect("Failed to create runtime");
 
-    dotenv::dotenv().ok();
-    let connection_url = dotenv::var("MYSQL_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::dotenv().ok();
+    let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
 
     let conn = runtime.block_on(async {

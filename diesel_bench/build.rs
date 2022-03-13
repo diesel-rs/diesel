@@ -1,8 +1,8 @@
 extern crate diesel;
 extern crate diesel_migrations as migrations;
-extern crate dotenv;
+extern crate dotenvy;
 use self::diesel::*;
-use self::dotenv::dotenv;
+use self::dotenvy::dotenv;
 use std::env;
 
 #[cfg(not(any(feature = "mysql", feature = "sqlite", feature = "postgres")))]
