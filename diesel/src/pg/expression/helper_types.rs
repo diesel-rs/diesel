@@ -1,7 +1,7 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
 use crate::pg::types::sql_types::Array;
-use crate::sql_types::{Inet, Jsonb, VarChar};
+use crate::sql_types::{Inet, Integer, Jsonb, VarChar};
 
 /// The return type of `lhs.ilike(rhs)`
 pub type ILike<Lhs, Rhs> = Grouped<super::operators::ILike<Lhs, AsExprOf<Rhs, VarChar>>>;
@@ -102,3 +102,6 @@ pub type ContainsJsonb<Lhs, Rhs> =
 /// The return type of `lsh.is_contained_by(rhs)`
 pub type IsContainedByJsonb<Lhs, Rhs> =
     Grouped<super::operators::IsContainedByJsonb<Lhs, AsExprOf<Rhs, Jsonb>>>;
+
+/// The return type of `lhs.index(rhs)`
+pub type ArrayIndex<Lhs, Rhs> = super::operators::ArrayIndex<Lhs, AsExprOf<Rhs, Integer>>;
