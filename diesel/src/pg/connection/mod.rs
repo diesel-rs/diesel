@@ -255,7 +255,7 @@ extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc:
 
 #[cfg(test)]
 mod tests {
-    extern crate dotenv;
+    extern crate dotenvy;
 
     use super::*;
     use crate::dsl::sql;

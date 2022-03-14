@@ -58,7 +58,7 @@ fn duration_to_usecs(duration: Duration) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    extern crate dotenv;
+    extern crate dotenvy;
 
     use std::time::{Duration, SystemTime, UNIX_EPOCH};
 

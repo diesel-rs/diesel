@@ -2,7 +2,7 @@ pub mod models;
 pub mod schema;
 
 use diesel::prelude::*;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use std::env;
 
 use models::NewPost;

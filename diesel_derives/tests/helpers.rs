@@ -16,13 +16,13 @@ cfg_if! {
             conn
         }
     } else if #[cfg(feature = "postgres")] {
-        extern crate dotenv;
+        extern crate dotenvy;
 
         pub type TestConnection = PgConnection;
 
         pub fn connection() -> TestConnection {
-            let database_url = dotenv::var("PG_DATABASE_URL")
-                .or_else(|_| dotenv::var("DATABASE_URL"))
+            let database_url = dotenvy::var("PG_DATABASE_URL")
+                .or_else(|_| dotenvy::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
             let mut conn = PgConnection::establish(&database_url).unwrap();
             conn.begin_test_transaction().unwrap();
@@ -36,13 +36,13 @@ cfg_if! {
             conn
         }
     } else if #[cfg(feature = "mysql")] {
-        extern crate dotenv;
+        extern crate dotenvy;
 
         pub type TestConnection = MysqlConnection;
 
         pub fn connection() -> TestConnection {
-            let database_url = dotenv::var("MYSQL_UNIT_TEST_DATABASE_URL")
-                .or_else(|_| dotenv::var("DATABASE_URL"))
+            let database_url = dotenvy::var("MYSQL_UNIT_TEST_DATABASE_URL")
+                .or_else(|_| dotenvy::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests");
             let mut conn = MysqlConnection::establish(&database_url).unwrap();
             sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&mut conn).unwrap();

@@ -9,7 +9,7 @@ pub enum AuthenticationError {
     IncorrectPassword,
     NoUsernameSet,
     NoPasswordSet,
-    EnvironmentError(dotenv::Error),
+    EnvironmentError(dotenvy::Error),
     BcryptError(BcryptError),
     DatabaseError(diesel::result::Error),
 }
@@ -86,21 +86,21 @@ fn register_user(
 }
 
 fn get_username() -> Result<String, AuthenticationError> {
-    if_not_present(dotenv::var("BLOG_USERNAME"), NoUsernameSet)
+    if_not_present(dotenvy::var("BLOG_USERNAME"), NoUsernameSet)
 }
 
 fn get_password() -> Result<String, AuthenticationError> {
-    if_not_present(dotenv::var("BLOG_PASSWORD"), NoPasswordSet)
+    if_not_present(dotenvy::var("BLOG_PASSWORD"), NoPasswordSet)
 }
 
 fn if_not_present<T>(
-    res: Result<T, dotenv::Error>,
+    res: Result<T, dotenvy::Error>,
     on_not_present: AuthenticationError,
 ) -> Result<T, AuthenticationError> {
     use std::env::VarError::NotPresent;
 
     res.map_err(|e| match e {
-        dotenv::Error::EnvVar(NotPresent) => on_not_present,
+        dotenvy::Error::EnvVar(NotPresent) => on_not_present,
         e => AuthenticationError::EnvironmentError(e),
     })
 }

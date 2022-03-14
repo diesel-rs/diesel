@@ -40,8 +40,8 @@ pub fn establish_connection() -> diesel::PgConnection {
     use diesel::*;
 
     let mut conn = PgConnection::establish(
-        &dotenv::var("DATABASE_URL")
-            .or_else(|_| dotenv::var("PG_DATABASE_URL"))
+        &dotenvy::var("DATABASE_URL")
+            .or_else(|_| dotenvy::var("PG_DATABASE_URL"))
             .expect("Set either `DATABASE_URL` or `PG_DATABASE_URL`"),
     )
     .unwrap();
@@ -55,8 +55,8 @@ pub fn establish_connection() -> diesel::MysqlConnection {
     use diesel::*;
 
     let mut conn = MysqlConnection::establish(
-        &dotenv::var("DATABASE_URL")
-            .or_else(|_| dotenv::var("MYSQL_DATABASE_URL"))
+        &dotenvy::var("DATABASE_URL")
+            .or_else(|_| dotenvy::var("MYSQL_DATABASE_URL"))
             .expect("Set either `DATABASE_URL` or `MYSQL_DATABASE_URL`"),
     )
     .unwrap();

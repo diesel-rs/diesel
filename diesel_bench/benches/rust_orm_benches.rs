@@ -79,21 +79,21 @@ mod for_load {
 
 fn connect() -> EntityManager {
     let mut pool = Pool::new();
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     let db_url = if cfg!(feature = "sqlite") {
-        let url = dotenv::var("SQLITE_DATABASE_URL")
-            .or_else(|_| dotenv::var("DATABASE_URL"))
+        let url = dotenvy::var("SQLITE_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests");
 
         url.replace("sqlite:", "sqlite://")
     } else if cfg!(feature = "postgres") {
-        dotenv::var("POSTGRES_DATABASE_URL")
-            .or_else(|_| dotenv::var("DATABASE_URL"))
+        dotenvy::var("POSTGRES_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests")
     } else if cfg!(feature = "mysql") {
-        dotenv::var("MYSQL_DATABASE_URL")
-            .or_else(|_| dotenv::var("DATABASE_URL"))
+        dotenvy::var("MYSQL_DATABASE_URL")
+            .or_else(|_| dotenvy::var("DATABASE_URL"))
             .expect("DATABASE_URL must be set in order to run tests")
     } else {
         unimplemented!()

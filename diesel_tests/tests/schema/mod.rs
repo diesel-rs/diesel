@@ -251,8 +251,8 @@ pub fn connection_without_transaction() -> TestConnection {
 
 #[cfg(feature = "postgres")]
 pub fn backend_specific_connection() -> TestConnection {
-    let connection_url = dotenv::var("PG_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    let connection_url = dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     let mut conn = PgConnection::establish(&connection_url).unwrap();
 
@@ -276,8 +276,8 @@ pub fn backend_specific_connection() -> TestConnection {
 
 #[cfg(feature = "mysql")]
 pub fn backend_specific_connection() -> TestConnection {
-    let connection_url = dotenv::var("MYSQL_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests");
     MysqlConnection::establish(&connection_url).unwrap()
 }

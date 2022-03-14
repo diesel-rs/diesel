@@ -46,7 +46,7 @@ use self::database_error::{DatabaseError, DatabaseResult};
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 fn main() {
-    use dotenv::dotenv;
+    use dotenvy::dotenv;
     dotenv().ok();
 
     let matches = cli::build_cli().get_matches();

@@ -1,4 +1,4 @@
-extern crate dotenv;
+extern crate dotenvy;
 
 use crate::prelude::*;
 
@@ -37,8 +37,8 @@ cfg_if! {
         }
 
         pub fn database_url() -> String {
-            dotenv::var("MYSQL_UNIT_TEST_DATABASE_URL")
-                .or_else(|_| dotenv::var("DATABASE_URL"))
+            dotenvy::var("MYSQL_UNIT_TEST_DATABASE_URL")
+                .or_else(|_| dotenvy::var("DATABASE_URL"))
                 .expect("DATABASE_URL must be set in order to run tests")
         }
     } else {
@@ -65,7 +65,7 @@ pub fn pg_connection_no_transaction() -> PgConnection {
 
 #[cfg(feature = "postgres")]
 pub fn pg_database_url() -> String {
-    dotenv::var("PG_DATABASE_URL")
-        .or_else(|_| dotenv::var("DATABASE_URL"))
+    dotenvy::var("PG_DATABASE_URL")
+        .or_else(|_| dotenvy::var("DATABASE_URL"))
         .expect("DATABASE_URL must be set in order to run tests")
 }

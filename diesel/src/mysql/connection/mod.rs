@@ -164,13 +164,13 @@ impl MysqlConnection {
 
 #[cfg(test)]
 mod tests {
-    extern crate dotenv;
+    extern crate dotenvy;
 
     use super::*;
     use std::env;
 
     fn connection() -> MysqlConnection {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let database_url = env::var("MYSQL_UNIT_TEST_DATABASE_URL")
             .or_else(|_| env::var("MYSQL_DATABASE_URL"))
             .or_else(|_| env::var("DATABASE_URL"))

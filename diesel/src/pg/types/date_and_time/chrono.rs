@@ -125,7 +125,7 @@ impl FromSql<Date, Pg> for NaiveDate {
 #[cfg(test)]
 mod tests {
     extern crate chrono;
-    extern crate dotenv;
+    extern crate dotenvy;
 
     use self::chrono::naive::MAX_DATE;
     use self::chrono::{Duration, FixedOffset, NaiveDate, NaiveTime, TimeZone, Utc};

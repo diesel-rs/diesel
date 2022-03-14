@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "postgres")] {

@@ -101,7 +101,7 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
 #[cfg(test)]
 mod tests {
     extern crate chrono;
-    extern crate dotenv;
+    extern crate dotenvy;
 
     use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc};
 
