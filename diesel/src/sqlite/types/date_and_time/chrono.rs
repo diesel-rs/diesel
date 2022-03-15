@@ -169,7 +169,8 @@ impl FromSql<TimestampWithTz, Sqlite> for DateTime<Local> {
 
 impl<TZ: TimeZone> ToSql<TimestampWithTz, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        ToSql::<TimestampWithTz, Sqlite>::to_sql(&self.naive_utc(), &mut out.reborrow())
+        out.set_value(self.naive_utc().format("%F %T%.f%:z").to_string());
+        Ok(IsNull::No)
     }
 }
 
@@ -178,14 +179,17 @@ mod tests {
     extern crate chrono;
     extern crate dotenvy;
 
-    use self::chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc};
+    use self::chrono::{
+        Duration, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc,
+    };
 
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
-    use crate::sql_types::{Text, Time, Timestamp};
+    use crate::sql_types::{Text, Time, Timestamp, TimestampWithTz};
     use crate::test_helpers::connection;
 
+    sql_function!(fn datetime_with_tz(x: Text, z: Text) -> TimestampWithTz);
     sql_function!(fn datetime(x: Text) -> Timestamp);
     sql_function!(fn time(x: Text) -> Time);
     sql_function!(fn date(x: Text) -> Date);
@@ -435,5 +439,60 @@ mod tests {
         let distant_future = NaiveDate::from_ymd(9999, 1, 8).and_hms(0, 0, 0);
         let query = select(datetime("9999-01-08 00:00:00.000000").eq(distant_future));
         assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[test]
+    fn datetime_with_tz_encodes_correctly() {
+        let connection = &mut connection();
+        let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let query = select(datetime_with_tz("1970-01-01 00:00:00.000000Z").eq(time));
+        assert_eq!(Ok(true), query.get_result(connection));
+    }
+
+    #[test]
+    fn datetime_with_tz_decodes_correctly() {
+        let connection = &mut connection();
+        let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let valid_epoch_formats = vec![
+            "1970-01-01 00:00Z",
+            "1970-01-01 00:00:00Z",
+            "1970-01-01 00:00:00.000Z",
+            "1970-01-01 00:00:00.000000Z",
+            "1970-01-01T00:00Z",
+            "1970-01-01T00:00:00Z",
+            "1970-01-01T00:00:00.000Z",
+            "1970-01-01T00:00:00.000000Z",
+            "1970-01-01 00:00+00:00",
+            "1970-01-01 00:00:00+00:00",
+            "1970-01-01 00:00:00.000+00:00",
+            "1970-01-01 00:00:00.000000+00:00",
+            "1970-01-01T00:00+00:00",
+            "1970-01-01T00:00:00+00:00",
+            "1970-01-01T00:00:00.000+00:00",
+            "1970-01-01T00:00:00.000000+00:00",
+            "1970-01-01 00:00+01:00",
+            "1970-01-01 00:00:00+01:00",
+            "1970-01-01 00:00:00.000+01:00",
+            "1970-01-01 00:00:00.000000+01:00",
+            "1970-01-01T00:00+01:00",
+            "1970-01-01T00:00:00+01:00",
+            "1970-01-01T00:00:00.000+01:00",
+            "1970-01-01T00:00:00.000000+01:00",
+            "1970-01-01T00:00-01:00",
+            "1970-01-01T00:00:00-01:00",
+            "1970-01-01T00:00:00.000-01:00",
+            "1970-01-01T00:00:00.000000-01:00",
+            "1970-01-01T00:00-01:00",
+            "1970-01-01T00:00:00-01:00",
+            "1970-01-01T00:00:00.000-01:00",
+            "1970-01-01T00:00:00.000000-01:00",
+            "2440587.5",
+        ];
+
+        for s in valid_epoch_formats {
+            let epoch_from_sql =
+                select(sql::<Timestamp>(&format!("'{}'", s))).get_result(connection);
+            assert_eq!(Ok(time), epoch_from_sql, "format {} failed", s);
+        }
     }
 }
