@@ -210,7 +210,14 @@ pub fn determine_column_type(
         String::from("Float")
     } else if is_double(&type_name) {
         String::from("Double")
-    } else if type_name == "datetime" || type_name == "timestamp" {
+    } else if type_name == "datetime" {
+        // Decision made with the help of https://www.sqlite.org/lang_datefunc.html
+        if type_name.contains("localtime") || type_name.contains("utc") {
+            String::from("TimestampWithTz")
+        } else {
+            String::from("Timestamp")
+        }
+    } else if type_name == "timestamp" {
         String::from("Timestamp")
     } else if type_name == "date" {
         String::from("Date")

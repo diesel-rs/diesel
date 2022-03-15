@@ -69,3 +69,21 @@ impl ToSql<sql_types::Timestamp, Sqlite> for String {
         <str as ToSql<sql_types::Timestamp, Sqlite>>::to_sql(self as &str, out)
     }
 }
+
+impl FromSql<sql_types::TimestampWithTz, Sqlite> for String {
+    fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
+        FromSql::<sql_types::Text, Sqlite>::from_sql(value)
+    }
+}
+
+impl ToSql<sql_types::TimestampWithTz, Sqlite> for str {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
+        ToSql::<sql_types::Text, Sqlite>::to_sql(self, out)
+    }
+}
+
+impl ToSql<sql_types::TimestampWithTz, Sqlite> for String {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
+        ToSql::<sql_types::Text, Sqlite>::to_sql(self, out)
+    }
+}
