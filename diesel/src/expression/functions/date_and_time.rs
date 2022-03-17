@@ -59,6 +59,7 @@ impl AsExpression<Nullable<Timestamp>> for now {
 }
 
 #[cfg(feature = "postgres")]
+#[cfg(feature = "sqlite")]
 impl AsExpression<Timestamptz> for now {
     type Expression = Coerce<now, Timestamptz>;
 
@@ -68,6 +69,7 @@ impl AsExpression<Timestamptz> for now {
 }
 
 #[cfg(feature = "postgres")]
+#[cfg(feature = "sqlite")]
 impl AsExpression<Nullable<Timestamptz>> for now {
     type Expression = Coerce<now, Nullable<Timestamptz>>;
 

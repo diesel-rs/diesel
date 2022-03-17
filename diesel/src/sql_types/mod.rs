@@ -349,41 +349,6 @@ pub struct Time;
 #[diesel(mysql_type(name = "Timestamp"))]
 pub struct Timestamp;
 
-/// The timestamp with timezone SQL type.
-///
-/// ### [`ToSql`](crate::serialize::ToSql) impls
-///
-/// - [`std::time::SystemTime`][SystemTime] (PG only)
-/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
-/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
-///
-/// ### [`FromSql`](crate::deserialize::FromSql) impls
-///
-/// - [`std::time::SystemTime`][SystemTime] (PG only)
-/// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
-/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
-///
-/// [SystemTime]: std::time::SystemTime
-#[cfg_attr(
-    feature = "chrono",
-    doc = " [NaiveDateTime]: chrono::naive::NaiveDateTime"
-)]
-#[cfg_attr(
-    not(feature = "chrono"),
-    doc = " [NaiveDateTime]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDateTime.html"
-)]
-#[cfg_attr(feature = "chrono", doc = " [`chrono::DateTime`]: chrono::DateTime")]
-#[cfg_attr(
-    not(feature = "chrono"),
-    doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
-)]
-/// [Timespec]: /time/struct.Timespec.html
-#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
-#[diesel(postgres_type(oid = 1184, array_oid = 1185))]
-#[diesel(sqlite_type(name = "Text"))]
-#[diesel(mysql_type(name = "Timestamp"))]
-pub struct TimestampWithTz;
-
 /// The JSON SQL type.  This type can only be used with `feature =
 /// "serde_json"`
 ///
@@ -436,6 +401,10 @@ pub use crate::pg::sql_types::*;
 #[doc(inline)]
 #[cfg(feature = "mysql_backend")]
 pub use crate::mysql::sql_types::{Datetime, Unsigned};
+
+#[doc(inline)]
+#[cfg(feature = "sqlite")]
+pub use crate::sqlite::sql_types::Timestamptz;
 
 /// Indicates that a SQL type exists for a backend.
 ///

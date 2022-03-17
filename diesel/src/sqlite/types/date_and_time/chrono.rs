@@ -4,7 +4,7 @@ use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZon
 use crate::backend;
 use crate::deserialize::{self, FromSql};
 use crate::serialize::{self, IsNull, Output, ToSql};
-use crate::sql_types::{Date, Time, Timestamp, TimestampWithTz};
+use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
 use crate::sqlite::Sqlite;
 
 const SQLITE_DATE_FORMAT: &str = "%F";
@@ -106,7 +106,7 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
-impl FromSql<TimestampWithTz, Sqlite> for NaiveDateTime {
+impl FromSql<Timestamptz, Sqlite> for NaiveDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             let sqlite_datetime_formats = &[
@@ -146,28 +146,28 @@ impl FromSql<TimestampWithTz, Sqlite> for NaiveDateTime {
     }
 }
 
-impl ToSql<TimestampWithTz, Sqlite> for NaiveDateTime {
+impl ToSql<Timestamptz, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format("%F %T%.f%:z").to_string());
         Ok(IsNull::No)
     }
 }
 
-impl FromSql<TimestampWithTz, Sqlite> for DateTime<Utc> {
+impl FromSql<Timestamptz, Sqlite> for DateTime<Utc> {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
-        let naive_date_time = <NaiveDateTime as FromSql<TimestampWithTz, Sqlite>>::from_sql(value)?;
+        let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Sqlite>>::from_sql(value)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
     }
 }
 
-impl FromSql<TimestampWithTz, Sqlite> for DateTime<Local> {
+impl FromSql<Timestamptz, Sqlite> for DateTime<Local> {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
-        let naive_date_time = <NaiveDateTime as FromSql<TimestampWithTz, Sqlite>>::from_sql(value)?;
+        let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Sqlite>>::from_sql(value)?;
         Ok(Local::from_utc_datetime(&Local, &naive_date_time))
     }
 }
 
-impl<TZ: TimeZone> ToSql<TimestampWithTz, Sqlite> for DateTime<TZ> {
+impl<TZ: TimeZone> ToSql<Timestamptz, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.naive_utc().format("%F %T%.f%:z").to_string());
         Ok(IsNull::No)
@@ -180,16 +180,16 @@ mod tests {
     extern crate dotenvy;
 
     use self::chrono::{
-        Duration, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc,
+        DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike, Utc,
     };
 
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
-    use crate::sql_types::{Text, Time, Timestamp, TimestampWithTz};
+    use crate::sql_types::{Text, Time, Timestamp, Timestamptz};
     use crate::test_helpers::connection;
 
-    sql_function!(fn datetime_with_tz(x: Text, z: Text) -> TimestampWithTz);
+    sql_function!(fn datetime_with_tz(x: Text, z: Text) -> Timestamptz);
     sql_function!(fn datetime(x: Text) -> Timestamp);
     sql_function!(fn time(x: Text) -> Time);
     sql_function!(fn date(x: Text) -> Date);
@@ -442,57 +442,19 @@ mod tests {
     }
 
     #[test]
-    fn datetime_with_tz_encodes_correctly() {
+    fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = &mut connection();
-        let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let query = select(datetime_with_tz("1970-01-01 00:00:00.000000Z").eq(time));
-        assert_eq!(Ok(true), query.get_result(connection));
+        let naive_datetime = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let time: DateTime<Utc> = DateTime::from_utc(naive_datetime, Utc);
+        let query = select(sql::<Timestamptz>("'1970-01-01 01:00:00Z'").eq(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
-    fn datetime_with_tz_decodes_correctly() {
+    fn unix_epoch_decodes_correctly_with_timezone() {
         let connection = &mut connection();
-        let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let valid_epoch_formats = vec![
-            "1970-01-01 00:00Z",
-            "1970-01-01 00:00:00Z",
-            "1970-01-01 00:00:00.000Z",
-            "1970-01-01 00:00:00.000000Z",
-            "1970-01-01T00:00Z",
-            "1970-01-01T00:00:00Z",
-            "1970-01-01T00:00:00.000Z",
-            "1970-01-01T00:00:00.000000Z",
-            "1970-01-01 00:00+00:00",
-            "1970-01-01 00:00:00+00:00",
-            "1970-01-01 00:00:00.000+00:00",
-            "1970-01-01 00:00:00.000000+00:00",
-            "1970-01-01T00:00+00:00",
-            "1970-01-01T00:00:00+00:00",
-            "1970-01-01T00:00:00.000+00:00",
-            "1970-01-01T00:00:00.000000+00:00",
-            "1970-01-01 00:00+01:00",
-            "1970-01-01 00:00:00+01:00",
-            "1970-01-01 00:00:00.000+01:00",
-            "1970-01-01 00:00:00.000000+01:00",
-            "1970-01-01T00:00+01:00",
-            "1970-01-01T00:00:00+01:00",
-            "1970-01-01T00:00:00.000+01:00",
-            "1970-01-01T00:00:00.000000+01:00",
-            "1970-01-01T00:00-01:00",
-            "1970-01-01T00:00:00-01:00",
-            "1970-01-01T00:00:00.000-01:00",
-            "1970-01-01T00:00:00.000000-01:00",
-            "1970-01-01T00:00-01:00",
-            "1970-01-01T00:00:00-01:00",
-            "1970-01-01T00:00:00.000-01:00",
-            "1970-01-01T00:00:00.000000-01:00",
-            "2440587.5",
-        ];
-
-        for s in valid_epoch_formats {
-            let epoch_from_sql =
-                select(sql::<Timestamp>(&format!("'{}'", s))).get_result(connection);
-            assert_eq!(Ok(time), epoch_from_sql, "format {} failed", s);
-        }
+        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let epoch_from_sql = select(sql::<Timestamptz>("'1970-01-01Z'")).get_result(connection);
+        assert_eq!(Ok(time), epoch_from_sql);
     }
 }

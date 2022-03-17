@@ -4,8 +4,10 @@ mod numeric;
 use super::connection::SqliteValue;
 use super::Sqlite;
 use crate::deserialize::{self, FromSql};
+use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
+use crate::sql_types::SqlType;
 
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new
@@ -138,3 +140,35 @@ impl ToSql<sql_types::Double, Sqlite> for f64 {
         Ok(IsNull::No)
     }
 }
+
+/// The SQLite timestamp with time zone type
+///
+/// ### [`ToSql`] impls
+///
+/// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+/// - [`chrono::DateTime`] with `feature = "chrono"`
+///
+/// ### [`FromSql`] impls
+///
+/// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+/// - [`chrono::DateTime`] with `feature = "chrono"`
+///
+/// [`ToSql`]: crate::serialize::ToSql
+/// [`FromSql`]: crate::deserialize::FromSql
+#[cfg_attr(
+    feature = "chrono",
+    doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "chrono"),
+    doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
+)]
+#[cfg_attr(feature = "chrono", doc = " [`chrono::DateTime`]: chrono::DateTime")]
+#[cfg_attr(
+    not(feature = "chrono"),
+    doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
+)]
+#[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+#[diesel(sqlite_type(name = "Text"))]
+#[cfg(feature = "sqlite")]
+pub struct Timestamptz;
