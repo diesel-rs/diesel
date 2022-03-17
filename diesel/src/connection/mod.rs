@@ -439,7 +439,7 @@ where
     }
 }
 
-impl<DB: Backend> dyn BoxableConnection<DB> {
+impl<DB: Backend + 'static> dyn BoxableConnection<DB> {
     /// Downcast the current connection to a specific connection
     /// type.
     ///
