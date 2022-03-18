@@ -9,6 +9,7 @@ use std::os::raw as libc;
 use std::ptr::NonNull;
 
 use super::bind::{OutputBinds, PreparedStatementBinds};
+use crate::connection::statement_cache::MaybeCached;
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 
@@ -63,55 +64,10 @@ impl Statement {
         self.did_an_error_occur()
     }
 
-    /// This function should be called instead of `results` on queries which
-    /// have no return value. It should never be called on a statement on
-    /// which `results` has previously been called?
-    pub unsafe fn execute(&self) -> QueryResult<()> {
-        ffi::mysql_stmt_execute(self.stmt.as_ptr());
-        self.did_an_error_occur()?;
-        ffi::mysql_stmt_store_result(self.stmt.as_ptr());
-        self.did_an_error_occur()?;
-        Ok(())
-    }
-
-    pub fn affected_rows(&self) -> usize {
-        let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.stmt.as_ptr()) };
-        affected_rows as usize
-    }
-
-    /// This function should be called after `execute` only
-    /// otherwise it's not guranteed to return a valid result
-    pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
-        let size = ffi::mysql_stmt_num_rows(self.stmt.as_ptr());
-        usize::try_from(size).map_err(|e| Error::DeserializationError(Box::new(e)))
-    }
-
     fn last_error_message(&self) -> String {
         unsafe { CStr::from_ptr(ffi::mysql_stmt_error(self.stmt.as_ptr())) }
             .to_string_lossy()
             .into_owned()
-    }
-
-    /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
-    /// you must call this function again before calling `mysql_stmt_fetch`.
-    pub unsafe fn bind_result(&self, binds: *mut ffi::MYSQL_BIND) -> QueryResult<()> {
-        ffi::mysql_stmt_bind_result(self.stmt.as_ptr(), binds);
-        self.did_an_error_occur()
-    }
-
-    pub unsafe fn fetch_column(
-        &self,
-        bind: &mut ffi::MYSQL_BIND,
-        idx: usize,
-        offset: usize,
-    ) -> QueryResult<()> {
-        ffi::mysql_stmt_fetch_column(
-            self.stmt.as_ptr(),
-            bind,
-            idx as libc::c_uint,
-            offset as libc::c_ulong,
-        );
-        self.did_an_error_occur()
     }
 
     pub(super) fn metadata(&self) -> QueryResult<StatementMetadata> {
@@ -153,16 +109,64 @@ impl Statement {
         }
     }
 
-    pub(super) fn execute_statement(&mut self, binds: &mut OutputBinds) -> QueryResult<()> {
+    /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
+    /// you must call this function again before calling `mysql_stmt_fetch`.
+    pub unsafe fn bind_result(&self, binds: *mut ffi::MYSQL_BIND) -> QueryResult<()> {
+        ffi::mysql_stmt_bind_result(self.stmt.as_ptr(), binds);
+        self.did_an_error_occur()
+    }
+}
+
+impl<'a> MaybeCached<'a, Statement> {
+    pub(super) fn execute_statement(
+        self,
+        binds: &mut OutputBinds,
+    ) -> QueryResult<StatementUse<'a>> {
         unsafe {
             binds.with_mysql_binds(|bind_ptr| self.bind_result(bind_ptr))?;
-            self.execute()?;
+            self.execute()
         }
-        Ok(())
+    }
+
+    /// This function should be called instead of `results` on queries which
+    /// have no return value. It should never be called on a statement on
+    /// which `results` has previously been called?
+    pub(super) unsafe fn execute(self) -> QueryResult<StatementUse<'a>> {
+        ffi::mysql_stmt_execute(self.stmt.as_ptr());
+        self.did_an_error_occur()?;
+        ffi::mysql_stmt_store_result(self.stmt.as_ptr());
+        let ret = StatementUse { inner: self };
+        ret.inner.did_an_error_occur()?;
+        Ok(ret)
+    }
+}
+
+impl Drop for Statement {
+    fn drop(&mut self) {
+        unsafe { ffi::mysql_stmt_close(self.stmt.as_ptr()) };
+    }
+}
+
+#[allow(missing_debug_implementations)]
+pub(super) struct StatementUse<'a> {
+    inner: MaybeCached<'a, Statement>,
+}
+
+impl<'a> StatementUse<'a> {
+    pub(in crate::mysql::connection) fn affected_rows(&self) -> usize {
+        let affected_rows = unsafe { ffi::mysql_stmt_affected_rows(self.inner.stmt.as_ptr()) };
+        affected_rows as usize
+    }
+
+    /// This function should be called after `execute` only
+    /// otherwise it's not guranteed to return a valid result
+    pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
+        let size = ffi::mysql_stmt_num_rows(self.inner.stmt.as_ptr());
+        usize::try_from(size).map_err(|e| Error::DeserializationError(Box::new(e)))
     }
 
     pub(super) fn populate_row_buffers(&self, binds: &mut OutputBinds) -> QueryResult<Option<()>> {
-        let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.stmt.as_ptr()) };
+        let next_row_result = unsafe { ffi::mysql_stmt_fetch(self.inner.stmt.as_ptr()) };
         match next_row_result as libc::c_uint {
             ffi::MYSQL_NO_DATA => Ok(None),
             ffi::MYSQL_DATA_TRUNCATED => binds.populate_dynamic_buffers(self).map(Some),
@@ -170,13 +174,39 @@ impl Statement {
                 binds.update_buffer_lengths();
                 Ok(Some(()))
             }
-            _error => self.did_an_error_occur().map(Some),
+            _error => self.inner.did_an_error_occur().map(Some),
         }
+    }
+
+    pub(in crate::mysql::connection) unsafe fn fetch_column(
+        &self,
+        bind: &mut ffi::MYSQL_BIND,
+        idx: usize,
+        offset: usize,
+    ) -> QueryResult<()> {
+        ffi::mysql_stmt_fetch_column(
+            self.inner.stmt.as_ptr(),
+            bind,
+            idx as libc::c_uint,
+            offset as libc::c_ulong,
+        );
+        self.inner.did_an_error_occur()
+    }
+
+    /// If the pointers referenced by the `MYSQL_BIND` structures are invalidated,
+    /// you must call this function again before calling `mysql_stmt_fetch`.
+    pub(in crate::mysql::connection) unsafe fn bind_result(
+        &self,
+        binds: *mut ffi::MYSQL_BIND,
+    ) -> QueryResult<()> {
+        self.inner.bind_result(binds)
     }
 }
 
-impl Drop for Statement {
+impl<'a> Drop for StatementUse<'a> {
     fn drop(&mut self) {
-        unsafe { ffi::mysql_stmt_close(self.stmt.as_ptr()) };
+        unsafe {
+            ffi::mysql_stmt_free_result(self.inner.stmt.as_ptr());
+        }
     }
 }

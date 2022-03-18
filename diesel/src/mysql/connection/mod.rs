@@ -105,10 +105,8 @@ impl Connection for MysqlConnection {
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let stmt = self.prepared_query(source)?;
-        unsafe {
-            stmt.execute()?;
-        }
-        Ok(stmt.affected_rows())
+        let stmt_use = unsafe { stmt.execute()? };
+        Ok(stmt_use.affected_rows())
     }
 
     #[doc(hidden)]
