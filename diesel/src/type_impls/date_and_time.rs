@@ -38,12 +38,13 @@ mod chrono {
     // TODO: Add TimestamptzSqlite stuff here??
     struct NaiveDateTimeProxy(NaiveDateTime);
 
-    #[derive(AsExpression, FromSqlRow)]
+    #[derive(FromSqlRow)]
     #[diesel(foreign_derive)]
     #[cfg_attr(
         feature = "postgres_backend",
+        derive(AsExpression),
         diesel(sql_type = crate::sql_types::Timestamptz)
     )]
-    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
+    #[cfg_attr(feature = "sqlite", derive(AsExpression), diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
     struct DateTimeProxy<Tz: TimeZone>(DateTime<Tz>);
 }
