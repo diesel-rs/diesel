@@ -72,8 +72,6 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 * Added an option to `#[derive(Insertable)]` that let you insert `NULL` values instead of `DEFAULT` values for `Option<T>` 
 
-* Added support for the `FROM ONLY <table>` clause in Postgresql
-
 * Added support for all the derive attributes being inside `#[diesel(...)]`
 
 * Added support for `RETURNING` expressions for Sqlite via the `returning_clauses_for_sqlite_3_35` feature
