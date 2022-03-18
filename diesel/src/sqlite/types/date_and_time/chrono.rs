@@ -4,7 +4,7 @@ use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZon
 use crate::backend;
 use crate::deserialize::{self, FromSql};
 use crate::serialize::{self, IsNull, Output, ToSql};
-use crate::sql_types::{Date, Time, Timestamp, Timestamptz};
+use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
 const SQLITE_DATE_FORMAT: &str = "%F";
@@ -106,7 +106,7 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
-impl FromSql<Timestamptz, Sqlite> for NaiveDateTime {
+impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             let sqlite_datetime_formats = &[
@@ -146,28 +146,30 @@ impl FromSql<Timestamptz, Sqlite> for NaiveDateTime {
     }
 }
 
-impl ToSql<Timestamptz, Sqlite> for NaiveDateTime {
+impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format("%F %T%.f%:z").to_string());
         Ok(IsNull::No)
     }
 }
 
-impl FromSql<Timestamptz, Sqlite> for DateTime<Utc> {
+impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
-        let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Sqlite>>::from_sql(value)?;
+        let naive_date_time =
+            <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
     }
 }
 
-impl FromSql<Timestamptz, Sqlite> for DateTime<Local> {
+impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
-        let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Sqlite>>::from_sql(value)?;
+        let naive_date_time =
+            <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(Local::from_utc_datetime(&Local, &naive_date_time))
     }
 }
 
-impl<TZ: TimeZone> ToSql<Timestamptz, Sqlite> for DateTime<TZ> {
+impl<TZ: TimeZone> ToSql<TimestamptzSqlite, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.naive_utc().format("%F %T%.f%:z").to_string());
         Ok(IsNull::No)
@@ -186,10 +188,10 @@ mod tests {
     use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
-    use crate::sql_types::{Text, Time, Timestamp, Timestamptz};
+    use crate::sql_types::{Text, Time, Timestamp, TimestamptzSqlite};
     use crate::test_helpers::connection;
 
-    sql_function!(fn datetime_with_tz(x: Text, z: Text) -> Timestamptz);
+    sql_function!(fn datetime_with_tz(x: Text, z: Text) -> TimestamptzSqlite);
     sql_function!(fn datetime(x: Text) -> Timestamp);
     sql_function!(fn time(x: Text) -> Time);
     sql_function!(fn date(x: Text) -> Date);
@@ -446,7 +448,7 @@ mod tests {
         let connection = &mut connection();
         let naive_datetime = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
         let time: DateTime<Utc> = DateTime::from_utc(naive_datetime, Utc);
-        let query = select(sql::<Timestamptz>("'1970-01-01 01:00:00Z'").eq(time));
+        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00Z'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
@@ -454,7 +456,8 @@ mod tests {
     fn unix_epoch_decodes_correctly_with_timezone() {
         let connection = &mut connection();
         let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let epoch_from_sql = select(sql::<Timestamptz>("'1970-01-01Z'")).get_result(connection);
+        let epoch_from_sql =
+            select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00Z'")).get_result(connection);
         assert_eq!(Ok(time), epoch_from_sql);
     }
 }
