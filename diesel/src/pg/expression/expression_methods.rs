@@ -1616,7 +1616,7 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     ///     .values((name.eq("Claus"), address.eq(&santas_address)))
     ///     .execute(conn)?;
     ///
-    /// let santas_modified_address = contacts.select(address.remove::<diesel::sql_types::Text, _>("postcode")).get_result::<serde_json::Value>(conn)?;
+    /// let santas_modified_address = contacts.select(address.remove("postcode")).get_result::<serde_json::Value>(conn)?;
     /// assert_eq!(santas_modified_address, serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
     ///     "city": "North Pole",
@@ -1626,7 +1626,7 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     ///     .values((name.eq("Claus"), address.eq(&santas_address)))
     ///     .execute(conn)?;
     ///
-    /// let santas_modified_address = contacts.select(address.remove::<diesel::sql_types::Array<diesel::sql_types::Text>, _>(vec!["postcode", "state"])).get_result::<serde_json::Value>(conn)?;
+    /// let santas_modified_address = contacts.select(address.remove(vec!["postcode", "state"])).get_result::<serde_json::Value>(conn)?;
     /// assert_eq!(santas_modified_address, serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
     ///     "city": "North Pole",
@@ -1653,7 +1653,7 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     ///
     /// let roberts_address_in_db = contacts
     ///                             .filter(name.eq("Robert Downey Jr."))
-    ///                             .select(address.remove::<diesel::sql_types::Integer, _>(1))
+    ///                             .select(address.remove(1))
     ///                             .get_result::<serde_json::Value>(conn)?;
     ///
     /// let roberts_first_address = serde_json::json!([{
@@ -1670,12 +1670,84 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     ///
-    fn remove<ST, T>(self, other: T) -> dsl::RemoveFromJsonb<Self, T, ST>
+    fn remove<T>(
+        self,
+        other: T,
+    ) -> dsl::RemoveFromJsonb<Self, T::Expression, <T::Expression as Expression>::SqlType>
     where
-        ST: SqlType + TypedExpressionType + TextArrayOrTextOrInteger,
-        T: AsExpression<ST>,
+        T: JsonRemoveIndex,
+        <T::Expression as Expression>::SqlType: SqlType,
     {
-        Grouped(RemoveFromJsonb::new(self, other.as_expression()))
+        Grouped(RemoveFromJsonb::new(self, other.as_json_index_expression()))
+    }
+}
+
+/// A trait that describes valid json indices used by postgresql
+pub trait JsonRemoveIndex {
+    /// The Expression node created by this index type
+    type Expression: Expression;
+
+    /// Convert a index value into the corresponding index expression
+    fn as_json_index_expression(self) -> Self::Expression;
+}
+
+impl<'a> JsonRemoveIndex for &'a str {
+    type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
+
+    fn as_json_index_expression(self) -> Self::Expression {
+        self.into_sql::<Text>()
+    }
+}
+
+impl JsonRemoveIndex for String {
+    type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
+
+    fn as_json_index_expression(self) -> Self::Expression {
+        self.into_sql::<Text>()
+    }
+}
+
+impl JsonRemoveIndex for Vec<String> {
+    type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+    fn as_json_index_expression(self) -> Self::Expression {
+        self.into_sql::<Array<Text>>()
+    }
+}
+
+impl<'a> JsonRemoveIndex for Vec<&'a str> {
+    type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+    fn as_json_index_expression(self) -> Self::Expression {
+        self.into_sql::<Array<Text>>()
+    }
+}
+
+impl<'a> JsonRemoveIndex for &'a [&'a str] {
+    type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+    fn as_json_index_expression(self) -> Self::Expression {
+        self.into_sql::<Array<Text>>()
+    }
+}
+
+impl JsonRemoveIndex for i32 {
+    type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
+
+    fn as_json_index_expression(self) -> Self::Expression {
+        self.into_sql::<crate::sql_types::Int4>()
+    }
+}
+
+impl<T> JsonRemoveIndex for T
+where
+    T: Expression,
+    T::SqlType: TextArrayOrTextOrInteger,
+{
+    type Expression = Self;
+
+    fn as_json_index_expression(self) -> Self::Expression {
+        self
     }
 }
 
