@@ -1,8 +1,8 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, InetOrCidr, JsonbOrNullableJsonb, RangeHelper, RangeOrNullableRange,
-    TextOrNullableText,
+    ArrayOrNullableArray, InetOrCidr, JsonRemoveIndex, JsonbOrNullableJsonb, RangeHelper,
+    RangeOrNullableRange, TextOrNullableText,
 };
 use super::operators::*;
 use crate::dsl;
@@ -1599,12 +1599,13 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # fn run_test() -> QueryResult<()> {
     /// #     use self::contacts::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     conn.execute("DROP TABLE IF EXISTS contacts").unwrap();
-    /// #     conn.execute("CREATE TABLE contacts (
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
     /// #         id SERIAL PRIMARY KEY,
     /// #         name VARCHAR NOT NULL,
     /// #         address JSONB NOT NULL
-    /// #     )").unwrap();
+    /// #     )").execute(conn)
+    /// #        .unwrap();
     /// #
     /// let santas_address: serde_json::Value = serde_json::json!({
     ///     "street": "Article Circle Expressway 1",
@@ -1682,75 +1683,6 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     }
 }
 
-/// A trait that describes valid json indices used by postgresql
-pub trait JsonRemoveIndex {
-    /// The Expression node created by this index type
-    type Expression: Expression;
-
-    /// Convert a index value into the corresponding index expression
-    fn as_json_index_expression(self) -> Self::Expression;
-}
-
-impl<'a> JsonRemoveIndex for &'a str {
-    type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
-
-    fn as_json_index_expression(self) -> Self::Expression {
-        self.into_sql::<Text>()
-    }
-}
-
-impl JsonRemoveIndex for String {
-    type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
-
-    fn as_json_index_expression(self) -> Self::Expression {
-        self.into_sql::<Text>()
-    }
-}
-
-impl JsonRemoveIndex for Vec<String> {
-    type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
-
-    fn as_json_index_expression(self) -> Self::Expression {
-        self.into_sql::<Array<Text>>()
-    }
-}
-
-impl<'a> JsonRemoveIndex for Vec<&'a str> {
-    type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
-
-    fn as_json_index_expression(self) -> Self::Expression {
-        self.into_sql::<Array<Text>>()
-    }
-}
-
-impl<'a> JsonRemoveIndex for &'a [&'a str] {
-    type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
-
-    fn as_json_index_expression(self) -> Self::Expression {
-        self.into_sql::<Array<Text>>()
-    }
-}
-
-impl JsonRemoveIndex for i32 {
-    type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
-
-    fn as_json_index_expression(self) -> Self::Expression {
-        self.into_sql::<crate::sql_types::Int4>()
-    }
-}
-
-impl<T> JsonRemoveIndex for T
-where
-    T: Expression,
-    T::SqlType: TextArrayOrTextOrInteger,
-{
-    type Expression = Self;
-
-    fn as_json_index_expression(self) -> Self::Expression {
-        self
-    }
-}
-
 impl<T> PgJsonbExpressionMethods for T
 where
     T: Expression,
@@ -1759,7 +1691,8 @@ where
 }
 
 mod private {
-    use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
+    use crate::sql_types::{Array, Cidr, Inet, Integer, Jsonb, Nullable, Range, SqlType, Text};
+    use crate::{Expression, IntoSql};
 
     /// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
     /// types. Once coherence takes associated types into account, we can remove
@@ -1811,4 +1744,79 @@ mod private {
 
     impl JsonbOrNullableJsonb for Jsonb {}
     impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+    /// A trait that describes valid json indices used by postgresql
+    pub trait JsonRemoveIndex {
+        /// The Expression node created by this index type
+        type Expression: Expression;
+
+        /// Convert a index value into the corresponding index expression
+        fn as_json_index_expression(self) -> Self::Expression;
+    }
+
+    impl<'a> JsonRemoveIndex for &'a str {
+        type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
+
+        fn as_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Text>()
+        }
+    }
+
+    impl JsonRemoveIndex for String {
+        type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
+
+        fn as_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Text>()
+        }
+    }
+
+    impl JsonRemoveIndex for Vec<String> {
+        type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+        fn as_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Array<Text>>()
+        }
+    }
+
+    impl<'a> JsonRemoveIndex for Vec<&'a str> {
+        type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+        fn as_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Array<Text>>()
+        }
+    }
+
+    impl<'a> JsonRemoveIndex for &'a [&'a str] {
+        type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+        fn as_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Array<Text>>()
+        }
+    }
+
+    impl JsonRemoveIndex for i32 {
+        type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
+
+        fn as_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<crate::sql_types::Int4>()
+        }
+    }
+
+    impl<T> JsonRemoveIndex for T
+    where
+        T: Expression,
+        T::SqlType: TextArrayOrTextOrInteger,
+    {
+        type Expression = Self;
+
+        fn as_json_index_expression(self) -> Self::Expression {
+            self
+        }
+    }
+
+    pub trait TextArrayOrTextOrInteger {}
+
+    impl TextArrayOrTextOrInteger for Array<Text> {}
+    impl TextArrayOrTextOrInteger for Text {}
+    impl TextArrayOrTextOrInteger for Integer {}
 }
