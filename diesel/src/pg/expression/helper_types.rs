@@ -1,7 +1,7 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
 use crate::pg::types::sql_types::Array;
-use crate::sql_types::{Inet, Integer, Jsonb, VarChar};
+use crate::sql_types::{Inet, Integer, Jsonb, Text, VarChar};
 
 /// The return type of `lhs.ilike(rhs)`
 pub type ILike<Lhs, Rhs> = Grouped<super::operators::ILike<Lhs, AsExprOf<Rhs, VarChar>>>;
@@ -106,10 +106,22 @@ pub type IsContainedByJsonb<Lhs, Rhs> =
 /// The return type of `lhs.index(rhs)`
 pub type ArrayIndex<Lhs, Rhs> = super::operators::ArrayIndex<Lhs, AsExprOf<Rhs, Integer>>;
 
-/// The return type of `lsh.remove(rhs)`
+/// The return type of `lhs.remove(rhs)`
 pub type RemoveFromJsonb<Lhs, Rhs, St> =
     Grouped<super::operators::RemoveFromJsonb<Lhs, AsExprOf<Rhs, St>>>;
 
-/// The return type of `lsh.retrieve_as_object(rhs)`
-pub type RetrieveAsObjectJsonb<Lhs, Rhs, ST> =
-    Grouped<super::operators::RetrieveAsObjectJsonb<Lhs, AsExprOf<Rhs, ST>>>;
+/// The return type of `lhs.retrieve_as_object(rhs)`
+pub type RetrieveAsObjectJson<Lhs, Rhs, ST> =
+    Grouped<super::operators::RetrieveAsObjectJson<Lhs, AsExprOf<Rhs, ST>>>;
+
+/// The return type of `lhs.retrieve_as_text(rhs)`
+pub type RetrieveAsTextJson<Lhs, Rhs, ST> =
+    Grouped<super::operators::RetrieveAsTextJson<Lhs, AsExprOf<Rhs, ST>>>;
+
+/// The return type of `lhs.retrieve_by_path_as_object(rhs)`
+pub type RetrieveByPathAsObjectJson<Lhs, Rhs> =
+    Grouped<super::operators::RetrieveByPathAsObjectJson<Lhs, AsExprOf<Rhs, Array<Text>>>>;
+
+/// The return type of `lhs.retrieve_by_path_as_text(rhs)`
+pub type RetrieveByPathAsTextJson<Lhs, Rhs> =
+    Grouped<super::operators::RetrieveByPathAsTextJson<Lhs, AsExprOf<Rhs, Array<Text>>>>;
