@@ -1,15 +1,16 @@
 //! PostgreSQL specific expression methods
 
 pub(in crate::pg) use self::private::{
-    ArrayOrNullableArray, InetOrCidr, JsonbOrNullableJsonb, RangeHelper, RangeOrNullableRange,
-    TextOrNullableText,
+    ArrayOrNullableArray, InetOrCidr, JsonIndex, JsonOrNullableJsonOrJsonbOrNullableJsonb,
+    JsonRemoveIndex, JsonbOrNullableJsonb, RangeHelper, RangeOrNullableRange, TextOrNullableText,
 };
+use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Desc};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Inet, Integer, Jsonb, SqlType, Text};
+use crate::sql_types::{Array, Inet, Integer, Jsonb, SqlType, Text, VarChar};
 use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
@@ -73,9 +74,6 @@ pub trait PgExpressionMethods: Expression + Sized {
 }
 
 impl<T: Expression> PgExpressionMethods for T {}
-
-use super::date_and_time::{AtTimeZone, DateTimeLike};
-use crate::sql_types::VarChar;
 
 /// PostgreSQL specific methods present on timestamp expressions.
 #[cfg(feature = "postgres_backend")]
@@ -1572,6 +1570,231 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     {
         Grouped(IsContainedByJsonb::new(self, other.as_expression()))
     }
+
+    /// Creates a PostgreSQL `-` expression.
+    ///
+    /// This operator removes the value associated with the given key, that is provided on the
+    /// Right Hand Side of the operator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").execute(conn)
+    /// #        .unwrap();
+    /// #
+    /// let santas_address: serde_json::Value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let santas_modified_address = contacts.select(address.remove("postcode")).get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(santas_modified_address, serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "state": "Alaska"
+    /// }));
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let santas_modified_address = contacts.select(address.remove(vec!["postcode", "state"])).get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(santas_modified_address, serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    /// }));
+    ///
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
+    ///     .execute(conn)?;
+    ///
+    /// let roberts_address_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.remove(1))
+    ///                             .get_result::<serde_json::Value>(conn)?;
+    ///
+    /// let roberts_first_address = serde_json::json!([{
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    /// }]);
+    /// assert_eq!(roberts_first_address, roberts_address_in_db);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    ///
+    fn remove<T>(
+        self,
+        other: T,
+    ) -> dsl::RemoveFromJsonb<Self, T::Expression, <T::Expression as Expression>::SqlType>
+    where
+        T: JsonRemoveIndex,
+        <T::Expression as Expression>::SqlType: SqlType,
+    {
+        Grouped(RemoveFromJsonb::new(
+            self,
+            other.into_json_index_expression(),
+        ))
+    }
+
+    /// Creates a PostgreSQL `#-` expression.
+    ///
+    /// This operator removes the value associated with the given json path, that is provided on the
+    /// Right Hand Side of the operator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").execute(conn)
+    /// #        .unwrap();
+    /// #
+    /// let santas_address: serde_json::Value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let santas_modified_address = contacts.select(address.remove("postcode")).get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(santas_modified_address, serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "state": "Alaska"
+    /// }));
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let santas_modified_address = contacts.select(address.remove_by_path(vec!["postcode"])).get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(santas_modified_address, serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "state": "Alaska"
+    /// }));
+    ///
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
+    ///     .execute(conn)?;
+    ///
+    /// let roberts_address_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.remove_by_path(vec!["1", "postcode"]))
+    ///                             .get_result::<serde_json::Value>(conn)?;
+    ///
+    /// let roberts_address = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    /// assert_eq!(roberts_address, roberts_address_in_db);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    ///
+    fn remove_by_path<T>(self, other: T) -> dsl::RemoveByPathFromJsonb<Self, T::Expression>
+    where
+        T: AsExpression<Array<Text>>,
+    {
+        Grouped(RemoveByPathFromJsonb::new(self, other.as_expression()))
+    }
 }
 
 impl<T> PgJsonbExpressionMethods for T
@@ -1581,8 +1804,384 @@ where
 {
 }
 
+/// PostgreSQL specific methods present on JSON and JSONB expressions.
+#[cfg(feature = "postgres_backend")]
+pub trait PgAnyJsonExpressionMethods: Expression + Sized {
+    /// Creates a PostgreSQL `->` expression.
+    ///
+    /// This operator extracts the value associated with the given key, that is provided on the
+    /// Right Hand Side of the operator.
+    ///
+    /// Extracts n'th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
+    /// Extracts JSON object field with the given key.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").execute(conn)
+    /// #        .unwrap();
+    /// #
+    /// let santas_address: serde_json::Value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let santas_postcode = contacts.select(address.retrieve_as_object("postcode")).get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(santas_postcode, serde_json::json!("99705"));
+    ///
+    ///
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
+    ///     .execute(conn)?;
+    ///
+    /// let roberts_second_address_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.retrieve_as_object(1))
+    ///                             .get_result::<serde_json::Value>(conn)?;
+    ///
+    /// let roberts_second_address = serde_json::json!({
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    /// });
+    /// assert_eq!(roberts_second_address, roberts_second_address_in_db);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn retrieve_as_object<T>(
+        self,
+        other: T,
+    ) -> dsl::RetrieveAsObjectJson<Self, T::Expression, <T::Expression as Expression>::SqlType>
+    where
+        T: JsonIndex,
+        <T::Expression as Expression>::SqlType: SqlType,
+    {
+        Grouped(RetrieveAsObjectJson::new(
+            self,
+            other.into_json_index_expression(),
+        ))
+    }
+
+    /// Creates a PostgreSQL `->>` expression.
+    ///
+    /// This operator extracts the value associated with the given key, that is provided on the
+    /// Right Hand Side of the operator.
+    ///
+    /// Extracts n'th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
+    /// Extracts JSON object field as Text with the given key.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").execute(conn)
+    /// #        .unwrap();
+    /// #
+    /// let santas_address: serde_json::Value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let santas_postcode = contacts.select(address.retrieve_as_text("postcode")).get_result::<String>(conn)?;
+    /// assert_eq!(santas_postcode, "99705");
+    ///
+    ///
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
+    ///     .execute(conn)?;
+    ///
+    /// let roberts_second_address_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.retrieve_as_text(1))
+    ///                             .get_result::<String>(conn)?;
+    ///
+    /// let roberts_second_address = String::from(
+    ///     "{\"city\": \"New York\", \
+    ///     \"state\": \"New York\", \
+    ///     \"street\": \"Somewhere In Ny 251\", \
+    ///     \"postcode\": \"3213212\"}"
+    ///     );
+    /// assert_eq!(roberts_second_address, roberts_second_address_in_db);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn retrieve_as_text<T>(
+        self,
+        other: T,
+    ) -> dsl::RetrieveAsTextJson<Self, T::Expression, <T::Expression as Expression>::SqlType>
+    where
+        T: JsonIndex,
+        <T::Expression as Expression>::SqlType: SqlType,
+    {
+        Grouped(RetrieveAsTextJson::new(
+            self,
+            other.into_json_index_expression(),
+        ))
+    }
+
+    /// Creates a PostgreSQL `#>` expression.
+    ///
+    /// This operator extracts the value associated with the given key, that is provided on the
+    /// Right Hand Side of the operator.
+    ///
+    /// Extracts n'th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
+    /// Extracts JSON object field with the given key.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").execute(conn)
+    /// #        .unwrap();
+    /// #
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
+    ///     .execute(conn)?;
+    ///
+    /// let roberts_second_street_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.retrieve_by_path_as_object(vec!["1", "street"]))
+    ///                             .get_result::<serde_json::Value>(conn)?;
+    ///
+    /// assert_eq!(roberts_second_street_in_db, serde_json::json!("Somewhere In Ny 251"));
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn retrieve_by_path_as_object<T>(
+        self,
+        other: T,
+    ) -> dsl::RetrieveByPathAsObjectJson<Self, T::Expression>
+    where
+        T: AsExpression<Array<Text>>,
+    {
+        Grouped(RetrieveByPathAsObjectJson::new(self, other.as_expression()))
+    }
+
+    /// Creates a PostgreSQL `#>>` expression.
+    ///
+    /// This operator extracts the value associated with the given key, that is provided on the
+    /// Right Hand Side of the operator.
+    ///
+    /// Extracts n'th element of JSON array (array elements are indexed from zero, but negative integers count from the end).
+    /// Extracts JSON object field as Text with the given key.
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").execute(conn)
+    /// #        .unwrap();
+    /// #
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
+    ///     .execute(conn)?;
+    ///
+    /// let roberts_second_street_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.retrieve_by_path_as_text(vec!["1", "street"]))
+    ///                             .get_result::<String>(conn)?;
+    ///
+    /// assert_eq!(roberts_second_street_in_db, "Somewhere In Ny 251");
+    ///
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    /// ```
+    fn retrieve_by_path_as_text<T>(
+        self,
+        other: T,
+    ) -> dsl::RetrieveByPathAsTextJson<Self, T::Expression>
+    where
+        T: AsExpression<Array<Text>>,
+    {
+        Grouped(RetrieveByPathAsTextJson::new(self, other.as_expression()))
+    }
+}
+
+#[doc(hidden)]
+impl<T> PgAnyJsonExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: JsonOrNullableJsonOrJsonbOrNullableJsonb,
+{
+}
+
 mod private {
-    use crate::sql_types::{Array, Cidr, Inet, Jsonb, Nullable, Range, SqlType, Text};
+    use crate::sql_types::{
+        Array, Cidr, Inet, Integer, Json, Jsonb, Nullable, Range, SqlType, Text,
+    };
+    use crate::{Expression, IntoSql};
 
     /// Marker trait used to implement `ArrayExpressionMethods` on the appropriate
     /// types. Once coherence takes associated types into account, we can remove
@@ -1634,4 +2233,132 @@ mod private {
 
     impl JsonbOrNullableJsonb for Jsonb {}
     impl JsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+    /// A trait that describes valid json indices used by postgresql
+    pub trait JsonRemoveIndex {
+        /// The Expression node created by this index type
+        type Expression: Expression;
+
+        /// Convert a index value into the corresponding index expression
+        fn into_json_index_expression(self) -> Self::Expression;
+    }
+
+    impl<'a> JsonRemoveIndex for &'a str {
+        type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Text>()
+        }
+    }
+
+    impl JsonRemoveIndex for String {
+        type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Text>()
+        }
+    }
+
+    impl JsonRemoveIndex for Vec<String> {
+        type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Array<Text>>()
+        }
+    }
+
+    impl<'a> JsonRemoveIndex for Vec<&'a str> {
+        type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Array<Text>>()
+        }
+    }
+
+    impl<'a> JsonRemoveIndex for &'a [&'a str] {
+        type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Array<Text>>()
+        }
+    }
+
+    impl JsonRemoveIndex for i32 {
+        type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<crate::sql_types::Int4>()
+        }
+    }
+
+    impl<T> JsonRemoveIndex for T
+    where
+        T: Expression,
+        T::SqlType: TextArrayOrTextOrInteger,
+    {
+        type Expression = Self;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self
+        }
+    }
+
+    pub trait TextArrayOrTextOrInteger {}
+
+    impl TextArrayOrTextOrInteger for Array<Text> {}
+    impl TextArrayOrTextOrInteger for Text {}
+    impl TextArrayOrTextOrInteger for Integer {}
+
+    /// Marker trait used to implement `PgAnyJsonExpressionMethods` on the appropriate types.
+    pub trait JsonOrNullableJsonOrJsonbOrNullableJsonb {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Json {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Json> {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Jsonb {}
+    impl JsonOrNullableJsonOrJsonbOrNullableJsonb for Nullable<Jsonb> {}
+
+    pub trait JsonIndex {
+        type Expression: Expression;
+
+        fn into_json_index_expression(self) -> Self::Expression;
+    }
+
+    impl<'a> JsonIndex for &'a str {
+        type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Text>()
+        }
+    }
+
+    impl JsonIndex for String {
+        type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<Text>()
+        }
+    }
+
+    impl JsonIndex for i32 {
+        type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self.into_sql::<crate::sql_types::Int4>()
+        }
+    }
+
+    impl<T> JsonIndex for T
+    where
+        T: Expression,
+        T::SqlType: TextOrInteger,
+    {
+        type Expression = Self;
+
+        fn into_json_index_expression(self) -> Self::Expression {
+            self
+        }
+    }
+
+    pub trait TextOrInteger {}
+    impl TextOrInteger for Text {}
+    impl TextOrInteger for Integer {}
 }

@@ -105,3 +105,27 @@ pub type IsContainedByJsonb<Lhs, Rhs> =
 
 /// The return type of `lhs.index(rhs)`
 pub type ArrayIndex<Lhs, Rhs> = super::operators::ArrayIndex<Lhs, AsExprOf<Rhs, Integer>>;
+
+/// The return type of `lhs.remove(rhs)`
+pub type RemoveFromJsonb<Lhs, Rhs, ST> =
+    Grouped<super::operators::RemoveFromJsonb<Lhs, AsExprOf<Rhs, ST>>>;
+
+/// The return type of `lhs.retrieve_as_object(rhs)`
+pub type RetrieveAsObjectJson<Lhs, Rhs, ST> =
+    Grouped<super::operators::RetrieveAsObjectJson<Lhs, AsExprOf<Rhs, ST>>>;
+
+/// The return type of `lhs.retrieve_as_text(rhs)`
+pub type RetrieveAsTextJson<Lhs, Rhs, ST> =
+    Grouped<super::operators::RetrieveAsTextJson<Lhs, AsExprOf<Rhs, ST>>>;
+
+/// The return type of `lhs.retrieve_by_path_as_object(rhs)`
+pub type RetrieveByPathAsObjectJson<Lhs, Rhs> =
+    Grouped<super::operators::RetrieveByPathAsObjectJson<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;
+
+/// The return type of `lhs.retrieve_by_path_as_text(rhs)`
+pub type RetrieveByPathAsTextJson<Lhs, Rhs> =
+    Grouped<super::operators::RetrieveByPathAsTextJson<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;
+
+/// The return type of `lhs.remove_by_path(rhs)`
+pub type RemoveByPathFromJsonb<Lhs, Rhs> =
+    Grouped<super::operators::RemoveByPathFromJsonb<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;

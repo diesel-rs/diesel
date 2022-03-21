@@ -2,7 +2,9 @@ use crate::expression::expression_types::NotSelectable;
 use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
 use crate::query_builder::{QueryFragment, QueryId};
-use crate::sql_types::{Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType};
+use crate::sql_types::{
+    Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
+};
 
 __diesel_infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
 __diesel_infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
@@ -28,6 +30,22 @@ infix_operator!(HasAnyKeyJsonb, " ?| ", backend: Pg);
 infix_operator!(HasAllKeysJsonb, " ?& ", backend: Pg);
 infix_operator!(ContainsJsonb, " @> ", backend: Pg);
 infix_operator!(IsContainedByJsonb, " <@ ", backend: Pg);
+infix_operator!(RemoveFromJsonb, " - ", Jsonb, backend: Pg);
+__diesel_infix_operator!(
+    RetrieveAsObjectJson,
+    " -> ",
+    __diesel_internal_SameResultAsInput,
+    backend: Pg
+);
+infix_operator!(RetrieveAsTextJson, " ->> ", Text, backend: Pg);
+__diesel_infix_operator!(
+    RetrieveByPathAsObjectJson,
+    " #> ",
+    __diesel_internal_SameResultAsInput,
+    backend: Pg
+);
+infix_operator!(RetrieveByPathAsTextJson, " #>> ", Text, backend: Pg);
+infix_operator!(RemoveByPathFromJsonb, " #-", Jsonb, backend: Pg);
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]
