@@ -45,6 +45,7 @@ __diesel_infix_operator!(
     backend: Pg
 );
 infix_operator!(RetrieveByPathAsTextJson, " #>> ", Text, backend: Pg);
+infix_operator!(RemoveByPathFromJsonb, " #-", Jsonb, backend: Pg);
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]

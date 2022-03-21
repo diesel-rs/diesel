@@ -125,3 +125,7 @@ pub type RetrieveByPathAsObjectJson<Lhs, Rhs> =
 /// The return type of `lhs.retrieve_by_path_as_text(rhs)`
 pub type RetrieveByPathAsTextJson<Lhs, Rhs> =
     Grouped<super::operators::RetrieveByPathAsTextJson<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;
+
+/// The return type of `lhs.remove_by_path(rhs)`
+pub type RemoveByPathFromJsonb<Lhs, Rhs> =
+    Grouped<super::operators::RemoveByPathFromJsonb<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;

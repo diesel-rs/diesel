@@ -1682,6 +1682,119 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
             other.into_json_index_expression(),
         ))
     }
+
+    /// Creates a PostgreSQL `#-` expression.
+    ///
+    /// This operator removes the value associated with the given json path, that is provided on the
+    /// Right Hand Side of the operator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #    contacts {
+    /// #        id -> Integer,
+    /// #        name -> VarChar,
+    /// #        address -> Jsonb,
+    /// #    }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    ///
+    /// # #[cfg(feature = "serde_json")]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::contacts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS contacts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE contacts (
+    /// #         id SERIAL PRIMARY KEY,
+    /// #         name VARCHAR NOT NULL,
+    /// #         address JSONB NOT NULL
+    /// #     )").execute(conn)
+    /// #        .unwrap();
+    /// #
+    /// let santas_address: serde_json::Value = serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "postcode": "99705",
+    ///     "state": "Alaska"
+    /// });
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let santas_modified_address = contacts.select(address.remove("postcode")).get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(santas_modified_address, serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "state": "Alaska"
+    /// }));
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .execute(conn)?;
+    ///
+    /// let santas_modified_address = contacts.select(address.remove_by_path(vec!["postcode"])).get_result::<serde_json::Value>(conn)?;
+    /// assert_eq!(santas_modified_address, serde_json::json!({
+    ///     "street": "Article Circle Expressway 1",
+    ///     "city": "North Pole",
+    ///     "state": "Alaska"
+    /// }));
+    ///
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
+    /// diesel::insert_into(contacts)
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
+    ///     .execute(conn)?;
+    ///
+    /// let roberts_address_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.remove_by_path(vec!["1", "postcode"]))
+    ///                             .get_result::<serde_json::Value>(conn)?;
+    ///
+    /// let roberts_address = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    /// assert_eq!(roberts_address, roberts_address_in_db);
+    /// #     Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "serde_json"))]
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     Ok(())
+    /// # }
+    ///
+    fn remove_by_path<T>(self, other: T) -> dsl::RemoveByPathFromJsonb<Self, T::Expression>
+    where
+        T: AsExpression<Array<Text>>,
+    {
+        Grouped(RemoveByPathFromJsonb::new(self, other.as_expression()))
+    }
 }
 
 impl<T> PgJsonbExpressionMethods for T
