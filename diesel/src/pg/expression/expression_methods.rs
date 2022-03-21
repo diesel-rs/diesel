@@ -1677,7 +1677,10 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
         T: JsonRemoveIndex,
         <T::Expression as Expression>::SqlType: SqlType,
     {
-        Grouped(RemoveFromJsonb::new(self, other.as_json_index_expression()))
+        Grouped(RemoveFromJsonb::new(
+            self,
+            other.into_json_index_expression(),
+        ))
     }
 }
 
@@ -1789,7 +1792,7 @@ pub trait PgAnyJsonExpressionMethods: Expression + Sized {
     {
         Grouped(RetrieveAsObjectJson::new(
             self,
-            other.as_json_index_expression(),
+            other.into_json_index_expression(),
         ))
     }
 
@@ -1891,7 +1894,7 @@ pub trait PgAnyJsonExpressionMethods: Expression + Sized {
     {
         Grouped(RetrieveAsTextJson::new(
             self,
-            other.as_json_index_expression(),
+            other.into_json_index_expression(),
         ))
     }
 
@@ -1931,18 +1934,31 @@ pub trait PgAnyJsonExpressionMethods: Expression + Sized {
     /// #     )").execute(conn)
     /// #        .unwrap();
     /// #
-    /// let santas_address: serde_json::Value = serde_json::json!({
-    ///     "street": "Article Circle Expressway 1",
-    ///     "city": "North Pole",
-    ///     "postcode": "99705",
-    ///     "state": "Alaska"
-    /// });
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
     /// diesel::insert_into(contacts)
-    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
     ///     .execute(conn)?;
     ///
-    /// let santas_postcode = contacts.select(address.retrieve_by_path_as_object(vec!["postcode"])).get_result::<serde_json::Value>(conn)?;
-    /// assert_eq!(santas_postcode, serde_json::json!("99705"));
+    /// let roberts_second_street_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.retrieve_by_path_as_object(vec!["1", "street"]))
+    ///                             .get_result::<serde_json::Value>(conn)?;
+    ///
+    /// assert_eq!(roberts_second_street_in_db, serde_json::json!("Somewhere In Ny 251"));
     /// #     Ok(())
     /// # }
     /// # #[cfg(not(feature = "serde_json"))]
@@ -1996,18 +2012,31 @@ pub trait PgAnyJsonExpressionMethods: Expression + Sized {
     /// #     )").execute(conn)
     /// #        .unwrap();
     /// #
-    /// let santas_address: serde_json::Value = serde_json::json!({
-    ///     "street": "Article Circle Expressway 1",
-    ///     "city": "North Pole",
-    ///     "postcode": "99705",
-    ///     "state": "Alaska"
-    /// });
+    /// let robert_downey_jr_addresses: serde_json::Value = serde_json::json!([
+    ///     {
+    ///         "street": "Somewhere In La 251",
+    ///         "city": "Los Angeles",
+    ///         "postcode": "12231223",
+    ///         "state": "California"
+    ///     },
+    ///     {
+    ///         "street": "Somewhere In Ny 251",
+    ///         "city": "New York",
+    ///         "postcode": "3213212",
+    ///         "state": "New York"
+    ///     }
+    /// ]);
+    ///
     /// diesel::insert_into(contacts)
-    ///     .values((name.eq("Claus"), address.eq(&santas_address)))
+    ///     .values((name.eq("Robert Downey Jr."), address.eq(&robert_downey_jr_addresses)))
     ///     .execute(conn)?;
     ///
-    /// let santas_postcode = contacts.select(address.retrieve_by_path_as_text(vec!["postcode"])).get_result::<String>(conn)?;
-    /// assert_eq!(santas_postcode, "99705");
+    /// let roberts_second_street_in_db = contacts
+    ///                             .filter(name.eq("Robert Downey Jr."))
+    ///                             .select(address.retrieve_by_path_as_text(vec!["1", "street"]))
+    ///                             .get_result::<String>(conn)?;
+    ///
+    /// assert_eq!(roberts_second_street_in_db, "Somewhere In Ny 251");
     ///
     /// #     Ok(())
     /// # }
@@ -2098,13 +2127,13 @@ mod private {
         type Expression: Expression;
 
         /// Convert a index value into the corresponding index expression
-        fn as_json_index_expression(self) -> Self::Expression;
+        fn into_json_index_expression(self) -> Self::Expression;
     }
 
     impl<'a> JsonRemoveIndex for &'a str {
         type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<Text>()
         }
     }
@@ -2112,7 +2141,7 @@ mod private {
     impl JsonRemoveIndex for String {
         type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<Text>()
         }
     }
@@ -2120,7 +2149,7 @@ mod private {
     impl JsonRemoveIndex for Vec<String> {
         type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<Array<Text>>()
         }
     }
@@ -2128,7 +2157,7 @@ mod private {
     impl<'a> JsonRemoveIndex for Vec<&'a str> {
         type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<Array<Text>>()
         }
     }
@@ -2136,7 +2165,7 @@ mod private {
     impl<'a> JsonRemoveIndex for &'a [&'a str] {
         type Expression = crate::dsl::AsExprOf<Self, Array<Text>>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<Array<Text>>()
         }
     }
@@ -2144,7 +2173,7 @@ mod private {
     impl JsonRemoveIndex for i32 {
         type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<crate::sql_types::Int4>()
         }
     }
@@ -2156,7 +2185,7 @@ mod private {
     {
         type Expression = Self;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self
         }
     }
@@ -2177,13 +2206,13 @@ mod private {
     pub trait JsonIndex {
         type Expression: Expression;
 
-        fn as_json_index_expression(self) -> Self::Expression;
+        fn into_json_index_expression(self) -> Self::Expression;
     }
 
     impl<'a> JsonIndex for &'a str {
         type Expression = crate::dsl::AsExprOf<&'a str, crate::sql_types::Text>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<Text>()
         }
     }
@@ -2191,7 +2220,7 @@ mod private {
     impl JsonIndex for String {
         type Expression = crate::dsl::AsExprOf<String, crate::sql_types::Text>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<Text>()
         }
     }
@@ -2199,7 +2228,7 @@ mod private {
     impl JsonIndex for i32 {
         type Expression = crate::dsl::AsExprOf<i32, crate::sql_types::Int4>;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self.into_sql::<crate::sql_types::Int4>()
         }
     }
@@ -2211,7 +2240,7 @@ mod private {
     {
         type Expression = Self;
 
-        fn as_json_index_expression(self) -> Self::Expression {
+        fn into_json_index_expression(self) -> Self::Expression {
             self
         }
     }
