@@ -1,6 +1,6 @@
 use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::Connection;
-use crate::result::{Error, QueryResult};
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use std::borrow::Cow;
 use std::num::NonZeroU32;
 
@@ -73,7 +73,7 @@ pub struct AnsiTransactionManager {
 }
 
 /// Status of the transaction manager
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum TransactionManagerStatus {
     /// Valid status, the manager can run operations
     Valid(ValidTransactionManagerStatus),
@@ -107,10 +107,10 @@ impl TransactionManagerStatus {
 
 /// Valid transaction status for the manager. Can return the current transaction depth
 #[allow(missing_copy_implementations)]
-#[derive(Debug, PartialEq, Eq, Default)]
+#[derive(Debug, Default)]
 pub struct ValidTransactionManagerStatus {
     pub(super) transaction_depth: Option<NonZeroU32>,
-    pub(crate) previous_serialization_error: Option<String>,
+    pub(crate) previous_error_relevant_for_rollback: Option<(DatabaseErrorKind, String)>,
 }
 
 impl ValidTransactionManagerStatus {
@@ -224,17 +224,17 @@ where
             )),
         };
 
-        if let Some(msg) = transaction_state.previous_serialization_error.take() {
+        if let Some((kind, msg)) = transaction_state
+            .previous_error_relevant_for_rollback
+            .take()
+        {
             // we can safely ignore the result here
             // as the only other error than the "rollback error" variants
             // is failing to load the transaction state, but that's something
             // we have already done above
             let _ = process_commit_error(
                 conn,
-                crate::result::Error::DatabaseError(
-                    crate::result::DatabaseErrorKind::SerializationFailure,
-                    Box::new(String::new()),
-                ),
+                crate::result::Error::DatabaseError(kind, Box::new(String::new())),
                 rollback_sql,
             );
             let transaction_state = Self::get_transaction_state(conn)?;
@@ -244,12 +244,9 @@ where
                 .unwrap_or_default()
                 > 0
             {
-                transaction_state.previous_serialization_error = Some(msg.clone());
+                transaction_state.previous_error_relevant_for_rollback = Some((kind, msg.clone()));
             }
-            return Err(crate::result::Error::DatabaseError(
-                crate::result::DatabaseErrorKind::SerializationFailure,
-                Box::new(msg),
-            ));
+            return Err(crate::result::Error::DatabaseError(kind, Box::new(msg)));
         }
         let result = conn.batch_execute(&*rollback_sql);
         let state = Self::get_transaction_state(conn)?;
@@ -309,8 +306,9 @@ where
             }
             Err(e) => {
                 let transaction_state = Self::get_transaction_state(conn)?;
-                let is_serialization_error =
-                    transaction_state.previous_serialization_error.is_some();
+                let is_serialization_error = transaction_state
+                    .previous_error_relevant_for_rollback
+                    .is_some();
 
                 Self::rollback_transaction(conn).map_err(|e| {
                     if is_serialization_error {
@@ -540,10 +538,10 @@ mod test {
             result,
             Err(Error::CommitTransactionFailed{commit_error, ..}) if matches!(&*commit_error, Error::DatabaseError(DatabaseErrorKind::Unknown, _))
         ));
-        assert_eq!(
+        assert!(matches!(
             *<AnsiTransactionManager as TransactionManager<mock::MockConnection>>::transaction_manager_status_mut(
                 &mut conn),
-            TransactionManagerStatus::InError
+            TransactionManagerStatus::InError)
         );
         // Ensure the transaction manager is unusable
         let result = conn.transaction(|_conn| Ok(()));

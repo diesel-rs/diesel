@@ -108,8 +108,8 @@ impl Connection for MysqlConnection {
             let stmt = self.prepared_query(source)?;
             let res = unsafe { stmt.execute() };
             match res {
-                Err(e) => e,
                 Ok(stmt_use) => return Ok(stmt_use.affected_rows()),
+                Err(e) => e,
             }
         };
         if let Error::DatabaseError(DatabaseErrorKind::SerializationFailure, msg) = err {
@@ -117,7 +117,10 @@ impl Connection for MysqlConnection {
                 status: TransactionManagerStatus::Valid(ref mut valid),
             } = self.transaction_state
             {
-                valid.previous_serialization_error = Some(msg.message().to_owned())
+                valid.previous_error_relevant_for_rollback = Some((
+                    DatabaseErrorKind::SerializationFailure,
+                    msg.message().to_owned(),
+                ))
             }
             Err(Error::DatabaseError(
                 DatabaseErrorKind::SerializationFailure,

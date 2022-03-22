@@ -111,7 +111,7 @@ mod tests {
         let state = ValidTransactionManagerStatus {
             // Transaction depth == 1, so one unnested transaction
             transaction_depth: NonZeroU32::new(1),
-            previous_serialization_error: None,
+            previous_error_relevant_for_rollback: None,
         };
         let error = Error::DatabaseError(
             DatabaseErrorKind::ReadOnlyTransaction,
@@ -130,7 +130,7 @@ mod tests {
         let state = ValidTransactionManagerStatus {
             // Transaction depth == 2, so two nested transactions
             transaction_depth: NonZeroU32::new(2),
-            previous_serialization_error: None,
+            previous_error_relevant_for_rollback: None,
         };
         let error = Error::DatabaseError(
             DatabaseErrorKind::ReadOnlyTransaction,
@@ -147,7 +147,7 @@ mod tests {
             // Transaction depth == None, so no transaction running, so nothing
             // to rollback. Something went wrong so mark everything as broken.
             transaction_depth: None,
-            previous_serialization_error: None,
+            previous_error_relevant_for_rollback: None,
         };
         let error = Error::DatabaseError(
             DatabaseErrorKind::ReadOnlyTransaction,
