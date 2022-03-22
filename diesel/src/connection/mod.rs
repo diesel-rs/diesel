@@ -291,18 +291,7 @@ where
         F: FnOnce(&mut Self) -> Result<T, E>,
         E: From<Error>,
     {
-        Self::TransactionManager::begin_transaction(self)?;
-        match f(&mut *self) {
-            Ok(value) => {
-                Self::TransactionManager::commit_transaction(self)?;
-                Ok(value)
-            }
-            Err(e) => {
-                Self::TransactionManager::rollback_transaction(self)
-                    .map_err(|e| Error::RollbackError(Box::new(e)))?;
-                Err(e)
-            }
-        }
+        Self::TransactionManager::transaction(self, f)
     }
 
     /// Creates a transaction that will never be committed. This is useful for

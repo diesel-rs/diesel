@@ -104,9 +104,28 @@ impl Connection for MysqlConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let stmt = self.prepared_query(source)?;
-        let stmt_use = unsafe { stmt.execute()? };
-        Ok(stmt_use.affected_rows())
+        let err = {
+            let stmt = self.prepared_query(source)?;
+            let res = unsafe { stmt.execute() };
+            match res {
+                Err(e) => e,
+                Ok(stmt_use) => return Ok(stmt_use.affected_rows()),
+            }
+        };
+        if let Error::DatabaseError(DatabaseErrorKind::SerializationFailure, msg) = err {
+            if let AnsiTransactionManager {
+                status: TransactionManagerStatus::Valid(ref mut valid),
+            } = self.transaction_state
+            {
+                valid.previous_serialization_error = Some(msg.message().to_owned())
+            }
+            Err(Error::DatabaseError(
+                DatabaseErrorKind::SerializationFailure,
+                msg,
+            ))
+        } else {
+            Err(err)
+        }
     }
 
     #[doc(hidden)]
