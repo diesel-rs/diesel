@@ -42,7 +42,7 @@ allow_tables_to_appear_in_same_query!(users, posts, comments);
 #[derive(
     PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
 )]
-#[diesel(table_name = users)]
+#[table_name = "users"]
 pub struct User {
     pub id: i32,
     pub name: String,
@@ -50,8 +50,7 @@ pub struct User {
 }
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
-#[diesel(table_name = users)]
-#[diesel(treat_none_as_default_value = false)]
+#[table_name = "users"]
 pub struct NewUser {
     pub name: String,
     pub hair_color: Option<String>,
@@ -67,8 +66,8 @@ impl NewUser {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName)]
-#[diesel(belongs_to(User))]
-#[diesel(table_name = posts)]
+#[belongs_to(User)]
+#[table_name = "posts"]
 pub struct Post {
     pub id: i32,
     pub user_id: i32,
@@ -76,8 +75,25 @@ pub struct Post {
     pub body: Option<String>,
 }
 
+use diesel::sql_types::*;
+
+#[derive(QueryableByName)]
+pub struct UserWithOptionalPost {
+    #[diesel(embed)]
+    pub user: User,
+    #[column_name = "post_id"]
+    #[sql_type = "Nullable<Integer>"]
+    pub id: Option<i32>,
+    #[sql_type = "Nullable<Text>"]
+    pub user_id: Option<String>,
+    #[sql_type = "Nullable<Text>"]
+    pub title: Option<String>,
+    #[sql_type = "Nullable<Text>"]
+    pub body: Option<String>,
+}
+
 #[derive(Insertable)]
-#[diesel(table_name = posts)]
+#[table_name = "posts"]
 pub struct NewPost {
     user_id: i32,
     title: String,
@@ -95,7 +111,7 @@ impl NewPost {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[diesel(belongs_to(Post))]
+#[belongs_to(Post)]
 pub struct Comment {
     id: i32,
     post_id: i32,
@@ -103,10 +119,10 @@ pub struct Comment {
 }
 
 #[derive(Debug, Clone, Copy, Insertable)]
-#[diesel(table_name = comments)]
+#[table_name = "comments"]
 pub struct NewComment<'a>(
-    #[diesel(column_name = post_id)] pub i32,
-    #[diesel(column_name = text)] pub &'a str,
+    #[column_name = "post_id"] pub i32,
+    #[column_name = "text"] pub &'a str,
 );
 
 #[cfg(feature = "mysql")]
@@ -183,7 +199,7 @@ fn insert_users<F: Fn(usize) -> Option<&'static str>, const N: usize>(
 
     // There are stackoverflows on windows otherwise
     if N > 1_000 {
-        let mut data = Box::new([DUMMY_USER; N]);
+        let mut data = vec![DUMMY_USER; N];
 
         for (idx, user) in data.iter_mut().enumerate() {
             *user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
@@ -194,7 +210,7 @@ fn insert_users<F: Fn(usize) -> Option<&'static str>, const N: usize>(
             .execute(conn)
             .unwrap();
     } else {
-        let mut data = [DUMMY_USER; N];
+        let mut data = vec![DUMMY_USER; N];
 
         for (idx, user) in data.iter_mut().enumerate() {
             *user = NewUser::new(&format!("User {}", idx), hair_color_init(idx));
@@ -310,10 +326,10 @@ pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize
 
     b.iter(|| {
         diesel::sql_query(
-            "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
+            "SELECT u.id, u.name, u.hair_color, p.id as post_id, p.user_id, p.title, p.body \
              FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
         )
-        .load::<(User, Option<Post>)>(&mut conn)
+        .load::<UserWithOptionalPost>(&mut conn)
         .unwrap()
     })
 }

@@ -52,7 +52,6 @@ fn database_url_from_env(backend_specific_env_var: &str) -> String {
 }
 
 fn main() {
-    use migrations::MigrationHarness;
     use std::path::PathBuf;
 
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -60,9 +59,15 @@ fn main() {
         .join("..")
         .join("migrations")
         .join(MIGRATION_SUBDIR);
-    let migrations = migrations::FileBasedMigrations::from_path(&migrations_dir).unwrap();
 
     println!("cargo:rerun-if-changed={}", migrations_dir.display());
 
-    connection().run_pending_migrations(migrations).unwrap();
+    let conn = connection();
+
+    diesel_migrations::run_pending_migrations_in_directory(
+        &conn,
+        &migrations_dir,
+        &mut std::io::stdout(),
+    )
+    .unwrap()
 }

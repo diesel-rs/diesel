@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate diesel;
+
 #[cfg(all(feature = "diesel-async", any(feature = "postgres", feature = "mysql")))]
 mod diesel_async_benches;
 mod diesel_benches;
