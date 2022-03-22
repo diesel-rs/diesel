@@ -5,12 +5,14 @@ use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Bool, Pg> for bool {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         Ok(bytes.as_bytes()[0] != 0)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Bool, Pg> for bool {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(&[*self as u8])
@@ -24,6 +26,7 @@ impl ToSql<sql_types::Bool, Pg> for bool {
 /// impl in terms of `String`, but don't want to allocate. We have to return a
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Text, Pg> for *const str {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         use std::str;
@@ -37,6 +40,7 @@ impl FromSql<sql_types::Text, Pg> for *const str {
 /// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
 /// raw pointer instead of a reference with a lifetime due to the structure of
 /// `FromSql`
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Binary, Pg> for *const [u8] {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes() as *const _)

@@ -8,6 +8,7 @@ use crate::query_builder::bind_collector::ByteWrapper;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Array, HasSqlType, Nullable};
 
+#[cfg(feature = "postgres_backend")]
 impl<T> HasSqlType<Array<T>> for Pg
 where
     Pg: HasSqlType<T>,
@@ -20,6 +21,7 @@ where
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Array<ST>, Pg> for Vec<T>
 where
     T: FromSql<ST, Pg>,
@@ -61,6 +63,7 @@ use crate::expression::AsExpression;
 
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {
+        #[cfg(feature = "postgres_backend")]
         impl<'a, 'b, ST: 'static, T> AsExpression<$sql_type> for $ty {
             type Expression = Bound<$sql_type, Self>;
 
@@ -82,6 +85,7 @@ array_as_expression!(&'a Vec<T>, Nullable<Array<ST>>);
 array_as_expression!(&'a &'b Vec<T>, Array<ST>);
 array_as_expression!(&'a &'b Vec<T>, Nullable<Array<ST>>);
 
+#[cfg(feature = "postgres_backend")]
 impl<ST, T> ToSql<Array<ST>, Pg> for [T]
 where
     Pg: HasSqlType<ST>,
@@ -123,6 +127,7 @@ where
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for [T]
 where
     [T]: ToSql<Array<ST>, Pg>,
@@ -133,6 +138,7 @@ where
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<ST, T> ToSql<Array<ST>, Pg> for Vec<T>
 where
     ST: 'static,
@@ -144,6 +150,7 @@ where
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<ST, T> ToSql<Nullable<Array<ST>>, Pg> for Vec<T>
 where
     ST: 'static,

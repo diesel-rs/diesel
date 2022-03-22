@@ -20,6 +20,7 @@ macro_rules! tuple_impls {
             $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
         }
     )+) => {$(
+        #[cfg(feature = "postgres_backend")]
         impl<$($T,)+ $($ST,)+> FromSql<Record<($($ST,)+)>, Pg> for ($($T,)+)
         where
             $($T: FromSql<$ST, Pg>,)+
@@ -69,6 +70,7 @@ macro_rules! tuple_impls {
             }
         }
 
+        #[cfg(feature = "postgres_backend")]
         impl<$($T,)+ $($ST,)+> Queryable<Record<($($ST,)+)>, Pg> for ($($T,)+)
         where Self: FromSql<Record<($($ST,)+)>, Pg>
         {
@@ -79,6 +81,7 @@ macro_rules! tuple_impls {
             }
         }
 
+        #[cfg(feature = "postgres_backend")]
         impl<$($T,)+ $($ST,)+> AsExpression<Record<($($ST,)+)>> for ($($T,)+)
         where
             $($ST: SqlType + TypedExpressionType,)+
@@ -94,6 +97,7 @@ macro_rules! tuple_impls {
             }
         }
 
+        #[cfg(feature = "postgres_backend")]
         impl<$($T,)+ $($ST,)+> WriteTuple<($($ST,)+)> for ($($T,)+)
         where
             $($T: ToSql<$ST, Pg>,)+

@@ -84,54 +84,63 @@ impl PgInterval {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Timestamp, Pg> for PgTimestamp {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Timestamp, Pg> for PgTimestamp {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         FromSql::<sql_types::BigInt, Pg>::from_sql(bytes).map(PgTimestamp)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Timestamptz, Pg> for PgTimestamp {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::Timestamp, Pg>::to_sql(self, out)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Timestamptz, Pg> for PgTimestamp {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         FromSql::<sql_types::Timestamp, Pg>::from_sql(bytes)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Date, Pg> for PgDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::Integer, Pg>::to_sql(&self.0, out)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Date, Pg> for PgDate {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         FromSql::<sql_types::Integer, Pg>::from_sql(bytes).map(PgDate)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Time, Pg> for PgTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::BigInt, Pg>::to_sql(&self.0, out)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Time, Pg> for PgTime {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         FromSql::<sql_types::BigInt, Pg>::from_sql(bytes).map(PgTime)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Interval, Pg> for PgInterval {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<sql_types::BigInt, Pg>::to_sql(&self.microseconds, out)?;
@@ -141,6 +150,7 @@ impl ToSql<sql_types::Interval, Pg> for PgInterval {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Interval, Pg> for PgInterval {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         Ok(PgInterval {

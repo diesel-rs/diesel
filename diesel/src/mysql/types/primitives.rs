@@ -46,6 +46,7 @@ fn f64_to_i64(f: f64) -> deserialize::Result<i64> {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<SmallInt, Mysql> for i16 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -76,6 +77,7 @@ impl FromSql<SmallInt, Mysql> for i16 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Integer, Mysql> for i32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -106,6 +108,7 @@ impl FromSql<Integer, Mysql> for i32 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<BigInt, Mysql> for i64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -120,6 +123,7 @@ impl FromSql<BigInt, Mysql> for i64 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Float, Mysql> for f32 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -134,6 +138,7 @@ impl FromSql<Float, Mysql> for f32 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Double, Mysql> for f64 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         match value.numeric_value()? {
@@ -148,12 +153,14 @@ impl FromSql<Double, Mysql> for f64 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Text, Mysql> for String {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         String::from_utf8(value.as_bytes().into()).map_err(Into::into)
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Binary, Mysql> for Vec<u8> {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes().into())

@@ -8,6 +8,7 @@ mod bigdecimal {
     use crate::serialize::{self, IsNull, Output, ToSql};
     use crate::sql_types::Numeric;
 
+    #[cfg(all(feature = "mysql_backend", feature = "bigdecimal"))]
     impl ToSql<Numeric, Mysql> for BigDecimal {
         fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
             write!(out, "{}", *self)
@@ -16,6 +17,7 @@ mod bigdecimal {
         }
     }
 
+    #[cfg(all(feature = "mysql_backend", feature = "bigdecimal"))]
     impl FromSql<Numeric, Mysql> for BigDecimal {
         fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
             match value.numeric_value()? {

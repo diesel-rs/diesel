@@ -286,109 +286,109 @@ pub mod helper_types {
     #[doc(inline)]
     pub use crate::expression::helper_types::*;
 
-    /// Represents the return type of `.select(selection)`
+    /// Represents the return type of [`.select(selection)`](crate::prelude::QueryDsl::select)
     pub type Select<Source, Selection> = <Source as SelectDsl<Selection>>::Output;
 
-    /// Represents the return type of `diesel::select(selection)`
+    /// Represents the return type of [`diesel::select(selection)`](crate::select)
     pub type BareSelect<Selection> = crate::query_builder::SelectStatement<
         crate::query_builder::NoFromClause,
         SelectClause<Selection>,
     >;
 
-    /// Represents the return type of `.filter(predicate)`
+    /// Represents the return type of [`.filter(predicate)`](crate::prelude::QueryDsl::filter)
     pub type Filter<Source, Predicate> = <Source as FilterDsl<Predicate>>::Output;
 
-    /// Represents the return type of `.filter(lhs.eq(rhs))`
+    /// Represents the return type of [`.filter(lhs.eq(rhs))`](crate::prelude::QueryDsl::filter)
     pub type FindBy<Source, Column, Value> = Filter<Source, Eq<Column, Value>>;
 
-    /// Represents the return type of `.for_update()`
+    /// Represents the return type of [`.for_update()`](crate::prelude::QueryDsl::for_update)
     pub type ForUpdate<Source> = <Source as LockingDsl<lock::ForUpdate>>::Output;
 
-    /// Represents the return type of `.for_no_key_update()`
+    /// Represents the return type of [`.for_no_key_update()`](crate::prelude::QueryDsl::for_no_key_update)
     pub type ForNoKeyUpdate<Source> = <Source as LockingDsl<lock::ForNoKeyUpdate>>::Output;
 
-    /// Represents the return type of `.for_share()`
+    /// Represents the return type of [`.for_share()`](crate::prelude::QueryDsl::for_share)
     pub type ForShare<Source> = <Source as LockingDsl<lock::ForShare>>::Output;
 
-    /// Represents the return type of `.for_key_share()`
+    /// Represents the return type of [`.for_key_share()`](crate::prelude::QueryDsl::for_key_share)
     pub type ForKeyShare<Source> = <Source as LockingDsl<lock::ForKeyShare>>::Output;
 
-    /// Represents the return type of `.skip_locked()`
+    /// Represents the return type of [`.skip_locked()`](crate::prelude::QueryDsl::skip_locked)
     pub type SkipLocked<Source> = <Source as ModifyLockDsl<lock::SkipLocked>>::Output;
 
-    /// Represents the return type of `.no_wait()`
+    /// Represents the return type of [`.no_wait()`](crate::prelude::QueryDsl::no_wait)
     pub type NoWait<Source> = <Source as ModifyLockDsl<lock::NoWait>>::Output;
 
-    /// Represents the return type of `.find(pk)`
+    /// Represents the return type of [`.find(pk)`](crate::prelude::QueryDsl::find)
     pub type Find<Source, PK> = <Source as FindDsl<PK>>::Output;
 
-    /// Represents the return type of `.or_filter(predicate)`
+    /// Represents the return type of [`.or_filter(predicate)`](crate::prelude::QueryDsl::or_filter)
     pub type OrFilter<Source, Predicate> = <Source as OrFilterDsl<Predicate>>::Output;
 
-    /// Represents the return type of `.order(ordering)`
+    /// Represents the return type of [`.order(ordering)`](crate::prelude::QueryDsl::order)
     pub type Order<Source, Ordering> = <Source as OrderDsl<Ordering>>::Output;
 
-    /// Represents the return type of `.then_order_by(ordering)`
+    /// Represents the return type of [`.then_order_by(ordering)`](crate::prelude::QueryDsl::then_order_by)
     pub type ThenOrderBy<Source, Ordering> = <Source as ThenOrderDsl<Ordering>>::Output;
 
-    /// Represents the return type of `.limit()`
+    /// Represents the return type of [`.limit()`](crate::prelude::QueryDsl::limit)
     pub type Limit<Source> = <Source as LimitDsl>::Output;
 
-    /// Represents the return type of `.offset()`
+    /// Represents the return type of [`.offset()`](crate::prelude::QueryDsl::offset)
     pub type Offset<Source> = <Source as OffsetDsl>::Output;
 
-    /// Represents the return type of `.inner_join(rhs)`
+    /// Represents the return type of [`.inner_join(rhs)`](crate::prelude::QueryDsl::inner_join)
     pub type InnerJoin<Source, Rhs> =
         <Source as JoinWithImplicitOnClause<Rhs, joins::Inner>>::Output;
 
-    /// Represents the return type of `.inner_join(rhs.on(on))`
+    /// Represents the return type of [`.inner_join(rhs.on(on))`](crate::prelude::QueryDsl::inner_join)
     pub type InnerJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::Inner, On>>::Output;
 
-    /// Represents the return type of `.left_join(rhs)`
+    /// Represents the return type of [`.left_join(rhs)`](crate::prelude::QueryDsl::left_join)
     pub type LeftJoin<Source, Rhs> =
         <Source as JoinWithImplicitOnClause<Rhs, joins::LeftOuter>>::Output;
 
-    /// Represents the return type of `.left_join(rhs.on(on))`
+    /// Represents the return type of [`.left_join(rhs.on(on))`](crate::prelude::QueryDsl::left_join)
     pub type LeftJoinOn<Source, Rhs, On> =
         <Source as InternalJoinDsl<Rhs, joins::LeftOuter, On>>::Output;
 
-    /// Represents the return type of `rhs.on(on)`
+    /// Represents the return type of [`rhs.on(on)`](crate::query_dsl::JoinOnDsl::on)
     pub type On<Source, On> = joins::OnClauseWrapper<Source, On>;
 
     use super::associations::HasTable;
     use super::query_builder::{AsChangeset, IntoUpdateTarget, UpdateStatement};
 
-    /// Represents the return type of `update(lhs).set(rhs)`
+    /// Represents the return type of [`update(lhs).set(rhs)`](crate::query_builder::UpdateStatement::set)
     pub type Update<Target, Changes> = UpdateStatement<
         <Target as HasTable>::Table,
         <Target as IntoUpdateTarget>::WhereClause,
         <Changes as AsChangeset>::Changeset,
     >;
 
-    /// Represents the return type of `.into_boxed::<'a, DB>()`
+    /// Represents the return type of [`.into_boxed::<'a, DB>()`](crate::prelude::QueryDsl::into_boxed)
     pub type IntoBoxed<'a, Source, DB> = <Source as BoxedDsl<'a, DB>>::Output;
 
-    /// Represents the return type of `.distinct()`
+    /// Represents the return type of [`.distinct()`](crate::prelude::QueryDsl::distinct)
     pub type Distinct<Source> = <Source as DistinctDsl>::Output;
 
-    /// Represents the return type of `.distinct_on(expr)`
+    /// Represents the return type of [`.distinct_on(expr)`](crate::prelude::QueryDsl::distinct_on)
     #[cfg(feature = "postgres_backend")]
     pub type DistinctOn<Source, Expr> = <Source as DistinctOnDsl<Expr>>::Output;
 
-    /// Represents the return type of `.single_value()`
+    /// Represents the return type of [`.single_value()`](SingleValueDsl::single_value)
     pub type SingleValue<Source> = <Source as SingleValueDsl>::Output;
 
-    /// Represents the return type of `.nullable()`
+    /// Represents the return type of [`.nullable()`](SelectNullableDsl::nullable)
     pub type NullableSelect<Source> = <Source as SelectNullableDsl>::Output;
 
-    /// Represents the return type of `.group_by(expr)`
+    /// Represents the return type of [`.group_by(expr)`](crate::prelude::QueryDsl::group_by)
     pub type GroupBy<Source, Expr> = <Source as GroupByDsl<Expr>>::Output;
 
-    /// Represents the return type of `.having(predicate)`
+    /// Represents the return type of [`.having(predicate)`](crate::prelude::QueryDsl::having)
     pub type Having<Source, Predicate> = <Source as HavingDsl<Predicate>>::Output;
 
-    /// Represents the return type of `.union(rhs)`
+    /// Represents the return type of [`.union(rhs)`](crate::prelude::CombineDsl::union)
     pub type Union<Source, Rhs> = CombinationClause<
         combination_clause::Union,
         combination_clause::Distinct,
@@ -396,7 +396,7 @@ pub mod helper_types {
         <Rhs as AsQuery>::Query,
     >;
 
-    /// Represents the return type of `.union_all(rhs)`
+    /// Represents the return type of [`.union_all(rhs)`](crate::prelude::CombineDsl::union_all)
     pub type UnionAll<Source, Rhs> = CombinationClause<
         combination_clause::Union,
         combination_clause::All,
@@ -404,7 +404,7 @@ pub mod helper_types {
         <Rhs as AsQuery>::Query,
     >;
 
-    /// Represents the return type of `.intersect(rhs)`
+    /// Represents the return type of [`.intersect(rhs)`](crate::prelude::CombineDsl::intersect)
     pub type Intersect<Source, Rhs> = CombinationClause<
         combination_clause::Intersect,
         combination_clause::Distinct,
@@ -412,7 +412,7 @@ pub mod helper_types {
         <Rhs as AsQuery>::Query,
     >;
 
-    /// Represents the return type of `.intersect_all(rhs)`
+    /// Represents the return type of [`.intersect_all(rhs)`](crate::prelude::CombineDsl::intersect_all)
     pub type IntersectAll<Source, Rhs> = CombinationClause<
         combination_clause::Intersect,
         combination_clause::All,
@@ -420,7 +420,7 @@ pub mod helper_types {
         <Rhs as AsQuery>::Query,
     >;
 
-    /// Represents the return type of `.except(rhs)`
+    /// Represents the return type of [`.except(rhs)`](crate::prelude::CombineDsl::except)
     pub type Except<Source, Rhs> = CombinationClause<
         combination_clause::Except,
         combination_clause::Distinct,
@@ -428,7 +428,7 @@ pub mod helper_types {
         <Rhs as AsQuery>::Query,
     >;
 
-    /// Represents the return type of `.except_all(rhs)`
+    /// Represents the return type of [`.except_all(rhs)`](crate::prelude::CombineDsl::except_all)
     pub type ExceptAll<Source, Rhs> = CombinationClause<
         combination_clause::Except,
         combination_clause::All,
@@ -460,7 +460,8 @@ pub mod helper_types {
 
     /// Maps `F` to `Alias<S>`
     ///
-    /// Any column `F` that belongs to `S::Table` will be transformed into `AliasedField<S, Self>`
+    /// Any column `F` that belongs to `S::Table` will be transformed into
+    /// [`AliasedField<S, Self>`](crate::query_source::AliasedField)
     ///
     /// Any column `F` that does not belong to `S::Table` will be left untouched.
     ///

@@ -7,6 +7,7 @@ use crate::expression::{AsExpression, Expression};
 use crate::sql_types::SqlType;
 
 /// Sqlite specific methods which are present on all expressions.
+#[cfg(feature = "sqlite")]
 pub trait SqliteExpressionMethods: Expression + Sized {
     /// Creates a Sqlite `IS` expression.
     ///

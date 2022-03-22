@@ -18,6 +18,7 @@ mod foreign_derives {
     struct ByteArrayProxy([u8; 6]);
 }
 
+#[cfg(all(feature = "postgres_backend", feature = "network-address"))]
 impl FromSql<MacAddr, Pg> for [u8; 6] {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         value
@@ -27,6 +28,7 @@ impl FromSql<MacAddr, Pg> for [u8; 6] {
     }
 }
 
+#[cfg(all(feature = "postgres_backend", feature = "network-address"))]
 impl ToSql<MacAddr, Pg> for [u8; 6] {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(&self[..])

@@ -14,12 +14,14 @@ use crate::sql_types::*;
 use crate::sql_types::{self, ops::*};
 use byteorder::{NativeEndian, WriteBytesExt};
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<TinyInt, Mysql> for i8 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         out.write_i8(*self).map(|_| IsNull::No).map_err(Into::into)
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<TinyInt, Mysql> for i8 {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         let bytes = value.as_bytes();
@@ -64,12 +66,14 @@ where
     type Output = Unsigned<T::Output>;
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<Unsigned<TinyInt>, Mysql> for u8 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         ToSql::<TinyInt, Mysql>::to_sql(&(*self as i8), &mut out.reborrow())
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Unsigned<TinyInt>, Mysql> for u8 {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i8 = FromSql::<TinyInt, Mysql>::from_sql(bytes)?;
@@ -77,12 +81,14 @@ impl FromSql<Unsigned<TinyInt>, Mysql> for u8 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<Unsigned<SmallInt>, Mysql> for u16 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         ToSql::<SmallInt, Mysql>::to_sql(&(*self as i16), &mut out.reborrow())
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i32 = FromSql::<Integer, Mysql>::from_sql(bytes)?;
@@ -90,12 +96,14 @@ impl FromSql<Unsigned<SmallInt>, Mysql> for u16 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<Unsigned<Integer>, Mysql> for u32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         ToSql::<Integer, Mysql>::to_sql(&(*self as i32), &mut out.reborrow())
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Unsigned<Integer>, Mysql> for u32 {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
@@ -103,12 +111,14 @@ impl FromSql<Unsigned<Integer>, Mysql> for u32 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<Unsigned<BigInt>, Mysql> for u64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         ToSql::<BigInt, Mysql>::to_sql(&(*self as i64), &mut out.reborrow())
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Unsigned<BigInt>, Mysql> for u64 {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let signed: i64 = FromSql::<BigInt, Mysql>::from_sql(bytes)?;
@@ -116,6 +126,7 @@ impl FromSql<Unsigned<BigInt>, Mysql> for u64 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<Bool, Mysql> for bool {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         let int_value = if *self { 1 } else { 0 };
@@ -123,12 +134,14 @@ impl ToSql<Bool, Mysql> for bool {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl FromSql<Bool, Mysql> for bool {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(bytes.as_bytes().iter().any(|x| *x != 0))
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<sql_types::SmallInt, Mysql> for i16 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         out.write_i16::<NativeEndian>(*self)
@@ -137,6 +150,7 @@ impl ToSql<sql_types::SmallInt, Mysql> for i16 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<sql_types::Integer, Mysql> for i32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         out.write_i32::<NativeEndian>(*self)
@@ -145,6 +159,7 @@ impl ToSql<sql_types::Integer, Mysql> for i32 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<sql_types::BigInt, Mysql> for i64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         out.write_i64::<NativeEndian>(*self)
@@ -153,6 +168,7 @@ impl ToSql<sql_types::BigInt, Mysql> for i64 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<sql_types::Double, Mysql> for f64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         out.write_f64::<NativeEndian>(*self)
@@ -161,6 +177,7 @@ impl ToSql<sql_types::Double, Mysql> for f64 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl ToSql<sql_types::Float, Mysql> for f32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
         out.write_f32::<NativeEndian>(*self)
@@ -169,24 +186,28 @@ impl ToSql<sql_types::Float, Mysql> for f32 {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl HasSqlType<Unsigned<TinyInt>> for Mysql {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedTiny
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl HasSqlType<Unsigned<SmallInt>> for Mysql {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedShort
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl HasSqlType<Unsigned<Integer>> for Mysql {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedLong
     }
 }
 
+#[cfg(feature = "mysql_backend")]
 impl HasSqlType<Unsigned<BigInt>> for Mysql {
     fn metadata(_lookup: &mut ()) -> MysqlType {
         MysqlType::UnsignedLongLong

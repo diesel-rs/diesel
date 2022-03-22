@@ -7,6 +7,7 @@ use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 const SQLITE_DATE_FORMAT: &str = "%F";
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<Date, Sqlite> for NaiveDate {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value
@@ -15,6 +16,7 @@ impl FromSql<Date, Sqlite> for NaiveDate {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<Date, Sqlite> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format(SQLITE_DATE_FORMAT).to_string());
@@ -22,6 +24,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<Time, Sqlite> for NaiveTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
@@ -42,6 +45,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<Time, Sqlite> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format("%T%.f").to_string());
@@ -49,6 +53,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
@@ -91,6 +96,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format("%F %T%.f").to_string());
