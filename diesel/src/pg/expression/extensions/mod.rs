@@ -2,7 +2,5 @@
 //! building expressions. These traits are not exported by default. The are also
 //! re-exported in `diesel::dsl`
 mod interval_dsl;
-mod only_dsl;
 
 pub use self::interval_dsl::IntervalDsl;
-pub use self::only_dsl::OnlyDsl;

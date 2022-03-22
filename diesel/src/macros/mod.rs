@@ -33,23 +33,6 @@ macro_rules! __diesel_fix_sql_type_import {
     }
 }
 
-#[macro_export]
-#[doc(hidden)]
-#[cfg(feature = "postgres_backend")]
-macro_rules! __diesel_internal_table_backend_specific_impls {
-    ($table:ident, $column_name:ident) => { 
-        impl $crate::expression::AppearsOnTable<$crate::internal::table_macro::Only<$table>>
-            for $column_name {}
-        impl $crate::expression::SelectableExpression<$crate::internal::table_macro::Only<$table>>
-            for $column_name {}
-    };
-}
-#[macro_export]
-#[doc(hidden)]
-#[cfg(not(feature = "postgres_backend"))]
-macro_rules! __diesel_internal_table_backend_specific_impls {
-    ($table:ident, $column_name:ident) => {};
-}
 
 #[macro_export]
 #[doc(hidden)]
@@ -165,8 +148,6 @@ macro_rules! __diesel_column {
             }
         }
 
-
-        $crate::__diesel_internal_table_backend_specific_impls!($table, $column_name);
 
         $crate::__diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
         $crate::__diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);

@@ -5,7 +5,6 @@ use crate::result::QueryResult;
 mod distinct_on;
 mod limit_offset;
 pub(crate) mod on_constraint;
-pub(crate) mod only_clause;
 mod query_fragment_impls;
 pub use self::distinct_on::DistinctOnClause;
 

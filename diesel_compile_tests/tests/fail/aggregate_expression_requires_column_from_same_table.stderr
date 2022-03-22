@@ -6,10 +6,10 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
    |
    = help: the following implementations were found:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
-           and 2 others
+             <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, LeftOuter>>>
+             <posts::columns::id as SelectableExpression<posts::table>>
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>`
    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>>` for `SelectStatement<FromClause<users::table>>`
 
@@ -46,10 +46,10 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
    |
    = help: the following implementations were found:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
-           and 2 others
+             <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, LeftOuter>>>
+             <posts::columns::id as SelectableExpression<posts::table>>
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>`
    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>>` for `SelectStatement<FromClause<users::table>>`
 
@@ -86,10 +86,10 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
    |
    = help: the following implementations were found:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
-           and 2 others
+             <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, LeftOuter>>>
+             <posts::columns::id as SelectableExpression<posts::table>>
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>`
    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>>` for `SelectStatement<FromClause<users::table>>`
 
@@ -126,10 +126,10 @@ error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::t
    |
    = help: the following implementations were found:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
-             <posts::columns::id as SelectableExpression<Only<posts::table>>>
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
-           and 2 others
+             <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, LeftOuter>>>
+             <posts::columns::id as SelectableExpression<posts::table>>
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>`
    = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>>` for `SelectStatement<FromClause<users::table>>`
 

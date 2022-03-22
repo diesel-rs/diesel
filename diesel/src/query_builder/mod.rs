@@ -98,13 +98,6 @@ pub(crate) use self::select_clause::SelectClauseExpression;
 )]
 pub(crate) use self::from_clause::{FromClause, NoFromClause};
 
-#[cfg(feature = "postgres_backend")]
-#[diesel_derives::__diesel_public_if(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-)]
-#[doc(inline)]
-pub(crate) use crate::pg::query_builder::only_clause::Only;
-
 pub(crate) use self::insert_statement::ColumnList;
 pub(crate) use self::select_statement::BoxedSelectStatement;
 pub(crate) use self::select_statement::SelectStatement;
