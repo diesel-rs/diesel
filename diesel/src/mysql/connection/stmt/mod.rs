@@ -105,6 +105,7 @@ impl Statement {
             1792 => DatabaseErrorKind::ReadOnlyTransaction,
             1048 | 1364 => DatabaseErrorKind::NotNullViolation,
             3819 => DatabaseErrorKind::CheckViolation,
+            1213 => DatabaseErrorKind::SerializationFailure,
             _ => DatabaseErrorKind::Unknown,
         }
     }

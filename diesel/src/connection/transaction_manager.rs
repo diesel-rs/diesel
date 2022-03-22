@@ -1,6 +1,6 @@
 use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::Connection;
-use crate::result::{Error, QueryResult};
+use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use std::borrow::Cow;
 use std::num::NonZeroU32;
 
@@ -40,6 +40,28 @@ pub trait TransactionManager<Conn: Connection> {
     /// inside of a transaction, and that operations are not run in a `InError`
     /// transaction manager.
     fn transaction_manager_status_mut(conn: &mut Conn) -> &mut TransactionManagerStatus;
+
+    /// Executes the given function inside of a database transaction
+    ///
+    /// Each implementation of this function needs to fullfill the documented
+    /// behaviour of [`Connection::transaction`]
+    fn transaction<F, R, E>(conn: &mut Conn, callback: F) -> Result<R, E>
+    where
+        F: FnOnce(&mut Conn) -> Result<R, E>,
+        E: From<Error>,
+    {
+        Self::begin_transaction(conn)?;
+        match callback(&mut *conn) {
+            Ok(value) => {
+                Self::commit_transaction(conn)?;
+                Ok(value)
+            }
+            Err(e) => {
+                Self::rollback_transaction(conn).map_err(|e| Error::RollbackError(Box::new(e)))?;
+                Err(e)
+            }
+        }
+    }
 }
 
 /// An implementation of `TransactionManager` which can be used for backends
@@ -51,7 +73,7 @@ pub struct AnsiTransactionManager {
 }
 
 /// Status of the transaction manager
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum TransactionManagerStatus {
     /// Valid status, the manager can run operations
     Valid(ValidTransactionManagerStatus),
@@ -85,9 +107,10 @@ impl TransactionManagerStatus {
 
 /// Valid transaction status for the manager. Can return the current transaction depth
 #[allow(missing_copy_implementations)]
-#[derive(Debug, PartialEq, Eq, Default)]
+#[derive(Debug, Default)]
 pub struct ValidTransactionManagerStatus {
     pub(super) transaction_depth: Option<NonZeroU32>,
+    pub(crate) previous_error_relevant_for_rollback: Option<(DatabaseErrorKind, String)>,
 }
 
 impl ValidTransactionManagerStatus {
@@ -200,6 +223,31 @@ where
                 transaction_depth.get() - 1
             )),
         };
+
+        if let Some((kind, msg)) = transaction_state
+            .previous_error_relevant_for_rollback
+            .take()
+        {
+            // we can safely ignore the result of process_commit_error here
+            // as the only other error than the "rollback error" variants
+            // is failing to load the transaction state, but that's something
+            // we have already done above
+            let _ = process_commit_error(
+                conn,
+                crate::result::Error::DatabaseError(kind, Box::new(String::new())),
+                rollback_sql,
+            );
+            let transaction_state = Self::get_transaction_state(conn)?;
+            if transaction_state
+                .transaction_depth
+                .map(|t| t.get())
+                .unwrap_or_default()
+                > 0
+            {
+                transaction_state.previous_error_relevant_for_rollback = Some((kind, msg.clone()));
+            }
+            return Err(crate::result::Error::DatabaseError(kind, Box::new(msg)));
+        }
         let result = conn.batch_execute(&*rollback_sql);
         let state = Self::get_transaction_state(conn)?;
         state.change_transaction_depth(TransactionDepthChange::DecreaseDepth, result)
@@ -237,54 +285,91 @@ where
                 // and we are done
                 state.change_transaction_depth(TransactionDepthChange::DecreaseDepth, res)
             }
-            Err(error) => {
-                let commit_error_outcome = conn.process_commit_error(error);
-                let state = Self::get_transaction_state(conn)?;
-                // commit failed so we call the error processor to get a information out
-                // what should be done
-                match commit_error_outcome {
-                    CommitErrorOutcome::RollbackAndThrow(error) => {
-                        // We should try to rollback the transaction here
-                        let rollback_result = conn.batch_execute(&*rollback_sql);
-                        let state = Self::get_transaction_state(conn)?;
-                        let rollback_result = state.change_transaction_depth(
-                            TransactionDepthChange::DecreaseDepth,
-                            rollback_result,
-                        );
-                        Err(Error::CommitTransactionFailed {
-                            commit_error: Box::new(error),
-                            rollback_result: Box::new(rollback_result),
-                        })
-                    }
-                    CommitErrorOutcome::Throw(error) => {
-                        // The error processor indicated that we just
-                        // need to decrease the transaction depth and return the original error
-                        let _ = state.change_transaction_depth(
-                            TransactionDepthChange::DecreaseDepth,
-                            Ok(()),
-                        );
-                        Err(Error::CommitTransactionFailed {
-                            commit_error: Box::new(error),
-                            rollback_result: Box::new(Ok(())),
-                        })
-                    }
-                    CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error) => {
-                        // The connection contains an unrecoverable broken transaction
-                        // so mark the transaction state as broken and return the error
-                        *Self::transaction_manager_status_mut(conn) =
-                            TransactionManagerStatus::InError;
-                        Err(Error::CommitTransactionFailed {
-                            commit_error: Box::new(error),
-                            rollback_result: Box::new(Err(Error::BrokenTransaction)),
-                        })
-                    }
-                }
-            }
+            Err(error) => process_commit_error(conn, error, rollback_sql),
         }
     }
 
     fn transaction_manager_status_mut(conn: &mut Conn) -> &mut TransactionManagerStatus {
         &mut conn.transaction_state().status
+    }
+
+    fn transaction<F, R, E>(conn: &mut Conn, f: F) -> Result<R, E>
+    where
+        F: FnOnce(&mut Conn) -> Result<R, E>,
+        E: From<Error>,
+    {
+        Self::begin_transaction(conn)?;
+        match f(&mut *conn) {
+            Ok(value) => {
+                Self::commit_transaction(conn)?;
+                Ok(value)
+            }
+            Err(e) => {
+                let transaction_state = Self::get_transaction_state(conn)?;
+                let is_serialization_error = transaction_state
+                    .previous_error_relevant_for_rollback
+                    .is_some();
+
+                Self::rollback_transaction(conn).map_err(|e| {
+                    if is_serialization_error {
+                        if let Error::DatabaseError(
+                            crate::result::DatabaseErrorKind::SerializationFailure,
+                            _,
+                        ) = e
+                        {
+                            return e;
+                        }
+                    }
+
+                    Error::RollbackError(Box::new(e))
+                })?;
+                Err(e)
+            }
+        }
+    }
+}
+
+fn process_commit_error<Conn>(
+    conn: &mut Conn,
+    error: Error,
+    rollback_sql: Cow<'_, str>,
+) -> QueryResult<()>
+where
+    Conn: Connection<TransactionManager = AnsiTransactionManager> + CommitErrorProcessor,
+{
+    let commit_error_outcome = conn.process_commit_error(error);
+    let state = AnsiTransactionManager::get_transaction_state(conn)?;
+    match commit_error_outcome {
+        CommitErrorOutcome::RollbackAndThrow(error) => {
+            // We should try to rollback the transaction here
+            let rollback_result = conn.batch_execute(&*rollback_sql);
+            let state = AnsiTransactionManager::get_transaction_state(conn)?;
+            let rollback_result = state
+                .change_transaction_depth(TransactionDepthChange::DecreaseDepth, rollback_result);
+            Err(Error::CommitTransactionFailed {
+                commit_error: Box::new(error),
+                rollback_result: Box::new(rollback_result),
+            })
+        }
+        CommitErrorOutcome::Throw(error) => {
+            // The error processor indicated that we just
+            // need to decrease the transaction depth and return the original error
+            let _ = state.change_transaction_depth(TransactionDepthChange::DecreaseDepth, Ok(()));
+            Err(Error::CommitTransactionFailed {
+                commit_error: Box::new(error),
+                rollback_result: Box::new(Ok(())),
+            })
+        }
+        CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error) => {
+            // The connection contains an unrecoverable broken transaction
+            // so mark the transaction state as broken and return the error
+            *AnsiTransactionManager::transaction_manager_status_mut(conn) =
+                TransactionManagerStatus::InError;
+            Err(Error::CommitTransactionFailed {
+                commit_error: Box::new(error),
+                rollback_result: Box::new(Err(Error::BrokenTransaction)),
+            })
+        }
     }
 }
 
@@ -388,6 +473,44 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "postgres")]
+    fn transaction_manager_returns_an_error_when_attempting_to_commit_outside_of_a_transaction() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::PgConnection;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result = AnsiTransactionManager::commit_transaction(conn);
+        assert!(matches!(result, Err(Error::NotInTransaction)))
+    }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn transaction_manager_returns_an_error_when_attempting_to_rollback_outside_of_a_transaction() {
+        use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::transaction_manager::TransactionManager;
+        use crate::result::Error;
+        use crate::PgConnection;
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+        let result = AnsiTransactionManager::rollback_transaction(conn);
+        assert!(matches!(result, Err(Error::NotInTransaction)))
+    }
+
+    #[test]
     fn transaction_manager_enters_broken_state_when_connection_is_broken() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::transaction_manager::TransactionManager;
@@ -415,10 +538,10 @@ mod test {
             result,
             Err(Error::CommitTransactionFailed{commit_error, ..}) if matches!(&*commit_error, Error::DatabaseError(DatabaseErrorKind::Unknown, _))
         ));
-        assert_eq!(
+        assert!(matches!(
             *<AnsiTransactionManager as TransactionManager<mock::MockConnection>>::transaction_manager_status_mut(
                 &mut conn),
-            TransactionManagerStatus::InError
+            TransactionManagerStatus::InError)
         );
         // Ensure the transaction manager is unusable
         let result = conn.transaction(|_conn| Ok(()));
@@ -432,6 +555,7 @@ mod test {
         use crate::connection::transaction_manager::TransactionManager;
         use crate::*;
         use std::num::NonZeroU32;
+
         let conn = &mut crate::test_helpers::connection_no_transaction();
         assert_eq!(
             None,
@@ -466,6 +590,7 @@ mod test {
         use crate::connection::transaction_manager::TransactionManager;
         use crate::*;
         use std::num::NonZeroU32;
+
         let conn = &mut crate::test_helpers::connection();
         assert_eq!(
             None,
@@ -500,6 +625,7 @@ mod test {
         use crate::connection::transaction_manager::TransactionManager;
         use crate::*;
         use std::num::NonZeroU32;
+
         let conn = &mut crate::test_helpers::connection_no_transaction();
         assert_eq!(
             None,
@@ -545,6 +671,214 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "mysql")]
+    fn mysql_transaction_depth_commits_tracked_properly_on_serialization_failure() {
+        use crate::result::DatabaseErrorKind::SerializationFailure;
+        use crate::result::Error::DatabaseError;
+        use crate::*;
+        use std::num::NonZeroU32;
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        table! {
+            #[sql_name = "mysql_transaction_depth_is_tracked_properly_on_commit_failure"]
+            serialization_example {
+                id -> Integer,
+                class -> Integer,
+            }
+        }
+
+        let conn = &mut crate::test_helpers::connection_no_transaction();
+
+        sql_query(
+            "DROP TABLE IF EXISTS mysql_transaction_depth_is_tracked_properly_on_commit_failure;",
+        )
+        .execute(conn)
+        .unwrap();
+        sql_query(
+            r#"
+            CREATE TABLE mysql_transaction_depth_is_tracked_properly_on_commit_failure (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                class INTEGER NOT NULL
+            )
+        "#,
+        )
+        .execute(conn)
+        .unwrap();
+
+        insert_into(serialization_example::table)
+            .values(&vec![
+                serialization_example::class.eq(1),
+                serialization_example::class.eq(2),
+            ])
+            .execute(conn)
+            .unwrap();
+
+        let before_barrier = Arc::new(Barrier::new(2));
+        let after_barrier = Arc::new(Barrier::new(2));
+
+        let threads = (1..3)
+            .map(|i| {
+                let before_barrier = before_barrier.clone();
+                let after_barrier = after_barrier.clone();
+                thread::spawn(move || {
+                    use crate::connection::transaction_manager::AnsiTransactionManager;
+                    use crate::connection::transaction_manager::TransactionManager;
+                    let conn = &mut crate::test_helpers::connection_no_transaction();
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                    crate::sql_query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE").execute(conn)?;
+
+                    let result =
+                    conn.transaction(|conn| {
+                        assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                        let _ = serialization_example::table
+                            .filter(serialization_example::class.eq(i))
+                            .count()
+                            .execute(conn)?;
+
+                        let other_i = if i == 1 { 2 } else { 1 };
+                        let q = insert_into(serialization_example::table)
+                            .values(serialization_example::class.eq(other_i));
+                        before_barrier.wait();
+
+                        let r = q.execute(conn);
+                        after_barrier.wait();
+                        r
+                    });
+
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+
+                    let second_trans_result = conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
+                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+                    result
+                })
+            })
+            .collect::<Vec<_>>();
+        let second_trans_result =
+            conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
+        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+
+        let mut results = threads
+            .into_iter()
+            .map(|t| t.join().unwrap())
+            .collect::<Vec<_>>();
+
+        results.sort_by_key(|r| r.is_err());
+        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        // Note that contrary to Postgres, this is not a commit failure
+        assert!(
+            matches!(&results[1], Err(DatabaseError(SerializationFailure, _))),
+            "Got {:?} instead",
+            results
+        );
+    }
+
+    #[test]
+    #[cfg(feature = "mysql")]
+    fn mysql_nested_transaction_depth_commits_tracked_properly_on_serialization_failure() {
+        use crate::result::DatabaseErrorKind::SerializationFailure;
+        use crate::result::Error::DatabaseError;
+        use crate::*;
+        use std::num::NonZeroU32;
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        table! {
+            #[sql_name = "mysql_nested_trans_depth_is_tracked_properly_on_commit_failure"]
+            serialization_example {
+                id -> Integer,
+                class -> Integer,
+            }
+        }
+
+        let conn = &mut crate::test_helpers::connection_no_transaction();
+
+        sql_query(
+            "DROP TABLE IF EXISTS mysql_nested_trans_depth_is_tracked_properly_on_commit_failure;",
+        )
+        .execute(conn)
+        .unwrap();
+        sql_query(
+            r#"
+            CREATE TABLE mysql_nested_trans_depth_is_tracked_properly_on_commit_failure (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                class INTEGER NOT NULL
+            )
+        "#,
+        )
+        .execute(conn)
+        .unwrap();
+
+        insert_into(serialization_example::table)
+            .values(&vec![
+                serialization_example::class.eq(1),
+                serialization_example::class.eq(2),
+            ])
+            .execute(conn)
+            .unwrap();
+
+        let before_barrier = Arc::new(Barrier::new(2));
+        let after_barrier = Arc::new(Barrier::new(2));
+
+        let threads = (1..3)
+            .map(|i| {
+                let before_barrier = before_barrier.clone();
+                let after_barrier = after_barrier.clone();
+                thread::spawn(move || {
+                    use crate::connection::transaction_manager::AnsiTransactionManager;
+                    use crate::connection::transaction_manager::TransactionManager;
+                    let conn = &mut crate::test_helpers::connection_no_transaction();
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                    crate::sql_query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE").execute(conn)?;
+
+                    let result =
+                    conn.transaction(|conn| {
+                        assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                        conn.transaction(|conn| {
+                            assert_eq!(NonZeroU32::new(2), <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+                            let _ = serialization_example::table
+                                .filter(serialization_example::class.eq(i))
+                                .count()
+                                .execute(conn)?;
+
+                            let other_i = if i == 1 { 2 } else { 1 };
+                            let q = insert_into(serialization_example::table)
+                                .values(serialization_example::class.eq(other_i));
+                            before_barrier.wait();
+
+                            let r = q.execute(conn);
+                            after_barrier.wait();
+                            r
+                        })
+                    });
+
+                    assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
+
+                    let second_trans_result = conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
+                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+                    result
+                })
+            })
+            .collect::<Vec<_>>();
+        let second_trans_result =
+            conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
+        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+
+        let mut results = threads
+            .into_iter()
+            .map(|t| t.join().unwrap())
+            .collect::<Vec<_>>();
+
+        results.sort_by_key(|r| r.is_err());
+        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        assert!(
+            matches!(&results[1], Err(DatabaseError(SerializationFailure, _))),
+            "Got {:?} instead",
+            results
+        );
+    }
+
+    #[test]
     #[cfg(feature = "sqlite")]
     fn sqlite_transaction_is_rolled_back_upon_deferred_constraint_failure() {
         use crate::connection::transaction_manager::AnsiTransactionManager;
@@ -552,6 +886,7 @@ mod test {
         use crate::result::Error;
         use crate::*;
         use std::num::NonZeroU32;
+
         let conn = &mut crate::test_helpers::connection();
         assert_eq!(
             None,
