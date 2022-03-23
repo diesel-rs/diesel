@@ -84,6 +84,6 @@ impl ToSql<sql_types::TimestamptzSqlite, Sqlite> for str {
 
 impl ToSql<sql_types::TimestamptzSqlite, Sqlite> for String {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        ToSql::<sql_types::Text, Sqlite>::to_sql(self, out)
+        <str as ToSql<sql_types::TimestamptzSqlite, Sqlite>>::to_sql(self as &str, out)
     }
 }
