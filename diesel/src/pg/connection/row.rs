@@ -9,11 +9,17 @@ use std::rc::Rc;
 pub struct PgRow {
     db_result: Rc<PgResult>,
     row_idx: usize,
+    field_count: usize,
 }
 
 impl PgRow {
     pub(crate) fn new(db_result: Rc<PgResult>, row_idx: usize) -> Self {
-        PgRow { db_result, row_idx }
+        let field_count = db_result.column_count();
+        PgRow {
+            db_result,
+            row_idx,
+            field_count,
+        }
     }
 }
 
@@ -25,7 +31,7 @@ impl<'a> Row<'a, Pg> for PgRow {
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
-        self.db_result.column_count()
+        self.field_count
     }
 
     fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Pg>>::Field>
