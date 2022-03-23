@@ -9,12 +9,14 @@ use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
 
+#[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
 impl FromSql<sql_types::Json, Pg> for serde_json::Value {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         serde_json::from_slice(value.as_bytes()).map_err(|_| "Invalid Json".into())
     }
 }
 
+#[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
 impl ToSql<sql_types::Json, Pg> for serde_json::Value {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         serde_json::to_writer(out, self)
@@ -23,6 +25,7 @@ impl ToSql<sql_types::Json, Pg> for serde_json::Value {
     }
 }
 
+#[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
 impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let bytes = value.as_bytes();
@@ -33,6 +36,7 @@ impl FromSql<sql_types::Jsonb, Pg> for serde_json::Value {
     }
 }
 
+#[cfg(all(feature = "postgres_backend", feature = "serde_json"))]
 impl ToSql<sql_types::Jsonb, Pg> for serde_json::Value {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(&[1])?;

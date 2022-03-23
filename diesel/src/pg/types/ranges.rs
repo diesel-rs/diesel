@@ -24,6 +24,7 @@ bitflags::bitflags! {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<ST: 'static, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
@@ -32,6 +33,7 @@ impl<ST: 'static, T> AsExpression<Range<ST>> for (Bound<T>, Bound<T>) {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<'a, ST: 'static, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Range<ST>, Self>;
 
@@ -40,6 +42,7 @@ impl<'a, ST: 'static, T> AsExpression<Range<ST>> for &'a (Bound<T>, Bound<T>) {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<ST: 'static, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
@@ -48,6 +51,7 @@ impl<ST: 'static, T> AsExpression<Nullable<Range<ST>>> for (Bound<T>, Bound<T>) 
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<'a, ST: 'static, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bound<T>) {
     type Expression = SqlBound<Nullable<Range<ST>>, Self>;
 
@@ -56,6 +60,7 @@ impl<'a, ST: 'static, T> AsExpression<Nullable<Range<ST>>> for &'a (Bound<T>, Bo
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<T, ST> FromSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: FromSql<ST, Pg>,
@@ -94,6 +99,7 @@ where
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<T, ST> Queryable<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: FromSql<ST, Pg>,
@@ -105,6 +111,7 @@ where
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<ST, T> ToSql<Range<ST>, Pg> for (Bound<T>, Bound<T>)
 where
     T: ToSql<ST, Pg>,
@@ -157,6 +164,7 @@ where
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl<ST, T> ToSql<Nullable<Range<ST>>, Pg> for (Bound<T>, Bound<T>)
 where
     ST: 'static,
@@ -167,12 +175,14 @@ where
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl HasSqlType<Int4range> for Pg {
     fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3904, 3905)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl HasSqlType<Numrange> for Pg {
     fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3906, 3907)
@@ -185,18 +195,21 @@ impl HasSqlType<Tsrange> for Pg {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl HasSqlType<Tstzrange> for Pg {
     fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3910, 3911)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl HasSqlType<Daterange> for Pg {
     fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3912, 3913)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl HasSqlType<Int8range> for Pg {
     fn metadata(_: &mut Self::MetadataLookup) -> PgTypeMetadata {
         PgTypeMetadata::new(3926, 3927)

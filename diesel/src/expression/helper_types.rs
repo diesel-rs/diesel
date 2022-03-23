@@ -118,7 +118,7 @@ pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlT
 /// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
-/// Represents the return type of `.as_select()`
+/// Represents the return type of [`.as_select()`](crate::prelude::SelectableHelper::as_select)
 pub type AsSelect<Source, DB> = SelectBy<Source, DB>;
 
 // we allow unreachable_pub here

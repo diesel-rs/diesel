@@ -47,6 +47,7 @@ impl ::std::fmt::Display for InvalidNumericSign {
 
 impl Error for InvalidNumericSign {}
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = bytes.as_bytes();
@@ -76,6 +77,7 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let sign = match *self {
@@ -110,6 +112,7 @@ impl ToSql<sql_types::Numeric, Pg> for PgNumeric {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Float, Pg> for f32 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
@@ -129,6 +132,7 @@ impl FromSql<sql_types::Float, Pg> for f32 {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Double, Pg> for f64 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
@@ -148,6 +152,7 @@ impl FromSql<sql_types::Double, Pg> for f64 {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Float, Pg> for f32 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_f32::<NetworkEndian>(*self)
@@ -156,6 +161,7 @@ impl ToSql<sql_types::Float, Pg> for f32 {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Double, Pg> for f64 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_f64::<NetworkEndian>(*self)

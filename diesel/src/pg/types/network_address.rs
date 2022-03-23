@@ -60,6 +60,7 @@ macro_rules! assert_or_error {
 
 macro_rules! impl_Sql {
     ($ty: ty, $net_type: expr) => {
+        #[cfg(all(feature = "postgres_backend", feature = "network-address"))]
         impl FromSql<$ty, Pg> for IpNetwork {
             fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
                 // https://github.com/postgres/postgres/blob/55c3391d1e6a201b5b891781d21fe682a8c64fe6/src/include/utils/inet.h#L23-L28
@@ -96,6 +97,7 @@ macro_rules! impl_Sql {
             }
         }
 
+        #[cfg(all(feature = "postgres_backend", feature = "network-address"))]
         impl ToSql<$ty, Pg> for IpNetwork {
             fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
                 use self::ipnetwork::IpNetwork::*;

@@ -12,12 +12,14 @@ use crate::sql_types::Uuid;
 #[allow(dead_code)]
 struct UuidProxy(uuid::Uuid);
 
+#[cfg(all(feature = "postgres_backend", feature = "uuid"))]
 impl FromSql<Uuid, Pg> for uuid::Uuid {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         uuid::Uuid::from_slice(value.as_bytes()).map_err(Into::into)
     }
 }
 
+#[cfg(all(feature = "postgres_backend", feature = "uuid"))]
 impl ToSql<Uuid, Pg> for uuid::Uuid {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         out.write_all(self.as_bytes())

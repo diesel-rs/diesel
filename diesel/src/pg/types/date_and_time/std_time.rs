@@ -10,6 +10,7 @@ fn pg_epoch() -> SystemTime {
     UNIX_EPOCH + thirty_years
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let (before_epoch, duration) = match self.duration_since(pg_epoch()) {
@@ -25,6 +26,7 @@ impl ToSql<sql_types::Timestamp, Pg> for SystemTime {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Timestamp, Pg> for SystemTime {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let usecs_passed = <i64 as FromSql<sql_types::BigInt, Pg>>::from_sql(bytes)?;

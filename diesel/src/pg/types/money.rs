@@ -22,12 +22,14 @@ use crate::sql_types::{BigInt, Money};
 #[diesel(sql_type = Money)]
 pub struct PgMoney(pub i64);
 
+#[cfg(feature = "postgres_backend")]
 impl FromSql<Money, Pg> for PgMoney {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         FromSql::<BigInt, Pg>::from_sql(bytes).map(PgMoney)
     }
 }
 
+#[cfg(feature = "postgres_backend")]
 impl ToSql<Money, Pg> for PgMoney {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         ToSql::<BigInt, Pg>::to_sql(&self.0, out)
