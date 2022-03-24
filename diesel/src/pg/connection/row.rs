@@ -14,6 +14,12 @@ pub struct PgRow {
 
 impl PgRow {
     pub(crate) fn new(db_result: Rc<PgResult>, row_idx: usize) -> Self {
+        // We prefetch the field count here
+        // because otherwise we would need to go
+        // through the `Rc<_>` everytime we need that value
+        //
+        // This change was found to improve the performance of load
+        // operations slightly
         let field_count = db_result.column_count();
         PgRow {
             db_result,
