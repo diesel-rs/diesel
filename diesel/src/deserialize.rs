@@ -420,12 +420,10 @@ pub trait FromSql<A, DB: Backend>: Sized {
     ///
     /// If your custom type supports null values you need to provide a
     /// custom implementation.
-    #[inline(always)]
     fn from_nullable_sql(bytes: Option<backend::RawValue<'_, DB>>) -> Result<Self> {
-        match bytes {
-            Some(bytes) => Self::from_sql(bytes),
-            None => Err(Box::new(crate::result::UnexpectedNullError)),
-        }
+        bytes
+            .map(Self::from_sql)
+            .unwrap_or_else(|| Err(Box::new(crate::result::UnexpectedNullError)))
     }
 }
 
