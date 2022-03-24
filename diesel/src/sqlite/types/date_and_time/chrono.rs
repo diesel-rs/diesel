@@ -449,7 +449,7 @@ mod tests {
             #[allow(unused_parens)]
             test_insert_timestamptz_into_table_as_text(id) {
                 id -> Integer,
-                timestamp_with_tz -> Text,
+                timestamp_with_tz -> TimestamptzSqlite,
             }
         }
         let conn = &mut connection();
@@ -462,10 +462,14 @@ mod tests {
         let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
 
         crate::insert_into(test_insert_timestamptz_into_table_as_text::table)
-            .values(vec![
-                (test_insert_timestamptz_into_table_as_text::timestamp_with_tz
-                    .eq("'1970-01-01 00:00:00+00:00'")),
-            ])
+            .values(vec![(
+                test_insert_timestamptz_into_table_as_text::id.eq(1),
+                test_insert_timestamptz_into_table_as_text::timestamp_with_tz.eq(sql::<
+                    TimestamptzSqlite,
+                >(
+                    "'1970-01-01 00:00:00+00:00'",
+                )),
+            )])
             .execute(conn)
             .unwrap();
 
@@ -482,7 +486,7 @@ mod tests {
             #[allow(unused_parens)]
             test_query_timestamptz_column_with_between(id) {
                 id -> Integer,
-                timestamp_with_tz -> Text,
+                timestamp_with_tz -> TimestamptzSqlite,
             }
         }
         let conn = &mut connection();
@@ -492,26 +496,54 @@ mod tests {
         .execute(conn)
         .unwrap();
 
-        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
-
         crate::insert_into(test_query_timestamptz_column_with_between::table)
             .values(vec![
-                (test_query_timestamptz_column_with_between::timestamp_with_tz
-                    .eq("'1970-01-01 00:00:01+00:00'")),
-                (test_query_timestamptz_column_with_between::timestamp_with_tz
-                    .eq("'1970-01-01 00:00:02+00:00'")),
-                (test_query_timestamptz_column_with_between::timestamp_with_tz
-                    .eq("'1970-01-01 00:00:03+00:00'")),
-                (test_query_timestamptz_column_with_between::timestamp_with_tz
-                    .eq("'1970-01-01 00:00:04+00:00'")),
+                (
+                    test_query_timestamptz_column_with_between::id.eq(1),
+                    test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
+                        TimestamptzSqlite,
+                    >(
+                        "'1970-01-01 00:00:01+00:00'",
+                    )),
+                ),
+                (
+                    test_query_timestamptz_column_with_between::id.eq(2),
+                    test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
+                        TimestamptzSqlite,
+                    >(
+                        "'1970-01-01 00:00:02+00:00'",
+                    )),
+                ),
+                (
+                    test_query_timestamptz_column_with_between::id.eq(3),
+                    test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
+                        TimestamptzSqlite,
+                    >(
+                        "'1970-01-01 00:00:03+00:00'",
+                    )),
+                ),
+                (
+                    test_query_timestamptz_column_with_between::id.eq(4),
+                    test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
+                        TimestamptzSqlite,
+                    >(
+                        "'1970-01-01 00:00:04+00:00'",
+                    )),
+                ),
             ])
             .execute(conn)
             .unwrap();
 
         let result = test_query_timestamptz_column_with_between::table
             .select(test_query_timestamptz_column_with_between::timestamp_with_tz)
-            .gt(Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0))
-            .lte(Utc.ymd(1970, 1, 1).and_hms_milli(0, 3, 0, 0))
+            .filter(
+                test_query_timestamptz_column_with_between::timestamp_with_tz
+                    .gt(Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            )
+            .filter(
+                test_query_timestamptz_column_with_between::timestamp_with_tz
+                    .lt(Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 4, 0)),
+            )
             .count()
             .get_result::<_>(conn);
         assert_eq!(result, Ok(3));
