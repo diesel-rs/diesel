@@ -40,14 +40,21 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
 ///
 /// For most backends, this is the concrete implementation of `BindCollector`
 /// that should be used.
+#[non_exhaustive]
 pub struct RawBytesBindCollector<DB: Backend + TypeMetadata> {
     /// The metadata associated with each bind parameter.
     ///
     /// This vec is guaranteed to be the same length as `binds`.
+    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+    pub metadata: Vec<DB::TypeMetadata>,
+    #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
     pub(crate) metadata: Vec<DB::TypeMetadata>,
     /// The serialized bytes for each bind parameter.
     ///
     /// This vec is guaranteed to be the same length as `metadata`.
+    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+    pub binds: Vec<Option<Vec<u8>>>,
+    #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
     pub(crate) binds: Vec<Option<Vec<u8>>>,
 }
 
