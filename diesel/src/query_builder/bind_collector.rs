@@ -40,15 +40,16 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
 ///
 /// For most backends, this is the concrete implementation of `BindCollector`
 /// that should be used.
+#[non_exhaustive]
 pub struct RawBytesBindCollector<DB: Backend + TypeMetadata> {
     /// The metadata associated with each bind parameter.
     ///
     /// This vec is guaranteed to be the same length as `binds`.
-    pub(crate) metadata: Vec<DB::TypeMetadata>,
+    pub metadata: Vec<DB::TypeMetadata>,
     /// The serialized bytes for each bind parameter.
     ///
     /// This vec is guaranteed to be the same length as `metadata`.
-    pub(crate) binds: Vec<Option<Vec<u8>>>,
+    pub binds: Vec<Option<Vec<u8>>>,
 }
 
 #[allow(clippy::new_without_default)]
