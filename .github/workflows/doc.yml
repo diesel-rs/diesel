@@ -4,6 +4,7 @@ on:
       - master
       - '0.[0-9]+.x'
       - '1.[0-9]+.x'
+      - '2.[0-9]+.x'
 
 name: Publish Docs
 jobs:
@@ -44,12 +45,13 @@ jobs:
 
     - name: Publish documentation
       if: success()
-      uses: JamesIves/github-pages-deploy-action@releases/v3
+      uses: JamesIves/github-pages-deploy-action@releases/v4.2
       with:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        BRANCH: gh-pages # The branch the action should deploy to.
-        FOLDER: target/doc # The folder the action should deploy.
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: gh-pages # The branch the action should deploy to.
+        folder: target/doc # The folder the action should deploy.
         # Store documentation for each branch in a different folder
         # This allows us to differentiate between docs for master
         # and docs for already released versions
-        TARGET_FOLDER: ${{ steps.current_branch.outputs.branch }}
+        target-folder: ${{ steps.current_branch.outputs.branch }}
+        single-commit: true
