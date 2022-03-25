@@ -45,7 +45,7 @@ jobs:
 
     - name: Publish documentation
       if: success()
-      uses: JamesIves/github-pages-deploy-action@releases/v4.1.3
+      uses: JamesIves/github-pages-deploy-action@v4.2.5
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         branch: gh-pages # The branch the action should deploy to.
