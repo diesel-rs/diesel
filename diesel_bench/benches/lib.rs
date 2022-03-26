@@ -45,7 +45,7 @@ const TRIVIAL_QUERY_SIZE: &[usize] = &[1, 10, 100, 1_000, 10_000];
 const MEDIUM_COMPLEX_SIZE: &[usize] = &[1, 10, 100, 1_000, 10_000];
 const INSERT_SIZE: &[usize] = &[1, 10, 25, 50, 100];
 
-fn bench_trivial_query(c: &mut Criterion) {
+fn bench_trivial_query(c: &mut CriterionType) {
     let mut group = c.benchmark_group("bench_trivial_query");
 
     for size in TRIVIAL_QUERY_SIZE {
@@ -150,7 +150,7 @@ fn bench_trivial_query(c: &mut Criterion) {
     group.finish();
 }
 
-fn bench_medium_complex_query(c: &mut Criterion) {
+fn bench_medium_complex_query(c: &mut CriterionType) {
     let mut group = c.benchmark_group("bench_medium_complex_query");
 
     for size in MEDIUM_COMPLEX_SIZE {
@@ -248,7 +248,7 @@ fn bench_medium_complex_query(c: &mut Criterion) {
     group.finish();
 }
 
-fn bench_loading_associations_sequentially(c: &mut Criterion) {
+fn bench_loading_associations_sequentially(c: &mut CriterionType) {
     let mut group = c.benchmark_group("bench_loading_associations_sequentially");
 
     group.bench_function("diesel/bench_loading_associations_sequentially", |b| {
@@ -299,7 +299,7 @@ fn bench_loading_associations_sequentially(c: &mut Criterion) {
     group.finish();
 }
 
-fn bench_insert(c: &mut Criterion) {
+fn bench_insert(c: &mut CriterionType) {
     let mut group = c.benchmark_group("bench_insert");
 
     for size in INSERT_SIZE {
@@ -351,9 +351,37 @@ fn bench_insert(c: &mut Criterion) {
     group.finish();
 }
 
+#[cfg(not(feature = "instruction_count"))]
+fn setup_config() -> Criterion {
+    Criterion::default()
+}
+
+#[cfg(feature = "instruction_count")]
+fn setup_config() -> Criterion<criterion_perf_events::Perf> {
+    use criterion_perf_events::Perf;
+    use perfcnt::linux::HardwareEventType as Hardware;
+    use perfcnt::linux::PerfCounterBuilderLinux as Builder;
+
+    Criterion::default().with_measurement(Perf::new(Builder::from_hardware_event(
+        Hardware::Instructions,
+    )))
+}
+
+#[cfg(feature = "instruction_count")]
+type CriterionType = Criterion<criterion_perf_events::Perf>;
+
+#[cfg(not(feature = "instruction_count"))]
+type CriterionType = Criterion;
+
+#[cfg(feature = "instruction_count")]
+type Bencher<'a> = criterion::Bencher<'a, criterion_perf_events::Perf>;
+
+#[cfg(not(feature = "instruction_count"))]
+type Bencher<'a> = criterion::Bencher<'a>;
+
 criterion::criterion_group!(
     name = benches;
-    config = Criterion::default();
+    config = setup_config();
     targets = bench_trivial_query, bench_medium_complex_query, bench_loading_associations_sequentially, bench_insert
 );
 

@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use diesel::*;
 
 #[cfg(feature = "postgres")]

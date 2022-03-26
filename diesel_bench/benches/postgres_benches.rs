@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use rust_postgres::fallible_iterator::FallibleIterator;
 use rust_postgres::types::ToSql;
 use rust_postgres::{Client, NoTls};

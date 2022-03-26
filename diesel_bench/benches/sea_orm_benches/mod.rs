@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use sea_orm::entity::*;
 use sea_orm::query::*;
 use sea_orm::DatabaseConnection;

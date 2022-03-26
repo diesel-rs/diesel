@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use sqlx::*;
 use std::collections::HashMap;
 use tokio::runtime::Runtime;

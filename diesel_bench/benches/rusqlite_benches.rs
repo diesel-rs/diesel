@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use rusqlite::params;
 use rusqlite::Connection;
 use rusqlite::Row;

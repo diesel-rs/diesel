@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use quaint::prelude::*;
 use quaint::single::Quaint;
 use serde::Deserialize;
