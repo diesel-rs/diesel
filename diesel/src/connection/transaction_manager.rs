@@ -2,6 +2,7 @@ use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorP
 use crate::connection::Connection;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
 use std::borrow::Cow;
+use std::fmt::{Debug, Display, Formatter};
 use std::num::NonZeroU32;
 
 /// Manages the internal transaction state for a connection.
@@ -43,7 +44,7 @@ pub trait TransactionManager<Conn: Connection> {
 
     /// Executes the given function inside of a database transaction
     ///
-    /// Each implementation of this function needs to fullfill the documented
+    /// Each implementation of this function needs to fulfill the documented
     /// behaviour of [`Connection::transaction`]
     fn transaction<F, R, E>(conn: &mut Conn, callback: F) -> Result<R, E>
     where
@@ -62,7 +63,59 @@ pub trait TransactionManager<Conn: Connection> {
             }
         }
     }
+
+    /// Executes the given function inside of a database transaction
+    ///
+    /// Each implementation of this function needs to fulfill the documented
+    /// behaviour of [`Connection::transaction`]
+    fn transaction2<F, R, E>(conn: &mut Conn, callback: F) -> Result<R, TransactionError<E>>
+    where
+        F: FnOnce(&mut Conn) -> Result<R, E>,
+    {
+        Self::begin_transaction(conn)?;
+        match callback(&mut *conn) {
+            Ok(value) => {
+                Self::commit_transaction(conn)?;
+                Ok(value)
+            }
+            Err(e) => {
+                Self::rollback_transaction(conn).map_err(|e| Error::RollbackError(Box::new(e)))?;
+                Err(TransactionError::TransactionFunction(e))
+            }
+        }
+    }
 }
+
+/// Wraps Diesel and User defined errors into a single type.
+#[derive(Debug)]
+pub enum TransactionError<E> {
+    /// A Diesel error that occurred while beginning, committing, or rolling back the transaction.
+    Diesel(Error),
+    /// An error that was returned from the transaction function
+    TransactionFunction(E),
+}
+
+impl<E> From<Error> for TransactionError<E> {
+    fn from(e: Error) -> Self {
+        Self::Diesel(e)
+    }
+}
+
+impl<E: Display> Display for TransactionError<E> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TransactionError::Diesel(e) => f.write_str(&format!(
+                "Error attempting to perform database transaction: {}",
+                e
+            )),
+            TransactionError::TransactionFunction(e) => {
+                f.write_str(&format!("Error occurred in transaction function: {}", e))
+            }
+        }
+    }
+}
+
+impl<E> std::error::Error for TransactionError<E> where E: Display + Debug {}
 
 /// An implementation of `TransactionManager` which can be used for backends
 /// which use ANSI standard syntax for savepoints such as SQLite and PostgreSQL.
