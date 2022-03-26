@@ -41,8 +41,17 @@ const SQLITE_MIGRATION_SQL: &[&str] = &[
 ",
 ];
 
+#[cfg(feature = "fast_run")]
+const TRIVIAL_QUERY_SIZE: &[usize] = &[1, 10_000];
+#[cfg(not(feature = "fast_run"))]
 const TRIVIAL_QUERY_SIZE: &[usize] = &[1, 10, 100, 1_000, 10_000];
+#[cfg(feature = "fast_run")]
+const MEDIUM_COMPLEX_SIZE: &[usize] = &[1, 10_000];
+#[cfg(not(feature = "fast_run"))]
 const MEDIUM_COMPLEX_SIZE: &[usize] = &[1, 10, 100, 1_000, 10_000];
+#[cfg(feature = "fast_run")]
+const INSERT_SIZE: &[usize] = &[1, 100];
+#[cfg(not(feature = "fast_run"))]
 const INSERT_SIZE: &[usize] = &[1, 10, 25, 50, 100];
 
 fn bench_trivial_query(c: &mut CriterionType) {

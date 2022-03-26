@@ -51,6 +51,7 @@ sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql"]
 sqlx-bench = ["sqlx", "tokio", "sqlx/runtime-tokio-rustls"]
 instruction_count = ["criterion-perf-events", "perfcnt"]
+fast_run = []
 
 [replace]
 "quaint:0.2.0-alpha.13" = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
