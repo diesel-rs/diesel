@@ -148,7 +148,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
 
 impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format("%F %T+00:00").to_string());
+        out.set_value(self.format("%F %T%.f+00:00").to_string());
         Ok(IsNull::No)
     }
 }
@@ -171,7 +171,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
 
 impl<TZ: TimeZone> ToSql<TimestamptzSqlite, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.naive_utc().format("%F %T+00:00").to_string());
+        out.set_value(self.naive_utc().format("%F %T%.f+00:00").to_string());
         Ok(IsNull::No)
     }
 }
@@ -467,7 +467,7 @@ mod tests {
                 test_insert_timestamptz_into_table_as_text::timestamp_with_tz.eq(sql::<
                     TimestamptzSqlite,
                 >(
-                    "'1970-01-01 00:00:00+00:00'",
+                    "'1970-01-01 00:00:00.000000+00:00'",
                 )),
             )])
             .execute(conn)
@@ -503,7 +503,7 @@ mod tests {
                     test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
                         TimestamptzSqlite,
                     >(
-                        "'1970-01-01 00:00:01+00:00'",
+                        "'1970-01-01 00:00:01.000000+00:00'",
                     )),
                 ),
                 (
@@ -511,7 +511,7 @@ mod tests {
                     test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
                         TimestamptzSqlite,
                     >(
-                        "'1970-01-01 00:00:02+00:00'",
+                        "'1970-01-01 00:00:02.000000+00:00'",
                     )),
                 ),
                 (
@@ -519,7 +519,7 @@ mod tests {
                     test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
                         TimestamptzSqlite,
                     >(
-                        "'1970-01-01 00:00:03+00:00'",
+                        "'1970-01-01 00:00:03.000000+00:00'",
                     )),
                 ),
                 (
@@ -527,7 +527,7 @@ mod tests {
                     test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
                         TimestamptzSqlite,
                     >(
-                        "'1970-01-01 00:00:04+00:00'",
+                        "'1970-01-01 00:00:04.000000+00:00'",
                     )),
                 ),
             ])
@@ -553,16 +553,18 @@ mod tests {
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = &mut connection();
         // West one hour is negative offset
-        let time = FixedOffset::west(3600).ymd(1970, 1, 1).and_hms(0, 0, 0);
-        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 01:00:00+00:00'").eq(time));
+        let time = FixedOffset::west(3600)
+            .ymd(1970, 1, 1)
+            .and_hms_milli(0, 0, 0, 1);
+        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 01:00:00.001+00:00'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = &mut connection();
-        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
-        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00+00:00'").eq(time));
+        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 1);
+        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00.001+00:00'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
