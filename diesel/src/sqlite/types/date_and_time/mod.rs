@@ -70,18 +70,21 @@ impl ToSql<sql_types::Timestamp, Sqlite> for String {
     }
 }
 
+#[cfg(feature = "sqlite")]
 impl FromSql<sql_types::TimestamptzSqlite, Sqlite> for String {
     fn from_sql(value: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         FromSql::<sql_types::Text, Sqlite>::from_sql(value)
     }
 }
 
+#[cfg(feature = "sqlite")]
 impl ToSql<sql_types::TimestamptzSqlite, Sqlite> for str {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         ToSql::<sql_types::Text, Sqlite>::to_sql(self, out)
     }
 }
 
+#[cfg(feature = "sqlite")]
 impl ToSql<sql_types::TimestamptzSqlite, Sqlite> for String {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         <str as ToSql<sql_types::TimestamptzSqlite, Sqlite>>::to_sql(self as &str, out)

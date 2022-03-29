@@ -106,6 +106,7 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
@@ -146,6 +147,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.format("%F %T%.f+00:00").to_string());
@@ -153,6 +155,7 @@ impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         let naive_date_time =
@@ -161,6 +164,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         let naive_date_time =
@@ -169,6 +173,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
     }
 }
 
+#[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl<TZ: TimeZone> ToSql<TimestamptzSqlite, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         out.set_value(self.naive_utc().format("%F %T%.f+00:00").to_string());
