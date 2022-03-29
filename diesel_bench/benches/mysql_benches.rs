@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use rust_mysql::params::Params;
 use rust_mysql::prelude::*;
 use rust_mysql::{Conn, Opts, Row};

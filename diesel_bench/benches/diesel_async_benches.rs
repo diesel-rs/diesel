@@ -1,4 +1,4 @@
-use criterion::Bencher;
+use super::Bencher;
 use diesel::insert_into;
 use diesel::prelude::{
     allow_tables_to_appear_in_same_query, joinable, table, AsChangeset, Associations,
