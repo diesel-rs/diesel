@@ -402,6 +402,10 @@ pub use crate::pg::sql_types::*;
 #[cfg(feature = "mysql_backend")]
 pub use crate::mysql::sql_types::{Datetime, Unsigned};
 
+#[doc(inline)]
+#[cfg(feature = "sqlite")]
+pub use crate::sqlite::sql_types::Timestamptz as TimestamptzSqlite;
+
 /// Indicates that a SQL type exists for a backend.
 ///
 /// This trait can be derived using the [`SqlType` derive](derive@SqlType)

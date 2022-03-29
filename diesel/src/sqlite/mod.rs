@@ -7,9 +7,10 @@
 pub(crate) mod backend;
 mod connection;
 pub(crate) mod expression;
-mod types;
 
 pub mod query_builder;
+
+mod types;
 
 pub use self::backend::{Sqlite, SqliteType};
 pub use self::connection::SqliteBindValue;
@@ -41,4 +42,10 @@ pub trait SqliteAggregateFunction<Args>: Default {
     /// This is called through a C FFI, as such panics do not propagate to the caller. Panics are
     /// caught and cause a return with an error value.
     fn finalize(aggregator: Option<Self>) -> Self::Output;
+}
+
+/// SQLite specific sql types
+pub mod sql_types {
+    #[doc(inline)]
+    pub use super::types::Timestamptz;
 }

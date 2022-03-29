@@ -76,6 +76,24 @@ impl AsExpression<Nullable<Timestamptz>> for now {
     }
 }
 
+#[cfg(feature = "sqlite")]
+impl AsExpression<TimestamptzSqlite> for now {
+    type Expression = Coerce<now, TimestamptzSqlite>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl AsExpression<Nullable<TimestamptzSqlite>> for now {
+    type Expression = Coerce<now, Nullable<TimestamptzSqlite>>;
+
+    fn as_expression(self) -> Self::Expression {
+        Coerce::new(self)
+    }
+}
+
 /// Represents the SQL `CURRENT_DATE` constant.
 #[allow(non_camel_case_types)]
 #[derive(Debug, Copy, Clone, QueryId, ValidGrouping)]
