@@ -33,6 +33,59 @@ macro_rules! __diesel_fix_sql_type_import {
     }
 }
 
+#[macro_export]
+#[doc(hidden)]
+#[cfg(feature = "postgres_backend")]
+macro_rules! __diesel_internal_backend_specific_column_impls {
+    ($table:ident, $column_name:ident) => {
+        impl $crate::query_source::AppearsInFromClause<$crate::query_builder::Only<$table>>
+            for $column_name {
+            type Count = $crate::query_source::Once;
+        }
+        impl $crate::SelectableExpression<$crate::query_builder::Only<$table>> for $column_name {}
+    }
+}
+#[macro_export]
+#[doc(hidden)]
+#[cfg(not(feature = "postgres_backend"))]
+macro_rules! __diesel_internal_backend_specific_column_impls {
+    ($table:ident, $column_name:ident) => {};
+}
+#[macro_export]
+#[doc(hidden)]
+#[cfg(feature = "postgres_backend")]
+macro_rules! __diesel_internal_backend_specific_table_impls {
+    ($table:ident) => {
+        impl<S> $crate::JoinTo<$crate::query_builder::Only<S>> for $table
+        where
+            $crate::query_builder::Only<S>: $crate::JoinTo<$table>,
+        {
+            type FromClause = $crate::query_builder::Only<S>;
+            type OnClause = <$crate::query_builder::Only<S> as $crate::JoinTo<$table>>::OnClause;
+
+            fn join_target(rhs: $crate::query_builder::Only<S>) -> (Self::FromClause, Self::OnClause) {
+                let (_, on_clause) = $crate::query_builder::Only::<S>::join_target($table);
+                (rhs, on_clause)
+            }
+        }
+
+        impl $crate::query_source::AppearsInFromClause<$crate::query_builder::Only<$table>>
+            for $table {
+            type Count = $crate::query_source::Once;
+        }
+        impl $crate::query_source::AppearsInFromClause<$table>
+            for $crate::query_builder::Only<$table> {
+            type Count = $crate::query_source::Once;
+        }
+    };
+}
+#[macro_export]
+#[doc(hidden)]
+#[cfg(not(feature = "postgres_backend"))]
+macro_rules! __diesel_internal_backend_specific_table_impls {
+    ($table:ident) => {};
+}
+
 
 #[macro_export]
 #[doc(hidden)]
@@ -152,6 +205,7 @@ macro_rules! __diesel_column {
         $crate::__diesel_generate_ops_impls_if_numeric!($column_name, $($Type)*);
         $crate::__diesel_generate_ops_impls_if_date_time!($column_name, $($Type)*);
         $crate::__diesel_generate_ops_impls_if_network!($column_name, $($Type)*);
+        $crate::__diesel_internal_backend_specific_column_impls!($table, $column_name);
     }
 }
 
@@ -931,6 +985,8 @@ macro_rules! __diesel_table_impl {
                 }
             }
 
+            $crate::__diesel_internal_backend_specific_table_impls!(table);
+
             /// Contains all of the columns of this table
             pub mod columns {
                 use super::table;
@@ -1265,6 +1321,7 @@ macro_rules! allow_tables_to_appear_in_same_query {
         $(
             impl $crate::query_source::TableNotEqual<$left_mod::table> for $right_mod::table {}
             impl $crate::query_source::TableNotEqual<$right_mod::table> for $left_mod::table {}
+            $crate::__diesel_internal_backend_specific_allow_tables_to_appear_in_same_query!($left_mod, $right_mod);
         )+
         $crate::allow_tables_to_appear_in_same_query!($($right_mod,)+);
     };
@@ -1272,6 +1329,25 @@ macro_rules! allow_tables_to_appear_in_same_query {
     ($last_table:ident,) => {};
 
     () => {};
+}
+#[doc(hidden)]
+#[macro_export]
+#[cfg(feature = "postgres_backend")]
+macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_query {
+    ($left:ident, $right:ident) => {
+        impl $crate::query_source::TableNotEqual<$left::table> for $crate::query_builder::Only<$right::table> {}
+        impl $crate::query_source::TableNotEqual<$right::table> for $crate::query_builder::Only<$left::table> {}
+        impl $crate::query_source::TableNotEqual<$crate::query_builder::Only<$left::table>>
+            for $right::table {}
+        impl $crate::query_source::TableNotEqual<$crate::query_builder::Only<$right::table>>
+            for $left::table {}
+    }
+}
+#[doc(hidden)]
+#[macro_export]
+#[cfg(not(feature = "postgres_backend"))]
+macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_query {
+    ($left:ident, $rigth:ident) => { }
 }
 
 #[doc(hidden)]
@@ -1552,7 +1628,6 @@ macro_rules! __diesel_error_table_size {
         );
     }
 }
-
 
 
 

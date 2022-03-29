@@ -102,6 +102,9 @@ pub(crate) use self::insert_statement::ColumnList;
 pub(crate) use self::select_statement::BoxedSelectStatement;
 pub(crate) use self::select_statement::SelectStatement;
 
+#[cfg(feature = "postgres_backend")]
+pub use crate::pg::query_builder::only::Only;
+
 use crate::backend::{Backend, HasBindCollector};
 use crate::result::QueryResult;
 use std::error::Error;

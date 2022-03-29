@@ -110,7 +110,7 @@ error[E0277]: the trait bound `{integer}: SelectableExpression<NoFromClause>` is
               <(T0, T1) as SelectableExpression<QS>>
               <(T0, T1, T2) as SelectableExpression<QS>>
               <(T0, T1, T2, T3) as SelectableExpression<QS>>
-            and 149 others
+            and 155 others
     = note: required because of the requirements on the impl of `SelectableExpression<NoFromClause>` for `({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>)`
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<NoFromClause>` for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>`
@@ -152,7 +152,7 @@ error[E0277]: the trait bound `{integer}: SelectableExpression<NoFromClause>` is
              <(T0, T1) as SelectableExpression<QS>>
              <(T0, T1, T2) as SelectableExpression<QS>>
              <(T0, T1, T2, T3) as SelectableExpression<QS>>
-           and 149 others
+           and 155 others
    = note: required because of the requirements on the impl of `SelectableExpression<NoFromClause>` for `({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>)`
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `SelectableExpression<NoFromClause>` for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>`
@@ -189,7 +189,7 @@ error[E0277]: the trait bound `{integer}: QueryFragment<Pg>` is not satisfied
              <() as QueryFragment<DB>>
              <(T0, T1) as QueryFragment<__DB>>
              <(T0, T1, T2) as QueryFragment<__DB>>
-           and 266 others
+           and 267 others
    = note: required because of the requirements on the impl of `QueryFragment<Pg>` for `({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>)`
    = note: 3 redundant requirements hidden
    = note: required because of the requirements on the impl of `QueryFragment<Pg>` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
@@ -206,7 +206,7 @@ error[E0277]: the trait bound `{integer}: QueryId` is not satisfied
              <() as QueryId>
              <(T0, T1) as QueryId>
              <(T0, T1, T2) as QueryId>
-           and 230 others
+           and 231 others
    = note: required because of the requirements on the impl of `QueryId` for `({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>)`
    = note: 3 redundant requirements hidden
    = note: required because of the requirements on the impl of `QueryId` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
