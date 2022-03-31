@@ -23,7 +23,7 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
         // a user stored the row in some long time container before calling next another time
         // In this case we copy out the current values into a temporary store and advance
         // the statement iterator internally afterwards
-        let mut last_row = {
+        let last_row = {
             let mut last_row = match outer_last_row.try_borrow_mut() {
                 Ok(o) => o,
                 Err(_e) => {
@@ -38,7 +38,7 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
             let duplicated = last_row.duplicate(column_names);
             std::mem::replace(last_row, duplicated)
         };
-        if let PrivateSqliteRow::Direct(ref mut stmt) = last_row {
+        if let PrivateSqliteRow::Direct(mut stmt) = last_row {
             let res = unsafe {
                 // This is actually safe here as we've already
                 // performed one step. For the first step we would have
@@ -46,18 +46,23 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
                 // have access to `PrivateSqliteRow` at all
                 stmt.step(false)
             };
+            *outer_last_row = Rc::new(RefCell::new(PrivateSqliteRow::Direct(stmt)));
             match res {
                 Err(e) => Some(Err(e)),
                 Ok(false) => None,
                 Ok(true) => {
                     let field_count = field_count;
                     Some(Ok(SqliteRow {
-                        inner: Rc::clone(&outer_last_row),
+                        inner: Rc::clone(outer_last_row),
                         field_count,
                     }))
                 }
             }
         } else {
+            match last_row {
+                PrivateSqliteRow::Direct(_) => dbg!("direct"),
+                PrivateSqliteRow::Duplicated { .. } => dbg!("duplicated"),
+            };
             // any other state than `PrivateSqliteRow::Direct` is invalid here
             // and should not happen. If this ever happens this is a logic error
             // in the code above
