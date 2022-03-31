@@ -501,6 +501,11 @@ where
     DB: Backend,
     T::Row: FromStaticSqlRow<ST, DB>,
 {
+    // This inline(always) attribute is here as benchmarks have shown
+    // a up to 5% reduction in instruction count of having it here
+    //
+    // A plain inline attribute does not show similar improvements
+    #[inline(always)]
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
         let row = <T::Row as FromStaticSqlRow<ST, DB>>::build_from_row(row)?;
         T::build(row)
