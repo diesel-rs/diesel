@@ -142,7 +142,7 @@ impl Statement {
             }
             (t, b) => {
                 return Err(Error::SerializationError(
-                    format!("Type missmatch: Expected {:?}, got {}", t, b).into(),
+                    format!("Type mismatch: Expected {:?}, got {}", t, b).into(),
                 ))
             }
         };
