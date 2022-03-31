@@ -19,7 +19,6 @@ pub(super) enum PrivateSqliteRow<'stmt, 'query> {
         values: Vec<Option<OwnedSqliteValue>>,
         column_names: Rc<[Option<String>]>,
     },
-    TemporaryEmpty,
 }
 
 impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
@@ -57,7 +56,6 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
                     .collect(),
                 column_names: column_names.clone(),
             },
-            PrivateSqliteRow::TemporaryEmpty => PrivateSqliteRow::TemporaryEmpty,
         }
     }
 }
@@ -110,16 +108,6 @@ impl<'stmt, 'idx, 'query> RowIndex<&'idx str> for SqliteRow<'stmt, 'query> {
             PrivateSqliteRow::Duplicated { column_names, .. } => column_names
                 .iter()
                 .position(|n| n.as_ref().map(|s| s as &str) == Some(field_name)),
-            PrivateSqliteRow::TemporaryEmpty => {
-                // This cannot happen as this is only a temproray state
-                // used inside of `StatementIterator::next()`
-                unreachable!(
-                    "You've reached an impossible internal state. \
-                     If you ever see this error message please open \
-                     an issue at https://github.com/diesel-rs/diesel \
-                     providing example code how to trigger this error."
-                )
-            }
         }
     }
 }
@@ -137,16 +125,6 @@ impl<'stmt, 'query> Field<'stmt, Sqlite> for SqliteField<'stmt, 'query> {
             PrivateSqliteRow::Duplicated { column_names, .. } => column_names
                 .get(self.col_idx as usize)
                 .and_then(|t| t.as_ref().map(|n| n as &str)),
-            PrivateSqliteRow::TemporaryEmpty => {
-                // This cannot happen as this is only a temproray state
-                // used inside of `StatementIterator::next()`
-                unreachable!(
-                    "You've reached an impossible internal state. \
-                     If you ever see this error message please open \
-                     an issue at https://github.com/diesel-rs/diesel \
-                     providing example code how to trigger this error."
-                )
-            }
         }
     }
 
