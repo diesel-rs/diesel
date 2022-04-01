@@ -123,19 +123,24 @@ async fn connection() -> TestConnection {
     let mut conn = diesel_async::AsyncMysqlConnection::establish(&connection_url)
         .await
         .unwrap();
-    AsyncConnection::execute(&mut conn, "SET FOREIGN_KEY_CHECKS = 0;")
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 0;")
+        .execute(&mut conn)
         .await
         .unwrap();
-    AsyncConnection::execute(&mut conn, "TRUNCATE TABLE comments")
+    diesel::sql_query("TRUNCATE TABLE comments")
+        .execute(&mut conn)
         .await
         .unwrap();
-    AsyncConnection::execute(&mut conn, "TRUNCATE TABLE posts")
+    diesel::sql_query("TRUNCATE TABLE posts")
+        .execute(&mut conn)
         .await
         .unwrap();
-    AsyncConnection::execute(&mut conn, "TRUNCATE TABLE users")
+    diesel::sql_query("TRUNCATE TABLE users")
+        .execute(&mut conn)
         .await
         .unwrap();
-    AsyncConnection::execute(&mut conn, "SET FOREIGN_KEY_CHECKS = 1;")
+    diesel::sql_query("SET FOREIGN_KEY_CHECKS = 1;")
+        .execute(&mut conn)
         .await
         .unwrap();
     conn
@@ -150,13 +155,16 @@ async fn connection() -> TestConnection {
     let mut conn = diesel_async::AsyncPgConnection::establish(&connection_url)
         .await
         .unwrap();
-    AsyncConnection::execute(&mut conn, "TRUNCATE TABLE comments CASCADE")
+    diesel::sql_query("TRUNCATE TABLE comments CASCADE")
+        .execute(&mut conn)
         .await
         .unwrap();
-    AsyncConnection::execute(&mut conn, "TRUNCATE TABLE posts CASCADE")
+    diesel::sql_query("TRUNCATE TABLE posts CASCADE")
+        .execute(&mut conn)
         .await
         .unwrap();
-    AsyncConnection::execute(&mut conn, "TRUNCATE TABLE users CASCADE")
+    diesel::sql_query("TRUNCATE TABLE users CASCADE")
+        .execute(&mut conn)
         .await
         .unwrap();
     conn

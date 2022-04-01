@@ -77,35 +77,50 @@ fn connection() -> Connection {
     conn
 }
 
-fn insert_users(
+fn insert_users<'a>(
     size: usize,
-    conn: &mut Connection,
+    conn: &'a Connection,
+    stmt_handle: &mut Option<rusqlite::Statement<'a>>,
     hair_color_init: impl Fn(usize) -> Option<String>,
 ) {
     if size == 0 {
         return;
     }
+    let mut params = Vec::<(String, Option<String>)>::with_capacity(size);
 
-    let conn = conn.transaction().unwrap();
+    let stmt = if let Some(stmt) = stmt_handle {
+        for x in 0..size {
+            params.push((format!("User {}", x), hair_color_init(x)));
+        }
 
-    {
-        let mut query = conn
-            .prepare("INSERT INTO users (name, hair_color) VALUES (?, ?)")
-            .unwrap();
+        stmt
+    } else {
+        let mut query = String::from("INSERT INTO users (name, hair_color) VALUES");
 
         for x in 0..size {
-            query
-                .execute(params!(format!("User {}", x), hair_color_init(x)))
-                .unwrap();
+            if x != 0 {
+                query += ",";
+            }
+            query += "(?, ?)";
+            params.push((format!("User {}", x), hair_color_init(x)));
         }
-    }
+        let query = conn.prepare(&query).unwrap();
 
-    conn.commit().unwrap();
+        *stmt_handle = Some(query);
+        stmt_handle.as_mut().unwrap()
+    };
+
+    let params: Vec<_> = params
+        .iter()
+        .flat_map(|&(ref name, ref hair_color)| [name as &dyn rusqlite::ToSql, hair_color as _])
+        .collect();
+    stmt.execute(&params as &[_]).unwrap();
 }
 
 pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
-    insert_users(size, &mut conn, |_| None);
+    let conn = connection();
+    let mut insert_stmt = None;
+    insert_users(size, &conn, &mut insert_stmt, |_| None);
 
     let mut query = conn
         .prepare("SELECT id, name, hair_color FROM users")
@@ -120,8 +135,9 @@ pub fn bench_trivial_query_by_id(b: &mut Bencher, size: usize) {
 }
 
 pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
-    insert_users(size, &mut conn, |_| None);
+    let conn = connection();
+    let mut insert_stmt = None;
+    insert_users(size, &conn, &mut insert_stmt, |_| None);
 
     let mut query = conn
         .prepare("SELECT id, name, hair_color FROM users")
@@ -136,8 +152,9 @@ pub fn bench_trivial_query_by_name(b: &mut Bencher, size: usize) {
 }
 
 pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
-    insert_users(size, &mut conn, |i| {
+    let conn = connection();
+    let mut insert_stmt = None;
+    insert_users(size, &conn, &mut insert_stmt, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     });
 
@@ -168,8 +185,9 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
 }
 
 pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
-    insert_users(size, &mut conn, |i| {
+    let conn = connection();
+    let mut insert_stmt = None;
+    insert_users(size, &conn, &mut insert_stmt, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     });
 
@@ -204,15 +222,20 @@ pub fn bench_medium_complex_query_by_name(b: &mut Bencher, size: usize) {
 }
 
 pub fn bench_insert(b: &mut Bencher, size: usize) {
-    let mut conn = connection();
+    let conn = connection();
 
-    b.iter(|| insert_users(size, &mut conn, |_| Some(String::from("hair_color"))))
+    let mut insert_stmt = None;
+    b.iter(|| {
+        insert_users(size, &conn, &mut insert_stmt, |_| {
+            Some(String::from("hair_color"))
+        })
+    })
 }
 
 pub fn loading_associations_sequentially(b: &mut Bencher) {
-    let mut conn = connection();
-
-    insert_users(9, &mut conn, |i| {
+    let conn = connection();
+    let mut insert_stmt = None;
+    insert_users(9, &conn, &mut insert_stmt, |i| {
         Some(if i % 2 == 0 {
             String::from("black")
         } else {
@@ -231,7 +254,6 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     };
 
     {
-        let conn = conn.transaction().unwrap();
         {
             let mut insert_posts = conn
                 .prepare("INSERT INTO posts(title, user_id, body) VALUES (?, ?, ?)")
@@ -249,8 +271,6 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                 }
             }
         }
-
-        conn.commit().unwrap();
     }
 
     let all_posts = {
@@ -264,7 +284,6 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
     };
 
     {
-        let conn = conn.transaction().unwrap();
         {
             let mut insert_comments = conn
                 .prepare("INSERT INTO comments(text, post_id) VALUES (?, ?)")
@@ -281,8 +300,6 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                 }
             }
         }
-
-        conn.commit().unwrap();
     }
 
     let mut user_query = conn
