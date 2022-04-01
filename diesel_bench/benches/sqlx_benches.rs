@@ -178,46 +178,28 @@ async fn insert_users(
     conn: &mut Connection,
     hair_color_init: impl Fn(usize) -> Option<String>,
 ) {
-    use sqlx::Connection;
-
     if size == 0 {
         return;
     }
 
-    if cfg!(feature = "sqlite") {
-        let query = String::from("INSERT INTO users (name, hair_color) VALUES(?, ?)");
+    let mut query = String::from("INSERT INTO users (name, hair_color) VALUES");
 
-        let mut conn = Connection::begin(conn).await.unwrap();
-        for x in 0..size {
-            sqlx::query(&query)
-                .bind(format!("User {}", x))
-                .bind(hair_color_init(x))
-                .execute(&mut *conn)
-                .await
-                .unwrap();
-        }
-
-        conn.commit().await.unwrap();
-    } else {
-        let mut query = String::from("INSERT INTO users (name, hair_color) VALUES");
-
-        for x in 0..size {
-            let (bind_a, bind_b) = if cfg!(feature = "mysql") {
-                ("?".into(), "?".into())
-            } else {
-                (format!("${}", 2 * x + 1), format!("${}", 2 * x + 2))
-            };
-            query += &format!("{} ({}, {})", if x == 0 { "" } else { "," }, bind_a, bind_b);
-        }
-
-        let mut query = sqlx::query(&query);
-
-        for x in 0..size {
-            query = query.bind(format!("User {}", x)).bind(hair_color_init(x));
-        }
-
-        query.execute(conn).await.unwrap();
+    for x in 0..size {
+        let (bind_a, bind_b) = if cfg!(any(feature = "mysql", feature = "sqlite")) {
+            ("?".into(), "?".into())
+        } else {
+            (format!("${}", 2 * x + 1), format!("${}", 2 * x + 2))
+        };
+        query += &format!("{} ({}, {})", if x == 0 { "" } else { "," }, bind_a, bind_b);
     }
+
+    let mut query = sqlx::query(&query);
+
+    for x in 0..size {
+        query = query.bind(format!("User {}", x)).bind(hair_color_init(x));
+    }
+
+    query.execute(conn).await.unwrap();
 }
 
 pub fn bench_trivial_query_query_as_macro(b: &mut Bencher, size: usize) {
