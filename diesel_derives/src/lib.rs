@@ -300,7 +300,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///    is insertable into. The path is relative to the current module.
 ///    If this attribute is not used, the type name converted to
 ///    `snake_case` with an added `s` is used as table name
-/// * `#[diesel(treat_none_as_default_value = false)], specifies that `None` values
+/// * `#[diesel(treat_none_as_default_value = false)]`, specifies that `None` values
 ///    should be converted to `NULL` values on SQL side instead of being treated as `DEFAULT`
 ///    value primitive. *Note*: This option may control if your query is stored in the
 ///    prepared statement cache or not*
