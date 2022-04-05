@@ -442,6 +442,54 @@ pub trait ExpressionMethods: Expression + Sized {
     fn asc(self) -> dsl::Asc<Self> {
         Asc::new(self)
     }
+}
+
+impl<T> ExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: SingleValue,
+{
+}
+
+/// Methods present on all expressions
+pub trait NullableExpressionMethods: Expression + Sized {
+    /// Converts this potentially non-null expression into one which is treated
+    /// as nullable. This method has no impact on the generated SQL, and is only
+    /// used to allow certain comparisons that would otherwise fail to compile.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # #![allow(dead_code)]
+    /// # include!("../doctest_setup.rs");
+    /// # use diesel::sql_types::*;
+    /// # use schema::users;
+    /// #
+    /// table! {
+    ///     posts {
+    ///         id -> Integer,
+    ///         user_id -> Integer,
+    ///         author_name -> Nullable<VarChar>,
+    ///     }
+    /// }
+    /// #
+    /// # joinable!(posts -> users (user_id));
+    /// # allow_tables_to_appear_in_same_query!(posts, users);
+    ///
+    /// fn main() {
+    ///     use self::users::dsl::*;
+    ///     use self::posts::dsl::{posts, author_name};
+    ///     let connection = &mut establish_connection();
+    ///
+    ///     let data = users.inner_join(posts)
+    ///         .filter(name.nullable().eq(author_name))
+    ///         .select(name)
+    ///         .load::<String>(connection);
+    ///     println!("{:?}", data);
+    /// }
+    /// ```
+    fn nullable(self) -> dsl::Nullable<Self> {
+        nullable::Nullable::new(self)
+    }
 
     /// Converts this potentially nullable expression into one which will be **assumed**
     /// to be not-null. This method has no impact on the generated SQL, however it will
@@ -559,54 +607,6 @@ pub trait ExpressionMethods: Expression + Sized {
     /// ```
     fn assume_not_null(self) -> dsl::AssumeNotNull<Self> {
         assume_not_null::AssumeNotNull::new(self)
-    }
-}
-
-impl<T> ExpressionMethods for T
-where
-    T: Expression,
-    T::SqlType: SingleValue,
-{
-}
-
-/// Methods present on all expressions
-pub trait NullableExpressionMethods: Expression + Sized {
-    /// Converts this potentially non-null expression into one which is treated
-    /// as nullable. This method has no impact on the generated SQL, and is only
-    /// used to allow certain comparisons that would otherwise fail to compile.
-    ///
-    /// # Example
-    /// ```no_run
-    /// # #![allow(dead_code)]
-    /// # include!("../doctest_setup.rs");
-    /// # use diesel::sql_types::*;
-    /// # use schema::users;
-    /// #
-    /// table! {
-    ///     posts {
-    ///         id -> Integer,
-    ///         user_id -> Integer,
-    ///         author_name -> Nullable<VarChar>,
-    ///     }
-    /// }
-    /// #
-    /// # joinable!(posts -> users (user_id));
-    /// # allow_tables_to_appear_in_same_query!(posts, users);
-    ///
-    /// fn main() {
-    ///     use self::users::dsl::*;
-    ///     use self::posts::dsl::{posts, author_name};
-    ///     let connection = &mut establish_connection();
-    ///
-    ///     let data = users.inner_join(posts)
-    ///         .filter(name.nullable().eq(author_name))
-    ///         .select(name)
-    ///         .load::<String>(connection);
-    ///     println!("{:?}", data);
-    /// }
-    /// ```
-    fn nullable(self) -> dsl::Nullable<Self> {
-        nullable::Nullable::new(self)
     }
 }
 
