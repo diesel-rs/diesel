@@ -1,10 +1,10 @@
 # Diesel 2.0 Migration guide
 
-Diesel 2.0 changes large parts of the internal implementation of diesel. 
+Diesel 2.0 introduces substantial changes to Diesel's inner workings. 
 In some cases this impacts code written using Diesel 1.4.x. 
 This document outlines notable changes and presents potential update strategies. 
 We recommend to start the upgrade by removing the usage of all items that 
-are deprecated on Diesel 1.4.x.
+are marked as deprecated in Diesel 1.4.x.
 
 We expect that not all users are effected equally by different required changes. 
 Any code base using migrating to Diesel 2.0 is expected to be affected at least by 
@@ -13,32 +13,33 @@ the following changes:
 * [Diesel requires now a mutable connetion type](2-0-0-mutable-connection)
 * [Changed derive attributes](2-0-0-derive-attributes)
 
-Any users of `diesel_migration` are additionally affected by the following change:
+Users of `diesel_migration` are additionally affected by the following change:
 
 * [`diesel_migration` rewrite](2-0-0-upgrade-migrations)
 
-Any user of `BoxableExpression` might be affected by the following change:
+Users of `BoxableExpression` might be affected by the following change:
 
 * [Changed nullability of operators](2-0-0-nullability-ops)
 
-Any users that implement support for their SQL types or type mappings are affected 
+Users that implement support for their SQL types or type mappings are affected 
 by the following changes:
 
 * [Changed required traits for custom SQL types](2-0-0-custom-type-implementation)
 * [Changed `ToSql` implementations](2-0-0-to-sql)
 * [Changed `FromSql` implementations](2-0-0-from-sql)
 
-Any user that used the `no_arg_sql_function!` macro might want to replace their usage:
+`no_arg_sql_function!` macro is now pending deprecation.
+Users of the macro are advised to consider `sql_function!` macro.
 
 * [Deprecated usage of `no_arg_sql_function!` macro](2-0-0-no_arg_sql_function)
 
-Users that update generic diesel code will also be affected by the following changes:
+Users that update generic Diesel code will also be affected by the following changes:
 
 * [Removing `NonAggregate` in favor of `ValidGrouping`](2-0-0-upgrade-non-aggregate)
 * [Changed generic bounds](2-0-0-generic-changes)
 
 Additionally this release contains many changes for users that implemented a custom backend/connection.
-We do not provide explicit migration steps there, but we encourage users to reach out for questions there. 
+We do not provide explicit migration steps but we encourage users to reach out with questions pertaining to these changes. 
 
 ## Mutable Connections required
 <a name="2-0-0-mutable-connection"></a>
@@ -53,14 +54,14 @@ are required for all usages of a `Connection` type:
 + let result = some_query.load(&mut connection)?;
 ```
 
-We expect that this is a straightforward change as there connection already can execute only one query at the time.
+We expect this to be a straightforward change as the connection already can execute only one query at a time.
 
 
 ## Derive attributes
 <a name="2-0-0-derive-attributes"></a>
 
-We have updated all of our diesel derive attributes to follow the patterns that are used
-widely in the rust ecosystem. This means that all of them need to be wrapped by `#[diesel()]` now. And you can specify multiple attributes on the same line now separated by `,`.
+We have updated all of our Diesel derive attributes to follow the patterns that are used
+widely in the Rust's ecosystem. This means that all of them need to be wrapped by `#[diesel()]` now.  You can now specify multiple attributes on the same line using `,` separator.
 
 This is backward compatible and thus all of your old attributes will still work, but with
 warnings. The attributes can be upgraded by either looking at the warnings or by reading
@@ -69,12 +70,12 @@ diesel derive documentation reference.
 ## `diesel_migration` rewrite
 <a name = "2-0-0-upgrade-migrations"></a>
 
-We have completely rewritten the `diesel_migration` crate. As part of this rewrite all 
+We have completely rewritten the `diesel_migration` crate. As a part of this rewrite all 
 free standing functions are removed from `diesel_migration`. Equivalent functionality 
 is now provided by the `MigrationHarness` trait, which is implemented for any `Connection` 
-type and for `HarnessWithOutput`. Checkout their documentation for details.
+type and for `HarnessWithOutput`. Refer to their documentations for details.
 
-Additionally this rewrite changed the way we provide migrations. Instead of having a own implementation
+Additionally, this rewrite changed the way we provide migrations. Instead of having our own implementation
 for file based and embedded migration we now provide a unified `MigrationSource` trait to abstract 
 over the differences. `diesel_migration` provides two implementations:
 
@@ -108,8 +109,8 @@ fn run_migration(conn: &PgConnection) {
 We changed the way how we handle the propagation of null values through binary operators. Diesel 1.x always assumed 
 that the result of a binary operation `value_a > value_b` is not nullable, which does not match the behaviour of the 
 underlying databases. `value_a > null` may return a `NULL` value there. With Diesel 2.0 we changed this to match more
-closely the behaviour of the underlying databases. We expect that this change has the biggest impact on existing usages
-of `BoxableExpression` as it may change the resulting sql type there. As possibly workaround for divering sql types 
+closely the behaviour of the underlying databases. We expect this change to have the biggest impact on existing usages
+of `BoxableExpression` as it may change the resulting sql type there. As a possible workaround for divering sql types 
 there we recommend to use one of the following functions:
 
 * `NullableExpressionMethods::nullable()`
@@ -133,13 +134,13 @@ it with a corresponding `SqlType` implementation:
 + }
 ```
 
-Additionally the diesel CLI tool was changed so that it automatically generates the rust side definition of custom SQL types 
+Additionally, the diesel CLI tool was changed so that it automatically generates the Rust side definition of custom SQL types 
 as long as they appear on any table. This feature currently only supports the PostgreSQL backend, as all other supported backends
 do not support real custom types at SQL level at all.
 
 ## Changed `ToSql` implementations
 
-We restructured the way diesel serializes rust values to their backend specific representation.
+We restructured the way Diesel serializes Rust values to their backend specific representation.
 This enables us to skip copying the value at all if the specific backend supports writing to a 
 shared buffer. Unfortunately, this feature requires changes to the `ToSql` trait. This change introduces
 a lifetime that ensures that a value implementing `ToSql` outlives the underlying serialisation buffer.
@@ -148,19 +149,19 @@ Additionally we separated the output buffer type for Sqlite from the type used f
 This has the implication that for generic implementations using a inner existing `ToSql` implementation you cannot
 create temporary values anymore and forward them to the inner implementation.
 
-For backend concrete implementations there are the following functions avaible to workaround this limitation:
+For backend concrete implementations, the following functions allow You to work around this limitation:
 
 * `Output::reborrow()` for the `Pg` and `Mysql` backend
-* `Output::set_value()` for the `Sqlite` backend (Checkout the documentation of `SqliteBindValue` for accepted values)
+* `Output::set_value()` for the `Sqlite` backend (Refer to the documentation of `SqliteBindValue` for accepted values)
 
 
 
 ## Changed `FromSql` implementations
 <a name="2-0-0-from-sql"></a>
 
-We changed the raw value representation for both, the postgres and mysql
-backend, from a `& [u8]` to an opaque type. This allows us to include additional information like the database side
-type there. This change enables users to write `FromSql` implementations that decide dynamically which kind of value
+We changed the raw value representation for both PostgreSQL and MySQL
+backends, from a `& [u8]` to an opaque type. This allows us to include additional information like the database side
+type there. This change enables users to write `FromSql` implementations that decide dynamically what kind of value
 was received. The new value types for both backends expose a `as_bytes()` method to access the underlying byte buffer.
 
 Any affected backend needs to perform the following changes:
@@ -183,7 +184,7 @@ impl<DB: Backend> FromSql<YourSqlType, DB> for YourType {
 The `no_arg_sql_function` was deprecated without direct replacement. At the same time the
 `sql_function!` macro gained support for sql functions without argument. This support generates slightly 
 different code. Instead of representing the sql function as zero sized struct, `sql_function!` will generate an ordinary function call without arguments. This requires changing any usage of the generated dsl. This change 
-affects any usage of `no_arg_sql_function!` in third party crates.
+affects all of the usages of the `no_arg_sql_function!` in third party crates.
 
 ```diff
 - no_arg_sql_function!(now, sql_types::Timestamp, "Represents the SQL NOW() function");
@@ -201,11 +202,11 @@ affects any usage of `no_arg_sql_function!` in third party crates.
 ### Replacement of `NonAggregate` with `ValidGrouping`
 <a name="2-0-0-upgrade-non-aggregate"></a>
 
-Diesel does now fully enforce aggregation rules, which required us to change the way we represent aggregation 
-at the type system level. This is used to provide `group_by` support. Diesels aggregation rules 
-match the semantics of PostgreSQL or Mysql with the `ONLY_FULL_GROUP_BY` option enabled.
+Diesel now fully enforces the aggregation rules, which required us to change the way we represent the aggregation 
+at the type system level. This is used to provide `group_by` support. Diesel's aggregation rules 
+match the semantics of PostgreSQL or MySQL with the `ONLY_FULL_GROUP_BY` option enabled.
 
-As part of this change we removed the `NonAggregate` trait in favor of a new more expressive `ValidGrouping`
+As part of this change we removed the `NonAggregate` trait in favor of a new, more expressive `ValidGrouping`
 trait. Existing implementations of `NonAggregate` must be replaced with an equivalent `ValidGrouping` implementation.
 
 The following change shows how to replace an existing implementation with a strictly equivalent implementation.
@@ -216,9 +217,9 @@ The following change shows how to replace an existing implementation with a stri
 + }
 ```
 Additional changes may be required to adapt custom query ast implementations to fully support `group_by` clauses. 
-Checkout the documentation of `ValidGrouping` for details there.
+Refer to the documentation of `ValidGrouping` for details.
 
-In addition any occurrence of `NonAggregate` in trait bounds needs to be replaced. Again the following
+In addition, any occurrence of `NonAggregate` in trait bounds needs to be replaced. Again, the following
 change shows the strictly equivalent version:
 
 ```diff
@@ -233,18 +234,18 @@ change shows the strictly equivalent version:
 ## Other changes to generics
 <a name="2-0-0-generic-changes">
 
-In addition to the changes listed above, we changed numerous internal details of diesel. This will have impacts on
-most people that wrote non trivial generic code abstracting over diesel. This section tries to list as much of those
+In addition to the changes listed above, we changed numerous internal details of Diesel. This will have impact on
+most codebases that include non-trivial generic code abstracting over Diesel. This section tries to list as much of those
 changes as possible
 
 ### Removed most of the non-public reachable API
 
 With Diesel 2.0 we removed most of the API which was marked with `#[doc(hidden)]`. Technically these parts of the API 
-have always been private to diesel. This change enforces this distinction a in a stricter way. In addition some
+have always been private to Diesel. This change enforces this distinction in stricter way. In addition, some
 parts of these formerly hidden API are now documented and exposed behind the
 `i-implement-a-third-party-backend-and-opt-into-breaking-changes` crate feature. As the name already implies 
-we reserve the right to change these API's between different diesel 2.x minor releases, so you should always specify
-a concrete minor release version if you use these API's.
+we reserve the right to change these APIs between different Diesel 2.x minor releases, so you should always pin
+a concrete minor release version if you use these APIs.
 If you depended on such an API and you cannot find a suitable replacement we invite you to work with us on exposing the corresponding 
 feature as part of the stable API.
 
@@ -254,14 +255,14 @@ We changed the internal structure of the `FromSqlRow`, `Queryable` and `Queryabl
 We hopefully put sufficient wild card implementations in place so that old trait bounds imply 
 the right trait anyway. For cases where this does not hold true, the following changes may be required:
 
-`Queryable<ST, DB>` is now equivalent to `FromSqlRow<ST, DB>`. The later is used as actual trait bound 
+`Queryable<ST, DB>` is now equivalent to `FromSqlRow<ST, DB>`. The latter is used as an actual trait bound 
 on the corresponding `RunQueryDsl` methods.
-`QueryableByName<DB>` is now equivalent to `FromSqlRow<Untyped, DB>`. The later is used as actual trait 
+`QueryableByName<DB>` is now equivalent to `FromSqlRow<Untyped, DB>`. The latter is used as an actual trait 
 on the corresponding `RunQueryDsl` methods.
 
 ### Changed the scope of `QueryFragment` implementations
 
-With diesel 2.0 we introduced a way to specialise `QueryFragment` implementations for specific backend, while 
+With Diesel 2.0, we introduced a way to specialise `QueryFragment` implementations for specific backend, while 
 providing a generic implementation for other backends. To be able to use this feature in the future we marked
 existing wild card `QueryFragment` implementations with an additional `DieselReserveSpecialization`. 
 Rustc suggests just adding an additional trait bound on this trait. It's not possible to add a bound on 
