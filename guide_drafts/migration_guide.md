@@ -6,7 +6,6 @@ This document outlines notable changes and presents potential update strategies.
 We recommend to start the upgrade by removing the usage of all items that 
 are marked as deprecated in Diesel 1.4.x.
 
-We expect that not all users are effected equally by different required changes. 
 Any code base using migrating to Diesel 2.0 is expected to be affected at least by 
 the following changes:
 
@@ -45,7 +44,7 @@ We do not provide explicit migration steps but we encourage users to reach out w
 <a name="2-0-0-mutable-connection"></a>
 
 Diesel now requires mutable access to the `Connection` to perform any database interaction. The following changes
-are required for all usages of a `Connection` type:
+are required for all usages of any `Connection` type:
 
 ```diff
 - let connection = PgConnection::establish_connection("…")?;

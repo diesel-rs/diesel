@@ -3,10 +3,10 @@
 All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
-For any named minimal supported rust version we guarantee that it is possible to build diesel with the 
+For any named minimal supported Rust version we guarantee that it is possible to build Diesel with the 
 default features enabled using some set of dependencies. Those set of dependencies is not necessarily 
 an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
-Increasing the minimal supported rust version will always be coupled at least with a minor release.
+Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
 ## Unreleased
 
