@@ -1,5 +1,5 @@
 use super::data_structures::*;
-use heck::CamelCase;
+use heck::ToUpperCamelCase;
 use std::error::Error;
 use std::io::{stderr, Write};
 
@@ -39,7 +39,7 @@ pub fn determine_column_type(
             }
         }),
         sql_name: tpe.to_lowercase(),
-        rust_name: tpe.to_camel_case(),
+        rust_name: tpe.to_upper_camel_case(),
         is_array,
         is_nullable: attr.nullable,
         is_unsigned: false,
