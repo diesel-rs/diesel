@@ -39,7 +39,8 @@ impl QueryBuilder<Pg> for PgQueryBuilder {
     fn push_bind_param(&mut self) {
         self.push_bind_param_value_only();
         self.sql += "$";
-        itoa::fmt(&mut self.sql, self.bind_idx).expect("int formating does not fail");
+        let mut buffer = itoa::Buffer::new();
+        self.sql += buffer.format(self.bind_idx);
     }
 
     fn push_bind_param_value_only(&mut self) {
