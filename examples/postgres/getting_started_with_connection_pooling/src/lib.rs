@@ -21,7 +21,8 @@ pub fn get_pg_pool() -> PostgresPool {
     dotenv().ok();
     let url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let manager = ConnectionManager::<PgConnection>::new(url);
-    // Refer to the `r2d2` documentation for more methods to use on Pool build
+    // Refer to the `r2d2` documentation for more methods to use
+    // when building a connection pool
     Pool::builder()
         .max_size(2)
         .test_on_check_out(true)
