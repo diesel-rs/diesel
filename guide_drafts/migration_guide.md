@@ -9,7 +9,7 @@ are marked as deprecated in Diesel 1.4.x.
 Any code base using migrating to Diesel 2.0 is expected to be affected at least by 
 the following changes:
 
-* [Diesel requires now a mutable connetion type](2-0-0-mutable-connection)
+* [Diesel now requires a mutable reference to the connection](2-0-0-mutable-connection)
 * [Changed derive attributes](2-0-0-derive-attributes)
 
 Users of `diesel_migration` are additionally affected by the following change:
