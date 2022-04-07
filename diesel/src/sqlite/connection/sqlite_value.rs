@@ -49,16 +49,6 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
             PrivateSqliteRow::Duplicated { values, .. } => {
                 values.get(col_idx as usize).and_then(|v| v.as_ref())?.value
             }
-            PrivateSqliteRow::TemporaryEmpty => {
-                // This cannot happen as this is only a temproray state
-                // used inside of `StatementIterator::next()`
-                unreachable!(
-                    "You've reached an impossible internal state. \
-                     If you ever see this error message please open \
-                     an issue at https://github.com/diesel-rs/diesel \
-                     providing example code how to trigger this error."
-                )
-            }
         };
 
         let ret = Self { _row: row, value };

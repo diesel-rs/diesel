@@ -373,7 +373,6 @@ impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
 pub struct StatementUse<'stmt, 'query> {
     statement: BoundStatement<'stmt, 'query>,
     column_names: OnceCell<Vec<*const str>>,
-    called_step_once: bool,
 }
 
 impl<'stmt, 'query> StatementUse<'stmt, 'query> {
@@ -387,33 +386,34 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         Ok(Self {
             statement: BoundStatement::bind(statement, query)?,
             column_names: OnceCell::new(),
-            called_step_once: false,
         })
     }
 
-    pub(super) fn run(self) -> QueryResult<()> {
-        self.step().map(|_| ())
+    pub(super) fn run(mut self) -> QueryResult<()> {
+        unsafe {
+            // This is safe as we pass `first_step = true`
+            // and we consume the statement so nobody could
+            // access the columnns later on anyway.
+            self.step(true).map(|_| ())
+        }
     }
 
-    pub(super) fn step(self) -> QueryResult<Option<Self>> {
-        let res = unsafe {
-            match ffi::sqlite3_step(self.statement.statement.inner_statement.as_ptr()) {
-                ffi::SQLITE_DONE => Ok(None),
-                ffi::SQLITE_ROW => Ok(Some(())),
-                _ => Err(last_error(self.statement.statement.raw_connection())),
-            }
-        }?;
-        Ok(res.map(move |()| {
-            if self.called_step_once {
-                self
-            } else {
-                Self {
-                    called_step_once: true,
-                    column_names: OnceCell::new(),
-                    ..self
-                }
-            }
-        }))
+    // This function is marked as unsafe incorrectly passing `false` to `first_step`
+    // for a first call to this function could cause access to freed memory via
+    // the cached column names.
+    //
+    // It's always safe to call this function with `first_step = true` as this removes
+    // the cached column names
+    pub(super) unsafe fn step(&mut self, first_step: bool) -> QueryResult<bool> {
+        let res = match ffi::sqlite3_step(self.statement.statement.inner_statement.as_ptr()) {
+            ffi::SQLITE_DONE => Ok(false),
+            ffi::SQLITE_ROW => Ok(true),
+            _ => Err(last_error(self.statement.statement.raw_connection())),
+        };
+        if first_step {
+            self.column_names = OnceCell::new();
+        }
+        res
     }
 
     // The returned string pointer is valid until either the prepared statement is
