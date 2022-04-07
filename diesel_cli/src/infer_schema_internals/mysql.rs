@@ -1,6 +1,6 @@
 use diesel::mysql::Mysql;
 use diesel::*;
-use heck::CamelCase;
+use heck::ToUpperCamelCase;
 use std::error::Error;
 
 use super::data_structures::*;
@@ -94,7 +94,7 @@ pub fn determine_column_type(
     Ok(ColumnType {
         schema: None,
         sql_name: tpe.trim().to_lowercase(),
-        rust_name: tpe.trim().to_camel_case(),
+        rust_name: tpe.trim().to_upper_camel_case(),
         is_array: false,
         is_nullable: attr.nullable,
         is_unsigned: unsigned,
