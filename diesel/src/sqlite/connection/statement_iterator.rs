@@ -59,10 +59,6 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
                 }
             }
         } else {
-            match last_row {
-                PrivateSqliteRow::Direct(_) => dbg!("direct"),
-                PrivateSqliteRow::Duplicated { .. } => dbg!("duplicated"),
-            };
             // any other state than `PrivateSqliteRow::Direct` is invalid here
             // and should not happen. If this ever happens this is a logic error
             // in the code above
