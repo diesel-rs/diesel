@@ -18,6 +18,7 @@ members = [
     "examples/postgres/getting_started_step_1",
     "examples/postgres/getting_started_step_2",
     "examples/postgres/getting_started_step_3",
+    "examples/postgres/getting_started_with_connection_pooling",
     "examples/postgres/custom_types",
     "examples/sqlite/all_about_inserts",
     "examples/sqlite/getting_started_step_1",

@@ -1,0 +1,27 @@
+[package]
+name = "diesel_demo_pg_with_conn_pooling"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres", "r2d2"] }
+dotenvy = "0.15"
+
+[[bin]]
+name = "show_posts"
+doc = false
+
+[[bin]]
+name = "write_post"
+doc = false
+
+[[bin]]
+name = "delete_post"
+doc = false
+
+[[bin]]
+name = "publish_post"
+doc = false
+
+[lib]
+doc = false
