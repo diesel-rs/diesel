@@ -18,8 +18,6 @@
 //! use diesel::r2d2::ConnectionManager;
 //! use diesel::r2d2::Pool;
 //! use std::env;
-//! use std::sync::Arc;
-//! use std::sync::Mutex;
 //! use std::thread;
 //!
 //! pub type PostgresPool = Pool<ConnectionManager<PgConnection>>;
@@ -60,18 +58,17 @@
 //!
 //! fn main() {
 //!     let pool_size = 1;
-//!     let connection_pool = Arc::new(Mutex::new(get_connection_pool(pool_size)));
-//!     setup_user_table(&mut connection_pool.lock().unwrap().get().unwrap());
+//!     let pool = get_connection_pool(pool_size);
+//!     setup_user_table(&mut pool.get().unwrap());
 //!
 //!     let mut threads = vec![];
 //!     let max_users_to_create = 1;
 //!
 //!     for i in 0..max_users_to_create {
-//!         let connection_pool = Arc::clone(&connection_pool);
+//!         let pool = pool.clone();
 //!         threads.push(thread::spawn({
 //!             move || {
-//!                 let connection_pool = connection_pool.lock().unwrap();
-//!                 let conn = &mut connection_pool.get().unwrap();
+//!                 let conn = &mut pool.get().unwrap();
 //!                 let name = format!("Person {}", i);
 //!                 create_user(conn, &name).unwrap();
 //!             }
@@ -82,7 +79,7 @@
 //!         handle.join().unwrap();
 //!     }
 //!
-//!     delete_user_table(&mut connection_pool.lock().unwrap().get().unwrap());
+//!     delete_user_table(&mut pool.get().unwrap());
 //! }
 //! ```
 //!
