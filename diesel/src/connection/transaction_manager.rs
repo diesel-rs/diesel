@@ -306,12 +306,12 @@ where
             }
             Err(e) => {
                 let transaction_state = Self::get_transaction_state(conn)?;
-                let is_serialization_error = transaction_state
+                let is_error_relevant_for_rollback = transaction_state
                     .previous_error_relevant_for_rollback
                     .is_some();
 
                 Self::rollback_transaction(conn).map_err(|e| {
-                    if is_serialization_error {
+                    if is_error_relevant_for_rollback {
                         if let Error::DatabaseError(
                             crate::result::DatabaseErrorKind::SerializationFailure,
                             _,
