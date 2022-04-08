@@ -2,6 +2,92 @@
 //!
 //! Note: This module requires enabling the `r2d2` feature
 //!
+//! # Example
+//!
+//! The below snippet is a contrived example emulating a web application,
+//! where one would first initialize the pool in the `main()` function
+//! (at the start of a long-running process). One would then pass this
+//! pool struct around as shared state, which, here, we've emulated using
+//! threads instead of routes.
+//!
+//! ```rust
+//! # include!("doctest_setup.rs");
+//! use diesel::result::Error;
+//! use diesel::pg::PgConnection;
+//! use diesel::prelude::*;
+//! use diesel::r2d2::ConnectionManager;
+//! use diesel::r2d2::Pool;
+//! use std::env;
+//! use std::sync::Arc;
+//! use std::sync::Mutex;
+//! use std::thread;
+//!
+//! pub type PostgresPool = Pool<ConnectionManager<PgConnection>>;
+//!
+//! pub fn get_connection_pool(pool_size: u32) -> PostgresPool {
+//!     let url = database_url_for_env();
+//!     let manager = ConnectionManager::<PgConnection>::new(url);
+//!     // Refer to the `r2d2` documentation for more methods to use
+//!     // when building a connection pool
+//!     Pool::builder()
+//!         .max_size(pool_size)
+//!         .test_on_check_out(true)
+//!         .build(manager)
+//!         .expect("Could not build connection pool")
+//! }
+//!
+//! pub fn create_user(conn: &mut PgConnection, user_name: &str) -> Result<usize, Error> {
+//!     use schema::users::dsl::*;
+//!
+//!     diesel::insert_into(users)
+//!         .values(name.eq(user_name))
+//!         .execute(conn)
+//! }
+//!
+//! pub fn setup_user_table(conn: &mut PgConnection) {
+//!     diesel::sql_query("DROP TABLE IF EXISTS users CASCADE").execute(conn).unwrap();
+//!     diesel::sql_query("CREATE TABLE users (
+//!         id SERIAL PRIMARY KEY,
+//!         name VARCHAR NOT NULL
+//!     )")
+//!         .execute(conn)
+//!         .unwrap();
+//! }
+//!
+//! pub fn delete_user_table(conn: &mut PgConnection) {
+//!     diesel::sql_query("DROP TABLE IF EXISTS users CASCADE").execute(conn).unwrap();
+//! }
+//!
+//! fn main() {
+//!     let pool_size = 1;
+//!     let connection_pool = Arc::new(Mutex::new(get_connection_pool(pool_size)));
+//!     setup_user_table(&mut connection_pool.lock().unwrap().get().unwrap());
+//!
+//!     let mut threads = vec![];
+//!     let max_users_to_create = 1;
+//!
+//!     for i in 0..max_users_to_create {
+//!         let connection_pool = Arc::clone(&connection_pool);
+//!         threads.push(thread::spawn({
+//!             move || {
+//!                 let connection_pool = connection_pool.lock().unwrap();
+//!                 let conn = &mut connection_pool.get().unwrap();
+//!                 let name = format!("Person {}", i);
+//!                 create_user(conn, &name).unwrap();
+//!             }
+//!         }))
+//!     }
+//!
+//!     for handle in threads {
+//!         handle.join().unwrap();
+//!     }
+//!
+//!     delete_user_table(&mut connection_pool.lock().unwrap().get().unwrap());
+//! }
+//! ```
+//!
+//! # A note on error handling
+//!
 //! When used inside a pool, if an individual connection becomes
 //! broken (as determined by the [R2D2Connection::is_broken] method)
 //! then `r2d2` will put close and return the connection to the DB.

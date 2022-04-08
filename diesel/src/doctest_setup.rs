@@ -6,8 +6,12 @@ cfg_if::cfg_if! {
         #[allow(dead_code)]
         type DB = diesel::pg::Pg;
 
+        fn database_url_for_env() -> String {
+            database_url_from_env("PG_DATABASE_URL")
+        }
+
         fn connection_no_transaction() -> PgConnection {
-            let connection_url = database_url_from_env("PG_DATABASE_URL");
+            let connection_url = database_url_for_env();
             PgConnection::establish(&connection_url).unwrap()
         }
 
@@ -82,6 +86,10 @@ cfg_if::cfg_if! {
         #[allow(dead_code)]
         type DB = diesel::sqlite::Sqlite;
 
+        fn database_url_for_env() -> String {
+            String::from(":memory:")
+        }
+
         fn connection_no_data() -> SqliteConnection {
             SqliteConnection::establish(":memory:").unwrap()
         }
@@ -134,8 +142,12 @@ cfg_if::cfg_if! {
         #[allow(dead_code)]
         type DB = diesel::mysql::Mysql;
 
+        fn database_url_for_env() -> String {
+            database_url_from_env("MYSQL_UNIT_TEST_DATABASE_URL")
+        }
+
         fn connection_no_data() -> MysqlConnection {
-            let connection_url = database_url_from_env("MYSQL_UNIT_TEST_DATABASE_URL");
+            let connection_url = database_url_for_env();
             let mut connection = MysqlConnection::establish(&connection_url).unwrap();
             diesel::sql_query("SET FOREIGN_KEY_CHECKS=0").execute(&mut connection).unwrap();
             diesel::sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&mut connection).unwrap();
