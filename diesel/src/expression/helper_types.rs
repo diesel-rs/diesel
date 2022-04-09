@@ -89,7 +89,7 @@ pub type Asc<Expr> = super::operators::Asc<Expr>;
 pub type Nullable<Expr> = super::nullable::Nullable<Expr>;
 
 /// The return type of
-/// [`expr.assume_not_null()`](crate::expression_methods::ExpressionMethods::assume_not_null())
+/// [`expr.assume_not_null()`](crate::expression_methods::NullableExpressionMethods::assume_not_null())
 pub type AssumeNotNull<Expr> = super::assume_not_null::AssumeNotNull<Expr>;
 
 /// The return type of
