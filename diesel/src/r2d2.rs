@@ -2,9 +2,85 @@
 //!
 //! Note: This module requires enabling the `r2d2` feature
 //!
+//! # Example
+//!
+//! The below snippet is a contrived example emulating a web application,
+//! where one would first initialize the pool in the `main()` function
+//! (at the start of a long-running process). One would then pass this
+//! pool struct around as shared state, which, here, we've emulated using
+//! threads instead of routes.
+//!
+//! ```rust
+//! # include!("doctest_setup.rs");
+//! use diesel::prelude::*;
+//! use diesel::r2d2::ConnectionManager;
+//! # use diesel::r2d2::CustomizeConnection;
+//! # use diesel::r2d2::Error as R2D2Error;
+//! use diesel::r2d2::Pool;
+//! use diesel::r2d2::PooledConnection;
+//! use diesel::result::Error;
+//! use std::env;
+//! use std::thread;
+//!
+//! # #[derive(Copy, Clone, Debug)]
+//! # pub struct SetupUserTableCustomizer;
+//! #
+//! # impl CustomizeConnection<DbConnection, R2D2Error> for SetupUserTableCustomizer
+//! # {
+//! #     fn on_acquire(&self, conn: &mut DbConnection) -> Result<(), R2D2Error> {
+//! #         setup_database(conn);
+//! #         Ok(())
+//! #     }
+//! # }
+//!
+//! pub fn get_connection_pool() -> Pool<ConnectionManager<DbConnection>> {
+//!     let url = database_url_for_env();
+//!     let manager = ConnectionManager::<DbConnection>::new(url);
+//!     // Refer to the `r2d2` documentation for more methods to use
+//!     // when building a connection pool
+//!     Pool::builder()
+//! #         .max_size(1)
+//!         .test_on_check_out(true)
+//! #         .connection_customizer(Box::new(SetupUserTableCustomizer))
+//!         .build(manager)
+//!         .expect("Could not build connection pool")
+//! }
+//!
+//! pub fn create_user(conn: &mut DbConnection, user_name: &str) -> Result<usize, Error> {
+//!     use schema::users::dsl::*;
+//!
+//!     diesel::insert_into(users)
+//!         .values(name.eq(user_name))
+//!         .execute(conn)
+//! }
+//!
+//! fn main() {
+//!     let pool = get_connection_pool();
+//!     let mut threads = vec![];
+//!     let max_users_to_create = 1;
+//!
+//!     for i in 0..max_users_to_create {
+//!         let pool = pool.clone();
+//!         threads.push(thread::spawn({
+//!             move || {
+//!                 let conn = &mut pool.get().unwrap();
+//!                 let name = format!("Person {}", i);
+//!                 create_user(conn, &name).unwrap();
+//!             }
+//!         }))
+//!     }
+//!
+//!     for handle in threads {
+//!         handle.join().unwrap();
+//!     }
+//! }
+//! ```
+//!
+//! # A note on error handling
+//!
 //! When used inside a pool, if an individual connection becomes
 //! broken (as determined by the [R2D2Connection::is_broken] method)
-//! then `r2d2` will put close and return the connection to the DB.
+//! then `r2d2` will close and return the connection to the DB.
 //!
 //! `diesel` determines broken connections by whether or not the current
 //! thread is panicking or if individual `Connection` structs are
