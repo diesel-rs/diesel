@@ -12,29 +12,41 @@
 //!
 //! ```rust
 //! # include!("doctest_setup.rs");
-//! use diesel::result::Error;
-//! use diesel::pg::PgConnection;
 //! use diesel::prelude::*;
 //! use diesel::r2d2::ConnectionManager;
+//! # use diesel::r2d2::CustomizeConnection;
+//! # use diesel::r2d2::Error as R2D2Error;
 //! use diesel::r2d2::Pool;
+//! use diesel::r2d2::PooledConnection;
+//! use diesel::result::Error;
 //! use std::env;
 //! use std::thread;
 //!
-//! pub type PostgresPool = Pool<ConnectionManager<PgConnection>>;
+//! # #[derive(Copy, Clone, Debug)]
+//! # pub struct SetupUserTableCustomizer;
+//! #
+//! # impl CustomizeConnection<DbConnection, R2D2Error> for SetupUserTableCustomizer
+//! # {
+//! #     fn on_acquire(&self, conn: &mut DbConnection) -> Result<(), R2D2Error> {
+//! #         setup_database(conn);
+//! #         Ok(())
+//! #     }
+//! # }
 //!
-//! pub fn get_connection_pool(pool_size: u32) -> PostgresPool {
+//! pub fn get_connection_pool() -> Pool<ConnectionManager<DbConnection>> {
 //!     let url = database_url_for_env();
-//!     let manager = ConnectionManager::<PgConnection>::new(url);
+//!     let manager = ConnectionManager::<DbConnection>::new(url);
 //!     // Refer to the `r2d2` documentation for more methods to use
 //!     // when building a connection pool
 //!     Pool::builder()
-//!         .max_size(pool_size)
+//! #         .max_size(1)
 //!         .test_on_check_out(true)
+//! #         .connection_customizer(Box::new(SetupUserTableCustomizer))
 //!         .build(manager)
 //!         .expect("Could not build connection pool")
 //! }
 //!
-//! pub fn create_user(conn: &mut PgConnection, user_name: &str) -> Result<usize, Error> {
+//! pub fn create_user(conn: &mut DbConnection, user_name: &str) -> Result<usize, Error> {
 //!     use schema::users::dsl::*;
 //!
 //!     diesel::insert_into(users)
@@ -42,25 +54,8 @@
 //!         .execute(conn)
 //! }
 //!
-//! pub fn setup_user_table(conn: &mut PgConnection) {
-//!     diesel::sql_query("DROP TABLE IF EXISTS users CASCADE").execute(conn).unwrap();
-//!     diesel::sql_query("CREATE TABLE users (
-//!         id SERIAL PRIMARY KEY,
-//!         name VARCHAR NOT NULL
-//!     )")
-//!         .execute(conn)
-//!         .unwrap();
-//! }
-//!
-//! pub fn delete_user_table(conn: &mut PgConnection) {
-//!     diesel::sql_query("DROP TABLE IF EXISTS users CASCADE").execute(conn).unwrap();
-//! }
-//!
 //! fn main() {
-//!     let pool_size = 1;
-//!     let pool = get_connection_pool(pool_size);
-//!     setup_user_table(&mut pool.get().unwrap());
-//!
+//!     let pool = get_connection_pool();
 //!     let mut threads = vec![];
 //!     let max_users_to_create = 1;
 //!
@@ -78,8 +73,6 @@
 //!     for handle in threads {
 //!         handle.join().unwrap();
 //!     }
-//!
-//!     delete_user_table(&mut pool.get().unwrap());
 //! }
 //! ```
 //!
@@ -87,7 +80,7 @@
 //!
 //! When used inside a pool, if an individual connection becomes
 //! broken (as determined by the [R2D2Connection::is_broken] method)
-//! then `r2d2` will put close and return the connection to the DB.
+//! then `r2d2` will close and return the connection to the DB.
 //!
 //! `diesel` determines broken connections by whether or not the current
 //! thread is panicking or if individual `Connection` structs are
