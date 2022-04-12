@@ -1,10 +1,11 @@
-use crate::backend::Backend;
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::AppearsOnTable;
 use crate::query_builder::*;
 use crate::query_source::{Column, QuerySource};
 use crate::result::QueryResult;
+use crate::Table;
 
 /// Types which can be passed to
 /// [`update.set`](UpdateStatement::set()).
@@ -40,15 +41,15 @@ impl<T: AsChangeset> AsChangeset for Option<T> {
 
 impl<Left, Right> AsChangeset for Eq<Left, Right>
 where
-    Left: Column,
+    Left: AssignmentTarget,
     Right: AppearsOnTable<Left::Table>,
 {
     type Target = Left::Table;
-    type Changeset = Assign<Left, Right>;
+    type Changeset = Assign<<Left as AssignmentTarget>::QueryAstNode, Right>;
 
     fn as_changeset(self) -> Self::Changeset {
         Assign {
-            _column: self.left,
+            target: self.left.into_target(),
             expr: self.right,
         }
     }
@@ -68,20 +69,76 @@ where
 }
 
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct Assign<Col, Expr> {
-    _column: Col,
+pub struct Assign<Target, Expr> {
+    target: Target,
     expr: Expr,
 }
 
 impl<T, U, DB> QueryFragment<DB> for Assign<T, U>
 where
     DB: Backend,
-    T: Column,
+    T: QueryFragment<DB>,
     U: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_identifier(T::NAME)?;
+        QueryFragment::walk_ast(&self.target, out.reborrow())?;
         out.push_sql(" = ");
-        QueryFragment::walk_ast(&self.expr, out)
+        QueryFragment::walk_ast(&self.expr, out.reborrow())
+    }
+}
+
+/// Represents the left hand side of an assignment expression for an
+/// assignment in [AsChangeset]. The vast majority of the time, this will
+/// be a [Column]. However, in certain database backends, it's possible to
+/// assign to an expression. For example, in Postgres, it's possible to
+/// "UPDATE TABLE SET array_column\[1\] = 'foo'".
+pub trait AssignmentTarget {
+    /// Table the assignment is to
+    type Table: Table;
+    /// A wrapper around a type to assign to (this wrapper should implement
+    /// [QueryFragment]).
+    type QueryAstNode;
+
+    /// Move this in to the AST node which should implement [QueryFragment].
+    fn into_target(self) -> Self::QueryAstNode;
+}
+
+/// Represents a `Column` as an `AssignmentTarget`. The vast majority of
+/// targets in an update statement will be `Column`s.
+#[derive(Debug, Clone, Copy)]
+pub struct ColumnWrapperForUpdate<C>(pub C);
+
+impl<DB, C> QueryFragment<DB> for ColumnWrapperForUpdate<C>
+where
+    DB: Backend + DieselReserveSpecialization,
+    C: Column,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_identifier(C::NAME)
+    }
+}
+
+impl<C> AssignmentTarget for C
+where
+    C: Column,
+{
+    type Table = C::Table;
+    type QueryAstNode = ColumnWrapperForUpdate<C>;
+
+    fn into_target(self) -> Self::QueryAstNode {
+        ColumnWrapperForUpdate(self)
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct ExpressionWrapperForUpdate<C>(C);
+
+impl<DB, Expr> QueryFragment<DB> for ExpressionWrapperForUpdate<Expr>
+where
+    DB: Backend + DieselReserveSpecialization,
+    Expr: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        QueryFragment::walk_ast(&self.0, out.reborrow())
     }
 }

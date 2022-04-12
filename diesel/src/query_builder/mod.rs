@@ -55,7 +55,7 @@ pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
 #[doc(inline)]
-pub use self::update_statement::changeset::AsChangeset;
+pub use self::update_statement::changeset::{AsChangeset, AssignmentTarget};
 #[doc(inline)]
 pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
 #[doc(inline)]

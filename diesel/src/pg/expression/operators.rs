@@ -1,7 +1,7 @@
 use crate::expression::expression_types::NotSelectable;
 use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
-use crate::query_builder::{QueryFragment, QueryId};
+use crate::query_builder::{AssignmentTarget, AstPass, QueryFragment, QueryId};
 use crate::sql_types::{
     Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
 };
@@ -88,5 +88,33 @@ where
         self.index_expr.walk_ast(out.reborrow())?;
         out.push_sql("]");
         Ok(())
+    }
+}
+
+impl<L, R> AssignmentTarget for ArrayIndex<L, R>
+where
+    L: Column,
+{
+    type Table = <L as Column>::Table;
+    type QueryAstNode = ArrayIndex<UncorrelatedColumn<L>, R>;
+
+    fn into_target(self) -> Self::QueryAstNode {
+        ArrayIndex::new(UncorrelatedColumn(self.array_expr), self.index_expr)
+    }
+}
+
+/// Signifies that this column should be rendered without its 'correlation'
+/// (i.e. table name prefix). For update statements, fully qualified column
+/// names aren't allowed.
+#[derive(Debug)]
+pub struct UncorrelatedColumn<C>(C);
+
+impl<C, DB> QueryFragment<DB> for UncorrelatedColumn<C>
+where
+    C: Column,
+    DB: Backend + DieselReserveSpecialization,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_identifier(C::NAME)
     }
 }
