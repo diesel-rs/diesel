@@ -307,3 +307,30 @@ fn upsert_with_sql_literal_for_target() {
     ];
     assert_eq!(Ok(expected_data), data);
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn update_array_index_expression() {
+    use crate::schema::posts::dsl::*;
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+    let sean = find_user_by_name("Sean", connection);
+    let new_post = sean.new_post("Hello", Some("world"));
+    insert_into(posts)
+        .values(&new_post)
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(tags.eq(vec!["programming", "rust"]))
+        .execute(connection)
+        .unwrap();
+    update(posts)
+        .set(tags.index(1).eq("postgres"))
+        .execute(connection)
+        .unwrap();
+    let data = posts.select(tags).load(connection);
+    let expected_data = vec![vec!["postgres".to_string(), "rust".to_string()]];
+
+    assert_eq!(Ok(expected_data), data);
+}
