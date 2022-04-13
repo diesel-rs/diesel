@@ -5,7 +5,7 @@ authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 edition = "2018"
 
 [dependencies]
-diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres"] }
+diesel = { version = "2.0.0-rc.0", path = "../../../diesel", features = ["postgres"] }
 
 [lib]
 doc = false

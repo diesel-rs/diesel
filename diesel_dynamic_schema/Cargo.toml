@@ -1,14 +1,14 @@
 [package]
 name = "diesel-dynamic-schema"
-version = "1.0.0"
 authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
+version = "0.2.0-rc.0"
 license = "MIT OR Apache-2.0"
 edition = "2018"
 autotests = false
 include = ["src/**/*", "LICENSE-*", "README.md"]
 
 [dependencies.diesel]
-version = "2.0.0"
+version = "~2.0.0-rc.0"
 path = "../diesel/"
 default-features = false
 

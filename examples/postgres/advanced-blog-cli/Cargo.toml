@@ -1,20 +1,19 @@
 [package]
 name = "advanced-blog-cli"
 version = "0.1.0"
-authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 edition = "2018"
 
 [dependencies]
 bcrypt = "0.10.1"
 chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
-diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres", "chrono"] }
+diesel = { version = "2.0.0-rc.0", path = "../../../diesel", features = ["postgres", "chrono"] }
 dotenvy = "0.15"
 structopt = "0.3"
 tempfile = "3.1.0"
 
 [dev-dependencies]
 assert_matches = "1.1"
-diesel_migrations = { version = "2.0.0", features = ["postgres"], path = "../../../diesel_migrations" }
+diesel_migrations = { version = "2.0.0-rc.0", features = ["postgres"], path = "../../../diesel_migrations" }
 lazy_static = "1.0"
 
 [[bin]]

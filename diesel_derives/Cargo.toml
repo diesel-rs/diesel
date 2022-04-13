@@ -1,7 +1,7 @@
 [package]
 name = "diesel_derives"
-version = "2.0.0"
 authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
+version = "2.0.0-rc.0"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."
 documentation = "https://diesel.rs/guides/"
@@ -21,7 +21,7 @@ cfg-if = "1"
 dotenvy = "0.15"
 
 [dev-dependencies.diesel]
-version = "~2.0.0"
+version = "~2.0.0-rc.0"
 path = "../diesel"
 
 [lib]
