@@ -1,6 +1,5 @@
 [package]
 name = "diesel_derives"
-authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 version = "2.0.0-rc.0"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."

@@ -1,7 +1,6 @@
 [package]
 name = "diesel_demo_step_2_pg"
 version = "0.1.0"
-authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 edition = "2018"
 
 [dependencies]

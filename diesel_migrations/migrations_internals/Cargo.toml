@@ -1,6 +1,5 @@
 [package]
 name = "migrations_internals"
-authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 version = "2.0.0-rc.0"
 license = "MIT OR Apache-2.0"
 description = "Internal implementation of diesels migration mechanism"

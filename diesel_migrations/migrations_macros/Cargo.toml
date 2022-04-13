@@ -1,6 +1,5 @@
 [package]
 name = "migrations_macros"
-authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 version = "2.0.0-rc.0"
 license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"

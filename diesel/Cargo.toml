@@ -1,6 +1,5 @@
 [package]
 name = "diesel"
-authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 version = "2.0.0-rc.0"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"

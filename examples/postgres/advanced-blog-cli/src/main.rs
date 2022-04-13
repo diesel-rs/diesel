@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 mod auth;
 mod cli;
 mod comment;
