@@ -1,5 +1,4 @@
 // Built-in Lints
-#![deny(warnings, missing_copy_implementations)]
 // Clippy lints
 #![allow(clippy::map_unwrap_or)]
 #![warn(
@@ -9,7 +8,8 @@
     clippy::non_ascii_literal,
     clippy::similar_names,
     clippy::unicode_not_nfc,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    missing_copy_implementations
 )]
 #![cfg_attr(test, allow(clippy::result_unwrap_used))]
 

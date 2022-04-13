@@ -1,5 +1,4 @@
 // Built-in Lints
-#![deny(warnings, missing_copy_implementations)]
 // Clippy lints
 #![allow(clippy::needless_pass_by_value, clippy::map_unwrap_or)]
 #![warn(
@@ -10,7 +9,8 @@
     clippy::unicode_not_nfc,
     clippy::if_not_else,
     clippy::items_after_statements,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    missing_copy_implementations
 )]
 //! Provides functions for maintaining database schema.
 //!

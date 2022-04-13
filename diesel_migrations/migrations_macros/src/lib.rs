@@ -1,5 +1,4 @@
 // Built-in Lints
-#![deny(warnings, missing_debug_implementations, missing_copy_implementations)]
 // Clippy lints
 #![allow(
     clippy::map_unwrap_or,
@@ -17,7 +16,9 @@
     clippy::enum_glob_use,
     clippy::if_not_else,
     clippy::items_after_statements,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    missing_debug_implementations,
+    missing_copy_implementations
 )]
 #![cfg_attr(test, allow(clippy::option_unwrap_used, clippy::result_unwrap_used))]
 extern crate proc_macro;

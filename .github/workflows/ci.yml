@@ -6,6 +6,7 @@ on:
       - master
       - "0.[0-9]+.x"
       - "1.[0-9]+.x"
+      - "2.[0-9]+.x"
 
 name: CI Tests
 
@@ -47,8 +48,15 @@ jobs:
         shell: bash
         if: matrix.rust == 'nightly'
         run: |
-          echo "RUSTFLAGS=--cap-lints=warn --cfg doc_cfg" >> $GITHUB_ENV
+          echo "RUSTFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
           echo "RUSTDOCFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
+
+      - name: Set environment variables
+        shell: bash
+        if: matrix.rust != 'nightly'
+        run: |
+          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
+          echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
 
       - name: Install postgres (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'postgres'
@@ -398,11 +406,6 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
-
-      - name: Setup environment
-        run: |
-          echo "RUSTFLAGS=--cap-lints=warn" >> $GITHUB_ENV
-          echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Test diesel-cli
         uses: actions-rs/cargo@v1

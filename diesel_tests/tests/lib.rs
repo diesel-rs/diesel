@@ -1,5 +1,4 @@
 #![recursion_limit = "1024"]
-#![deny(warnings)]
 
 #[macro_use]
 extern crate assert_matches;

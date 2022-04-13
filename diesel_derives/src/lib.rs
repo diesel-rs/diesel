@@ -1,6 +1,4 @@
 #![recursion_limit = "1024"]
-// Built-in Lints
-#![deny(warnings, missing_copy_implementations)]
 // Clippy lints
 #![allow(
     clippy::needless_doctest_main,
@@ -14,7 +12,8 @@
     clippy::unicode_not_nfc,
     clippy::if_not_else,
     clippy::items_after_statements,
-    clippy::used_underscore_binding
+    clippy::used_underscore_binding,
+    missing_copy_implementations
 )]
 
 extern crate proc_macro;

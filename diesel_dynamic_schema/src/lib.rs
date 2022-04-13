@@ -77,7 +77,6 @@
 
 // Built-in Lints
 #![warn(missing_docs)]
-#![deny(warnings)]
 
 mod column;
 mod dummy_expression;

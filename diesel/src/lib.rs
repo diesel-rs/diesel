@@ -163,7 +163,6 @@
 #![cfg_attr(doc_cfg, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]
 // Built-in Lints
-#![deny(warnings)]
 #![warn(
     unreachable_pub,
     missing_debug_implementations,

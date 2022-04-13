@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 extern crate chrono;
 extern crate diesel;
 #[macro_use]

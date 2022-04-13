@@ -1,6 +1,5 @@
 [package]
 name = "diesel_migrations"
-authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 version = "2.0.0-rc.0"
 license = "MIT OR Apache-2.0"
 description = "Migration management for diesel"
@@ -9,11 +8,11 @@ homepage = "https://diesel.rs"
 edition = "2018"
 
 [dependencies.migrations_internals]
-version = "~2.0.0"
+version = "~2.0.0-rc.0"
 path = "migrations_internals"
 
 [dependencies.migrations_macros]
-version = "~2.0.0"
+version = "~2.0.0-rc.0"
 path = "migrations_macros"
 
 [dev-dependencies]
@@ -22,7 +21,7 @@ cfg-if = "1.0.0"
 tempfile = "3.2"
 
 [dependencies.diesel]
-version = "~2.0.0"
+version = "~2.0.0-rc.0"
 path = "../diesel"
 default-features = false
 
