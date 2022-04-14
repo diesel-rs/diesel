@@ -15,7 +15,7 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install postgres (Linux)
         if: matrix.backend == 'postgres'
