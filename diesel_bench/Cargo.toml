@@ -1,7 +1,6 @@
 [package]
 name = "diesel_bench"
 version = "0.1.0"
-authors = []
 edition = "2018"
 build = "build.rs"
 autobenches = false
@@ -23,7 +22,7 @@ quaint = {version = "=0.2.0-alpha.13", optional = true}
 serde = {version = "1", optional = true, features = ["derive"]}
 sea-orm = {version = "0.7", optional = true, features = ["runtime-tokio-rustls"]}
 futures = {version = "0.3", optional = true}
-diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "7052fe7ab02045c21d8a4a7ea8554a28d486fe59", optional = true, default-features = false}
+diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "e7c562a6986609c3c66ad0b453f9bfb0dde845bf", optional = true, default-features = false}
 criterion-perf-events = { version = "0.2", optional = true}
 perfcnt = {version = "0.8", optional = true}
 
@@ -55,4 +54,4 @@ fast_run = []
 
 [replace]
 "quaint:0.2.0-alpha.13" = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
-"https://github.com/diesel-rs/diesel#2.0.0" = { path = "../diesel"}
+"https://github.com/weiznich/diesel#2.0.0-rc.0" = { path = "../diesel"}
