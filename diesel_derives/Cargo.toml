@@ -8,6 +8,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
 include = ["src/**/*", "LICENSE-*"]
+rust-version = "1.54.0"
 
 [dependencies]
 syn = { version = "1.0.73", features = ["derive", "fold"] }
