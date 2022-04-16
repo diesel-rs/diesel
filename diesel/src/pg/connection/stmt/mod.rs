@@ -44,7 +44,7 @@ impl Statement {
             )
         };
 
-        PgResult::new(internal_res?)
+        PgResult::new(internal_res?, raw_connection)
     }
 
     pub(super) fn prepare(
@@ -69,7 +69,7 @@ impl Statement {
                 param_types_to_ptr(Some(&param_types_vec)),
             )
         };
-        PgResult::new(internal_result?)?;
+        PgResult::new(internal_result?, raw_connection)?;
 
         Ok(Statement {
             name,
