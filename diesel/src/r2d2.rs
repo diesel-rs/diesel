@@ -17,9 +17,7 @@
 //! # use diesel::r2d2::CustomizeConnection;
 //! # use diesel::r2d2::Error as R2D2Error;
 //! use diesel::r2d2::Pool;
-//! use diesel::r2d2::PooledConnection;
 //! use diesel::result::Error;
-//! use std::env;
 //! use std::thread;
 //!
 //! # #[derive(Copy, Clone, Debug)]
