@@ -15,12 +15,6 @@ pub(super) struct RawConnection {
     internal_connection: NonNull<PGconn>,
 }
 
-impl From<&RawConnection> for *const PGconn {
-    fn from(raw_conn: &RawConnection) -> *const PGconn {
-        raw_conn.internal_connection.as_ptr()
-    }
-}
-
 impl RawConnection {
     pub(super) fn establish(database_url: &str) -> ConnectionResult<Self> {
         let connection_string = CString::new(database_url)?;
@@ -107,6 +101,10 @@ impl RawConnection {
 
     pub(super) fn transaction_status(&self) -> PgTransactionStatus {
         unsafe { PQtransactionStatus(self.internal_connection.as_ptr()) }.into()
+    }
+
+    pub(super) fn get_status(&self) -> ConnStatusType {
+        unsafe { PQstatus(self.internal_connection.as_ptr() as *const PGconn) }
     }
 }
 

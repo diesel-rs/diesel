@@ -70,8 +70,8 @@ impl PgResult {
                         _ => DatabaseErrorKind::Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
-                let pg_connection: *const PGconn = conn.into();
-                if unsafe { PQstatus(pg_connection) } == ConnStatusType::CONNECTION_BAD {
+                let conn_status = conn.get_status();
+                if conn_status == ConnStatusType::CONNECTION_BAD {
                     error_kind = DatabaseErrorKind::ClosedConnection;
                 }
                 Err(Error::DatabaseError(error_kind, error_information))
