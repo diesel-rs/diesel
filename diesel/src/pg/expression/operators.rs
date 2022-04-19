@@ -1,3 +1,4 @@
+use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::expression_types::NotSelectable;
 use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
@@ -5,6 +6,7 @@ use crate::query_builder::{AssignmentTarget, AstPass, QueryFragment, QueryId};
 use crate::sql_types::{
     Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
 };
+use crate::{Column, QueryResult};
 
 __diesel_infix_operator!(IsDistinctFrom, " IS DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
 __diesel_infix_operator!(IsNotDistinctFrom, " IS NOT DISTINCT FROM ", ConstantNullability Bool, backend: Pg);
