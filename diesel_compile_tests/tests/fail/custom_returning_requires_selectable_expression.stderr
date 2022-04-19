@@ -10,7 +10,7 @@ error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::ta
              <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
              <bad::columns::age as SelectableExpression<bad::table>>
            and 2 others
-   = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<bad::columns::age>>`
+   = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<bad::columns::age>>`
 
 error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::table>` is not satisfied
   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:63
