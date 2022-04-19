@@ -87,10 +87,10 @@ error[E0277]: the trait bound `users::columns::id: SelectableExpression<Alias<us
    |
    = help: the following implementations were found:
              <users::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <users::columns::id as SelectableExpression<Only<users::table>>>
              <users::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <users::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
-             <users::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, LeftOuter>>>
-             <users::columns::id as SelectableExpression<users::table>>
+           and 2 others
    = note: required because of the requirements on the impl of `SelectDsl<users::columns::id>` for `SelectStatement<FromClause<Alias<users2>>>`
 
 error[E0277]: the trait bound `users::columns::id: SelectableExpression<Alias<users2>>` is not satisfied
@@ -101,10 +101,10 @@ error[E0277]: the trait bound `users::columns::id: SelectableExpression<Alias<us
    |
    = help: the following implementations were found:
              <users::columns::id as SelectableExpression<JoinOn<Join, On>>>
+             <users::columns::id as SelectableExpression<Only<users::table>>>
              <users::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <users::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
-             <users::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, LeftOuter>>>
-             <users::columns::id as SelectableExpression<users::table>>
+           and 2 others
    = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<Alias<users2>>>` for `diesel::query_builder::select_clause::SelectClause<users::columns::id>`
    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<Alias<users2>>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
    = note: required because of the requirements on the impl of `LoadQuery<'_, _, i32>` for `SelectStatement<FromClause<Alias<users2>>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
@@ -135,8 +135,8 @@ error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfi
              <users::table as JoinTo<Alias<S>>>
              <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
              <users::table as JoinTo<JoinOn<Join, On>>>
-             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
-           and 2 others
+             <users::table as JoinTo<Only<S>>>
+           and 3 others
    = note: required because of the requirements on the impl of `JoinTo<pets::table>` for `Alias<users2>`
    = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<Alias<users2>, Inner>` for `pets::table`
 
