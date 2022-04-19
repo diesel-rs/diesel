@@ -104,7 +104,7 @@ impl RawConnection {
     }
 
     pub(super) fn get_status(&self) -> ConnStatusType {
-        unsafe { PQstatus(self.internal_connection.as_ptr() as *const PGconn) }
+        unsafe { PQstatus(self.internal_connection.as_ptr()) }
     }
 }
 
