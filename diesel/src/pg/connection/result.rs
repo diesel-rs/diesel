@@ -7,14 +7,10 @@ use std::os::raw as libc;
 use std::rc::Rc;
 use std::{slice, str};
 
-use super::raw::RawResult;
+use super::raw::{RawConnection, RawResult};
 use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 use crate::util::OnceCell;
-
-// Message after a database connection has been unexpectedly closed.
-const CLOSED_CONNECTION_MSG: &str = "server closed the connection unexpectedly\n\t\
-This probably means the server terminated abnormally\n\tbefore or while processing the request.\n";
 
 pub(crate) struct PgResult {
     internal_result: RawResult,
@@ -28,7 +24,7 @@ pub(crate) struct PgResult {
 
 impl PgResult {
     #[allow(clippy::new_ret_no_self)]
-    pub(super) fn new(internal_result: RawResult) -> QueryResult<Self> {
+    pub(super) fn new(internal_result: RawResult, conn: &RawConnection) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
             ExecStatusType::PGRES_COMMAND_OK | ExecStatusType::PGRES_TUPLES_OK => {
@@ -74,14 +70,8 @@ impl PgResult {
                         _ => DatabaseErrorKind::Unknown,
                     };
                 let error_information = Box::new(PgErrorInformation(internal_result));
-                // NOTE: Ideally, we'd remove this check, in favor of matching
-                // on an error code (instead of the more brittle description
-                // string).
-                //
-                // Unfortunately, this particular error is often propagated in
-                // cases - such as network disconnect - without any accompanying
-                // "SqlState", and therefore without an error code..
-                if error_information.message() == CLOSED_CONNECTION_MSG {
+                let conn_status = conn.get_status();
+                if conn_status == ConnStatusType::CONNECTION_BAD {
                     error_kind = DatabaseErrorKind::ClosedConnection;
                 }
                 Err(Error::DatabaseError(error_kind, error_information))
