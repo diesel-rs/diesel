@@ -33,15 +33,24 @@ fn uuid_to_sql() {
     use crate::query_builder::bind_collector::ByteWrapper;
 
     let mut buffer = Vec::new();
-    let test_uuid = uuid::Uuid::from_fields(0xFFFF_FFFF, 0xFFFF, 0xFFFF, b"abcdef12").unwrap();
+    let bytes = [
+        0xFF_u8, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x31, 0x32,
+    ];
+
+    let test_uuid = uuid::Uuid::from_slice(&bytes).unwrap();
     let mut bytes = Output::test(ByteWrapper(&mut buffer));
     ToSql::<Uuid, Pg>::to_sql(&test_uuid, &mut bytes).unwrap();
-    assert_eq!(buffer, test_uuid.as_bytes());
+    assert_eq!(buffer, test_uuid.into_bytes());
 }
 
 #[test]
 fn some_uuid_from_sql() {
-    let input_uuid = uuid::Uuid::from_fields(0xFFFF_FFFF, 0xFFFF, 0xFFFF, b"abcdef12").unwrap();
+    let bytes = [
+        0xFF_u8, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66,
+        0x31, 0x32,
+    ];
+    let input_uuid = uuid::Uuid::from_slice(&bytes).unwrap();
     let output_uuid =
         FromSql::<Uuid, Pg>::from_sql(PgValue::for_test(input_uuid.as_bytes())).unwrap();
     assert_eq!(input_uuid, output_uuid);
@@ -52,7 +61,7 @@ fn bad_uuid_from_sql() {
     let uuid = uuid::Uuid::from_sql(PgValue::for_test(b"boom"));
     assert_eq!(
         uuid.unwrap_err().to_string(),
-        "invalid bytes length: expected 16, found 4"
+        "invalid length: expected 16 bytes, found 4"
     );
 }
 
