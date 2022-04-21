@@ -408,5 +408,16 @@ pub trait Identifiable: HasTable {
     fn id(self) -> Self::Id;
 }
 
+impl<T> Identifiable for &T
+where
+    T: Identifiable + Copy,
+{
+    type Id = T::Id;
+
+    fn id(self) -> Self::Id {
+        T::id(*self)
+    }
+}
+
 #[doc(inline)]
 pub use diesel_derives::Identifiable;
