@@ -45,7 +45,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
             }
         }
 
-        impl #ref_generics Identifiable for &'ident &'ident #struct_name #ty_generics
+        impl #ref_generics Identifiable for &'_ &'ident #struct_name #ty_generics
             #where_clause
         {
             type Id = (#(&'ident #field_ty),*);
