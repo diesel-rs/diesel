@@ -163,6 +163,10 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 /// This derive implement support for diesel's associations api. Check the
 /// module level documentation of the `diesel::associations` module for details.
 ///
+/// This derive generates the following impls:
+/// * `impl BelongsTo<Parent> for YourType`
+/// * `impl BelongsTo<&'a Parent> for YourType`
+///
 /// # Attributes
 ///
 /// # Required container attributes
@@ -233,6 +237,10 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// you can specify a path to the table with `#[diesel(table_name = path::to::table)]`.
 /// Our rules for inferring table names is considered public API.
 /// It will never change without a major version bump.
+///
+/// This derive generates the following impls:
+/// * `impl Identifiable for &'a YourType`
+/// * `impl Identifiable for &'a &'a YourType`
 ///
 /// # Attributes
 ///
