@@ -287,7 +287,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+          args: --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
 
       - name: Run diesel_benches
         uses: actions-rs/cargo@v1
@@ -422,7 +422,6 @@ jobs:
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
         run: cargo -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
-
 
   minimal_rust_version:
     name: Check Minimal supported rust version (1.54.0)
