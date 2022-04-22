@@ -41,7 +41,7 @@ fn uuid_to_sql() {
     let test_uuid = uuid::Uuid::from_slice(&bytes).unwrap();
     let mut bytes = Output::test(ByteWrapper(&mut buffer));
     ToSql::<Uuid, Pg>::to_sql(&test_uuid, &mut bytes).unwrap();
-    assert_eq!(buffer, test_uuid.into_bytes());
+    assert_eq!(&buffer, test_uuid.as_bytes());
 }
 
 #[test]
@@ -59,10 +59,18 @@ fn some_uuid_from_sql() {
 #[test]
 fn bad_uuid_from_sql() {
     let uuid = uuid::Uuid::from_sql(PgValue::for_test(b"boom"));
-    assert_eq!(
-        uuid.unwrap_err().to_string(),
-        "invalid length: expected 16 bytes, found 4"
-    );
+    assert!(uuid.is_err());
+    // The error message changes slightly between different
+    // uuid versions, so we just check on the relevant parts
+    // The exact error messages are either:
+    // "invalid bytes length: expected 16, found 4"
+    // or
+    // "invalid length: expected 16 bytes, found 4"
+    let error_message = uuid.unwrap_err().to_string();
+    assert!(error_message.starts_with("invalid"));
+    assert!(error_message.contains("length"));
+    assert!(error_message.contains("expected 16"));
+    assert!(error_message.ends_with("found 4"));
 }
 
 #[test]
