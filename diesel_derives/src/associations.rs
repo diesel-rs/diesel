@@ -80,6 +80,22 @@ fn derive_belongs_to(item: &DeriveInput, model: &Model, assoc: &BelongsTo) -> To
                 #table_name::#foreign_key
             }
         }
+
+        impl #impl_generics diesel::associations::BelongsTo<&'_ #parent_struct>
+            for #struct_name #ty_generics
+        #where_clause
+        {
+            type ForeignKey = #foreign_key_ty;
+            type ForeignKeyColumn = #table_name::#foreign_key;
+
+            fn foreign_key(&self) -> std::option::Option<&Self::ForeignKey> {
+                #foreign_key_expr
+            }
+
+            fn foreign_key_column() -> Self::ForeignKeyColumn {
+                #table_name::#foreign_key
+            }
+        }
     }
 }
 

@@ -38,6 +38,23 @@ fn eager_loading_associations_for_multiple_records() {
     assert_eq!(expected_data, users_and_posts);
 }
 
+#[test]
+fn eager_loading_associations_for_multiple_ref_records() {
+    let (mut connection, sean, tess, _) = conn_with_test_data();
+
+    let users = vec![&sean, &tess];
+    let posts = Post::belonging_to(&users)
+        .load::<Post>(&mut connection)
+        .unwrap()
+        .grouped_by(&users);
+    let users_and_posts = users.into_iter().zip(posts).collect::<Vec<_>>();
+
+    let seans_posts = Post::belonging_to(&sean).load(&mut connection).unwrap();
+    let tess_posts = Post::belonging_to(&tess).load(&mut connection).unwrap();
+    let expected_data = vec![(&sean, seans_posts), (&tess, tess_posts)];
+    assert_eq!(expected_data, users_and_posts);
+}
+
 #[cfg(not(feature = "mysql"))] // FIXME: Figure out how to handle tests that modify schema
 mod eager_loading_with_string_keys {
     use crate::schema::{connection, drop_table_cascade};
