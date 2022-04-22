@@ -239,7 +239,7 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 ///
 /// This derive generates the following impls:
 /// * `impl Identifiable for &'a YourType`
-/// * `impl Identifiable for &'a &'a YourType`
+/// * `impl Identifiable for &'_ &'a YourType`
 ///
 /// # Attributes
 ///
