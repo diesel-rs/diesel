@@ -22,7 +22,7 @@ quaint = {version = "=0.2.0-alpha.13", optional = true}
 serde = {version = "1", optional = true, features = ["derive"]}
 sea-orm = {version = "0.7", optional = true, features = ["runtime-tokio-rustls"]}
 futures = {version = "0.3", optional = true}
-diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "e7c562a6986609c3c66ad0b453f9bfb0dde845bf", optional = true, default-features = false}
+diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "f6456e076a863fca89ad923402996dbec210511b", optional = true, default-features = false}
 criterion-perf-events = { version = "0.2", optional = true}
 perfcnt = {version = "0.8", optional = true}
 
@@ -54,4 +54,4 @@ fast_run = []
 
 [replace]
 "quaint:0.2.0-alpha.13" = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
-"https://github.com/weiznich/diesel#2.0.0-rc.0" = { path = "../diesel"}
+"https://github.com/diesel/diesel#2.0.0-rc.0" = { path = "../diesel"}
