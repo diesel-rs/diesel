@@ -102,6 +102,10 @@ impl RawConnection {
     pub(super) fn transaction_status(&self) -> PgTransactionStatus {
         unsafe { PQtransactionStatus(self.internal_connection.as_ptr()) }.into()
     }
+
+    pub(super) fn get_status(&self) -> ConnStatusType {
+        unsafe { PQstatus(self.internal_connection.as_ptr()) }
+    }
 }
 
 /// Represents the current in-transaction status of the connection

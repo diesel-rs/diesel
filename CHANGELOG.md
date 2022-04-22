@@ -82,6 +82,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * Added support for table aliasing via the `alias!` macro
 
+* Added support for the usage of slices of references with `belonging_to` from `BelongingToDsl`
+
 * Added support for updating individual array elements `UPDATE table SET array_column[1] = true`
 
 ### Removed
