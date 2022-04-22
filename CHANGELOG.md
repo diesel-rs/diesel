@@ -10,6 +10,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.0.0 Rc0] 2022-04-22
+
 ### Added
 
 * `MysqlConnection::establish` is able to initiate an SSL connection while specifying certificate roots. The database URL should contain an `ssl_ca` parameter with a path pointing to the certificate roots. [See docs](https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-ca) if desired.
@@ -271,7 +273,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
    favour of `ExpressionMethods::eq_any()` and `ExpressionMethods::ne_all()`
 
 
-[2-0-migration]: FIXME write a migration guide
+[2-0-migration]: https://github.com/diesel-rs/diesel/blob/master/guide_drafts/migration_guide.md
 
 ## [1.4.8] - 2021-09-20
 
@@ -1935,3 +1937,4 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 [1.4.6]: https://github.com/diesel-rs/diesel/compare/v1.4.5...v1.4.6
 [1.4.7]: https://github.com/diesel-rs/diesel/compare/v1.4.6...v1.4.7
 [1.4.8]: https://github.com/diesel-rs/diesel/compare/v1.4.7...v1.4.8
+[2.0.0 Rc0]: https://github.com/diesel-rs/diesel/compare/v.1.4.0...v2.0.0-rc0
