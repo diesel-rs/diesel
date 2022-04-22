@@ -30,7 +30,7 @@ mod returning_clause;
 pub(crate) mod select_clause;
 pub(crate) mod select_statement;
 mod sql_query;
-mod update_statement;
+pub(crate) mod update_statement;
 pub(crate) mod upsert;
 mod where_clause;
 
@@ -55,7 +55,7 @@ pub use self::sql_query::{BoxedSqlQuery, SqlQuery};
 pub use self::upsert::on_conflict_target_decorations::DecoratableTarget;
 
 #[doc(inline)]
-pub use self::update_statement::changeset::{AsChangeset, AssignmentTarget};
+pub use self::update_statement::changeset::AsChangeset;
 #[doc(inline)]
 pub use self::update_statement::target::{IntoUpdateTarget, UpdateTarget};
 #[doc(inline)]

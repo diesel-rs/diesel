@@ -129,16 +129,3 @@ where
         ColumnWrapperForUpdate(self)
     }
 }
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct ExpressionWrapperForUpdate<C>(C);
-
-impl<DB, Expr> QueryFragment<DB> for ExpressionWrapperForUpdate<Expr>
-where
-    DB: Backend + DieselReserveSpecialization,
-    Expr: QueryFragment<DB>,
-{
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        QueryFragment::walk_ast(&self.0, out.reborrow())
-    }
-}

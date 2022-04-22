@@ -2,7 +2,8 @@ use crate::backend::{Backend, DieselReserveSpecialization};
 use crate::expression::expression_types::NotSelectable;
 use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::pg::Pg;
-use crate::query_builder::{AssignmentTarget, AstPass, QueryFragment, QueryId};
+use crate::query_builder::update_statement::changeset::AssignmentTarget;
+use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::sql_types::{
     Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
 };

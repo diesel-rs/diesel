@@ -1,4 +1,4 @@
-pub(super) mod changeset;
+pub(crate) mod changeset;
 pub(super) mod target;
 
 use self::target::UpdateTarget;
