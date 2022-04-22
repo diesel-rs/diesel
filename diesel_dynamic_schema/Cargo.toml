@@ -37,6 +37,6 @@ harness = true
 
 [features]
 default = []
-postgres = ["diesel/postgres"]
+postgres = ["diesel/postgres_backend"]
 sqlite = ["diesel/sqlite"]
-mysql = ["diesel/mysql"]
+mysql = ["diesel/mysql_backend"]
