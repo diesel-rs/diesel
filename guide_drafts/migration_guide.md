@@ -177,7 +177,7 @@ Any affected backend needs to perform the following changes:
 ```diff
 impl<DB: Backend> FromSql<YourSqlType, DB> for YourType {
 -    fn from_sql(bytes: &[u8]) -> deserialize::Result<Self> {
-+    fn from_sql(value: backend::RawValue<DB>) -> deserialize::Result<Self> {
++    fn from_sql(value: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
 +        let bytes = value.as_bytes();
          // …
      }
