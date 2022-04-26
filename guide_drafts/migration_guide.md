@@ -20,6 +20,10 @@ Users of `BoxableExpression` might be affected by the following change:
 
 * [Changed nullability of operators](#2-0-0-nullability-ops)
 
+Users of tables containing an column of the type `Array<T>` are affected by the following change:
+
+* [Changed nullability of array elemetns](#2-0-0-nullability-of-array-elements)
+
 Users that implement support for their SQL types or type mappings are affected 
 by the following changes:
 
@@ -111,6 +115,16 @@ there we recommend to use one of the following functions:
 
 * `NullableExpressionMethods::nullable()`
 * `NullableExpressionMethods::assume_not_nullable()`
+
+## Changed nullability of array elements<a name="#2-0-0-nullability-of-array-elements"></a>
+
+We changed the infered SQL type for columns with array types for the PostgreSQL backend. Instead of using `Array<ST>` 
+we now infer `Array<Nullable<ST>>` to support arrays containing `NULL` values. This change implies a change mapping
+of columns of the corresponding types. It is possible to handle this change using one of the following strategies:
+
+* Use `Vec<Option<T>>` as rust side type instead of `Vec<T>`
+* Manually set the corresponding column to `Array<ST>` in your schema, to signal that this array does not contain null values. You may want to use the `patch_file` key for diesel CLI for this.
+* Use `#[diesel(deserialize_as = "…")]` to explicitly overwrite the used deserialization implementation for this specific struct field. Checkout the documentation of `#[derive(Queryable)]` for details.
 
 ## Custom SQL type implementations<a name="2-0-0-custom-type-implementation"></a>
 
