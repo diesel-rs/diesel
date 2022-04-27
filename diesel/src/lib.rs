@@ -142,7 +142,7 @@
 //! provided by `uuid`
 //! - `network-address`: This feature flag enables support for (de)serializing IP and Macadresse values from the
 //! database using types provided by `ipnetwork`
-//! - `numeric`: This feature flag enables support for (de)support numeric values from the database using types
+//! - `numeric`: This feature flag enables support for (de)serializing numeric values from the database using types
 //! provided by `bigdecimal`
 //! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
 //! - `extras`: This feature enables the feature flaged support for any third party crate. This implies the
