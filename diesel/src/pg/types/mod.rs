@@ -86,8 +86,7 @@ pub mod sql_types {
     /// The [`Array`] SQL type.
     ///
     /// This wraps another type to represent a SQL array of that type.
-    /// Multidimensional arrays are not supported,
-    /// nor are arrays containing null.
+    /// Multidimensional arrays are not supported.
     ///
     /// ### [`ToSql`] impls
     ///
