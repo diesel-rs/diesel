@@ -116,3 +116,33 @@ fn except() {
         .unwrap();
     assert_eq!(expected_data, data);
 }
+
+#[test]
+fn union_with_order() {
+    let conn = &mut connection();
+    let data = vec![
+        NewUser::new("Sean", None),
+        NewUser::new("Tess", None),
+        NewUser::new("Jim", None),
+    ];
+    insert_into(users::table)
+        .values(&data)
+        .execute(conn)
+        .unwrap();
+
+    let users = users::table
+        .select(users::name)
+        .order_by(users::id.asc())
+        .limit(1)
+        .union(
+            users::table
+                .order_by(users::id.desc())
+                .select(users::name)
+                .limit(1),
+        )
+        .positional_order_by(1)
+        .load::<String>(conn)
+        .unwrap();
+
+    assert_eq!(vec![String::from("Jim"), "Sean".into()], users);
+}
