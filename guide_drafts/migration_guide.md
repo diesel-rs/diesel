@@ -114,7 +114,7 @@ of `BoxableExpression` as it may change the resulting sql type there. As a possi
 there we recommend to use one of the following functions:
 
 * `NullableExpressionMethods::nullable()`
-* `NullableExpressionMethods::assume_not_nullable()`
+* `NullableExpressionMethods::assume_not_null()`
 
 ## Changed nullability of array elements<a name="#2-0-0-nullability-of-array-elements"></a>
 
