@@ -23,6 +23,33 @@ where
     T::SqlType: SingleValue,
 {
 }
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Desc<T>>
+where
+    T: Expression,
+    T::SqlType: SingleValue,
+{
+}
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Asc<T>>
+where
+    T: Expression,
+    T::SqlType: SingleValue,
+{
+}
+
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+    for OrderClause<(crate::helper_types::Desc<T>,)>
+where
+    T: Expression,
+    T::SqlType: SingleValue,
+{
+}
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+    for OrderClause<(crate::helper_types::Asc<T>,)>
+where
+    T: Expression,
+    T::SqlType: SingleValue,
+{
+}
 
 impl<T> QueryFragment<Pg> for DistinctOnClause<T>
 where
