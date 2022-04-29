@@ -26,8 +26,8 @@ where
 pub struct CombinationClause<Combinator, Rule, Source, Rhs> {
     combinator: Combinator,
     duplicate_rule: Rule,
-    source: Source,
-    rhs: RhsParenthesisWrapper<Rhs>,
+    source: ParenthesisWrapper<Source>,
+    rhs: ParenthesisWrapper<Rhs>,
 }
 
 impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, Rhs> {
@@ -41,8 +41,8 @@ impl<Combinator, Rule, Source, Rhs> CombinationClause<Combinator, Rule, Source, 
         CombinationClause {
             combinator,
             duplicate_rule,
-            source,
-            rhs: RhsParenthesisWrapper(rhs),
+            source: ParenthesisWrapper(source),
+            rhs: ParenthesisWrapper(rhs),
         }
     }
 }
@@ -129,8 +129,8 @@ impl<Combinator, Rule, Source, Rhs, DB: Backend> QueryFragment<DB>
 where
     Combinator: QueryFragment<DB>,
     Rule: QueryFragment<DB>,
-    Source: QueryFragment<DB>,
-    RhsParenthesisWrapper<Rhs>: QueryFragment<DB>,
+    ParenthesisWrapper<Source>: QueryFragment<DB>,
+    ParenthesisWrapper<Rhs>: QueryFragment<DB>,
     DB: Backend + SupportsCombinationClause<Combinator, Rule> + DieselReserveSpecialization,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -215,7 +215,7 @@ pub trait SupportsCombinationClause<Combinator, Rule> {}
 
 #[derive(Debug, Copy, Clone, QueryId)]
 /// Wrapper used to wrap rhs sql in parenthesis when supported by backend
-pub struct RhsParenthesisWrapper<T>(T);
+pub struct ParenthesisWrapper<T>(T);
 
 #[cfg(feature = "postgres")]
 mod postgres {
@@ -224,7 +224,7 @@ mod postgres {
     use crate::query_builder::{AstPass, QueryFragment};
     use crate::QueryResult;
 
-    impl<T: QueryFragment<Pg>> QueryFragment<Pg> for RhsParenthesisWrapper<T> {
+    impl<T: QueryFragment<Pg>> QueryFragment<Pg> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
             out.push_sql("(");
             self.0.walk_ast(out.reborrow())?;
@@ -248,7 +248,7 @@ mod mysql {
     use crate::query_builder::{AstPass, QueryFragment};
     use crate::QueryResult;
 
-    impl<T: QueryFragment<Mysql>> QueryFragment<Mysql> for RhsParenthesisWrapper<T> {
+    impl<T: QueryFragment<Mysql>> QueryFragment<Mysql> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
             out.push_sql("(");
             self.0.walk_ast(out.reborrow())?;
@@ -268,9 +268,15 @@ mod sqlite {
     use crate::sqlite::Sqlite;
     use crate::QueryResult;
 
-    impl<T: QueryFragment<Sqlite>> QueryFragment<Sqlite> for RhsParenthesisWrapper<T> {
-        fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-            self.0.walk_ast(out) // SQLite does not support parenthesis around Ths
+    impl<T: QueryFragment<Sqlite>> QueryFragment<Sqlite> for ParenthesisWrapper<T> {
+        fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
+            // SQLite does not support parenthesis around Ths
+            // we can emulate this by construct a fake outer
+            // SELECT * FROM (inner_query) statement
+            out.push_sql("SELECT * FROM (");
+            self.0.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+            Ok(())
         }
     }
 
