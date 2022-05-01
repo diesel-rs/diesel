@@ -10,7 +10,8 @@ use crate::dsl;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{Asc, Desc};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
-use crate::sql_types::{Array, Inet, Integer, Jsonb, SqlType, Text, VarChar};
+use crate::pg::expression::expression_methods::private::BinaryOrNullableBinary;
+use crate::sql_types::{Array, Binary, Inet, Integer, Jsonb, SqlType, Text, VarChar};
 use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
@@ -2177,9 +2178,179 @@ where
 {
 }
 
+/// PostgreSQL specific methods present on Binary expressions.
+#[cfg(feature = "postgres_backend")]
+pub trait PgBinaryExpressionMethods: Expression + Sized {
+    /// Concatenates two PostgreSQL byte arrays using the `||` operator.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> Binary,
+    /// #         hair_color -> Nullable<Binary>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     use diesel::insert_into;
+    /// #
+    /// #     let connection = &mut connection_no_data();
+    /// #     diesel::sql_query("CREATE TABLE users (
+    /// #         id INTEGER PRIMARY KEY,
+    /// #         name BYTEA NOT NULL,
+    /// #         hair_color BYTEA
+    /// #     )").execute(connection).unwrap();
+    /// #
+    /// #     insert_into(users)
+    /// #         .values(&vec![
+    /// #             (id.eq(1), name.eq("Sean".as_bytes()), Some(hair_color.eq(Some("Green".as_bytes())))),
+    /// #             (id.eq(2), name.eq("Tess".as_bytes()), None),
+    /// #         ])
+    /// #         .execute(connection)
+    /// #         .unwrap();
+    /// #
+    /// let names = users.select(name.concat(" the Greatest".as_bytes())).load(connection);
+    /// let expected_names = vec![
+    ///     b"Sean the Greatest".to_vec(),
+    ///     b"Tess the Greatest".to_vec()
+    /// ];
+    /// assert_eq!(Ok(expected_names), names);
+    ///
+    /// // If the value is nullable, the output will be nullable
+    /// let names = users.select(hair_color.concat("ish".as_bytes())).load(connection);
+    /// let expected_names = vec![
+    ///     Some(b"Greenish".to_vec()),
+    ///     None,
+    /// ];
+    /// assert_eq!(Ok(expected_names), names);
+    /// # }
+    /// ```
+    fn concat<T>(self, other: T) -> dsl::ConcatBinary<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Binary>,
+    {
+        Grouped(ConcatBinary::new(self, other.as_expression()))
+    }
+
+    /// Creates a PostgreSQL binary `LIKE` expression.
+    ///
+    /// This method is case sensitive. There is no case-insensitive
+    /// equivalent as of PostgreSQL 14.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> Binary,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     use diesel::insert_into;
+    /// #
+    /// #     let connection = &mut connection_no_data();
+    /// #     diesel::sql_query("CREATE TABLE users (
+    /// #         id INTEGER PRIMARY KEY,
+    /// #         name BYTEA NOT NULL
+    /// #     )").execute(connection).unwrap();
+    /// #
+    /// #     insert_into(users)
+    /// #         .values(&vec![
+    /// #             (id.eq(1), name.eq("Sean".as_bytes())),
+    /// #             (id.eq(2), name.eq("Tess".as_bytes()))
+    /// #         ])
+    /// #         .execute(connection)
+    /// #         .unwrap();
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.like(b"S%".to_vec()))
+    ///     .load(connection);
+    /// assert_eq!(Ok(vec![b"Sean".to_vec()]), starts_with_s);
+    /// # }
+    /// ```
+    fn like<T>(self, other: T) -> dsl::LikeBinary<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Binary>,
+    {
+        Grouped(LikeBinary::new(self, other.as_expression()))
+    }
+
+    /// Creates a PostgreSQL binary `LIKE` expression.
+    ///
+    /// This method is case sensitive. There is no case-insensitive
+    /// equivalent as of PostgreSQL 14.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> Binary,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     use self::users::dsl::*;
+    /// #     use diesel::insert_into;
+    /// #
+    /// #     let connection = &mut connection_no_data();
+    /// #     diesel::sql_query("CREATE TABLE users (
+    /// #         id INTEGER PRIMARY KEY,
+    /// #         name BYTEA NOT NULL
+    /// #     )").execute(connection).unwrap();
+    /// #
+    /// #     insert_into(users)
+    /// #         .values(&vec![
+    /// #             (id.eq(1), name.eq("Sean".as_bytes())),
+    /// #             (id.eq(2), name.eq("Tess".as_bytes()))
+    /// #         ])
+    /// #         .execute(connection)
+    /// #         .unwrap();
+    /// #
+    /// let starts_with_s = users
+    ///     .select(name)
+    ///     .filter(name.not_like(b"S%".to_vec()))
+    ///     .load(connection);
+    /// assert_eq!(Ok(vec![b"Tess".to_vec()]), starts_with_s);
+    /// # }
+    /// ```
+    fn not_like<T>(self, other: T) -> dsl::NotLikeBinary<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Binary>,
+    {
+        Grouped(NotLikeBinary::new(self, other.as_expression()))
+    }
+}
+
+#[doc(hidden)]
+impl<T> PgBinaryExpressionMethods for T
+where
+    T: Expression,
+    T::SqlType: BinaryOrNullableBinary,
+{
+}
+
 mod private {
     use crate::sql_types::{
-        Array, Cidr, Inet, Integer, Json, Jsonb, Nullable, Range, SqlType, Text,
+        Array, Binary, Cidr, Inet, Integer, Json, Jsonb, Nullable, Range, SqlType, Text,
     };
     use crate::{Expression, IntoSql};
 
@@ -2361,4 +2532,9 @@ mod private {
     pub trait TextOrInteger {}
     impl TextOrInteger for Text {}
     impl TextOrInteger for Integer {}
+
+    pub trait BinaryOrNullableBinary {}
+
+    impl BinaryOrNullableBinary for Binary {}
+    impl BinaryOrNullableBinary for Nullable<Binary> {}
 }

@@ -1,7 +1,7 @@
 use crate::dsl::{AsExpr, AsExprOf, SqlTypeOf};
 use crate::expression::grouped::Grouped;
 use crate::pg::types::sql_types::Array;
-use crate::sql_types::{Inet, Integer, Jsonb, VarChar};
+use crate::sql_types::{Binary, Inet, Integer, Jsonb, VarChar};
 
 /// The return type of [`lhs.ilike(rhs)`](super::expression_methods::PgTextExpressionMethods::ilike)
 #[cfg(feature = "postgres_backend")]
@@ -170,3 +170,17 @@ pub type RetrieveByPathAsTextJson<Lhs, Rhs> =
 #[cfg(feature = "postgres_backend")]
 pub type RemoveByPathFromJsonb<Lhs, Rhs> =
     Grouped<super::operators::RemoveByPathFromJsonb<Lhs, AsExprOf<Rhs, Array<VarChar>>>>;
+
+/// The return type of [`lhs.remove_by_path(rhs)`](super::expression_methods::PgBinaryExpressionMethods::concat)
+#[cfg(feature = "postgres_backend")]
+pub type ConcatBinary<Lhs, Rhs> =
+    Grouped<super::operators::ConcatBinary<Lhs, AsExprOf<Rhs, Binary>>>;
+
+/// The return type of [`lhs.remove_by_path(rhs)`](super::expression_methods::PgBinaryExpressionMethods::like)
+#[cfg(feature = "postgres_backend")]
+pub type LikeBinary<Lhs, Rhs> = Grouped<super::operators::LikeBinary<Lhs, AsExprOf<Rhs, Binary>>>;
+
+/// The return type of [`lhs.remove_by_path(rhs)`](super::expression_methods::PgBinaryExpressionMethods::not_like)
+#[cfg(feature = "postgres_backend")]
+pub type NotLikeBinary<Lhs, Rhs> =
+    Grouped<super::operators::NotLikeBinary<Lhs, AsExprOf<Rhs, Binary>>>;
