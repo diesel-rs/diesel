@@ -180,7 +180,7 @@ impl crate::r2d2::R2D2Connection for PgConnection {
         self.transaction_state
             .status
             .transaction_depth()
-            .map(|d| d.is_none())
+            .map(|d| d.is_some())
             .unwrap_or(true)
     }
 }
