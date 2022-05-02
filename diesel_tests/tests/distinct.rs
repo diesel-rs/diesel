@@ -32,12 +32,29 @@ fn distinct_on() {
         .select((name, hair_color))
         .order(name)
         .distinct_on(name);
-    let expected_data = vec![
+    let mut expected_data = vec![
         ("Sean".to_string(), Some("black".to_string())),
         ("Tess".to_string(), None),
     ];
     let data: Vec<_> = source.load(connection).unwrap();
 
+    assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order(name.asc())
+        .distinct_on(name);
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order(name.desc())
+        .distinct_on(name);
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    expected_data.reverse();
     assert_eq!(expected_data, data);
 }
 
