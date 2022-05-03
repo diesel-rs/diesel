@@ -109,14 +109,25 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
         item.generics.params.push(parse_quote!(__GroupByClause));
         let (impl_generics, _, _) = item.generics.split_for_impl();
 
-        wrap_in_dummy_mod(quote! {
-            use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
+        // Inline expansion of util::wrap_in_dummy_mod, to avoid quoting/parsing a big module.
+        quote! {
+            #[allow(unused_imports)]
+            const _: () = {
+                // This import is not actually redundant. When using diesel_derives
+                // inside of diesel, `diesel` doesn't exist as an extern crate, and
+                // to work around that it contains a private
+                // `mod diesel { pub use super::*; }` that this import will then
+                // refer to. In all other cases, this imports refers to the extern
+                // crate diesel.
+                use diesel;
+                use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
 
-            impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
-            #where_clause
-            {
-                type IsAggregate = #is_aggregate;
-            }
-        })
+                impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
+                #where_clause
+                {
+                    type IsAggregate = #is_aggregate;
+                }
+            };
+        }
     }
 }
