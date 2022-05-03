@@ -11,6 +11,8 @@ mod json;
 mod mac_addr;
 #[doc(hidden)]
 pub(in crate::pg) mod money;
+#[cfg(feature = "ipnet-address")]
+mod ipnet_address;
 #[cfg(feature = "network-address")]
 mod network_address;
 mod numeric;
@@ -19,6 +21,9 @@ mod ranges;
 mod record;
 #[cfg(feature = "uuid")]
 mod uuid;
+
+#[cfg(all(feature = "network-address", feature = "ipnet-address"))]
+compile_error!("Features 'network-address' and 'ipnet-address' cannot be enabled at the same time");
 
 /// PostgreSQL specific SQL types
 ///
@@ -404,23 +409,24 @@ pub mod sql_types {
     /// Alias for `MacAddr` to be able to use it with `infer_schema`.
     pub type Macaddr = MacAddr;
 
-    /// The [`INET`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    /// The [`INET`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
     ///
     /// ### [`ToSql`] impls
     ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
+    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
     ///
     /// ### [`FromSql`] impls
     ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
+    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
-    #[cfg_attr(
-        not(feature = "ipnetwork"),
-        doc = " [IpNetwork]: https://docs.rs/ipnetwork/*/ipnetwork/enum.IpNetwork.html"
-    )]
+    #[cfg_attr(feature = "ipnet", doc = " [IpNet]: ipnet::IpNet")]
     ///
     /// # Examples
     ///
@@ -434,9 +440,8 @@ pub mod sql_types {
     ///     }
     /// }
     ///
-    /// # #[cfg(feature = "network-address")]
+    /// # #[cfg(any(feature = "network-address", feature = "ipnet-address"))]
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use ipnetwork::IpNetwork;
     ///
     /// #     use diesel::insert_into;
     /// #     use self::clients::dsl::*;
@@ -445,7 +450,8 @@ pub mod sql_types {
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address INET NOT NULL
     /// #     )").execute(connection)?;
-    /// let addr = "10.1.9.32/32".parse::<IpNetwork>()?;
+    #[cfg_attr(feature = "ipnetwork", doc = "let addr = \"10.1.9.32/32\".parse::<ipnetwork::IpNetwork>()?;")]
+    #[cfg_attr(feature = "ipnet", doc = "let addr = \"10.1.9.32/32\".parse::<ipnet::IpNet>()?;")]
     /// let inserted_address = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
@@ -454,7 +460,7 @@ pub mod sql_types {
     /// #     Ok(())
     /// # }
     /// #
-    /// # #[cfg(not(feature = "network-address"))]
+    /// # #[cfg(not(any(feature = "network-address", feature = "ipnet-address")))]
     /// # fn main() {}
     /// ```
     #[cfg(feature = "postgres_backend")]
@@ -462,23 +468,24 @@ pub mod sql_types {
     #[diesel(postgres_type(oid = 869, array_oid = 1041))]
     pub struct Inet;
 
-    /// The [`CIDR`](https://www.postgresql.org/docs/postgresql/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"`
+    /// The [`CIDR`](https://www.postgresql.org/docs/postgresql/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
     ///
     /// ### [`ToSql`] impls
     ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
+    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
     ///
     /// ### [`FromSql`] impls
     ///
-    /// - [`ipnetwork::IpNetwork`][IpNetwork]
+    #[cfg_attr(feature = "ipnetwork", doc = " - [`ipnetwork::IpNetwork`][IpNetwork]")]
+    #[cfg_attr(feature = "ipnet", doc = " - [`ipnet::IpNet`][IpNet]")]
+    #[cfg_attr(not(any(feature = "ipnetwork", feature = "ipnet")), doc = "N/A")]
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
     #[cfg_attr(feature = "ipnetwork", doc = " [IpNetwork]: ipnetwork::IpNetwork")]
-    #[cfg_attr(
-        not(feature = "ipnetwork"),
-        doc = " [IpNetwork]: https://docs.rs/ipnetwork/*/ipnetwork/enum.IpNetwork.html"
-    )]
+    #[cfg_attr(feature = "ipnet", doc = " [IpNet]: ipnet::IpNet")]
     ///
     /// # Examples
     ///
@@ -492,9 +499,8 @@ pub mod sql_types {
     ///     }
     /// }
     ///
-    /// # #[cfg(feature = "network-address")]
+    /// # #[cfg(any(feature = "network-address", feature = "ipnet-address"))]
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// use ipnetwork::IpNetwork;
     ///
     /// #     use diesel::insert_into;
     /// #     use self::clients::dsl::*;
@@ -503,7 +509,8 @@ pub mod sql_types {
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address CIDR NOT NULL
     /// #     )").execute(connection)?;
-    /// let addr = "10.1.9.32/32".parse::<IpNetwork>()?;
+    #[cfg_attr(feature = "ipnetwork", doc = "let addr = \"10.1.9.32/32\".parse::<ipnetwork::IpNetwork>()?;")]
+    #[cfg_attr(feature = "ipnet", doc = "let addr = \"10.1.9.32/32\".parse::<ipnet::IpNet>()?;")]
     /// let inserted_addr = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
@@ -511,7 +518,7 @@ pub mod sql_types {
     /// assert_eq!(addr, inserted_addr);
     /// #     Ok(())
     /// # }
-    /// # #[cfg(not(feature = "network-address"))]
+    /// # #[cfg(not(any(feature = "network-address", feature = "ipnet-address")))]
     /// # fn main() {}
     /// ```
     #[cfg(feature = "postgres_backend")]
