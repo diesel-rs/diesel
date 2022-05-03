@@ -403,11 +403,11 @@ where
         ffi::sqlite3_aggregate_context(ctx, std::mem::size_of::<OptionalAggregator<A>>() as i32)
     };
     let aggregate_context = NonNull::new(aggregate_context as *mut OptionalAggregator<A>);
-    let aggregator = unsafe {
-        match aggregate_context.map(|a| &mut *a.as_ptr()) {
+    let aggregator = 
+        match unsafe { aggregate_context.map(|a| &mut *a.as_ptr()) } {
             Some(&mut OptionalAggregator::Some(ref mut agg)) => agg,
             Some(a_ptr @ &mut OptionalAggregator::None) => {
-                ptr::write_unaligned(a_ptr as *mut _, OptionalAggregator::Some(A::default()));
+                unsafe { ptr::write_unaligned(a_ptr as *mut _, OptionalAggregator::Some(A::default())) };
                 if let OptionalAggregator::Some(ref mut agg) = a_ptr {
                     agg
                 } else {
@@ -417,8 +417,7 @@ where
             None => {
                 return Err(SqliteCallbackError::Abort(NULL_AG_CTX_ERR));
             }
-        }
-    };
+        };
     let args = build_sql_function_args::<ArgsSqlType, Args>(args)?;
 
     aggregator.step(args);

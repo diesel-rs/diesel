@@ -165,8 +165,8 @@ impl RawConnection {
     }
 
     fn consume_current_result(&self) -> QueryResult<()> {
+        let res = unsafe { ffi::mysql_store_result(self.0.as_ptr()) };
         unsafe {
-            let res = ffi::mysql_store_result(self.0.as_ptr());
             if !res.is_null() {
                 ffi::mysql_free_result(res);
             }
