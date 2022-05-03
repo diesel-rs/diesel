@@ -8,20 +8,14 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
     let model = Model::from_item(&item, true);
     let struct_ty = ty_for_foreign_derive(&item, &model);
 
-    let type_params = item
-        .generics
-        .type_params()
-        .map(|param| param.ident.clone())
-        .collect::<Vec<_>>();
-
-    for type_param in type_params {
-        let where_clause = item.generics.make_where_clause();
-        where_clause
-            .predicates
-            .push(parse_quote!(#type_param: ValidGrouping<__GroupByClause>));
-    }
-
     if model.aggregate {
+        // Make all type parameters valid groupings.
+        for type_param in item.generics.type_params_mut() {
+            type_param
+                .bounds
+                .push(parse_quote!(ValidGrouping<__GroupByClause>));
+        }
+
         item.generics.params.push(parse_quote!(__GroupByClause));
         let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
@@ -35,28 +29,85 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
             }
         })
     } else {
-        let mut aggregates = item
-            .generics
-            .type_params()
-            .map(|t| quote!(#t::IsAggregate))
-            .collect::<Vec<_>>()
-            .into_iter();
+        // We now build up:
+        // - the `IsAggregate` associated type to use as this grouping's aggregate
+        // - the where clause constraining type parameters to be valid groupings
+        // - the where clause constraining type parameters as valid aggregates
 
-        let is_aggregate = aggregates
-            .next()
-            .map(|first| {
-                let where_clause = item.generics.make_where_clause();
-                aggregates.fold(first, |left, right| {
-                    where_clause.predicates.push(parse_quote!(
-                        #left: MixedAggregates<#right>
+        // If there are existing where clause predicates, we'll enrich this existing where clause.
+        let has_predicates = item
+            .generics
+            .where_clause
+            .as_ref()
+            .map(|where_clause| !where_clause.predicates.is_empty())
+            .unwrap_or(false);
+
+        // If there are type params, we'll need to constrain them.
+        let has_aggregates = item.generics.type_params().next().is_some();
+
+        let (is_aggregate, where_clause) = if has_predicates || has_aggregates {
+            let mut where_clause = if has_predicates {
+                // There are existing predicates, we'll enrich the existing where clause.
+                let where_clause = &item.generics.where_clause;
+                quote!(#where_clause,).to_string()
+            } else {
+                // There are type params to aggregate and constrain in the where clause, but no
+                // existing predicates: let's build a where clause from scratch.
+                String::from("where ")
+            };
+
+            let mut is_aggregate = String::new();
+            for (idx, type_param) in item.generics.type_params().enumerate() {
+                // Make all type parameters valid groupings.
+                where_clause.push_str(&format!(
+                    "{}: ValidGrouping<__GroupByClause>,",
+                    quote!(#type_param)
+                ));
+
+                let aggregate = quote!(#type_param::IsAggregate);
+
+                // This `ValidGrouping`'s associated type `IsAggregate` is always the last type
+                // parameter's:
+                // - when there's only parameter: we simply use its `IsAggregate`
+                // - when there's multiple: we'll chain the type parameters pair-wise with
+                //   `MixedAggregates`, and the result will be the last `Output`
+                is_aggregate = if idx == 0 {
+                    aggregate.to_string()
+                } else {
+                    // Build-up the `MixedAggregates` chain both:
+                    // 1) in the where clause
+                    where_clause.push_str(&format!(
+                        "{left}: MixedAggregates<{right}>,",
+                        left = is_aggregate,
+                        right = aggregate,
                     ));
-                    quote!(<#left as MixedAggregates<#right>>::Output)
-                })
-            })
-            .unwrap_or_else(|| quote!(is_aggregate::Never));
+
+                    // 2) for the final aggregate
+                    format!(
+                        "<{left} as MixedAggregates <{right}>>::Output",
+                        left = is_aggregate,
+                        right = aggregate,
+                    )
+                };
+            }
+
+            // Only parse the complex associated type once.
+            let is_aggregate = is_aggregate
+                .parse()
+                .expect("Unexpected lexing error while parsing `is_aggregate`");
+
+            // Only parse the complex where clause once.
+            let where_clause: TokenStream = where_clause
+                .parse()
+                .expect("Unexpected lexing error while parsing `where_clause`");
+
+            (is_aggregate, Some(where_clause))
+        } else {
+            (quote!(is_aggregate::Never), None)
+        };
 
         item.generics.params.push(parse_quote!(__GroupByClause));
-        let (impl_generics, _, where_clause) = item.generics.split_for_impl();
+        let (impl_generics, _, _) = item.generics.split_for_impl();
 
         wrap_in_dummy_mod(quote! {
             use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
