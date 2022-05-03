@@ -5,8 +5,8 @@ use crate::deserialize::{
 };
 use crate::expression::{
     is_contained_in_group_by, AppearsOnTable, AsExpression, AsExpressionList, Expression,
-    IsContainedInGroupBy, QueryMetadata, Selectable, SelectableExpression, TypedExpressionType,
-    ValidGrouping,
+    IsContainedInGroupBy, MixedAggregates, QueryMetadata, Selectable, SelectableExpression,
+    TypedExpressionType, ValidGrouping,
 };
 use crate::insertable::{CanInsertInSingleQuery, InsertValues, Insertable, InsertableOptionHelper};
 use crate::query_builder::*;
@@ -113,12 +113,6 @@ macro_rules! tuple_impls {
 
                 const HAS_STATIC_QUERY_ID: bool = $($T::HAS_STATIC_QUERY_ID &&)+ true;
             }
-
-            const _: () = {
-                #[derive(ValidGrouping)]
-                #[diesel(foreign_derive)]
-                struct TupleWrapper<$($T,)*>(($($T,)*));
-            };
 
             impl_valid_grouping_for_tuple_of_columns!($($T,)*);
 
@@ -453,49 +447,22 @@ macro_rules! impl_from_sql_row {
 }
 
 macro_rules! impl_valid_grouping_for_tuple_of_columns {
-    (
-        @build
-        start_ts = [$($ST: ident,)*],
-        ts = [$T1: ident,],
-        bounds = [$($bounds: tt)*],
-        is_aggregate = [$($is_aggregate: tt)*],
-    ) => {
-        impl<$($ST,)* Col> IsContainedInGroupBy<Col> for ($($ST,)*)
-        where Col: Column,
-            $($ST: IsContainedInGroupBy<Col>,)*
-            $($bounds)*
-            <$T1 as IsContainedInGroupBy<Col>>::Output: is_contained_in_group_by::IsAny<$($is_aggregate)*>,
-        {
-            type Output = <<$T1 as IsContainedInGroupBy<Col>>::Output as is_contained_in_group_by::IsAny<$($is_aggregate)*>>::Output;
-        }
-    };
-    (
-        @build
-        start_ts = [$($ST: ident,)*],
-        ts = [$T1: ident, $($T: ident,)+],
-        bounds = [$($bounds: tt)*],
-        is_aggregate = [$($is_aggregate: tt)*],
-    ) => {
-        impl_valid_grouping_for_tuple_of_columns! {
-            @build
-            start_ts = [$($ST,)*],
-            ts = [$($T,)*],
-            bounds = [
-                $($bounds)*
-                <$T1 as IsContainedInGroupBy<Col>>::Output: is_contained_in_group_by::IsAny<$($is_aggregate)*>,
-            ],
-            is_aggregate = [
-                <<$T1 as IsContainedInGroupBy<Col>>::Output as is_contained_in_group_by::IsAny<$($is_aggregate)*>>::Output
-            ],
-        }
-    };
     ($T1: ident, $($T: ident,)+) => {
-        impl_valid_grouping_for_tuple_of_columns! {
-            @build
-            start_ts = [$T1, $($T,)*],
-            ts = [$($T,)*],
-            bounds = [],
-            is_aggregate = [<$T1 as IsContainedInGroupBy<Col>>::Output],
+        impl<$T1, $($T,)* GB> ValidGrouping<GB> for ($T1, $($T,)*)
+        where
+            $T1: ValidGrouping<GB>,
+            ($($T,)*): ValidGrouping<GB>,
+            $T1::IsAggregate: MixedAggregates<<($($T,)*) as ValidGrouping<GB>>::IsAggregate>,
+        {
+            type IsAggregate = <$T1::IsAggregate as MixedAggregates<<($($T,)*) as ValidGrouping<GB>>::IsAggregate>>::Output;
+        }
+        impl<$T1, $($T,)* Col> IsContainedInGroupBy<Col> for ($T1, $($T,)*)
+        where Col: Column,
+              ($($T,)*): IsContainedInGroupBy<Col>,
+              $T1: IsContainedInGroupBy<Col>,
+              $T1::Output: is_contained_in_group_by::IsAny<<($($T,)*) as IsContainedInGroupBy<Col>>::Output>
+        {
+            type Output = <$T1::Output as is_contained_in_group_by::IsAny<<($($T,)*) as IsContainedInGroupBy<Col>>::Output>>::Output;
         }
     };
     ($T1: ident,) => {
@@ -504,6 +471,12 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
               $T1: IsContainedInGroupBy<Col>
         {
             type Output = <$T1 as IsContainedInGroupBy<Col>>::Output;
+        }
+
+        impl<$T1, GB> ValidGrouping<GB> for ($T1,)
+            where $T1: ValidGrouping<GB>
+        {
+            type IsAggregate = $T1::IsAggregate;
         }
     };
 }
