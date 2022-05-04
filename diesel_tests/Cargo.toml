@@ -10,8 +10,7 @@ edition = "2018"
 [dependencies]
 assert_matches = "1.0.1"
 chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
-# TODO: Previously, this used the 'network-address' feature.
-diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "numeric", "with-deprecated"] }
+diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated"] }
 diesel_migrations = { path = "../diesel_migrations" }
 dotenvy = "0.15"
 quickcheck = "1.0.3"

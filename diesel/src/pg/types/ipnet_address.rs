@@ -159,8 +159,7 @@ fn v4address_to_sql() {
 fn some_v4address_from_sql() {
     macro_rules! test_some_address_from_sql {
         ($ty:tt) => {
-            let input_address =
-                IpNet::V4(Ipv4Net::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
+            let input_address = IpNet::V4(Ipv4Net::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap());
             let mut buffer = Vec::new();
             {
                 let mut bytes = Output::test(ByteWrapper(&mut buffer));
@@ -182,9 +181,8 @@ fn v6address_to_sql() {
             let mut buffer = Vec::new();
             {
                 let mut bytes = Output::test(ByteWrapper(&mut buffer));
-                let test_address = IpNet::V6(
-                    Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap(),
-                );
+                let test_address =
+                    IpNet::V6(Ipv6Net::new(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1), 64).unwrap());
                 ToSql::<$ty, Pg>::to_sql(&test_address, &mut bytes).unwrap();
             }
             assert_eq!(

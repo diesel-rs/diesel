@@ -141,11 +141,9 @@
 //! - `uuid`: This feature flag enables support for (de)serializing uuid values from the database using types
 //! provided by `uuid`
 //! - `network-address`: This feature flag enables support for (de)serializing
-//! IP values from the database using types provided by `ipnetwork`. Mutually
-//! exclusive with `ipnet-address.
+//! IP values from the database using types provided by `ipnetwork`.
 //! - `ipnet-address`: This feature flag enables support for (de)serializing IP
-//! values from the database using types provided by `ipnet`. Mutually exclusive
-//! with `network-address.
+//! values from the database using types provided by `ipnet`.
 //! - `numeric`: This feature flag enables support for (de)serializing numeric values from the database using types
 //! provided by `bigdecimal`
 //! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.

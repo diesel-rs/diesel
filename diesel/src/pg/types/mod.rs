@@ -6,13 +6,13 @@ pub(in crate::pg) mod date_and_time;
 #[doc(hidden)]
 pub(in crate::pg) mod floats;
 mod integers;
+#[cfg(feature = "ipnet-address")]
+mod ipnet_address;
 #[cfg(feature = "serde_json")]
 mod json;
 mod mac_addr;
 #[doc(hidden)]
 pub(in crate::pg) mod money;
-#[cfg(feature = "ipnet-address")]
-mod ipnet_address;
 #[cfg(feature = "network-address")]
 mod network_address;
 mod numeric;
@@ -21,9 +21,6 @@ mod ranges;
 mod record;
 #[cfg(feature = "uuid")]
 mod uuid;
-
-#[cfg(all(feature = "network-address", feature = "ipnet-address"))]
-compile_error!("Features 'network-address' and 'ipnet-address' cannot be enabled at the same time");
 
 /// PostgreSQL specific SQL types
 ///
@@ -450,8 +447,8 @@ pub mod sql_types {
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address INET NOT NULL
     /// #     )").execute(connection)?;
-    #[cfg_attr(feature = "ipnetwork", doc = "let addr = \"10.1.9.32/32\".parse::<ipnetwork::IpNetwork>()?;")]
-    #[cfg_attr(feature = "ipnet", doc = "let addr = \"10.1.9.32/32\".parse::<ipnet::IpNet>()?;")]
+    /// // Parsing "ipnet::IpNet" would also work.
+    /// let addr = "10.1.9.32/32".parse::<ipnetwork::IpNetwork>()?;
     /// let inserted_address = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
@@ -509,8 +506,8 @@ pub mod sql_types {
     /// #         id SERIAL PRIMARY KEY,
     /// #         ip_address CIDR NOT NULL
     /// #     )").execute(connection)?;
-    #[cfg_attr(feature = "ipnetwork", doc = "let addr = \"10.1.9.32/32\".parse::<ipnetwork::IpNetwork>()?;")]
-    #[cfg_attr(feature = "ipnet", doc = "let addr = \"10.1.9.32/32\".parse::<ipnet::IpNet>()?;")]
+    /// // Parsing "ipnet::IpNet" would also work.
+    /// let addr = "10.1.9.32/32".parse::<ipnetwork::IpNetwork>()?;
     /// let inserted_addr = insert_into(clients)
     ///     .values(ip_address.eq(&addr))
     ///     .returning(ip_address)
