@@ -448,14 +448,15 @@ macro_rules! impl_from_sql_row {
 
 macro_rules! impl_valid_grouping_for_tuple_of_columns {
     ($T1: ident, $($T: ident,)+) => {
-        impl<$T1, $($T,)* GB> ValidGrouping<GB> for ($T1, $($T,)*)
+        impl<$T1, $($T,)* __GroupByClause> ValidGrouping<__GroupByClause> for ($T1, $($T,)*)
         where
-            $T1: ValidGrouping<GB>,
-            ($($T,)*): ValidGrouping<GB>,
-            $T1::IsAggregate: MixedAggregates<<($($T,)*) as ValidGrouping<GB>>::IsAggregate>,
+            $T1: ValidGrouping<__GroupByClause>,
+            ($($T,)*): ValidGrouping<__GroupByClause>,
+            $T1::IsAggregate: MixedAggregates<<($($T,)*) as ValidGrouping<__GroupByClause>>::IsAggregate>,
         {
-            type IsAggregate = <$T1::IsAggregate as MixedAggregates<<($($T,)*) as ValidGrouping<GB>>::IsAggregate>>::Output;
+            type IsAggregate = <$T1::IsAggregate as MixedAggregates<<($($T,)*) as ValidGrouping<__GroupByClause>>::IsAggregate>>::Output;
         }
+
         impl<$T1, $($T,)* Col> IsContainedInGroupBy<Col> for ($T1, $($T,)*)
         where Col: Column,
               ($($T,)*): IsContainedInGroupBy<Col>,
@@ -473,8 +474,8 @@ macro_rules! impl_valid_grouping_for_tuple_of_columns {
             type Output = <$T1 as IsContainedInGroupBy<Col>>::Output;
         }
 
-        impl<$T1, GB> ValidGrouping<GB> for ($T1,)
-            where $T1: ValidGrouping<GB>
+        impl<$T1, __GroupByClause> ValidGrouping<__GroupByClause> for ($T1,)
+            where $T1: ValidGrouping<__GroupByClause>
         {
             type IsAggregate = $T1::IsAggregate;
         }
