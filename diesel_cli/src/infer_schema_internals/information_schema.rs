@@ -4,7 +4,7 @@ use std::error::Error;
 use diesel::backend::Backend;
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::dsl::*;
-use diesel::expression::{is_aggregate, MixedAggregates, QueryMetadata, ValidGrouping};
+use diesel::expression::{is_aggregate, QueryMetadata, ValidGrouping};
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
@@ -160,10 +160,12 @@ where
         )>,
         Conn::Backend,
     >,
-    is_aggregate::No: MixedAggregates<
-        <<Conn::Backend as UsesInformationSchema>::TypeSchema as ValidGrouping<()>>::IsAggregate,
-        Output = is_aggregate::No,
-    >,
+    (
+        columns::column_name,
+        <Conn::Backend as UsesInformationSchema>::TypeColumn,
+        <Conn::Backend as UsesInformationSchema>::TypeSchema,
+        columns::__is_nullable,
+    ): ValidGrouping<()>,
     String: FromSql<sql_types::Text, Conn::Backend>,
     Option<String>: FromSql<sql_types::Nullable<sql_types::Text>, Conn::Backend>,
     Order<
