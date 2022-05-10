@@ -22,7 +22,7 @@ use crate::result::*;
 use std::fmt::Debug;
 
 pub use self::transaction_manager::{
-    AnsiTransactionManager, TransactionManager, TransactionManagerStatus,
+    AnsiTransactionManager, TransactionDepthChange, TransactionManager, TransactionManagerStatus,
     ValidTransactionManagerStatus,
 };
 
