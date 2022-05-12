@@ -98,7 +98,8 @@ where
     }
 }
 
-impl<T, U> QueryFragment<Pg, crate::pg::backend::PgOnConflictClaues>
+impl<T, U>
+    QueryFragment<Pg, crate::backend::sql_dialect::on_conflict_clause::PgLikeOnConflictClause>
     for DecoratedConflictTarget<T, U>
 where
     T: QueryFragment<Pg>,

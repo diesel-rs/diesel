@@ -18,11 +18,32 @@ where
     }
 }
 
-impl<DB, T> QueryFragment<DB, T> for DoNothing
+impl<DB> QueryFragment<DB, sql_dialect::on_conflict_clause::PgLikeOnConflictClause> for DoNothing
 where
-    DB: Backend,
-    T: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+    DB: Backend<
+        OnConflictClause = crate::backend::sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
+    >,
 {
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql(" DO NOTHING");
+        Ok(())
+    }
+}
+
+impl<DB> QueryFragment<DB, sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause>
+    for DoNothing
+where
+    DB: Backend<
+        OnConflictClause = crate::backend::sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause,
+    >,
+{
+    ///
+    /// FIXME: This is super wrong right now and will likely cause a panic; MySQL doesn't support
+    /// the "DO NOTHING" syntax; the likely workaround would need to have access to at least one
+    /// column from the table being modified in this query:
+    /// 
+    /// https://stackoverflow.com/questions/4596390/insert-on-duplicate-key-do-nothing
+    /// 
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" DO NOTHING");
         Ok(())
@@ -89,14 +110,29 @@ where
     }
 }
 
-impl<DB, T, SP> QueryFragment<DB, SP> for Excluded<T>
+impl<DB, T>
+    QueryFragment<DB, crate::backend::sql_dialect::on_conflict_clause::PgLikeOnConflictClause>
+    for Excluded<T>
 where
     DB: Backend,
-    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: Column,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("excluded.");
+        out.push_identifier(T::NAME)?;
+        Ok(())
+    }
+}
+
+impl<DB, T>
+    QueryFragment<DB, crate::backend::sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause>
+    for Excluded<T>
+where
+    DB: Backend,
+    T: Column,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.push_sql("new.");
         out.push_identifier(T::NAME)?;
         Ok(())
     }

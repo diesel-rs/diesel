@@ -74,7 +74,7 @@ impl TypeMetadata for Mysql {
 impl SqlDialect for Mysql {
     type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
 
-    type OnConflictClause = sql_dialect::on_conflict_clause::DoesNotSupportOnConflictClause;
+    type OnConflictClause = sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause;
 
     type InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword;
     type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;

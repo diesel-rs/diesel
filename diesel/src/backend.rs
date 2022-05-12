@@ -345,9 +345,6 @@ pub(crate) mod sql_dialect {
         /// `QueryFragment` implementations
         pub trait SupportsOnConflictClause {}
 
-        /// A marker trait indicating if a `ON CONFLICT (...) DO UPDATE ... [WHERE ...]` clause is supported or not
-        pub trait SupportsOnConflictClauseWhere {}
-
         /// This marker type indicates that `ON CONFLICT` clauses are not supported for this backend
         #[derive(Debug, Copy, Clone)]
         pub struct DoesNotSupportOnConflictClause;
