@@ -26,7 +26,7 @@ pub(crate) mod locking_clause;
 pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
-mod returning_clause;
+pub(crate) mod returning_clause;
 pub(crate) mod select_clause;
 pub(crate) mod select_statement;
 mod sql_query;
@@ -35,7 +35,7 @@ pub(crate) mod upsert;
 mod where_clause;
 
 #[doc(inline)]
-pub use self::ast_pass::AstPass;
+pub use self::ast_pass::{AstPass, AstPassToSqlOptions};
 #[doc(inline)]
 pub use self::bind_collector::BindCollector;
 #[doc(inline)]
@@ -203,7 +203,8 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     fn to_sql(&self, out: &mut DB::QueryBuilder, backend: &DB) -> QueryResult<()> {
-        self.walk_ast(AstPass::to_sql(out, backend))
+        let mut options = AstPassToSqlOptions::default();
+        self.walk_ast(AstPass::to_sql(out, &mut options, backend))
     }
 
     /// Serializes all bind parameters in this query.

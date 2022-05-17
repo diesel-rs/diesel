@@ -38,9 +38,13 @@ where
     DB: Backend,
     'b: 'a,
 {
-    pub(crate) fn to_sql(query_builder: &'a mut DB::QueryBuilder, backend: &'b DB) -> Self {
+    pub(crate) fn to_sql(
+        query_builder: &'a mut DB::QueryBuilder,
+        options: &'a mut AstPassToSqlOptions,
+        backend: &'b DB,
+    ) -> Self {
         AstPass {
-            internals: AstPassInternals::ToSql(query_builder),
+            internals: AstPassInternals::ToSql(query_builder, options),
             backend,
         }
     }
@@ -84,6 +88,12 @@ where
         }
     }
 
+    pub(crate) fn skip_from(&mut self) {
+        if let AstPassInternals::ToSql(_, ref mut options) = self.internals {
+            options.skip_from = false
+        }
+    }
+
     /// Call this method whenever you pass an instance of `AstPass` by value.
     ///
     /// Effectively copies `self`, with a narrower lifetime. When passing a
@@ -95,7 +105,9 @@ where
     /// implicitly if you were passing a mutable reference
     pub fn reborrow(&'_ mut self) -> AstPass<'_, 'b, DB> {
         let internals = match self.internals {
-            AstPassInternals::ToSql(ref mut builder) => AstPassInternals::ToSql(&mut **builder),
+            AstPassInternals::ToSql(ref mut builder, ref mut options) => {
+                AstPassInternals::ToSql(&mut **builder, &mut **options)
+            }
             AstPassInternals::CollectBinds {
                 ref mut collector,
                 ref mut metadata_lookup,
@@ -167,7 +179,7 @@ where
     /// ```
     pub fn push_sql(&mut self, sql: &str) {
         match self.internals {
-            AstPassInternals::ToSql(ref mut builder) => builder.push_sql(sql),
+            AstPassInternals::ToSql(ref mut builder, _) => builder.push_sql(sql),
             AstPassInternals::IsNoop(ref mut result) => **result = false,
             _ => {}
         }
@@ -179,7 +191,7 @@ where
     /// the query is being constructed for.
     pub fn push_identifier(&mut self, identifier: &str) -> QueryResult<()> {
         match self.internals {
-            AstPassInternals::ToSql(ref mut builder) => builder.push_identifier(identifier)?,
+            AstPassInternals::ToSql(ref mut builder, _) => builder.push_identifier(identifier)?,
             AstPassInternals::IsNoop(ref mut result) => **result = false,
             _ => {}
         }
@@ -197,7 +209,7 @@ where
         U: ToSql<T, DB>,
     {
         match self.internals {
-            AstPassInternals::ToSql(ref mut out) => out.push_bind_param(),
+            AstPassInternals::ToSql(ref mut out, _) => out.push_bind_param(),
             AstPassInternals::CollectBinds {
                 ref mut collector,
                 ref mut metadata_lookup,
@@ -220,7 +232,7 @@ where
             AstPassInternals::CollectBinds { .. } | AstPassInternals::DebugBinds(..) => {
                 self.push_bind_param(bind)?
             }
-            AstPassInternals::ToSql(ref mut out) => {
+            AstPassInternals::ToSql(ref mut out, _) => {
                 out.push_bind_param_value_only();
             }
             _ => {}
@@ -240,6 +252,22 @@ where
     pub fn backend(&self) -> &DB {
         self.backend
     }
+
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc(hidden)
+    )] // This is used by the `sql_function` macro
+    #[cfg_attr(
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+    )]
+    pub fn should_skip_from(&self) -> &bool {
+        if let AstPassInternals::ToSql(_, ref options) = self.internals {
+            &options.skip_from
+        } else {
+            &false
+        }
+    }
 }
 
 #[allow(missing_debug_implementations)]
@@ -255,7 +283,7 @@ where
     DB::MetadataLookup: 'a,
     'b: 'a,
 {
-    ToSql(&'a mut DB::QueryBuilder),
+    ToSql(&'a mut DB::QueryBuilder, &'a mut AstPassToSqlOptions),
     CollectBinds {
         collector: &'a mut <DB as HasBindCollector<'b>>::BindCollector,
         metadata_lookup: &'a mut DB::MetadataLookup,
@@ -263,4 +291,12 @@ where
     IsSafeToCachePrepared(&'a mut bool),
     DebugBinds(&'a mut Vec<&'b dyn fmt::Debug>),
     IsNoop(&'a mut bool),
+}
+
+#[allow(missing_debug_implementations)]
+#[derive(Default)]
+/// This is used to pass down additional settings to the `AstPass`
+/// when rendering the sql string.
+pub struct AstPassToSqlOptions {
+    skip_from: bool,
 }
