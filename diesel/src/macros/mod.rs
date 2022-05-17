@@ -115,10 +115,12 @@ macro_rules! __diesel_column {
             #[allow(non_snake_case)]
             fn walk_ast<'b>(&'b self, mut __diesel_internal_out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
             {
-                const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
 
-                FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
-                __diesel_internal_out.push_sql(".");
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
                 __diesel_internal_out.push_identifier($sql_name)
             }
         }
@@ -1018,10 +1020,14 @@ macro_rules! __diesel_table_impl {
                     fn walk_ast<'b>(&'b self, mut __diesel_internal_out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
                     {
                         use $crate::QuerySource;
-                        const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
 
-                        FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
-                        __diesel_internal_out.push_sql(".*");
+                        if !__diesel_internal_out.should_skip_from() {
+                            const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
+
+                            FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                            __diesel_internal_out.push_sql(".");
+                        }
+                        __diesel_internal_out.push_sql("*");
                         Ok(())
                     }
                 }
