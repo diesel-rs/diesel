@@ -74,8 +74,14 @@ where
     pub fn on_conflict_do_nothing(
         self,
     ) -> InsertStatement<T, OnConflictValues<U::ValueClause, NoConflictTarget, DoNothing>, Op, Ret>
+    where
+        U: std::fmt::Debug,
     {
-        self.replace_values(|values| OnConflictValues::do_nothing(values.into_value_clause()))
+        println!("Hey I'm inside of on_conflict_do_nothing!");
+        self.replace_values(|values| {
+            println!("values is {:?}", values);
+            OnConflictValues::do_nothing(values.into_value_clause())
+        })
     }
 
     /// Adds an `ON CONFLICT` to the insert statement, if a conflict occurs
@@ -92,15 +98,33 @@ where
     /// ### Specifying a column as the target
     ///
     /// ```rust
-    /// # include!("on_conflict_docs_setup.rs");
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #         hair_color -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # #[derive(Clone, Copy, Insertable)]
+    /// # #[diesel(table_name = users)]
+    /// # struct User<'a> {
+    /// #     id: i32,
+    /// #     name: &'a str,
+    /// # }
     /// #
     /// # fn main() {
     /// #     use self::users::dsl::*;
+    /// use diesel::upsert::*;
+    ///
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(any(feature = "postgres", feature = "mysql"))]
-    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
-    /// #     #[cfg(feature = "sqlite")]
-    /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
+    /// #     diesel::sql_query("DROP TABLE users").execute(conn).unwrap();
+    /// #[cfg(any(feature = "sqlite", feature = "postgres"))]
+    /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT)").execute(conn).unwrap();
+    /// #[cfg(feature = "mysql")]
+    /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255))").execute(conn).unwrap();
     /// diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean" };
     /// let same_name_different_id = User { id: 2, name: "Sean" };
@@ -151,7 +175,10 @@ where
     ///
     /// #     let conn = &mut establish_connection();
     /// #     diesel::sql_query("DROP TABLE users").execute(conn).unwrap();
+    /// #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT, hair_color TEXT)").execute(conn).unwrap();
+    /// #[cfg(feature = "mysql")]
+    /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), hair_color VARCHAR(255))").execute(conn).unwrap();
     /// diesel::sql_query("CREATE UNIQUE INDEX users_name_hair_color ON users (name, hair_color)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean", hair_color: "black" };
     /// let same_name_different_hair_color = User { id: 2, name: "Sean", hair_color: "brown" };
@@ -231,6 +258,7 @@ where
     /// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
     /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
     pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
+        println!("Hey I'm inside of do_nothing!");
         let target = self.target;
         self.stmt.replace_values(|values| {
             println!("values is {:?}", values);
@@ -325,7 +353,6 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
-    /// # use diesel::debug_query;
     /// #
     /// # fn main() {
     /// #     use self::users::dsl::*;
