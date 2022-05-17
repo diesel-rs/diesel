@@ -57,7 +57,7 @@ impl SqlDialect for Sqlite {
     #[cfg(not(feature = "returning_clauses_for_sqlite_3_35"))]
     type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
     #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
-    type ReturningClause = sql_dialect::returning_clause::PgLikeReturningClause;
+    type ReturningClause = sql_dialect::returning_clause::SqliteReturningClause;
 
     type OnConflictClause = SqliteOnConflictClause;
 
@@ -81,3 +81,8 @@ impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for SqliteOnConfl
 
 #[derive(Debug, Copy, Clone)]
 pub struct SqliteBatchInsert;
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteReturningClause;
+
+impl sql_dialect::returning_clause::SupportsReturningClause for SqliteReturningClause {}
