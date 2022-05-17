@@ -72,10 +72,11 @@ where
     }
 }
 
-impl<DB, T, SP> QueryFragment<DB, SP> for DoUpdate<T>
+impl<DB, T>
+    QueryFragment<DB, crate::backend::sql_dialect::on_conflict_clause::PgLikeOnConflictClause>
+    for DoUpdate<T>
 where
     DB: Backend,
-    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     T: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -84,6 +85,25 @@ where
             out.push_sql(" DO NOTHING");
         } else {
             out.push_sql(" DO UPDATE SET ");
+            self.changeset.walk_ast(out.reborrow())?;
+        }
+        Ok(())
+    }
+}
+
+impl<DB, T>
+    QueryFragment<DB, crate::backend::sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause>
+    for DoUpdate<T>
+where
+    DB: Backend,
+    T: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        out.unsafe_to_cache_prepared();
+        if self.changeset.is_noop(out.backend())? {
+            out.push_sql(" DO NOTHING");
+        } else {
+            out.push_sql(" UPDATE ");
             self.changeset.walk_ast(out.reborrow())?;
         }
         Ok(())
@@ -132,8 +152,9 @@ where
     T: Column,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_sql("new.");
+        out.push_sql("VALUES(");
         out.push_identifier(T::NAME)?;
+        out.push_sql(")");
         Ok(())
     }
 }
