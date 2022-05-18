@@ -172,6 +172,32 @@ fn insert_record_using_returning_clause() {
 }
 
 #[test]
+#[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
+fn insert_record_attached_database_using_returning_clause() {
+    use crate::schema::external_table;
+
+    #[derive(Queryable, Debug, PartialEq)]
+    #[diesel(table_name = external_table)]
+    struct ExternalEntity {
+        id: i32,
+        data: String,
+    }
+
+    let connection = &mut connection();
+
+    let inserted_entity = insert_into(external_table::table)
+        .values(external_table::data.eq("test".to_string()))
+        .get_result::<ExternalEntity>(connection)
+        .unwrap();
+    let expected_entity = ExternalEntity {
+        id: inserted_entity.id,
+        data: "test".to_string(),
+    };
+
+    assert_eq!(expected_entity, inserted_entity);
+}
+
+#[test]
 #[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 fn insert_records_using_returning_clause() {
     use crate::schema::users::table as users;

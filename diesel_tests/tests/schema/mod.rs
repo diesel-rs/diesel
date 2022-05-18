@@ -272,6 +272,9 @@ pub fn backend_specific_connection() -> TestConnection {
     diesel::sql_query("PRAGMA foreign_keys = ON")
         .execute(&mut conn)
         .unwrap();
+    diesel::sql_query("ATTACH DATABASE ':memory:' AS external")
+        .execute(&mut conn)
+        .unwrap();
     conn
 }
 
