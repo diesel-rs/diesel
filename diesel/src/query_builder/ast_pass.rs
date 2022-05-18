@@ -88,6 +88,7 @@ where
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn skip_from(&mut self) {
         if let AstPassInternals::ToSql(_, ref mut options) = self.internals {
             options.skip_from = false
@@ -261,11 +262,11 @@ where
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-    pub fn should_skip_from(&self) -> &bool {
+    pub fn should_skip_from(&self) -> bool {
         if let AstPassInternals::ToSql(_, ref options) = self.internals {
-            &options.skip_from
+            options.skip_from
         } else {
-            &false
+            false
         }
     }
 }
@@ -294,6 +295,7 @@ where
 }
 
 #[allow(missing_debug_implementations)]
+#[allow(missing_copy_implementations)]
 #[derive(Default)]
 /// This is used to pass down additional settings to the `AstPass`
 /// when rendering the sql string.

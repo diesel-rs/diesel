@@ -55,7 +55,7 @@ impl QueryBuilder<Pg> for PgQueryBuilder {
 
 #[test]
 fn check_sql_query_increments_bind_count() {
-    use crate::query_builder::{AstPass, QueryFragment};
+    use crate::query_builder::{AstPass, AstPassToSqlOptions, QueryFragment};
     use crate::sql_types::*;
 
     let query = crate::sql_query("SELECT $1, $2, $3")
@@ -66,7 +66,8 @@ fn check_sql_query_increments_bind_count() {
     let mut query_builder = PgQueryBuilder::default();
 
     {
-        let ast_pass = AstPass::<crate::pg::Pg>::to_sql(&mut query_builder, &Pg);
+        let mut options = AstPassToSqlOptions::default();
+        let ast_pass = AstPass::<crate::pg::Pg>::to_sql(&mut query_builder, &mut options, &Pg);
 
         query.walk_ast(ast_pass).unwrap();
     }
