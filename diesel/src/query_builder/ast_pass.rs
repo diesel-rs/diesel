@@ -91,7 +91,7 @@ where
     #[allow(dead_code)]
     pub(crate) fn skip_from(&mut self) {
         if let AstPassInternals::ToSql(_, ref mut options) = self.internals {
-            options.skip_from = false
+            options.skip_from = true
         }
     }
 
