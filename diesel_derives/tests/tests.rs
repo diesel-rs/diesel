@@ -1,5 +1,3 @@
-#![deny(warnings)]
-
 #[macro_use]
 extern crate cfg_if;
 #[macro_use]

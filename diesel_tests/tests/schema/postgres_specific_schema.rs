@@ -1,6 +1,8 @@
 use super::{posts, User};
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName)]
+#[derive(
+    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName, Selectable,
+)]
 #[diesel(table_name = posts)]
 #[diesel(belongs_to(User))]
 pub struct Post {

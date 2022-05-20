@@ -701,7 +701,7 @@ fn selecting_crazy_nested_joins() {
     assert_eq!(Ok(expected), data);
 }
 
-fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
+pub(crate) fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
     let mut connection = connection_with_sean_and_tess_in_users_table();
 
     let sean = find_user_by_name("Sean", &mut connection);
@@ -775,11 +775,11 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
     (connection, test_data)
 }
 
-struct TestData {
-    sean: User,
-    tess: User,
-    posts: Vec<Post>,
-    comments: Vec<Comment>,
-    likes: Vec<Like>,
-    followings: Vec<Following>,
+pub struct TestData {
+    pub sean: User,
+    pub tess: User,
+    pub posts: Vec<Post>,
+    pub comments: Vec<Comment>,
+    pub likes: Vec<Like>,
+    pub followings: Vec<Following>,
 }
