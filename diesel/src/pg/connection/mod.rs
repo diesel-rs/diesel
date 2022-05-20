@@ -146,7 +146,6 @@ impl Connection for PgConnection {
         })
     }
 
-    #[doc(hidden)]
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Pg> + QueryId,

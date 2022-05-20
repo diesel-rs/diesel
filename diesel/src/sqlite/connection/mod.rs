@@ -113,7 +113,6 @@ impl Connection for SqliteConnection {
         Ok(StatementIterator::new(statement_use))
     }
 
-    #[doc(hidden)]
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
