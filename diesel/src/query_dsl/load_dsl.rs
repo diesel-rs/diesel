@@ -195,8 +195,8 @@ mod private {
     }
 
     #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait CompatibleType<U, DB> {
         type SqlType;

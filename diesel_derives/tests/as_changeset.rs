@@ -1,3 +1,5 @@
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
 use diesel::*;
 use helpers::*;
 use schema::*;
