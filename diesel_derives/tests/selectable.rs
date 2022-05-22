@@ -86,3 +86,31 @@ fn embedded_option() {
     let data = my_structs::table.select(A::as_select()).get_result(conn);
     assert!(data.is_err());
 }
+
+#[test]
+fn embedded_option_with_nullable_field() {
+    table! {
+        my_structs (foo) {
+            foo -> Integer,
+            bar -> Nullable<Integer>,
+        }
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
+    #[diesel(table_name = my_structs)]
+    struct A {
+        foo: i32,
+        #[diesel(embed)]
+        b: Option<B>,
+    }
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Selectable)]
+    #[diesel(table_name = my_structs)]
+    struct B {
+        bar: Option<i32>,
+    }
+
+    let conn = &mut connection();
+    let data = my_structs::table.select(A::as_select()).get_result(conn);
+    assert!(data.is_err());
+}

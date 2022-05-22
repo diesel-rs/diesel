@@ -61,8 +61,8 @@ impl UserName {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[diesel(belongs_to(Post))]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, Selectable)]
+#[diesel(belongs_to(Post), table_name = comments)]
 pub struct Comment {
     id: i32,
     post_id: i32,
@@ -79,7 +79,9 @@ impl Comment {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable, Selectable,
+)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Post))]
 #[diesel(table_name = followings)]
@@ -177,14 +179,16 @@ pub struct NullableColumn {
     value: Option<i32>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations, Selectable,
+)]
 #[diesel(table_name = likes)]
-#[diesel(primary_key(user_id, comment_id))]
+#[diesel(primary_key(comment_id, user_id))]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Comment))]
 pub struct Like {
-    pub user_id: i32,
     pub comment_id: i32,
+    pub user_id: i32,
 }
 
 #[cfg(feature = "postgres")]

@@ -99,7 +99,6 @@ impl Connection for MysqlConnection {
         StatementIterator::from_stmt(stmt, &metadata)
     }
 
-    #[doc(hidden)]
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
@@ -131,7 +130,6 @@ impl Connection for MysqlConnection {
         }
     }
 
-    #[doc(hidden)]
     fn transaction_state(&mut self) -> &mut AnsiTransactionManager {
         &mut self.transaction_state
     }
