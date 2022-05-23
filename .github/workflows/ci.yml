@@ -377,14 +377,14 @@ jobs:
           find ~/.cargo/registry -iname "*clippy.toml" -delete
 
       - name: Run clippy
-        run:
+        run: |
           cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "postgres diesel/postgres"
           cargo clippy --tests --manifest-path diesel/Cargo.toml --features "postgres"
           cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "postgres diesel/postgres"
           cargo clippy --tests --manifest-path diesel_migrations/migrations_internals/Cargo.toml
           cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "postgres diesel/postgres"
           cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "postgres diesel/postgres"
-          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "postgres"
+          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "postgres" --no-default-features
           cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "postgres"
           cargo clippy --tests --manifest-path examples/postgres/getting_started_step1/Cargo.toml
           cargo clippy --tests --manifest-path examples/postgres/getting_started_step2/Cargo.toml
@@ -399,7 +399,7 @@ jobs:
           cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "sqlite diesel/sqlite"
           cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "sqlite diesel/sqlite"
           cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "sqlite diesel/sqlite"
-          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "sqlite"
+          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "sqlite" --no-default-features
           cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "sqlite"
           cargo clippy --tests --manifest-path examples/sqlite/getting_started_step1/Cargo.toml
           cargo clippy --tests --manifest-path examples/sqlite/getting_started_step2/Cargo.toml
@@ -411,7 +411,7 @@ jobs:
           cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "mysql diesel/mysql"
           cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "mysql diesel/mysql"
           cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "mysql diesel/mysql"
-          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "mysql"
+          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "mysql" --no-default-features
           cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "mysql"
           cargo clippy --tests --manifest-path examples/mysql/getting_started_step1/Cargo.toml
           cargo clippy --tests --manifest-path examples/mysql/getting_started_step2/Cargo.toml
