@@ -116,6 +116,8 @@ fn test_adding_nullables() {
 }
 
 #[test]
+#[allow(clippy::eq_op)]
+// As this creates a sql expression clippy is wrong here
 fn test_subtracting_nullables() {
     use crate::schema::nullable_table::dsl::*;
     let connection = &mut connection_with_nullable_table_data();
@@ -156,6 +158,8 @@ fn test_multiplying_nullables() {
 }
 
 #[test]
+#[allow(clippy::eq_op)]
+// As this creates a sql expression clippy is wrong here
 fn test_dividing_nullables() {
     use crate::schema::nullable_table::dsl::*;
     let connection = &mut connection_with_nullable_table_data();
@@ -220,6 +224,8 @@ fn test_adding_unsigned() {
 
 #[test]
 #[cfg(feature = "mysql")]
+#[allow(clippy::eq_op)]
+// As this creates a sql expression clippy is wrong here
 fn test_subtracting_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();
@@ -238,6 +244,8 @@ fn test_subtracting_unsigned() {
 
 #[test]
 #[cfg(feature = "mysql")]
+#[allow(clippy::identity_op)]
+// As this creates a sql expression clippy is wrong here
 fn test_multiplying_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();
@@ -256,6 +264,8 @@ fn test_multiplying_unsigned() {
 
 #[test]
 #[cfg(feature = "mysql")]
+#[allow(clippy::identity_op, clippy::eq_op)]
+// As this creates a sql expression clippy is wrong here
 fn test_dividing_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();

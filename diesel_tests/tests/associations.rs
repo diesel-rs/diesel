@@ -134,7 +134,7 @@ fn grouping_associations_maintains_ordering() {
     assert_eq!(expected_data, users_and_posts);
 
     // Test when sorted manually
-    let users = vec![sean.clone(), tess.clone()];
+    let users = vec![sean, tess];
     let mut posts = Post::belonging_to(&users)
         .load::<Post>(&mut connection)
         .unwrap();

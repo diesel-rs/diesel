@@ -369,6 +369,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
+      - name: Set environment variables
+        shell: bash
+        run: |
+          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
+          echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
 
       - name: Remove potential newer clippy.toml from dependencies
         run: |
@@ -386,9 +391,9 @@ jobs:
           cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "postgres diesel/postgres"
           cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "postgres" --no-default-features
           cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "postgres"
-          cargo clippy --tests --manifest-path examples/postgres/getting_started_step1/Cargo.toml
-          cargo clippy --tests --manifest-path examples/postgres/getting_started_step2/Cargo.toml
-          cargo clippy --tests --manifest-path examples/postgres/getting_started_step3/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/getting_started_step_1/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/getting_started_step_2/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/getting_started_step_3/Cargo.toml
           cargo clippy --tests --manifest-path examples/postgres/advanced-blog-cli/Cargo.toml
           cargo clippy --tests --manifest-path examples/postgres/all_about_inserts/Cargo.toml
           cargo clippy --tests --manifest-path examples/postgres/all_about_updates/Cargo.toml
@@ -401,9 +406,9 @@ jobs:
           cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "sqlite diesel/sqlite"
           cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "sqlite" --no-default-features
           cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "sqlite"
-          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step1/Cargo.toml
-          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step2/Cargo.toml
-          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step3/Cargo.toml
+          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step_1/Cargo.toml
+          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step_2/Cargo.toml
+          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step_3/Cargo.toml
           cargo clippy --tests --manifest-path examples/sqlite/all_about_inserts/Cargo.toml
 
           cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "mysql diesel/mysql"
@@ -413,9 +418,9 @@ jobs:
           cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "mysql diesel/mysql"
           cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "mysql" --no-default-features
           cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "mysql"
-          cargo clippy --tests --manifest-path examples/mysql/getting_started_step1/Cargo.toml
-          cargo clippy --tests --manifest-path examples/mysql/getting_started_step2/Cargo.toml
-          cargo clippy --tests --manifest-path examples/mysql/getting_started_step3/Cargo.toml
+          cargo clippy --tests --manifest-path examples/mysql/getting_started_step_1/Cargo.toml
+          cargo clippy --tests --manifest-path examples/mysql/getting_started_step_2/Cargo.toml
+          cargo clippy --tests --manifest-path examples/mysql/getting_started_step_3/Cargo.toml
           cargo clippy --tests --manifest-path examples/mysql/all_about_inserts/Cargo.toml
 
       - name: Check formating
