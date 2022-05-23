@@ -64,7 +64,7 @@ fn with_select_sql() {
         .execute(connection)
         .unwrap();
 
-    assert_eq!(Ok(3), select_count.clone().first(connection));
+    assert_eq!(Ok(3), select_count.first(connection));
 }
 
 #[test]

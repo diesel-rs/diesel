@@ -301,24 +301,20 @@ fn fun_with_row_iters() {
         Row::get(&first_row, 0).unwrap(),
         Row::get(&first_row, 1).unwrap(),
     );
-    let first_values = (first_fields.0.value(), first_fields.1.value());
+    let _first_values = (first_fields.0.value(), first_fields.1.value());
 
     assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(first_values);
     assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(first_fields);
 
     let second_row = row_iter.next().unwrap().unwrap();
     let second_fields = (
         Row::get(&second_row, 0).unwrap(),
         Row::get(&second_row, 1).unwrap(),
     );
-    let second_values = (second_fields.0.value(), second_fields.1.value());
+    let _second_values = (second_fields.0.value(), second_fields.1.value());
 
     assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(second_values);
     assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(second_fields);
 
     assert!(row_iter.next().is_none());
 

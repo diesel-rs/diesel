@@ -54,11 +54,11 @@ fn boxed_queries_can_differ_conditionally() {
     assert_eq!(Ok(expected_data), all);
 
     let ordered = source(Query::Ordered).load(connection);
-    let expected_data = vec![tess.clone(), sean.clone(), jim.clone()];
+    let expected_data = vec![tess, sean.clone(), jim];
     assert_eq!(Ok(expected_data), ordered);
 
     let one = source(Query::One).load(connection);
-    let expected_data = vec![sean.clone()];
+    let expected_data = vec![sean];
     assert_eq!(Ok(expected_data), one);
 }
 

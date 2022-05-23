@@ -5,7 +5,7 @@ use diesel::*;
 #[test]
 #[cfg(not(feature = "sqlite"))] // FIXME: This test is only valid when operating on a file and not :memory:
 fn transaction_executes_fn_in_a_sql_transaction() {
-    const TEST_NAME: &'static str = "transaction_executes_fn_in_a_sql_transaction";
+    const TEST_NAME: &str = "transaction_executes_fn_in_a_sql_transaction";
     let conn1 = &mut connection_without_transaction();
     let conn2 = &mut connection_without_transaction();
     setup_test_table(conn1, TEST_NAME);
@@ -98,7 +98,7 @@ fn transaction_rollback_returns_error() {
 #[test]
 fn transactions_can_be_nested() {
     let connection = &mut connection_without_transaction();
-    const TEST_NAME: &'static str = "transactions_can_be_nested";
+    const TEST_NAME: &str = "transactions_can_be_nested";
     setup_test_table(connection, TEST_NAME);
     fn get_count(connection: &mut TestConnection) -> i64 {
         count_test_table(connection, TEST_NAME)
