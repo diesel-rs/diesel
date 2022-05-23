@@ -206,7 +206,7 @@ fn sql_syntax_is_correct_when_option_field_comes_mixed_with_non_option() {
         .first::<Post>(connection)
         .unwrap();
 
-    let expected_post = Post::new(post.id, sean.id, "Hello".into(), Some("earth".into()));
+    let expected_post = Post::new(post.id, sean.id, "Hello", Some("earth"));
     assert_eq!(expected_post, post);
 }
 

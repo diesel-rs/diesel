@@ -32,7 +32,7 @@ pub struct User {
 impl User {
     pub fn new(id: i32, name: &str) -> Self {
         User {
-            id: id,
+            id,
             name: name.to_string(),
             hair_color: None,
         }
@@ -40,7 +40,7 @@ impl User {
 
     pub fn with_hair_color(id: i32, name: &str, hair_color: &str) -> Self {
         User {
-            id: id,
+            id,
             name: name.to_string(),
             hair_color: Some(hair_color.to_string()),
         }
@@ -72,8 +72,8 @@ pub struct Comment {
 impl Comment {
     pub fn new(id: i32, post_id: i32, text: &str) -> Self {
         Comment {
-            id: id,
-            post_id: post_id,
+            id,
+            post_id,
             text: text.into(),
         }
     }
@@ -142,7 +142,7 @@ pub struct NewPost {
 impl NewPost {
     pub fn new(user_id: i32, title: &str, body: Option<&str>) -> Self {
         NewPost {
-            user_id: user_id,
+            user_id,
             title: title.into(),
             body: body.map(|b| b.into()),
         }
@@ -165,10 +165,7 @@ pub struct FkTest {
 
 impl FkTest {
     pub fn new(id: i32, fk_id: i32) -> Self {
-        FkTest {
-            id: id,
-            fk_id: fk_id,
-        }
+        FkTest { id, fk_id }
     }
 }
 

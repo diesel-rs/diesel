@@ -1289,14 +1289,14 @@ mod tests {
 
     #[test]
     fn check_json_bind() {
-        let conn = &mut crate::test_helpers::connection();
-
         table! {
             json_test {
                 id -> Integer,
                 json_field -> Text,
             }
         }
+
+        let conn = &mut crate::test_helpers::connection();
 
         crate::sql_query("DROP TABLE IF EXISTS json_test CASCADE")
             .execute(conn)

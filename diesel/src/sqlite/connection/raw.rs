@@ -475,7 +475,6 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     });
     if let Err(e) = result {
         e.emit(ctx);
-        return;
     }
 }
 

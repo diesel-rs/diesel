@@ -178,7 +178,6 @@
     clippy::redundant_field_names,
     clippy::type_complexity
 )]
-#![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
 #![warn(
     clippy::unwrap_used,
     clippy::print_stdout,
@@ -191,6 +190,7 @@
     clippy::items_after_statements,
     clippy::used_underscore_binding
 )]
+#![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
 
 extern crate diesel_derives;
 

@@ -32,6 +32,9 @@ pub trait QuerySource {
 
     /// The actual `FROM` clause of this type. This is typically only called in
     /// `QueryFragment` implementations.
+    // from here is something different than from in rust
+    // as this literally refercs to SQL from.
+    #[allow(clippy::wrong_self_convention)]
     fn from_clause(&self) -> Self::FromClause;
     /// The default select clause of this type, which should be used if no
     /// select clause was explicitly specified. This should always be a tuple of

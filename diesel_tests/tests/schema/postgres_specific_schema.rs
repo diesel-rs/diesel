@@ -16,8 +16,8 @@ pub struct Post {
 impl Post {
     pub fn new(id: i32, user_id: i32, title: &str, body: Option<&str>) -> Self {
         Post {
-            id: id,
-            user_id: user_id,
+            id,
+            user_id,
             title: title.to_string(),
             body: body.map(|s| s.to_string()),
             tags: Vec::new(),

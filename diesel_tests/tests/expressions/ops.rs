@@ -205,8 +205,8 @@ fn precedence_with_parens_is_maintained() {
 fn test_adding_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+    diesel::sql_query("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![2, 3];
@@ -223,8 +223,8 @@ fn test_adding_unsigned() {
 fn test_subtracting_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+    diesel::sql_query("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![0, 1];
@@ -241,8 +241,8 @@ fn test_subtracting_unsigned() {
 fn test_multiplying_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+    diesel::sql_query("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![1, 2];
@@ -259,8 +259,8 @@ fn test_multiplying_unsigned() {
 fn test_dividing_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+    diesel::sql_query("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![1, 2];
@@ -277,8 +277,8 @@ fn test_dividing_unsigned() {
 fn test_multiple_unsigned() {
     use crate::schema::unsigned_table::dsl::*;
     let connection = &mut connection();
-    connection
-        .execute("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+    diesel::sql_query("INSERT INTO unsigned_table VALUES (1,1), (2,2)")
+        .execute(connection)
         .unwrap();
 
     let expected_data = vec![1, 1];

@@ -245,7 +245,7 @@ fn selecting_parent_child_grandchild() {
         (sean.clone(), (posts[0].clone(), comments[2].clone())),
         (sean.clone(), (posts[2].clone(), comments[1].clone())),
     ];
-    assert_eq!(Ok(expected.clone()), data);
+    assert_eq!(Ok(expected), data);
 
     let data = users::table
         .inner_join(
@@ -305,8 +305,8 @@ fn selecting_parent_child_grandchild() {
     let expected = vec![
         (sean.clone(), Some((posts[0].clone(), comments[0].clone()))),
         (sean.clone(), Some((posts[0].clone(), comments[2].clone()))),
-        (sean.clone(), Some((posts[2].clone(), comments[1].clone()))),
-        (tess.clone(), None),
+        (sean, Some((posts[2].clone(), comments[1].clone()))),
+        (tess, None),
     ];
     assert_eq!(Ok(expected), data);
 }
@@ -389,7 +389,7 @@ fn selecting_parent_child_grandchild_nested() {
             },
         },
     ];
-    assert_eq!(Ok(expected.clone()), data);
+    assert_eq!(Ok(expected), data);
 
     #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
     #[diesel(table_name = users)]
@@ -601,7 +601,7 @@ fn selecting_parent_child_grandchild_nested() {
         User4 {
             id: sean.id,
             name: sean.name.clone(),
-            hair_color: sean.hair_color.clone(),
+            hair_color: sean.hair_color,
             post: Some(Post4 {
                 id: posts[2].id,
                 user_id: posts[2].user_id,
@@ -613,7 +613,7 @@ fn selecting_parent_child_grandchild_nested() {
         User4 {
             id: tess.id,
             name: tess.name.clone(),
-            hair_color: tess.hair_color.clone(),
+            hair_color: tess.hair_color,
             post: None,
         },
     ];
@@ -640,7 +640,7 @@ fn selecting_grandchild_child_parent() {
     let expected = vec![
         (comments[0].clone(), (posts[0].clone(), sean.clone())),
         (comments[2].clone(), (posts[0].clone(), sean.clone())),
-        (comments[1].clone(), (posts[2].clone(), sean.clone())),
+        (comments[1].clone(), (posts[2].clone(), sean)),
     ];
     assert_eq!(Ok(expected), data);
 }
@@ -677,7 +677,7 @@ fn selecting_crazy_nested_joins() {
             sean.clone(),
             (
                 posts[0].clone(),
-                Some((comments[0].clone(), Some(likes[0].clone()))),
+                Some((comments[0].clone(), Some(likes[0]))),
                 None,
             ),
         ),
@@ -689,10 +689,7 @@ fn selecting_crazy_nested_joins() {
             sean.clone(),
             (posts[2].clone(), Some((comments[1].clone(), None)), None),
         ),
-        (
-            tess.clone(),
-            (posts[1].clone(), None, Some(followings[0].clone())),
-        ),
+        (tess.clone(), (posts[1].clone(), None, Some(followings[0]))),
     ];
     assert_eq!(Ok(expected), data);
 
@@ -711,7 +708,7 @@ fn selecting_crazy_nested_joins() {
             sean.clone(),
             (
                 posts[0].clone(),
-                Some((comments[0].clone(), Some(likes[0].clone()))),
+                Some((comments[0].clone(), Some(likes[0]))),
             ),
             Some(followings[0]),
         ),
@@ -721,11 +718,11 @@ fn selecting_crazy_nested_joins() {
             Some(followings[0]),
         ),
         (
-            sean.clone(),
+            sean,
             (posts[2].clone(), Some((comments[1].clone(), None))),
             Some(followings[0]),
         ),
-        (tess.clone(), (posts[1].clone(), None), None),
+        (tess, (posts[1].clone(), None), None),
     ];
     assert_eq!(Ok(expected), data);
 }

@@ -69,6 +69,7 @@ macro_rules! test_round_trip {
     };
     ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident, $cmp: expr) => {
         #[test]
+        #[allow(clippy::type_complexity)]
         fn $test_name() {
             use diesel::sql_types::*;
 
@@ -228,6 +229,7 @@ mod pg_types {
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
     test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
 
+    #[allow(clippy::type_complexity)]
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
         let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
@@ -300,12 +302,7 @@ mod pg_types {
             if r < earliest_pg_date {
                 let diff = earliest_pg_date - r;
                 r = earliest_pg_date + diff;
-            }
-            /*else if r > latest_pg_date {
-                let diff = r - latest_pg_date;
-                r = earliest_pg_date + diff;
-            }*/
-            else {
+            } else {
                 break;
             }
         }
@@ -457,7 +454,7 @@ mod mysql_types {
     pub fn mk_naive_timestamp((mut seconds, nanos): (i64, u32)) -> NaiveDateTime {
         // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
         let earliest_mysql_date = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 1);
-        let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(03, 14, 7);
+        let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(3, 14, 7);
 
         if seconds != 0 {
             seconds = earliest_mysql_date.timestamp()
@@ -600,7 +597,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 
 #[cfg(feature = "mysql")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    let earliest_mysql_date = NaiveDate::from_ymd(1000, 01, 01);
+    let earliest_mysql_date = NaiveDate::from_ymd(1000, 1, 1);
     let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31);
     let num_days_representable = latest_mysql_date
         .signed_duration_since(earliest_mysql_date)
