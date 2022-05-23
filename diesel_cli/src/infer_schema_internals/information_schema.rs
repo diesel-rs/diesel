@@ -559,7 +559,7 @@ mod tests {
         let id = ColumnInformation::new("id", "int4", pg_catalog.clone(), false);
         let text_col = ColumnInformation::new("text_col", "varchar", pg_catalog.clone(), true);
         let not_null = ColumnInformation::new("not_null", "text", pg_catalog.clone(), false);
-        let array_col = ColumnInformation::new("array_col", "_varchar", pg_catalog.clone(), false);
+        let array_col = ColumnInformation::new("array_col", "_varchar", pg_catalog, false);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
             get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)
@@ -594,14 +594,14 @@ mod tests {
         let table_3 = TableName::new("table_3", "test_schema");
         let fk_one = ForeignKeyConstraint {
             child_table: table_2.clone(),
-            parent_table: table_1.clone(),
+            parent_table: table_1,
             foreign_key: "fk_one".into(),
             foreign_key_rust_name: "fk_one".into(),
             primary_key: "id".into(),
         };
         let fk_two = ForeignKeyConstraint {
-            child_table: table_3.clone(),
-            parent_table: table_2.clone(),
+            child_table: table_3,
+            parent_table: table_2,
             foreign_key: "fk_two".into(),
             foreign_key_rust_name: "fk_two".into(),
             primary_key: "id".into(),

@@ -97,7 +97,7 @@ fn get_column_information(
         }
     };
     if let Err(NotFound) = column_info {
-        Err(format!("no table exists named {}", table.to_string()).into())
+        Err(format!("no table exists named {}", table).into())
     } else {
         column_info.map_err(Into::into)
     }
@@ -137,7 +137,7 @@ pub(crate) fn get_primary_keys(
         Err(format!(
             "Diesel only supports tables with primary keys. \
              Table {} has no primary key",
-            table.to_string()
+            table,
         )
         .into())
     } else {

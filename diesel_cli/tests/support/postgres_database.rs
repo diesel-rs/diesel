@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
@@ -49,7 +50,7 @@ impl Database {
     }
 
     fn split_url(&self) -> (String, String) {
-        let mut split: Vec<&str> = self.url.split("/").collect();
+        let mut split: Vec<&str> = self.url.split('/').collect();
         let database = split.pop().unwrap();
         let postgres_url = format!("{}/{}", split.join("/"), "postgres");
         (database.into(), postgres_url)

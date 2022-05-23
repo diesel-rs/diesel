@@ -11,7 +11,7 @@
     clippy::used_underscore_binding,
     missing_copy_implementations
 )]
-#![cfg_attr(test, allow(clippy::result_unwrap_used))]
+#![cfg_attr(test, allow(clippy::unwrap_used))]
 
 mod config;
 
