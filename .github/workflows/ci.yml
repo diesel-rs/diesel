@@ -377,10 +377,46 @@ jobs:
           find ~/.cargo/registry -iname "*clippy.toml" -delete
 
       - name: Run clippy
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --all
+        run:
+          cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "postgres diesel/postgres"
+          cargo clippy --tests --manifest-path diesel/Cargo.toml --features "postgres"
+          cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "postgres diesel/postgres"
+          cargo clippy --tests --manifest-path diesel_migrations/migrations_internals/Cargo.toml
+          cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "postgres diesel/postgres"
+          cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "postgres diesel/postgres"
+          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "postgres"
+          cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "postgres"
+          cargo clippy --tests --manifest-path examples/postgres/getting_started_step1/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/getting_started_step2/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/getting_started_step3/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/advanced-blog-cli/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/all_about_inserts/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/all_about_updates/Cargo.toml
+          cargo clippy --tests --manifest-path examples/postgres/custom_types/Cargo.toml
+
+          cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "sqlite diesel/sqlite"
+          cargo clippy --tests --manifest-path diesel/Cargo.toml --features "sqlite"
+          cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "sqlite diesel/sqlite"
+          cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "sqlite diesel/sqlite"
+          cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "sqlite diesel/sqlite"
+          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "sqlite"
+          cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "sqlite"
+          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step1/Cargo.toml
+          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step2/Cargo.toml
+          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step3/Cargo.toml
+          cargo clippy --tests --manifest-path examples/sqlite/all_about_inserts/Cargo.toml
+
+          cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "mysql diesel/mysql"
+          cargo clippy --tests --manifest-path diesel/Cargo.toml --features "mysql"
+          cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "mysql diesel/mysql"
+          cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "mysql diesel/mysql"
+          cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "mysql diesel/mysql"
+          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "mysql"
+          cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "mysql"
+          cargo clippy --tests --manifest-path examples/mysql/getting_started_step1/Cargo.toml
+          cargo clippy --tests --manifest-path examples/mysql/getting_started_step2/Cargo.toml
+          cargo clippy --tests --manifest-path examples/mysql/getting_started_step3/Cargo.toml
+          cargo clippy --tests --manifest-path examples/mysql/all_about_inserts/Cargo.toml
 
       - name: Check formating
         uses: actions-rs/cargo@v1
