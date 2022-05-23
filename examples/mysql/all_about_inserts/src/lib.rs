@@ -258,24 +258,24 @@ fn insert_get_results_batch() {
     use diesel::result::Error;
 
     let conn = &mut establish_connection();
-    conn.test_transaction::<_, Error, _>(|| {
+    conn.test_transaction::<_, Error, _>(|conn| {
         use diesel::select;
         use schema::users::dsl::*;
 
-        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(&conn)?;
+        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(conn)?;
 
-        let inserted_users = conn.transaction::<_, Error, _>(|| {
+        let inserted_users = conn.transaction::<_, Error, _>(|conn| {
             let inserted_count = insert_into(users)
                 .values(&vec![
                     (id.eq(1), name.eq("Sean")),
                     (id.eq(2), name.eq("Tess")),
                 ])
-                .execute(&conn)?;
+                .execute(conn)?;
 
             Ok(users
                 .order(id.desc())
                 .limit(inserted_count as i64)
-                .load(&conn)?
+                .load(conn)?
                 .into_iter()
                 .rev()
                 .collect::<Vec<_>>())
@@ -330,18 +330,18 @@ fn insert_get_result() {
     use diesel::result::Error;
 
     let conn = &mut establish_connection();
-    conn.test_transaction::<_, Error, _>(|| {
+    conn.test_transaction::<_, Error, _>(|conn| {
         use diesel::select;
         use schema::users::dsl::*;
 
-        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(&conn)?;
+        let now = select(diesel::dsl::now).get_result::<NaiveDateTime>(conn)?;
 
-        let inserted_user = conn.transaction::<_, Error, _>(|| {
+        let inserted_user = conn.transaction::<_, Error, _>(|conn| {
             insert_into(users)
                 .values((id.eq(3), name.eq("Ruby")))
-                .execute(&conn)?;
+                .execute(conn)?;
 
-            users.order(id.desc()).first(&conn)
+            users.order(id.desc()).first(conn)
         })?;
 
         let expected_user = User {

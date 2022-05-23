@@ -92,6 +92,7 @@ macro_rules! test_round_trip {
     };
 }
 
+#[allow(clippy::float_cmp)]
 pub fn f32_ne(a: &f32, b: &f32) -> bool {
     if a.is_nan() && b.is_nan() {
         false
@@ -100,6 +101,7 @@ pub fn f32_ne(a: &f32, b: &f32) -> bool {
     }
 }
 
+#[allow(clippy::float_cmp)]
 pub fn f64_ne(a: &f64, b: &f64) -> bool {
     if a.is_nan() && b.is_nan() {
         false
@@ -233,7 +235,7 @@ mod pg_types {
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
         let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
-        uuid::Uuid::from_fields(data.0, data.1, data.2, &b).unwrap()
+        uuid::Uuid::from_fields(data.0, data.1, data.2, &b)
     }
 
     fn mk_macaddr(data: (u8, u8, u8, u8, u8, u8)) -> [u8; 6] {

@@ -316,7 +316,7 @@ fn fun_with_row_iters() {
     let second_values = (second_fields.0.value(), second_fields.1.value());
 
     assert!(row_iter.next().unwrap().is_err());
-    std::mem::drop(first_values);
+    std::mem::drop(second_values);
     assert!(row_iter.next().unwrap().is_err());
     std::mem::drop(second_fields);
 
