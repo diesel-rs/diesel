@@ -144,6 +144,8 @@ fn mysql_diesel_types() -> HashSet<&'static str> {
 
     types.insert("TinyInt");
     types.insert("Tinyint");
+    types.insert("Datetime");
+    types.insert("Json");
     types
 }
 

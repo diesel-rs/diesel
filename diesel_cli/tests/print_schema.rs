@@ -125,6 +125,12 @@ fn print_schema_unsigned() {
 }
 
 #[test]
+#[cfg(feature = "mysql")]
+fn print_schema_datetime_for_mysql() {
+    test_print_schema("print_schema_datetime_for_mysql", vec!["--with-docs"]);
+}
+
+#[test]
 #[cfg(not(windows))]
 fn print_schema_patch_file() {
     let path_to_patch_file = backend_file_path("print_schema_patch_file", "schema.patch");
