@@ -35,7 +35,7 @@ pub(crate) mod upsert;
 mod where_clause;
 
 #[doc(inline)]
-pub use self::ast_pass::{AstPass, AstPassToSqlOptions};
+pub use self::ast_pass::AstPass;
 #[doc(inline)]
 pub use self::bind_collector::BindCollector;
 #[doc(inline)]
@@ -85,6 +85,12 @@ pub use self::insert_statement::DefaultValues;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
 pub use self::returning_clause::ReturningClause;
+
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::ast_pass::AstPassToSqlOptions;
 
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(

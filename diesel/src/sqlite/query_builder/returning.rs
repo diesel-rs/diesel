@@ -10,7 +10,7 @@ where
     Expr: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.skip_from();
+        out.skip_from(true);
         out.push_sql(" RETURNING ");
         self.0.walk_ast(out.reborrow())?;
         Ok(())
