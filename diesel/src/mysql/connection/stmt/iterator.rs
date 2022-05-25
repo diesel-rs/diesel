@@ -39,11 +39,15 @@ impl<'a> StatementIterator<'a> {
 
     fn next(&mut self) -> Option<QueryResult<MysqlRow>> {
         match self.stmt.populate_row_buffers(&mut self.output_binds) {
-            Ok(Some(())) => Some(Ok(MysqlRow {
-                col_idx: 0,
-                binds: &mut self.output_binds,
-                metadata: &self.metadata,
-            })),
+            Ok(Some(())) => {
+                let rs = MysqlRow {
+                    col_idx: 0,
+                    binds: &mut self.output_binds,
+                    metadata: &self.metadata,
+                };
+                let _ = rs.col_idx;
+                
+                Some(Ok(rs))},
             Ok(None) => None,
             Err(e) => Some(Err(e)),
         }
