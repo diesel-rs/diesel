@@ -171,7 +171,7 @@ mod sqlite {
 
         let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
         let inferred_datetime_types = InferredDatetimeTypes {
-            dt: dt,
+            dt,
             date: dt.date(),
             time: dt.time(),
             timestamp: dt,

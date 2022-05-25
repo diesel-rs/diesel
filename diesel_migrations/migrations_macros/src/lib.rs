@@ -20,7 +20,7 @@
     missing_debug_implementations,
     missing_copy_implementations
 )]
-#![cfg_attr(test, allow(clippy::option_unwrap_used, clippy::result_unwrap_used))]
+#![cfg_attr(test, allow(clippy::unwrap_used))]
 extern crate proc_macro;
 
 mod embed_migrations;

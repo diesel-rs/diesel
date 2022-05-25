@@ -672,6 +672,9 @@ mod test {
 
     #[test]
     #[cfg(feature = "mysql")]
+    // This function uses a collect with side effects (spawning threads)
+    // so clippy is wrong here
+    #[allow(clippy::needless_collect)]
     fn mysql_transaction_depth_commits_tracked_properly_on_serialization_failure() {
         use crate::result::DatabaseErrorKind::SerializationFailure;
         use crate::result::Error::DatabaseError;
@@ -775,6 +778,9 @@ mod test {
 
     #[test]
     #[cfg(feature = "mysql")]
+    // This function uses a collect with side effects (spawning threads)
+    // so clippy is wrong here
+    #[allow(clippy::needless_collect)]
     fn mysql_nested_transaction_depth_commits_tracked_properly_on_serialization_failure() {
         use crate::result::DatabaseErrorKind::SerializationFailure;
         use crate::result::Error::DatabaseError;

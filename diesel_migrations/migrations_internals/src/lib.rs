@@ -59,8 +59,7 @@ pub fn search_for_migrations_directory(path: &Path) -> Option<PathBuf> {
     if migration_path.is_dir() {
         Some(migration_path)
     } else {
-        path.parent()
-            .and_then(|p| search_for_migrations_directory(p))
+        path.parent().and_then(search_for_migrations_directory)
     }
 }
 

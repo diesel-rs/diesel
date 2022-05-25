@@ -33,10 +33,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 
     let treat_none_as_null = model.treat_none_as_null();
 
-    let (_, ty_generics, where_clause) = item.generics.split_for_impl();
-    let mut impl_generics = item.generics.clone();
-    impl_generics.params.push(parse_quote!('update));
-    let (impl_generics, _, _) = impl_generics.split_for_impl();
+    let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
     let mut generate_borrowed_changeset = true;
 
@@ -106,6 +103,10 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     };
 
     let changeset_borrowed = if generate_borrowed_changeset {
+        let mut impl_generics = item.generics.clone();
+        impl_generics.params.push(parse_quote!('update));
+        let (impl_generics, _, _) = impl_generics.split_for_impl();
+
         quote! {
             impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
             #where_clause

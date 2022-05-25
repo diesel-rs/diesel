@@ -64,6 +64,9 @@ use crate::expression::AsExpression;
 macro_rules! array_as_expression {
     ($ty:ty, $sql_type:ty) => {
         #[cfg(feature = "postgres_backend")]
+        // this simplifies the macro implemntation
+        // as some macro calls use this lifetime
+        #[allow(clippy::extra_unused_lifetimes)]
         impl<'a, 'b, ST: 'static, T> AsExpression<$sql_type> for $ty {
             type Expression = Bound<$sql_type, Self>;
 

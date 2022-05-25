@@ -62,6 +62,6 @@ fn ensure_sqlite_does_not_access_dropped_buffers() {
 
     let mut iter = Connection::load(connection, query).unwrap();
 
-    assert_eq!(iter.next().is_some(), true);
-    assert_eq!(iter.next().is_none(), true);
+    assert!(iter.next().is_some());
+    assert!(iter.next().is_none());
 }
