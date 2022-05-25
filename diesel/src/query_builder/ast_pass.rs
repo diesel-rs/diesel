@@ -88,10 +88,10 @@ where
         }
     }
 
-    #[allow(dead_code)]
-    pub(crate) fn skip_from(&mut self) {
+    #[cfg(feature = "skip-from")]
+    pub(crate) fn skip_from(&mut self, value: bool) {
         if let AstPassInternals::ToSql(_, ref mut options) = self.internals {
-            options.skip_from = true
+            options.skip_from = value
         }
     }
 
@@ -254,18 +254,27 @@ where
         self.backend
     }
 
+    /// Get if the query should be rendered with from clauses or not
     #[cfg_attr(
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
         doc(hidden)
-    )] // This is used by the `sql_function` macro
+    )] // This is used by the `__diesel_column` macro
     #[cfg_attr(
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub fn should_skip_from(&self) -> bool {
-        if let AstPassInternals::ToSql(_, ref options) = self.internals {
-            options.skip_from
-        } else {
+        #[cfg(feature = "skip-from")]
+        {
+            if let AstPassInternals::ToSql(_, ref options) = self.internals {
+                options.skip_from
+            } else {
+                false
+            }
+        }
+
+        #[cfg(not(feature = "skip-from"))]
+        {
             false
         }
     }
@@ -294,11 +303,14 @@ where
     IsNoop(&'a mut bool),
 }
 
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 #[allow(missing_debug_implementations)]
 #[allow(missing_copy_implementations)]
 #[derive(Default)]
 /// This is used to pass down additional settings to the `AstPass`
 /// when rendering the sql string.
-pub struct AstPassToSqlOptions {
+pub(crate) struct AstPassToSqlOptions {
     skip_from: bool,
 }
