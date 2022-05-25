@@ -174,7 +174,12 @@ fn insert_record_using_returning_clause() {
 #[test]
 #[cfg(all(feature = "sqlite", feature = "returning_clauses_for_sqlite_3_35"))]
 fn insert_record_attached_database_using_returning_clause() {
-    use crate::schema::external_table;
+    table! {
+        external.external_table (id) {
+            id -> Integer,
+            data -> Text,
+        }
+    }
 
     #[derive(Queryable, Debug, PartialEq)]
     #[diesel(table_name = external_table)]
@@ -183,8 +188,24 @@ fn insert_record_attached_database_using_returning_clause() {
         data: String,
     }
 
-    let connection = &mut connection();
+    let connection = &mut connection_without_transaction();
 
+    // Create external table
+    diesel::sql_query("ATTACH DATABASE ':memory:' AS external")
+        .execute(connection)
+        .unwrap();
+    diesel::sql_query(
+        r#"
+        CREATE TABLE external.external_table (
+            id integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+            data text NOT NULL
+        )
+    "#,
+    )
+    .execute(connection)
+    .unwrap();
+
+    // Insert entity and fetch with the returning clause
     let inserted_entity = insert_into(external_table::table)
         .values(external_table::data.eq("test".to_string()))
         .get_result::<ExternalEntity>(connection)

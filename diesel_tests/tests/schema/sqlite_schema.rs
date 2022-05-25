@@ -236,13 +236,6 @@ table! {
     }
 }
 
-table! {
-    external.external_table (id) {
-        id -> Integer,
-        data -> Text,
-    }
-}
-
 joinable!(comments -> posts (post_id));
 joinable!(fk_tests -> fk_inits (fk_id));
 joinable!(followings -> posts (post_id));
