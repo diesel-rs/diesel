@@ -23,7 +23,7 @@ rand = "0.8.4"
 libsqlite3-sys = { version = "0.24", optional = true }
 
 [features]
-default = ["sqlite", "returning_clauses_for_sqlite_3_35"]
+default = []
 unstable = ["diesel/unstable"]
 postgres = ["diesel/postgres"]
 sqlite = ["diesel/sqlite"]
