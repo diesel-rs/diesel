@@ -312,5 +312,6 @@ where
 /// This is used to pass down additional settings to the `AstPass`
 /// when rendering the sql string.
 pub(crate) struct AstPassToSqlOptions {
+    #[cfg(feature = "skip-from")]
     skip_from: bool,
 }
