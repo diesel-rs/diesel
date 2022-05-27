@@ -1129,9 +1129,10 @@ macro_rules! __diesel_table_generate_static_query_fragment_for_table {
 ///
 /// The generated `ON` clause will always join to the primary key of the parent
 /// table. This macro removes the need to call [`.on`] explicitly, you will
-/// still need to invoke [`allow_tables_to_appear_in_same_query!`] for these two tables to
-/// be able to use the resulting query, unless you are using `diesel print-schema`
-/// which will generate it for you.
+/// still need to invoke
+/// [`allow_tables_to_appear_in_same_query!`](crate::allow_tables_to_appear_in_same_query)
+/// for these two tables to be able to use the resulting query, unless you are
+/// using `diesel print-schema` which will generate it for you.
 ///
 /// If you are using `diesel print-schema`, an invocation of this macro
 /// will be generated for every foreign key in your database unless
