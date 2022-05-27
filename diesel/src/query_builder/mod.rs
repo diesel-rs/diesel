@@ -332,6 +332,15 @@ pub trait AsQuery {
     fn as_query(self) -> Self::Query;
 }
 
+impl<T: Query> AsQuery for T {
+    type SqlType = <T as Query>::SqlType;
+    type Query = T;
+
+    fn as_query(self) -> <T as AsQuery>::Query {
+        self
+    }
+}
+
 /// Takes a query `QueryFragment` expression as an argument and returns a type
 /// that implements `fmt::Display` and `fmt::Debug` to show the query.
 ///
