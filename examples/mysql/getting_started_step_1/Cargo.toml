@@ -5,9 +5,17 @@ authors = ["Sean Griffin <sean@seantheprogrammer.com>"]
 edition = "2018"
 
 [dependencies]
-diesel = { version = "2.0.0", path = "../../../diesel", features = ["mysql"] }
+diesel = { version = "2.0.0", path = "../../../diesel", features = ["mysql", "numeric"] }
 dotenv = "0.15"
 chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
+num-bigint = { version = ">=0.2.0, <0.5.0", optional = true }
+num-traits = { version = "0.2.0", optional = true }
+num-integer = { version = "0.1.39", optional = true }
+bigdecimal = { version = ">=0.0.13, < 0.4.0", optional = true }
+
+[features]
+default = ["numeric"]
+numeric = ["num-bigint", "bigdecimal", "num-traits", "num-integer"]
 
 [[bin]]
 name = "show_posts"

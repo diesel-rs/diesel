@@ -1,7 +1,9 @@
+extern crate bigdecimal;
 use diesel::prelude::*;
-
+use crate::schema::company;
 use crate::schema::posts;
 use std::default::Default;
+use bigdecimal::BigDecimal;
 
 
 #[derive(Identifiable, Debug, Clone, Queryable, Insertable,AsChangeset, PartialEq,Default)]
@@ -16,14 +18,16 @@ pub struct Post {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug, Clone, Queryable)] 
+#[derive(Identifiable, Debug, Clone, Queryable, Insertable,AsChangeset, PartialEq,Default)] 
+#[primary_key(CompanyID)]
+#[table_name = "company"]
 pub struct Company {
     pub CompanyID: i32,
     pub CompanyCode: String,
     pub CompanyName: String,
     pub CompanyNameCN: String,
     // pub DateCreated: NaiveDateTime,
-    pub CreditAmount: f64,
+    pub CreditAmount: Option<BigDecimal>,
     pub IsHeadOffice: bool,
     id0 : i32,
     id1 : i32,
@@ -55,4 +59,5 @@ pub struct Company {
     // id27 : i32,
     // id28 : i32,
     // id29 : i32,
+    
 }

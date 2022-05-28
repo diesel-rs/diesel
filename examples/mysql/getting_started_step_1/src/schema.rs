@@ -10,13 +10,14 @@ diesel::table! {
 }
 
 diesel::table! {    
+    #[sql_name = "company"]
     company (CompanyID) {
         CompanyID -> Integer,
         CompanyCode -> VarChar,       
         CompanyName -> VarChar,
         CompanyNameCN -> VarChar,
         // DateCreated -> Timestamp,
-        CreditAmount -> Double,
+        CreditAmount -> Nullable<Decimal>,
         IsHeadOffice -> Bool,
         id0 -> Integer,
             id1 -> Integer,
@@ -47,6 +48,6 @@ diesel::table! {
             // id26 -> Integer,
             // id27 -> Integer,
             // id28 -> Integer,
-            // id29 -> Integer,
+            // id29 -> Integer,            
     }
 }
