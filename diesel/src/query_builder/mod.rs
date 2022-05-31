@@ -333,10 +333,10 @@ pub trait AsQuery {
 }
 
 impl<T: Query> AsQuery for T {
-    type SqlType = <Self as Query>::SqlType;
-    type Query = Self;
+    type SqlType = <T as Query>::SqlType;
+    type Query = T;
 
-    fn as_query(self) -> Self::Query {
+    fn as_query(self) -> <T as AsQuery>::Query {
         self
     }
 }
