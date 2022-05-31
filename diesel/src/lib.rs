@@ -130,8 +130,8 @@
 //! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
 //! private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
 //! or write a custom [`Connection`](crate::connection::Connection) implementation. **Do not use this feature for
-//! any other usecase**. By enabling this feature you explicitly opt out diesel stability gurantees. We explicitly
-//! reserve us the right to break API's exported under this feature flag in any upcomming minor version release.
+//! any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
+//! reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
 //! If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
 //! currently released minor version.
 //! - `serde_json`: This feature flag enables support for (de)serializing json values from the database using
@@ -148,9 +148,9 @@
 //! - `extras`: This feature enables the feature flaged support for any third party crate. This implies the
 //! following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
 //! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
-//! disabling this feature explicitly opts out diesels stability gurantee.
+//! disabling this feature explicitly opts out diesels stability guarantee.
 //! - `without-deprecated`: This feature disables any item marked as `#[deprecated]`. Enabling this feature
-//! explicitly opts out the stability gurantee given by diesel. This feature overrides the `with-deprecated`.
+//! explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
 //! Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
 //! various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
 //!
