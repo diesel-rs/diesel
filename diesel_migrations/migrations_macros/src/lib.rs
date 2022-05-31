@@ -110,7 +110,7 @@ use proc_macro::TokenStream;
 ///
 /// ```
 /// fn main() {
-///    println!("cargo:rerun-if-changed=path/to/your/migration/dir/reletive/to/your/Cargo.toml");
+///    println!("cargo:rerun-if-changed=path/to/your/migration/dir/relative/to/your/Cargo.toml");
 /// }
 /// ```
 #[proc_macro]
