@@ -28,7 +28,7 @@ where
     const HAS_STATIC_QUERY_ID: bool = T::HAS_STATIC_QUERY_ID;
 }
 
-impl<T, ST, DB> FromSql<Nullable<ST>, DB> for Option<T>
+impl<T: 'static, ST, DB> FromSql<Nullable<ST>, DB> for Option<T>
 where
     T: FromSql<ST, DB>,
     DB: Backend,
@@ -48,7 +48,21 @@ where
     fn from_nullable_sql_field<'a>(field: &dyn Field<'a, DB>) ->  deserialize::Result<Self> {
         let bytes = field.value();
         match bytes {
-            Some(bytes) => T::from_sql(bytes).map(Some),
+            Some(bytes) =>{ 
+                let val = T::from_sql(bytes).map(Some);                
+                if std::any::TypeId::of::<T>()== std::any::TypeId::of::<String>(){
+
+                    if let Some(raw) = field.raw_value(){
+                        if raw[0] == 0{
+
+                            println!("null string");  
+                            return Ok(None);
+                        }
+                    }
+                    
+                }
+                val
+            },
             None => Ok(None),
         }
     }

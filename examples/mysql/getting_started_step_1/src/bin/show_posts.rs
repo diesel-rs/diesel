@@ -14,10 +14,10 @@ fn main() {
         .expect("Error loading posts");
 
     let post = Post{
-        id : 1,
+        id : 3,
         title : "test".to_string(),
         body : "body".to_string(),
-        published : true,
+        published : true,        
     };
 
     diesel::insert_into(posts).values(post).execute(connection).expect("insert error");

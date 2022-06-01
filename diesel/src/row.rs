@@ -77,6 +77,9 @@ pub trait Field<'a, DB: Backend> {
     fn is_null(&self) -> bool {
         self.value().is_none()
     }
+
+    /// get raw value as [u8]
+    fn raw_value(&self)-> Option<&'a [u8]>;
 }
 
 /// A row type that wraps an inner row

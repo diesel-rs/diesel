@@ -543,6 +543,7 @@ where
 {
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self> {
         let field = row.get(0).ok_or(crate::result::UnexpectedEndOfRow)?;
+        
 
         T::from_nullable_sql_field(&field)
     }

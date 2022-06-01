@@ -123,4 +123,8 @@ impl<'a> Field<'a, Mysql> for MysqlField<'a> {
     fn value(&self) -> Option<crate::backend::RawValue<'a, Mysql>> {
         self.bind.value()
     }
+
+    fn raw_value(&self)->Option<&'a [u8]>{
+        self.bind.raw_value()
+    }
 }

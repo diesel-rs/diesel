@@ -72,4 +72,9 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
 
         Some(PgValue::new(raw, type_oid))
     }
+
+    fn raw_value(&self)->Option<&'a [u8]>{
+        let raw = self.db_result.get(self.row_idx, self.col_idx);
+        raw
+    }
 }

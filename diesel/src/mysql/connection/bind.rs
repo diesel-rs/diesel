@@ -330,6 +330,10 @@ impl BindData {
         }
     }
 
+    pub fn raw_value(&self)->Option<&'_ [u8]> {
+        return Some(&self.bytes)
+    }
+
     pub fn is_null(&self) -> bool {
         self.is_null != 0
     }
