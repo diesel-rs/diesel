@@ -124,13 +124,6 @@ impl InferConnection {
 macro_rules! call_with_conn {
     (
         $database_url:expr,
-        $($func:ident)::+
-    ) => {
-        call_with_conn!($database_url, $($func)::+ ())
-    };
-
-    (
-        $database_url:expr,
         $($func:ident)::+ ($($args:expr),*)
     ) => {
         match crate::database::InferConnection::establish(&$database_url)

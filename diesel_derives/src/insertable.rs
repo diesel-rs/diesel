@@ -13,10 +13,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     let table_name = &model.table_name();
     let struct_name = &item.ident;
 
-    let (_, ty_generics, where_clause) = item.generics.split_for_impl();
-    let mut impl_generics = item.generics.clone();
-    impl_generics.params.push(parse_quote!('insert));
-    let (impl_generics, ..) = impl_generics.split_for_impl();
+    let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
 
     let mut generate_borrowed_insert = true;
 
@@ -97,6 +94,10 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     };
 
     let insert_borrowed = if generate_borrowed_insert {
+        let mut impl_generics = item.generics.clone();
+        impl_generics.params.push(parse_quote!('insert));
+        let (impl_generics, ..) = impl_generics.split_for_impl();
+
         quote! {
             impl #impl_generics Insertable<#table_name::table>
                 for &'insert #struct_name #ty_generics

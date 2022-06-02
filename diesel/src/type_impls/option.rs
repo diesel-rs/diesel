@@ -5,6 +5,7 @@ use crate::expression::*;
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{is_nullable, HasSqlType, Nullable, SingleValue, SqlType};
+use crate::NullableExpressionMethods;
 
 impl<T, DB> HasSqlType<Nullable<T>> for DB
 where
@@ -109,15 +110,25 @@ where
     }
 }
 
-#[cfg(all(test, feature = "postgres"))]
-use crate::pg::Pg;
-#[cfg(all(test, feature = "postgres"))]
-use crate::sql_types;
+impl<T, DB> Selectable<DB> for Option<T>
+where
+    DB: Backend,
+    T: Selectable<DB>,
+    crate::dsl::Nullable<T::SelectExpression>: Expression,
+{
+    type SelectExpression = crate::dsl::Nullable<T::SelectExpression>;
+
+    fn construct_selection() -> Self::SelectExpression {
+        T::construct_selection().nullable()
+    }
+}
 
 #[test]
 #[cfg(feature = "postgres")]
 fn option_to_sql() {
+    use crate::pg::Pg;
     use crate::query_builder::bind_collector::ByteWrapper;
+    use crate::sql_types;
 
     type Type = sql_types::Nullable<sql_types::VarChar>;
 

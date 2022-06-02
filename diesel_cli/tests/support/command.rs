@@ -46,7 +46,7 @@ impl TestCommand {
             .build_command()
             .output()
             .expect("failed to execute process");
-        CommandResult { output: output }
+        CommandResult { output }
     }
 
     fn build_command(&self) -> Command {

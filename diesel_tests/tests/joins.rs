@@ -301,6 +301,7 @@ fn select_right_side_with_nullable_column_first() {
 }
 
 #[test]
+#[allow(clippy::type_complexity)]
 fn select_left_join_right_side_with_non_null_inside() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
@@ -467,7 +468,7 @@ fn selecting_parent_child_grandchild() {
         (sean.clone(), (posts[0].clone(), comments[2].clone())),
         (sean.clone(), (posts[2].clone(), comments[1].clone())),
     ];
-    assert_eq!(Ok(expected.clone()), data);
+    assert_eq!(Ok(expected), data);
 
     let data = users::table
         .inner_join(
@@ -523,8 +524,8 @@ fn selecting_parent_child_grandchild() {
     let expected = vec![
         (sean.clone(), Some((posts[0].clone(), comments[0].clone()))),
         (sean.clone(), Some((posts[0].clone(), comments[2].clone()))),
-        (sean.clone(), Some((posts[2].clone(), comments[1].clone()))),
-        (tess.clone(), None),
+        (sean, Some((posts[2].clone(), comments[1].clone()))),
+        (tess, None),
     ];
     assert_eq!(Ok(expected), data);
 }
@@ -546,7 +547,7 @@ fn selecting_grandchild_child_parent() {
     let expected = vec![
         (comments[0].clone(), (posts[0].clone(), sean.clone())),
         (comments[2].clone(), (posts[0].clone(), sean.clone())),
-        (comments[1].clone(), (posts[2].clone(), sean.clone())),
+        (comments[1].clone(), (posts[2].clone(), sean)),
     ];
     assert_eq!(Ok(expected), data);
 }
@@ -568,7 +569,7 @@ fn selecting_four_tables_deep() {
         .load(&mut connection);
     let expected = vec![(
         sean.clone(),
-        (posts[0].clone(), (comments[0].clone(), likes[0].clone())),
+        (posts[0].clone(), (comments[0].clone(), likes[0])),
     )];
     assert_eq!(Ok(expected), data);
 
@@ -579,19 +580,13 @@ fn selecting_four_tables_deep() {
     let expected = vec![
         (
             sean.clone(),
-            (
-                posts[0].clone(),
-                (comments[0].clone(), Some(likes[0].clone())),
-            ),
+            (posts[0].clone(), (comments[0].clone(), Some(likes[0]))),
         ),
         (
             sean.clone(),
             (posts[0].clone(), (comments[2].clone(), None)),
         ),
-        (
-            sean.clone(),
-            (posts[2].clone(), (comments[1].clone(), None)),
-        ),
+        (sean, (posts[2].clone(), (comments[1].clone(), None))),
     ];
     assert_eq!(Ok(expected), data);
 }
@@ -611,7 +606,7 @@ fn selecting_parent_child_sibling() {
         .inner_join(posts::table)
         .inner_join(likes::table)
         .load(&mut connection);
-    let expected = vec![(tess.clone(), posts[1].clone(), likes[0].clone())];
+    let expected = vec![(tess.clone(), posts[1].clone(), likes[0])];
     assert_eq!(Ok(expected), data);
 
     let data = users::table
@@ -621,8 +616,8 @@ fn selecting_parent_child_sibling() {
         .load(&mut connection);
     let expected = vec![
         (sean.clone(), posts[0].clone(), None),
-        (sean.clone(), posts[2].clone(), None),
-        (tess.clone(), posts[1].clone(), Some(likes[0].clone())),
+        (sean, posts[2].clone(), None),
+        (tess, posts[1].clone(), Some(likes[0])),
     ];
     assert_eq!(Ok(expected), data);
 }
@@ -653,7 +648,7 @@ fn selecting_crazy_nested_joins() {
             sean.clone(),
             (
                 posts[0].clone(),
-                Some((comments[0].clone(), Some(likes[0].clone()))),
+                Some((comments[0].clone(), Some(likes[0]))),
                 None,
             ),
         ),
@@ -665,10 +660,7 @@ fn selecting_crazy_nested_joins() {
             sean.clone(),
             (posts[2].clone(), Some((comments[1].clone(), None)), None),
         ),
-        (
-            tess.clone(),
-            (posts[1].clone(), None, Some(followings[0].clone())),
-        ),
+        (tess.clone(), (posts[1].clone(), None, Some(followings[0]))),
     ];
     assert_eq!(Ok(expected), data);
 
@@ -682,7 +674,7 @@ fn selecting_crazy_nested_joins() {
             sean.clone(),
             (
                 posts[0].clone(),
-                Some((comments[0].clone(), Some(likes[0].clone()))),
+                Some((comments[0].clone(), Some(likes[0]))),
             ),
             Some(followings[0]),
         ),
@@ -692,16 +684,16 @@ fn selecting_crazy_nested_joins() {
             Some(followings[0]),
         ),
         (
-            sean.clone(),
+            sean,
             (posts[2].clone(), Some((comments[1].clone(), None))),
             Some(followings[0]),
         ),
-        (tess.clone(), (posts[1].clone(), None), None),
+        (tess, (posts[1].clone(), None), None),
     ];
     assert_eq!(Ok(expected), data);
 }
 
-fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
+pub(crate) fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestData) {
     let mut connection = connection_with_sean_and_tess_in_users_table();
 
     let sean = find_user_by_name("Sean", &mut connection);
@@ -775,11 +767,11 @@ fn connection_with_fixture_data_for_multitable_joins() -> (TestConnection, TestD
     (connection, test_data)
 }
 
-struct TestData {
-    sean: User,
-    tess: User,
-    posts: Vec<Post>,
-    comments: Vec<Comment>,
-    likes: Vec<Like>,
-    followings: Vec<Following>,
+pub struct TestData {
+    pub sean: User,
+    pub tess: User,
+    pub posts: Vec<Post>,
+    pub comments: Vec<Comment>,
+    pub likes: Vec<Like>,
+    pub followings: Vec<Following>,
 }

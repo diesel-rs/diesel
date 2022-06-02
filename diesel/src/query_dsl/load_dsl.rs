@@ -90,13 +90,15 @@ pub trait ExecuteDsl<Conn: Connection<Backend = DB>, DB: Backend = <Conn as Conn
     fn execute(query: Self, conn: &mut Conn) -> QueryResult<usize>;
 }
 
+use crate::result::Error;
+
 impl<Conn, DB, T> ExecuteDsl<Conn, DB> for T
 where
     Conn: Connection<Backend = DB>,
     DB: Backend,
     T: QueryFragment<DB> + QueryId,
 {
-    fn execute(query: Self, conn: &mut Conn) -> QueryResult<usize> {
+    fn execute(query: T, conn: &mut Conn) -> Result<usize, Error> {
         conn.execute_returning_count(&query)
     }
 }
@@ -195,8 +197,8 @@ mod private {
     }
 
     #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait CompatibleType<U, DB> {
         type SqlType;

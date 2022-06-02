@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -121,6 +122,12 @@ fn print_schema_type_renaming() {
 #[cfg(feature = "mysql")]
 fn print_schema_unsigned() {
     test_print_schema("print_schema_unsigned", vec!["--with-docs"]);
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn print_schema_datetime_for_mysql() {
+    test_print_schema("print_schema_datetime_for_mysql", vec!["--with-docs"]);
 }
 
 #[test]

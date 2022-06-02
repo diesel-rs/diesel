@@ -146,7 +146,6 @@ impl Connection for PgConnection {
         })
     }
 
-    #[doc(hidden)]
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Pg> + QueryId,
@@ -274,12 +273,8 @@ mod tests {
         let query =
             crate::sql_query("SELECT not_existent FROM also_not_there;").execute(connection);
 
-        if let Err(err) = query {
-            if let DatabaseError(_, string) = err {
-                assert_eq!(Some(26), string.statement_position());
-            } else {
-                unreachable!();
-            }
+        if let Err(DatabaseError(_, string)) = query {
+            assert_eq!(Some(26), string.statement_position());
         } else {
             unreachable!();
         }
@@ -368,14 +363,14 @@ mod tests {
         let insert = query
             .insert_into(users::table)
             .into_columns((users::id, users::name));
-        assert_eq!(true, insert.execute(connection).is_ok());
+        assert!(insert.execute(connection).is_ok());
         assert_eq!(1, connection.statement_cache.len());
 
         let query = users::table.filter(users::id.eq(42)).into_boxed();
         let insert = query
             .insert_into(users::table)
             .into_columns((users::id, users::name));
-        assert_eq!(true, insert.execute(connection).is_ok());
+        assert!(insert.execute(connection).is_ok());
         assert_eq!(2, connection.statement_cache.len());
     }
 
@@ -393,7 +388,7 @@ mod tests {
         let insert =
             crate::insert_into(users::table).values((users::id.eq(42), users::name.eq("Foo")));
 
-        assert_eq!(true, insert.execute(connection).is_ok());
+        assert!(insert.execute(connection).is_ok());
         assert_eq!(1, connection.statement_cache.len());
     }
 
@@ -411,7 +406,7 @@ mod tests {
         let insert = crate::insert_into(users::table)
             .values(vec![(users::id.eq(42), users::name.eq("Foo"))]);
 
-        assert_eq!(true, insert.execute(connection).is_ok());
+        assert!(insert.execute(connection).is_ok());
         assert_eq!(0, connection.statement_cache.len());
     }
 
@@ -429,7 +424,7 @@ mod tests {
         let insert =
             crate::insert_into(users::table).values([(users::id.eq(42), users::name.eq("Foo"))]);
 
-        assert_eq!(true, insert.execute(connection).is_ok());
+        assert!(insert.execute(connection).is_ok());
         assert_eq!(1, connection.statement_cache.len());
     }
 
@@ -586,6 +581,9 @@ mod tests {
     }
 
     #[test]
+    // This function uses collect with an side effect (spawning threads)
+    // so this is a false positive from clippy
+    #[allow(clippy::needless_collect)]
     fn postgres_transaction_depth_is_tracked_properly_on_serialization_failure() {
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::DatabaseErrorKind::SerializationFailure;
@@ -693,6 +691,9 @@ mod tests {
     }
 
     #[test]
+    // This function uses collect with an side effect (spawning threads)
+    // so this is a false positive from clippy
+    #[allow(clippy::needless_collect)]
     fn postgres_transaction_depth_is_tracked_properly_on_nested_serialization_failure() {
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::DatabaseErrorKind::SerializationFailure;

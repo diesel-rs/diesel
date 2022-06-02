@@ -242,6 +242,9 @@ impl IntervalDsl for f64 {
 }
 
 #[cfg(test)]
+// those macros define nested function
+// that's fine for this test code
+#[allow(clippy::items_after_statements)]
 mod tests {
     extern crate dotenvy;
     extern crate quickcheck;

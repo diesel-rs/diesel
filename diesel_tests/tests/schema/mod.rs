@@ -32,7 +32,7 @@ pub struct User {
 impl User {
     pub fn new(id: i32, name: &str) -> Self {
         User {
-            id: id,
+            id,
             name: name.to_string(),
             hair_color: None,
         }
@@ -40,7 +40,7 @@ impl User {
 
     pub fn with_hair_color(id: i32, name: &str, hair_color: &str) -> Self {
         User {
-            id: id,
+            id,
             name: name.to_string(),
             hair_color: Some(hair_color.to_string()),
         }
@@ -61,8 +61,8 @@ impl UserName {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[diesel(belongs_to(Post))]
+#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, Selectable)]
+#[diesel(belongs_to(Post), table_name = comments)]
 pub struct Comment {
     id: i32,
     post_id: i32,
@@ -72,14 +72,16 @@ pub struct Comment {
 impl Comment {
     pub fn new(id: i32, post_id: i32, text: &str) -> Self {
         Comment {
-            id: id,
-            post_id: post_id,
+            id,
+            post_id,
             text: text.into(),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Associations, Identifiable, Selectable,
+)]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Post))]
 #[diesel(table_name = followings)]
@@ -140,7 +142,7 @@ pub struct NewPost {
 impl NewPost {
     pub fn new(user_id: i32, title: &str, body: Option<&str>) -> Self {
         NewPost {
-            user_id: user_id,
+            user_id,
             title: title.into(),
             body: body.map(|b| b.into()),
         }
@@ -163,10 +165,7 @@ pub struct FkTest {
 
 impl FkTest {
     pub fn new(id: i32, fk_id: i32) -> Self {
-        FkTest {
-            id: id,
-            fk_id: fk_id,
-        }
+        FkTest { id, fk_id }
     }
 }
 
@@ -177,14 +176,16 @@ pub struct NullableColumn {
     value: Option<i32>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Queryable, Insertable, Identifiable, Associations, Selectable,
+)]
 #[diesel(table_name = likes)]
-#[diesel(primary_key(user_id, comment_id))]
+#[diesel(primary_key(comment_id, user_id))]
 #[diesel(belongs_to(User))]
 #[diesel(belongs_to(Comment))]
 pub struct Like {
-    pub user_id: i32,
     pub comment_id: i32,
+    pub user_id: i32,
 }
 
 #[cfg(feature = "postgres")]

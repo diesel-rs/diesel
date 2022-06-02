@@ -4,7 +4,7 @@ use std::error::Error;
 use diesel::backend::Backend;
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::dsl::*;
-use diesel::expression::{is_aggregate, MixedAggregates, QueryMetadata, ValidGrouping};
+use diesel::expression::{is_aggregate, QueryMetadata, ValidGrouping};
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
@@ -160,10 +160,12 @@ where
         )>,
         Conn::Backend,
     >,
-    is_aggregate::No: MixedAggregates<
-        <<Conn::Backend as UsesInformationSchema>::TypeSchema as ValidGrouping<()>>::IsAggregate,
-        Output = is_aggregate::No,
-    >,
+    (
+        columns::column_name,
+        <Conn::Backend as UsesInformationSchema>::TypeColumn,
+        <Conn::Backend as UsesInformationSchema>::TypeSchema,
+        columns::__is_nullable,
+    ): ValidGrouping<()>,
     String: FromSql<sql_types::Text, Conn::Backend>,
     Option<String>: FromSql<sql_types::Nullable<sql_types::Text>, Conn::Backend>,
     Order<
@@ -557,7 +559,7 @@ mod tests {
         let id = ColumnInformation::new("id", "int4", pg_catalog.clone(), false);
         let text_col = ColumnInformation::new("text_col", "varchar", pg_catalog.clone(), true);
         let not_null = ColumnInformation::new("not_null", "text", pg_catalog.clone(), false);
-        let array_col = ColumnInformation::new("array_col", "_varchar", pg_catalog.clone(), false);
+        let array_col = ColumnInformation::new("array_col", "_varchar", pg_catalog, false);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
             get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)
@@ -592,14 +594,14 @@ mod tests {
         let table_3 = TableName::new("table_3", "test_schema");
         let fk_one = ForeignKeyConstraint {
             child_table: table_2.clone(),
-            parent_table: table_1.clone(),
+            parent_table: table_1,
             foreign_key: "fk_one".into(),
             foreign_key_rust_name: "fk_one".into(),
             primary_key: "id".into(),
         };
         let fk_two = ForeignKeyConstraint {
-            child_table: table_3.clone(),
-            parent_table: table_2.clone(),
+            child_table: table_3,
+            parent_table: table_2,
             foreign_key: "fk_two".into(),
             foreign_key_rust_name: "fk_two".into(),
             primary_key: "id".into(),

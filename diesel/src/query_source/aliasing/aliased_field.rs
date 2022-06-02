@@ -16,7 +16,7 @@ use std::marker::PhantomData;
 #[derive(Debug, Clone, Copy)]
 /// Represents an aliased field (column) within diesel's query builder
 ///
-/// See [alias!] for more details.
+/// See [`alias!`](crate::alias) for more details.
 pub struct AliasedField<S, F> {
     pub(super) _alias_source: PhantomData<S>,
     pub(super) _field: F,

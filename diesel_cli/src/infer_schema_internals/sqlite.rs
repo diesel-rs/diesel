@@ -368,14 +368,14 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
     let table_3 = TableName::from_name("table_3");
     let fk_one = ForeignKeyConstraint {
         child_table: table_2.clone(),
-        parent_table: table_1.clone(),
+        parent_table: table_1,
         foreign_key: "fk_one".into(),
         foreign_key_rust_name: "fk_one".into(),
         primary_key: "id".into(),
     };
     let fk_two = ForeignKeyConstraint {
-        child_table: table_3.clone(),
-        parent_table: table_2.clone(),
+        child_table: table_3,
+        parent_table: table_2,
         foreign_key: "fk_two".into(),
         foreign_key_rust_name: "fk_two".into(),
         primary_key: "id".into(),

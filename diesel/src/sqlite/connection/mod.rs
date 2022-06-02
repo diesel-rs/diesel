@@ -113,7 +113,6 @@ impl Connection for SqliteConnection {
         Ok(StatementIterator::new(statement_use))
     }
 
-    #[doc(hidden)]
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
@@ -457,7 +456,7 @@ mod tests {
     #[test]
     fn register_noarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        answer::register_impl(&connection, || 42).unwrap();
+        answer::register_impl(connection, || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);
@@ -466,7 +465,7 @@ mod tests {
     #[test]
     fn register_nondeterministic_noarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        answer::register_nondeterministic_impl(&connection, || 42).unwrap();
+        answer::register_nondeterministic_impl(connection, || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);

@@ -78,16 +78,18 @@
 //!
 //! When used inside a pool, if an individual connection becomes
 //! broken (as determined by the [R2D2Connection::is_broken] method)
-//! then `r2d2` will close and return the connection to the DB.
+//! then, when the connection goes out of scope, `r2d2` will close
+//! and return the connection to the DB.
 //!
 //! `diesel` determines broken connections by whether or not the current
 //! thread is panicking or if individual `Connection` structs are
 //! broken (determined by the `is_broken()` method). Generically, these
 //! are left to individual backends to implement themselves.
 //!
-//! For SQLite, PG, and MySQL backends, specifically, `is_broken()`
-//! is determined by whether or not the `TransactionManagerStatus` (as a part
-//! of the `AnsiTransactionManager` struct) is in an `InError` state.
+//! For SQLite, PG, and MySQL backends `is_broken()` is determined
+//! by whether or not the `TransactionManagerStatus` (as a part
+//! of the `AnsiTransactionManager` struct) is in an `InError` state
+//! or contains an open transaction when the connection goes out of scope.
 //!
 
 pub use r2d2::*;
@@ -498,7 +500,11 @@ mod tests {
                 .unwrap();
         }
 
-        assert_eq!(acquire_count.load(Ordering::Relaxed), 1);
+        // we are not interested in the acquire count here
+        // as the pool opens a new connection in the background
+        // that could lead to this test failing if that happens to fast
+        // (which is sometimes the case for sqlite)
+        //assert_eq!(acquire_count.load(Ordering::Relaxed), 1);
         assert_eq!(release_count.load(Ordering::Relaxed), 1);
         assert_eq!(checkin_count.load(Ordering::Relaxed), 2);
         assert_eq!(checkout_count.load(Ordering::Relaxed), 2);
@@ -517,7 +523,11 @@ mod tests {
         }))
         .unwrap_err();
 
-        assert_eq!(acquire_count.load(Ordering::Relaxed), 2);
+        // we are not interested in the acquire count here
+        // as the pool opens a new connection in the background
+        // that could lead to this test failing if that happens to fast
+        // (which is sometimes the case for sqlite)
+        //assert_eq!(acquire_count.load(Ordering::Relaxed), 2);
         assert_eq!(release_count.load(Ordering::Relaxed), 2);
         assert_eq!(checkin_count.load(Ordering::Relaxed), 3);
         assert_eq!(checkout_count.load(Ordering::Relaxed), 3);

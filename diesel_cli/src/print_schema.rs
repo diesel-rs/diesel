@@ -144,6 +144,8 @@ fn mysql_diesel_types() -> HashSet<&'static str> {
 
     types.insert("TinyInt");
     types.insert("Tinyint");
+    types.insert("Datetime");
+    types.insert("Json");
     types
 }
 
@@ -289,6 +291,7 @@ impl Display for CustomTypeList {
                 Ok(())
             }
             #[cfg(feature = "sqlite")]
+            #[allow(clippy::print_in_format_impl)]
             Backend::Sqlite => {
                 let _ = (&f, self.with_docs);
                 for t in &self.types_sorted {
@@ -302,6 +305,7 @@ impl Display for CustomTypeList {
                 )
             }
             #[cfg(feature = "mysql")]
+            #[allow(clippy::print_in_format_impl)]
             Backend::Mysql => {
                 let _ = (&f, self.with_docs);
                 for t in &self.types_sorted {
