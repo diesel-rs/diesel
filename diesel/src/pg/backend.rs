@@ -140,7 +140,7 @@ impl SqlDialect for Pg {
 
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
-    type ArrayComparision = PgStyleArrayComparision;
+    type ArrayComparison = PgStyleArrayComparision;
 }
 
 impl DieselReserveSpecialization for Pg {}

@@ -23,7 +23,7 @@ use std::marker::PhantomData;
 ///
 /// Third party backend can customize the [`QueryFragment`]
 /// implementation of this query dsl node via
-/// [`SqlDialect::ArrayComparision`]. A customized implementation
+/// [`SqlDialect::ArrayComparison`]. A customized implementation
 /// is expected to provide the same sematics as a ANSI SQL
 /// `IN` expression.
 ///
@@ -43,7 +43,7 @@ pub struct In<T, U> {
 ///
 /// Third party backend can customize the [`QueryFragment`]
 /// implementation of this query dsl node via
-/// [`SqlDialect::ArrayComparision`]. A customized implementation
+/// [`SqlDialect::ArrayComparison`]. A customized implementation
 /// is expected to provide the same sematics as a ANSI SQL
 /// `NOT IN` expression.0
 ///
@@ -89,18 +89,17 @@ where
 impl<T, U, DB> QueryFragment<DB> for In<T, U>
 where
     DB: Backend,
-    Self: QueryFragment<DB, DB::ArrayComparision>,
+    Self: QueryFragment<DB, DB::ArrayComparison>,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
+        <Self as QueryFragment<DB, DB::ArrayComparison>>::walk_ast(self, pass)
     }
 }
 
-impl<T, U, DB> QueryFragment<DB, sql_dialect::array_comparision::AnsiSqlArrayComparison>
-    for In<T, U>
+impl<T, U, DB> QueryFragment<DB, sql_dialect::array_comparison::AnsiSqlArrayComparison> for In<T, U>
 where
     DB: Backend
-        + SqlDialect<ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison>,
+        + SqlDialect<ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison>,
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
@@ -120,18 +119,18 @@ where
 impl<T, U, DB> QueryFragment<DB> for NotIn<T, U>
 where
     DB: Backend,
-    Self: QueryFragment<DB, DB::ArrayComparision>,
+    Self: QueryFragment<DB, DB::ArrayComparison>,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
+        <Self as QueryFragment<DB, DB::ArrayComparison>>::walk_ast(self, pass)
     }
 }
 
-impl<T, U, DB> QueryFragment<DB, sql_dialect::array_comparision::AnsiSqlArrayComparison>
+impl<T, U, DB> QueryFragment<DB, sql_dialect::array_comparison::AnsiSqlArrayComparison>
     for NotIn<T, U>
 where
     DB: Backend
-        + SqlDialect<ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison>,
+        + SqlDialect<ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison>,
     T: QueryFragment<DB>,
     U: QueryFragment<DB> + MaybeEmpty,
 {
@@ -234,7 +233,7 @@ where
 ///
 /// Third party backend can customize the [`QueryFragment`]
 /// implementation of this query dsl node via
-/// [`SqlDialect::ArrayComparision`]. The default
+/// [`SqlDialect::ArrayComparison`]. The default
 /// implementation does generate one bind per value
 /// in the `values` field.
 ///
@@ -290,20 +289,20 @@ where
 
 impl<ST, I, DB> QueryFragment<DB> for Many<ST, I>
 where
-    Self: QueryFragment<DB, DB::ArrayComparision>,
+    Self: QueryFragment<DB, DB::ArrayComparison>,
     DB: Backend,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        <Self as QueryFragment<DB, DB::ArrayComparision>>::walk_ast(self, pass)
+        <Self as QueryFragment<DB, DB::ArrayComparison>>::walk_ast(self, pass)
     }
 }
 
-impl<ST, I, DB> QueryFragment<DB, sql_dialect::array_comparision::AnsiSqlArrayComparison>
+impl<ST, I, DB> QueryFragment<DB, sql_dialect::array_comparison::AnsiSqlArrayComparison>
     for Many<ST, I>
 where
     DB: Backend
         + HasSqlType<ST>
-        + SqlDialect<ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison>,
+        + SqlDialect<ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison>,
     ST: SingleValue,
     I: ToSql<ST, DB>,
 {
