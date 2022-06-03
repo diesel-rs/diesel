@@ -290,6 +290,13 @@ pub trait SqlDialect: self::private::TrustedBackend {
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
 pub(crate) mod sql_dialect {
+    #![cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        // Otherwise there are false positives
+        // because the lint seems to believe that these pub statements
+        // are not required, but they are required through the various backend impls
+        allow(unreachable_pub)
+    )]
     #[cfg(doc)]
     use super::SqlDialect;
 
@@ -304,18 +311,11 @@ pub(crate) mod sql_dialect {
         /// If you use a custom type to specify specialized support for `ON CONFLICT` clauses
         /// implementing this trait opts into reusing diesels existing `ON CONFLICT`
         /// `QueryFragment` implementations
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-
-        pub(crate) trait SupportsOnConflictClause {}
+        pub trait SupportsOnConflictClause {}
 
         /// This marker type indicates that `ON CONFLICT` clauses are not supported for this backend
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct DoesNotSupportOnConflictClause;
+        pub struct DoesNotSupportOnConflictClause;
     }
 
     /// This module contains all reusable options to configure
@@ -328,25 +328,16 @@ pub(crate) mod sql_dialect {
         ///
         /// If you use custom type to specify specialized support for `RETURNING` clauses
         /// implementing this trait opts in supporting `RETURNING` clause syntax
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) trait SupportsReturningClause {}
+        pub trait SupportsReturningClause {}
 
         /// Indicates that a backend provides support for `RETURNING` clauses
         /// using the postgresql `RETURNING` syntax
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct PgLikeReturningClause;
+        pub struct PgLikeReturningClause;
 
         /// Indicates that a backend does not support `RETURNING` clauses
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct DoesNotSupportReturningClause;
+        pub struct DoesNotSupportReturningClause;
 
         impl SupportsReturningClause for PgLikeReturningClause {}
     }
@@ -365,26 +356,17 @@ pub(crate) mod sql_dialect {
         /// expressions implementing this trait opts in support for `DEFAULT`
         /// value expressions for inserts. Otherwise diesel will emulate this
         /// behaviour.
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) trait SupportsDefaultKeyword {}
+        pub trait SupportsDefaultKeyword {}
 
         /// Indicates that a backend support `DEFAULT` value expressions
         /// for `INSERT INTO` statements based on the ISO SQL standard
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct IsoSqlDefaultKeyword;
+        pub struct IsoSqlDefaultKeyword;
 
         /// Indicates that a backend does not support `DEFAULT` value
         /// expressions0for `INSERT INTO` statements
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct DoesNotSupportDefaultKeyword;
+        pub struct DoesNotSupportDefaultKeyword;
 
         impl SupportsDefaultKeyword for IsoSqlDefaultKeyword {}
     }
@@ -397,30 +379,20 @@ pub(crate) mod sql_dialect {
     pub(crate) mod batch_insert_support {
         /// A marker trait indicating if batch insert statements
         /// are supported for this backend or not
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) trait SupportsBatchInsert {}
+        pub trait SupportsBatchInsert {}
 
         /// Indicates that this backend does not support batch
         /// insert statements.
         /// In this case diesel will emulate batch insert support
         /// by inserting each row on it's own
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct DoesNotSupportBatchInsert;
+        pub struct DoesNotSupportBatchInsert;
 
         /// Indicates that this backend supports postgres style
         /// batch insert statements to insert multiple rows using one
         /// insert statement
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-
-        pub(crate) struct PostgresLikeBatchInsertSupport;
+        pub struct PostgresLikeBatchInsertSupport;
 
         impl SupportsBatchInsert for PostgresLikeBatchInsertSupport {}
     }
@@ -437,10 +409,7 @@ pub(crate) mod sql_dialect {
         /// that a row consisting only of default
         /// values should be inserted
         #[derive(Debug, Clone, Copy)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct AnsiDefaultValueClause;
+        pub struct AnsiDefaultValueClause;
     }
 
     /// This module contains all reusable options to configure
@@ -454,10 +423,7 @@ pub(crate) mod sql_dialect {
         /// the `FROM` clause in `SELECT` statements
         /// if no table/view is queried
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct AnsiSqlFromClauseSyntax;
+        pub struct AnsiSqlFromClauseSyntax;
     }
 
     /// This module contains all reusable options to configure
@@ -471,10 +437,7 @@ pub(crate) mod sql_dialect {
         /// treats `EXIST()` as function
         /// like expression
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct AnsiSqlExistsSyntax;
+        pub struct AnsiSqlExistsSyntax;
     }
 
     /// This module contains all reusable options to configure
@@ -487,10 +450,7 @@ pub(crate) mod sql_dialect {
         /// Indicates that this backend requires a single bind
         /// per array element in `IN()` and `NOT IN()` expression
         #[derive(Debug, Copy, Clone)]
-        #[diesel_derives::__diesel_public_if(
-            feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-        )]
-        pub(crate) struct AnsiSqlArrayComparison;
+        pub struct AnsiSqlArrayComparison;
     }
 }
 
