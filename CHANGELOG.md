@@ -10,6 +10,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Added
+
+* Adds an `ipnet-address` feature flag, allowing support (de)serializing IP
+  values from the database using types provided by `ipnet`. This feature
+  may be enabled concurrently with the previously existing `network-address`
+  feature.
+
 ## [2.0.0 Rc0] 2022-04-22
 
 ### Added
