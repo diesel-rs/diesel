@@ -26,6 +26,7 @@ where
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -54,6 +55,7 @@ where
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
@@ -115,6 +117,7 @@ where
     /// #     name: &'a str,
     /// # }
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::*;
@@ -169,6 +172,7 @@ where
     /// #     hair_color: &'a str,
     /// # }
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::*;

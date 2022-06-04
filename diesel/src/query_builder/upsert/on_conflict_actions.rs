@@ -30,26 +30,6 @@ where
     }
 }
 
-impl<DB> QueryFragment<DB, sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause>
-    for DoNothing
-where
-    DB: Backend<
-        OnConflictClause = crate::backend::sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause,
-    >,
-{
-    ///
-    /// FIXME: This is super wrong right now and will likely cause a panic; MySQL doesn't support
-    /// the "DO NOTHING" syntax; the likely workaround would need to have access to at least one
-    /// column from the table being modified in this query:
-    /// 
-    /// https://stackoverflow.com/questions/4596390/insert-on-duplicate-key-do-nothing
-    /// 
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_sql(" DO NOTHING");
-        Ok(())
-    }
-}
-
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct DoUpdate<T> {
@@ -100,12 +80,11 @@ where
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
-        if self.changeset.is_noop(out.backend())? {
-            out.push_sql(" DO NOTHING");
-        } else {
-            out.push_sql(" UPDATE ");
-            self.changeset.walk_ast(out.reborrow())?;
-        }
+        // FIXME: We really should be checking for whether or not `self.changeset.is_noop()`
+        //  but until we get DO NOTHING working with MySQL we'll unfortunately keep this
+        //  unnecessary update
+        out.push_sql(" UPDATE ");
+        self.changeset.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
