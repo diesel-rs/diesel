@@ -153,7 +153,7 @@ jobs:
         run: |
           choco install sqlite
           cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
 
       - name: Set variables for sqlite (Windows)
