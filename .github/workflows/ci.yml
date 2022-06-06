@@ -24,7 +24,7 @@ jobs:
       matrix:
         rust: ["stable", "beta", "nightly"]
         backend: ["postgres", "sqlite", "mysql"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest, windows-2019]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -153,13 +153,7 @@ jobs:
         run: |
           choco install sqlite
           cd /D C:\ProgramData\chocolatey\lib\SQLite\tools
-          dir "C:\Program Files\Microsoft Visual Studio"
-          dir "C:\Program Files\Microsoft Visual Studio\2022"
-          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
-          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC"
-          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary"
-          dir "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build"
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           lib /machine:x64 /def:sqlite3.def /out:sqlite3.lib
 
       - name: Set variables for sqlite (Windows)
