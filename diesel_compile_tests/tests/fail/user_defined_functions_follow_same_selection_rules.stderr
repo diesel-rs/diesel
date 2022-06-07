@@ -12,12 +12,22 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 38 |         .load::<User>(&mut conn);
    |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |         title -> VarChar,
+17 | |     }
+18 | | }
+   | |_^
    = note: 3 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>`
    = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>`
    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
    = note: required because of the requirements on the impl of `LoadQuery<'_, _, User>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:38:10
@@ -26,9 +36,19 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
    |          ^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
    |
    = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |         title -> VarChar,
+17 | |     }
+18 | | }
+   | |_^
    = note: 3 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>`
    = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>`
    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
    = note: required because of the requirements on the impl of `LoadQuery<'_, _, User>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)

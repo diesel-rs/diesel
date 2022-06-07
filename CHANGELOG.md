@@ -116,7 +116,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Changed
 
-* The minimal officially supported rustc version is now 1.54.0
+* The minimal officially supported rustc version is now 1.56.0
 
 * Interacting with a database requires a mutable connection.
 
