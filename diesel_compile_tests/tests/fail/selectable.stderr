@@ -142,38 +142,6 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
 
-error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
-   --> tests/fail/selectable.rs:158:10
-    |
-158 |         .load(&mut conn)
-    |          ^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `posts::columns::id`
-    |
-    = help: the following implementations were found:
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::id>>
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::title>>
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::user_id>>
-    = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::id`
-    = note: 2 redundant requirements hidden
-    = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
-
-error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::name>` is not satisfied
-   --> tests/fail/selectable.rs:158:10
-    |
-158 |         .load(&mut conn)
-    |          ^^^^ the trait `IsContainedInGroupBy<users::columns::name>` is not implemented for `posts::columns::id`
-    |
-    = help: the following implementations were found:
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::id>>
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::title>>
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::user_id>>
-    = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::name`
-    = note: 3 redundant requirements hidden
-    = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
-
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
    --> tests/fail/selectable.rs:164:10
     |
@@ -188,21 +156,6 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>`
     = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
 
-error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
-   --> tests/fail/selectable.rs:165:10
-    |
-165 |         .load(&mut conn)
-    |          ^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
-    |
-    = help: the following implementations were found:
-              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
-              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
-    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(users::columns::name, diesel::expression::count::count::count<diesel::sql_types::Integer, posts::columns::id>)`
-    = note: 2 redundant requirements hidden
-    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>`
-    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>>`
-    = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithPostCount>` for `SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>>`
-
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:172:10
     |
@@ -243,13 +196,24 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 172 |         .returning(UserWithEmbeddedPost::as_select())
     |          ^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
     |
-    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |         title -> Text,
+16  | |         user_id -> Integer,
+17  | |     }
+18  | | }
+    | |_^
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:173:10
@@ -293,7 +257,17 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 173 |         .load(&mut conn)
     |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
     |
-    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |         title -> Text,
+16  | |         user_id -> Integer,
+17  | |     }
+18  | | }
+    | |_^
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -301,6 +275,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:180:10
@@ -342,13 +317,24 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 180 |         .returning(UserWithEmbeddedPost::as_select())
     |          ^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
     |
-    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |         title -> Text,
+16  | |         user_id -> Integer,
+17  | |     }
+18  | | }
+    | |_^
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:181:10
@@ -392,7 +378,17 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 181 |         .load(&mut conn)
     |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
     |
-    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |         title -> Text,
+16  | |         user_id -> Integer,
+17  | |     }
+18  | | }
+    | |_^
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -400,6 +396,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:187:10
@@ -439,12 +436,23 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 187 |         .returning(UserWithEmbeddedPost::as_select())
     |          ^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
     |
-    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |         title -> Text,
+16  | |         user_id -> Integer,
+17  | |     }
+18  | | }
+    | |_^
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
+    = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
    --> tests/fail/selectable.rs:188:10
@@ -488,7 +496,17 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 188 |         .load(&mut conn)
     |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
     |
-    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+   --> tests/fail/selectable.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |         title -> Text,
+16  | |         user_id -> Integer,
+17  | |     }
+18  | | }
+    | |_^
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -496,6 +514,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `Query` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
     = note: required because of the requirements on the impl of `LoadQuery<'_, _, UserWithEmbeddedPost>` for `DeleteStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>>`
+    = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0599]: the function or associated item `as_select` exists for struct `UserWithoutSelectable`, but its trait bounds were not satisfied
    --> tests/fail/selectable.rs:192:56

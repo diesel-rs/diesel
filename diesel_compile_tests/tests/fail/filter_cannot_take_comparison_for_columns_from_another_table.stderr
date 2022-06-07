@@ -4,12 +4,22 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 32 |         .load::<User>(&mut conn);
    |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |         title -> VarChar,
+17 | |     }
+18 | | }
+   | |_^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>`
    = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>`
    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>>`
    = note: required because of the requirements on the impl of `LoadQuery<'_, _, User>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:36:10
@@ -17,10 +27,20 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 36 |         .filter(posts::id.eq(1));
    |          ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
+  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |         title -> VarChar,
+17 | |     }
+18 | | }
+   | |_^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>>: BoxedDsl<'_, Pg>` is not satisfied
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:39:10
@@ -38,12 +58,22 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 43 |         .load::<User>(&mut conn);
    |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |         title -> VarChar,
+17 | |     }
+18 | | }
+   | |_^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>`
    = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>`
    = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
    = note: required because of the requirements on the impl of `LoadQuery<'_, _, User>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:47:10
@@ -51,10 +81,20 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 47 |         .filter(users::name.eq(posts::title));
    |          ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+  --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |         title -> VarChar,
+17 | |     }
+18 | | }
+   | |_^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, posts::columns::title>>>>: BoxedDsl<'_, Pg>` is not satisfied
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:51:10
