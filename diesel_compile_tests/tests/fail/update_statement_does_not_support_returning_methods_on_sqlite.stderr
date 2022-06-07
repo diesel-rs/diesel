@@ -6,6 +6,7 @@ error[E0277]: the trait bound `diesel::query_builder::returning_clause::Returnin
    |
    = help: the following implementations were found:
              <diesel::query_builder::returning_clause::ReturningClause<Expr> as QueryFragment<DB, backend::sql_dialect::returning_clause::PgLikeReturningClause>>
+             <diesel::query_builder::returning_clause::ReturningClause<Expr> as QueryFragment<DB, sqlite::backend::SqliteReturningClause>>
              <diesel::query_builder::returning_clause::ReturningClause<Expr> as QueryFragment<DB>>
    = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::query_builder::returning_clause::ReturningClause<(columns::id, columns::name)>`
    = note: 1 redundant requirements hidden
@@ -20,6 +21,7 @@ error[E0277]: the trait bound `diesel::query_builder::returning_clause::Returnin
    |
    = help: the following implementations were found:
              <diesel::query_builder::returning_clause::ReturningClause<Expr> as QueryFragment<DB, backend::sql_dialect::returning_clause::PgLikeReturningClause>>
+             <diesel::query_builder::returning_clause::ReturningClause<Expr> as QueryFragment<DB, sqlite::backend::SqliteReturningClause>>
              <diesel::query_builder::returning_clause::ReturningClause<Expr> as QueryFragment<DB>>
    = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::query_builder::returning_clause::ReturningClause<columns::name>`
    = note: 1 redundant requirements hidden
