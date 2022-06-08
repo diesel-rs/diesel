@@ -438,7 +438,7 @@ fn redo_migrations<Conn, DB>(
             .map(|m| (m.name().version().as_owned(), m))
             .collect::<HashMap<_, _>>();
 
-        let migrations = reverted_versions
+        let mut migrations = reverted_versions
             .into_iter()
             .map(|v| {
                 migrations
@@ -446,6 +446,8 @@ fn redo_migrations<Conn, DB>(
                     .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.as_owned()))
             })
             .collect::<Result<Vec<_>, _>>()?;
+        // Sort the migrations by version to apply them in order.
+        migrations.sort_by_key(|m| m.name().version().as_owned());
 
         harness.run_migrations(&migrations)?;
 

@@ -69,8 +69,8 @@ fn migration_redo_runs_the_last_two_migrations_down_and_up() {
         result.stdout()
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
                 Rolling back migration 2017-09-03-210424_create_contracts\n\
-                Running migration 2017-09-12-210424_create_bills\n\
-                Running migration 2017-09-03-210424_create_contracts\n",
+                Running migration 2017-09-03-210424_create_contracts\n\
+                Running migration 2017-09-12-210424_create_bills\n",
         "Unexpected stdout : {}",
         result.stdout()
     );
@@ -247,9 +247,9 @@ fn migration_redo_all_runs_all_migrations_down_and_up() {
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
                 Rolling back migration 2017-09-03-210424_create_contracts\n\
                 Rolling back migration 2017-08-31-210424_create_customers\n\
-                Running migration 2017-09-12-210424_create_bills\n\
+                Running migration 2017-08-31-210424_create_customers\n\
                 Running migration 2017-09-03-210424_create_contracts\n\
-                Running migration 2017-08-31-210424_create_customers\n",
+                Running migration 2017-09-12-210424_create_bills\n",
         "Unexpected stdout : {}",
         result.stdout()
     );
@@ -305,9 +305,9 @@ fn migration_redo_with_more_than_max_should_redo_all() {
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
                 Rolling back migration 2017-09-03-210424_create_contracts\n\
                 Rolling back migration 2017-08-31-210424_create_customers\n\
-                Running migration 2017-09-12-210424_create_bills\n\
+                Running migration 2017-08-31-210424_create_customers\n\
                 Running migration 2017-09-03-210424_create_contracts\n\
-                Running migration 2017-08-31-210424_create_customers\n",
+                Running migration 2017-09-12-210424_create_bills\n",
         "Unexpected stdout : {}",
         result.stdout()
     );
