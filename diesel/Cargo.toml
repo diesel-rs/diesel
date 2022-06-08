@@ -10,7 +10,7 @@ repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "sql"]
 categories = ["database"]
 edition = "2018"
-rust-version = "1.54.0"
+rust-version = "1.56.0"
 
 [dependencies]
 byteorder = { version = "1.0", optional = true }
