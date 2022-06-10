@@ -223,6 +223,12 @@ fn print_schema_array_type() {
     test_print_schema("print_schema_array_type", vec![])
 }
 
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_sqlite_implicit_foreign_key_reference() {
+    test_print_schema("print_schema_sqlite_implicit_foreign_key_reference", vec![]);
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
