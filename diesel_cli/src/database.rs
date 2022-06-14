@@ -346,8 +346,8 @@ pub fn schema_table_exists(database_url: &str) -> DatabaseResult<bool> {
 
 pub fn database_url(matches: &ArgMatches) -> String {
     matches
-        .value_of("DATABASE_URL")
-        .map(|s| s.into())
+        .get_one::<String>("DATABASE_URL")
+        .cloned()
         .or_else(|| env::var("DATABASE_URL").ok())
         .unwrap_or_else(|| handle_error(DatabaseError::DatabaseUrlMissing))
 }
