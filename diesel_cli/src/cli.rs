@@ -1,5 +1,7 @@
-use crate::validators::num::*;
-use clap::{Arg, Command};
+use clap::{
+    builder::{EnumValueParser, PossibleValuesParser},
+    Arg, Command,
+};
 use clap_complete::Shell;
 
 fn str_as_char(str: &str) -> char {
@@ -45,7 +47,7 @@ pub fn build_cli() -> Command<'static> {
                         )
                         .default_value("1")
                         .takes_value(true)
-                        .validator(is_positive_int)
+                        .value_parser(clap::value_parser!(u64))
                         .conflicts_with("REVERT_ALL"),
                 ),
         )
@@ -79,7 +81,7 @@ pub fn build_cli() -> Command<'static> {
                         )
                         .default_value("1")
                         .takes_value(true)
-                        .validator(is_positive_int)
+                        .value_parser(clap::value_parser!(u64))
                         .conflicts_with("REDO_ALL"),
                 ),
         )
@@ -114,7 +116,8 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("MIGRATION_FORMAT")
                         .long("format")
-                        .possible_values(&["sql", "barrel"])
+                        .value_parser(PossibleValuesParser::new(["sql"]))
+                        .takes_value(true)
                         .default_value("sql")
                         .takes_value(true)
                         .help("The format of the migration to be generated."),
@@ -154,7 +157,7 @@ pub fn build_cli() -> Command<'static> {
             Arg::new("SHELL")
                 .index(1)
                 .required(true)
-                .possible_values(Shell::possible_values()),
+                .value_parser(EnumValueParser::<Shell>::new()),
         );
 
     let infer_schema_subcommand = Command::new("print-schema")
@@ -171,7 +174,7 @@ pub fn build_cli() -> Command<'static> {
                 .index(1)
                 .takes_value(true)
                 .multiple_values(true)
-                .multiple_occurrences(true)
+                .action(clap::ArgAction::Append)
                 .help("Table names to filter (default only-tables if not empty)."),
         )
         .arg(
@@ -198,12 +201,13 @@ pub fn build_cli() -> Command<'static> {
                 .long("column-sorting")
                 .help("Sort order for table columns.")
                 .takes_value(true)
-                .possible_values(&["ordinal_position", "name"]),
+                .value_parser(PossibleValuesParser::new(["ordinal_position", "name"])),
         )
         .arg(
             Arg::new("patch-file")
                 .long("patch-file")
                 .takes_value(true)
+                .value_parser(clap::value_parser!(std::path::PathBuf))
                 .help("A unified diff file to be applied to the final schema."),
         )
         .arg(
@@ -211,7 +215,7 @@ pub fn build_cli() -> Command<'static> {
                 .long("import-types")
                 .takes_value(true)
                 .multiple_values(true)
-                .multiple_occurrences(true)
+                .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of types to import for every table, separated by commas."),
         )
@@ -222,6 +226,7 @@ pub fn build_cli() -> Command<'static> {
         );
 
     let config_arg = Arg::new("CONFIG_FILE")
+        .value_parser(clap::value_parser!(std::path::PathBuf))
         .long("config-file")
         .help(
             "The location of the configuration file to use. Falls back to the \
@@ -269,5 +274,6 @@ fn migration_dir_arg<'a>() -> Arg<'a> {
              current directory and its parents.",
         )
         .takes_value(true)
+        .value_parser(clap::value_parser!(std::path::PathBuf))
         .global(true)
 }
