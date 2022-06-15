@@ -23,7 +23,6 @@ mod infer_schema_internals;
 mod print_schema;
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 mod query_helper;
-mod validators;
 
 use chrono::*;
 use clap::ArgMatches;
@@ -76,27 +75,24 @@ fn run_migration_command(
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
-            if args.is_present("REVERT_ALL") {
+            if args.contains_id("REVERT_ALL") {
                 call_with_conn!(database_url, revert_all_migrations_with_output(dir))?;
             } else {
-                let number = args.value_of("REVERT_NUMBER").unwrap();
-                for _ in 0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected.") {
-                        match call_with_conn!(
-                            database_url,
-                            revert_migration_with_output(dir.clone())
-                        ) {
-                            Ok(_) => {}
-                            Err(e) if e.is::<MigrationError>() => {
-                                match e.downcast_ref::<MigrationError>() {
-                                    // If n is larger then the actual number of migrations,
-                                    // just stop reverting them
-                                    Some(MigrationError::NoMigrationRun) => break,
-                                    _ => return Err(e),
-                                }
+                let number = args.get_one::<u64>("REVERT_NUMBER").unwrap();
+                for _ in 0..*number {
+                    match call_with_conn!(database_url, revert_migration_with_output(dir.clone())) {
+                        Ok(_) => {}
+                        Err(e) if e.is::<MigrationError>() => {
+                            match e.downcast_ref::<MigrationError>() {
+                                // If n is larger then the actual number of migrations,
+                                // just stop reverting them
+                                Some(MigrationError::NoMigrationRun) => break,
+                                _ => return Err(e),
                             }
-                            Err(e) => return Err(e),
                         }
+                        Err(e) => return Err(e),
                     }
+                }
             }
 
             regenerate_schema_if_file_specified(matches)?;
@@ -123,7 +119,7 @@ fn run_migration_command(
             println!("{:?}", result);
         }
         ("generate", args) => {
-            let migration_name = args.value_of("MIGRATION_NAME").unwrap();
+            let migration_name = args.get_one::<String>("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
             let versioned_name = format!("{}_{}", version, migration_name);
             let migration_dir = migrations_dir(matches)
@@ -131,7 +127,10 @@ fn run_migration_command(
                 .join(versioned_name);
             fs::create_dir(&migration_dir).unwrap();
 
-            match args.value_of("MIGRATION_FORMAT") {
+            match args
+                .get_one::<String>("MIGRATION_FORMAT")
+                .map(|s| s as &str)
+            {
                 Some("sql") => generate_sql_migration(&migration_dir),
                 Some(x) => return Err(format!("Unrecognized migration format `{}`", x).into()),
                 None => unreachable!("MIGRATION_FORMAT has a default value"),
@@ -169,20 +168,17 @@ fn generate_sql_migration(path: &Path) {
 
 fn migration_version<'a>(matches: &'a ArgMatches) -> Box<dyn Display + 'a> {
     matches
-        .value_of("MIGRATION_VERSION")
+        .get_one::<String>("MIGRATION_VERSION")
         .map(|s| Box::new(s) as Box<dyn Display>)
         .unwrap_or_else(|| Box::new(Utc::now().format(TIMESTAMP_FORMAT)))
 }
 
 fn migrations_dir_from_cli(matches: &ArgMatches) -> Option<PathBuf> {
-    matches
-        .value_of("MIGRATION_DIRECTORY")
-        .map(PathBuf::from)
-        .or_else(|| {
-            matches
-                .subcommand()
-                .and_then(|s| migrations_dir_from_cli(s.1))
-        })
+    matches.get_one("MIGRATION_DIRECTORY").cloned().or_else(|| {
+        matches
+            .subcommand()
+            .and_then(|s| migrations_dir_from_cli(s.1))
+    })
 }
 
 fn run_migrations_with_output<Conn, DB>(
@@ -355,11 +351,10 @@ fn run_database_command(
 }
 
 fn generate_completions_command(matches: &ArgMatches) {
-    let shell: Shell = matches.value_of_t("SHELL").unwrap_or_else(|e| e.exit());
+    let shell: &Shell = matches.get_one("SHELL").expect("Shell is set here?");
     let mut app = cli::build_cli();
     let name = app.get_name().to_string();
-    generate(shell, &mut app, name, &mut stdout());
-    // cli::build_cli().gen_completions_to("diesel", shell, &mut stdout());
+    generate(*shell, &mut app, name, &mut stdout());
 }
 
 /// Looks for a migrations directory in the current path and all parent paths,
@@ -407,11 +402,11 @@ fn redo_migrations<Conn, DB>(
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
 {
     let migrations_inner = |harness: &mut HarnessWithOutput<Conn, _>| -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-        let reverted_versions = if args.is_present("REDO_ALL") {
+        let reverted_versions = if args.contains_id("REDO_ALL") {
             harness.revert_all_migrations(migrations_dir.clone())?
         } else {
-            let number = args.value_of("REDO_NUMBER").unwrap();
-            (0..number.parse::<u64>().expect("Unable to parse the value of the --number argument. A positive integer is expected."))
+            let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
+            (0..*number)
                 .filter_map(|_|{
                     match harness.revert_last_migration(migrations_dir.clone()) {
                         Ok(v) => {
@@ -501,45 +496,45 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
     let database_url = database::database_url(matches);
     let mut config = Config::read(matches)?.print_schema;
 
-    if let Some(schema_name) = matches.value_of("schema") {
-        config.schema = Some(String::from(schema_name))
+    if let Some(schema_name) = matches.get_one::<String>("schema") {
+        config.schema = Some(schema_name.clone())
     }
 
     let filter = matches
-        .values_of("table-name")
+        .get_many::<String>("table-name")
         .unwrap_or_default()
         .map(|table_name_regex| Regex::new(table_name_regex).map(Into::into))
         .collect::<Result<_, _>>()
         .map_err(|e| format!("invalid argument for table filtering regex: {}", e));
 
-    if matches.is_present("only-tables") {
+    if matches.contains_id("only-tables") {
         config.filter = Filtering::OnlyTables(filter?)
-    } else if matches.is_present("except-tables") {
+    } else if matches.contains_id("except-tables") {
         config.filter = Filtering::ExceptTables(filter?)
     }
 
-    if matches.is_present("with-docs") {
+    if matches.contains_id("with-docs") {
         config.with_docs = true;
     }
 
-    if let Some(sorting) = matches.value_of("column-sorting") {
-        match sorting {
+    if let Some(sorting) = matches.get_one::<String>("column-sorting") {
+        match sorting as &str {
             "ordinal_position" => config.column_sorting = ColumnSorting::OrdinalPosition,
             "name" => config.column_sorting = ColumnSorting::Name,
             _ => return Err(format!("Invalid column sorting mode: {}", sorting).into()),
         }
     }
 
-    if let Some(path) = matches.value_of("patch-file") {
-        config.patch_file = Some(PathBuf::from(path));
+    if let Some(path) = matches.get_one::<PathBuf>("patch-file") {
+        config.patch_file = Some(path.clone());
     }
 
-    if let Some(types) = matches.values_of("import-types") {
-        let types = types.map(String::from).collect();
+    if let Some(types) = matches.get_many("import-types") {
+        let types = types.cloned().collect();
         config.import_types = Some(types);
     }
 
-    if matches.is_present("generate-custom-type-definitions") {
+    if matches.contains_id("generate-custom-type-definitions") {
         config.generate_missing_sql_type_definitions = Some(false);
     }
 
@@ -560,7 +555,7 @@ fn regenerate_schema_if_file_specified(
 
         let database_url = database::database_url(matches);
 
-        if matches.is_present("LOCKED_SCHEMA") {
+        if matches.contains_id("LOCKED_SCHEMA") {
             let mut buf = Vec::new();
             print_schema::run_print_schema(&database_url, &config.print_schema, &mut buf)?;
 

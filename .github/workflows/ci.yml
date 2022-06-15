@@ -318,7 +318,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.54.0
+          toolchain: 1.56.0
           profile: minimal
           override: true
       - name: Cache cargo registry
@@ -347,7 +347,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.54.0
+          toolchain: 1.56.0
           profile: minimal
           components: clippy, rustfmt
           override: true
@@ -462,13 +462,13 @@ jobs:
         run: cargo -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
 
   minimal_rust_version:
-    name: Check Minimal supported rust version (1.54.0)
+    name: Check Minimal supported rust version (1.56.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.54.0
+          toolchain: 1.56.0
           profile: minimal
           override: true
       - name: Cache cargo registry

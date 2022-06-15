@@ -4,12 +4,12 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
 13 |     let source = stuff::table.select(max(stuff::b));
    |                                      ^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
-  ::: $DIESEL/src/expression/functions/aggregate_ordering.rs
+   = note: required because of the requirements on the impl of `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` for `diesel::sql_types::Bool`
+note: required by a bound in `diesel::dsl::max`
+  --> $DIESEL/src/expression/functions/aggregate_ordering.rs
    |
    |     fn max<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
-   |                --------------- required by this bound in `diesel::dsl::max`
-   |
-   = note: required because of the requirements on the impl of `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` for `diesel::sql_types::Bool`
+   |                ^^^^^^^^^^^^^^^ required by this bound in `diesel::dsl::max`
 
 error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
   --> tests/fail/ordering_functions_require_ord.rs:13:38
@@ -27,12 +27,12 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
 14 |     let source = stuff::table.select(min(stuff::b));
    |                                      ^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
-  ::: $DIESEL/src/expression/functions/aggregate_ordering.rs
+   = note: required because of the requirements on the impl of `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` for `diesel::sql_types::Bool`
+note: required by a bound in `diesel::dsl::min`
+  --> $DIESEL/src/expression/functions/aggregate_ordering.rs
    |
    |     fn min<ST: SqlOrdAggregate>(expr: ST) -> ST::Ret;
-   |                --------------- required by this bound in `diesel::dsl::min`
-   |
-   = note: required because of the requirements on the impl of `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` for `diesel::sql_types::Bool`
+   |                ^^^^^^^^^^^^^^^ required by this bound in `diesel::dsl::min`
 
 error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
   --> tests/fail/ordering_functions_require_ord.rs:14:38

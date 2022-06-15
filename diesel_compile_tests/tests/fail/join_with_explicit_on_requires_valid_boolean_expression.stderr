@@ -4,11 +4,20 @@ error[E0271]: type mismatch resolving `<diesel::internal::table_macro::Join<user
 31 |     let _ = users::table.inner_join(posts::table.on(users::id.eq(comments::id)));
    |                          ^^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<diesel::internal::table_macro::Join<users::table, posts::table, Inner>>` for `comments::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<diesel::internal::table_macro::Join<users::table, posts::table, Inner>>` for `comments::columns::id`
+  --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:17:1
+   |
+17 | / table! {
+18 | |     comments {
+19 | |         id -> Integer,
+20 | |     }
+21 | | }
+   | |_^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<diesel::internal::table_macro::Join<users::table, posts::table, Inner>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>`
    = note: required because of the requirements on the impl of `QuerySource` for `JoinOn<diesel::internal::table_macro::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>`
    = note: required because of the requirements on the impl of `InternalJoinDsl<posts::table, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>` for `SelectStatement<FromClause<users::table>>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `diesel::sql_types::Integer: BoolOrNullableBool` is not satisfied
   --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:33:26

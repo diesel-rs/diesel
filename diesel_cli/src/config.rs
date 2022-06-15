@@ -22,8 +22,8 @@ pub struct Config {
 impl Config {
     pub fn file_path(matches: &ArgMatches) -> PathBuf {
         matches
-            .value_of("CONFIG_FILE")
-            .map(PathBuf::from)
+            .get_one::<PathBuf>("CONFIG_FILE")
+            .cloned()
             .or_else(|| env::var_os("DIESEL_CONFIG_FILE").map(PathBuf::from))
             .unwrap_or_else(|| find_project_root().unwrap_or_default().join("diesel.toml"))
     }

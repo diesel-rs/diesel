@@ -11,7 +11,7 @@ keywords = ["diesel", "migrations", "cli"]
 autotests = false
 edition = "2018"
 include = ["src/**/*", "LICENSE-*", "README.md"]
-rust-version = "1.54.0"
+rust-version = "1.56.0"
 
 [[bin]]
 name = "diesel"
@@ -20,8 +20,8 @@ doc = false
 
 [dependencies]
 chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
-clap = "3.1"
-clap_complete = "3.1"
+clap = "3.2.1"
+clap_complete = "3.2"
 dotenvy = "0.15"
 heck = "0.4.0"
 serde = { version = "1.0.0", features = ["derive"] }

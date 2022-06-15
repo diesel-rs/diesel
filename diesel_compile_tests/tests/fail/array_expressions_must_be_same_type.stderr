@@ -4,17 +4,17 @@ error[E0277]: the trait bound `f64: SelectableExpression<NoFromClause>` is not s
 11  |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
     |     ^^^^^^ the trait `SelectableExpression<NoFromClause>` is not implemented for `f64`
     |
-   ::: $DIESEL/src/query_builder/functions.rs
-    |
-    |     crate::dsl::BareSelect<T>: AsQuery,
-    |                                ------- required by this bound in `diesel::select`
-    |
     = note: required because of the requirements on the impl of `SelectableExpression<NoFromClause>` for `(diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>, f64)`
     = note: 1 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<NoFromClause>` for `diesel::pg::expression::array::ArrayLiteral<(diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>`
     = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>` for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>`
     = note: required because of the requirements on the impl of `Query` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>`
     = note: required because of the requirements on the impl of `AsQuery` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>`
+note: required by a bound in `diesel::select`
+   --> $DIESEL/src/query_builder/functions.rs
+    |
+    |     crate::dsl::BareSelect<T>: AsQuery,
+    |                                ^^^^^^^ required by this bound in `diesel::select`
 
 error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
    --> tests/fail/array_expressions_must_be_same_type.rs:11:5
@@ -22,16 +22,16 @@ error[E0277]: the trait bound `f64: ValidGrouping<()>` is not satisfied
 11  |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
     |     ^^^^^^ the trait `ValidGrouping<()>` is not implemented for `f64`
     |
-   ::: $DIESEL/src/query_builder/functions.rs
-    |
-    |     crate::dsl::BareSelect<T>: AsQuery,
-    |                                ------- required by this bound in `diesel::select`
-    |
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(f64,)`
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::pg::expression::array::ArrayLiteral<(diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>`
     = note: required because of the requirements on the impl of `Query` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>`
     = note: required because of the requirements on the impl of `AsQuery` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>, f64), diesel::sql_types::Integer>>>`
+note: required by a bound in `diesel::select`
+   --> $DIESEL/src/query_builder/functions.rs
+    |
+    |     crate::dsl::BareSelect<T>: AsQuery,
+    |                                ^^^^^^^ required by this bound in `diesel::select`
 
 error[E0277]: the trait bound `f64: SelectableExpression<NoFromClause>` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:11:30
@@ -86,24 +86,19 @@ error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
 11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
    |            ^^^^^ the trait `diesel::Expression` is not implemented for `f64`
    |
-  ::: $DIESEL/src/pg/expression/array.rs
-   |
-   |     T: AsExpressionList<ST>,
-   |        -------------------- required by this bound in `diesel::dsl::array`
-   |
    = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Integer>` for `f64`
    = note: required because of the requirements on the impl of `AsExpressionList<diesel::sql_types::Integer>` for `(i32, f64)`
+note: required by a bound in `diesel::dsl::array`
+  --> $DIESEL/src/pg/expression/array.rs
+   |
+   |     T: AsExpressionList<ST>,
+   |        ^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::dsl::array`
 
 error[E0277]: the trait bound `{integer}: SelectableExpression<NoFromClause>` is not satisfied
    --> tests/fail/array_expressions_must_be_same_type.rs:12:5
     |
 12  |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
     |     ^^^^^^ the trait `SelectableExpression<NoFromClause>` is not implemented for `{integer}`
-    |
-   ::: $DIESEL/src/query_builder/functions.rs
-    |
-    |     crate::dsl::BareSelect<T>: AsQuery,
-    |                                ------- required by this bound in `diesel::select`
     |
     = help: the following implementations were found:
               <&'a T as SelectableExpression<QS>>
@@ -117,17 +112,17 @@ error[E0277]: the trait bound `{integer}: SelectableExpression<NoFromClause>` is
     = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<NoFromClause>` for `diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>`
     = note: required because of the requirements on the impl of `Query` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
     = note: required because of the requirements on the impl of `AsQuery` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
+note: required by a bound in `diesel::select`
+   --> $DIESEL/src/query_builder/functions.rs
+    |
+    |     crate::dsl::BareSelect<T>: AsQuery,
+    |                                ^^^^^^^ required by this bound in `diesel::select`
 
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
    --> tests/fail/array_expressions_must_be_same_type.rs:12:5
     |
 12  |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
     |     ^^^^^^ the trait `ValidGrouping<()>` is not implemented for `{integer}`
-    |
-   ::: $DIESEL/src/query_builder/functions.rs
-    |
-    |     crate::dsl::BareSelect<T>: AsQuery,
-    |                                ------- required by this bound in `diesel::select`
     |
     = help: the following implementations were found:
               <&'a T as ValidGrouping<GB>>
@@ -140,6 +135,11 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>`
     = note: required because of the requirements on the impl of `Query` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
     = note: required because of the requirements on the impl of `AsQuery` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<({integer}, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Double, f64>), diesel::sql_types::Double>>>`
+note: required by a bound in `diesel::select`
+   --> $DIESEL/src/query_builder/functions.rs
+    |
+    |     crate::dsl::BareSelect<T>: AsQuery,
+    |                                ^^^^^^^ required by this bound in `diesel::select`
 
 error[E0277]: the trait bound `{integer}: SelectableExpression<NoFromClause>` is not satisfied
   --> tests/fail/array_expressions_must_be_same_type.rs:12:30
@@ -218,11 +218,6 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
 12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
    |            ^^^^^ the trait `diesel::Expression` is not implemented for `{integer}`
    |
-  ::: $DIESEL/src/pg/expression/array.rs
-   |
-   |     T: AsExpressionList<ST>,
-   |        -------------------- required by this bound in `diesel::dsl::array`
-   |
    = help: the following implementations were found:
              <&'a T as diesel::Expression>
              <(T0, T1) as diesel::Expression>
@@ -231,3 +226,30 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
            and 123 others
    = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Double>` for `{integer}`
    = note: required because of the requirements on the impl of `AsExpressionList<diesel::sql_types::Double>` for `({integer}, f64)`
+note: required by a bound in `diesel::dsl::array`
+  --> $DIESEL/src/pg/expression/array.rs
+   |
+   |     T: AsExpressionList<ST>,
+   |        ^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::dsl::array`
+
+error[E0277]: the trait bound `f64: diesel::Expression` is not satisfied
+  --> tests/fail/array_expressions_must_be_same_type.rs:11:12
+   |
+11 |     select(array((1, 3f64))).get_result::<Vec<i32>>(&mut connection).unwrap();
+   |            ^^^^^^^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `f64`
+   |
+   = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Integer>` for `f64`
+
+error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
+  --> tests/fail/array_expressions_must_be_same_type.rs:12:12
+   |
+12 |     select(array((1, 3f64))).get_result::<Vec<f64>>(&mut connection).unwrap();
+   |            ^^^^^^^^^^^^^^^^ the trait `diesel::Expression` is not implemented for `{integer}`
+   |
+   = help: the following implementations were found:
+             <&'a T as diesel::Expression>
+             <(T0, T1) as diesel::Expression>
+             <(T0, T1, T2) as diesel::Expression>
+             <(T0, T1, T2, T3) as diesel::Expression>
+           and 123 others
+   = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Double>` for `{integer}`

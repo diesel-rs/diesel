@@ -357,14 +357,46 @@ macro_rules! tuple_impls {
     }
 
 macro_rules! impl_contains_defaultable_value {
+      (
+        @build
+        start_ts = [$($ST: ident,)*],
+        ts = [$T1: ident,],
+        bounds = [$($bounds: tt)*],
+        out = [$($out: tt)*],
+    )=> {
+        impl<$($ST,)*> ContainsDefaultableValue for ($($ST,)*)
+        where
+            $($ST: ContainsDefaultableValue,)*
+            $($bounds)*
+            $T1::Out: Any<$($out)*>,
+        {
+            type Out = <$T1::Out as Any<$($out)*>>::Out;
+        }
+
+    };
+    (
+        @build
+        start_ts = [$($ST: ident,)*],
+        ts = [$T1: ident, $($T: ident,)+],
+        bounds = [$($bounds: tt)*],
+        out = [$($out: tt)*],
+    )=> {
+        impl_contains_defaultable_value! {
+            @build
+            start_ts = [$($ST,)*],
+            ts = [$($T,)*],
+            bounds = [$($bounds)* $T1::Out: Any<$($out)*>,],
+            out = [<$T1::Out as Any<$($out)*>>::Out],
+        }
+    };
     ($T1: ident, $($T: ident,)+) => {
-        impl<$T1, $($T,)*> ContainsDefaultableValue for ($T1, $($T,)*)
-            where $T1: ContainsDefaultableValue,
-                  ($($T,)*): ContainsDefaultableValue,
-                  $T1::Out: Any<<($($T,)*) as ContainsDefaultableValue>::Out>
-            {
-                type Out = <$T1::Out as Any<<($($T,)*) as ContainsDefaultableValue>::Out>>::Out;
-            }
+        impl_contains_defaultable_value! {
+            @build
+            start_ts = [$T1, $($T,)*],
+            ts = [$($T,)*],
+            bounds = [],
+            out = [$T1::Out],
+        }
     };
     ($T1: ident,) => {
         impl<$T1> ContainsDefaultableValue for ($T1,)
