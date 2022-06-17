@@ -244,7 +244,7 @@ dependencies = [
  "chrono",
  "diesel_derives",
  "dotenvy",
- "ipnetwork 0.19.0",
+ "ipnetwork",
  "itoa",
  "libc",
  "libsqlite3-sys",
@@ -398,7 +398,7 @@ dependencies = [
  "diesel",
  "diesel_migrations",
  "dotenvy",
- "ipnetwork 0.18.0",
+ "ipnetwork",
  "libsqlite3-sys",
  "quickcheck",
  "rand",
@@ -558,15 +558,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "ipnetwork"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4088d739b183546b239688ddbc79891831df421773df95e236daf7867866d355"
-dependencies = [
- "serde",
 ]
 
 [[package]]
