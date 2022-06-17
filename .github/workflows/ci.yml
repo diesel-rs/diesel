@@ -369,12 +369,6 @@ jobs:
           echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
           echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
 
-      - name: Remove potential newer clippy.toml from dependencies
-        run: |
-          cargo update
-          cargo fetch
-          find ~/.cargo/registry -iname "*clippy.toml" -delete
-
       - name: Run clippy
         run: |
           cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "postgres diesel/postgres"
@@ -486,7 +480,7 @@ jobs:
         run: |
           RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
 
-      - name: Check building with rust 1.54.0
+      - name: Check building with rust 1.56.0
         uses: actions-rs/cargo@v1
         with:
           command: check
