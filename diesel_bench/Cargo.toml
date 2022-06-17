@@ -52,6 +52,8 @@ sqlx-bench = ["sqlx", "tokio", "sqlx/runtime-tokio-rustls"]
 instruction_count = ["criterion-perf-events", "perfcnt"]
 fast_run = []
 
-[replace]
-"quaint:0.2.0-alpha.13" = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
-"https://github.com/diesel-rs/diesel#2.0.0-rc.0" = { path = "../diesel"}
+[patch.crates-io]
+quaint = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
+
+[patch.'https://github.com/diesel-rs/diesel']
+diesel = { path = "../diesel" }
