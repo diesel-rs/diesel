@@ -299,11 +299,18 @@ where
                 AnsiTransactionManager::commit_transaction(&mut *self.connection)?;
                 Ok(value)
             }
-            Err(e) => {
-                AnsiTransactionManager::rollback_transaction(&mut *self.connection)
-                    .map_err(|e| Error::RollbackError(Box::new(e)))?;
-                Err(e)
-            }
+            Err(user_error) => Err(
+                match AnsiTransactionManager::rollback_transaction(&mut *self.connection) {
+                    Ok(()) => user_error,
+                    Err(rollback_error) => E::from(match rollback_error {
+                        Error::RollbackError { .. } => rollback_error,
+                        not_packed_rollback_error => Error::RollbackError {
+                            rollback_error: Box::new(not_packed_rollback_error),
+                            commit_error: None,
+                        },
+                    }),
+                },
+            ),
         }
     }
 }

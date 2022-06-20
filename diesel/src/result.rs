@@ -66,7 +66,13 @@ pub enum Error {
     ///
     /// An example of when this error would be returned is if a rollback has
     /// already be called on the current transaction.
-    RollbackError(Box<Error>),
+    RollbackError {
+        /// The error that caused the rollback failure
+        rollback_error: Box<Error>,
+        /// If the rollback attempt resulted from a failed attempt to commit the transaction,
+        /// you will find the related error here.
+        commit_error: Option<Box<Error>>,
+    },
 
     /// Roll back the current transaction.
     ///
@@ -86,18 +92,6 @@ pub enum Error {
 
     /// Transaction broken, likely due to a broken connection. No other operations are possible.
     BrokenTransaction,
-
-    /// Commiting a transaction failed
-    ///
-    /// The transaction manager will try to perform
-    /// a rollback in such cases. Indications about the success
-    /// of this can be extracted from this error variant
-    CommitTransactionFailed {
-        /// Failure message of the commit attempt
-        commit_error: Box<Error>,
-        /// Outcome of the rollback attempt
-        rollback_result: Box<QueryResult<()>>,
-    },
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -314,7 +308,20 @@ impl Display for Error {
             Error::QueryBuilderError(ref e) => e.fmt(f),
             Error::DeserializationError(ref e) => e.fmt(f),
             Error::SerializationError(ref e) => e.fmt(f),
-            Error::RollbackError(ref e) => e.fmt(f),
+            Error::RollbackError {
+                ref rollback_error,
+                ref commit_error,
+            } => {
+                write!(f, "Transaction rollback failed: {}", &**rollback_error)?;
+                if let Some(commit_error) = commit_error {
+                    write!(
+                        f,
+                        " (rollback attempted because of failure to commit: {})",
+                        &**commit_error
+                    )?;
+                }
+                Ok(())
+            }
             Error::RollbackTransaction => write!(f, "The current transaction was aborted"),
             Error::BrokenTransaction => write!(f, "The current transaction is broken"),
             Error::AlreadyInTransaction => write!(
@@ -323,20 +330,6 @@ impl Display for Error {
             ),
             Error::NotInTransaction => {
                 write!(f, "Cannot perform this operation outside of a transaction",)
-            }
-            Error::CommitTransactionFailed {
-                ref commit_error,
-                ref rollback_result,
-            } => {
-                write!(
-                    f,
-                    "Commiting the current transaction failed: {}",
-                    commit_error
-                )?;
-                match &**rollback_result {
-                    Ok(()) => write!(f, " Rollback attempt was succesful"),
-                    Err(e) => write!(f, " Rollback attempt failed with {}", e),
-                }
             }
         }
     }

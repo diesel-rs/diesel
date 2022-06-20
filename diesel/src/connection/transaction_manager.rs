@@ -56,10 +56,16 @@ pub trait TransactionManager<Conn: Connection> {
                 Self::commit_transaction(conn)?;
                 Ok(value)
             }
-            Err(e) => {
-                Self::rollback_transaction(conn).map_err(|e| Error::RollbackError(Box::new(e)))?;
-                Err(e)
-            }
+            Err(user_error) => Err(match Self::rollback_transaction(conn) {
+                Ok(()) => user_error,
+                Err(rollback_error) => E::from(match rollback_error {
+                    Error::RollbackError { .. } => rollback_error,
+                    not_packed_rollback_error => Error::RollbackError {
+                        rollback_error: Box::new(not_packed_rollback_error),
+                        commit_error: None,
+                    },
+                }),
+            }),
         }
     }
 }
@@ -228,15 +234,11 @@ where
             .previous_error_relevant_for_rollback
             .take()
         {
-            // we can safely ignore the result of process_commit_error here
-            // as the only other error than the "rollback error" variants
-            // is failing to load the transaction state, but that's something
-            // we have already done above
-            let _ = process_commit_error(
+            let _: Error = process_commit_error(
                 conn,
                 crate::result::Error::DatabaseError(kind, Box::new(String::new())),
                 rollback_sql,
-            );
+            )?;
             let transaction_state = Self::get_transaction_state(conn)?;
             if transaction_state
                 .transaction_depth
@@ -285,7 +287,7 @@ where
                 // and we are done
                 state.change_transaction_depth(TransactionDepthChange::DecreaseDepth, res)
             }
-            Err(error) => process_commit_error(conn, error, rollback_sql),
+            Err(error) => Err(process_commit_error(conn, error, rollback_sql)?),
         }
     }
 
@@ -304,27 +306,30 @@ where
                 Self::commit_transaction(conn)?;
                 Ok(value)
             }
-            Err(e) => {
+            Err(user_error) => Err({
                 let transaction_state = Self::get_transaction_state(conn)?;
                 let is_error_relevant_for_rollback = transaction_state
                     .previous_error_relevant_for_rollback
                     .is_some();
-
-                Self::rollback_transaction(conn).map_err(|e| {
-                    if is_error_relevant_for_rollback {
-                        if let Error::DatabaseError(
+                match Self::rollback_transaction(conn) {
+                    Ok(()) => user_error,
+                    Err(rollback_error) => E::from(match rollback_error {
+                        Error::RollbackError { .. } => rollback_error,
+                        original_error_to_not_pack @ Error::DatabaseError(
                             crate::result::DatabaseErrorKind::SerializationFailure,
                             _,
-                        ) = e
-                        {
-                            return e;
+                        ) if is_error_relevant_for_rollback => {
+                            // TODO: Understand what this branch is for and make sure
+                            // I can't think of a better design
+                            original_error_to_not_pack
                         }
-                    }
-
-                    Error::RollbackError(Box::new(e))
-                })?;
-                Err(e)
-            }
+                        not_yet_packed_rollback_error => Error::RollbackError {
+                            rollback_error: Box::new(not_yet_packed_rollback_error),
+                            commit_error: None,
+                        },
+                    }),
+                }
+            }),
         }
     }
 }
@@ -333,44 +338,43 @@ fn process_commit_error<Conn>(
     conn: &mut Conn,
     error: Error,
     rollback_sql: Cow<'_, str>,
-) -> QueryResult<()>
+) -> QueryResult<Error>
 where
     Conn: Connection<TransactionManager = AnsiTransactionManager> + CommitErrorProcessor,
 {
     let commit_error_outcome = conn.process_commit_error(error);
-    let state = AnsiTransactionManager::get_transaction_state(conn)?;
-    match commit_error_outcome {
+    let (error_to_throw, rollback_result) = match commit_error_outcome {
         CommitErrorOutcome::RollbackAndThrow(error) => {
             // We should try to rollback the transaction here
             let rollback_result = conn.batch_execute(&*rollback_sql);
             let state = AnsiTransactionManager::get_transaction_state(conn)?;
             let rollback_result = state
                 .change_transaction_depth(TransactionDepthChange::DecreaseDepth, rollback_result);
-            Err(Error::CommitTransactionFailed {
-                commit_error: Box::new(error),
-                rollback_result: Box::new(rollback_result),
-            })
+            (error, rollback_result)
         }
         CommitErrorOutcome::Throw(error) => {
             // The error processor indicated that we just
             // need to decrease the transaction depth and return the original error
-            let _ = state.change_transaction_depth(TransactionDepthChange::DecreaseDepth, Ok(()));
-            Err(Error::CommitTransactionFailed {
-                commit_error: Box::new(error),
-                rollback_result: Box::new(Ok(())),
-            })
+            let state = AnsiTransactionManager::get_transaction_state(conn)?;
+            let rollback_result =
+                state.change_transaction_depth(TransactionDepthChange::DecreaseDepth, Ok(()));
+            (error, rollback_result)
         }
         CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error) => {
             // The connection contains an unrecoverable broken transaction
             // so mark the transaction state as broken and return the error
             *AnsiTransactionManager::transaction_manager_status_mut(conn) =
                 TransactionManagerStatus::InError;
-            Err(Error::CommitTransactionFailed {
-                commit_error: Box::new(error),
-                rollback_result: Box::new(Err(Error::BrokenTransaction)),
-            })
+            (error, Err(Error::BrokenTransaction))
         }
-    }
+    };
+    Ok(match rollback_result {
+        Ok(()) => error_to_throw,
+        Err(rollback_error) => Error::RollbackError {
+            rollback_error: Box::new(rollback_error),
+            commit_error: Some(Box::new(error_to_throw)),
+        },
+    })
 }
 
 #[cfg(test)]
@@ -534,10 +538,18 @@ mod test {
             )));
             Ok(())
         });
-        assert!(matches!(
-            result,
-            Err(Error::CommitTransactionFailed{commit_error, ..}) if matches!(&*commit_error, Error::DatabaseError(DatabaseErrorKind::Unknown, _))
-        ));
+        assert!(
+            matches!(
+                &result,
+                Err(Error::RollbackError {
+                    rollback_error,
+                    commit_error
+                }) if matches!(**rollback_error, Error::BrokenTransaction)
+                    && matches!(commit_error.as_deref(), Some(Error::DatabaseError(DatabaseErrorKind::Unknown, _)))
+            ),
+            "Got {:?}",
+            result
+        );
         assert!(matches!(
             *<AnsiTransactionManager as TransactionManager<mock::MockConnection>>::transaction_manager_status_mut(
                 &mut conn),

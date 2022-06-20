@@ -78,12 +78,11 @@ pub(crate) fn default_process_commit_error(
             | Error::InvalidCString(_)
             | Error::NotFound
             | Error::QueryBuilderError(_)
-            | Error::RollbackError(_)
+            | Error::RollbackError { .. }
             | Error::RollbackTransaction
             | Error::SerializationError(_)
             | Error::NotInTransaction
-            | Error::BrokenTransaction
-            | Error::CommitTransactionFailed { .. } => CommitErrorOutcome::Throw(error),
+            | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
         }
     } else {
         unreachable!(

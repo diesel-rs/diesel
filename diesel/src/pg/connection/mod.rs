@@ -95,12 +95,11 @@ impl CommitErrorProcessor for PgConnection {
                 | Error::InvalidCString(_)
                 | Error::NotFound
                 | Error::QueryBuilderError(_)
-                | Error::RollbackError(_)
+                | Error::RollbackError { .. }
                 | Error::NotInTransaction
                 | Error::RollbackTransaction
                 | Error::SerializationError(_)
-                | Error::BrokenTransaction
-                | Error::CommitTransactionFailed { .. } => CommitErrorOutcome::Throw(error),
+                | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
             }
         } else {
             unreachable!(
@@ -587,7 +586,7 @@ mod tests {
     fn postgres_transaction_depth_is_tracked_properly_on_serialization_failure() {
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::DatabaseErrorKind::SerializationFailure;
-        use crate::result::Error::{self, DatabaseError};
+        use crate::result::Error::DatabaseError;
         use crate::*;
         use std::sync::{Arc, Barrier};
         use std::thread;
@@ -675,12 +674,7 @@ mod tests {
 
         assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
         assert!(
-            matches!(
-                &results[1],
-                Err(Error::CommitTransactionFailed {
-                    ref commit_error, ..
-                }) if matches!(&**commit_error, DatabaseError(SerializationFailure, _))
-            ),
+            matches!(&results[1], Err(DatabaseError(SerializationFailure, _))),
             "Got {:?} instead",
             results
         );
@@ -697,7 +691,7 @@ mod tests {
     fn postgres_transaction_depth_is_tracked_properly_on_nested_serialization_failure() {
         use crate::pg::connection::raw::PgTransactionStatus;
         use crate::result::DatabaseErrorKind::SerializationFailure;
-        use crate::result::Error::{self, DatabaseError};
+        use crate::result::Error::DatabaseError;
         use crate::*;
         use std::sync::{Arc, Barrier};
         use std::thread;
@@ -794,12 +788,7 @@ mod tests {
 
         assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
         assert!(
-            matches!(
-                &results[1],
-                Err(Error::CommitTransactionFailed {
-                    ref commit_error, ..
-                }) if matches!(&**commit_error, DatabaseError(SerializationFailure, _))
-            ),
+            matches!(&results[1], Err(DatabaseError(SerializationFailure, _))),
             "Got {:?} instead",
             results
         );
