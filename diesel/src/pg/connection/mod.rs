@@ -11,7 +11,6 @@ use self::cursor::*;
 use self::raw::{PgTransactionStatus, RawConnection};
 use self::result::PgResult;
 use self::stmt::Statement;
-use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
@@ -41,7 +40,10 @@ impl SimpleConnection for PgConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
         let query = CString::new(query)?;
         let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
-        PgResult::new(inner_result?, &self.raw_connection)?;
+        update_transaction_manager_status(
+            inner_result.and_then(|raw_result| PgResult::new(raw_result, &self.raw_connection)),
+            self,
+        )?;
         Ok(())
     }
 }
@@ -49,66 +51,6 @@ impl SimpleConnection for PgConnection {
 impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection {
     type Cursor = Cursor<'conn>;
     type Row = self::row::PgRow;
-}
-
-impl CommitErrorProcessor for PgConnection {
-    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
-        let transaction_depth = match self.transaction_state.status.transaction_depth() {
-            Ok(d) => d,
-            Err(e) => return CommitErrorOutcome::Throw(e),
-        };
-        let transaction_status = self.raw_connection.transaction_status();
-        if transaction_status == PgTransactionStatus::Unknown {
-            return CommitErrorOutcome::ThrowAndMarkManagerAsBroken(error);
-        }
-        if matches!(
-            error,
-            Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
-        ) {
-            return CommitErrorOutcome::Throw(error);
-        }
-        if let Some(transaction_depth) = transaction_depth {
-            match error {
-                Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
-                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
-                    if transaction_depth.get() == 1 =>
-                {
-                    CommitErrorOutcome::RollbackAndThrow(error)
-                }
-                Error::DatabaseError(DatabaseErrorKind::Unknown, _)
-                    if transaction_status == PgTransactionStatus::InError
-                        && transaction_depth.get() > 1 =>
-                {
-                    CommitErrorOutcome::RollbackAndThrow(error)
-                }
-                Error::AlreadyInTransaction
-                | Error::DatabaseError(DatabaseErrorKind::CheckViolation, _)
-                | Error::DatabaseError(DatabaseErrorKind::ClosedConnection, _)
-                | Error::DatabaseError(DatabaseErrorKind::ForeignKeyViolation, _)
-                | Error::DatabaseError(DatabaseErrorKind::NotNullViolation, _)
-                | Error::DatabaseError(DatabaseErrorKind::UnableToSendCommand, _)
-                | Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)
-                | Error::DatabaseError(DatabaseErrorKind::Unknown, _)
-                | Error::DatabaseError(DatabaseErrorKind::ReadOnlyTransaction, _)
-                | Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)
-                | Error::DeserializationError(_)
-                | Error::InvalidCString(_)
-                | Error::NotFound
-                | Error::QueryBuilderError(_)
-                | Error::RollbackError { .. }
-                | Error::NotInTransaction
-                | Error::RollbackTransaction
-                | Error::SerializationError(_)
-                | Error::BrokenTransaction => CommitErrorOutcome::Throw(error),
-            }
-        } else {
-            unreachable!(
-                "Calling commit_error_processor outside of a transaction is implementation error.\
-                 If you ever see this error message outside implementing a custom transaction manager\
-                 please open a new issue at diesels issue tracker."
-            )
-        }
-    }
 }
 
 impl Connection for PgConnection {
@@ -137,21 +79,27 @@ impl Connection for PgConnection {
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source, |stmt, params, conn| {
-            let result = stmt.execute(conn, &params)?;
-            let cursor = Cursor::new(result);
+        update_transaction_manager_status(
+            self.with_prepared_query(&source, |stmt, params, conn| {
+                let result = stmt.execute(conn, &params)?;
+                let cursor = Cursor::new(result);
 
-            Ok(cursor)
-        })
+                Ok(cursor)
+            }),
+            self,
+        )
     }
 
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Pg> + QueryId,
     {
-        self.with_prepared_query(source, |query, params, conn| {
-            query.execute(conn, &params).map(|r| r.rows_affected())
-        })
+        update_transaction_manager_status(
+            self.with_prepared_query(source, |query, params, conn| {
+                query.execute(conn, &params).map(|r| r.rows_affected())
+            }),
+            self,
+        )
     }
 
     fn transaction_state(&mut self) -> &mut AnsiTransactionManager
@@ -166,6 +114,50 @@ impl GetPgMetadataCache for PgConnection {
     fn get_metadata_cache(&mut self) -> &mut PgMetadataCache {
         &mut self.metadata_cache
     }
+}
+
+#[inline(always)]
+fn update_transaction_manager_status<T>(
+    query_result: QueryResult<T>,
+    conn: &mut PgConnection,
+) -> QueryResult<T> {
+    if let Err(Error::DatabaseError { .. }) = query_result {
+        /// avoid monomorphizing for every result type - this part will not be inlined
+        fn non_generic_inner(conn: &mut PgConnection) {
+            if AnsiTransactionManager::transaction_manager_status_mut(conn)
+                .is_not_broken_and_in_transaction()
+            {
+                // libpq keeps track of the transaction status internally, and that is accessible
+                // via `transaction_status`. We can use that to update the AnsiTransactionManager
+                // status
+                match conn.raw_connection.transaction_status() {
+                    PgTransactionStatus::InError => {
+                        AnsiTransactionManager::transaction_manager_status_mut(conn)
+                            .set_top_level_transaction_requires_rollback()
+                    }
+                    PgTransactionStatus::Unknown => {
+                        AnsiTransactionManager::transaction_manager_status_mut(conn).set_in_error()
+                    }
+                    PgTransactionStatus::Idle => {
+                        // This may repair the transaction manager
+                        *AnsiTransactionManager::transaction_manager_status_mut(conn) =
+                            TransactionManagerStatus::Valid(Default::default())
+                    }
+                    PgTransactionStatus::InTransaction => {
+                        let transaction_status =
+                            AnsiTransactionManager::transaction_manager_status_mut(conn);
+                        if !matches!(transaction_status, TransactionManagerStatus::Valid(valid_tm) if valid_tm.transaction_depth().is_some())
+                        {
+                            transaction_status.set_in_error()
+                        }
+                    }
+                    PgTransactionStatus::Active => {}
+                }
+            }
+        }
+        non_generic_inner(conn)
+    }
+    query_result
 }
 
 #[cfg(feature = "r2d2")]

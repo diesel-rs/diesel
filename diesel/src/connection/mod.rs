@@ -1,11 +1,5 @@
 //! Types related to database connections
 
-#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-pub mod commit_error_processor;
-
-#[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-pub(crate) mod commit_error_processor;
-
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
     any(feature = "sqlite", feature = "postgres", feature = "mysql")

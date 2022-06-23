@@ -62,16 +62,20 @@ pub enum Error {
     /// by PostgreSQL.
     SerializationError(Box<dyn StdError + Send + Sync>),
 
-    /// An error occurred during the rollback of a transaction.
+    /// An error occurred when attempting rollback of a transaction subsequently to a failed
+    /// commit attempt.
     ///
-    /// An example of when this error would be returned is if a rollback has
-    /// already be called on the current transaction.
-    RollbackError {
-        /// The error that caused the rollback failure
+    /// When a commit attempt fails and Diesel beleives that it can attempt a rollback to return
+    /// the connection back in a usable state (out of that transaction), it attempts it then
+    /// returns the original error.
+    ///
+    /// If that fails, you get this.
+    RollbackErrorOnCommit {
+        /// The error that was encoutered when attempting the rollback
         rollback_error: Box<Error>,
         /// If the rollback attempt resulted from a failed attempt to commit the transaction,
         /// you will find the related error here.
-        commit_error: Option<Box<Error>>,
+        commit_error: Box<Error>,
     },
 
     /// Roll back the current transaction.
@@ -90,8 +94,8 @@ pub enum Error {
     /// when no transaction was open
     NotInTransaction,
 
-    /// Transaction broken, likely due to a broken connection. No other operations are possible.
-    BrokenTransaction,
+    /// Transaction manager broken, likely due to a broken connection. No other operations are possible.
+    BrokenTransactionManager,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -308,22 +312,22 @@ impl Display for Error {
             Error::QueryBuilderError(ref e) => e.fmt(f),
             Error::DeserializationError(ref e) => e.fmt(f),
             Error::SerializationError(ref e) => e.fmt(f),
-            Error::RollbackError {
+            Error::RollbackErrorOnCommit {
                 ref rollback_error,
                 ref commit_error,
             } => {
-                write!(f, "Transaction rollback failed: {}", &**rollback_error)?;
-                if let Some(commit_error) = commit_error {
-                    write!(
-                        f,
-                        " (rollback attempted because of failure to commit: {})",
-                        &**commit_error
-                    )?;
-                }
+                write!(
+                    f,
+                    "Transaction rollback failed: {} \
+                        (rollback attempted because of failure to commit: {})",
+                    &**rollback_error, &**commit_error
+                )?;
                 Ok(())
             }
-            Error::RollbackTransaction => write!(f, "The current transaction was aborted"),
-            Error::BrokenTransaction => write!(f, "The current transaction is broken"),
+            Error::RollbackTransaction => {
+                write!(f, "You have asked diesel to rollback the transaction")
+            }
+            Error::BrokenTransactionManager => write!(f, "The transaction manager is broken"),
             Error::AlreadyInTransaction => write!(
                 f,
                 "Cannot perform this operation while a transaction is open",

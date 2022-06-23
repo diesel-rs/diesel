@@ -105,7 +105,6 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use crate::backend::Backend;
-use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::{
     ConnectionGatWorkaround, SimpleConnection, TransactionManager, TransactionManagerStatus,
 };
@@ -219,16 +218,6 @@ where
 {
     type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor;
     type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Row;
-}
-
-impl<M> CommitErrorProcessor for PooledConnection<M>
-where
-    M: ManageConnection,
-    M::Connection: R2D2Connection + CommitErrorProcessor + Send + 'static,
-{
-    fn process_commit_error(&self, error: crate::result::Error) -> CommitErrorOutcome {
-        (&**self).process_commit_error(error)
-    }
 }
 
 impl<M> Connection for PooledConnection<M>
