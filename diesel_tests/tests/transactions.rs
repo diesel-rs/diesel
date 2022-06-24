@@ -57,7 +57,7 @@ fn transaction_is_rolled_back_when_returned_an_error() {
 }
 
 // This test uses a SQLite3 fact to generate a rollback error,
-// so that we can verify `Error::RollbackError`. Reference:
+// so that we can verify error. Reference:
 // https://www.sqlite.org/lang_transaction.html
 //
 // The same trick cannot be used for PostgreSQL as it generates
@@ -87,9 +87,9 @@ fn transaction_rollback_returns_error() {
         Err(Error::NotFound)
     });
 
-    // Verify that the transaction failed with `RollbackError`.
-    assert!(r.is_err());
-    assert!(matches!(r.unwrap_err(), Error::RollbackError(_)));
+    // Verify that the transaction failed with an error from database (and not the original
+    // "NotFound").
+    assert!(matches!(r.unwrap_err(), Error::DatabaseError(_, _)));
 
     assert_eq!(0, count_test_table(connection, test_name));
     drop_test_table(connection, test_name);

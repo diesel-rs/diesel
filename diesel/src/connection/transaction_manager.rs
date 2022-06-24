@@ -96,20 +96,36 @@ impl TransactionManagerStatus {
         }
     }
 
+    #[cfg(any(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        feature = "postgres",
+    ))]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     /// Whether we may be interested in calling
     /// `set_top_level_transaction_requires_rollback_if_not_broken`
     ///
     /// You should typically not need this outside of a custom backend implementation
-    pub fn is_not_broken_and_in_transaction(&self) -> bool {
+    pub(crate) fn is_not_broken_and_in_transaction(&self) -> bool {
         match self {
             TransactionManagerStatus::Valid(valid_status) => valid_status.in_transaction.is_some(),
             TransactionManagerStatus::InError => false,
         }
     }
 
+    #[cfg(any(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        feature = "postgres",
+        feature = "mysql",
+        test
+    ))]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     /// If in transaction and transaction manager is not broken, registers that the
     /// connection can not be used anymore until top-level transaction is rolled back
-    pub fn set_top_level_transaction_requires_rollback(&mut self) {
+    pub(crate) fn set_top_level_transaction_requires_rollback(&mut self) {
         if let TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
             in_transaction:
                 Some(InTransactionStatus {
@@ -173,7 +189,7 @@ impl ValidTransactionManagerStatus {
                 // <https://github.com/rust-lang/rust/issues/84186> is stable
                 in_transaction.transaction_depth =
                     NonZeroU32::new(in_transaction.transaction_depth.get().saturating_add(1))
-                        .unwrap();
+                        .expect("nz + nz is always non-zero");
                 Ok(())
             }
             (Some(in_transaction), TransactionDepthChange::DecreaseDepth) => {
@@ -186,7 +202,7 @@ impl ValidTransactionManagerStatus {
             }
             (None, TransactionDepthChange::IncreaseDepth) => {
                 self.in_transaction = Some(InTransactionStatus {
-                    transaction_depth: NonZeroU32::new(1).unwrap(),
+                    transaction_depth: NonZeroU32::new(1).expect("1 is non-zero"),
                     top_level_transaction_requires_rollback: false,
                 });
                 Ok(())
@@ -277,8 +293,8 @@ where
                             // is rolled back.
 
                             // To make it easier on the user (that they don't have to really look
-                            // at actual transaction depth) and can just rely on the number of
-                            // times they have called begin/commit/rollback we don't mark the
+                            // at actual transaction depth and can just rely on the number of
+                            // times they have called begin/commit/rollback) we don't mark the
                             // transaction manager as out of the savepoints as soon as we
                             // realize there is that issue, but instead we still decrement here:
                             in_transaction.transaction_depth = NonZeroU32::new(depth_gt1 - 1)
@@ -375,8 +391,8 @@ where
                             // is rolled back.
 
                             // To make it easier on the user (that they don't have to really look
-                            // at actual transaction depth) and can just rely on the number of
-                            // times they have called begin/commit/rollback we don't mark the
+                            // at actual transaction depth and can just rely on the number of
+                            // times they have called begin/commit/rollback) we don't mark the
                             // transaction manager as out of the savepoints as soon as we
                             // realize there is that issue, but instead we still decrement here:
                             *transaction_depth = NonZeroU32::new(depth_gt1 - 1)
@@ -544,13 +560,13 @@ mod test {
             conn.next_results.push_back(Ok(1));
             let query_result = sql_query("SELECT 1").execute(conn);
             assert!(query_result.is_ok());
-            conn.top_level_requires_rollback_after_next_batch_execute = true;
             // Set result for COMMIT attempt
             conn.next_batch_execute_results
                 .push_back(Err(Error::DatabaseError(
                     DatabaseErrorKind::Unknown,
                     Box::new("commit fails".to_string()),
                 )));
+            conn.top_level_requires_rollback_after_next_batch_execute = true;
             conn.next_batch_execute_results
                 .push_back(Err(Error::DatabaseError(
                     DatabaseErrorKind::Unknown,
@@ -565,16 +581,18 @@ mod test {
                     rollback_error,
                     commit_error
                 }) if matches!(**commit_error, Error::DatabaseError(DatabaseErrorKind::Unknown, _))
-                    && matches!(**rollback_error, Error::DatabaseError(DatabaseErrorKind::Unknown, _))
+                    && matches!(&**rollback_error,
+                        Error::DatabaseError(DatabaseErrorKind::Unknown, msg)
+                            if msg.message() == "rollback also fails"
+                    )
             ),
             "Got {:?}",
             result
         );
         assert!(matches!(
-            *<AnsiTransactionManager as TransactionManager<mock::MockConnection>>::transaction_manager_status_mut(
-                &mut conn),
-            TransactionManagerStatus::InError)
-        );
+            *AnsiTransactionManager::transaction_manager_status_mut(&mut conn),
+            TransactionManagerStatus::InError
+        ));
         // Ensure the transaction manager is unusable
         let result = conn.transaction(|_conn| Ok(()));
         assert!(matches!(result, Err(Error::BrokenTransactionManager)))
