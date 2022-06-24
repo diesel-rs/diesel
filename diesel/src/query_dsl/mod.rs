@@ -1596,9 +1596,17 @@ pub trait RunQueryDsl<Conn>: Sized {
         conn: &'conn mut Conn,
     ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U>>
     where
+        Conn: std::any::Any,
         U: 'conn,
         Self: LoadQuery<'query, Conn, U> + 'conn,
     {
+        #[cfg(feature = "postgres")]
+        {
+            let conn = conn as &mut dyn std::any::Any;
+            if let Some(pg_conn) = conn.downcast_mut::<crate::pg::PgConnection>() {
+                pg_conn.enable_row_by_row_mode_for_next_query();
+            }
+        }
         self.internal_load(conn)
     }
 

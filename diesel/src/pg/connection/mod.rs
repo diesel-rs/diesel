@@ -33,6 +33,7 @@ pub struct PgConnection {
     transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
+    use_row_by_row_mode_for_next_query: bool,
 }
 
 unsafe impl Send for PgConnection {}
@@ -123,6 +124,7 @@ impl Connection for PgConnection {
                 transaction_state: AnsiTransactionManager::default(),
                 statement_cache: StatementCache::new(),
                 metadata_cache: PgMetadataCache::new(),
+                use_row_by_row_mode_for_next_query: false,
             };
             conn.set_config_options()
                 .map_err(CouldntSetupConfiguration)?;
@@ -138,9 +140,11 @@ impl Connection for PgConnection {
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
+        // TODO: use the connection wide flag here instead
+        let row_by_row_mode = true;
         self.with_prepared_query(&source, |stmt, params, conn| {
-            let result = stmt.execute(conn, &params)?;
-            let cursor = Cursor::new(result);
+            let result = stmt.execute(conn, &params, row_by_row_mode)?;
+            let cursor = Cursor::new(result, conn, row_by_row_mode);
 
             Ok(cursor)
         })
@@ -151,7 +155,13 @@ impl Connection for PgConnection {
         T: QueryFragment<Pg> + QueryId,
     {
         self.with_prepared_query(source, |query, params, conn| {
-            query.execute(conn, &params).map(|r| r.rows_affected())
+            let res = query
+                .execute(conn, &params, false)
+                .map(|r| r.rows_affected());
+            // TODO: understand why this is required
+            let next_res = conn.get_next_result();
+            debug_assert!(matches!(next_res, Ok(None)));
+            res
         })
     }
 
@@ -242,7 +252,7 @@ impl PgConnection {
             Statement::prepare(raw_conn, sql, query_name.as_deref(), &metadata)
         });
 
-        f(query?, binds, raw_conn)
+        f(query?, binds, &mut *raw_conn)
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {
@@ -251,6 +261,10 @@ impl PgConnection {
         self.raw_connection
             .set_notice_processor(noop_notice_processor);
         Ok(())
+    }
+
+    pub(crate) fn enable_row_by_row_mode_for_next_query(&mut self) {
+        self.use_row_by_row_mode_for_next_query = true;
     }
 }
 

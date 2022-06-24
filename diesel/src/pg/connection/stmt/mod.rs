@@ -20,6 +20,7 @@ impl Statement {
         &self,
         raw_connection: &mut RawConnection,
         param_data: &[Option<Vec<u8>>],
+        row_by_row: bool,
     ) -> QueryResult<PgResult> {
         let params_pointer = param_data
             .iter()
@@ -33,8 +34,8 @@ impl Statement {
             .iter()
             .map(|data| data.as_ref().map(|d| d.len() as libc::c_int).unwrap_or(0))
             .collect::<Vec<_>>();
-        let internal_res = unsafe {
-            raw_connection.exec_prepared(
+        unsafe {
+            raw_connection.send_query_prepared(
                 self.name.as_ptr(),
                 params_pointer.len() as libc::c_int,
                 params_pointer.as_ptr(),
@@ -42,9 +43,11 @@ impl Statement {
                 self.param_formats.as_ptr(),
                 1,
             )
-        };
-
-        PgResult::new(internal_res?, raw_connection)
+        }?;
+        if row_by_row {
+            raw_connection.enable_row_by_row_mode()?;
+        }
+        Ok(raw_connection.get_next_result()?.expect("Is never none"))
     }
 
     pub(super) fn prepare(

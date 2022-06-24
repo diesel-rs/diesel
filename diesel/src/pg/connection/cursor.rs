@@ -1,9 +1,8 @@
-use std::marker::PhantomData;
 use std::rc::Rc;
 
+use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
-use super::PgConnection;
 
 /// The type returned by various [`Connection`] methods.
 /// Acts as an iterator over `T`.
@@ -11,34 +10,51 @@ use super::PgConnection;
 pub struct Cursor<'a> {
     current_row: usize,
     db_result: Rc<PgResult>,
-    // We referenze connection here so that
-    // we could possibly use the connection in future changes
-    // to cursor
-    // This may be required to conditionally implement
-    // loading items using libpqs single row mode
-    p: PhantomData<&'a mut PgConnection>,
+    conn: &'a mut RawConnection,
+    row_by_row_mode: bool,
 }
 
-impl Cursor<'_> {
-    pub(super) fn new(db_result: PgResult) -> Self {
+impl<'a> Cursor<'a> {
+    pub(super) fn new(
+        db_result: PgResult,
+        raw_connection: &'a mut RawConnection,
+        row_by_row_mode: bool,
+    ) -> Self {
         Cursor {
             current_row: 0,
             db_result: Rc::new(db_result),
-            p: PhantomData,
+            conn: raw_connection,
+            row_by_row_mode,
         }
     }
 }
 
-impl ExactSizeIterator for Cursor<'_> {
-    fn len(&self) -> usize {
-        self.db_result.num_rows() - self.current_row
-    }
-}
+// impl ExactSizeIterator for Cursor<'_> {
+//     fn len(&self) -> usize {
+//         self.db_result.num_rows() - self.current_row
+//     }
+// }
 
 impl Iterator for Cursor<'_> {
     type Item = crate::QueryResult<PgRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.row_by_row_mode && self.current_row > 0 {
+            match self.conn.get_next_result() {
+                Ok(Some(res)) => {
+                    if let Some(old_res) = Rc::get_mut(&mut self.db_result) {
+                        *old_res = res;
+                    } else {
+                        self.db_result = Rc::new(res);
+                    }
+                    self.current_row = 0;
+                }
+                Ok(None) => {
+                    return None;
+                }
+                Err(e) => return Some(Err(e)),
+            }
+        }
         if self.current_row < self.db_result.num_rows() {
             let row = self.db_result.clone().get_row(self.current_row);
             self.current_row += 1;
@@ -48,21 +64,34 @@ impl Iterator for Cursor<'_> {
         }
     }
 
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        self.current_row = (self.current_row + n).min(self.db_result.num_rows());
-        self.next()
-    }
+    // fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    //     self.current_row = (self.current_row + n).min(self.db_result.num_rows());
+    //     self.next()
+    // }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let len = self.len();
-        (len, Some(len))
-    }
+    // fn size_hint(&self) -> (usize, Option<usize>) {
+    //     let len = self.len();
+    //     (len, Some(len))
+    // }
 
-    fn count(self) -> usize
-    where
-        Self: Sized,
-    {
-        self.len()
+    // fn count(self) -> usize
+    // where
+    //     Self: Sized,
+    // {
+    //     self.len()
+    // }
+}
+
+impl Drop for Cursor<'_> {
+    fn drop(&mut self) {
+        if self.row_by_row_mode {
+            loop {
+                let res = self.conn.get_next_result();
+                if matches!(res, Err(_) | Ok(None)) {
+                    break;
+                }
+            }
+        }
     }
 }
 
