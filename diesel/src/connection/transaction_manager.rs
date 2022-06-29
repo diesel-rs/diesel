@@ -890,7 +890,7 @@ mod test {
                     let result =
                     conn.transaction(|conn| {
                         assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
-                        let r2 = conn.transaction(|conn| {
+                       conn.transaction(|conn| {
                             assert_eq!(NonZeroU32::new(2), <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
                             let _ = serialization_example::table
                                 .filter(serialization_example::class.eq(i))
@@ -904,12 +904,10 @@ mod test {
 
                             let r = q.execute(conn);
                             after_barrier.wait();
-                            dbg!(r)
-                        });
-                        dbg!(r2)
+                            r
+                        })
                     });
 
-                    dbg!(&result);
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
                     let second_trans_result = conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
