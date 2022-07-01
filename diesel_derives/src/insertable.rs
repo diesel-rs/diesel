@@ -22,8 +22,9 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let struct_name = &item.ident;
 
     let (_, ty_generics, where_clause) = item.generics.split_for_impl();
-    let mut impl_generics = item.generics.clone();
-    impl_generics.params.push(parse_quote!('insert));
+    let impl_generics = item.generics.clone();
+    let mut impl_generics_ref = item.generics.clone();
+    impl_generics_ref.params.push(parse_quote!('insert));
     let (impl_generics, ..) = impl_generics.split_for_impl();
 
     let (direct_field_ty, direct_field_assign): (Vec<_>, Vec<_>) = model
@@ -65,7 +66,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
                 }
             }
 
-            impl #impl_generics Insertable<#table_name::table>
+            impl #impl_generics_ref Insertable<#table_name::table>
                 for &'insert #struct_name #ty_generics
             #where_clause
             {

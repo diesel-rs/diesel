@@ -21,8 +21,9 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
     let table_name = model.table_name();
 
     let (_, ty_generics, where_clause) = item.generics.split_for_impl();
-    let mut impl_generics = item.generics.clone();
-    impl_generics.params.push(parse_quote!('update));
+    let impl_generics = item.generics.clone();
+    let mut impl_generics_ref = item.generics.clone();
+    impl_generics_ref.params.push(parse_quote!('update));
     let (impl_generics, _, _) = impl_generics.split_for_impl();
 
     let fields_for_update = model
@@ -64,7 +65,7 @@ pub fn derive(item: syn::DeriveInput) -> Result<proc_macro2::TokenStream, Diagno
             use diesel::query_builder::AsChangeset;
             use diesel::prelude::*;
 
-            impl #impl_generics AsChangeset for &'update #struct_name #ty_generics
+            impl #impl_generics_ref AsChangeset for &'update #struct_name #ty_generics
             #where_clause
             {
                 type Target = #table_name::table;
