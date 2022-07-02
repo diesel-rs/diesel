@@ -55,10 +55,15 @@ pub trait TransactionManager<Conn: Connection> {
                 Self::commit_transaction(conn)?;
                 Ok(value)
             }
-            Err(user_error) => {
-                Self::rollback_transaction(conn)?;
-                Err(user_error)
-            }
+            Err(user_error) => match Self::rollback_transaction(conn) {
+                Ok(()) => Err(user_error),
+                Err(Error::BrokenTransactionManager) => {
+                    // In this case we are probably more interested by the
+                    // original error, which likely caused this
+                    Err(user_error)
+                }
+                Err(rollback_error) => Err(rollback_error.into()),
+            },
         }
     }
 }

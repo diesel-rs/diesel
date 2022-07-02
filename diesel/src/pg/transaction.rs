@@ -294,8 +294,15 @@ where
                 Ok(value)
             }
             Err(user_error) => {
-                AnsiTransactionManager::rollback_transaction(&mut *self.connection)?;
-                Err(user_error)
+                match AnsiTransactionManager::rollback_transaction(&mut *self.connection) {
+                    Ok(()) => Err(user_error),
+                    Err(Error::BrokenTransactionManager) => {
+                        // In this case we are probably more interested by the
+                        // original error, which likely caused this
+                        Err(user_error)
+                    }
+                    Err(rollback_error) => Err(rollback_error.into()),
+                }
             }
         }
     }
