@@ -17,7 +17,7 @@ path = "src/main.rs"
 doc = false
 
 [dependencies]
-chrono = "0.4"
+chrono = { version = "0.4", default-features = false}
 clap = "2.27"
 diesel = { version = "~1.4.0", default-features = false }
 dotenv = ">=0.8, <0.11"
