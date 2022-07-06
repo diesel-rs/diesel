@@ -25,6 +25,9 @@ where
     for<'a> Self: LoadQueryGatWorkaround<'a, 'query, Conn, U>,
 {
     /// Load this query
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     fn internal_load<'conn>(
         self,
         conn: &'conn mut Conn,
