@@ -1596,6 +1596,7 @@ pub trait RunQueryDsl<Conn>: Sized {
         conn: &'conn mut Conn,
     ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U>>
     where
+        Conn: 'static,
         U: 'conn,
         Self: LoadQuery<'query, Conn, U> + 'conn,
     {
