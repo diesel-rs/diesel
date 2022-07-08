@@ -1591,14 +1591,14 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'conn, 'query: 'conn, U>(
+    fn load_iter<'conn, 'query: 'conn, U, B>(
         self,
         conn: &'conn mut Conn,
-    ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U>>
+    ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U, B>>
     where
         Conn: std::any::Any,
         U: 'conn,
-        Self: LoadQuery<'query, Conn, U> + 'conn,
+        Self: LoadQuery<'query, Conn, U, B> + 'conn,
     {
         #[cfg(feature = "postgres")]
         {

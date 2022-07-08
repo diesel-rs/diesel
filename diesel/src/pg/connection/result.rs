@@ -12,7 +12,8 @@ use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 use crate::util::OnceCell;
 
-pub(crate) struct PgResult {
+#[allow(missing_debug_implementations)]
+pub struct PgResult {
     internal_result: RawResult,
     column_count: usize,
     row_count: usize,

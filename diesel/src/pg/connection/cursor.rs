@@ -4,57 +4,33 @@ use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
 
-/// The type returned by various [`Connection`] methods.
-/// Acts as an iterator over `T`.
 #[allow(missing_debug_implementations)]
-pub struct Cursor<'a> {
+pub struct Cursor {
     current_row: usize,
     db_result: Rc<PgResult>,
-    conn: &'a mut RawConnection,
-    row_by_row_mode: bool,
 }
 
-impl<'a> Cursor<'a> {
-    pub(super) fn new(
-        db_result: PgResult,
-        raw_connection: &'a mut RawConnection,
-        row_by_row_mode: bool,
-    ) -> Self {
-        Cursor {
+impl Cursor {
+    pub(super) fn new(result: PgResult, conn: &mut RawConnection) -> crate::QueryResult<Cursor> {
+        let next_res = conn.get_next_result()?;
+        debug_assert!(next_res.is_none());
+        Ok(Self {
             current_row: 0,
-            db_result: Rc::new(db_result),
-            conn: raw_connection,
-            row_by_row_mode,
-        }
+            db_result: Rc::new(result),
+        })
     }
 }
 
-// impl ExactSizeIterator for Cursor<'_> {
-//     fn len(&self) -> usize {
-//         self.db_result.num_rows() - self.current_row
-//     }
-// }
+impl ExactSizeIterator for Cursor {
+    fn len(&self) -> usize {
+        self.db_result.num_rows() - self.current_row
+    }
+}
 
-impl Iterator for Cursor<'_> {
+impl Iterator for Cursor {
     type Item = crate::QueryResult<PgRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.row_by_row_mode && self.current_row > 0 {
-            match self.conn.get_next_result() {
-                Ok(Some(res)) => {
-                    if let Some(old_res) = Rc::get_mut(&mut self.db_result) {
-                        *old_res = res;
-                    } else {
-                        self.db_result = Rc::new(res);
-                    }
-                    self.current_row = 0;
-                }
-                Ok(None) => {
-                    return None;
-                }
-                Err(e) => return Some(Err(e)),
-            }
-        }
         if self.current_row < self.db_result.num_rows() {
             let row = self.db_result.clone().get_row(self.current_row);
             self.current_row += 1;
@@ -82,14 +58,61 @@ impl Iterator for Cursor<'_> {
     // }
 }
 
-impl Drop for Cursor<'_> {
-    fn drop(&mut self) {
-        if self.row_by_row_mode {
-            loop {
-                let res = self.conn.get_next_result();
-                if matches!(res, Err(_) | Ok(None)) {
-                    break;
+/// The type returned by various [`Connection`] methods.
+/// Acts as an iterator over `T`.
+#[allow(missing_debug_implementations)]
+pub struct RowByRowCursor<'a> {
+    current_row: usize,
+    db_result: Rc<PgResult>,
+    conn: &'a mut RawConnection,
+}
+
+impl<'a> RowByRowCursor<'a> {
+    pub(super) fn new(db_result: PgResult, raw_connection: &'a mut RawConnection) -> Self {
+        RowByRowCursor {
+            current_row: 0,
+            db_result: Rc::new(db_result),
+            conn: raw_connection,
+        }
+    }
+}
+
+impl Iterator for RowByRowCursor<'_> {
+    type Item = crate::QueryResult<PgRow>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_row > 0 {
+            match self.conn.get_next_result() {
+                Ok(Some(res)) => {
+                    if let Some(old_res) = Rc::get_mut(&mut self.db_result) {
+                        *old_res = res;
+                    } else {
+                        self.db_result = Rc::new(res);
+                    }
+                    self.current_row = 0;
                 }
+                Ok(None) => {
+                    return None;
+                }
+                Err(e) => return Some(Err(e)),
+            }
+        }
+        if self.current_row < self.db_result.num_rows() {
+            let row = self.db_result.clone().get_row(self.current_row);
+            self.current_row += 1;
+            Some(Ok(row))
+        } else {
+            None
+        }
+    }
+}
+
+impl Drop for RowByRowCursor<'_> {
+    fn drop(&mut self) {
+        loop {
+            let res = self.conn.get_next_result();
+            if matches!(res, Err(_) | Ok(None)) {
+                break;
             }
         }
     }
@@ -131,7 +154,7 @@ fn fun_with_row_iters() {
 
     let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
 
-    let row_iter = conn.load(&query).unwrap();
+    let row_iter = conn.load::<_, DefaultLoadBehavior>(&query).unwrap();
     for (row, expected) in row_iter.zip(&expected) {
         let row = row.unwrap();
 
@@ -145,7 +168,10 @@ fn fun_with_row_iters() {
     }
 
     {
-        let collected_rows = conn.load(&query).unwrap().collect::<Vec<_>>();
+        let collected_rows = conn
+            .load::<_, DefaultLoadBehavior>(&query)
+            .unwrap()
+            .collect::<Vec<_>>();
 
         for (row, expected) in collected_rows.iter().zip(&expected) {
             let deserialized = row
@@ -162,7 +188,7 @@ fn fun_with_row_iters() {
         }
     }
 
-    let mut row_iter = conn.load(&query).unwrap();
+    let mut row_iter = conn.load::<_, DefaultLoadBehavior>(&query).unwrap();
 
     let first_row = row_iter.next().unwrap().unwrap();
     let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());

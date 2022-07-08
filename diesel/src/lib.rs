@@ -282,6 +282,7 @@ pub mod helper_types {
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
+    use crate::connection::DefaultLoadBehavior;
     use crate::query_builder::select_clause::SelectClause;
 
     #[doc(inline)]
@@ -456,8 +457,8 @@ pub mod helper_types {
     /// [`Iterator`](std::iter::Iterator) of [`QueryResult<U>`](crate::result::QueryResult)
     ///
     /// See [`RunQueryDsl::load_iter`] for more information
-    pub type LoadIter<'conn, 'query, Q, Conn, U> =
-        <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret;
+    pub type LoadIter<'conn, 'query, Q, Conn, U, B = DefaultLoadBehavior> =
+        <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U, B>>::Ret;
 
     /// Maps `F` to `Alias<S>`
     ///

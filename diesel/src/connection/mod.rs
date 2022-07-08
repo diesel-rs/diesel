@@ -45,8 +45,8 @@ pub trait SimpleConnection {
 /// Return type of [`Connection::load`].
 ///
 /// Users should threat this type as `impl Iterator<Item = QueryResult<impl Row<DB>>>`
-pub type LoadRowIter<'conn, 'query, C, DB> =
-    <C as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor;
+pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadBehavior> =
+    <C as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor;
 
 /// A connection to a database
 ///
@@ -194,9 +194,9 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// As these implementations will vary depending on the backend being used,
 /// we cannot give concrete examples here. We recommend looking at our existing
 /// implementations to see how you can implement your own connection.
-pub trait Connection: SimpleConnection + Sized + Send
+pub trait Connection<B = DefaultLoadBehavior>: SimpleConnection + Sized + Send
 where
-    Self: for<'a, 'b> ConnectionGatWorkaround<'a, 'b, <Self as Connection>::Backend>,
+    Self: for<'a, 'b> ConnectionGatWorkaround<'a, 'b, <Self as Connection<B>>::Backend, B>,
 {
     /// The backend this type connects to
     type Backend: Backend;
@@ -205,7 +205,7 @@ where
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    type TransactionManager: TransactionManager<Self>;
+    type TransactionManager: TransactionManager<Self, B>;
 
     /// Establishes a new connection to the database
     ///
@@ -370,7 +370,7 @@ where
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
     where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>;
@@ -393,7 +393,7 @@ where
     )]
     fn transaction_state(
         &mut self,
-    ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData;
+    ) -> &mut <Self::TransactionManager as TransactionManager<Self, B>>::TransactionStateData;
 }
 
 /// A variant of the [`Connection`](trait.Connection.html) trait that is
@@ -427,6 +427,9 @@ where
         self
     }
 }
+
+#[derive(Debug, Copy, Clone)]
+pub struct DefaultLoadBehavior;
 
 impl<DB: Backend + 'static> dyn BoxableConnection<DB> {
     /// Downcast the current connection to a specific connection
@@ -472,6 +475,8 @@ mod private {
     use crate::backend::Backend;
     use crate::QueryResult;
 
+    use super::DefaultLoadBehavior;
+
     /// This trait describes which cursor type is used by a given connection
     /// implementation. This trait is only useful in combination with [`Connection`].
     ///
@@ -482,7 +487,7 @@ mod private {
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-    pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend> {
+    pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend, B = DefaultLoadBehavior> {
         /// The cursor type returned by [`Connection::load`]
         ///
         /// Users should handle this as opaque type that implements [`Iterator`]

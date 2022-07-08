@@ -1,7 +1,7 @@
 use self::private::LoadIter;
 use super::RunQueryDsl;
 use crate::backend::Backend;
-use crate::connection::{Connection, ConnectionGatWorkaround};
+use crate::connection::{Connection, ConnectionGatWorkaround, DefaultLoadBehavior};
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
@@ -20,25 +20,26 @@ pub(crate) use self::private::{CompatibleType, LoadQueryGatWorkaround};
 /// to call `load` from generic code.
 ///
 /// [`RunQueryDsl`]: crate::RunQueryDsl
-pub trait LoadQuery<'query, Conn, U>: RunQueryDsl<Conn>
+pub trait LoadQuery<'query, Conn, U, B = DefaultLoadBehavior>: RunQueryDsl<Conn>
 where
-    for<'a> Self: LoadQueryGatWorkaround<'a, 'query, Conn, U>,
+    for<'a> Self: LoadQueryGatWorkaround<'a, 'query, Conn, U, B>,
 {
     /// Load this query
     fn internal_load<'conn>(
         self,
         conn: &'conn mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret>;
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U, B>>::Ret>;
 }
 
 /// The return type of [`LoadQuery<C, U>::internal_load()`]
 ///
 /// Users should thread this type as `impl Iterator<Item = QueryResult<U>>`
-pub type LoadRet<'conn, 'query, Q, C, U> = <Q as LoadQueryGatWorkaround<'conn, 'query, C, U>>::Ret;
+pub type LoadRet<'conn, 'query, Q, C, U, B = DefaultLoadBehavior> =
+    <Q as LoadQueryGatWorkaround<'conn, 'query, C, U, B>>::Ret;
 
-impl<'conn, 'query, Conn, T, U, DB> LoadQueryGatWorkaround<'conn, 'query, Conn, U> for T
+impl<'conn, 'query, Conn, T, U, DB, B> LoadQueryGatWorkaround<'conn, 'query, Conn, U, B> for T
 where
-    Conn: Connection<Backend = DB>,
+    Conn: Connection<B, Backend = DB>,
     T: AsQuery + RunQueryDsl<Conn>,
     T::Query: QueryFragment<DB> + QueryId,
     T::SqlType: CompatibleType<U, DB>,
@@ -49,15 +50,15 @@ where
     type Ret = LoadIter<
         'conn,
         U,
-        <Conn as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor,
+        <Conn as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
         DB,
     >;
 }
 
-impl<'query, Conn, T, U, DB> LoadQuery<'query, Conn, U> for T
+impl<'query, Conn, T, U, DB, B> LoadQuery<'query, Conn, U, B> for T
 where
-    Conn: Connection<Backend = DB>,
+    Conn: Connection<B, Backend = DB>,
     T: AsQuery + RunQueryDsl<Conn>,
     T::Query: QueryFragment<DB> + QueryId + 'query,
     T::SqlType: CompatibleType<U, DB>,
@@ -68,7 +69,7 @@ where
     fn internal_load<'conn>(
         self,
         conn: &'conn mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret> {
+    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U, B>>::Ret> {
         Ok(LoadIter {
             cursor: conn.load(self.as_query())?,
             _marker: Default::default(),
@@ -111,6 +112,7 @@ where
 // * LoadIter as it's an implementation detail
 mod private {
     use crate::backend::Backend;
+    use crate::connection::DefaultLoadBehavior;
     use crate::deserialize::FromSqlRow;
     use crate::expression::select_by::SelectBy;
     use crate::expression::{Expression, TypedExpressionType};
@@ -121,7 +123,7 @@ mod private {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
     )]
-    pub trait LoadQueryGatWorkaround<'conn, 'query, Conn, U> {
+    pub trait LoadQueryGatWorkaround<'conn, 'query, Conn, U, B = DefaultLoadBehavior> {
         type Ret: Iterator<Item = QueryResult<U>>;
     }
 
