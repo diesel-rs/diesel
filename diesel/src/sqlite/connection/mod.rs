@@ -37,6 +37,81 @@ use crate::sqlite::Sqlite;
 /// - File paths (`test.db`)
 /// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
 /// - Special identifiers (`:memory:`)
+///
+/// # Supported loading model implementations
+///
+/// * [`DefaultLoadingMode`]
+///
+/// As `SqliteConnection` only supports a single loading mode implementation
+/// it is **not required** to explicitly specify a loading mode
+/// when calling [`RunQueryDsl::load_iter()`] or [`LoadConnection::load`]
+///
+/// ## DefaultLoadingMode
+///
+/// `SqliteConnection` only supports a single loading mode, which loads
+/// values row by row from the result set.
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+/// { // scope to restrict the lifetime of the iterator
+///     let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+///     for r in iter1 {
+///         let (id, name) = r?;
+///         println!("Id: {} Name: {}", id, name);
+///     }
+/// }
+///
+/// // works without specifying the loading mode
+/// let iter2 = users::table.load_iter::<(i32, String), _>(connection)?;
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// This mode does **not support** creating
+/// multiple iterators using the same connection.
+///
+/// ```compile_fail
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+/// let iter2 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
 #[allow(missing_debug_implementations)]
 #[cfg(feature = "sqlite")]
 pub struct SqliteConnection {
@@ -100,19 +175,6 @@ impl Connection for SqliteConnection {
         Ok(conn)
     }
 
-    fn load<'conn, 'query, T>(
-        &'conn mut self,
-        source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
-    where
-        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
-        Self::Backend: QueryMetadata<T::SqlType>,
-    {
-        let statement_use = self.prepared_query(source)?;
-
-        Ok(StatementIterator::new(statement_use))
-    }
-
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
@@ -128,6 +190,21 @@ impl Connection for SqliteConnection {
         Self: Sized,
     {
         &mut self.transaction_state
+    }
+}
+
+impl LoadConnection<DefaultLoadingMode> for SqliteConnection {
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
+    {
+        let statement_use = self.prepared_query(source)?;
+
+        Ok(StatementIterator::new(statement_use))
     }
 }
 

@@ -1,7 +1,7 @@
 use self::private::LoadIter;
 use super::RunQueryDsl;
 use crate::backend::Backend;
-use crate::connection::{Connection, ConnectionGatWorkaround, DefaultLoadBehavior};
+use crate::connection::{Connection, ConnectionGatWorkaround, DefaultLoadingMode, LoadConnection};
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
@@ -20,7 +20,7 @@ pub(crate) use self::private::{CompatibleType, LoadQueryGatWorkaround};
 /// to call `load` from generic code.
 ///
 /// [`RunQueryDsl`]: crate::RunQueryDsl
-pub trait LoadQuery<'query, Conn, U, B = DefaultLoadBehavior>: RunQueryDsl<Conn>
+pub trait LoadQuery<'query, Conn, U, B = DefaultLoadingMode>: RunQueryDsl<Conn>
 where
     for<'a> Self: LoadQueryGatWorkaround<'a, 'query, Conn, U, B>,
 {
@@ -34,12 +34,12 @@ where
 /// The return type of [`LoadQuery<C, U>::internal_load()`]
 ///
 /// Users should thread this type as `impl Iterator<Item = QueryResult<U>>`
-pub type LoadRet<'conn, 'query, Q, C, U, B = DefaultLoadBehavior> =
+pub type LoadRet<'conn, 'query, Q, C, U, B = DefaultLoadingMode> =
     <Q as LoadQueryGatWorkaround<'conn, 'query, C, U, B>>::Ret;
 
 impl<'conn, 'query, Conn, T, U, DB, B> LoadQueryGatWorkaround<'conn, 'query, Conn, U, B> for T
 where
-    Conn: Connection<B, Backend = DB>,
+    Conn: Connection<Backend = DB> + ConnectionGatWorkaround<'conn, 'query, DB, B>,
     T: AsQuery + RunQueryDsl<Conn>,
     T::Query: QueryFragment<DB> + QueryId,
     T::SqlType: CompatibleType<U, DB>,
@@ -58,7 +58,7 @@ where
 
 impl<'query, Conn, T, U, DB, B> LoadQuery<'query, Conn, U, B> for T
 where
-    Conn: Connection<B, Backend = DB>,
+    Conn: Connection<Backend = DB> + LoadConnection<B>,
     T: AsQuery + RunQueryDsl<Conn>,
     T::Query: QueryFragment<DB> + QueryId + 'query,
     T::SqlType: CompatibleType<U, DB>,
@@ -112,7 +112,7 @@ where
 // * LoadIter as it's an implementation detail
 mod private {
     use crate::backend::Backend;
-    use crate::connection::DefaultLoadBehavior;
+    use crate::connection::DefaultLoadingMode;
     use crate::deserialize::FromSqlRow;
     use crate::expression::select_by::SelectBy;
     use crate::expression::{Expression, TypedExpressionType};
@@ -123,7 +123,7 @@ mod private {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
     )]
-    pub trait LoadQueryGatWorkaround<'conn, 'query, Conn, U, B = DefaultLoadBehavior> {
+    pub trait LoadQueryGatWorkaround<'conn, 'query, Conn, U, B = DefaultLoadingMode> {
         type Ret: Iterator<Item = QueryResult<U>>;
     }
 

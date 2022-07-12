@@ -1501,6 +1501,15 @@ pub trait RunQueryDsl<Conn>: Sized {
     ///
     /// When using the query builder, the return type can be
     /// a tuple of the values, or a struct which implements [`Queryable`].
+    /// This type is specified by the first generic type of this function.
+    ///
+    /// The second generic type paramater specifies the so called loading mode,
+    /// which describes how the connection implementation loads data from the database.
+    /// All connections should provide a implementaiton for [`DefaultLoadingMode`].
+    /// They may provide additional modes. Checkout the documentation of the concrete
+    /// connection types for details. For connection implementations that provide
+    /// more than one loading mode it is **required** to specify this generic paramater.
+    /// This is currently true for `PgConnection`.
     ///
     /// When this method is called on [`sql_query`],
     /// the return type can only be a struct which implements [`QueryableByName`]
@@ -1528,8 +1537,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
     /// let data = users.select(name)
-    ///     .load_iter::<String>(connection)?
+    ///     .load_iter::<String, DefaultLoadingMode>(connection)?
     ///     .collect::<QueryResult<Vec<_>>>()?;
     /// assert_eq!(vec!["Sean", "Tess"], data);
     /// #     Ok(())
@@ -1549,8 +1560,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
     /// let data = users
-    ///     .load_iter::<(i32, String)>(connection)?
+    ///     .load_iter::<(i32, String), DefaultLoadingMode>(connection)?
     ///     .collect::<QueryResult<Vec<_>>>()?;
     /// let expected_data = vec![
     ///     (1, String::from("Sean")),
@@ -1580,8 +1593,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
     /// let data = users
-    ///     .load_iter::<User>(connection)?
+    ///     .load_iter::<User, DefaultLoadingMode>(connection)?
     ///     .collect::<QueryResult<Vec<_>>>()?;
     /// let expected_data = vec![
     ///     User { id: 1, name: String::from("Sean") },

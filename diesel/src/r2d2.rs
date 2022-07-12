@@ -107,7 +107,8 @@ use std::marker::PhantomData;
 use crate::backend::Backend;
 use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::{
-    ConnectionGatWorkaround, SimpleConnection, TransactionManager, TransactionManagerStatus,
+    ConnectionGatWorkaround, LoadConnection, LoadRowIter, SimpleConnection, TransactionManager,
+    TransactionManagerStatus,
 };
 use crate::expression::QueryMetadata;
 use crate::prelude::*;
@@ -211,14 +212,14 @@ where
     }
 }
 
-impl<'conn, 'query, DB, M> ConnectionGatWorkaround<'conn, 'query, DB> for PooledConnection<M>
+impl<'conn, 'query, DB, M, B> ConnectionGatWorkaround<'conn, 'query, DB, B> for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection<Backend = DB>,
+    M::Connection: Connection<Backend = DB> + ConnectionGatWorkaround<'conn, 'query, DB, B>,
     DB: Backend,
 {
-    type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor;
-    type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Row;
+    type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor;
+    type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Row;
 }
 
 impl<M> CommitErrorProcessor for PooledConnection<M>
@@ -246,17 +247,6 @@ where
         )))
     }
 
-    fn load<'conn, 'query, T>(
-        &'conn mut self,
-        source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
-    where
-        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
-        Self::Backend: QueryMetadata<T::SqlType>,
-    {
-        (&mut **self).load(source)
-    }
-
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
@@ -272,6 +262,23 @@ where
 
     fn begin_test_transaction(&mut self) -> QueryResult<()> {
         (&mut **self).begin_test_transaction()
+    }
+}
+
+impl<B, M> LoadConnection<B> for PooledConnection<M>
+where
+    M: ManageConnection,
+    M::Connection: LoadConnection<B> + R2D2Connection,
+{
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
+    {
+        (&mut **self).load(source)
     }
 }
 

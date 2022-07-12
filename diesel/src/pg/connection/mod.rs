@@ -26,6 +26,92 @@ use crate::RunQueryDsl;
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
 /// <https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING>
+///
+/// # Supported loading model implementations
+///
+/// * [`DefaultLoadingMode`]
+/// * [`PgRowByRowLoadingMode`]
+///
+/// If you are unsure which loading mode is the correct one for your application,
+/// you likely want to use the `DefaultLoadingMode` as that one offers
+/// generally better performance.
+///
+/// Due to the fact that `PgConnection` supports multiple loading modes
+/// it is **required** to always specify the used loading mode
+/// when calling [`RunQueryDsl::load_iter`] or [`LoadConnection::load`].
+///
+/// ## `DefaultLoadingMode`
+///
+/// By using this mode `PgConnection` defaults to loading all response values at **once**
+/// and only performs deserialization afterward for the `DefaultLoadingMode`.
+/// Generally this mode will be more performant as it.
+///
+/// This loading mode allows users to perform hold more than one iterator at once using
+/// the same connection:
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+/// let iter2 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// ## `PgRowByRowLoadingMode`
+///
+/// By using this mode `PgConnection` defaults to loading each row of the result set
+/// sepreatly. This might be desired for huge result sets.
+///
+/// This loading mode **prevents** creating more than one iterator at once using
+/// the same connection. The following code is **not** allowed:
+///
+/// ```compile_fail
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::pg::PgRowByRowLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), PgRowByRowLoadingMode>(connection)?;
+/// // creating a second iterator generates an compiler error
+/// let iter2 = users::table.load_iter::<(i32, String), PgRowByRowLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
 #[allow(missing_debug_implementations)]
 #[cfg(feature = "postgres")]
 pub struct PgConnection {
@@ -47,17 +133,22 @@ impl SimpleConnection for PgConnection {
     }
 }
 
+/// A [`PgConnection`] specific loading mode to load rows one by one
+///
+/// See the documentation of [`PgConnection`] for details
 #[derive(Debug, Copy, Clone)]
-pub struct RowByRowMode;
+pub struct PgRowByRowLoadingMode;
 
-impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadBehavior>
+impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadingMode>
     for PgConnection
 {
     type Cursor = Cursor;
     type Row = self::row::PgRow;
 }
 
-impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg, RowByRowMode> for PgConnection {
+impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg, PgRowByRowLoadingMode>
+    for PgConnection
+{
     type Cursor = RowByRowCursor<'conn>;
     type Row = self::row::PgRow;
 }
@@ -138,27 +229,28 @@ mod private {
         ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg, B>>::Cursor>;
     }
 
-    impl PgLoadingMode<DefaultLoadBehavior> for PgConnection {
+    impl PgLoadingMode<DefaultLoadingMode> for PgConnection {
         const USE_ROW_BY_ROW_MODE: bool = false;
 
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut RawConnection,
             result: PgResult,
         ) -> QueryResult<
-            <Self as ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadBehavior>>::Cursor,
+            <Self as ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadingMode>>::Cursor,
         > {
             Cursor::new(result, raw_connection)
         }
     }
 
-    impl PgLoadingMode<RowByRowMode> for PgConnection {
+    impl PgLoadingMode<PgRowByRowLoadingMode> for PgConnection {
         const USE_ROW_BY_ROW_MODE: bool = false;
 
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut RawConnection,
             result: PgResult,
-        ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg, RowByRowMode>>::Cursor>
-        {
+        ) -> QueryResult<
+            <Self as ConnectionGatWorkaround<'conn, 'query, Pg, PgRowByRowLoadingMode>>::Cursor,
+        > {
             Ok(RowByRowCursor::new(result, raw_connection))
         }
     }
@@ -166,10 +258,7 @@ mod private {
 
 use self::private::PgLoadingMode;
 
-impl<B> Connection<B> for PgConnection
-where
-    for<'conn, 'query> Self: ConnectionGatWorkaround<'conn, 'query, Pg, B> + PgLoadingMode<B>,
-{
+impl Connection for PgConnection {
     type Backend = Pg;
     type TransactionManager = AnsiTransactionManager;
 
@@ -187,23 +276,6 @@ where
             Ok(conn)
         })
     }
-
-    fn load<'conn, 'query, T>(
-        &'conn mut self,
-        source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
-    where
-        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
-        Self::Backend: QueryMetadata<T::SqlType>,
-    {
-        self.with_prepared_query(&source, |stmt, params, conn| {
-            let result = stmt.execute(conn, &params, Self::USE_ROW_BY_ROW_MODE)?;
-            let cursor = Self::get_cursor(conn, result);
-
-            cursor
-        })
-    }
-
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Pg> + QueryId,
@@ -224,6 +296,27 @@ where
         Self: Sized,
     {
         &mut self.transaction_state
+    }
+}
+
+impl<B> LoadConnection<B> for PgConnection
+where
+    Self: PgLoadingMode<B>,
+{
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
+    {
+        self.with_prepared_query(&source, |stmt, params, conn| {
+            let result = stmt.execute(conn, &params, Self::USE_ROW_BY_ROW_MODE)?;
+            let cursor = Self::get_cursor(conn, result);
+
+            cursor
+        })
     }
 }
 
@@ -329,7 +422,7 @@ mod tests {
     extern crate dotenvy;
 
     use super::*;
-    use crate::dsl::{sql, LoadIter};
+    use crate::dsl::sql;
     use crate::prelude::*;
     use crate::result::Error::DatabaseError;
     use crate::sql_types::{Integer, VarChar};
@@ -1140,30 +1233,5 @@ mod tests {
             conn.raw_connection.transaction_status()
         );
         assert!(result.is_ok());
-    }
-
-    #[test]
-    fn fun_with_iters() {
-        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
-
-        let normal_iter1 = conn
-            .load::<_, DefaultLoadBehavior>(crate::select(1.into_sql::<crate::sql_types::Int4>()))
-            .unwrap();
-        let normal_iter2 = conn
-            .load::<_, DefaultLoadBehavior>(crate::select(1.into_sql::<crate::sql_types::Int4>()))
-            .unwrap();
-
-        // let normal_iter : LoadIter<_, PgConnection, i32, DefaultLoadBehavior> = crate::select(1.into_sql::<crate::sql_types::Int4>()).load_iter::<i32, DefaultLoadBehavior>(conn).unwrap();
-        // let normal_iter2 = crate::select(2.into_sql::<crate::sql_types::Int4>()).load_iter::<i32, DefaultLoadBehavior>(conn).unwrap();
-
-        let zip = normal_iter1.zip(normal_iter2).collect::<Vec<_>>();
-
-        let row_by_row_iter1 = conn
-            .load::<_, RowByRowMode>(crate::select(1.into_sql::<crate::sql_types::Int4>()))
-            .unwrap();
-        let row_by_row_iter2 = conn
-            .load::<_, RowByRowMode>(crate::select(1.into_sql::<crate::sql_types::Int4>()))
-            .unwrap();
-        let zip = row_by_row_iter1.zip(row_by_row_iter2).collect::<Vec<_>>();
     }
 }

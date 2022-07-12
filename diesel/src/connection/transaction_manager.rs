@@ -8,7 +8,7 @@ use std::num::NonZeroU32;
 ///
 /// You will not need to interact with this trait, unless you are writing an
 /// implementation of [`Connection`].
-pub trait TransactionManager<Conn: Connection<B>, B> {
+pub trait TransactionManager<Conn: Connection> {
     /// Data stored as part of the connection implementation
     /// to track the current transaction state of a connection
     type TransactionStateData;
@@ -164,11 +164,11 @@ pub enum TransactionDepthChange {
 }
 
 impl AnsiTransactionManager {
-    fn get_transaction_state<Conn, B>(
+    fn get_transaction_state<Conn>(
         conn: &mut Conn,
     ) -> QueryResult<&mut ValidTransactionManagerStatus>
     where
-        Conn: Connection<B, TransactionManager = Self> + CommitErrorProcessor,
+        Conn: Connection<TransactionManager = Self> + CommitErrorProcessor,
     {
         conn.transaction_state().status.transaction_state()
     }
@@ -178,9 +178,9 @@ impl AnsiTransactionManager {
     /// This is used by connections to implement more complex transaction APIs
     /// to set things such as isolation levels.
     /// Returns an error if already inside of a transaction.
-    pub fn begin_transaction_sql<Conn, B>(conn: &mut Conn, sql: &str) -> QueryResult<()>
+    pub fn begin_transaction_sql<Conn>(conn: &mut Conn, sql: &str) -> QueryResult<()>
     where
-        Conn: Connection<B, TransactionManager = Self> + CommitErrorProcessor,
+        Conn: Connection<TransactionManager = Self> + CommitErrorProcessor,
     {
         let state = Self::get_transaction_state(conn)?;
         match state.transaction_depth() {
@@ -194,9 +194,9 @@ impl AnsiTransactionManager {
     }
 }
 
-impl<Conn, B> TransactionManager<Conn, B> for AnsiTransactionManager
+impl<Conn> TransactionManager<Conn> for AnsiTransactionManager
 where
-    Conn: Connection<B, TransactionManager = Self> + CommitErrorProcessor,
+    Conn: Connection<TransactionManager = Self> + CommitErrorProcessor,
 {
     type TransactionStateData = Self;
 
@@ -329,13 +329,13 @@ where
     }
 }
 
-fn process_commit_error<Conn, B>(
+fn process_commit_error<Conn>(
     conn: &mut Conn,
     error: Error,
     rollback_sql: Cow<'_, str>,
 ) -> QueryResult<()>
 where
-    Conn: Connection<B, TransactionManager = AnsiTransactionManager> + CommitErrorProcessor,
+    Conn: Connection<TransactionManager = AnsiTransactionManager> + CommitErrorProcessor,
 {
     let commit_error_outcome = conn.process_commit_error(error);
     let state = AnsiTransactionManager::get_transaction_state(conn)?;
