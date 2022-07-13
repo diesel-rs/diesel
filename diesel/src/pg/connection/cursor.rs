@@ -40,22 +40,22 @@ impl Iterator for Cursor {
         }
     }
 
-    // fn nth(&mut self, n: usize) -> Option<Self::Item> {
-    //     self.current_row = (self.current_row + n).min(self.db_result.num_rows());
-    //     self.next()
-    // }
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.current_row = (self.current_row + n).min(self.db_result.num_rows());
+        self.next()
+    }
 
-    // fn size_hint(&self) -> (usize, Option<usize>) {
-    //     let len = self.len();
-    //     (len, Some(len))
-    // }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let len = self.len();
+        (len, Some(len))
+    }
 
-    // fn count(self) -> usize
-    // where
-    //     Self: Sized,
-    // {
-    //     self.len()
-    // }
+    fn count(self) -> usize
+    where
+        Self: Sized,
+    {
+        self.len()
+    }
 }
 
 /// The type returned by various [`Connection`] methods.
@@ -120,6 +120,8 @@ impl Drop for RowByRowCursor<'_> {
 
 #[cfg(test)]
 mod tests {
+    use crate::connection::DefaultLoadingMode;
+    use crate::pg::PgRowByRowLoadingMode;
 
     #[test]
     fn fun_with_row_iters() {
@@ -131,7 +133,7 @@ mod tests {
             }
         }
 
-        use crate::connection::{DefaultLoadingMode, LoadConnection};
+        use crate::connection::LoadConnection;
         use crate::deserialize::{FromSql, FromSqlRow};
         use crate::pg::Pg;
         use crate::prelude::*;
@@ -234,7 +236,50 @@ mod tests {
         );
     }
 
-    #[ignore]
+    #[test]
+    fn loading_modes_return_the_same_result() {
+        use crate::prelude::*;
+
+        crate::table! {
+            #[allow(unused_parens)]
+            users(id) {
+                id -> Integer,
+                name -> Text,
+            }
+        }
+
+        let conn = &mut crate::test_helpers::connection();
+
+        crate::sql_query(
+            "CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY, name TEXT NOT NULL);",
+        )
+        .execute(conn)
+        .unwrap();
+
+        crate::insert_into(users::table)
+            .values(vec![
+                (users::id.eq(1), users::name.eq("Sean")),
+                (users::id.eq(2), users::name.eq("Tess")),
+            ])
+            .execute(conn)
+            .unwrap();
+
+        let users_by_default_mode = users::table
+            .select(users::name)
+            .load_iter::<String, DefaultLoadingMode>(conn)
+            .unwrap()
+            .collect::<QueryResult<Vec<_>>>()
+            .unwrap();
+        let users_row_by_row = users::table
+            .select(users::name)
+            .load_iter::<String, PgRowByRowLoadingMode>(conn)
+            .unwrap()
+            .collect::<QueryResult<Vec<_>>>()
+            .unwrap();
+        assert_eq!(users_by_default_mode, users_row_by_row);
+        assert_eq!(users_by_default_mode, vec!["Sean", "Tess"]);
+    }
+
     #[test]
     fn fun_with_row_iters_row_by_row() {
         crate::table! {
@@ -247,7 +292,7 @@ mod tests {
 
         use crate::connection::LoadConnection;
         use crate::deserialize::{FromSql, FromSqlRow};
-        use crate::pg::{Pg, PgRowByRowLoadingMode};
+        use crate::pg::Pg;
         use crate::prelude::*;
         use crate::row::{Field, Row};
         use crate::sql_types;

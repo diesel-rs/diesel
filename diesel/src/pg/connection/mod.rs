@@ -385,7 +385,7 @@ mod private {
     }
 
     impl PgLoadingMode<PgRowByRowLoadingMode> for PgConnection {
-        const USE_ROW_BY_ROW_MODE: bool = false;
+        const USE_ROW_BY_ROW_MODE: bool = true;
 
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut RawConnection,
