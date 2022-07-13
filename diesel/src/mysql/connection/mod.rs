@@ -8,9 +8,6 @@ use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
-use crate::connection::commit_error_processor::{
-    default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
-};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
@@ -118,18 +115,6 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Mysql> for MysqlConne
     type Row = self::stmt::iterator::MysqlRow;
 }
 
-impl CommitErrorProcessor for MysqlConnection {
-    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
-        let state = match self.transaction_state.status {
-            TransactionManagerStatus::InError => {
-                return CommitErrorOutcome::Throw(Error::BrokenTransaction)
-            }
-            TransactionManagerStatus::Valid(ref v) => v,
-        };
-        default_process_commit_error(state, error)
-    }
-}
-
 impl Connection for MysqlConnection {
     type Backend = Mysql;
     type TransactionManager = AnsiTransactionManager;
@@ -162,36 +147,33 @@ impl Connection for MysqlConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        let err = {
-            let stmt = self.prepared_query(source)?;
-            let res = unsafe { stmt.execute() };
-            match res {
-                Ok(stmt_use) => return Ok(stmt_use.affected_rows()),
-                Err(e) => e,
-            }
-        };
-        if let Error::DatabaseError(DatabaseErrorKind::SerializationFailure, msg) = err {
-            if let AnsiTransactionManager {
-                status: TransactionManagerStatus::Valid(ref mut valid),
-            } = self.transaction_state
-            {
-                valid.previous_error_relevant_for_rollback = Some((
-                    DatabaseErrorKind::SerializationFailure,
-                    msg.message().to_owned(),
-                ))
-            }
-            Err(Error::DatabaseError(
-                DatabaseErrorKind::SerializationFailure,
-                msg,
-            ))
-        } else {
-            Err(err)
-        }
+        update_transaction_manager_status(
+            prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
+                |stmt| {
+                    let stmt_use = unsafe { stmt.execute() }?;
+                    Ok(stmt_use.affected_rows())
+                },
+            ),
+            &mut self.transaction_state,
+        )
     }
 
     fn transaction_state(&mut self) -> &mut AnsiTransactionManager {
         &mut self.transaction_state
     }
+}
+
+#[inline(always)]
+fn update_transaction_manager_status<T>(
+    query_result: QueryResult<T>,
+    transaction_manager: &mut AnsiTransactionManager,
+) -> QueryResult<T> {
+    if let Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) = query_result {
+        transaction_manager
+            .status
+            .set_top_level_transaction_requires_rollback()
+    }
+    query_result
 }
 
 impl LoadConnection<DefaultLoadingMode> for MysqlConnection {
@@ -203,12 +185,16 @@ impl LoadConnection<DefaultLoadingMode> for MysqlConnection {
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let stmt = self.prepared_query(&source)?;
-
-        let mut metadata = Vec::new();
-        Mysql::row_metadata(&mut (), &mut metadata);
-
-        StatementIterator::from_stmt(stmt, &metadata)
+        update_transaction_manager_status(
+            prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
+                |stmt| {
+                    let mut metadata = Vec::new();
+                    Mysql::row_metadata(&mut (), &mut metadata);
+                    StatementIterator::from_stmt(stmt, &metadata)
+                },
+            ),
+            &mut self.transaction_state,
+        )
     }
 }
 
@@ -231,25 +217,24 @@ impl crate::r2d2::R2D2Connection for MysqlConnection {
     }
 }
 
+fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
+    source: &'_ T,
+    statement_cache: &'a mut StatementCache<Mysql, Statement>,
+    raw_connection: &'a mut RawConnection,
+) -> QueryResult<MaybeCached<'a, Statement>> {
+    let mut stmt = statement_cache
+        .cached_statement(source, &Mysql, &[], |sql, _| raw_connection.prepare(sql))?;
+    let mut bind_collector = RawBytesBindCollector::new();
+    source.collect_binds(&mut bind_collector, &mut (), &Mysql)?;
+    let binds = bind_collector
+        .metadata
+        .into_iter()
+        .zip(bind_collector.binds);
+    stmt.bind(binds)?;
+    Ok(stmt)
+}
+
 impl MysqlConnection {
-    fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
-        &'a mut self,
-        source: &'_ T,
-    ) -> QueryResult<MaybeCached<'a, Statement>> {
-        let cache = &mut self.statement_cache;
-        let conn = &mut self.raw_connection;
-
-        let mut stmt = cache.cached_statement(source, &Mysql, &[], |sql, _| conn.prepare(sql))?;
-        let mut bind_collector = RawBytesBindCollector::new();
-        source.collect_binds(&mut bind_collector, &mut (), &Mysql)?;
-        let binds = bind_collector
-            .metadata
-            .into_iter()
-            .zip(bind_collector.binds);
-        stmt.bind(binds)?;
-        Ok(stmt)
-    }
-
     fn set_config_options(&mut self) -> QueryResult<()> {
         crate::sql_query("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))")
             .execute(self)?;
