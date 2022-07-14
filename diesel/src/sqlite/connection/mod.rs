@@ -43,6 +43,8 @@ use crate::sqlite::Sqlite;
 /// it is **not required** to explicitly specify a loading mode
 /// when calling [`RunQueryDsl::load_iter()`] or [`LoadConnection::load`]
 ///
+/// [`RunQueryDsl::load_iter()`]: crate::query_dsl::RunQueryDsl::load_iter
+///
 /// ## DefaultLoadingMode
 ///
 /// `SqliteConnection` only supports a single loading mode, which loads
