@@ -36,7 +36,7 @@ pub trait SimpleConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()>;
 }
 
-/// Return type of [`Connection::load`].
+/// Return type of [`LoadConnection::load`].
 ///
 /// Users should threat this type as `impl Iterator<Item = QueryResult<impl Row<DB>>>`
 pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =

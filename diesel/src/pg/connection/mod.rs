@@ -212,9 +212,7 @@ where
         self.with_prepared_query(&source, |stmt, params, conn| {
             use self::private::PgLoadingMode;
             let result = stmt.execute(conn, &params, Self::USE_ROW_BY_ROW_MODE)?;
-            let cursor = Self::get_cursor(conn, result);
-
-            cursor
+            Self::get_cursor(conn, result)
         })
     }
 }

@@ -1505,7 +1505,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     ///
     /// The second generic type paramater specifies the so called loading mode,
     /// which describes how the connection implementation loads data from the database.
-    /// All connections should provide a implementaiton for [`DefaultLoadingMode`].
+    /// All connections should provide a implementaiton for
+    /// [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode).
+    ///
     /// They may provide additional modes. Checkout the documentation of the concrete
     /// connection types for details. For connection implementations that provide
     /// more than one loading mode it is **required** to specify this generic paramater.
