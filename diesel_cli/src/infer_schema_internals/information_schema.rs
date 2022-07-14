@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::error::Error;
 
 use diesel::backend::Backend;
+use diesel::connection::LoadConnection;
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::dsl::*;
 use diesel::expression::{is_aggregate, QueryMetadata, ValidGrouping};
@@ -36,7 +37,7 @@ pub trait UsesInformationSchema: Backend {
 
     fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
-        C: Connection<Backend = Self>,
+        C: LoadConnection<Backend = Self>,
         String: FromSql<sql_types::Text, C::Backend>;
 }
 
@@ -76,7 +77,7 @@ impl UsesInformationSchema for Mysql {
 
     fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
-        C: Connection<Backend = Self>,
+        C: LoadConnection<Backend = Self>,
         String: FromSql<sql_types::Text, C::Backend>,
     {
         select(database()).get_result(conn)
@@ -149,7 +150,7 @@ pub fn get_table_data<'a, Conn>(
     column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>>
 where
-    Conn: Connection,
+    Conn: LoadConnection,
     Conn::Backend: UsesInformationSchema,
     ColumnInformation: FromSqlRow<
         SqlTypeOf<(
@@ -232,7 +233,7 @@ where
 
 pub fn get_primary_keys<'a, Conn>(conn: &mut Conn, table: &'a TableName) -> QueryResult<Vec<String>>
 where
-    Conn: Connection,
+    Conn: LoadConnection,
     Conn::Backend: UsesInformationSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
     Order<
@@ -282,7 +283,7 @@ pub fn load_table_names<'a, Conn>(
     schema_name: Option<&'a str>,
 ) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>>
 where
-    Conn: Connection,
+    Conn: LoadConnection,
     Conn::Backend: UsesInformationSchema + 'static,
     String: FromSql<sql_types::Text, Conn::Backend>,
     Filter<
