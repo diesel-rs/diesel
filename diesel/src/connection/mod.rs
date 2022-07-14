@@ -91,7 +91,7 @@ pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =
 /// based on a pure rust connection crate.
 ///
 /// **It's important to use prepared statements to implement the following methods:**
-/// * [`Connection::load`]
+/// * [`LoadConnection::load`]
 /// * [`Connection::execute_returning_count`]
 ///
 /// For performance reasons it may also be meaningful to cache already prepared statements.
@@ -500,11 +500,11 @@ mod private {
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend, B = DefaultLoadingMode> {
-        /// The cursor type returned by [`Connection::load`]
+        /// The cursor type returned by [`LoadConnection::load`]
         ///
         /// Users should handle this as opaque type that implements [`Iterator`]
         ///
-        /// [`Connection::load`]: super::Connection::load
+        /// [`LoadConnection::load`]: super::LoadConnection::load
         type Cursor: Iterator<Item = QueryResult<Self::Row>>;
         /// The row type used as [`Iterator::Item`] for the iterator implementation
         /// of [`ConnectionGatWorkaround::Cursor`]
