@@ -51,7 +51,6 @@ where
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
     type Ret = LoadIter<
-        'conn,
         U,
         <Conn as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
@@ -131,12 +130,12 @@ mod private {
     }
 
     #[allow(missing_debug_implementations)]
-    pub struct LoadIter<'a, U, C, ST, DB> {
+    pub struct LoadIter<U, C, ST, DB> {
         pub(super) cursor: C,
-        pub(super) _marker: std::marker::PhantomData<&'a (ST, U, DB)>,
+        pub(super) _marker: std::marker::PhantomData<(ST, U, DB)>,
     }
 
-    impl<'a, C, U, ST, DB, R> LoadIter<'a, U, C, ST, DB>
+    impl<'a, C, U, ST, DB, R> LoadIter<U, C, ST, DB>
     where
         DB: Backend,
         C: Iterator<Item = QueryResult<R>>,
@@ -153,7 +152,7 @@ mod private {
         }
     }
 
-    impl<'a, C, U, ST, DB, R> Iterator for LoadIter<'a, U, C, ST, DB>
+    impl<'a, C, U, ST, DB, R> Iterator for LoadIter<U, C, ST, DB>
     where
         DB: Backend,
         C: Iterator<Item = QueryResult<R>>,
@@ -189,7 +188,7 @@ mod private {
         }
     }
 
-    impl<'a, C, U, ST, DB, R> ExactSizeIterator for LoadIter<'a, U, C, ST, DB>
+    impl<'a, C, U, ST, DB, R> ExactSizeIterator for LoadIter<U, C, ST, DB>
     where
         DB: Backend,
         C: ExactSizeIterator + Iterator<Item = QueryResult<R>>,
