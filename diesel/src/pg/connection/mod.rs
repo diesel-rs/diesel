@@ -128,7 +128,8 @@ impl SimpleConnection for PgConnection {
         let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
         update_transaction_manager_status(
             inner_result.and_then(|raw_result| PgResult::new(raw_result, &self.raw_connection)),
-            self,
+            &mut self.raw_connection,
+            &mut self.transaction_state,
         )?;
         Ok(())
     }
@@ -176,7 +177,7 @@ impl Connection for PgConnection {
         T: QueryFragment<Pg> + QueryId,
     {
         update_transaction_manager_status(
-            self.with_prepared_query(source, |query, params, conn| {
+            self.with_prepared_query(source, |query, params, conn, _| {
                 let res = query
                     .execute(conn, &params, false)
                     .map(|r| r.rows_affected());
@@ -185,7 +186,8 @@ impl Connection for PgConnection {
                 debug_assert!(matches!(next_res, Ok(None)));
                 res
             }),
-            self,
+            &mut self.raw_connection,
+            &mut self.transaction_state,
         )
     }
 
@@ -209,10 +211,11 @@ where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source, |stmt, params, conn| {
+        self.with_prepared_query(&source, |stmt, params, conn, tm| {
             use self::private::PgLoadingMode;
-            let result = stmt.execute(conn, &params, Self::USE_ROW_BY_ROW_MODE)?;
-            Self::get_cursor(conn, result)
+            let result = stmt.execute(conn, &params, Self::USE_ROW_BY_ROW_MODE);
+            let result = update_transaction_manager_status(result, conn, tm)?;
+            Self::get_cursor(conn, tm, result)
         })
     }
 }
@@ -226,33 +229,27 @@ impl GetPgMetadataCache for PgConnection {
 #[inline(always)]
 fn update_transaction_manager_status<T>(
     query_result: QueryResult<T>,
-    conn: &mut PgConnection,
+    raw_conn: &mut RawConnection,
+    tm: &mut AnsiTransactionManager,
 ) -> QueryResult<T> {
     if let Err(Error::DatabaseError { .. }) = query_result {
         /// avoid monomorphizing for every result type - this part will not be inlined
-        fn non_generic_inner(conn: &mut PgConnection) {
-            if AnsiTransactionManager::transaction_manager_status_mut(conn)
-                .is_not_broken_and_in_transaction()
-            {
+        fn non_generic_inner(raw_conn: &mut RawConnection, tm: &mut AnsiTransactionManager) {
+            if tm.status.is_not_broken_and_in_transaction() {
                 // libpq keeps track of the transaction status internally, and that is accessible
                 // via `transaction_status`. We can use that to update the AnsiTransactionManager
                 // status
-                match conn.raw_connection.transaction_status() {
+                match raw_conn.transaction_status() {
                     PgTransactionStatus::InError => {
-                        AnsiTransactionManager::transaction_manager_status_mut(conn)
-                            .set_top_level_transaction_requires_rollback()
+                        tm.status.set_top_level_transaction_requires_rollback()
                     }
-                    PgTransactionStatus::Unknown => {
-                        AnsiTransactionManager::transaction_manager_status_mut(conn).set_in_error()
-                    }
+                    PgTransactionStatus::Unknown => tm.status.set_in_error(),
                     PgTransactionStatus::Idle => {
                         // This may repair the transaction manager
-                        *AnsiTransactionManager::transaction_manager_status_mut(conn) =
-                            TransactionManagerStatus::Valid(Default::default())
+                        tm.status = TransactionManagerStatus::Valid(Default::default())
                     }
                     PgTransactionStatus::InTransaction => {
-                        let transaction_status =
-                            AnsiTransactionManager::transaction_manager_status_mut(conn);
+                        let transaction_status = &mut tm.status;
                         if !matches!(transaction_status, TransactionManagerStatus::Valid(valid_tm) if valid_tm.transaction_depth().is_some())
                         {
                             transaction_status.set_in_error()
@@ -262,7 +259,7 @@ fn update_transaction_manager_status<T>(
                 }
             }
         }
-        non_generic_inner(conn)
+        non_generic_inner(raw_conn, tm)
     }
     query_result
 }
@@ -321,6 +318,7 @@ impl PgConnection {
             MaybeCached<'_, Statement>,
             Vec<Option<Vec<u8>>>,
             &'conn mut RawConnection,
+            &'conn mut AnsiTransactionManager,
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
@@ -340,7 +338,7 @@ impl PgConnection {
             Statement::prepare(raw_conn, sql, query_name.as_deref(), &metadata)
         });
 
-        f(query?, binds, &mut *raw_conn)
+        f(query?, binds, &mut *raw_conn, &mut self.transaction_state)
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {
@@ -365,6 +363,7 @@ mod private {
 
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut RawConnection,
+            tm: &'conn mut AnsiTransactionManager,
             result: PgResult,
         ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg, B>>::Cursor>;
     }
@@ -374,11 +373,16 @@ mod private {
 
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut RawConnection,
+            tm: &'conn mut AnsiTransactionManager,
             result: PgResult,
         ) -> QueryResult<
             <Self as ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadingMode>>::Cursor,
         > {
-            Cursor::new(result, raw_connection)
+            update_transaction_manager_status(
+                Cursor::new(result, raw_connection),
+                raw_connection,
+                tm,
+            )
         }
     }
 
@@ -387,11 +391,12 @@ mod private {
 
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut RawConnection,
+            tm: &'conn mut AnsiTransactionManager,
             result: PgResult,
         ) -> QueryResult<
             <Self as ConnectionGatWorkaround<'conn, 'query, Pg, PgRowByRowLoadingMode>>::Cursor,
         > {
-            Ok(RowByRowCursor::new(result, raw_connection))
+            Ok(RowByRowCursor::new(result, raw_connection, tm))
         }
     }
 }
