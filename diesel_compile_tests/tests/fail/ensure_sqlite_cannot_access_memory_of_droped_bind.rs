@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use diesel::connection::{LoadConnection, DefaultLoadingMode};
 use diesel::sql_types;
 
 fn main() {
@@ -9,7 +10,7 @@ fn main() {
 
         let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
 
-        let mut iter = Connection::load(&mut connection, query).unwrap();
+        let mut iter = LoadConnection::load(&mut connection, query).unwrap();
 
         // Sqlite borrows the buffer internally, so droping it here is not allowed
         // while the statement is still alive.
@@ -27,7 +28,7 @@ fn main() {
 
         let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
 
-        let mut iter = Connection::load(&mut connection, query).unwrap();
+        let mut iter = LoadConnection::<DefaultLoadingMode>::load(&mut connection, query).unwrap();
 
         std::mem::drop(buf);
 
@@ -42,7 +43,7 @@ fn main() {
 
         let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
 
-        let mut iter = Connection::load(&mut connection, query).unwrap();
+        let mut iter = LoadConnection::load(&mut connection, query).unwrap();
 
         std::mem::drop(buf);
 
@@ -57,7 +58,7 @@ fn main() {
 
         let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
 
-        let mut iter = Connection::load(&mut connection, query).unwrap();
+        let mut iter = LoadConnection::load(&mut connection, query).unwrap();
 
         assert_eq!(iter.next().is_some(), true);
         assert_eq!(iter.next().is_none(), true);
