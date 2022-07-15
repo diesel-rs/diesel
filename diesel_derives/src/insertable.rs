@@ -106,7 +106,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                 type Values = <(#(#ref_field_ty,)*) as Insertable<#table_name::table>>::Values;
 
                 fn values(self) -> <(#(#ref_field_ty,)*) as Insertable<#table_name::table>>::Values {
-                   (#(#ref_field_assign,)*).values()
+                    (#(#ref_field_assign,)*).values()
                 }
             }
         }
