@@ -4,10 +4,8 @@ mod result;
 mod row;
 mod stmt;
 
-use std::ffi::CString;
-use std::os::raw as libc;
-
 use self::cursor::*;
+use self::private::ConnectionAndTransactionManager;
 use self::raw::{PgTransactionStatus, RawConnection};
 use self::result::PgResult;
 use self::stmt::Statement;
@@ -21,6 +19,8 @@ use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
 use crate::result::*;
 use crate::RunQueryDsl;
+use std::ffi::CString;
+use std::os::raw as libc;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -114,10 +114,9 @@ use crate::RunQueryDsl;
 #[allow(missing_debug_implementations)]
 #[cfg(feature = "postgres")]
 pub struct PgConnection {
-    raw_connection: RawConnection,
-    transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
+    connection_and_transaction_manager: ConnectionAndTransactionManager,
 }
 
 unsafe impl Send for PgConnection {}
@@ -125,11 +124,19 @@ unsafe impl Send for PgConnection {}
 impl SimpleConnection for PgConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
         let query = CString::new(query)?;
-        let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
+        let inner_result = unsafe {
+            self.connection_and_transaction_manager
+                .raw_connection
+                .exec(query.as_ptr())
+        };
         update_transaction_manager_status(
-            inner_result.and_then(|raw_result| PgResult::new(raw_result, &self.raw_connection)),
-            &mut self.raw_connection,
-            &mut self.transaction_state,
+            inner_result.and_then(|raw_result| {
+                PgResult::new(
+                    raw_result,
+                    &self.connection_and_transaction_manager.raw_connection,
+                )
+            }),
+            &mut self.connection_and_transaction_manager,
         )?;
         Ok(())
     }
@@ -162,8 +169,10 @@ impl Connection for PgConnection {
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).and_then(|raw_conn| {
             let mut conn = PgConnection {
-                raw_connection: raw_conn,
-                transaction_state: AnsiTransactionManager::default(),
+                connection_and_transaction_manager: ConnectionAndTransactionManager {
+                    raw_connection: raw_conn,
+                    transaction_state: AnsiTransactionManager::default(),
+                },
                 statement_cache: StatementCache::new(),
                 metadata_cache: PgMetadataCache::new(),
             };
@@ -177,17 +186,16 @@ impl Connection for PgConnection {
         T: QueryFragment<Pg> + QueryId,
     {
         update_transaction_manager_status(
-            self.with_prepared_query(source, |query, params, conn, _| {
+            self.with_prepared_query(source, |query, params, conn| {
                 let res = query
-                    .execute(conn, &params, false)
+                    .execute(&mut conn.raw_connection, &params, false)
                     .map(|r| r.rows_affected());
-                // TODO: understand why this is required
-                let next_res = conn.get_next_result();
-                debug_assert!(matches!(next_res, Ok(None)));
+                // according to https://www.postgresql.org/docs/current/libpq-async.html
+                // `PQgetResult` needs to be called till a null pointer is returned
+                while conn.raw_connection.get_next_result()?.is_some() {}
                 res
             }),
-            &mut self.raw_connection,
-            &mut self.transaction_state,
+            &mut self.connection_and_transaction_manager,
         )
     }
 
@@ -195,7 +203,7 @@ impl Connection for PgConnection {
     where
         Self: Sized,
     {
-        &mut self.transaction_state
+        &mut self.connection_and_transaction_manager.transaction_state
     }
 }
 
@@ -211,11 +219,11 @@ where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source, |stmt, params, conn, tm| {
+        self.with_prepared_query(&source, |stmt, params, conn| {
             use self::private::PgLoadingMode;
-            let result = stmt.execute(conn, &params, Self::USE_ROW_BY_ROW_MODE);
-            let result = update_transaction_manager_status(result, conn, tm)?;
-            Self::get_cursor(conn, tm, result)
+            let result = stmt.execute(&mut conn.raw_connection, &params, Self::USE_ROW_BY_ROW_MODE);
+            let result = update_transaction_manager_status(result, conn)?;
+            Self::get_cursor(conn, result)
         })
     }
 }
@@ -229,8 +237,7 @@ impl GetPgMetadataCache for PgConnection {
 #[inline(always)]
 fn update_transaction_manager_status<T>(
     query_result: QueryResult<T>,
-    raw_conn: &mut RawConnection,
-    tm: &mut AnsiTransactionManager,
+    conn: &mut ConnectionAndTransactionManager,
 ) -> QueryResult<T> {
     if let Err(Error::DatabaseError { .. }) = query_result {
         /// avoid monomorphizing for every result type - this part will not be inlined
@@ -259,7 +266,7 @@ fn update_transaction_manager_status<T>(
                 }
             }
         }
-        non_generic_inner(raw_conn, tm)
+        non_generic_inner(&mut conn.raw_connection, &mut conn.transaction_state)
     }
     query_result
 }
@@ -271,7 +278,12 @@ impl crate::r2d2::R2D2Connection for PgConnection {
     }
 
     fn is_broken(&mut self) -> bool {
-        match self.transaction_state.status.transaction_depth() {
+        match self
+            .connection_and_transaction_manager
+            .transaction_state
+            .status
+            .transaction_depth()
+        {
             // all transactions are closed
             // so we don't consider this connection broken
             Ok(None) => false,
@@ -317,8 +329,7 @@ impl PgConnection {
         f: impl FnOnce(
             MaybeCached<'_, Statement>,
             Vec<Option<Vec<u8>>>,
-            &'conn mut RawConnection,
-            &'conn mut AnsiTransactionManager,
+            &'conn mut ConnectionAndTransactionManager,
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
@@ -328,23 +339,24 @@ impl PgConnection {
 
         let cache_len = self.statement_cache.len();
         let cache = &mut self.statement_cache;
-        let raw_conn = &mut self.raw_connection;
+        let conn = &mut self.connection_and_transaction_manager.raw_connection;
         let query = cache.cached_statement(source, &Pg, &metadata, |sql, _| {
             let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
                 Some(format!("__diesel_stmt_{}", cache_len))
             } else {
                 None
             };
-            Statement::prepare(raw_conn, sql, query_name.as_deref(), &metadata)
+            Statement::prepare(conn, sql, query_name.as_deref(), &metadata)
         });
 
-        f(query?, binds, &mut *raw_conn, &mut self.transaction_state)
+        f(query?, binds, &mut self.connection_and_transaction_manager)
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {
         crate::sql_query("SET TIME ZONE 'UTC'").execute(self)?;
         crate::sql_query("SET CLIENT_ENCODING TO 'UTF8'").execute(self)?;
-        self.raw_connection
+        self.connection_and_transaction_manager
+            .raw_connection
             .set_notice_processor(noop_notice_processor);
         Ok(())
     }
@@ -355,6 +367,12 @@ extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc:
 mod private {
     use super::*;
 
+    #[allow(missing_debug_implementations)]
+    pub struct ConnectionAndTransactionManager {
+        pub(super) raw_connection: RawConnection,
+        pub(super) transaction_state: AnsiTransactionManager,
+    }
+
     pub trait PgLoadingMode<B>
     where
         for<'conn, 'query> Self: ConnectionGatWorkaround<'conn, 'query, Pg, B>,
@@ -362,8 +380,7 @@ mod private {
         const USE_ROW_BY_ROW_MODE: bool;
 
         fn get_cursor<'conn, 'query>(
-            raw_connection: &'conn mut RawConnection,
-            tm: &'conn mut AnsiTransactionManager,
+            raw_connection: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
         ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg, B>>::Cursor>;
     }
@@ -372,17 +389,12 @@ mod private {
         const USE_ROW_BY_ROW_MODE: bool = false;
 
         fn get_cursor<'conn, 'query>(
-            raw_connection: &'conn mut RawConnection,
-            tm: &'conn mut AnsiTransactionManager,
+            conn: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
         ) -> QueryResult<
             <Self as ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadingMode>>::Cursor,
         > {
-            update_transaction_manager_status(
-                Cursor::new(result, raw_connection),
-                raw_connection,
-                tm,
-            )
+            update_transaction_manager_status(Cursor::new(result, &mut conn.raw_connection), conn)
         }
     }
 
@@ -390,13 +402,12 @@ mod private {
         const USE_ROW_BY_ROW_MODE: bool = true;
 
         fn get_cursor<'conn, 'query>(
-            raw_connection: &'conn mut RawConnection,
-            tm: &'conn mut AnsiTransactionManager,
+            raw_connection: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
         ) -> QueryResult<
             <Self as ConnectionGatWorkaround<'conn, 'query, Pg, PgRowByRowLoadingMode>>::Cursor,
         > {
-            Ok(RowByRowCursor::new(result, raw_connection, tm))
+            Ok(RowByRowCursor::new(result, raw_connection))
         }
     }
 }
@@ -650,7 +661,7 @@ mod tests {
             assert!(query_result.is_err());
             assert_eq!(
                 PgTransactionStatus::InError,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             query_result
         });
@@ -662,7 +673,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
     }
 
@@ -708,14 +721,16 @@ mod tests {
             assert!(query_result.is_ok());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             query_result
         });
         assert!(result.is_ok());
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert_eq!(
             None,
@@ -802,7 +817,7 @@ mod tests {
                     });
                     assert_eq!(
                         PgTransactionStatus::Idle,
-                        conn.raw_connection.transaction_status()
+                        conn.connection_and_transaction_manager.raw_connection.transaction_status()
                     );
 
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
@@ -826,7 +841,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
     }
 
@@ -910,13 +927,13 @@ mod tests {
                         assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
                         assert_eq!(
                             PgTransactionStatus::InTransaction,
-                            conn.raw_connection.transaction_status()
+                            conn.connection_and_transaction_manager.raw_connection.transaction_status()
                         );
                         r
                     });
                     assert_eq!(
                         PgTransactionStatus::Idle,
-                        conn.raw_connection.transaction_status()
+                        conn.connection_and_transaction_manager.raw_connection.transaction_status()
                     );
 
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
@@ -940,7 +957,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
     }
 
@@ -975,7 +994,7 @@ mod tests {
             assert!(result.is_ok());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             Ok(())
         });
@@ -987,7 +1006,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert!(result.is_err());
     }
@@ -1049,7 +1070,7 @@ mod tests {
             assert!(result.is_ok());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             Ok(())
         });
@@ -1061,7 +1082,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert!(result.is_err());
     }
@@ -1130,7 +1153,7 @@ mod tests {
             assert!(inner_result.is_err());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             Ok(())
         });
@@ -1142,7 +1165,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert!(result.is_ok(), "Expected success, got {:?}", result);
     }
@@ -1186,7 +1211,7 @@ mod tests {
             assert!(inner_result.is_err());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             assert_eq!(
                 NonZeroU32::new(1),
@@ -1204,7 +1229,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert!(result.is_ok());
     }

@@ -1,10 +1,7 @@
-use std::rc::Rc;
-
-use crate::connection::AnsiTransactionManager;
-
 use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
+use std::rc::Rc;
 
 #[allow(missing_debug_implementations)]
 pub struct Cursor {
@@ -66,21 +63,18 @@ impl Iterator for Cursor {
 pub struct RowByRowCursor<'a> {
     current_row: usize,
     db_result: Rc<PgResult>,
-    conn: &'a mut RawConnection,
-    tm: &'a mut AnsiTransactionManager,
+    conn: &'a mut super::ConnectionAndTransactionManager,
 }
 
 impl<'a> RowByRowCursor<'a> {
     pub(super) fn new(
         db_result: PgResult,
-        raw_connection: &'a mut RawConnection,
-        tm: &'a mut AnsiTransactionManager,
+        conn: &'a mut super::ConnectionAndTransactionManager,
     ) -> Self {
         RowByRowCursor {
             current_row: 0,
             db_result: Rc::new(db_result),
-            conn: raw_connection,
-            tm,
+            conn,
         }
     }
 }
@@ -91,9 +85,8 @@ impl Iterator for RowByRowCursor<'_> {
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_row > 0 {
             let get_next_result = super::update_transaction_manager_status(
-                self.conn.get_next_result(),
+                self.conn.raw_connection.get_next_result(),
                 self.conn,
-                self.tm,
             );
             match get_next_result {
                 Ok(Some(res)) => {
@@ -124,9 +117,8 @@ impl Drop for RowByRowCursor<'_> {
     fn drop(&mut self) {
         loop {
             let res = super::update_transaction_manager_status(
-                self.conn.get_next_result(),
+                self.conn.raw_connection.get_next_result(),
                 self.conn,
-                self.tm,
             );
             if matches!(res, Err(_) | Ok(None)) {
                 break;

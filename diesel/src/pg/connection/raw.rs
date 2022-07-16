@@ -13,7 +13,7 @@ use crate::result::*;
 use super::result::PgResult;
 
 #[allow(missing_debug_implementations, missing_copy_implementations)]
-pub struct RawConnection {
+pub(super) struct RawConnection {
     internal_connection: NonNull<PGconn>,
 }
 
