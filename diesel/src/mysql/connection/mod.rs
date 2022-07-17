@@ -20,6 +20,81 @@ use crate::RunQueryDsl;
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
 /// `mysql://[user[:password]@]host/database_name`
+///
+/// # Supported loading model implementations
+///
+/// * [`DefaultLoadingMode`]
+///
+/// As `MysqlConnection` only supports a single loading mode implementation
+/// it is **not required** to explicitly specify a loading mode
+/// when calling [`RunQueryDsl::load_iter()`] or [`LoadConnection::load`]
+///
+/// ## DefaultLoadingMode
+///
+/// `MysqlConnection` only supports a single loading mode, which loads
+/// values row by row from the result set.
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+/// { // scope to restrict the lifetime of the iterator
+///     let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+///     for r in iter1 {
+///         let (id, name) = r?;
+///         println!("Id: {} Name: {}", id, name);
+///     }
+/// }
+///
+/// // works without specifying the loading mode
+/// let iter2 = users::table.load_iter::<(i32, String), _>(connection)?;
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// This mode does **not support** creating
+/// multiple iterators using the same connection.
+///
+/// ```compile_fail
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+/// let iter2 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
 pub struct MysqlConnection {
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
@@ -68,26 +143,6 @@ impl Connection for MysqlConnection {
         Ok(conn)
     }
 
-    fn load<'conn, 'query, T>(
-        &'conn mut self,
-        source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
-    where
-        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
-        Self::Backend: QueryMetadata<T::SqlType>,
-    {
-        update_transaction_manager_status(
-            prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
-                |stmt| {
-                    let mut metadata = Vec::new();
-                    Mysql::row_metadata(&mut (), &mut metadata);
-                    StatementIterator::from_stmt(stmt, &metadata)
-                },
-            ),
-            &mut self.transaction_state,
-        )
-    }
-
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
@@ -119,6 +174,28 @@ fn update_transaction_manager_status<T>(
             .set_top_level_transaction_requires_rollback()
     }
     query_result
+}
+
+impl LoadConnection<DefaultLoadingMode> for MysqlConnection {
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
+    {
+        update_transaction_manager_status(
+            prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
+                |stmt| {
+                    let mut metadata = Vec::new();
+                    Mysql::row_metadata(&mut (), &mut metadata);
+                    StatementIterator::from_stmt(stmt, &metadata)
+                },
+            ),
+            &mut self.transaction_state,
+        )
+    }
 }
 
 #[cfg(feature = "r2d2")]

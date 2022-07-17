@@ -54,13 +54,14 @@ fn empty_query_gives_proper_error_instead_of_panicking() {
 
 #[test]
 fn ensure_sqlite_does_not_access_dropped_buffers() {
+    use diesel::connection::{DefaultLoadingMode, LoadConnection};
     let connection = &mut connection();
 
     let buf: Vec<u8> = vec![0, 1, 2];
 
     let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
 
-    let mut iter = Connection::load(connection, query).unwrap();
+    let mut iter = LoadConnection::<DefaultLoadingMode>::load(connection, query).unwrap();
 
     assert!(iter.next().is_some());
     assert!(iter.next().is_none());

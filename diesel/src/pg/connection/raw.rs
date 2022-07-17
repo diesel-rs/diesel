@@ -10,6 +10,8 @@ use std::{ptr, str};
 
 use crate::result::*;
 
+use super::result::PgResult;
+
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 pub(super) struct RawConnection {
     internal_connection: NonNull<PGconn>,
@@ -61,7 +63,7 @@ impl RawConnection {
         RawResult::new(PQexec(self.internal_connection.as_ptr(), query), self)
     }
 
-    pub(super) unsafe fn exec_prepared(
+    pub(super) unsafe fn send_query_prepared(
         &self,
         stmt_name: *const libc::c_char,
         param_count: libc::c_int,
@@ -69,8 +71,8 @@ impl RawConnection {
         param_lengths: *const libc::c_int,
         param_formats: *const libc::c_int,
         result_format: libc::c_int,
-    ) -> QueryResult<RawResult> {
-        let ptr = PQexecPrepared(
+    ) -> QueryResult<()> {
+        let res = PQsendQueryPrepared(
             self.internal_connection.as_ptr(),
             stmt_name,
             param_count,
@@ -79,7 +81,14 @@ impl RawConnection {
             param_formats,
             result_format,
         );
-        RawResult::new(ptr, self)
+        if res == 1 {
+            Ok(())
+        } else {
+            Err(Error::DatabaseError(
+                DatabaseErrorKind::UnableToSendCommand,
+                Box::new(self.last_error_message()),
+            ))
+        }
     }
 
     pub(super) unsafe fn prepare(
@@ -105,6 +114,28 @@ impl RawConnection {
 
     pub(super) fn get_status(&self) -> ConnStatusType {
         unsafe { PQstatus(self.internal_connection.as_ptr()) }
+    }
+
+    pub(crate) fn get_next_result(&self) -> Result<Option<PgResult>, Error> {
+        let res = unsafe { PQgetResult(self.internal_connection.as_ptr()) };
+        if res.is_null() {
+            Ok(None)
+        } else {
+            let raw = RawResult::new(res, self)?;
+            Ok(Some(PgResult::new(raw, self)?))
+        }
+    }
+
+    pub(crate) fn enable_row_by_row_mode(&self) -> QueryResult<()> {
+        let res = unsafe { PQsetSingleRowMode(self.internal_connection.as_ptr()) };
+        if res == 1 {
+            Ok(())
+        } else {
+            Err(Error::DatabaseError(
+                DatabaseErrorKind::Unknown,
+                Box::new(self.last_error_message()),
+            ))
+        }
     }
 }
 

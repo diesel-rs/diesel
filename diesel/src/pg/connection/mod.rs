@@ -4,10 +4,8 @@ mod result;
 mod row;
 mod stmt;
 
-use std::ffi::CString;
-use std::os::raw as libc;
-
 use self::cursor::*;
+use self::private::ConnectionAndTransactionManager;
 use self::raw::{PgTransactionStatus, RawConnection};
 use self::result::PgResult;
 use self::stmt::Statement;
@@ -21,17 +19,104 @@ use crate::query_builder::*;
 use crate::result::ConnectionError::CouldntSetupConfiguration;
 use crate::result::*;
 use crate::RunQueryDsl;
+use std::ffi::CString;
+use std::os::raw as libc;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
 /// <https://www.postgresql.org/docs/9.4/static/libpq-connect.html#LIBPQ-CONNSTRING>
+///
+/// # Supported loading model implementations
+///
+/// * [`DefaultLoadingMode`]
+/// * [`PgRowByRowLoadingMode`]
+///
+/// If you are unsure which loading mode is the correct one for your application,
+/// you likely want to use the `DefaultLoadingMode` as that one offers
+/// generally better performance.
+///
+/// Due to the fact that `PgConnection` supports multiple loading modes
+/// it is **required** to always specify the used loading mode
+/// when calling [`RunQueryDsl::load_iter`] or [`LoadConnection::load`].
+///
+/// ## `DefaultLoadingMode`
+///
+/// By using this mode `PgConnection` defaults to loading all response values at **once**
+/// and only performs deserialization afterward for the `DefaultLoadingMode`.
+/// Generally this mode will be more performant as it.
+///
+/// This loading mode allows users to perform hold more than one iterator at once using
+/// the same connection:
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+/// let iter2 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// ## `PgRowByRowLoadingMode`
+///
+/// By using this mode `PgConnection` defaults to loading each row of the result set
+/// sepreatly. This might be desired for huge result sets.
+///
+/// This loading mode **prevents** creating more than one iterator at once using
+/// the same connection. The following code is **not** allowed:
+///
+/// ```compile_fail
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::pg::PgRowByRowLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), PgRowByRowLoadingMode>(connection)?;
+/// // creating a second iterator generates an compiler error
+/// let iter2 = users::table.load_iter::<(i32, String), PgRowByRowLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
 #[allow(missing_debug_implementations)]
 #[cfg(feature = "postgres")]
 pub struct PgConnection {
-    raw_connection: RawConnection,
-    transaction_state: AnsiTransactionManager,
     statement_cache: StatementCache<Pg, Statement>,
     metadata_cache: PgMetadataCache,
+    connection_and_transaction_manager: ConnectionAndTransactionManager,
 }
 
 unsafe impl Send for PgConnection {}
@@ -39,17 +124,41 @@ unsafe impl Send for PgConnection {}
 impl SimpleConnection for PgConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
         let query = CString::new(query)?;
-        let inner_result = unsafe { self.raw_connection.exec(query.as_ptr()) };
+        let inner_result = unsafe {
+            self.connection_and_transaction_manager
+                .raw_connection
+                .exec(query.as_ptr())
+        };
         update_transaction_manager_status(
-            inner_result.and_then(|raw_result| PgResult::new(raw_result, &self.raw_connection)),
-            self,
+            inner_result.and_then(|raw_result| {
+                PgResult::new(
+                    raw_result,
+                    &self.connection_and_transaction_manager.raw_connection,
+                )
+            }),
+            &mut self.connection_and_transaction_manager,
         )?;
         Ok(())
     }
 }
 
-impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg> for PgConnection {
-    type Cursor = Cursor<'conn>;
+/// A [`PgConnection`] specific loading mode to load rows one by one
+///
+/// See the documentation of [`PgConnection`] for details
+#[derive(Debug, Copy, Clone)]
+pub struct PgRowByRowLoadingMode;
+
+impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadingMode>
+    for PgConnection
+{
+    type Cursor = Cursor;
+    type Row = self::row::PgRow;
+}
+
+impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg, PgRowByRowLoadingMode>
+    for PgConnection
+{
+    type Cursor = RowByRowCursor<'conn>;
     type Row = self::row::PgRow;
 }
 
@@ -60,8 +169,10 @@ impl Connection for PgConnection {
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
         RawConnection::establish(database_url).and_then(|raw_conn| {
             let mut conn = PgConnection {
-                raw_connection: raw_conn,
-                transaction_state: AnsiTransactionManager::default(),
+                connection_and_transaction_manager: ConnectionAndTransactionManager {
+                    raw_connection: raw_conn,
+                    transaction_state: AnsiTransactionManager::default(),
+                },
                 statement_cache: StatementCache::new(),
                 metadata_cache: PgMetadataCache::new(),
             };
@@ -70,35 +181,21 @@ impl Connection for PgConnection {
             Ok(conn)
         })
     }
-
-    fn load<'conn, 'query, T>(
-        &'conn mut self,
-        source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
-    where
-        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
-        Self::Backend: QueryMetadata<T::SqlType>,
-    {
-        update_transaction_manager_status(
-            self.with_prepared_query(&source, |stmt, params, conn| {
-                let result = stmt.execute(conn, &params)?;
-                let cursor = Cursor::new(result);
-
-                Ok(cursor)
-            }),
-            self,
-        )
-    }
-
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Pg> + QueryId,
     {
         update_transaction_manager_status(
             self.with_prepared_query(source, |query, params, conn| {
-                query.execute(conn, &params).map(|r| r.rows_affected())
+                let res = query
+                    .execute(&mut conn.raw_connection, &params, false)
+                    .map(|r| r.rows_affected());
+                // according to https://www.postgresql.org/docs/current/libpq-async.html
+                // `PQgetResult` needs to be called till a null pointer is returned
+                while conn.raw_connection.get_next_result()?.is_some() {}
+                res
             }),
-            self,
+            &mut self.connection_and_transaction_manager,
         )
     }
 
@@ -106,7 +203,28 @@ impl Connection for PgConnection {
     where
         Self: Sized,
     {
-        &mut self.transaction_state
+        &mut self.connection_and_transaction_manager.transaction_state
+    }
+}
+
+impl<B> LoadConnection<B> for PgConnection
+where
+    Self: self::private::PgLoadingMode<B>,
+{
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
+    {
+        self.with_prepared_query(&source, |stmt, params, conn| {
+            use self::private::PgLoadingMode;
+            let result = stmt.execute(&mut conn.raw_connection, &params, Self::USE_ROW_BY_ROW_MODE);
+            let result = update_transaction_manager_status(result, conn)?;
+            Self::get_cursor(conn, result)
+        })
     }
 }
 
@@ -119,33 +237,26 @@ impl GetPgMetadataCache for PgConnection {
 #[inline(always)]
 fn update_transaction_manager_status<T>(
     query_result: QueryResult<T>,
-    conn: &mut PgConnection,
+    conn: &mut ConnectionAndTransactionManager,
 ) -> QueryResult<T> {
     if let Err(Error::DatabaseError { .. }) = query_result {
         /// avoid monomorphizing for every result type - this part will not be inlined
-        fn non_generic_inner(conn: &mut PgConnection) {
-            if AnsiTransactionManager::transaction_manager_status_mut(conn)
-                .is_not_broken_and_in_transaction()
-            {
+        fn non_generic_inner(raw_conn: &mut RawConnection, tm: &mut AnsiTransactionManager) {
+            if tm.status.is_not_broken_and_in_transaction() {
                 // libpq keeps track of the transaction status internally, and that is accessible
                 // via `transaction_status`. We can use that to update the AnsiTransactionManager
                 // status
-                match conn.raw_connection.transaction_status() {
+                match raw_conn.transaction_status() {
                     PgTransactionStatus::InError => {
-                        AnsiTransactionManager::transaction_manager_status_mut(conn)
-                            .set_top_level_transaction_requires_rollback()
+                        tm.status.set_top_level_transaction_requires_rollback()
                     }
-                    PgTransactionStatus::Unknown => {
-                        AnsiTransactionManager::transaction_manager_status_mut(conn).set_in_error()
-                    }
+                    PgTransactionStatus::Unknown => tm.status.set_in_error(),
                     PgTransactionStatus::Idle => {
                         // This may repair the transaction manager
-                        *AnsiTransactionManager::transaction_manager_status_mut(conn) =
-                            TransactionManagerStatus::Valid(Default::default())
+                        tm.status = TransactionManagerStatus::Valid(Default::default())
                     }
                     PgTransactionStatus::InTransaction => {
-                        let transaction_status =
-                            AnsiTransactionManager::transaction_manager_status_mut(conn);
+                        let transaction_status = &mut tm.status;
                         if !matches!(transaction_status, TransactionManagerStatus::Valid(valid_tm) if valid_tm.transaction_depth().is_some())
                         {
                             transaction_status.set_in_error()
@@ -155,7 +266,7 @@ fn update_transaction_manager_status<T>(
                 }
             }
         }
-        non_generic_inner(conn)
+        non_generic_inner(&mut conn.raw_connection, &mut conn.transaction_state)
     }
     query_result
 }
@@ -167,7 +278,12 @@ impl crate::r2d2::R2D2Connection for PgConnection {
     }
 
     fn is_broken(&mut self) -> bool {
-        match self.transaction_state.status.transaction_depth() {
+        match self
+            .connection_and_transaction_manager
+            .transaction_state
+            .status
+            .transaction_depth()
+        {
             // all transactions are closed
             // so we don't consider this connection broken
             Ok(None) => false,
@@ -213,7 +329,7 @@ impl PgConnection {
         f: impl FnOnce(
             MaybeCached<'_, Statement>,
             Vec<Option<Vec<u8>>>,
-            &'conn mut RawConnection,
+            &'conn mut ConnectionAndTransactionManager,
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
@@ -223,29 +339,78 @@ impl PgConnection {
 
         let cache_len = self.statement_cache.len();
         let cache = &mut self.statement_cache;
-        let raw_conn = &mut self.raw_connection;
+        let conn = &mut self.connection_and_transaction_manager.raw_connection;
         let query = cache.cached_statement(source, &Pg, &metadata, |sql, _| {
             let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
                 Some(format!("__diesel_stmt_{}", cache_len))
             } else {
                 None
             };
-            Statement::prepare(raw_conn, sql, query_name.as_deref(), &metadata)
+            Statement::prepare(conn, sql, query_name.as_deref(), &metadata)
         });
 
-        f(query?, binds, raw_conn)
+        f(query?, binds, &mut self.connection_and_transaction_manager)
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {
         crate::sql_query("SET TIME ZONE 'UTC'").execute(self)?;
         crate::sql_query("SET CLIENT_ENCODING TO 'UTF8'").execute(self)?;
-        self.raw_connection
+        self.connection_and_transaction_manager
+            .raw_connection
             .set_notice_processor(noop_notice_processor);
         Ok(())
     }
 }
 
 extern "C" fn noop_notice_processor(_: *mut libc::c_void, _message: *const libc::c_char) {}
+
+mod private {
+    use super::*;
+
+    #[allow(missing_debug_implementations)]
+    pub struct ConnectionAndTransactionManager {
+        pub(super) raw_connection: RawConnection,
+        pub(super) transaction_state: AnsiTransactionManager,
+    }
+
+    pub trait PgLoadingMode<B>
+    where
+        for<'conn, 'query> Self: ConnectionGatWorkaround<'conn, 'query, Pg, B>,
+    {
+        const USE_ROW_BY_ROW_MODE: bool;
+
+        fn get_cursor<'conn, 'query>(
+            raw_connection: &'conn mut ConnectionAndTransactionManager,
+            result: PgResult,
+        ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg, B>>::Cursor>;
+    }
+
+    impl PgLoadingMode<DefaultLoadingMode> for PgConnection {
+        const USE_ROW_BY_ROW_MODE: bool = false;
+
+        fn get_cursor<'conn, 'query>(
+            conn: &'conn mut ConnectionAndTransactionManager,
+            result: PgResult,
+        ) -> QueryResult<
+            <Self as ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadingMode>>::Cursor,
+        > {
+            update_transaction_manager_status(Cursor::new(result, &mut conn.raw_connection), conn)
+        }
+    }
+
+    impl PgLoadingMode<PgRowByRowLoadingMode> for PgConnection {
+        const USE_ROW_BY_ROW_MODE: bool = true;
+
+        fn get_cursor<'conn, 'query>(
+            raw_connection: &'conn mut ConnectionAndTransactionManager,
+            result: PgResult,
+        ) -> QueryResult<
+            <Self as ConnectionGatWorkaround<'conn, 'query, Pg, PgRowByRowLoadingMode>>::Cursor,
+        > {
+            Ok(RowByRowCursor::new(result, raw_connection))
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -496,7 +661,7 @@ mod tests {
             assert!(query_result.is_err());
             assert_eq!(
                 PgTransactionStatus::InError,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             query_result
         });
@@ -508,7 +673,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
     }
 
@@ -554,14 +721,16 @@ mod tests {
             assert!(query_result.is_ok());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             query_result
         });
         assert!(result.is_ok());
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert_eq!(
             None,
@@ -648,7 +817,7 @@ mod tests {
                     });
                     assert_eq!(
                         PgTransactionStatus::Idle,
-                        conn.raw_connection.transaction_status()
+                        conn.connection_and_transaction_manager.raw_connection.transaction_status()
                     );
 
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
@@ -672,7 +841,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
     }
 
@@ -756,13 +927,13 @@ mod tests {
                         assert_eq!(NonZeroU32::new(1), <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
                         assert_eq!(
                             PgTransactionStatus::InTransaction,
-                            conn.raw_connection.transaction_status()
+                            conn.connection_and_transaction_manager.raw_connection.transaction_status()
                         );
                         r
                     });
                     assert_eq!(
                         PgTransactionStatus::Idle,
-                        conn.raw_connection.transaction_status()
+                        conn.connection_and_transaction_manager.raw_connection.transaction_status()
                     );
 
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
@@ -786,7 +957,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
     }
 
@@ -821,7 +994,7 @@ mod tests {
             assert!(result.is_ok());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             Ok(())
         });
@@ -833,7 +1006,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert!(result.is_err());
     }
@@ -895,7 +1070,7 @@ mod tests {
             assert!(result.is_ok());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             Ok(())
         });
@@ -907,7 +1082,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert!(result.is_err());
     }
@@ -976,7 +1153,7 @@ mod tests {
             assert!(inner_result.is_err());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             Ok(())
         });
@@ -988,7 +1165,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert!(result.is_ok(), "Expected success, got {:?}", result);
     }
@@ -1032,7 +1211,7 @@ mod tests {
             assert!(inner_result.is_err());
             assert_eq!(
                 PgTransactionStatus::InTransaction,
-                conn.raw_connection.transaction_status()
+                conn.connection_and_transaction_manager.raw_connection.transaction_status()
             );
             assert_eq!(
                 NonZeroU32::new(1),
@@ -1050,7 +1229,9 @@ mod tests {
         );
         assert_eq!(
             PgTransactionStatus::Idle,
-            conn.raw_connection.transaction_status()
+            conn.connection_and_transaction_manager
+                .raw_connection
+                .transaction_status()
         );
         assert!(result.is_ok());
     }

@@ -36,11 +36,11 @@ pub trait SimpleConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()>;
 }
 
-/// Return type of [`Connection::load`].
+/// Return type of [`LoadConnection::load`].
 ///
 /// Users should threat this type as `impl Iterator<Item = QueryResult<impl Row<DB>>>`
-pub type LoadRowIter<'conn, 'query, C, DB> =
-    <C as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor;
+pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =
+    <C as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor;
 
 /// A connection to a database
 ///
@@ -66,10 +66,11 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 ///
 /// Wrapping an existing connection allows you to customize the implementation to
 /// add additional functionality, like for example instrumentation. For this use case
-/// you only need to implement `Connection` and all super traits. You should forward
-/// any method call to the wrapped connection type. It is **important** to also
-/// forward any method where diesel provides a default implementation, as the
-/// wrapped connection implementation may contain a customized implementation.
+/// you only need to implement `Connection`, [`LoadConnection`] and all super traits.
+/// You should forward any method call to the wrapped connection type.
+/// It is **important** to also forward any method where diesel provides a
+/// default implementation, as the wrapped connection implementation may
+/// contain a customized implementation.
 ///
 /// To allow the integration of your new connection type with other diesel features
 #[cfg_attr(
@@ -90,7 +91,7 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// based on a pure rust connection crate.
 ///
 /// **It's important to use prepared statements to implement the following methods:**
-/// * [`Connection::load`]
+/// * [`LoadConnection::load`]
 /// * [`Connection::execute_returning_count`]
 ///
 /// For performance reasons it may also be meaningful to cache already prepared statements.
@@ -190,7 +191,11 @@ pub type LoadRowIter<'conn, 'query, C, DB> =
 /// implementations to see how you can implement your own connection.
 pub trait Connection: SimpleConnection + Sized + Send
 where
-    Self: for<'a, 'b> ConnectionGatWorkaround<'a, 'b, <Self as Connection>::Backend>,
+    // This trait bound is there so that implementing a new connection is
+    // gated behind the `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
+    // feature flag
+    for<'conn, 'query> Self:
+        ConnectionGatWorkaround<'conn, 'query, Self::Backend, DefaultLoadingMode>,
 {
     /// The backend this type connects to
     type Backend: Backend;
@@ -343,28 +348,6 @@ where
         user_result.expect("Transaction did not succeed")
     }
 
-    /// Executes a given query and returns any requested values
-    ///
-    /// This function executes a given query and returns the
-    /// query result as given by the database. **Normal users
-    /// should not use this function**. Use
-    /// [`QueryDsl::load`](crate::QueryDsl) instead.
-    ///
-    /// This function is useful for people trying to build an alternative
-    /// dsl on top of diesel. It returns an [ `LoadRowIter`], which
-    /// is essentially an [`Iterator<Item = QueryResult<&impl Row<Self::Backend>>`](Iterator).
-    /// This type can be used to iterate over all rows returned by the database.
-    #[diesel_derives::__diesel_public_if(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-    )]
-    fn load<'conn, 'query, T>(
-        &'conn mut self,
-        source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
-    where
-        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
-        Self::Backend: QueryMetadata<T::SqlType>;
-
     /// Execute a single SQL statements given by a query and return
     /// number of affected rows
     #[diesel_derives::__diesel_public_if(
@@ -384,6 +367,37 @@ where
     fn transaction_state(
         &mut self,
     ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData;
+}
+
+/// The specific part of a [`Connection`] which actually loads data from the database
+///
+/// This is a seperate trait to allow connection implementations to specify
+/// different loading modes via the generic paramater.
+pub trait LoadConnection<B = DefaultLoadingMode>: Connection
+where
+    for<'conn, 'query> Self: ConnectionGatWorkaround<'conn, 'query, Self::Backend, B>,
+{
+    /// Executes a given query and returns any requested values
+    ///
+    /// This function executes a given query and returns the
+    /// query result as given by the database. **Normal users
+    /// should not use this function**. Use
+    /// [`QueryDsl::load`](crate::QueryDsl) instead.
+    ///
+    /// This function is useful for people trying to build an alternative
+    /// dsl on top of diesel. It returns an [ `LoadRowIter`], which
+    /// is essentially an [`Iterator<Item = QueryResult<&impl Row<Self::Backend>>`](Iterator).
+    /// This type can be used to iterate over all rows returned by the database.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>;
 }
 
 /// A variant of the [`Connection`](trait.Connection.html) trait that is
@@ -417,6 +431,17 @@ where
         self
     }
 }
+
+/// The default loading mode provided by a [`Connection`].
+///
+/// Checkout the documentation of concrete connection types for details about
+/// supported loading modes.
+///
+/// All types implementing [`Connection`] should provide at least
+/// a single [`LoadConnection<DefaultLoadingMode>`](self::LoadConnection)
+/// implementation.
+#[derive(Debug, Copy, Clone)]
+pub struct DefaultLoadingMode;
 
 impl<DB: Backend + 'static> dyn BoxableConnection<DB> {
     /// Downcast the current connection to a specific connection
@@ -462,6 +487,8 @@ mod private {
     use crate::backend::Backend;
     use crate::QueryResult;
 
+    use super::DefaultLoadingMode;
+
     /// This trait describes which cursor type is used by a given connection
     /// implementation. This trait is only useful in combination with [`Connection`].
     ///
@@ -472,12 +499,12 @@ mod private {
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-    pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend> {
-        /// The cursor type returned by [`Connection::load`]
+    pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend, B = DefaultLoadingMode> {
+        /// The cursor type returned by [`LoadConnection::load`]
         ///
         /// Users should handle this as opaque type that implements [`Iterator`]
         ///
-        /// [`Connection::load`]: super::Connection::load
+        /// [`LoadConnection::load`]: super::LoadConnection::load
         type Cursor: Iterator<Item = QueryResult<Self::Row>>;
         /// The row type used as [`Iterator::Item`] for the iterator implementation
         /// of [`ConnectionGatWorkaround::Cursor`]

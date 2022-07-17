@@ -12,7 +12,8 @@ use super::row::PgRow;
 use crate::result::{DatabaseErrorInformation, DatabaseErrorKind, Error, QueryResult};
 use crate::util::OnceCell;
 
-pub(crate) struct PgResult {
+#[allow(missing_debug_implementations)]
+pub struct PgResult {
     internal_result: RawResult,
     column_count: usize,
     row_count: usize,
@@ -27,7 +28,9 @@ impl PgResult {
     pub(super) fn new(internal_result: RawResult, conn: &RawConnection) -> QueryResult<Self> {
         let result_status = unsafe { PQresultStatus(internal_result.as_ptr()) };
         match result_status {
-            ExecStatusType::PGRES_COMMAND_OK | ExecStatusType::PGRES_TUPLES_OK => {
+            ExecStatusType::PGRES_SINGLE_TUPLE
+            | ExecStatusType::PGRES_COMMAND_OK
+            | ExecStatusType::PGRES_TUPLES_OK => {
                 let column_count = unsafe { PQnfields(internal_result.as_ptr()) as usize };
                 let row_count = unsafe { PQntuples(internal_result.as_ptr()) as usize };
                 Ok(PgResult {

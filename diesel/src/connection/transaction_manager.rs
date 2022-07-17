@@ -423,8 +423,6 @@ mod test {
         use crate::connection::{
             Connection, ConnectionGatWorkaround, SimpleConnection, TransactionManager,
         };
-        use crate::expression::QueryMetadata;
-        use crate::query_builder::{AsQuery, QueryFragment, QueryId};
         use crate::result::QueryResult;
         use crate::test_helpers::TestConnection;
         use std::collections::VecDeque;
@@ -480,18 +478,6 @@ mod test {
                     top_level_requires_rollback_after_next_batch_execute: false,
                     transaction_state: AnsiTransactionManager::default(),
                 })
-            }
-
-            fn load<'conn, 'query, T>(
-                &'conn mut self,
-                _source: T,
-            ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
-            where
-                T: AsQuery,
-                T::Query: QueryFragment<Self::Backend> + QueryId + 'query,
-                Self::Backend: QueryMetadata<T::SqlType>,
-            {
-                unimplemented!()
             }
 
             fn execute_returning_count<T>(&mut self, _source: &T) -> QueryResult<usize>
