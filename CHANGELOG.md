@@ -17,6 +17,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   may be enabled concurrently with the previously existing `network-address`
   feature.
 
+### Fixed
+
+* Updated `ipnetwork` to allow version 0.20.
+
 ## [2.0.0 Rc0] 2022-04-22
 
 ### Added
