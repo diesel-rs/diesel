@@ -37,7 +37,7 @@ use std::os::raw as libc;
 ///
 /// Due to the fact that `PgConnection` supports multiple loading modes
 /// it is **required** to always specify the used loading mode
-/// when calling [`RunQueryDsl::load_iter`] or [`LoadConnection::load`].
+/// when calling [`RunQueryDsl::load_iter`]
 ///
 /// ## `DefaultLoadingMode`
 ///

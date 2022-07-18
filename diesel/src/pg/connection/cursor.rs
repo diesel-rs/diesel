@@ -61,7 +61,7 @@ impl Iterator for Cursor {
 /// Acts as an iterator over `T`.
 #[allow(missing_debug_implementations)]
 pub struct RowByRowCursor<'a> {
-    current_row: usize,
+    first_row: bool,
     db_result: Rc<PgResult>,
     conn: &'a mut super::ConnectionAndTransactionManager,
 }
@@ -72,7 +72,7 @@ impl<'a> RowByRowCursor<'a> {
         conn: &'a mut super::ConnectionAndTransactionManager,
     ) -> Self {
         RowByRowCursor {
-            current_row: 0,
+            first_row: true,
             db_result: Rc::new(db_result),
             conn,
         }
@@ -83,19 +83,19 @@ impl Iterator for RowByRowCursor<'_> {
     type Item = crate::QueryResult<PgRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.current_row > 0 {
+        if !self.first_row {
             let get_next_result = super::update_transaction_manager_status(
                 self.conn.raw_connection.get_next_result(),
                 self.conn,
             );
             match get_next_result {
                 Ok(Some(res)) => {
+                    // we try to reuse the existing allocation here
                     if let Some(old_res) = Rc::get_mut(&mut self.db_result) {
                         *old_res = res;
                     } else {
                         self.db_result = Rc::new(res);
                     }
-                    self.current_row = 0;
                 }
                 Ok(None) => {
                     return None;
@@ -103,10 +103,11 @@ impl Iterator for RowByRowCursor<'_> {
                 Err(e) => return Some(Err(e)),
             }
         }
-        if self.current_row < self.db_result.num_rows() {
-            let row = self.db_result.clone().get_row(self.current_row);
-            self.current_row += 1;
-            Some(Ok(row))
+        // This contains either 1 (for a row containing data) or 0 (for the last one) rows
+        if self.db_result.num_rows() > 0 {
+            debug_assert_eq!(self.db_result.num_rows(), 1);
+            self.first_row = false;
+            Some(Ok(self.db_result.clone().get_row(0)))
         } else {
             None
         }
