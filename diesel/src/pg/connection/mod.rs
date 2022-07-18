@@ -37,7 +37,7 @@ use std::os::raw as libc;
 ///
 /// Due to the fact that `PgConnection` supports multiple loading modes
 /// it is **required** to always specify the used loading mode
-/// when calling [`RunQueryDsl::load_iter`] or [`LoadConnection::load`].
+/// when calling [`RunQueryDsl::load_iter`]
 ///
 /// ## `DefaultLoadingMode`
 ///
@@ -241,7 +241,9 @@ fn update_transaction_manager_status<T>(
 ) -> QueryResult<T> {
     if let Err(Error::DatabaseError { .. }) = query_result {
         /// avoid monomorphizing for every result type - this part will not be inlined
-        fn non_generic_inner(raw_conn: &mut RawConnection, tm: &mut AnsiTransactionManager) {
+        fn non_generic_inner(conn: &mut ConnectionAndTransactionManager) {
+            let raw_conn: &mut RawConnection = &mut conn.raw_connection;
+            let tm: &mut AnsiTransactionManager = &mut conn.transaction_state;
             if tm.status.is_not_broken_and_in_transaction() {
                 // libpq keeps track of the transaction status internally, and that is accessible
                 // via `transaction_status`. We can use that to update the AnsiTransactionManager
@@ -266,7 +268,7 @@ fn update_transaction_manager_status<T>(
                 }
             }
         }
-        non_generic_inner(&mut conn.raw_connection, &mut conn.transaction_state)
+        non_generic_inner(conn)
     }
     query_result
 }
