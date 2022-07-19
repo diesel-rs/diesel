@@ -186,10 +186,10 @@ impl<DB: Backend> Migration<DB> for SqlFileMigration {
 
     fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> migration::Result<()> {
         let down_path = self.base_path.join("down.sql");
-        if !matches!(down_path.metadata(), Err(e) if e.kind() == std::io::ErrorKind::NotFound) {
-            Ok(run_sql_from_file(conn, &down_path, &self.name)?)
-        } else {
+        if matches!(down_path.metadata(), Err(e) if e.kind() == std::io::ErrorKind::NotFound) {
             Err(MigrationError::NoMigrationRevertFile.into())
+        } else {
+            Ok(run_sql_from_file(conn, &down_path, &self.name)?)
         }
     }
 
