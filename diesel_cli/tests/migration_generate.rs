@@ -70,6 +70,24 @@ fn migration_generate_creates_a_migration_with_initial_contents() {
 }
 
 #[test]
+fn migration_generate_with_no_down_file_has_no_down_file() {
+    let p = project("migration_name").folder("migrations").build();
+    let result = p
+        .command("migration")
+        .arg("generate")
+        .arg("--no-down")
+        .arg("hello")
+        .run();
+    assert!(result.is_success(), "Command failed: {:?}", result);
+
+    let migrations = p.migrations();
+    let migration = &migrations[0];
+
+    assert!(migration.path().join("up.sql").exists());
+    assert!(!migration.path().join("down.sql").exists());
+}
+
+#[test]
 fn migration_generate_doesnt_require_database_url_to_be_set() {
     let p = project("migration_name").folder("migrations").build();
     let result = p
