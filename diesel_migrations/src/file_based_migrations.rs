@@ -185,11 +185,12 @@ impl<DB: Backend> Migration<DB> for SqlFileMigration {
     }
 
     fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> migration::Result<()> {
-        Ok(run_sql_from_file(
-            conn,
-            &self.base_path.join("down.sql"),
-            &self.name,
-        )?)
+        let down_path = self.base_path.join("down.sql");
+        if !matches!(down_path.metadata(), Err(e) if e.kind() == std::io::ErrorKind::NotFound) {
+            Ok(run_sql_from_file(conn, &down_path, &self.name)?)
+        } else {
+            Err(MigrationError::NoMigrationRevertFile.into())
+        }
     }
 
     fn metadata(&self) -> &dyn MigrationMetadata {

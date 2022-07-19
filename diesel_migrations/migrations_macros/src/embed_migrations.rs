@@ -47,7 +47,7 @@ fn migration_literal_from_path(path: &Path) -> proc_macro2::TokenStream {
     if version_from_string(&name).is_none() {
         panic!(
             "Invalid migration directory, the directory's name should be \
-             <timestamp>_<name_of_migration>, and it should only contain \
+             <timestamp>_<name_of_migration>, and it should contain \
              up.sql and down.sql."
         );
     }

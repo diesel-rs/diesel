@@ -131,7 +131,10 @@ fn run_migration_command(
                 .get_one::<String>("MIGRATION_FORMAT")
                 .map(|s| s as &str)
             {
-                Some("sql") => generate_sql_migration(&migration_dir),
+                Some("sql") => generate_sql_migration(
+                    &migration_dir,
+                    !args.contains_id("MIGRATION_NO_DOWN_FILE"),
+                ),
                 Some(x) => return Err(format!("Unrecognized migration format `{}`", x).into()),
                 None => unreachable!("MIGRATION_FORMAT has a default value"),
             }
@@ -142,7 +145,7 @@ fn run_migration_command(
     Ok(())
 }
 
-fn generate_sql_migration(path: &Path) {
+fn generate_sql_migration(path: &Path, with_down: bool) {
     use std::io::Write;
 
     let migration_dir_relative =
@@ -156,14 +159,16 @@ fn generate_sql_migration(path: &Path) {
     let mut up = fs::File::create(up_path).unwrap();
     up.write_all(b"-- Your SQL goes here").unwrap();
 
-    let down_path = path.join("down.sql");
-    println!(
-        "Creating {}",
-        migration_dir_relative.join("down.sql").display()
-    );
-    let mut down = fs::File::create(down_path).unwrap();
-    down.write_all(b"-- This file should undo anything in `up.sql`")
-        .unwrap();
+    if with_down {
+        let down_path = path.join("down.sql");
+        println!(
+            "Creating {}",
+            migration_dir_relative.join("down.sql").display()
+        );
+        let mut down = fs::File::create(down_path).unwrap();
+        down.write_all(b"-- This file should undo anything in `up.sql`")
+            .unwrap();
+    }
 }
 
 fn migration_version<'a>(matches: &'a ArgMatches) -> Box<dyn Display + 'a> {

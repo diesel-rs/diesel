@@ -4,10 +4,6 @@ use clap::{
 };
 use clap_complete::Shell;
 
-fn str_as_char(str: &str) -> char {
-    str.chars().next().unwrap()
-}
-
 pub fn build_cli() -> Command<'static> {
     let database_arg = Arg::new("DATABASE_URL")
         .long("database-url")
@@ -31,7 +27,7 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("REVERT_ALL")
                         .long("all")
-                        .short(str_as_char("a"))
+                        .short('a')
                         .help("Reverts previously run migration files.")
                         .takes_value(false)
                         .conflicts_with("REVERT_NUMBER"),
@@ -39,7 +35,7 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("REVERT_NUMBER")
                         .long("number")
-                        .short(str_as_char("n"))
+                        .short('n')
                         .help("Reverts the last `n` migration files.")
                         .long_help(
                             "When this option is specified the last `n` migration files \
@@ -60,7 +56,7 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("REDO_ALL")
                         .long("all")
-                        .short(str_as_char("a"))
+                        .short('a')
                         .help("Reverts and re-runs all migrations.")
                         .long_help(
                             "When this option is specified all migrations \
@@ -73,7 +69,7 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("REDO_NUMBER")
                         .long("number")
-                        .short(str_as_char("n"))
+                        .short('n')
                         .help("Redo the last `n` migration files.")
                         .long_help(
                             "When this option is specified the last `n` migration files \
@@ -112,6 +108,16 @@ pub fn build_cli() -> Command<'static> {
                              for most use cases.",
                         )
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::new("MIGRATION_NO_DOWN_FILE")
+                        .short('u') // only Up
+                        .long("no-down")
+                        .help(
+                            "Don't generate a down.sql file. \
+                            You won't be able to run migration `revert` or `redo`.",
+                        )
+                        .takes_value(false),
                 )
                 .arg(
                     Arg::new("MIGRATION_FORMAT")
@@ -165,7 +171,7 @@ pub fn build_cli() -> Command<'static> {
         .arg(
             Arg::new("schema")
                 .long("schema")
-                .short(str_as_char("s"))
+                .short('s')
                 .takes_value(true)
                 .help("The name of the schema."),
         )
@@ -179,14 +185,14 @@ pub fn build_cli() -> Command<'static> {
         )
         .arg(
             Arg::new("only-tables")
-                .short(str_as_char("o"))
+                .short('o')
                 .long("only-tables")
                 .help("Only include tables from table-name that matches regexp.")
                 .conflicts_with("except-tables"),
         )
         .arg(
             Arg::new("except-tables")
-                .short(str_as_char("e"))
+                .short('e')
                 .long("except-tables")
                 .help("Exclude tables from table-name that matches regex.")
                 .conflicts_with("only-tables"),
