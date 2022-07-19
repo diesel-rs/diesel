@@ -88,7 +88,7 @@ fn setup_runs_migrations_if_no_schema_table() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     // sanity check
@@ -116,7 +116,7 @@ fn setup_doesnt_run_migrations_if_schema_table_exists() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     let result = p.command("setup").run();

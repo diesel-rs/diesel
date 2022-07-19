@@ -20,6 +20,7 @@
     missing_copy_implementations
 )]
 
+use std::ffi::OsString;
 use std::fs::{DirEntry, File};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -64,20 +65,18 @@ pub fn search_for_migrations_directory(path: &Path) -> Option<PathBuf> {
 }
 
 pub fn valid_sql_migration_directory(path: &Path) -> bool {
-    file_names(path)
-        .map(|files| files.contains(&"down.sql".into()) && files.contains(&"up.sql".into()))
-        .unwrap_or(false)
+    file_names(path).map_or(false, |files| files.iter().any(|f| f == "up.sql"))
 }
 
 pub fn version_from_string(path: &str) -> Option<String> {
     path.split('_').next().map(|s| s.replace('-', ""))
 }
 
-pub fn file_names(path: &Path) -> Result<Vec<String>, std::io::Error> {
+fn file_names(path: &Path) -> Result<Vec<OsString>, std::io::Error> {
     path.read_dir()?
         .filter_map(|entry| match entry {
             Ok(entry) if entry.file_name().to_string_lossy().starts_with('.') => None,
-            Ok(entry) => Some(Ok(entry.file_name().to_string_lossy().into_owned())),
+            Ok(entry) => Some(Ok(entry.file_name())),
             Err(e) => Some(Err(e)),
         })
         .collect::<Result<Vec<_>, _>>()

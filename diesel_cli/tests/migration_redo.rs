@@ -6,7 +6,7 @@ fn migration_redo_runs_the_last_migration_down_and_up() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
-        "DROP TABLE users;",
+        Some("DROP TABLE users;"),
     );
 
     // Make sure the project is setup
@@ -37,19 +37,19 @@ fn migration_redo_runs_the_last_two_migrations_down_and_up() {
     p.create_migration(
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE customers",
+        Some("DROP TABLE customers"),
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE contracts",
+        Some("DROP TABLE contracts"),
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE bills",
+        Some("DROP TABLE bills"),
     );
 
     // Make sure the project is setup
@@ -88,7 +88,7 @@ fn migration_redo_respects_migration_dir_var() {
         "foo",
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
-        "DROP TABLE users;",
+        Some("DROP TABLE users;"),
     );
 
     // Make sure the project is setup
@@ -121,7 +121,7 @@ fn migration_redo_respects_migration_dir_env() {
         "bar",
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
-        "DROP TABLE users;",
+        Some("DROP TABLE users;"),
     );
 
     // Make sure the project is setup
@@ -154,7 +154,7 @@ fn error_migrations_fails() {
     p.create_migration(
         "redo_error_migrations_fails",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
-        "DROP TABLE users};",
+        Some("DROP TABLE users};"),
     );
 
     // Make sure the project is setup
@@ -185,7 +185,7 @@ fn migration_redo_respects_migrations_dir_from_diesel_toml() {
         "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
-        "DROP TABLE users;",
+        Some("DROP TABLE users;"),
     );
 
     // Make sure the project is setup
@@ -216,19 +216,19 @@ fn migration_redo_all_runs_all_migrations_down_and_up() {
     p.create_migration(
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE customers",
+        Some("DROP TABLE customers"),
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE contracts",
+        Some("DROP TABLE contracts"),
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE bills",
+        Some("DROP TABLE bills"),
     );
 
     // Make sure the project is setup
@@ -269,19 +269,19 @@ fn migration_redo_with_more_than_max_should_redo_all() {
     p.create_migration(
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE customers",
+        Some("DROP TABLE customers"),
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE contracts",
+        Some("DROP TABLE contracts"),
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE bills",
+        Some("DROP TABLE bills"),
     );
 
     // Make sure the project is setup
@@ -356,7 +356,7 @@ fn migration_redo_with_zero_should_not_revert_any_migration() {
     p.create_migration(
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
-        "DROP TABLE customers",
+        Some("DROP TABLE customers"),
     );
 
     // Make sure the project is setup

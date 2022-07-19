@@ -15,7 +15,7 @@ fn migration_run_runs_pending_migrations() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
@@ -44,7 +44,7 @@ fn migration_run_inserts_run_on_timestamps() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     let migrations_done: bool = select(sql::<Bool>(
@@ -104,7 +104,7 @@ fn empty_migrations_are_not_valid() {
 
     p.command("setup").run();
 
-    p.create_migration("12345_empty_migration", "", "");
+    p.create_migration("12345_empty_migration", "", None);
 
     let result = p.command("migration").arg("run").run();
 
@@ -125,7 +125,7 @@ fn error_migrations_fails() {
     p.create_migration(
         "run_error_migrations_fails",
         "CREATE TABLE users (id INTEGER PRIMARY KEY}",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     let result = p.command("migration").arg("run").run();
@@ -149,7 +149,7 @@ fn error_migrations_when_use_invalid_database_url() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     let result = p
@@ -176,7 +176,7 @@ fn any_pending_migrations_works() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     let result = p.command("migration").arg("pending").run();
@@ -195,7 +195,7 @@ fn any_pending_migrations_after_running() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     p.command("migration").arg("run").run();
@@ -216,7 +216,7 @@ fn any_pending_migrations_after_running_and_creating() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     p.command("migration").arg("run").run();
@@ -224,7 +224,7 @@ fn any_pending_migrations_after_running_and_creating() {
     p.create_migration(
         "123456_create_posts_table",
         "CREATE TABLE posts (id INTEGER PRIMARY KEY)",
-        "DROP TABLE posts",
+        Some("DROP TABLE posts"),
     );
 
     let result = p.command("migration").arg("pending").run();
@@ -246,7 +246,7 @@ fn migration_run_runs_pending_migrations_custom_database_url_1() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
@@ -281,7 +281,7 @@ fn migration_run_runs_pending_migrations_custom_database_url_2() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
@@ -317,7 +317,7 @@ fn migration_run_runs_pending_migrations_custom_migration_dir_1() {
         "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
@@ -353,7 +353,7 @@ fn migration_run_runs_pending_migrations_custom_migration_dir_2() {
         "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
@@ -393,7 +393,7 @@ fn migration_run_updates_schema_if_config_present() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!p.has_file("src/my_schema.rs"));
@@ -421,7 +421,7 @@ fn migrations_can_be_run_with_no_config_file() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
@@ -452,7 +452,38 @@ fn migrations_can_be_run_with_no_cargo_toml() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
+    );
+
+    assert!(!db.table_exists("users"));
+
+    let result = p.command("migration").arg("run").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout().contains("Running migration 12345"),
+        "Unexpected stdout {}",
+        result.stdout()
+    );
+    assert!(db.table_exists("users"));
+}
+
+#[test]
+fn migrations_can_be_run_with_no_down() {
+    let p = project("migrations_can_be_run_with_no_down")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    let cargo_toml_path = Path::new("Cargo.toml");
+    p.delete_single_file(&cargo_toml_path);
+
+    p.command("database").arg("setup").run();
+
+    p.create_migration(
+        "12345_create_users_table",
+        "CREATE TABLE users (id INTEGER PRIMARY KEY)",
+        None,
     );
 
     assert!(!db.table_exists("users"));
@@ -487,7 +518,7 @@ fn verify_schema_errors_if_schema_file_would_change() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!p.has_file("src/my_schema.rs"));
@@ -500,7 +531,7 @@ fn verify_schema_errors_if_schema_file_would_change() {
     p.create_migration(
         "12346_create_posts_table",
         "CREATE TABLE posts (id INTEGER PRIMARY KEY)",
-        "DROP TABLE posts",
+        Some("DROP TABLE posts"),
     );
 
     let result = p
@@ -548,7 +579,7 @@ fn migration_run_runs_pending_migrations_custom_migrations_dir_from_diesel_toml(
         "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
