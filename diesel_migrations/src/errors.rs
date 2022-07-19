@@ -42,8 +42,9 @@ impl fmt::Display for MigrationError {
             ),
             MigrationError::UnknownMigrationFormat(_) => write!(
                 f,
-                "Invalid migration directory, the directory's name should be \
-                 <timestamp>_<name_of_migration>, and it should contain up.sql and down.sql."
+                "Invalid migration directory: the directory's name should be \
+                 <timestamp>_<name_of_migration>, and it should contain up.sql and \
+                 optionally down.sql."
             ),
             MigrationError::IoError(ref error) => write!(f, "{}", error),
             MigrationError::UnknownMigrationVersion(ref version) => write!(
