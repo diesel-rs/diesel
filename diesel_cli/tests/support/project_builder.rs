@@ -156,19 +156,27 @@ impl Project {
         migration_path.display().to_string()
     }
 
-    pub fn create_migration(&self, name: &str, up: &str, down: &str) {
+    pub fn create_migration(&self, name: &str, up: &str, down: Option<&str>) {
         self.create_migration_in_directory("migrations", name, up, down);
     }
 
-    pub fn create_migration_in_directory(&self, directory: &str, name: &str, up: &str, down: &str) {
+    pub fn create_migration_in_directory(
+        &self,
+        directory: &str,
+        name: &str,
+        up: &str,
+        down: Option<&str>,
+    ) {
         let migration_path = self.directory.path().join(directory).join(name);
         fs::create_dir(&migration_path)
             .expect("Migrations folder must exist to create a migration");
         let mut up_file = fs::File::create(&migration_path.join("up.sql")).unwrap();
         up_file.write_all(up.as_bytes()).unwrap();
 
-        let mut down_file = fs::File::create(&migration_path.join("down.sql")).unwrap();
-        down_file.write_all(down.as_bytes()).unwrap();
+        if let Some(down) = down {
+            let mut down_file = fs::File::create(&migration_path.join("down.sql")).unwrap();
+            down_file.write_all(down.as_bytes()).unwrap();
+        }
     }
 }
 

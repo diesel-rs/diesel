@@ -18,7 +18,7 @@ fn migration_list_lists_pending_applied_migrations() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
@@ -67,7 +67,7 @@ fn migration_list_lists_migrations_ordered_by_timestamp() {
     p.command("setup").run();
 
     let tag1 = format!("{}_initial", Utc::now().format(TIMESTAMP_FORMAT));
-    p.create_migration(&tag1, "", "");
+    p.create_migration(&tag1, "", Some(""));
 
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -76,7 +76,7 @@ fn migration_list_lists_migrations_ordered_by_timestamp() {
     sleep(Duration::from_millis(1100));
 
     let tag2 = format!("{}_alter", Utc::now().format(TIMESTAMP_FORMAT));
-    p.create_migration(&tag2, "", "");
+    p.create_migration(&tag2, "", Some(""));
 
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -93,23 +93,23 @@ fn migration_list_orders_unknown_timestamps_last() {
     p.command("setup").run();
 
     let tag1 = format!("{}_migration1", Utc::now().format(TIMESTAMP_FORMAT));
-    p.create_migration(&tag1, "", "");
+    p.create_migration(&tag1, "", Some(""));
 
     let tag4 = "abc_migration4";
-    p.create_migration(tag4, "", "");
+    p.create_migration(tag4, "", Some(""));
 
     let tag5 = "zzz_migration5";
-    p.create_migration(tag5, "", "");
+    p.create_migration(tag5, "", Some(""));
 
     sleep(Duration::from_millis(1100));
 
     let tag2 = format!("{}_migration2", Utc::now().format(TIMESTAMP_FORMAT));
-    p.create_migration(&tag2, "", "");
+    p.create_migration(&tag2, "", Some(""));
 
     sleep(Duration::from_millis(1100));
 
     let tag3 = format!("{}_migration3", Utc::now().format(TIMESTAMP_FORMAT));
-    p.create_migration(&tag3, "", "");
+    p.create_migration(&tag3, "", Some(""));
 
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -126,22 +126,22 @@ fn migration_list_orders_nontimestamp_versions_alphabetically() {
     p.command("setup").run();
 
     let tag4 = "a_migration";
-    p.create_migration(tag4, "", "");
+    p.create_migration(tag4, "", Some(""));
 
     let tag6 = "bc_migration";
-    p.create_migration(tag6, "", "");
+    p.create_migration(tag6, "", Some(""));
 
     let tag5 = "aa_migration";
-    p.create_migration(tag5, "", "");
+    p.create_migration(tag5, "", Some(""));
 
     let tag1 = "!wow_migration";
-    p.create_migration(tag1, "", "");
+    p.create_migration(tag1, "", Some(""));
 
     let tag3 = "7letters";
-    p.create_migration(tag3, "", "");
+    p.create_migration(tag3, "", Some(""));
 
     let tag2 = format!("{}_stamped_migration", Utc::now().format(TIMESTAMP_FORMAT));
-    p.create_migration(&tag2, "", "");
+    p.create_migration(&tag2, "", Some(""));
 
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -158,10 +158,10 @@ fn migration_list_orders_old_and_new_timestamp_forms_mixed_correctly() {
     p.command("setup").run();
 
     let tag1 = "20170505070309_migration";
-    p.create_migration(tag1, "", "");
+    p.create_migration(tag1, "", Some(""));
 
     let tag2 = "2017-11-23-064836_migration";
-    p.create_migration(tag2, "", "");
+    p.create_migration(tag2, "", Some(""));
 
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -189,7 +189,7 @@ fn migration_list_respects_migrations_dir_from_diesel_toml() {
         "custom_migrations",
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY)",
-        "DROP TABLE users",
+        Some("DROP TABLE users"),
     );
 
     assert!(!db.table_exists("users"));
