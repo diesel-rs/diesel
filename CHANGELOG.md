@@ -10,6 +10,17 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+### Added
+
+* Adds an `ipnet-address` feature flag, allowing support (de)serializing IP
+  values from the database using types provided by `ipnet`. This feature
+  may be enabled concurrently with the previously existing `network-address`
+  feature.
+
+### Fixed
+
+* Updated `ipnetwork` to allow version 0.20.
+
 ## [2.0.0 Rc0] 2022-04-22
 
 ### Added
@@ -109,7 +120,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Changed
 
-* The minimal officially supported rustc version is now 1.54.0
+* The minimal officially supported rustc version is now 1.56.0
 
 * Interacting with a database requires a mutable connection.
 

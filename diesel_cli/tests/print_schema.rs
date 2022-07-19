@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -124,6 +125,12 @@ fn print_schema_unsigned() {
 }
 
 #[test]
+#[cfg(feature = "mysql")]
+fn print_schema_datetime_for_mysql() {
+    test_print_schema("print_schema_datetime_for_mysql", vec!["--with-docs"]);
+}
+
+#[test]
 #[cfg(not(windows))]
 fn print_schema_patch_file() {
     let path_to_patch_file = backend_file_path("print_schema_patch_file", "schema.patch");
@@ -214,6 +221,12 @@ fn print_schema_generated_columns_with_generated_always() {
 #[cfg(feature = "postgres")]
 fn print_schema_array_type() {
     test_print_schema("print_schema_array_type", vec![])
+}
+
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_sqlite_implicit_foreign_key_reference() {
+    test_print_schema("print_schema_sqlite_implicit_foreign_key_reference", vec![]);
 }
 
 #[cfg(feature = "sqlite")]

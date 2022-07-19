@@ -1,6 +1,8 @@
 use super::*;
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName)]
+#[derive(
+    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName, Selectable,
+)]
 #[diesel(belongs_to(User))]
 #[diesel(table_name = posts)]
 pub struct Post {
@@ -13,8 +15,8 @@ pub struct Post {
 impl Post {
     pub fn new(id: i32, user_id: i32, title: &str, body: Option<&str>) -> Self {
         Post {
-            id: id,
-            user_id: user_id,
+            id,
+            user_id,
             title: title.to_string(),
             body: body.map(|s| s.to_string()),
         }

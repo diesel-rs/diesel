@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use chrono::Utc;
 use std::thread::sleep;
 use std::time::Duration;
@@ -95,10 +96,10 @@ fn migration_list_orders_unknown_timestamps_last() {
     p.create_migration(&tag1, "", "");
 
     let tag4 = "abc_migration4";
-    p.create_migration(&tag4, "", "");
+    p.create_migration(tag4, "", "");
 
     let tag5 = "zzz_migration5";
-    p.create_migration(&tag5, "", "");
+    p.create_migration(tag5, "", "");
 
     sleep(Duration::from_millis(1100));
 
@@ -113,7 +114,7 @@ fn migration_list_orders_unknown_timestamps_last() {
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     let output = result.stdout();
-    assert_tags_in_order(output, &[&tag1, &tag2, &tag3, &tag4, &tag5]);
+    assert_tags_in_order(output, &[&tag1, &tag2, &tag3, tag4, tag5]);
 }
 
 #[test]
@@ -125,19 +126,19 @@ fn migration_list_orders_nontimestamp_versions_alphabetically() {
     p.command("setup").run();
 
     let tag4 = "a_migration";
-    p.create_migration(&tag4, "", "");
+    p.create_migration(tag4, "", "");
 
     let tag6 = "bc_migration";
-    p.create_migration(&tag6, "", "");
+    p.create_migration(tag6, "", "");
 
     let tag5 = "aa_migration";
-    p.create_migration(&tag5, "", "");
+    p.create_migration(tag5, "", "");
 
     let tag1 = "!wow_migration";
-    p.create_migration(&tag1, "", "");
+    p.create_migration(tag1, "", "");
 
     let tag3 = "7letters";
-    p.create_migration(&tag3, "", "");
+    p.create_migration(tag3, "", "");
 
     let tag2 = format!("{}_stamped_migration", Utc::now().format(TIMESTAMP_FORMAT));
     p.create_migration(&tag2, "", "");
@@ -145,7 +146,7 @@ fn migration_list_orders_nontimestamp_versions_alphabetically() {
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     let output = result.stdout();
-    assert_tags_in_order(output, &[&tag1, &tag2, &tag3, &tag4, &tag5, &tag6]);
+    assert_tags_in_order(output, &[tag1, &tag2, tag3, tag4, tag5, tag6]);
 }
 
 #[test]
@@ -157,15 +158,15 @@ fn migration_list_orders_old_and_new_timestamp_forms_mixed_correctly() {
     p.command("setup").run();
 
     let tag1 = "20170505070309_migration";
-    p.create_migration(&tag1, "", "");
+    p.create_migration(tag1, "", "");
 
     let tag2 = "2017-11-23-064836_migration";
-    p.create_migration(&tag2, "", "");
+    p.create_migration(tag2, "", "");
 
     let result = p.command("migration").arg("list").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     let output = result.stdout();
-    assert_tags_in_order(output, &[&tag1, &tag2]);
+    assert_tags_in_order(output, &[tag1, tag2]);
 }
 
 #[test]

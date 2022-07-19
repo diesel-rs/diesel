@@ -8,9 +8,6 @@ use self::stmt::iterator::StatementIterator;
 use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
-use crate::connection::commit_error_processor::{
-    default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
-};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
@@ -23,6 +20,81 @@ use crate::RunQueryDsl;
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
 /// `mysql://[user[:password]@]host/database_name`
+///
+/// # Supported loading model implementations
+///
+/// * [`DefaultLoadingMode`]
+///
+/// As `MysqlConnection` only supports a single loading mode implementation
+/// it is **not required** to explicitly specify a loading mode
+/// when calling [`RunQueryDsl::load_iter()`] or [`LoadConnection::load`]
+///
+/// ## DefaultLoadingMode
+///
+/// `MysqlConnection` only supports a single loading mode, which loads
+/// values row by row from the result set.
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+/// { // scope to restrict the lifetime of the iterator
+///     let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+///     for r in iter1 {
+///         let (id, name) = r?;
+///         println!("Id: {} Name: {}", id, name);
+///     }
+/// }
+///
+/// // works without specifying the loading mode
+/// let iter2 = users::table.load_iter::<(i32, String), _>(connection)?;
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// This mode does **not support** creating
+/// multiple iterators using the same connection.
+///
+/// ```compile_fail
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+/// let iter2 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
 pub struct MysqlConnection {
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
@@ -41,18 +113,6 @@ impl SimpleConnection for MysqlConnection {
 impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Mysql> for MysqlConnection {
     type Cursor = self::stmt::iterator::StatementIterator<'conn>;
     type Row = self::stmt::iterator::MysqlRow;
-}
-
-impl CommitErrorProcessor for MysqlConnection {
-    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
-        let state = match self.transaction_state.status {
-            TransactionManagerStatus::InError => {
-                return CommitErrorOutcome::Throw(Error::BrokenTransaction)
-            }
-            TransactionManagerStatus::Valid(ref v) => v,
-        };
-        default_process_commit_error(state, error)
-    }
 }
 
 impl Connection for MysqlConnection {
@@ -83,6 +143,40 @@ impl Connection for MysqlConnection {
         Ok(conn)
     }
 
+    fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
+    where
+        T: QueryFragment<Self::Backend> + QueryId,
+    {
+        update_transaction_manager_status(
+            prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
+                |stmt| {
+                    let stmt_use = unsafe { stmt.execute() }?;
+                    Ok(stmt_use.affected_rows())
+                },
+            ),
+            &mut self.transaction_state,
+        )
+    }
+
+    fn transaction_state(&mut self) -> &mut AnsiTransactionManager {
+        &mut self.transaction_state
+    }
+}
+
+#[inline(always)]
+fn update_transaction_manager_status<T>(
+    query_result: QueryResult<T>,
+    transaction_manager: &mut AnsiTransactionManager,
+) -> QueryResult<T> {
+    if let Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) = query_result {
+        transaction_manager
+            .status
+            .set_top_level_transaction_requires_rollback()
+    }
+    query_result
+}
+
+impl LoadConnection<DefaultLoadingMode> for MysqlConnection {
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
@@ -91,49 +185,16 @@ impl Connection for MysqlConnection {
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let stmt = self.prepared_query(&source)?;
-
-        let mut metadata = Vec::new();
-        Mysql::row_metadata(&mut (), &mut metadata);
-
-        StatementIterator::from_stmt(stmt, &metadata)
-    }
-
-    #[doc(hidden)]
-    fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
-    where
-        T: QueryFragment<Self::Backend> + QueryId,
-    {
-        let err = {
-            let stmt = self.prepared_query(source)?;
-            let res = unsafe { stmt.execute() };
-            match res {
-                Ok(stmt_use) => return Ok(stmt_use.affected_rows()),
-                Err(e) => e,
-            }
-        };
-        if let Error::DatabaseError(DatabaseErrorKind::SerializationFailure, msg) = err {
-            if let AnsiTransactionManager {
-                status: TransactionManagerStatus::Valid(ref mut valid),
-            } = self.transaction_state
-            {
-                valid.previous_error_relevant_for_rollback = Some((
-                    DatabaseErrorKind::SerializationFailure,
-                    msg.message().to_owned(),
-                ))
-            }
-            Err(Error::DatabaseError(
-                DatabaseErrorKind::SerializationFailure,
-                msg,
-            ))
-        } else {
-            Err(err)
-        }
-    }
-
-    #[doc(hidden)]
-    fn transaction_state(&mut self) -> &mut AnsiTransactionManager {
-        &mut self.transaction_state
+        update_transaction_manager_status(
+            prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
+                |stmt| {
+                    let mut metadata = Vec::new();
+                    Mysql::row_metadata(&mut (), &mut metadata);
+                    StatementIterator::from_stmt(stmt, &metadata)
+                },
+            ),
+            &mut self.transaction_state,
+        )
     }
 }
 
@@ -144,33 +205,36 @@ impl crate::r2d2::R2D2Connection for MysqlConnection {
     }
 
     fn is_broken(&mut self) -> bool {
-        self.transaction_state
-            .status
-            .transaction_depth()
-            .map(|d| d.is_none())
-            .unwrap_or(true)
+        match self.transaction_state.status.transaction_depth() {
+            // all transactions are closed
+            // so we don't consider this connection broken
+            Ok(None) => false,
+            // The transaction manager is in an error state
+            // or contains an open transaction
+            // Therefore we consider this connection broken
+            Err(_) | Ok(Some(_)) => true,
+        }
     }
 }
 
+fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
+    source: &'_ T,
+    statement_cache: &'a mut StatementCache<Mysql, Statement>,
+    raw_connection: &'a mut RawConnection,
+) -> QueryResult<MaybeCached<'a, Statement>> {
+    let mut stmt = statement_cache
+        .cached_statement(source, &Mysql, &[], |sql, _| raw_connection.prepare(sql))?;
+    let mut bind_collector = RawBytesBindCollector::new();
+    source.collect_binds(&mut bind_collector, &mut (), &Mysql)?;
+    let binds = bind_collector
+        .metadata
+        .into_iter()
+        .zip(bind_collector.binds);
+    stmt.bind(binds)?;
+    Ok(stmt)
+}
+
 impl MysqlConnection {
-    fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
-        &'a mut self,
-        source: &'_ T,
-    ) -> QueryResult<MaybeCached<'a, Statement>> {
-        let cache = &mut self.statement_cache;
-        let conn = &mut self.raw_connection;
-
-        let mut stmt = cache.cached_statement(source, &Mysql, &[], |sql, _| conn.prepare(sql))?;
-        let mut bind_collector = RawBytesBindCollector::new();
-        source.collect_binds(&mut bind_collector, &mut (), &Mysql)?;
-        let binds = bind_collector
-            .metadata
-            .into_iter()
-            .zip(bind_collector.binds);
-        stmt.bind(binds)?;
-        Ok(stmt)
-    }
-
     fn set_config_options(&mut self) -> QueryResult<()> {
         crate::sql_query("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))")
             .execute(self)?;

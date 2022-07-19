@@ -1,32 +1,32 @@
 error[E0499]: cannot borrow `*conn` as mutable more than once at a time
-  --> tests/fail/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:13:21
+  --> tests/fail/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:15:42
    |
-12 |     let row_iter1 = conn.load(sql_query("bar")).unwrap();
-   |                     ---- first mutable borrow occurs here
-13 |     let row_iter2 = conn.load(sql_query("bar")).unwrap();
-   |                     ^^^^ second mutable borrow occurs here
-14 |
-15 |     let _ = row_iter1.zip(row_iter2);
+14 |     let row_iter1 = LoadConnection::load(conn, sql_query("bar")).unwrap();
+   |                                          ---- first mutable borrow occurs here
+15 |     let row_iter2 = LoadConnection::load(conn, sql_query("bar")).unwrap();
+   |                                          ^^^^ second mutable borrow occurs here
+16 |
+17 |     let _ = row_iter1.zip(row_iter2);
    |             --------- first borrow later used here
 
 error[E0499]: cannot borrow `*conn` as mutable more than once at a time
-  --> tests/fail/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:20:21
+  --> tests/fail/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:22:42
    |
-19 |     let row_iter1 = conn.load(sql_query("bar")).unwrap();
-   |                     ---- first mutable borrow occurs here
-20 |     let row_iter2 = conn.load(sql_query("bar")).unwrap();
-   |                     ^^^^ second mutable borrow occurs here
-21 |
-22 |     let _ = row_iter1.zip(row_iter2);
+21 |     let row_iter1 = LoadConnection::load(conn, sql_query("bar")).unwrap();
+   |                                          ---- first mutable borrow occurs here
+22 |     let row_iter2 = LoadConnection::load(conn, sql_query("bar")).unwrap();
+   |                                          ^^^^ second mutable borrow occurs here
+23 |
+24 |     let _ = row_iter1.zip(row_iter2);
    |             --------- first borrow later used here
 
 error[E0499]: cannot borrow `*conn` as mutable more than once at a time
-  --> tests/fail/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:28:21
+  --> tests/fail/sqlite_and_mysql_do_not_allow_multiple_iterators.rs:36:67
    |
-27 |     let row_iter1 = conn.load(sql_query("bar")).unwrap();
-   |                     ---- first mutable borrow occurs here
-28 |     let row_iter2 = conn.load(sql_query("bar")).unwrap();
-   |                     ^^^^ second mutable borrow occurs here
-29 |
-30 |     let _ = row_iter1.zip(row_iter2);
+35 |     let row_iter1 = LoadConnection::<PgRowByRowLoadingMode>::load(conn, sql_query("bar")).unwrap();
+   |                                                                   ---- first mutable borrow occurs here
+36 |     let row_iter2 = LoadConnection::<PgRowByRowLoadingMode>::load(conn, sql_query("bar")).unwrap();
+   |                                                                   ^^^^ second mutable borrow occurs here
+37 |
+38 |     let _ = row_iter1.zip(row_iter2);
    |             --------- first borrow later used here

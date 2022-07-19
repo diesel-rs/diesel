@@ -69,8 +69,8 @@ fn migration_redo_runs_the_last_two_migrations_down_and_up() {
         result.stdout()
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
                 Rolling back migration 2017-09-03-210424_create_contracts\n\
-                Running migration 2017-09-12-210424_create_bills\n\
-                Running migration 2017-09-03-210424_create_contracts\n",
+                Running migration 2017-09-03-210424_create_contracts\n\
+                Running migration 2017-09-12-210424_create_bills\n",
         "Unexpected stdout : {}",
         result.stdout()
     );
@@ -247,9 +247,9 @@ fn migration_redo_all_runs_all_migrations_down_and_up() {
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
                 Rolling back migration 2017-09-03-210424_create_contracts\n\
                 Rolling back migration 2017-08-31-210424_create_customers\n\
-                Running migration 2017-09-12-210424_create_bills\n\
+                Running migration 2017-08-31-210424_create_customers\n\
                 Running migration 2017-09-03-210424_create_contracts\n\
-                Running migration 2017-08-31-210424_create_customers\n",
+                Running migration 2017-09-12-210424_create_bills\n",
         "Unexpected stdout : {}",
         result.stdout()
     );
@@ -305,9 +305,9 @@ fn migration_redo_with_more_than_max_should_redo_all() {
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
                 Rolling back migration 2017-09-03-210424_create_contracts\n\
                 Rolling back migration 2017-08-31-210424_create_customers\n\
-                Running migration 2017-09-12-210424_create_bills\n\
+                Running migration 2017-08-31-210424_create_customers\n\
                 Running migration 2017-09-03-210424_create_contracts\n\
-                Running migration 2017-08-31-210424_create_customers\n",
+                Running migration 2017-09-12-210424_create_bills\n",
         "Unexpected stdout : {}",
         result.stdout()
     );
@@ -339,8 +339,9 @@ fn migration_redo_n_with_a_string_should_throw_an_error() {
     assert!(
         result.stderr()
             == "error: Invalid value \"infinite\" for '--number <REDO_NUMBER>': \
-                infinite isn't a positive integer.\n\nFor more information try --help\n",
-        "Unexpected stderr : {}",
+                invalid digit found in string\n\n\
+                For more information try --help\n",
+        "Unexpected stderr : '{}'",
         result.stderr()
     );
 }
@@ -366,6 +367,6 @@ fn migration_redo_with_zero_should_not_revert_any_migration() {
     // Should not revert any migration.
     let result = p.command("migration").arg("redo").arg("-n").arg("0").run();
 
-    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout() == "");
 }

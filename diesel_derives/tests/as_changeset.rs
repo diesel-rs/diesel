@@ -1,3 +1,5 @@
+use diesel::deserialize::FromSqlRow;
+use diesel::expression::AsExpression;
 use diesel::*;
 use helpers::*;
 use schema::*;
@@ -224,9 +226,9 @@ fn with_serialize_as() {
     #[diesel(sql_type = sql_types::Text)]
     struct UppercaseString(pub String);
 
-    impl Into<UppercaseString> for String {
-        fn into(self) -> UppercaseString {
-            UppercaseString(self.to_uppercase())
+    impl From<String> for UppercaseString {
+        fn from(val: String) -> Self {
+            UppercaseString(val.to_uppercase())
         }
     }
 

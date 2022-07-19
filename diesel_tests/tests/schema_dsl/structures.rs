@@ -8,10 +8,7 @@ pub struct CreateTable<'a, Cols> {
 
 impl<'a, Cols> CreateTable<'a, Cols> {
     pub fn new(name: &'a str, columns: Cols) -> Self {
-        CreateTable {
-            name: name,
-            columns: columns,
-        }
+        CreateTable { name, columns }
     }
 }
 
@@ -26,8 +23,8 @@ pub struct Column<'a, T> {
 impl<'a, T> Column<'a, T> {
     pub fn new(name: &'a str, type_name: &'a str) -> Self {
         Column {
-            name: name,
-            type_name: type_name,
+            name,
+            type_name,
             _marker: PhantomData,
         }
     }

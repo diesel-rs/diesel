@@ -84,7 +84,7 @@ impl Project {
             .read_dir()
             .expect("Error reading directory")
             .map(|e| Migration {
-                path: e.expect("error reading entry").path().into(),
+                path: e.expect("error reading entry").path(),
             })
             .collect()
     }

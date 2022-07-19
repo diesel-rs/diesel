@@ -69,6 +69,7 @@ macro_rules! test_round_trip {
     };
     ($test_name:ident, $sql_type:ty, $tpe:ty, $map_fn:ident, $cmp: expr) => {
         #[test]
+        #[allow(clippy::type_complexity)]
         fn $test_name() {
             use diesel::sql_types::*;
 
@@ -91,6 +92,7 @@ macro_rules! test_round_trip {
     };
 }
 
+#[allow(clippy::float_cmp)]
 pub fn f32_ne(a: &f32, b: &f32) -> bool {
     if a.is_nan() && b.is_nan() {
         false
@@ -99,6 +101,7 @@ pub fn f32_ne(a: &f32, b: &f32) -> bool {
     }
 }
 
+#[allow(clippy::float_cmp)]
 pub fn f64_ne(a: &f64, b: &f64) -> bool {
     if a.is_nan() && b.is_nan() {
         false
@@ -185,17 +188,41 @@ mod pg_types {
     );
     test_round_trip!(cidr_v4_roundtrips, Cidr, (u8, u8, u8, u8), mk_ipv4);
     test_round_trip!(
+        cidr_v4_roundtrips_ipnet,
+        Cidr,
+        (u8, u8, u8, u8),
+        mk_ipv4_ipnet
+    );
+    test_round_trip!(
         cidr_v6_roundtrips,
         Cidr,
         (u16, u16, u16, u16, u16, u16, u16, u16),
         mk_ipv6
     );
+    test_round_trip!(
+        cidr_v6_roundtrips_ipnet,
+        Cidr,
+        (u16, u16, u16, u16, u16, u16, u16, u16),
+        mk_ipv6_ipnet
+    );
     test_round_trip!(inet_v4_roundtrips, Inet, (u8, u8, u8, u8), mk_ipv4);
+    test_round_trip!(
+        inet_v4_roundtrips_ipnet,
+        Inet,
+        (u8, u8, u8, u8),
+        mk_ipv4_ipnet
+    );
     test_round_trip!(
         inet_v6_roundtrips,
         Inet,
         (u16, u16, u16, u16, u16, u16, u16, u16),
         mk_ipv6
+    );
+    test_round_trip!(
+        inet_v6_roundtrips_ipnet,
+        Inet,
+        (u16, u16, u16, u16, u16, u16, u16, u16),
+        mk_ipv6_ipnet
     );
     test_round_trip!(bigdecimal_roundtrips, Numeric, (i64, u64), mk_bigdecimal);
     test_round_trip!(int4range_roundtrips, Range<Int4>, (i32, i32), mk_bounds);
@@ -228,10 +255,11 @@ mod pg_types {
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
     test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
 
+    #[allow(clippy::type_complexity)]
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
         let b = [a.0, a.1, a.2, a.3, a.4, a.5, a.6, a.7];
-        uuid::Uuid::from_fields(data.0, data.1, data.2, &b).unwrap()
+        uuid::Uuid::from_fields(data.0, data.1, data.2, &b)
     }
 
     fn mk_macaddr(data: (u8, u8, u8, u8, u8, u8)) -> [u8; 6] {
@@ -244,12 +272,26 @@ mod pg_types {
         ipnetwork::IpNetwork::V4(ipnetwork::Ipv4Network::new(ip, 32).unwrap())
     }
 
+    fn mk_ipv4_ipnet(data: (u8, u8, u8, u8)) -> ipnet::IpNet {
+        use std::net::Ipv4Addr;
+        let ip = Ipv4Addr::new(data.0, data.1, data.2, data.3);
+        ipnet::IpNet::V4(ipnet::Ipv4Net::new(ip, 32).unwrap())
+    }
+
     fn mk_ipv6(data: (u16, u16, u16, u16, u16, u16, u16, u16)) -> ipnetwork::IpNetwork {
         use std::net::Ipv6Addr;
         let ip = Ipv6Addr::new(
             data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7,
         );
         ipnetwork::IpNetwork::V6(ipnetwork::Ipv6Network::new(ip, 128).unwrap())
+    }
+
+    fn mk_ipv6_ipnet(data: (u16, u16, u16, u16, u16, u16, u16, u16)) -> ipnet::IpNet {
+        use std::net::Ipv6Addr;
+        let ip = Ipv6Addr::new(
+            data.0, data.1, data.2, data.3, data.4, data.5, data.6, data.7,
+        );
+        ipnet::IpNet::V6(ipnet::Ipv6Net::new(ip, 128).unwrap())
     }
 
     fn mk_bounds<T: Ord + PartialEq>(data: (T, T)) -> (Bound<T>, Bound<T>) {
@@ -300,12 +342,7 @@ mod pg_types {
             if r < earliest_pg_date {
                 let diff = earliest_pg_date - r;
                 r = earliest_pg_date + diff;
-            }
-            /*else if r > latest_pg_date {
-                let diff = r - latest_pg_date;
-                r = earliest_pg_date + diff;
-            }*/
-            else {
+            } else {
                 break;
             }
         }
@@ -457,7 +494,7 @@ mod mysql_types {
     pub fn mk_naive_timestamp((mut seconds, nanos): (i64, u32)) -> NaiveDateTime {
         // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
         let earliest_mysql_date = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 1);
-        let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(03, 14, 7);
+        let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(3, 14, 7);
 
         if seconds != 0 {
             seconds = earliest_mysql_date.timestamp()
@@ -600,7 +637,7 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 
 #[cfg(feature = "mysql")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    let earliest_mysql_date = NaiveDate::from_ymd(1000, 01, 01);
+    let earliest_mysql_date = NaiveDate::from_ymd(1000, 1, 1);
     let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31);
     let num_days_representable = latest_mysql_date
         .signed_duration_since(earliest_mysql_date)

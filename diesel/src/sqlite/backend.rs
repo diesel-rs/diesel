@@ -57,9 +57,9 @@ impl SqlDialect for Sqlite {
     #[cfg(not(feature = "returning_clauses_for_sqlite_3_35"))]
     type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
     #[cfg(feature = "returning_clauses_for_sqlite_3_35")]
-    type ReturningClause = sql_dialect::returning_clause::PgLikeReturningClause;
+    type ReturningClause = SqliteReturningClause;
 
-    type OnConflictClause = SqliteOnConflictClaues;
+    type OnConflictClause = SqliteOnConflictClause;
 
     type InsertWithDefaultKeyword =
         sql_dialect::default_keyword_for_insert::DoesNotSupportDefaultKeyword;
@@ -68,16 +68,21 @@ impl SqlDialect for Sqlite {
 
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
-    type ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison;
+    type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
 }
 
 impl DieselReserveSpecialization for Sqlite {}
 impl TrustedBackend for Sqlite {}
 
 #[derive(Debug, Copy, Clone)]
-pub struct SqliteOnConflictClaues;
+pub struct SqliteOnConflictClause;
 
-impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for SqliteOnConflictClaues {}
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for SqliteOnConflictClause {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct SqliteBatchInsert;
+
+#[derive(Debug, Copy, Clone)]
+pub struct SqliteReturningClause;
+
+impl sql_dialect::returning_clause::SupportsReturningClause for SqliteReturningClause {}

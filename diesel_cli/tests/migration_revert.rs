@@ -259,8 +259,11 @@ fn migration_revert_with_zero_should_not_revert_any_migration() {
         .arg("-n")
         .arg("0")
         .run();
-
-    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.is_success(),
+        "Result was unsuccessful '{:?}'",
+        result
+    );
     assert!(result.stdout() == "");
 }
 
@@ -281,12 +284,13 @@ fn migration_revert_n_with_a_string_should_throw_an_error() {
         .arg("infinite")
         .run();
 
-    assert!(!result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!result.is_success(), "Result was successful {:?}", result);
 
     assert!(
         result.stderr()
             == "error: Invalid value \"infinite\" for '--number <REVERT_NUMBER>': \
-                infinite isn't a positive integer.\n\nFor more information try --help\n",
+                invalid digit found in string\n\n\
+                For more information try --help\n",
         "Unexpected stderr : {}",
         result.stderr()
     );

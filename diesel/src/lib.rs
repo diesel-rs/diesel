@@ -130,8 +130,8 @@
 //! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
 //! private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
 //! or write a custom [`Connection`](crate::connection::Connection) implementation. **Do not use this feature for
-//! any other usecase**. By enabling this feature you explicitly opt out diesel stability gurantees. We explicitly
-//! reserve us the right to break API's exported under this feature flag in any upcomming minor version release.
+//! any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
+//! reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
 //! If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
 //! currently released minor version.
 //! - `serde_json`: This feature flag enables support for (de)serializing json values from the database using
@@ -140,17 +140,19 @@
 //! types provided by `chrono`
 //! - `uuid`: This feature flag enables support for (de)serializing uuid values from the database using types
 //! provided by `uuid`
-//! - `network-address`: This feature flag enables support for (de)serializing IP and Macadresse values from the
-//! database using types provided by `ipnetwork`
-//! - `numeric`: This feature flag enables support for (de)support numeric values from the database using types
+//! - `network-address`: This feature flag enables support for (de)serializing
+//! IP values from the database using types provided by `ipnetwork`.
+//! - `ipnet-address`: This feature flag enables support for (de)serializing IP
+//! values from the database using types provided by `ipnet`.
+//! - `numeric`: This feature flag enables support for (de)serializing numeric values from the database using types
 //! provided by `bigdecimal`
 //! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
 //! - `extras`: This feature enables the feature flaged support for any third party crate. This implies the
 //! following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
 //! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
-//! disabling this feature explicitly opts out diesels stability gurantee.
+//! disabling this feature explicitly opts out diesels stability guarantee.
 //! - `without-deprecated`: This feature disables any item marked as `#[deprecated]`. Enabling this feature
-//! explicitly opts out the stability gurantee given by diesel. This feature overrides the `with-deprecated`.
+//! explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
 //! Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
 //! various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
 //!
@@ -178,7 +180,6 @@
     clippy::redundant_field_names,
     clippy::type_complexity
 )]
-#![cfg_attr(test, allow(clippy::option_map_unwrap_or, clippy::result_unwrap_used))]
 #![warn(
     clippy::unwrap_used,
     clippy::print_stdout,
@@ -191,6 +192,7 @@
     clippy::items_after_statements,
     clippy::used_underscore_binding
 )]
+#![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
 
 extern crate diesel_derives;
 
@@ -280,6 +282,7 @@ pub mod helper_types {
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
+    use crate::connection::DefaultLoadingMode;
     use crate::query_builder::select_clause::SelectClause;
 
     #[doc(inline)]
@@ -454,8 +457,8 @@ pub mod helper_types {
     /// [`Iterator`](std::iter::Iterator) of [`QueryResult<U>`](crate::result::QueryResult)
     ///
     /// See [`RunQueryDsl::load_iter`] for more information
-    pub type LoadIter<'conn, 'query, Q, Conn, U> =
-        <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U>>::Ret;
+    pub type LoadIter<'conn, 'query, Q, Conn, U, B = DefaultLoadingMode> =
+        <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U, B>>::Ret;
 
     /// Maps `F` to `Alias<S>`
     ///

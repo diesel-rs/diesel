@@ -6,5 +6,14 @@ error[E0277]: the trait bound `FromClause<users::table>: AppearsInFromClause<pos
    |
    = help: the following implementations were found:
              <FromClause<QS2> as AppearsInFromClause<QS1>>
-   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::id`
+note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::id`
+  --> tests/fail/order_requires_column_from_same_table.rs:11:1
+   |
+11 | / table! {
+12 | |     posts {
+13 | |         id -> Integer,
+14 | |     }
+15 | | }
+   | |_^
    = note: required because of the requirements on the impl of `OrderDsl<posts::columns::id>` for `SelectStatement<FromClause<users::table>>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)

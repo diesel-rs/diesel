@@ -6,17 +6,17 @@ error[E0277]: the trait bound `diesel::query_builder::insert_statement::batch_in
    |
    = help: the following implementations were found:
              <diesel::query_builder::insert_statement::batch_insert::BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB>>
-             <diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB, PostgresLikeBatchInsertSupport>>
+             <diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB, backend::sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport>>
    = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>`
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>, diesel::query_builder::upsert::on_conflict_target::NoConflictTarget, diesel::query_builder::upsert::on_conflict_actions::DoNothing>>`
    = note: required because of the requirements on the impl of `ExecuteDsl<diesel::SqliteConnection, Sqlite>` for `InsertStatement<users::table, diesel::query_builder::upsert::on_conflict_clause::OnConflictValues<diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>, diesel::query_builder::upsert::on_conflict_target::NoConflictTarget, diesel::query_builder::upsert::on_conflict_actions::DoNothing>>`
 
-error[E0271]: type mismatch resolving `<Sqlite as SqlDialect>::InsertWithDefaultKeyword == IsoSqlDefaultKeyword`
+error[E0271]: type mismatch resolving `<Sqlite as SqlDialect>::InsertWithDefaultKeyword == backend::sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword`
   --> tests/fail/upsert_with_multiple_values_not_supported_on_sqlite.rs:17:10
    |
 17 |         .execute(&mut connection);
-   |          ^^^^^^^ expected struct `DoesNotSupportDefaultKeyword`, found struct `IsoSqlDefaultKeyword`
+   |          ^^^^^^^ expected struct `backend::sql_dialect::default_keyword_for_insert::DoesNotSupportDefaultKeyword`, found struct `backend::sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword`
    |
    = note: required because of the requirements on the impl of `CanInsertInSingleQuery<Sqlite>` for `diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>`
    = note: 1 redundant requirements hidden

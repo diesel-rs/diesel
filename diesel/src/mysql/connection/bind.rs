@@ -846,8 +846,9 @@ mod tests {
             ).execute(conn)
             .unwrap();
 
-        let stmt = conn.prepared_query(&crate::sql_query(
-            "SELECT
+        let stmt = crate::mysql::connection::prepared_query(
+            &crate::sql_query(
+                "SELECT
                     tiny_int, small_int, medium_int, int_col,
                     big_int, unsigned_int, zero_fill_int,
                     numeric_col, decimal_col, float_col, double_col, bit_col,
@@ -857,7 +858,10 @@ mod tests {
                     ST_AsText(polygon_col), ST_AsText(multipoint_col), ST_AsText(multilinestring_col),
                     ST_AsText(multipolygon_col), ST_AsText(geometry_collection), json_col
                  FROM all_mysql_types",
-        )).unwrap();
+            ),
+            &mut conn.statement_cache,
+            &mut conn.raw_connection,
+        ).unwrap();
 
         let metadata = stmt.metadata().unwrap();
         let mut output_binds =
@@ -1289,14 +1293,14 @@ mod tests {
 
     #[test]
     fn check_json_bind() {
-        let conn = &mut crate::test_helpers::connection();
-
         table! {
             json_test {
                 id -> Integer,
                 json_field -> Text,
             }
         }
+
+        let conn = &mut crate::test_helpers::connection();
 
         crate::sql_query("DROP TABLE IF EXISTS json_test CASCADE")
             .execute(conn)

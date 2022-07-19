@@ -5,7 +5,7 @@ license = "MIT OR Apache-2.0"
 description = "Codegeneration macros for diesels embedded migrations"
 homepage = "https://diesel.rs"
 edition = "2018"
-rust-version = "1.54.0"
+rust-version = "1.56.0"
 
 [dependencies]
 quote = "1"

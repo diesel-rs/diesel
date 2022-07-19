@@ -604,7 +604,7 @@ where
     }
 }
 
-impl<'a, F, S, D, W, O, LOf, G, H> SelectNullableDsl
+impl<F, S, D, W, O, LOf, G, H> SelectNullableDsl
     for SelectStatement<F, SelectClause<S>, D, W, O, LOf, G, H>
 {
     type Output = SelectStatement<F, SelectClause<Nullable<S>>, D, W, O, LOf, G, H>;
@@ -624,7 +624,7 @@ impl<'a, F, S, D, W, O, LOf, G, H> SelectNullableDsl
     }
 }
 
-impl<'a, F, D, W, O, LOf, G, H> SelectNullableDsl
+impl<F, D, W, O, LOf, G, H> SelectNullableDsl
     for SelectStatement<F, DefaultSelectClause<F>, D, W, O, LOf, G, H>
 where
     F: AsQuerySource,
