@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "2.0.0-rc.0"
+version = "2.0.0-rc.1"
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 readme = "README.md"
@@ -33,12 +33,12 @@ regex = "1.0.6"
 serde_regex = "1.1"
 
 [dependencies.diesel]
-version = "~2.0.0-rc.0"
+version = "~2.0.0-rc.1"
 path = "../diesel"
 default-features = false
 
 [dependencies.diesel_migrations]
-version = "~2.0.0-rc.0"
+version = "~2.0.0-rc.1"
 path = "../diesel_migrations/"
 
 [dev-dependencies]

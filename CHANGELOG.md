@@ -8,7 +8,13 @@ default features enabled using some set of dependencies. Those set of dependenci
 an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
-## Unreleased
+## [2.0.0 Rc1] 2022-07-19 
+
+### Changed
+
+* We've changed the `RunQueryDsl::load_iter` interface to support different
+loading modes. This enables us to support more than one strategy for loading 
+values by iterator from the database. 
 
 ### Added
 
@@ -16,10 +22,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   values from the database using types provided by `ipnet`. This feature
   may be enabled concurrently with the previously existing `network-address`
   feature.
+* We've added support for loading values using libpq's row-by-row mode via 
+the new iterator interface
 
 ### Fixed
 
 * Updated `ipnetwork` to allow version 0.20.
+* Fix a bug that prevents connection reusing with r2d2 
 
 ## [2.0.0 Rc0] 2022-04-22
 
