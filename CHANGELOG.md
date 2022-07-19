@@ -28,6 +28,7 @@ the new iterator interface
 ### Fixed
 
 * Updated `ipnetwork` to allow version 0.20.
+* Updated `libsqlite3-sys` to allow version 0.25
 * Fix a bug that prevents connection reusing with r2d2 
 
 ## [2.0.0 Rc0] 2022-04-22

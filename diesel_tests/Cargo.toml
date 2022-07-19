@@ -20,7 +20,7 @@ ipnet = { version = "2.5.0" }
 ipnetwork = ">=0.12.2, <0.21.0"
 bigdecimal = ">= 0.0.13, < 0.4.0"
 rand = "0.8.4"
-libsqlite3-sys = { version = "0.24", optional = true }
+libsqlite3-sys = { version = "0.25", optional = true }
 
 [features]
 default = []
