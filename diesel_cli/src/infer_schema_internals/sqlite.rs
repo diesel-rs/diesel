@@ -244,7 +244,7 @@ fn is_binary(type_name: &str) -> bool {
 }
 
 fn is_bool(type_name: &str) -> bool {
-    type_name == "boolean" || type_name.contains("tiny") && type_name.contains("int")
+    type_name.contains("bool") || type_name.contains("tiny") && type_name.contains("int")
 }
 
 fn is_smallint(type_name: &str) -> bool {
