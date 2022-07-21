@@ -331,10 +331,9 @@ pub trait QueryDsl: Sized {
     /// [`.on`]: JoinOnDsl::on()
     ///
     /// You can join to as many tables as you'd like in a query, with the
-    /// restriction that no table can appear in the query more than once. The reason
-    /// for this restriction is that one of the appearances would require aliasing,
-    /// and we do not currently have a fleshed out story for dealing with table
-    /// aliases.
+    /// restriction that no table can appear in the query more than once. For
+    /// tables that appear more than once in a single query the usage of [`alias!`](crate::alias!)
+    /// is required.
     ///
     /// You will also need to call [`allow_tables_to_appear_in_same_query!`].
     /// If you are using `diesel print-schema`, this will
@@ -350,8 +349,11 @@ pub trait QueryDsl: Sized {
     ///
     /// ```sql
     /// SELECT * FROM users
-    ///     INNER JOIN posts ON posts.user_id = users.id
-    ///     INNER JOIN comments ON comments.post_id = posts.id
+    ///     INNER JOIN (
+    ///         posts
+    ///         INNER JOIN comments ON comments.post_id = posts.id
+    ///     ) ON posts.user_id = users.id
+    ///
     /// ```
     ///
     /// While the second query would deserialize into `(User, Post, Comment)` and
@@ -362,6 +364,15 @@ pub trait QueryDsl: Sized {
     ///     INNER JOIN posts ON posts.user_id = users.id
     ///     INNER JOIN comments ON comments.user_id = users.id
     /// ```
+    ///
+    /// The exact generated SQL may change in future diesel version as long as the
+    /// generated query continue to produce same results. The currently generated
+    /// SQL is refered as ["explicit join"](https://www.postgresql.org/docs/current/explicit-joins.html)
+    /// by the PostgreSQL documentation and may have implications on the choosen query plan
+    /// for large numbers of joins in the same query. Checkout the documentation of the
+    /// [`join_collapse_limit` paramater](https://www.postgresql.org/docs/current/runtime-config-query.html#GUC-JOIN-COLLAPSE-LIMIT)
+    /// to control this behaviour.
+    ///
     ///
     /// [associations]: crate::associations
     /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
