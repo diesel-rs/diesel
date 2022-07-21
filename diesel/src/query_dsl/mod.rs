@@ -366,13 +366,12 @@ pub trait QueryDsl: Sized {
     /// ```
     ///
     /// The exact generated SQL may change in future diesel version as long as the
-    /// generated query continue to produce same results. The currently generated
-    /// SQL is refered as ["explicit join"](https://www.postgresql.org/docs/current/explicit-joins.html)
-    /// by the PostgreSQL documentation and may have implications on the choosen query plan
+    /// generated query continues to produce same results. The currently generated
+    /// SQL is referred as ["explicit join"](https://www.postgresql.org/docs/current/explicit-joins.html)
+    /// by the PostgreSQL documentation and may have implications on the chosen query plan
     /// for large numbers of joins in the same query. Checkout the documentation of the
     /// [`join_collapse_limit` paramater](https://www.postgresql.org/docs/current/runtime-config-query.html#GUC-JOIN-COLLAPSE-LIMIT)
     /// to control this behaviour.
-    ///
     ///
     /// [associations]: crate::associations
     /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
