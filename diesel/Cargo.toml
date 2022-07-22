@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.0.0-rc.0"
+version = "2.0.0-rc.1"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -10,13 +10,13 @@ repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "sql"]
 categories = ["database"]
 edition = "2018"
-rust-version = "1.54.0"
+rust-version = "1.56.0"
 
 [dependencies]
 byteorder = { version = "1.0", optional = true }
 chrono = { version = "0.4.19", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
-libsqlite3-sys = { version = ">=0.17.2, <0.25.0", optional = true, features = ["bundled_bindings"] }
+libsqlite3-sys = { version = ">=0.17.2, <0.26.0", optional = true, features = ["bundled_bindings"] }
 mysqlclient-sys = { version = "0.2.5", optional = true }
 pq-sys = { version = "0.4.0", optional = true }
 quickcheck = { version = "1.0.3", optional = true }
@@ -24,7 +24,8 @@ serde_json = { version = ">=0.8.0, <2.0", optional = true }
 url = { version = "2.1.0", optional = true }
 percent-encoding = { version = "2.1.0", optional = true }
 uuid = { version = ">=0.7.0, <2.0.0", optional = true }
-ipnetwork = { version = ">=0.12.2, <0.19.0", optional = true }
+ipnetwork = { version = ">=0.12.2, <0.21.0", optional = true }
+ipnet = { version = "2.5.0", optional = true }
 num-bigint = { version = ">=0.2.0, <0.5.0", optional = true }
 num-traits = { version = "0.2.0", optional = true }
 num-integer = { version = "0.1.39", optional = true }
@@ -34,13 +35,13 @@ r2d2 = { version = ">= 0.8.2, < 0.9.0", optional = true }
 itoa = { version = "1.0.0", optional = true }
 
 [dependencies.diesel_derives]
-version = "~2.0.0-rc.0"
+version = "~2.0.0-rc.1"
 path = "../diesel_derives"
 
 [dev-dependencies]
 cfg-if = "1"
 dotenvy = "0.15"
-ipnetwork = ">=0.12.2, <0.19.0"
+ipnetwork = ">=0.12.2, <0.21.0"
 quickcheck = "1.0.3"
 
 [features]
@@ -58,6 +59,7 @@ mysql = ["mysqlclient-sys", "url", "percent-encoding", "bitflags", "mysql_backen
 without-deprecated = ["diesel_derives/without-deprecated"]
 with-deprecated = ["diesel_derives/with-deprecated"]
 network-address = ["ipnetwork", "libc"]
+ipnet-address = ["ipnet", "libc"]
 numeric = ["num-bigint", "bigdecimal", "num-traits", "num-integer"]
 postgres_backend = ["diesel_derives/postgres", "bitflags", "byteorder", "itoa"]
 mysql_backend = ["diesel_derives/mysql", "byteorder"]

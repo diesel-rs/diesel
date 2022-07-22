@@ -25,6 +25,9 @@ pub enum MigrationError {
     UnknownMigrationVersion(MigrationVersion<'static>),
     /// No migrations had to be/ could be run
     NoMigrationRun,
+    /// `down.sql` file is missing, and you're asking for a `revert`
+    /// or `redo`
+    NoMigrationRevertFile,
 }
 
 impl Error for MigrationError {}
@@ -39,8 +42,9 @@ impl fmt::Display for MigrationError {
             ),
             MigrationError::UnknownMigrationFormat(_) => write!(
                 f,
-                "Invalid migration directory, the directory's name should be \
-                 <timestamp>_<name_of_migration>, and it should only contain up.sql and down.sql."
+                "Invalid migration directory: the directory's name should be \
+                 <timestamp>_<name_of_migration>, and it should contain up.sql and \
+                 optionally down.sql."
             ),
             MigrationError::IoError(ref error) => write!(f, "{}", error),
             MigrationError::UnknownMigrationVersion(ref version) => write!(
@@ -52,6 +56,9 @@ impl fmt::Display for MigrationError {
                 f,
                 "No migrations have been run. Did you forget `diesel migration run`?"
             ),
+            MigrationError::NoMigrationRevertFile => {
+                write!(f, "Missing `down.sql` file to revert migration")
+            }
         }
     }
 }

@@ -5,7 +5,7 @@ use crate::pg::Pg;
 use crate::query_builder::update_statement::changeset::AssignmentTarget;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::sql_types::{
-    Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
+    Array, Bigint, Binary, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
 };
 use crate::{Column, QueryResult};
 
@@ -49,6 +49,9 @@ __diesel_infix_operator!(
 );
 infix_operator!(RetrieveByPathAsTextJson, " #>> ", Text, backend: Pg);
 infix_operator!(RemoveByPathFromJsonb, " #-", Jsonb, backend: Pg);
+infix_operator!(ConcatBinary, " || ", Binary, backend: Pg);
+infix_operator!(LikeBinary, " LIKE ", backend: Pg);
+infix_operator!(NotLikeBinary, " NOT LIKE ", backend: Pg);
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]

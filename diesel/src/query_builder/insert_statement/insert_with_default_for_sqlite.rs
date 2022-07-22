@@ -357,7 +357,7 @@ macro_rules! tuple_impls {
     }
 
 macro_rules! impl_contains_defaultable_value {
-    (
+      (
         @build
         start_ts = [$($ST: ident,)*],
         ts = [$T1: ident,],

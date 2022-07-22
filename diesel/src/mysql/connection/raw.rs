@@ -59,18 +59,12 @@ impl RawConnection {
             // Make sure you don't use the fake one!
             ffi::mysql_real_connect(
                 self.0.as_ptr(),
-                host.map(CStr::as_ptr).unwrap_or_else(|| ptr::null_mut()),
+                host.map(CStr::as_ptr).unwrap_or_else(ptr::null),
                 user.as_ptr(),
-                password
-                    .map(CStr::as_ptr)
-                    .unwrap_or_else(|| ptr::null_mut()),
-                database
-                    .map(CStr::as_ptr)
-                    .unwrap_or_else(|| ptr::null_mut()),
+                password.map(CStr::as_ptr).unwrap_or_else(ptr::null),
+                database.map(CStr::as_ptr).unwrap_or_else(ptr::null),
                 u32::from(port.unwrap_or(0)),
-                unix_socket
-                    .map(CStr::as_ptr)
-                    .unwrap_or_else(|| ptr::null_mut()),
+                unix_socket.map(CStr::as_ptr).unwrap_or_else(ptr::null),
                 client_flags.bits().into(),
             )
         };

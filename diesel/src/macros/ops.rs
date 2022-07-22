@@ -14,8 +14,8 @@ macro_rules! operator_allowed {
         {
             type Output = $crate::internal::table_macro::ops::$op<Self, Rhs::Expression>;
 
-            fn $fn_name(self, rhs: Rhs) -> Self::Output {
-                $crate::internal::table_macro::ops::$op::new(self, rhs.as_expression())
+            fn $fn_name(self, __diesel_internal_rhs: Rhs) -> Self::Output {
+                $crate::internal::table_macro::ops::$op::new(self, __diesel_internal_rhs.as_expression())
             }
         }
     };

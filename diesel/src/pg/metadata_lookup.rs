@@ -9,6 +9,7 @@
 
 use super::backend::{FailedToLookupTypeError, InnerPgTypeMetadata};
 use super::{Pg, PgTypeMetadata};
+use crate::connection::{DefaultLoadingMode, LoadConnection};
 use crate::prelude::*;
 
 use std::borrow::Cow;
@@ -31,7 +32,7 @@ pub trait PgMetadataLookup {
 
 impl<T> PgMetadataLookup for T
 where
-    T: Connection<Backend = Pg> + GetPgMetadataCache,
+    T: Connection<Backend = Pg> + GetPgMetadataCache + LoadConnection<DefaultLoadingMode>,
 {
     fn lookup_type(&mut self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata {
         let cache_key = PgMetadataCacheKey {
@@ -75,7 +76,7 @@ pub trait GetPgMetadataCache {
     fn get_metadata_cache(&mut self) -> &mut PgMetadataCache;
 }
 
-fn lookup_type<T: Connection<Backend = Pg>>(
+fn lookup_type<T: Connection<Backend = Pg> + LoadConnection<DefaultLoadingMode>>(
     cache_key: &PgMetadataCacheKey<'_>,
     conn: &mut T,
 ) -> QueryResult<InnerPgTypeMetadata> {

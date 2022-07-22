@@ -10,8 +10,18 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
 23 |     let command = update(users).set(name.eq(posts::title));
    |                                 ^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+  --> tests/fail/update_requires_column_be_from_same_table.rs:12:1
+   |
+12 | / table! {
+13 | |     posts {
+14 | |         id -> Integer,
+15 | |         title -> VarChar,
+16 | |     }
+17 | | }
+   | |_^
    = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
@@ -20,5 +30,15 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
    |                                 ^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
    |
    = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+  --> tests/fail/update_requires_column_be_from_same_table.rs:12:1
+   |
+12 | / table! {
+13 | |     posts {
+14 | |         id -> Integer,
+15 | |         title -> VarChar,
+16 | |     }
+17 | | }
+   | |_^
    = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -217,3 +217,512 @@ fn mixed_selectable_and_plain_select() {
         .unwrap();
     assert_eq!(expected_data, actual_data);
 }
+
+// The following tests are duplicates from tests in joins.rs
+// They are used to verify that selectable behaves equivalent to the corresponding
+// raw select
+#[test]
+fn selecting_parent_child_grandchild() {
+    use crate::joins::TestData;
+
+    let (mut connection, test_data) =
+        crate::joins::connection_with_fixture_data_for_multitable_joins();
+    let TestData {
+        sean,
+        tess,
+        posts,
+        comments,
+        ..
+    } = test_data;
+
+    let data = users::table
+        .inner_join(posts::table.inner_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .select(<(User, (Post, Comment)) as SelectableHelper<_>>::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), comments[0].clone())),
+        (sean.clone(), (posts[0].clone(), comments[2].clone())),
+        (sean.clone(), (posts[2].clone(), comments[1].clone())),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table
+        .inner_join(
+            posts::table
+                .on(users::id.eq(posts::user_id).and(posts::id.eq(posts[0].id)))
+                .inner_join(comments::table),
+        )
+        .order((users::id, posts::id, comments::id))
+        .select(<(User, (Post, Comment)) as SelectableHelper<_>>::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), comments[0].clone())),
+        (sean.clone(), (posts[0].clone(), comments[2].clone())),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table
+        .inner_join(posts::table.left_outer_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .select(<(User, (Post, Option<Comment>)) as SelectableHelper<_>>::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        (sean.clone(), (posts[0].clone(), Some(comments[0].clone()))),
+        (sean.clone(), (posts[0].clone(), Some(comments[2].clone()))),
+        (sean.clone(), (posts[2].clone(), Some(comments[1].clone()))),
+        (tess.clone(), (posts[1].clone(), None)),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table
+        .left_outer_join(posts::table.left_outer_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .select(<(User, Option<(Post, Option<Comment>)>) as SelectableHelper<_>>::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        (
+            sean.clone(),
+            Some((posts[0].clone(), Some(comments[0].clone()))),
+        ),
+        (
+            sean.clone(),
+            Some((posts[0].clone(), Some(comments[2].clone()))),
+        ),
+        (
+            sean.clone(),
+            Some((posts[2].clone(), Some(comments[1].clone()))),
+        ),
+        (tess.clone(), Some((posts[1].clone(), None))),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table
+        .left_outer_join(posts::table.inner_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .select(<(User, Option<(Post, Comment)>) as SelectableHelper<_>>::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        (sean.clone(), Some((posts[0].clone(), comments[0].clone()))),
+        (sean.clone(), Some((posts[0].clone(), comments[2].clone()))),
+        (sean, Some((posts[2].clone(), comments[1].clone()))),
+        (tess, None),
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
+#[test]
+fn selecting_parent_child_grandchild_nested() {
+    use crate::joins::TestData;
+
+    let (mut connection, test_data) =
+        crate::joins::connection_with_fixture_data_for_multitable_joins();
+    let TestData {
+        sean,
+        tess,
+        posts,
+        comments,
+        ..
+    } = test_data;
+
+    #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+    #[diesel(table_name = users)]
+    struct User1 {
+        id: i32,
+        name: String,
+        hair_color: Option<String>,
+        #[diesel(embed)]
+        post: Post1,
+    }
+
+    #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+    #[diesel(table_name = posts)]
+    struct Post1 {
+        id: i32,
+        user_id: i32,
+        title: String,
+        body: Option<String>,
+        #[diesel(embed)]
+        comment: Comment,
+    }
+
+    let data = users::table
+        .inner_join(posts::table.inner_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .select(User1::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        User1 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Post1 {
+                id: posts[0].id,
+                user_id: posts[0].user_id,
+                title: posts[0].title.clone(),
+                body: posts[0].body.clone(),
+                comment: comments[0].clone(),
+            },
+        },
+        User1 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Post1 {
+                id: posts[0].id,
+                user_id: posts[0].user_id,
+                title: posts[0].title.clone(),
+                body: posts[0].body.clone(),
+                comment: comments[2].clone(),
+            },
+        },
+        User1 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Post1 {
+                id: posts[2].id,
+                user_id: posts[2].user_id,
+                title: posts[2].title.clone(),
+                body: posts[2].body.clone(),
+                comment: comments[1].clone(),
+            },
+        },
+    ];
+    assert_eq!(Ok(expected), data);
+
+    #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+    #[diesel(table_name = users)]
+    struct User2 {
+        id: i32,
+        name: String,
+        hair_color: Option<String>,
+        #[diesel(embed)]
+        post: Post2,
+    }
+
+    #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+    #[diesel(table_name = posts)]
+    struct Post2 {
+        id: i32,
+        user_id: i32,
+        title: String,
+        body: Option<String>,
+        #[diesel(embed)]
+        comment: Option<Comment>,
+    }
+
+    let data = users::table
+        .inner_join(posts::table.left_outer_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .select(User2::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        User2 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Post2 {
+                id: posts[0].id,
+                user_id: posts[0].user_id,
+                title: posts[0].title.clone(),
+                body: posts[0].body.clone(),
+                comment: Some(comments[0].clone()),
+            },
+        },
+        User2 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Post2 {
+                id: posts[0].id,
+                user_id: posts[0].user_id,
+                title: posts[0].title.clone(),
+                body: posts[0].body.clone(),
+                comment: Some(comments[2].clone()),
+            },
+        },
+        User2 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Post2 {
+                id: posts[2].id,
+                user_id: posts[2].user_id,
+                title: posts[2].title.clone(),
+                body: posts[2].body.clone(),
+                comment: Some(comments[1].clone()),
+            },
+        },
+        User2 {
+            id: tess.id,
+            name: tess.name.clone(),
+            hair_color: tess.hair_color.clone(),
+            post: Post2 {
+                id: posts[1].id,
+                user_id: posts[1].user_id,
+                title: posts[1].title.clone(),
+                body: posts[1].body.clone(),
+                comment: None,
+            },
+        },
+    ];
+    assert_eq!(Ok(expected), data);
+
+    #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+    #[diesel(table_name = users)]
+    struct User3 {
+        id: i32,
+        name: String,
+        hair_color: Option<String>,
+        #[diesel(embed)]
+        post: Option<Post3>,
+    }
+
+    #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+    #[diesel(table_name = posts)]
+    struct Post3 {
+        id: i32,
+        user_id: i32,
+        title: String,
+        body: Option<String>,
+        #[diesel(embed)]
+        comment: Option<Comment>,
+    }
+
+    let data = users::table
+        .left_outer_join(posts::table.left_outer_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .select(User3::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        User3 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Some(Post3 {
+                id: posts[0].id,
+                user_id: posts[0].user_id,
+                title: posts[0].title.clone(),
+                body: posts[0].body.clone(),
+                comment: Some(comments[0].clone()),
+            }),
+        },
+        User3 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Some(Post3 {
+                id: posts[0].id,
+                user_id: posts[0].user_id,
+                title: posts[0].title.clone(),
+                body: posts[0].body.clone(),
+                comment: Some(comments[2].clone()),
+            }),
+        },
+        User3 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Some(Post3 {
+                id: posts[2].id,
+                user_id: posts[2].user_id,
+                title: posts[2].title.clone(),
+                body: posts[2].body.clone(),
+                comment: Some(comments[1].clone()),
+            }),
+        },
+        User3 {
+            id: tess.id,
+            name: tess.name.clone(),
+            hair_color: tess.hair_color.clone(),
+            post: Some(Post3 {
+                id: posts[1].id,
+                user_id: posts[1].user_id,
+                title: posts[1].title.clone(),
+                body: posts[1].body.clone(),
+                comment: None,
+            }),
+        },
+    ];
+    assert_eq!(Ok(expected), data);
+
+    #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+    #[diesel(table_name = users)]
+    struct User4 {
+        id: i32,
+        name: String,
+        hair_color: Option<String>,
+        #[diesel(embed)]
+        post: Option<Post4>,
+    }
+
+    #[derive(Queryable, Selectable, Clone, Debug, PartialEq)]
+    #[diesel(table_name = posts)]
+    struct Post4 {
+        id: i32,
+        user_id: i32,
+        title: String,
+        body: Option<String>,
+        #[diesel(embed)]
+        comment: Comment,
+    }
+
+    let data = users::table
+        .left_outer_join(posts::table.inner_join(comments::table))
+        .order((users::id, posts::id, comments::id))
+        .select(User4::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        User4 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Some(Post4 {
+                id: posts[0].id,
+                user_id: posts[0].user_id,
+                title: posts[0].title.clone(),
+                body: posts[0].body.clone(),
+                comment: comments[0].clone(),
+            }),
+        },
+        User4 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color.clone(),
+            post: Some(Post4 {
+                id: posts[0].id,
+                user_id: posts[0].user_id,
+                title: posts[0].title.clone(),
+                body: posts[0].body.clone(),
+                comment: comments[2].clone(),
+            }),
+        },
+        User4 {
+            id: sean.id,
+            name: sean.name.clone(),
+            hair_color: sean.hair_color,
+            post: Some(Post4 {
+                id: posts[2].id,
+                user_id: posts[2].user_id,
+                title: posts[2].title.clone(),
+                body: posts[2].body.clone(),
+                comment: comments[1].clone(),
+            }),
+        },
+        User4 {
+            id: tess.id,
+            name: tess.name.clone(),
+            hair_color: tess.hair_color,
+            post: None,
+        },
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
+#[test]
+fn selecting_grandchild_child_parent() {
+    use crate::joins::TestData;
+    let (mut connection, test_data) =
+        crate::joins::connection_with_fixture_data_for_multitable_joins();
+    let TestData {
+        sean,
+        posts,
+        comments,
+        ..
+    } = test_data;
+
+    let data = comments::table
+        .inner_join(posts::table.inner_join(users::table))
+        .order((users::id, posts::id, comments::id))
+        .select(<(Comment, (Post, User)) as SelectableHelper<_>>::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        (comments[0].clone(), (posts[0].clone(), sean.clone())),
+        (comments[2].clone(), (posts[0].clone(), sean.clone())),
+        (comments[1].clone(), (posts[2].clone(), sean)),
+    ];
+    assert_eq!(Ok(expected), data);
+}
+
+#[test]
+fn selecting_crazy_nested_joins() {
+    use crate::joins::TestData;
+    let (mut connection, test_data) =
+        crate::joins::connection_with_fixture_data_for_multitable_joins();
+    let TestData {
+        sean,
+        tess,
+        posts,
+        likes,
+        comments,
+        followings,
+        ..
+    } = test_data;
+
+    let data = users::table
+        .inner_join(
+            posts::table
+                .left_join(comments::table.left_join(likes::table))
+                .left_join(followings::table),
+        )
+        .select(<(
+            User,
+            (Post, Option<(Comment, Option<Like>)>, Option<Following>),
+        ) as SelectableHelper<_>>::as_select())
+        .order((users::id, posts::id, comments::id))
+        .load(&mut connection);
+    let expected = vec![
+        (
+            sean.clone(),
+            (
+                posts[0].clone(),
+                Some((comments[0].clone(), Some(likes[0]))),
+                None,
+            ),
+        ),
+        (
+            sean.clone(),
+            (posts[0].clone(), Some((comments[2].clone(), None)), None),
+        ),
+        (
+            sean.clone(),
+            (posts[2].clone(), Some((comments[1].clone(), None)), None),
+        ),
+        (tess.clone(), (posts[1].clone(), None, Some(followings[0]))),
+    ];
+    assert_eq!(Ok(expected), data);
+
+    let data = users::table
+        .inner_join(posts::table.left_join(comments::table.left_join(likes::table)))
+        .left_join(followings::table)
+        .order((users::id, posts::id, comments::id))
+        .select(<(
+            User,
+            (Post, Option<(Comment, Option<Like>)>),
+            Option<Following>,
+        ) as SelectableHelper<_>>::as_select())
+        .load(&mut connection);
+    let expected = vec![
+        (
+            sean.clone(),
+            (
+                posts[0].clone(),
+                Some((comments[0].clone(), Some(likes[0]))),
+            ),
+            Some(followings[0]),
+        ),
+        (
+            sean.clone(),
+            (posts[0].clone(), Some((comments[2].clone(), None))),
+            Some(followings[0]),
+        ),
+        (
+            sean,
+            (posts[2].clone(), Some((comments[1].clone(), None))),
+            Some(followings[0]),
+        ),
+        (tess, (posts[1].clone(), None), None),
+    ];
+    assert_eq!(Ok(expected), data);
+}

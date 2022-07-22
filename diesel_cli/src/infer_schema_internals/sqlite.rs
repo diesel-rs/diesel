@@ -31,7 +31,7 @@ table! {
         seq -> Integer,
         _table -> VarChar,
         from -> VarChar,
-        to -> VarChar,
+        to -> Nullable<VarChar>,
         on_update -> VarChar,
         on_delete -> VarChar,
         _match -> VarChar,
@@ -71,20 +71,37 @@ pub fn load_foreign_key_constraints(
         .into_iter()
         .map(|child_table| {
             let query = format!("PRAGMA FOREIGN_KEY_LIST('{}')", child_table.sql_name);
-            Ok(sql::<pragma_foreign_key_list::SqlType>(&query)
+            sql::<pragma_foreign_key_list::SqlType>(&query)
                 .load::<ForeignKeyListRow>(connection)?
                 .into_iter()
                 .map(|row| {
                     let parent_table = TableName::from_name(row.parent_table);
-                    ForeignKeyConstraint {
+                    let primary_key = if let Some(primary_key) = row.primary_key {
+                        primary_key
+                    } else {
+                        let mut primary_keys = get_primary_keys(connection, &parent_table)?;
+                        if primary_keys.len() == 1 {
+                            primary_keys
+                                .pop()
+                                .expect("There is exactly one primary key in this list")
+                        } else {
+                            return Err(diesel::result::Error::DatabaseError(
+                                diesel::result::DatabaseErrorKind::Unknown,
+                                Box::new(String::from(
+                                    "Found more than one primary key for an implicit reference",
+                                )),
+                            ));
+                        }
+                    };
+                    Ok(ForeignKeyConstraint {
                         child_table: child_table.clone(),
                         parent_table,
                         foreign_key: row.foreign_key.clone(),
                         foreign_key_rust_name: row.foreign_key,
-                        primary_key: row.primary_key,
-                    }
+                        primary_key,
+                    })
                 })
-                .collect())
+                .collect::<Result<_, _>>()
         })
         .collect::<QueryResult<Vec<Vec<_>>>>()?;
     Ok(rows.into_iter().flatten().collect())
@@ -163,7 +180,7 @@ struct ForeignKeyListRow {
     _seq: i32,
     parent_table: String,
     foreign_key: String,
-    primary_key: String,
+    primary_key: Option<String>,
     _on_update: String,
     _on_delete: String,
     _match: String,
@@ -368,14 +385,14 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
     let table_3 = TableName::from_name("table_3");
     let fk_one = ForeignKeyConstraint {
         child_table: table_2.clone(),
-        parent_table: table_1.clone(),
+        parent_table: table_1,
         foreign_key: "fk_one".into(),
         foreign_key_rust_name: "fk_one".into(),
         primary_key: "id".into(),
     };
     let fk_two = ForeignKeyConstraint {
-        child_table: table_3.clone(),
-        parent_table: table_2.clone(),
+        child_table: table_3,
+        parent_table: table_2,
         foreign_key: "fk_two".into(),
         foreign_key_rust_name: "fk_two".into(),
         primary_key: "id".into(),

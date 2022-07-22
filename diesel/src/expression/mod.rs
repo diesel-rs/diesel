@@ -212,9 +212,9 @@ where
     T: Expression<SqlType = ST>,
     ST: SqlType + TypedExpressionType,
 {
-    type Expression = Self;
+    type Expression = T;
 
-    fn as_expression(self) -> Self {
+    fn as_expression(self) -> T {
         self
     }
 }

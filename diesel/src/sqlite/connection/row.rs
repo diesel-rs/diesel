@@ -147,6 +147,7 @@ fn fun_with_row_iters() {
         }
     }
 
+    use crate::connection::LoadConnection;
     use crate::deserialize::{FromSql, FromSqlRow};
     use crate::prelude::*;
     use crate::row::{Field, Row};

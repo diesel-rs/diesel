@@ -4,7 +4,7 @@ use crate::deserialize;
 use std::error::Error;
 
 /// Raw mysql value as received from the database
-#[derive(Copy, Clone, Debug)]
+#[derive(Clone, Debug)]
 pub struct MysqlValue<'a> {
     raw: &'a [u8],
     tpe: MysqlType,

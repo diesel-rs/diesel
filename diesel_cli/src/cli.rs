@@ -1,10 +1,8 @@
-use crate::validators::num::*;
-use clap::{Arg, Command};
+use clap::{
+    builder::{EnumValueParser, PossibleValuesParser},
+    Arg, Command,
+};
 use clap_complete::Shell;
-
-fn str_as_char(str: &str) -> char {
-    str.chars().next().unwrap()
-}
 
 pub fn build_cli() -> Command<'static> {
     let database_arg = Arg::new("DATABASE_URL")
@@ -29,7 +27,7 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("REVERT_ALL")
                         .long("all")
-                        .short(str_as_char("a"))
+                        .short('a')
                         .help("Reverts previously run migration files.")
                         .takes_value(false)
                         .conflicts_with("REVERT_NUMBER"),
@@ -37,7 +35,7 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("REVERT_NUMBER")
                         .long("number")
-                        .short(str_as_char("n"))
+                        .short('n')
                         .help("Reverts the last `n` migration files.")
                         .long_help(
                             "When this option is specified the last `n` migration files \
@@ -45,7 +43,7 @@ pub fn build_cli() -> Command<'static> {
                         )
                         .default_value("1")
                         .takes_value(true)
-                        .validator(is_positive_int)
+                        .value_parser(clap::value_parser!(u64))
                         .conflicts_with("REVERT_ALL"),
                 ),
         )
@@ -58,7 +56,7 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("REDO_ALL")
                         .long("all")
-                        .short(str_as_char("a"))
+                        .short('a')
                         .help("Reverts and re-runs all migrations.")
                         .long_help(
                             "When this option is specified all migrations \
@@ -71,7 +69,7 @@ pub fn build_cli() -> Command<'static> {
                 .arg(
                     Arg::new("REDO_NUMBER")
                         .long("number")
-                        .short(str_as_char("n"))
+                        .short('n')
                         .help("Redo the last `n` migration files.")
                         .long_help(
                             "When this option is specified the last `n` migration files \
@@ -79,7 +77,7 @@ pub fn build_cli() -> Command<'static> {
                         )
                         .default_value("1")
                         .takes_value(true)
-                        .validator(is_positive_int)
+                        .value_parser(clap::value_parser!(u64))
                         .conflicts_with("REDO_ALL"),
                 ),
         )
@@ -112,9 +110,20 @@ pub fn build_cli() -> Command<'static> {
                         .takes_value(true),
                 )
                 .arg(
+                    Arg::new("MIGRATION_NO_DOWN_FILE")
+                        .short('u') // only Up
+                        .long("no-down")
+                        .help(
+                            "Don't generate a down.sql file. \
+                            You won't be able to run migration `revert` or `redo`.",
+                        )
+                        .takes_value(false),
+                )
+                .arg(
                     Arg::new("MIGRATION_FORMAT")
                         .long("format")
-                        .possible_values(&["sql", "barrel"])
+                        .value_parser(PossibleValuesParser::new(["sql"]))
+                        .takes_value(true)
                         .default_value("sql")
                         .takes_value(true)
                         .help("The format of the migration to be generated."),
@@ -154,7 +163,7 @@ pub fn build_cli() -> Command<'static> {
             Arg::new("SHELL")
                 .index(1)
                 .required(true)
-                .possible_values(Shell::possible_values()),
+                .value_parser(EnumValueParser::<Shell>::new()),
         );
 
     let infer_schema_subcommand = Command::new("print-schema")
@@ -162,7 +171,7 @@ pub fn build_cli() -> Command<'static> {
         .arg(
             Arg::new("schema")
                 .long("schema")
-                .short(str_as_char("s"))
+                .short('s')
                 .takes_value(true)
                 .help("The name of the schema."),
         )
@@ -171,19 +180,19 @@ pub fn build_cli() -> Command<'static> {
                 .index(1)
                 .takes_value(true)
                 .multiple_values(true)
-                .multiple_occurrences(true)
+                .action(clap::ArgAction::Append)
                 .help("Table names to filter (default only-tables if not empty)."),
         )
         .arg(
             Arg::new("only-tables")
-                .short(str_as_char("o"))
+                .short('o')
                 .long("only-tables")
                 .help("Only include tables from table-name that matches regexp.")
                 .conflicts_with("except-tables"),
         )
         .arg(
             Arg::new("except-tables")
-                .short(str_as_char("e"))
+                .short('e')
                 .long("except-tables")
                 .help("Exclude tables from table-name that matches regex.")
                 .conflicts_with("only-tables"),
@@ -198,12 +207,13 @@ pub fn build_cli() -> Command<'static> {
                 .long("column-sorting")
                 .help("Sort order for table columns.")
                 .takes_value(true)
-                .possible_values(&["ordinal_position", "name"]),
+                .value_parser(PossibleValuesParser::new(["ordinal_position", "name"])),
         )
         .arg(
             Arg::new("patch-file")
                 .long("patch-file")
                 .takes_value(true)
+                .value_parser(clap::value_parser!(std::path::PathBuf))
                 .help("A unified diff file to be applied to the final schema."),
         )
         .arg(
@@ -211,7 +221,7 @@ pub fn build_cli() -> Command<'static> {
                 .long("import-types")
                 .takes_value(true)
                 .multiple_values(true)
-                .multiple_occurrences(true)
+                .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of types to import for every table, separated by commas."),
         )
@@ -222,6 +232,7 @@ pub fn build_cli() -> Command<'static> {
         );
 
     let config_arg = Arg::new("CONFIG_FILE")
+        .value_parser(clap::value_parser!(std::path::PathBuf))
         .long("config-file")
         .help(
             "The location of the configuration file to use. Falls back to the \
@@ -269,5 +280,6 @@ fn migration_dir_arg<'a>() -> Arg<'a> {
              current directory and its parents.",
         )
         .takes_value(true)
+        .value_parser(clap::value_parser!(std::path::PathBuf))
         .global(true)
 }

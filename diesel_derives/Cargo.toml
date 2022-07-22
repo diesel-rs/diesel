@@ -1,6 +1,6 @@
 [package]
 name = "diesel_derives"
-version = "2.0.0-rc.0"
+version = "2.0.0-rc.1"
 license = "MIT OR Apache-2.0"
 description = "You should not use this crate directly, it is internal to Diesel."
 documentation = "https://diesel.rs/guides/"
@@ -8,7 +8,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
 include = ["src/**/*", "LICENSE-*"]
-rust-version = "1.54.0"
+rust-version = "1.56.0"
 
 [dependencies]
 syn = { version = "1.0.73", features = ["derive", "fold"] }
@@ -21,7 +21,7 @@ cfg-if = "1"
 dotenvy = "0.15"
 
 [dev-dependencies.diesel]
-version = "~2.0.0-rc.0"
+version = "~2.0.0-rc.1"
 path = "../diesel"
 
 [lib]

@@ -26,7 +26,7 @@ pub(crate) mod locking_clause;
 pub(crate) mod nodes;
 pub(crate) mod offset_clause;
 pub(crate) mod order_clause;
-mod returning_clause;
+pub(crate) mod returning_clause;
 pub(crate) mod select_clause;
 pub(crate) mod select_statement;
 mod sql_query;
@@ -85,6 +85,12 @@ pub use self::insert_statement::DefaultValues;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
 pub use self::returning_clause::ReturningClause;
+
+#[doc(inline)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+pub(crate) use self::ast_pass::AstPassToSqlOptions;
 
 #[doc(inline)]
 #[diesel_derives::__diesel_public_if(
@@ -203,7 +209,8 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     fn to_sql(&self, out: &mut DB::QueryBuilder, backend: &DB) -> QueryResult<()> {
-        self.walk_ast(AstPass::to_sql(out, backend))
+        let mut options = AstPassToSqlOptions::default();
+        self.walk_ast(AstPass::to_sql(out, &mut options, backend))
     }
 
     /// Serializes all bind parameters in this query.
@@ -333,10 +340,10 @@ pub trait AsQuery {
 }
 
 impl<T: Query> AsQuery for T {
-    type SqlType = <Self as Query>::SqlType;
-    type Query = Self;
+    type SqlType = <T as Query>::SqlType;
+    type Query = T;
 
-    fn as_query(self) -> Self::Query {
+    fn as_query(self) -> <T as AsQuery>::Query {
         self
     }
 }

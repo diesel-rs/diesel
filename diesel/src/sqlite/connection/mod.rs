@@ -18,9 +18,6 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
-use crate::connection::commit_error_processor::{
-    default_process_commit_error, CommitErrorOutcome, CommitErrorProcessor,
-};
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
@@ -37,6 +34,83 @@ use crate::sqlite::Sqlite;
 /// - File paths (`test.db`)
 /// - [URIs](https://sqlite.org/uri.html) (`file://test.db`)
 /// - Special identifiers (`:memory:`)
+///
+/// # Supported loading model implementations
+///
+/// * [`DefaultLoadingMode`]
+///
+/// As `SqliteConnection` only supports a single loading mode implementation
+/// it is **not required** to explicitly specify a loading mode
+/// when calling [`RunQueryDsl::load_iter()`] or [`LoadConnection::load`]
+///
+/// [`RunQueryDsl::load_iter()`]: crate::query_dsl::RunQueryDsl::load_iter
+///
+/// ## DefaultLoadingMode
+///
+/// `SqliteConnection` only supports a single loading mode, which loads
+/// values row by row from the result set.
+///
+/// ```rust
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+/// { // scope to restrict the lifetime of the iterator
+///     let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+///     for r in iter1 {
+///         let (id, name) = r?;
+///         println!("Id: {} Name: {}", id, name);
+///     }
+/// }
+///
+/// // works without specifying the loading mode
+/// let iter2 = users::table.load_iter::<(i32, String), _>(connection)?;
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
+///
+/// This mode does **not support** creating
+/// multiple iterators using the same connection.
+///
+/// ```compile_fail
+/// # include!("../../doctest_setup.rs");
+/// #
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     use schema::users;
+/// #     let connection = &mut establish_connection();
+/// use diesel::connection::DefaultLoadingMode;
+///
+/// let iter1 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+/// let iter2 = users::table.load_iter::<(i32, String), DefaultLoadingMode>(connection)?;
+///
+/// for r in iter1 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+///
+/// for r in iter2 {
+///     let (id, name) = r?;
+///     println!("Id: {} Name: {}", id, name);
+/// }
+/// #   Ok(())
+/// # }
+/// ```
 #[allow(missing_debug_implementations)]
 #[cfg(feature = "sqlite")]
 pub struct SqliteConnection {
@@ -64,18 +138,6 @@ impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Sqlite> for SqliteCon
     type Row = self::row::SqliteRow<'conn, 'query>;
 }
 
-impl CommitErrorProcessor for SqliteConnection {
-    fn process_commit_error(&self, error: Error) -> CommitErrorOutcome {
-        let state = match self.transaction_state.status {
-            TransactionManagerStatus::InError => {
-                return CommitErrorOutcome::Throw(Error::BrokenTransaction)
-            }
-            TransactionManagerStatus::Valid(ref v) => v,
-        };
-        default_process_commit_error(state, error)
-    }
-}
-
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
     type TransactionManager = AnsiTransactionManager;
@@ -100,20 +162,6 @@ impl Connection for SqliteConnection {
         Ok(conn)
     }
 
-    fn load<'conn, 'query, T>(
-        &'conn mut self,
-        source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
-    where
-        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
-        Self::Backend: QueryMetadata<T::SqlType>,
-    {
-        let statement_use = self.prepared_query(source)?;
-
-        Ok(StatementIterator::new(statement_use))
-    }
-
-    #[doc(hidden)]
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
@@ -132,6 +180,21 @@ impl Connection for SqliteConnection {
     }
 }
 
+impl LoadConnection<DefaultLoadingMode> for SqliteConnection {
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
+    {
+        let statement_use = self.prepared_query(source)?;
+
+        Ok(StatementIterator::new(statement_use))
+    }
+}
+
 #[cfg(feature = "r2d2")]
 impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
     fn ping(&mut self) -> QueryResult<()> {
@@ -141,11 +204,15 @@ impl crate::r2d2::R2D2Connection for crate::sqlite::SqliteConnection {
     }
 
     fn is_broken(&mut self) -> bool {
-        self.transaction_state
-            .status
-            .transaction_depth()
-            .map(|d| d.is_none())
-            .unwrap_or(true)
+        match self.transaction_state.status.transaction_depth() {
+            // all transactions are closed
+            // so we don't consider this connection broken
+            Ok(None) => false,
+            // The transaction manager is in an error state
+            // or contains an open transaction
+            // Therefore we consider this connection broken
+            Err(_) | Ok(Some(_)) => true,
+        }
     }
 }
 
@@ -453,7 +520,7 @@ mod tests {
     #[test]
     fn register_noarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        answer::register_impl(&connection, || 42).unwrap();
+        answer::register_impl(connection, || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);
@@ -462,7 +529,7 @@ mod tests {
     #[test]
     fn register_nondeterministic_noarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        answer::register_nondeterministic_impl(&connection, || 42).unwrap();
+        answer::register_nondeterministic_impl(connection, || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);

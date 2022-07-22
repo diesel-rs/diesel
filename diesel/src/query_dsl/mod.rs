@@ -331,10 +331,9 @@ pub trait QueryDsl: Sized {
     /// [`.on`]: JoinOnDsl::on()
     ///
     /// You can join to as many tables as you'd like in a query, with the
-    /// restriction that no table can appear in the query more than once. The reason
-    /// for this restriction is that one of the appearances would require aliasing,
-    /// and we do not currently have a fleshed out story for dealing with table
-    /// aliases.
+    /// restriction that no table can appear in the query more than once. For
+    /// tables that appear more than once in a single query the usage of [`alias!`](crate::alias!)
+    /// is required.
     ///
     /// You will also need to call [`allow_tables_to_appear_in_same_query!`].
     /// If you are using `diesel print-schema`, this will
@@ -350,8 +349,11 @@ pub trait QueryDsl: Sized {
     ///
     /// ```sql
     /// SELECT * FROM users
-    ///     INNER JOIN posts ON posts.user_id = users.id
-    ///     INNER JOIN comments ON comments.post_id = posts.id
+    ///     INNER JOIN (
+    ///         posts
+    ///         INNER JOIN comments ON comments.post_id = posts.id
+    ///     ) ON posts.user_id = users.id
+    ///
     /// ```
     ///
     /// While the second query would deserialize into `(User, Post, Comment)` and
@@ -362,6 +364,14 @@ pub trait QueryDsl: Sized {
     ///     INNER JOIN posts ON posts.user_id = users.id
     ///     INNER JOIN comments ON comments.user_id = users.id
     /// ```
+    ///
+    /// The exact generated SQL may change in future diesel version as long as the
+    /// generated query continues to produce same results. The currently generated
+    /// SQL is referred as ["explicit join"](https://www.postgresql.org/docs/current/explicit-joins.html)
+    /// by the PostgreSQL documentation and may have implications on the chosen query plan
+    /// for large numbers of joins in the same query. Checkout the documentation of the
+    /// [`join_collapse_limit` paramater](https://www.postgresql.org/docs/current/runtime-config-query.html#GUC-JOIN-COLLAPSE-LIMIT)
+    /// to control this behaviour.
     ///
     /// [associations]: crate::associations
     /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
@@ -1501,6 +1511,17 @@ pub trait RunQueryDsl<Conn>: Sized {
     ///
     /// When using the query builder, the return type can be
     /// a tuple of the values, or a struct which implements [`Queryable`].
+    /// This type is specified by the first generic type of this function.
+    ///
+    /// The second generic type paramater specifies the so called loading mode,
+    /// which describes how the connection implementation loads data from the database.
+    /// All connections should provide a implementaiton for
+    /// [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode).
+    ///
+    /// They may provide additional modes. Checkout the documentation of the concrete
+    /// connection types for details. For connection implementations that provide
+    /// more than one loading mode it is **required** to specify this generic paramater.
+    /// This is currently true for `PgConnection`.
     ///
     /// When this method is called on [`sql_query`],
     /// the return type can only be a struct which implements [`QueryableByName`]
@@ -1528,8 +1549,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
     /// let data = users.select(name)
-    ///     .load_iter::<String>(connection)?
+    ///     .load_iter::<String, DefaultLoadingMode>(connection)?
     ///     .collect::<QueryResult<Vec<_>>>()?;
     /// assert_eq!(vec!["Sean", "Tess"], data);
     /// #     Ok(())
@@ -1549,8 +1572,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
     /// let data = users
-    ///     .load_iter::<(i32, String)>(connection)?
+    ///     .load_iter::<(i32, String), DefaultLoadingMode>(connection)?
     ///     .collect::<QueryResult<Vec<_>>>()?;
     /// let expected_data = vec![
     ///     (1, String::from("Sean")),
@@ -1580,8 +1605,10 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     use diesel::insert_into;
     /// #     use schema::users::dsl::*;
     /// #     let connection = &mut establish_connection();
+    /// use diesel::connection::DefaultLoadingMode;
+    ///
     /// let data = users
-    ///     .load_iter::<User>(connection)?
+    ///     .load_iter::<User, DefaultLoadingMode>(connection)?
     ///     .collect::<QueryResult<Vec<_>>>()?;
     /// let expected_data = vec![
     ///     User { id: 1, name: String::from("Sean") },
@@ -1591,13 +1618,13 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn load_iter<'conn, 'query: 'conn, U>(
+    fn load_iter<'conn, 'query: 'conn, U, B>(
         self,
         conn: &'conn mut Conn,
-    ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U>>
+    ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U, B>>
     where
         U: 'conn,
-        Self: LoadQuery<'query, Conn, U> + 'conn,
+        Self: LoadQuery<'query, Conn, U, B> + 'conn,
     {
         self.internal_load(conn)
     }

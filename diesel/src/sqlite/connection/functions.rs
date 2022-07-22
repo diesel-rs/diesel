@@ -96,6 +96,9 @@ where
     Args::build_from_row(&row).map_err(Error::DeserializationError)
 }
 
+// clippy is wrong here, the let binding is required
+// for lifetime reasons
+#[allow(clippy::let_unit_value)]
 pub(super) fn process_sql_function_result<RetSqlType, Ret>(
     result: &'_ Ret,
 ) -> QueryResult<InternalSqliteBindValue<'_>>

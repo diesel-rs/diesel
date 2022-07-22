@@ -33,11 +33,21 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<bad:
 33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
    |                                                     ^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:12:1
+   |
+12 | / table! {
+13 | |     bad {
+14 | |       id -> Integer,
+15 | |       age -> Integer,
+16 | |     }
+17 | | }
+   | |_^
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not satisfied
   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
@@ -46,8 +56,18 @@ error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not s
    |                                                     ^^^^^^^^^ the trait `TableNotEqual<bad::table>` is not implemented for `users::table`
    |
    = note: required because of the requirements on the impl of `AppearsInFromClause<bad::table>` for `users::table`
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
+note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:12:1
+   |
+12 | / table! {
+13 | |     bad {
+14 | |       id -> Integer,
+15 | |       age -> Integer,
+16 | |     }
+17 | | }
+   | |_^
    = note: 1 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)

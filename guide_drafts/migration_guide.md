@@ -9,39 +9,43 @@ are marked as deprecated in Diesel 1.4.x.
 Any code base using migrating to Diesel 2.0 is expected to be affected at least by 
 the following changes:
 
-* [Diesel now requires a mutable reference to the connection](2-0-0-mutable-connection)
-* [Changed derive attributes](2-0-0-derive-attributes)
+* [Diesel now requires a mutable reference to the connection](#2-0-0-mutable-connection)
+* [Changed derive attributes](#2-0-0-derive-attributes)
 
 Users of `diesel_migration` are additionally affected by the following change:
 
-* [`diesel_migration` rewrite](2-0-0-upgrade-migrations)
+* [`diesel_migration` rewrite](#2-0-0-upgrade-migrations)
 
 Users of `BoxableExpression` might be affected by the following change:
 
-* [Changed nullability of operators](2-0-0-nullability-ops)
+* [Changed nullability of operators](#2-0-0-nullability-ops)
+
+Users of tables containing a column of the type `Array<T>` are affected by the following change:
+
+* [Changed nullability of array elemetns](#2-0-0-nullability-of-array-elements)
 
 Users that implement support for their SQL types or type mappings are affected 
 by the following changes:
 
-* [Changed required traits for custom SQL types](2-0-0-custom-type-implementation)
-* [Changed `ToSql` implementations](2-0-0-to-sql)
-* [Changed `FromSql` implementations](2-0-0-from-sql)
+* [Changed required traits for custom SQL types](#2-0-0-custom-type-implementation)
+* [Changed `ToSql` implementations](#2-0-0-to-sql)
+* [Changed `FromSql` implementations](#2-0-0-from-sql)
 
 `no_arg_sql_function!` macro is now pending deprecation.
 Users of the macro are advised to consider `sql_function!` macro.
 
-* [Deprecated usage of `no_arg_sql_function!` macro](2-0-0-no_arg_sql_function)
+* [Deprecated usage of `no_arg_sql_function!` macro](#2-0-0-no_arg_sql_function)
 
 Users that update generic Diesel code will also be affected by the following changes:
 
-* [Removing `NonAggregate` in favor of `ValidGrouping`](2-0-0-upgrade-non-aggregate)
-* [Changed generic bounds](2-0-0-generic-changes)
+* [Removing `NonAggregate` in favor of `ValidGrouping`](#2-0-0-upgrade-non-aggregate)
+* [Changed generic bounds](#2-0-0-generic-changes)
 
 Additionally this release contains many changes for users that implemented a custom backend/connection.
 We do not provide explicit migration steps but we encourage users to reach out with questions pertaining to these changes. 
 
-## Mutable Connections required
-<a name="2-0-0-mutable-connection"></a>
+
+## Mutable Connections required<a name="2-0-0-mutable-connection"></a>
 
 Diesel now requires mutable access to the `Connection` to perform any database interaction. The following changes
 are required for all usages of any `Connection` type:
@@ -56,8 +60,7 @@ are required for all usages of any `Connection` type:
 We expect this to be a straightforward change as the connection already can execute only one query at a time.
 
 
-## Derive attributes
-<a name="2-0-0-derive-attributes"></a>
+## Derive attributes<a name="2-0-0-derive-attributes"></a>
 
 We have updated all of our Diesel derive attributes to follow the patterns that are used
 widely in the Rust's ecosystem. This means that all of them need to be wrapped by `#[diesel()]` now.  You can now specify multiple attributes on the same line using `,` separator.
@@ -66,8 +69,7 @@ This is backward compatible and thus all of your old attributes will still work,
 warnings. The attributes can be upgraded by either looking at the warnings or by reading
 diesel derive documentation reference.
 
-## `diesel_migration` rewrite
-<a name = "2-0-0-upgrade-migrations"></a>
+## `diesel_migration` rewrite<a name = "2-0-0-upgrade-migrations"></a>
 
 We have completely rewritten the `diesel_migration` crate. As a part of this rewrite all 
 free standing functions are removed from `diesel_migration`. Equivalent functionality 
@@ -102,8 +104,7 @@ fn run_migration(conn: &PgConnection) {
 }
 ```
 
-## Changed nullability of operators
-<a name="2-0-0-nullability-ops"></a>
+## Changed nullability of operators<a name="2-0-0-nullability-ops"></a>
 
 We changed the way how we handle the propagation of null values through binary operators. Diesel 1.x always assumed 
 that the result of a binary operation `value_a > value_b` is not nullable, which does not match the behaviour of the 
@@ -113,10 +114,19 @@ of `BoxableExpression` as it may change the resulting sql type there. As a possi
 there we recommend to use one of the following functions:
 
 * `NullableExpressionMethods::nullable()`
-* `NullableExpressionMethods::assume_not_nullable()`
+* `NullableExpressionMethods::assume_not_null()`
 
-## Custom SQL type implementations
-<a name="2-0-0-custom-type-implementation"></a>
+## Changed nullability of array elements<a name="#2-0-0-nullability-of-array-elements"></a>
+
+We changed the inferred SQL type for columns with array types for the PostgreSQL backend. Instead of using `Array<ST>` 
+we now infer `Array<Nullable<ST>>` to support arrays containing `NULL` values. This change implies a change mapping
+of columns of the corresponding types. It is possible to handle this change using one of the following strategies:
+
+* Use `Vec<Option<T>>` as rust side type instead of `Vec<T>`
+* Manually set the corresponding column to `Array<ST>` in your schema, to signal that this array does not contain null values. You may want to use the `patch_file` key for diesel CLI for this.
+* Use `#[diesel(deserialize_as = "…")]` to explicitly overwrite the  deserialization implementation used for this specific struct field. Checkout the documentation of `#[derive(Queryable)]` for details.
+
+## Custom SQL type implementations<a name="2-0-0-custom-type-implementation"></a>
 
 We changed how we mark sql types as nullable at type level. For this we replaced the `NonNull` trait with a 
 more generic `SqlType` trait, which allows to mark a sql type as (non-) nullable. This may affect custom
@@ -137,7 +147,7 @@ Additionally, the diesel CLI tool was changed so that it automatically generates
 as long as they appear on any table. This feature currently only supports the PostgreSQL backend, as all other supported backends
 do not support real custom types at SQL level at all.
 
-## Changed `ToSql` implementations
+## Changed `ToSql` implementations<a name="2-0-0-to-sql"></a>
 
 We restructured the way Diesel serializes Rust values to their backend specific representation.
 This enables us to skip copying the value at all if the specific backend supports writing to a 
@@ -155,8 +165,7 @@ For backend concrete implementations, the following functions allow You to work 
 
 
 
-## Changed `FromSql` implementations
-<a name="2-0-0-from-sql"></a>
+## Changed `FromSql` implementations<a name="2-0-0-from-sql"></a>
 
 We changed the raw value representation for both PostgreSQL and MySQL
 backends, from a `& [u8]` to an opaque type. This allows us to include additional information like the database side
@@ -168,7 +177,7 @@ Any affected backend needs to perform the following changes:
 ```diff
 impl<DB: Backend> FromSql<YourSqlType, DB> for YourType {
 -    fn from_sql(bytes: &[u8]) -> deserialize::Result<Self> {
-+    fn from_sql(value: backend::RawValue<DB>) -> deserialize::Result<Self> {
++    fn from_sql(value: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
 +        let bytes = value.as_bytes();
          // …
      }
@@ -177,8 +186,7 @@ impl<DB: Backend> FromSql<YourSqlType, DB> for YourType {
 
 
 
-## `no_arg_sql_function`
-<a name="2-0-0-no_arg_sql_function"></a>
+## `no_arg_sql_function`<a name="2-0-0-no_arg_sql_function"></a>
 
 The `no_arg_sql_function` was deprecated without direct replacement. At the same time the
 `sql_function!` macro gained support for sql functions without argument. This support generates slightly 
@@ -198,8 +206,7 @@ affects all of the usages of the `no_arg_sql_function!` in third party crates.
 + diesel::select(now())
 ```
 
-### Replacement of `NonAggregate` with `ValidGrouping`
-<a name="2-0-0-upgrade-non-aggregate"></a>
+### Replacement of `NonAggregate` with `ValidGrouping`<a name="2-0-0-upgrade-non-aggregate"></a>
 
 Diesel now fully enforces the aggregation rules, which required us to change the way we represent the aggregation 
 at the type system level. This is used to provide `group_by` support. Diesel's aggregation rules 
@@ -230,8 +237,7 @@ change shows the strictly equivalent version:
 ```
 
 
-## Other changes to generics
-<a name="2-0-0-generic-changes">
+## Other changes to generics<a name="2-0-0-generic-changes">
 
 In addition to the changes listed above, we changed numerous internal details of Diesel. This will have impact on
 most codebases that include non-trivial generic code abstracting over Diesel. This section tries to list as much of those

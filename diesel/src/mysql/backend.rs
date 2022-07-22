@@ -89,7 +89,7 @@ impl SqlDialect for Mysql {
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
 
-    type ArrayComparision = sql_dialect::array_comparision::AnsiSqlArrayComparison;
+    type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
 }
 
 impl DieselReserveSpecialization for Mysql {}

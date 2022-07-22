@@ -78,16 +78,18 @@
 //!
 //! When used inside a pool, if an individual connection becomes
 //! broken (as determined by the [R2D2Connection::is_broken] method)
-//! then `r2d2` will close and return the connection to the DB.
+//! then, when the connection goes out of scope, `r2d2` will close
+//! and return the connection to the DB.
 //!
 //! `diesel` determines broken connections by whether or not the current
 //! thread is panicking or if individual `Connection` structs are
 //! broken (determined by the `is_broken()` method). Generically, these
 //! are left to individual backends to implement themselves.
 //!
-//! For SQLite, PG, and MySQL backends, specifically, `is_broken()`
-//! is determined by whether or not the `TransactionManagerStatus` (as a part
-//! of the `AnsiTransactionManager` struct) is in an `InError` state.
+//! For SQLite, PG, and MySQL backends `is_broken()` is determined
+//! by whether or not the `TransactionManagerStatus` (as a part
+//! of the `AnsiTransactionManager` struct) is in an `InError` state
+//! or contains an open transaction when the connection goes out of scope.
 //!
 
 pub use r2d2::*;
@@ -103,9 +105,9 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use crate::backend::Backend;
-use crate::connection::commit_error_processor::{CommitErrorOutcome, CommitErrorProcessor};
 use crate::connection::{
-    ConnectionGatWorkaround, SimpleConnection, TransactionManager, TransactionManagerStatus,
+    ConnectionGatWorkaround, LoadConnection, LoadRowIter, SimpleConnection, TransactionManager,
+    TransactionManagerStatus,
 };
 use crate::expression::QueryMetadata;
 use crate::prelude::*;
@@ -209,24 +211,14 @@ where
     }
 }
 
-impl<'conn, 'query, DB, M> ConnectionGatWorkaround<'conn, 'query, DB> for PooledConnection<M>
+impl<'conn, 'query, DB, M, B> ConnectionGatWorkaround<'conn, 'query, DB, B> for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection<Backend = DB>,
+    M::Connection: Connection<Backend = DB> + ConnectionGatWorkaround<'conn, 'query, DB, B>,
     DB: Backend,
 {
-    type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Cursor;
-    type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB>>::Row;
-}
-
-impl<M> CommitErrorProcessor for PooledConnection<M>
-where
-    M: ManageConnection,
-    M::Connection: R2D2Connection + CommitErrorProcessor + Send + 'static,
-{
-    fn process_commit_error(&self, error: crate::result::Error) -> CommitErrorOutcome {
-        (&**self).process_commit_error(error)
-    }
+    type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor;
+    type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Row;
 }
 
 impl<M> Connection for PooledConnection<M>
@@ -244,17 +236,6 @@ where
         )))
     }
 
-    fn load<'conn, 'query, T>(
-        &'conn mut self,
-        source: T,
-    ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Self::Backend>>::Cursor>
-    where
-        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
-        Self::Backend: QueryMetadata<T::SqlType>,
-    {
-        (&mut **self).load(source)
-    }
-
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
@@ -270,6 +251,23 @@ where
 
     fn begin_test_transaction(&mut self) -> QueryResult<()> {
         (&mut **self).begin_test_transaction()
+    }
+}
+
+impl<B, M> LoadConnection<B> for PooledConnection<M>
+where
+    M: ManageConnection,
+    M::Connection: LoadConnection<B> + R2D2Connection,
+{
+    fn load<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    where
+        T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
+        Self::Backend: QueryMetadata<T::SqlType>,
+    {
+        (&mut **self).load(source)
     }
 }
 
@@ -326,6 +324,28 @@ where
         (&mut **self).update_and_fetch(changeset)
     }
 }
+
+#[derive(QueryId)]
+pub(crate) struct CheckConnectionQuery;
+
+impl<DB> QueryFragment<DB> for CheckConnectionQuery
+where
+    DB: Backend,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut pass: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> QueryResult<()> {
+        pass.push_sql("SELECT 1");
+        Ok(())
+    }
+}
+
+impl Query for CheckConnectionQuery {
+    type SqlType = crate::sql_types::Integer;
+}
+
+impl<C> RunQueryDsl<C> for CheckConnectionQuery {}
 
 #[cfg(test)]
 mod tests {
@@ -394,26 +414,118 @@ mod tests {
         let query = select("foo".into_sql::<Text>());
         assert_eq!("foo", query.get_result::<String>(&mut conn).unwrap());
     }
-}
 
-#[derive(QueryId)]
-pub(crate) struct CheckConnectionQuery;
+    #[test]
+    fn check_pool_does_actually_hold_connections() {
+        use std::sync::atomic::{AtomicU32, Ordering};
 
-impl<DB> QueryFragment<DB> for CheckConnectionQuery
-where
-    DB: Backend,
-{
-    fn walk_ast<'b>(
-        &'b self,
-        mut pass: crate::query_builder::AstPass<'_, 'b, DB>,
-    ) -> QueryResult<()> {
-        pass.push_sql("SELECT 1");
-        Ok(())
+        #[derive(Debug)]
+        struct TestEventHandler {
+            acquire_count: Arc<AtomicU32>,
+            release_count: Arc<AtomicU32>,
+            checkin_count: Arc<AtomicU32>,
+            checkout_count: Arc<AtomicU32>,
+        }
+
+        impl r2d2::HandleEvent for TestEventHandler {
+            fn handle_acquire(&self, _event: r2d2::event::AcquireEvent) {
+                self.acquire_count.fetch_add(1, Ordering::Relaxed);
+            }
+            fn handle_release(&self, _event: r2d2::event::ReleaseEvent) {
+                self.release_count.fetch_add(1, Ordering::Relaxed);
+            }
+            fn handle_checkout(&self, _event: r2d2::event::CheckoutEvent) {
+                self.checkout_count.fetch_add(1, Ordering::Relaxed);
+            }
+            fn handle_checkin(&self, _event: r2d2::event::CheckinEvent) {
+                self.checkin_count.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+
+        let acquire_count = Arc::new(AtomicU32::new(0));
+        let release_count = Arc::new(AtomicU32::new(0));
+        let checkin_count = Arc::new(AtomicU32::new(0));
+        let checkout_count = Arc::new(AtomicU32::new(0));
+
+        let handler = Box::new(TestEventHandler {
+            acquire_count: acquire_count.clone(),
+            release_count: release_count.clone(),
+            checkin_count: checkin_count.clone(),
+            checkout_count: checkout_count.clone(),
+        });
+
+        let manager = ConnectionManager::<TestConnection>::new(database_url());
+        let pool = Pool::builder()
+            .max_size(1)
+            .test_on_check_out(true)
+            .event_handler(handler)
+            .build(manager)
+            .unwrap();
+
+        assert_eq!(acquire_count.load(Ordering::Relaxed), 1);
+        assert_eq!(release_count.load(Ordering::Relaxed), 0);
+        assert_eq!(checkin_count.load(Ordering::Relaxed), 0);
+        assert_eq!(checkout_count.load(Ordering::Relaxed), 0);
+
+        // check that we reuse connections with the pool
+        {
+            let conn = pool.get().unwrap();
+
+            assert_eq!(acquire_count.load(Ordering::Relaxed), 1);
+            assert_eq!(release_count.load(Ordering::Relaxed), 0);
+            assert_eq!(checkin_count.load(Ordering::Relaxed), 0);
+            assert_eq!(checkout_count.load(Ordering::Relaxed), 1);
+            std::mem::drop(conn);
+        }
+
+        assert_eq!(acquire_count.load(Ordering::Relaxed), 1);
+        assert_eq!(release_count.load(Ordering::Relaxed), 0);
+        assert_eq!(checkin_count.load(Ordering::Relaxed), 1);
+        assert_eq!(checkout_count.load(Ordering::Relaxed), 1);
+
+        // check that we remove a connection with open transactions from the pool
+        {
+            let mut conn = pool.get().unwrap();
+
+            assert_eq!(acquire_count.load(Ordering::Relaxed), 1);
+            assert_eq!(release_count.load(Ordering::Relaxed), 0);
+            assert_eq!(checkin_count.load(Ordering::Relaxed), 1);
+            assert_eq!(checkout_count.load(Ordering::Relaxed), 2);
+
+            <TestConnection as Connection>::TransactionManager::begin_transaction(&mut *conn)
+                .unwrap();
+        }
+
+        // we are not interested in the acquire count here
+        // as the pool opens a new connection in the background
+        // that could lead to this test failing if that happens to fast
+        // (which is sometimes the case for sqlite)
+        //assert_eq!(acquire_count.load(Ordering::Relaxed), 1);
+        assert_eq!(release_count.load(Ordering::Relaxed), 1);
+        assert_eq!(checkin_count.load(Ordering::Relaxed), 2);
+        assert_eq!(checkout_count.load(Ordering::Relaxed), 2);
+
+        // check that we remove a connection from the pool that was
+        // open during panicing
+        #[allow(unreachable_code, unused_variables)]
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let conn = pool.get();
+            assert_eq!(acquire_count.load(Ordering::Relaxed), 2);
+            assert_eq!(release_count.load(Ordering::Relaxed), 1);
+            assert_eq!(checkin_count.load(Ordering::Relaxed), 2);
+            assert_eq!(checkout_count.load(Ordering::Relaxed), 3);
+            panic!();
+            std::mem::drop(conn);
+        }))
+        .unwrap_err();
+
+        // we are not interested in the acquire count here
+        // as the pool opens a new connection in the background
+        // that could lead to this test failing if that happens to fast
+        // (which is sometimes the case for sqlite)
+        //assert_eq!(acquire_count.load(Ordering::Relaxed), 2);
+        assert_eq!(release_count.load(Ordering::Relaxed), 2);
+        assert_eq!(checkin_count.load(Ordering::Relaxed), 3);
+        assert_eq!(checkout_count.load(Ordering::Relaxed), 3);
     }
 }
-
-impl Query for CheckConnectionQuery {
-    type SqlType = crate::sql_types::Integer;
-}
-
-impl<C> RunQueryDsl<C> for CheckConnectionQuery {}

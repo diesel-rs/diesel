@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
@@ -124,6 +125,12 @@ fn print_schema_unsigned() {
 }
 
 #[test]
+#[cfg(feature = "mysql")]
+fn print_schema_datetime_for_mysql() {
+    test_print_schema("print_schema_datetime_for_mysql", vec!["--with-docs"]);
+}
+
+#[test]
 #[cfg(not(windows))]
 fn print_schema_patch_file() {
     let path_to_patch_file = backend_file_path("print_schema_patch_file", "schema.patch");
@@ -216,6 +223,12 @@ fn print_schema_array_type() {
     test_print_schema("print_schema_array_type", vec![])
 }
 
+#[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_sqlite_implicit_foreign_key_reference() {
+    test_print_schema("print_schema_sqlite_implicit_foreign_key_reference", vec![]);
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
@@ -270,7 +283,7 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String, e
     let p = p.build();
 
     p.command("setup").run();
-    p.create_migration("12345_create_schema", &schema, "");
+    p.create_migration("12345_create_schema", &schema, None);
 
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);

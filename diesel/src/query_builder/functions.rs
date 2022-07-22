@@ -588,8 +588,7 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 /// #     #[cfg(not(feature = "postgres"))]
 /// // Checkout the documentation of your database for the correct
 /// // bind placeholder
-/// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?")
-/// # ;
+/// let users = sql_query("SELECT * FROM users WHERE id > ? AND name <> ?");
 /// let users = users
 ///     .bind::<Integer, _>(1)
 ///     .bind::<Text, _>("Tess")

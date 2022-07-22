@@ -50,9 +50,10 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     impl SpecialPost {
+        #[allow(clippy::new_ret_no_self)]
         fn new(user_id: i32, title: &str) -> NewSpecialPost {
             NewSpecialPost {
-                user_id: user_id,
+                user_id,
                 title: title.to_owned(),
             }
         }
@@ -66,10 +67,9 @@ fn association_where_parent_and_child_have_underscores() {
     }
 
     impl SpecialComment {
+        #[allow(clippy::new_ret_no_self)]
         fn new(special_post_id: i32) -> NewSpecialComment {
-            NewSpecialComment {
-                special_post_id: special_post_id,
-            }
+            NewSpecialComment { special_post_id }
         }
     }
 

@@ -1,3 +1,4 @@
+#![allow(clippy::expect_fun_call)]
 use diesel::connection::SimpleConnection;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;

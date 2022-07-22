@@ -63,9 +63,9 @@ macro_rules! __diesel_internal_backend_specific_table_impls {
             type FromClause = $crate::query_builder::Only<S>;
             type OnClause = <$crate::query_builder::Only<S> as $crate::JoinTo<$table>>::OnClause;
 
-            fn join_target(rhs: $crate::query_builder::Only<S>) -> (Self::FromClause, Self::OnClause) {
-                let (_, on_clause) = $crate::query_builder::Only::<S>::join_target($table);
-                (rhs, on_clause)
+            fn join_target(__diesel_internal_rhs: $crate::query_builder::Only<S>) -> (Self::FromClause, Self::OnClause) {
+                let (_, __diesel_internal_on_clause) = $crate::query_builder::Only::<S>::join_target($table);
+                (__diesel_internal_rhs, __diesel_internal_on_clause)
             }
         }
 
@@ -113,13 +113,15 @@ macro_rules! __diesel_column {
             $crate::internal::table_macro::StaticQueryFragmentInstance<table>: $crate::query_builder::QueryFragment<DB>,
         {
             #[allow(non_snake_case)]
-            fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
+            fn walk_ast<'b>(&'b self, mut __diesel_internal_out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
             {
-                const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
+                if !__diesel_internal_out.should_skip_from() {
+                    const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
 
-                FROM_CLAUSE.walk_ast(__out.reborrow())?;
-                __out.push_sql(".");
-                __out.push_identifier($sql_name)
+                    FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                    __diesel_internal_out.push_sql(".");
+                }
+                __diesel_internal_out.push_identifier($sql_name)
             }
         }
 
@@ -195,9 +197,9 @@ macro_rules! __diesel_column {
         {
             type Output = $crate::dsl::Eq<Self, T::Expression>;
 
-            fn eq_all(self, rhs: T) -> Self::Output {
+            fn eq_all(self, __diesel_internal_rhs: T) -> Self::Output {
                 use $crate::expression_methods::ExpressionMethods;
-                self.eq(rhs)
+                self.eq(__diesel_internal_rhs)
             }
         }
 
@@ -805,8 +807,8 @@ macro_rules! __diesel_table_impl {
                 DB: $crate::backend::Backend,
                 <table as $crate::internal::table_macro::StaticQueryFragment>::Component: $crate::query_builder::QueryFragment<DB>
             {
-                fn walk_ast<'b>(&'b self, pass: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()> {
-                    <table as $crate::internal::table_macro::StaticQueryFragment>::STATIC_COMPONENT.walk_ast(pass)
+                fn walk_ast<'b>(&'b self, __diesel_internal_pass: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()> {
+                    <table as $crate::internal::table_macro::StaticQueryFragment>::STATIC_COMPONENT.walk_ast(__diesel_internal_pass)
                 }
             }
 
@@ -887,8 +889,8 @@ macro_rules! __diesel_table_impl {
             {
                 type Out = $crate::query_source::AliasedField<S, C>;
 
-                fn map(column: C, alias: &$crate::query_source::Alias<S>) -> Self::Out {
-                    alias.field(column)
+                fn map(__diesel_internal_column: C, __diesel_internal_alias: &$crate::query_source::Alias<S>) -> Self::Out {
+                    __diesel_internal_alias.field(__diesel_internal_column)
                 }
             }
 
@@ -904,9 +906,9 @@ macro_rules! __diesel_table_impl {
                 type FromClause = $crate::internal::table_macro::Join<Left, Right, Kind>;
                 type OnClause = <$crate::internal::table_macro::Join<Left, Right, Kind> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::internal::table_macro::Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::internal::table_macro::Join::join_target(table);
-                    (rhs, on_clause)
+                fn join_target(__diesel_internal_rhs: $crate::internal::table_macro::Join<Left, Right, Kind>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = $crate::internal::table_macro::Join::join_target(table);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
                 }
             }
 
@@ -916,9 +918,9 @@ macro_rules! __diesel_table_impl {
                 type FromClause = $crate::internal::table_macro::JoinOn<Join, On>;
                 type OnClause = <$crate::internal::table_macro::JoinOn<Join, On> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::internal::table_macro::JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::internal::table_macro::JoinOn::join_target(table);
-                    (rhs, on_clause)
+                fn join_target(__diesel_internal_rhs: $crate::internal::table_macro::JoinOn<Join, On>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = $crate::internal::table_macro::JoinOn::join_target(table);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
                 }
             }
 
@@ -929,9 +931,9 @@ macro_rules! __diesel_table_impl {
                 type FromClause = $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>;
                 type OnClause = <$crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::internal::table_macro::SelectStatement::join_target(table);
-                    (rhs, on_clause)
+                fn join_target(__diesel_internal_rhs: $crate::internal::table_macro::SelectStatement<$crate::internal::table_macro::FromClause<F>, S, D, W, O, L, Of, G>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = $crate::internal::table_macro::SelectStatement::join_target(table);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
                 }
             }
 
@@ -941,9 +943,9 @@ macro_rules! __diesel_table_impl {
             {
                 type FromClause = $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>;
                 type OnClause = <$crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB> as $crate::JoinTo<table>>::OnClause;
-                fn join_target(rhs: $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::internal::table_macro::BoxedSelectStatement::join_target(table);
-                    (rhs, on_clause)
+                fn join_target(__diesel_internal_rhs: $crate::internal::table_macro::BoxedSelectStatement<'a, $crate::internal::table_macro::FromClause<QS>, ST, DB>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = $crate::internal::table_macro::BoxedSelectStatement::join_target(table);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
                 }
             }
 
@@ -954,9 +956,9 @@ macro_rules! __diesel_table_impl {
                 type FromClause = $crate::query_source::Alias<S>;
                 type OnClause = <$crate::query_source::Alias<S> as $crate::JoinTo<table>>::OnClause;
 
-                fn join_target(rhs: $crate::query_source::Alias<S>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, on_clause) = $crate::query_source::Alias::<S>::join_target(table);
-                    (rhs, on_clause)
+                fn join_target(__diesel_internal_rhs: $crate::query_source::Alias<S>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = $crate::query_source::Alias::<S>::join_target(table);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
                 }
             }
 
@@ -1015,13 +1017,17 @@ macro_rules! __diesel_table_impl {
                     <table as $crate::QuerySource>::FromClause: $crate::query_builder::QueryFragment<DB>,
                 {
                     #[allow(non_snake_case)]
-                    fn walk_ast<'b>(&'b self, mut __out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
+                    fn walk_ast<'b>(&'b self, mut __diesel_internal_out: $crate::query_builder::AstPass<'_, 'b, DB>) -> $crate::result::QueryResult<()>
                     {
                         use $crate::QuerySource;
-                        const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
 
-                        FROM_CLAUSE.walk_ast(__out.reborrow())?;
-                        __out.push_sql(".*");
+                        if !__diesel_internal_out.should_skip_from() {
+                            const FROM_CLAUSE: $crate::internal::table_macro::StaticQueryFragmentInstance<table> = $crate::internal::table_macro::StaticQueryFragmentInstance::new();
+
+                            FROM_CLAUSE.walk_ast(__diesel_internal_out.reborrow())?;
+                            __diesel_internal_out.push_sql(".");
+                        }
+                        __diesel_internal_out.push_sql("*");
                         Ok(())
                     }
                 }
@@ -1129,9 +1135,10 @@ macro_rules! __diesel_table_generate_static_query_fragment_for_table {
 ///
 /// The generated `ON` clause will always join to the primary key of the parent
 /// table. This macro removes the need to call [`.on`] explicitly, you will
-/// still need to invoke [`allow_tables_to_appear_in_same_query!`] for these two tables to
-/// be able to use the resulting query, unless you are using `diesel print-schema`
-/// which will generate it for you.
+/// still need to invoke
+/// [`allow_tables_to_appear_in_same_query!`](crate::allow_tables_to_appear_in_same_query)
+/// for these two tables to be able to use the resulting query, unless you are
+/// using `diesel print-schema` which will generate it for you.
 ///
 /// If you are using `diesel print-schema`, an invocation of this macro
 /// will be generated for every foreign key in your database unless
