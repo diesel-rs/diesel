@@ -1,7 +1,7 @@
 use proc_macro2::{Span, TokenStream};
 use quote::ToTokens;
 use syn::spanned::Spanned;
-use syn::{Field as SynField, Ident, Index, Type};
+use syn::{Expr, Field as SynField, Ident, Index, Type};
 
 use attrs::{parse_attributes, AttributeSpanWrapper, FieldAttr, SqlIdentifier};
 
@@ -13,6 +13,8 @@ pub struct Field {
     pub sql_type: Option<AttributeSpanWrapper<Type>>,
     pub serialize_as: Option<AttributeSpanWrapper<Type>>,
     pub deserialize_as: Option<AttributeSpanWrapper<Type>>,
+    pub select_expression: Option<AttributeSpanWrapper<Expr>>,
+    pub select_expression_type: Option<AttributeSpanWrapper<Type>>,
     pub embed: Option<AttributeSpanWrapper<bool>>,
 }
 
@@ -27,6 +29,8 @@ impl Field {
         let mut serialize_as = None;
         let mut deserialize_as = None;
         let mut embed = None;
+        let mut select_expression = None;
+        let mut select_expression_type = None;
 
         for attr in parse_attributes(attrs) {
             let attribute_span = attr.attribute_span;
@@ -60,6 +64,20 @@ impl Field {
                         ident_span,
                     })
                 }
+                FieldAttr::SelectExpression(_, value) => {
+                    select_expression = Some(AttributeSpanWrapper {
+                        item: value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SelectExpressionType(_, value) => {
+                    select_expression_type = Some(AttributeSpanWrapper {
+                        item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
                 FieldAttr::Embed(_) => {
                     embed = Some(AttributeSpanWrapper {
                         item: true,
@@ -88,6 +106,8 @@ impl Field {
             sql_type,
             serialize_as,
             deserialize_as,
+            select_expression,
+            select_expression_type,
             embed,
         }
     }

@@ -17,6 +17,10 @@ pub const MYSQL_TYPE_NOTE: &str = "mysql_type(name = \"foo\")";
 pub const SQLITE_TYPE_NOTE: &str = "sqlite_type(name = \"foo\")";
 pub const POSTGRES_TYPE_NOTE: &str = "postgres_type(name = \"foo\", schema = \"public\")";
 pub const POSTGRES_TYPE_NOTE_ID: &str = "postgres_type(oid = 37, array_oid = 54)";
+pub const SELECT_EXPRESSION_NOTE: &str =
+    "select_expression = schema::table_name::column_name.is_not_null()";
+pub const SELECT_EXPRESSION_TYPE_NOTE: &str =
+    "select_expression_type = dsl::IsNotNull<schema::table_name::column_name>";
 
 pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> ! {
     let prefix = if valid.len() == 1 { "" } else { " one of" };
