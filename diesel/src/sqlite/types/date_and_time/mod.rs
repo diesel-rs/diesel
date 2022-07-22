@@ -8,6 +8,8 @@ use sqlite::Sqlite;
 
 #[cfg(feature = "chrono")]
 mod chrono;
+#[cfg(feature = "time")]
+mod time;
 
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new

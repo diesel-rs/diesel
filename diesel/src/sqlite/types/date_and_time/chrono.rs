@@ -373,6 +373,183 @@ mod tests {
 
         let distant_future = NaiveDate::from_ymd(9999, 1, 8).and_hms(0, 0, 0);
         let query = select(datetime("9999-01-08 00:00:00.000000").eq(distant_future));
-        assert!(query.get_result::<bool>(&connection).unwrap());
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[test]
+    fn insert_timestamptz_into_table_as_text() {
+        crate::table! {
+            #[allow(unused_parens)]
+            test_insert_timestamptz_into_table_as_text(id) {
+                id -> Integer,
+                timestamp_with_tz -> TimestamptzSqlite,
+            }
+        }
+        let conn = &mut connection();
+        crate::sql_query(
+            "CREATE TABLE test_insert_timestamptz_into_table_as_text(id INTEGER PRIMARY KEY, timestamp_with_tz TEXT);",
+        )
+        .execute(conn)
+        .unwrap();
+
+        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
+
+        crate::insert_into(test_insert_timestamptz_into_table_as_text::table)
+            .values(vec![(
+                test_insert_timestamptz_into_table_as_text::id.eq(1),
+                test_insert_timestamptz_into_table_as_text::timestamp_with_tz.eq(sql::<
+                    TimestamptzSqlite,
+                >(
+                    "'1970-01-01 00:00:00.000000+00:00'",
+                )),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        let result = test_insert_timestamptz_into_table_as_text::table
+            .select(test_insert_timestamptz_into_table_as_text::timestamp_with_tz)
+            .get_result::<DateTime<Utc>>(conn)
+            .unwrap();
+        assert_eq!(result, time);
+    }
+
+    #[test]
+    fn can_query_timestamptz_column_with_between() {
+        crate::table! {
+            #[allow(unused_parens)]
+            test_query_timestamptz_column_with_between(id) {
+                id -> Integer,
+                timestamp_with_tz -> TimestamptzSqlite,
+            }
+        }
+        let conn = &mut connection();
+        crate::sql_query(
+            "CREATE TABLE test_query_timestamptz_column_with_between(id INTEGER PRIMARY KEY, timestamp_with_tz TEXT);",
+        )
+        .execute(conn)
+        .unwrap();
+
+        crate::insert_into(test_query_timestamptz_column_with_between::table)
+            .values(vec![
+                (
+                    test_query_timestamptz_column_with_between::id.eq(1),
+                    test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
+                        TimestamptzSqlite,
+                    >(
+                        "'1970-01-01 00:00:01.000000+00:00'",
+                    )),
+                ),
+                (
+                    test_query_timestamptz_column_with_between::id.eq(2),
+                    test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
+                        TimestamptzSqlite,
+                    >(
+                        "'1970-01-01 00:00:02.000000+00:00'",
+                    )),
+                ),
+                (
+                    test_query_timestamptz_column_with_between::id.eq(3),
+                    test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
+                        TimestamptzSqlite,
+                    >(
+                        "'1970-01-01 00:00:03.000000+00:00'",
+                    )),
+                ),
+                (
+                    test_query_timestamptz_column_with_between::id.eq(4),
+                    test_query_timestamptz_column_with_between::timestamp_with_tz.eq(sql::<
+                        TimestamptzSqlite,
+                    >(
+                        "'1970-01-01 00:00:04.000000+00:00'",
+                    )),
+                ),
+            ])
+            .execute(conn)
+            .unwrap();
+
+        let result = test_query_timestamptz_column_with_between::table
+            .select(test_query_timestamptz_column_with_between::timestamp_with_tz)
+            .filter(
+                test_query_timestamptz_column_with_between::timestamp_with_tz
+                    .gt(Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0)),
+            )
+            .filter(
+                test_query_timestamptz_column_with_between::timestamp_with_tz
+                    .lt(Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 4, 0)),
+            )
+            .count()
+            .get_result::<_>(conn);
+        assert_eq!(result, Ok(3));
+    }
+
+    #[test]
+    fn unix_epoch_encodes_correctly_with_timezone() {
+        let connection = &mut connection();
+        // West one hour is negative offset
+        let time = FixedOffset::west(3600)
+            .ymd(1970, 1, 1)
+            .and_hms_milli(0, 0, 0, 1);
+        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 01:00:00.001+00:00'").eq(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[test]
+    fn unix_epoch_encodes_correctly_with_utc_timezone() {
+        let connection = &mut connection();
+        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 1);
+        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00.001+00:00'").eq(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+
+        // and without millisecond
+        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
+        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00+00:00'").eq(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+    }
+
+    #[test]
+    fn unix_epoch_decodes_correctly_with_utc_timezone_in_all_possible_formats() {
+        let connection = &mut connection();
+        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let valid_epoch_formats = vec![
+            "1970-01-01 00:00Z",
+            "1970-01-01 00:00:00Z",
+            "1970-01-01 00:00:00.000Z",
+            "1970-01-01 00:00:00.000000Z",
+            "1970-01-01T00:00Z",
+            "1970-01-01T00:00:00Z",
+            "1970-01-01T00:00:00.000Z",
+            "1970-01-01T00:00:00.000000Z",
+            "1970-01-01 00:00+00:00",
+            "1970-01-01 00:00:00+00:00",
+            "1970-01-01 00:00:00.000+00:00",
+            "1970-01-01 00:00:00.000000+00:00",
+            "1970-01-01T00:00+00:00",
+            "1970-01-01T00:00:00+00:00",
+            "1970-01-01T00:00:00.000+00:00",
+            "1970-01-01T00:00:00.000000+00:00",
+            "1970-01-01 00:00+01:00",
+            "1970-01-01 00:00:00+01:00",
+            "1970-01-01 00:00:00.000+01:00",
+            "1970-01-01 00:00:00.000000+01:00",
+            "1970-01-01T00:00+01:00",
+            "1970-01-01T00:00:00+01:00",
+            "1970-01-01T00:00:00.000+01:00",
+            "1970-01-01T00:00:00.000000+01:00",
+            "1970-01-01T00:00-01:00",
+            "1970-01-01T00:00:00-01:00",
+            "1970-01-01T00:00:00.000-01:00",
+            "1970-01-01T00:00:00.000000-01:00",
+            "1970-01-01T00:00-01:00",
+            "1970-01-01T00:00:00-01:00",
+            "1970-01-01T00:00:00.000-01:00",
+            "1970-01-01T00:00:00.000000-01:00",
+            "2440587.5",
+        ];
+
+        for s in valid_epoch_formats {
+            let epoch_from_sql =
+                select(sql::<TimestamptzSqlite>(&format!("'{}'", s))).get_result(connection);
+            assert_eq!(Ok(time), epoch_from_sql, "format {} failed", s);
+        }
     }
 }
