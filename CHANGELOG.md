@@ -8,7 +8,7 @@ default features enabled using some set of dependencies. Those set of dependenci
 an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
-## [2.0.0 Rc1] 2022-07-19 
+## [2.0.0 Rc1] 2022-07-22 
 
 ### Changed
 
@@ -1959,3 +1959,4 @@ the new iterator interface
 [1.4.7]: https://github.com/diesel-rs/diesel/compare/v1.4.6...v1.4.7
 [1.4.8]: https://github.com/diesel-rs/diesel/compare/v1.4.7...v1.4.8
 [2.0.0 Rc0]: https://github.com/diesel-rs/diesel/compare/v.1.4.0...v2.0.0-rc0
+[2.0.0 Rc1]: https://github.com/diesel-rs/diesel/compare/v.2.0.0-rc0...v2.0.0-rc1
