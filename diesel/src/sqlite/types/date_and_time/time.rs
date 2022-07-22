@@ -14,13 +14,13 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
-const SQLITE_DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
-const SQLITE_TIME_FORMAT: &[FormatItem<'_>] =
-    format_description!("[hour]:[minute]:[second].[subsecond]");
+const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
+const ENCODE_TIME_FORMAT: &[FormatItem<'_>] =
+    format_description!("[hour]:[minute]:[second].[subsecond digits:6]");
 
-const SQLITE_TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
+const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
     // Most likely
-    SQLITE_TIME_FORMAT,
+    format_description!("[hour]:[minute]:[second].[subsecond]"),
     // All other valid formats in order of increasing specificity
     format_description!("[hour]:[minute]"),
     format_description!("[hour]:[minute]Z"),
@@ -28,21 +28,22 @@ const SQLITE_TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
     format_description!("[hour]:[minute]:[second]"),
     format_description!("[hour]:[minute]:[second]Z"),
     format_description!("[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
-    // here is where SQLITE_TIME_FORMAT would go according to the pattern
+    // here is where the most likely format would go according to the pattern
     format_description!("[hour]:[minute]:[second].[subsecond]Z"),
     format_description!(
         "[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
     ),
 ];
 
-const SQLITE_PRIMITIVE_DATETIME_FORMAT: &[FormatItem<'_>] =
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]");
-const SQLITE_DATETIME_FORMAT: &[FormatItem<'_>] =
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]");
+const ENCODE_PRIMITIVE_DATETIME_FORMAT: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6]");
 
-const SQLITE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
+const ENCODE_DATETIME_FORMAT: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6][offset_hour sign:mandatory]:[offset_minute]");
+
+const DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     // Most likely format
-    SQLITE_PRIMITIVE_DATETIME_FORMAT,
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]"),
     // Other formats in order of increasing specificity
     format_description!("[year]-[month]-[day] [hour]:[minute]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]Z"),
@@ -50,7 +51,7 @@ const SQLITE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]Z"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
-    // here is where SQL_PRIMITIVE_DATETIME_FORMAT would go according to the pattern
+    // here is where the most likely format would go according to the pattern
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]Z"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
     // now the same thing, with T
@@ -82,7 +83,7 @@ fn parse_julian(julian_days: f64) -> Result<PrimitiveDateTime, ComponentRange> {
 impl FromSql<Date, Sqlite> for NaiveDate {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value
-            .parse_string(|s| Self::parse(s, SQLITE_DATE_FORMAT))
+            .parse_string(|s| Self::parse(s, DATE_FORMAT))
             .map_err(Into::into)
     }
 }
@@ -90,10 +91,9 @@ impl FromSql<Date, Sqlite> for NaiveDate {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Date, Sqlite> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(
-            self.format(SQLITE_DATE_FORMAT)
-                .map_err(|err| err.to_string())?,
-        );
+        out.set_value(dbg!(self
+            .format(DATE_FORMAT)
+            .map_err(|err| err.to_string()))?);
         Ok(IsNull::No)
     }
 }
@@ -102,7 +102,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 impl FromSql<Time, Sqlite> for NaiveTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            for format in SQLITE_TIME_FORMATS {
+            for format in TIME_FORMATS {
                 if let Ok(time) = Self::parse(text, format) {
                     return Ok(time);
                 }
@@ -116,10 +116,9 @@ impl FromSql<Time, Sqlite> for NaiveTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Time, Sqlite> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(
-            self.format(SQLITE_TIME_FORMAT)
-                .map_err(|err| err.to_string())?,
-        );
+        out.set_value(dbg!(self
+            .format(ENCODE_TIME_FORMAT)
+            .map_err(|err| err.to_string()))?);
         Ok(IsNull::No)
     }
 }
@@ -128,7 +127,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            for format in SQLITE_DATETIME_FORMATS {
+            for format in DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
                     return Ok(dt);
                 }
@@ -148,10 +147,9 @@ impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(
-            self.format(SQLITE_PRIMITIVE_DATETIME_FORMAT)
-                .map_err(|err| err.to_string())?,
-        );
+        out.set_value(dbg!(self
+            .format(ENCODE_PRIMITIVE_DATETIME_FORMAT)
+            .map_err(|err| err.to_string()))?);
         Ok(IsNull::No)
     }
 }
@@ -160,7 +158,7 @@ impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
 impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            for format in SQLITE_DATETIME_FORMATS {
+            for format in DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
                     return Ok(dt);
                 }
@@ -180,10 +178,9 @@ impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(
-            self.format(SQLITE_PRIMITIVE_DATETIME_FORMAT)
-                .map_err(|err| err.to_string())?,
-        );
+        out.set_value(dbg!(self
+            .format(ENCODE_PRIMITIVE_DATETIME_FORMAT)
+            .map_err(|err| err.to_string()))?);
         Ok(IsNull::No)
     }
 }
@@ -201,11 +198,9 @@ impl FromSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
 impl ToSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         let dt_utc = self.to_offset(UtcOffset::UTC);
-        out.set_value(
-            dt_utc
-                .format(SQLITE_DATETIME_FORMAT)
-                .map_err(|err| err.to_string())?,
-        );
+        out.set_value(dbg!(dt_utc
+            .format(ENCODE_DATETIME_FORMAT)
+            .map_err(|err| err.to_string()))?);
         Ok(IsNull::No)
     }
 }
@@ -221,14 +216,11 @@ mod tests {
 
     use super::naive_utc;
 
+    use crate::dsl::{now, sql};
     use crate::prelude::*;
     use crate::select;
     use crate::sql_types::{Text, Time, Timestamp, TimestamptzSqlite};
     use crate::test_helpers::connection;
-    use crate::{
-        debug_query,
-        dsl::{now, sql},
-    };
 
     sql_function!(fn datetime(x: Text) -> Timestamp);
     sql_function!(fn time(x: Text) -> Time);
@@ -593,7 +585,7 @@ mod tests {
     #[test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = &mut connection();
-        let time: OffsetDateTime = datetime!(1970-1-1 0:0:0.1 utc);
+        let time: OffsetDateTime = datetime!(1970-1-1 0:0:0.001 utc);
         let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00.001+00:00'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
