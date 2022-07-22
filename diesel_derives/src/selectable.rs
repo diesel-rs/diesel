@@ -48,7 +48,10 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 }
 
 fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
-    if field.embed() {
+    if let Some(ref select_expression_type) = field.select_expression_type {
+        let ty = &select_expression_type.item;
+        quote!(#ty)
+    } else if field.embed() {
         let embed_ty = &field.ty;
         quote!(<#embed_ty as Selectable<__DB>>::SelectExpression)
     } else {
@@ -59,7 +62,10 @@ fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
 }
 
 fn field_column_inst(field: &Field, model: &Model) -> TokenStream {
-    if field.embed() {
+    if let Some(ref select_expression) = field.select_expression {
+        let expr = &select_expression.item;
+        quote!(#expr)
+    } else if field.embed() {
         let embed_ty = &field.ty;
         quote!(<#embed_ty as Selectable<__DB>>::construct_selection())
     } else {
