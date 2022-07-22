@@ -6,6 +6,8 @@ use crate::sqlite::Sqlite;
 
 #[cfg(feature = "chrono")]
 mod chrono;
+#[cfg(feature = "time")]
+mod time;
 
 #[cfg(feature = "sqlite")]
 impl FromSql<sql_types::Date, Sqlite> for String {

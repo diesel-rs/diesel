@@ -89,6 +89,6 @@ mod time {
         feature = "postgres_backend",
         diesel(sql_type = crate::sql_types::Timestamptz)
     )]
-    // #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
+    #[cfg_attr(feature = "sqlite", diesel(sql_type = crate::sql_types::TimestamptzSqlite))]
     struct DateTimeProxy(OffsetDateTime);
 }
