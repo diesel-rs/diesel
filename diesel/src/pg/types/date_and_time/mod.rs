@@ -13,6 +13,8 @@ mod deprecated_time;
 #[cfg(feature = "quickcheck")]
 mod quickcheck_impls;
 mod std_time;
+#[cfg(feature = "time")]
+mod time;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, FromSqlRow, AsExpression)]
 #[sql_type = "Timestamp"]
