@@ -1,67 +1,12 @@
-extern crate chrono;
-extern crate mysqlclient_sys as ffi;
-
-use self::chrono::*;
-use std::io::Write;
+use ::chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 use std::os::raw as libc;
-use std::{mem, ptr, slice};
 
-use super::MYSQL_TIME;
-use deserialize::{self, FromSql};
-use mysql::Mysql;
-use serialize::{self, IsNull, Output, ToSql};
-use sql_types::{Date, Datetime, Time, Timestamp};
+use crate::deserialize::{self, FromSql};
+use crate::mysql::{Mysql, MysqlValue};
+use crate::serialize::{self, Output, ToSql};
+use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
-macro_rules! mysql_time_impls {
-    ($ty:ty) => {
-        impl ToSql<$ty, Mysql> for MYSQL_TIME {
-            fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-                let bytes = unsafe {
-                    let bytes_ptr = self as *const MYSQL_TIME as *const u8;
-                    slice::from_raw_parts(bytes_ptr, mem::size_of::<MYSQL_TIME>())
-                };
-                out.write_all(bytes)?;
-                Ok(IsNull::No)
-            }
-        }
-
-        impl FromSql<$ty, Mysql> for MYSQL_TIME {
-            // ptr::copy_nonoverlapping does not require aligned pointers
-            #[allow(clippy::cast_ptr_alignment)]
-            fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-                let bytes = not_none!(bytes);
-                let bytes_ptr = bytes.as_ptr() as *const MYSQL_TIME;
-
-                unsafe {
-                    let mut result = mem::zeroed();
-                    ptr::copy_nonoverlapping(bytes_ptr, &mut result, 1);
-                    if result.neg {
-                        Err("Negative dates/times are not yet supported".into())
-                    } else {
-                        Ok(result)
-                    }
-                }
-            }
-        }
-
-        impl ToSql<$ty, Mysql> for ffi::MYSQL_TIME {
-            fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
-                <MYSQL_TIME as ToSql<$ty, Mysql>>::to_sql(&MYSQL_TIME::from(*self), out)
-            }
-        }
-
-        impl FromSql<$ty, Mysql> for ffi::MYSQL_TIME {
-            fn from_sql(bytes: Option<&[u8]>) -> deserialize::Result<Self> {
-                <MYSQL_TIME as FromSql<$ty, Mysql>>::from_sql(bytes).map(|r| r.into())
-            }
-        }
-    };
-}
-
-mysql_time_impls!(Datetime);
-mysql_time_impls!(Timestamp);
-mysql_time_impls!(Time);
-mysql_time_impls!(Date);
+use super::{MysqlTime, MysqlTimestampType};
 
 impl ToSql<Datetime, Mysql> for NaiveDateTime {
     fn to_sql<W: Write>(&self, out: &mut Output<W, Mysql>) -> serialize::Result {
