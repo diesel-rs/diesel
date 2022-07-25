@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-diesel = { version = "2.0.0-rc.0", path = "../../../diesel", features = ["mysql"] }
+diesel = { version = "2.0.0-rc.1", path = "../../../diesel", features = ["mysql"] }
 dotenvy = "0.15"
 
 [[bin]]
