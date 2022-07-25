@@ -269,12 +269,15 @@ pub type Bit = Binary;
 /// ### [`ToSql`](../serialize/trait.ToSql.html) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
+/// - [`time::Date`][Date] with `feature = "time"`
 ///
 /// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
 ///
 /// - [`chrono::NaiveDate`][NaiveDate] with `feature = "chrono"`
+/// - [`time::Date`][Date] with `feature = "time"`
 ///
-/// [NaiveDate]: /chrono/naive/date/struct.NaiveDate.html
+/// [NaiveDate]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDate.html
+/// [Date]: https://docs.rs/time/0.3.9/time/struct.Date.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[cfg_attr(feature = "postgres", postgres(oid = "1082", array_oid = "1182"))]
 #[cfg_attr(feature = "sqlite", sqlite_type = "Text")]
@@ -304,12 +307,15 @@ pub struct Interval;
 /// ### [`ToSql`](../serialize/trait.ToSql.html) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
+/// - [`time::Time`][Time] with `feature = "time"`
 ///
 /// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
 ///
 /// - [`chrono::NaiveTime`][NaiveTime] with `feature = "chrono"`
+/// - [`time::Time`][Time] with `feature = "time"`
 ///
 /// [NaiveTime]: /chrono/naive/time/struct.NaiveTime.html
+/// [Time]: /time/struct.Time.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[cfg_attr(feature = "postgres", postgres(oid = "1083", array_oid = "1183"))]
 #[cfg_attr(feature = "sqlite", sqlite_type = "Text")]
@@ -322,16 +328,42 @@ pub struct Time;
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
-/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"`
 ///
 /// ### [`FromSql`](../deserialize/trait.FromSql.html) impls
 ///
 /// - [`std::time::SystemTime`][SystemTime] (PG only)
 /// - [`chrono::NaiveDateTime`][NaiveDateTime] with `feature = "chrono"`
-/// - [`time::Timespec`][Timespec] with `feature = "deprecated-time"` (PG only)
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"`
 ///
 /// [SystemTime]: https://doc.rust-lang.org/nightly/std/time/struct.SystemTime.html
-/// [NaiveDateTime]: /chrono/naive/datetime/struct.NaiveDateTime.html
+/// [SystemTime]: std::time::SystemTime
+#[cfg_attr(
+    feature = "chrono",
+    doc = " [NaiveDateTime]: chrono::naive::NaiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "chrono"),
+    doc = " [NaiveDateTime]: https://docs.rs/chrono/*/chrono/naive/struct.NaiveDateTime.html"
+)]
+#[cfg_attr(
+    feature = "time",
+    doc = " [`time::PrimitiveDateTime`]: time::PrimitiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "time"),
+    doc = " [`time::PrimitiveDateTime`]: https://docs.rs/time/0.3.9/time/struct.PrimitiveDateTime.html"
+)]
+#[cfg_attr(
+    feature = "time",
+    doc = " [`time::OffsetDateTime`]: time::OffsetDateTime"
+)]
+#[cfg_attr(
+    not(feature = "time"),
+    doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
+)]
 /// [Timespec]: /time/struct.Timespec.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[cfg_attr(feature = "postgres", postgres(oid = "1114", array_oid = "1115"))]

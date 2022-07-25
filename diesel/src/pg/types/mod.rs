@@ -50,18 +50,50 @@ pub mod sql_types {
     /// - [`PgTimestamp`]
     /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
     /// - [`chrono::DateTime`] with `feature = "chrono"`
+    /// - [`time::PrimitiveDateTime`] with `feature = "time"`
+    /// - [`time::OffsetDateTime`] with `feature = "time"`
     ///
     /// ### [`FromSql`] impls
     ///
     /// - [`PgTimestamp`]
     /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
     /// - [`chrono::DateTime`] with `feature = "chrono"`
+    /// - [`time::PrimitiveDateTime`] with `feature = "time"`
+    /// - [`time::OffsetDateTime`] with `feature = "time"`
     ///
-    /// [`ToSql`]: ../../../serialize/trait.ToSql.html
-    /// [`FromSql`]: ../../../deserialize/trait.FromSql.html
-    /// [`PgTimestamp`]: ../../data_types/struct.PgTimestamp.html
-    /// [`chrono::NaiveDateTime`]: ../../../../chrono/naive/struct.NaiveDateTime.html
-    /// [`chrono::DateTime`]: ../../../../chrono/struct.DateTime.html
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`PgTimestamp`]: super::super::data_types::PgTimestamp
+    #[cfg_attr(
+        feature = "chrono",
+        doc = " [`chrono::NaiveDateTime`]: chrono::naive::NaiveDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
+    )]
+    #[cfg_attr(feature = "chrono", doc = " [`chrono::DateTime`]: chrono::DateTime")]
+    #[cfg_attr(
+        not(feature = "chrono"),
+        doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
+    )]
+    #[cfg_attr(
+        feature = "time",
+        doc = " [`time::PrimitiveDateTime`]: time::PrimitiveDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "time"),
+        doc = " [`time::PrimitiveDateTime`]: https://docs.rs/time/0.3.9/time/struct.PrimitiveDateTime.html"
+    )]
+    #[cfg_attr(
+        feature = "time",
+        doc = " [`time::OffsetDateTime`]: time::OffsetDateTime"
+    )]
+    #[cfg_attr(
+        not(feature = "time"),
+        doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
+    )]
+    #[cfg(feature = "postgres_backend")]
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[postgres(oid = "1184", array_oid = "1185")]
     pub struct Timestamptz;
