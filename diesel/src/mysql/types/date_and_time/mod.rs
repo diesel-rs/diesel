@@ -10,6 +10,8 @@ use crate::sql_types::{Date, Datetime, Time, Timestamp};
 
 #[cfg(feature = "chrono")]
 mod chrono;
+#[cfg(feature = "time")]
+mod time;
 
 // This is a type from libmysqlclient
 // we have our own copy here to not break the
