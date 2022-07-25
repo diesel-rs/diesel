@@ -4,6 +4,10 @@ All user visible changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/), as described
 for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/text/1105-api-evolution.md)
 
+## Unreleased
+
+* Adds `Timestamp`, `Timestamptz` support for appropriate types for `time v0.3.9`.
+  This feature enables using the `time` crate as an alternative to `chrono`.
 
 ## [1.4.8] - 2021-09-20
 
@@ -49,7 +53,7 @@ for Rust libraries in [RFC #1105](https://github.com/rust-lang/rfcs/blob/master/
 
 ### Fixed
 
-* Updated several dependencies 
+* Updated several dependencies
 * Fixed an issue where the postgresql backend exploits implementation defined behaviour
 * Fixed issue where rustdoc failed to build the documentation
 * `diesel_derives` and `diesel_migrations` are updated to syn 1.0
