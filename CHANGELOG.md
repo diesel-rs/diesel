@@ -17,6 +17,9 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   may be enabled concurrently with the previously existing `network-address`
   feature.
 
+* Adds `Timestamp`, `Timestamptz` support for appropriate types for `time v0.3.9`.
+  This feature enables using the `time` crate as an alternative to `chrono`.
+
 ### Fixed
 
 * Updated `ipnetwork` to allow version 0.20.
