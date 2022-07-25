@@ -37,11 +37,16 @@ const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
     ),
 ];
 
-const ENCODE_PRIMITIVE_DATETIME_FORMAT: &[FormatItem<'_>] =
+const ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
+const ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6]");
 
-const ENCODE_DATETIME_FORMAT: &[FormatItem<'_>] =
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6][offset_hour sign:mandatory]:[offset_minute]");
+const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] = format_description!(
+    "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
+);
+const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3][offset_hour sign:mandatory]:[offset_minute]");
 
 const DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     // Most likely format
@@ -93,9 +98,7 @@ impl FromSql<Date, Sqlite> for NaiveDate {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Date, Sqlite> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(dbg!(self
-            .format(DATE_FORMAT)
-            .map_err(|err| err.to_string()))?);
+        out.set_value(self.format(DATE_FORMAT).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
@@ -152,9 +155,12 @@ impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(dbg!(self
-            .format(ENCODE_PRIMITIVE_DATETIME_FORMAT)
-            .map_err(|err| err.to_string()))?);
+        let format = if self.microsecond() == 0 {
+            ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND
+        } else {
+            ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND
+        };
+        out.set_value(self.format(format).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
@@ -183,9 +189,12 @@ impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(dbg!(self
-            .format(ENCODE_PRIMITIVE_DATETIME_FORMAT)
-            .map_err(|err| err.to_string()))?);
+        let format = if self.microsecond() == 0 {
+            ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND
+        } else {
+            ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND
+        };
+        out.set_value(self.format(format).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
@@ -203,9 +212,12 @@ impl FromSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
 impl ToSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         let dt_utc = self.to_offset(UtcOffset::UTC);
-        out.set_value(dbg!(dt_utc
-            .format(ENCODE_DATETIME_FORMAT)
-            .map_err(|err| err.to_string()))?);
+        let format = if self.millisecond() == 0 {
+            ENCODE_DATETIME_FORMAT_WHOLE_SECOND
+        } else {
+            ENCODE_DATETIME_FORMAT_SUBSECOND
+        };
+        out.set_value(dt_utc.format(format).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
@@ -592,6 +604,11 @@ mod tests {
         let connection = &mut connection();
         let time: OffsetDateTime = datetime!(1970-1-1 0:0:0.001 utc);
         let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00.001+00:00'").eq(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
+
+        // and without millisecond
+        let time: OffsetDateTime = datetime!(1970-1-1 0:0:0 utc);
+        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00+00:00'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
