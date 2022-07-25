@@ -192,135 +192,107 @@ jobs:
           echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
 
       - name: Install rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
-          profile: minimal
           toolchain: ${{ matrix.rust }}
-          override: true
+
       - name: Rust version check
-        uses: actions-rs/cargo@v1
-        with:
-          command: version
+        shell: bash
+        run: |
+          cargo +${{ matrix.rust }} --version
+          rustc +${{ matrix.rust }} --version
 
       - name: Test diesel (nightly)
         if: matrix.rust == 'nightly'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable extras i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable extras i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 
       - name: Test diesel
-        if: matrix.rust != 'nightly'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras r2d2"
+        if: matrix.rust == 'stable'
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras r2d2"
 
       - name: Test diesel (with-deprecated)
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras with-deprecated"
+        if: matrix.rust == 'beta'
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras with-deprecated"
 
       - name: Test diesel-derives (nightly)
         if: matrix.rust == 'nightly'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} diesel/unstable"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} diesel/unstable"
 
       - name: Test diesel-derives
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }}"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }}"
 
       - name: Test diesel-cli
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
 
       - name: Test diesel examples
         shell: bash
+        env:
+          BACKEND: ${{ matrix.backend }}
         run: |
-          (cd examples/${{ matrix.backend }} && BACKEND=${{ matrix.backend }} ./test_all)
+           (cd examples/${{ matrix.backend}} && rustup run ${{ matrix.rust}} bash test_all)
 
       - name: Test migrations-internals
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_migrations/migrations_internals/Cargo.toml
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/migrations_internals/Cargo.toml
 
       - name: Test migrations-macros
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
 
       - name: Test diesel_migrations
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_migrations/Cargo.toml --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/Cargo.toml --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
 
       - name: Run diesel_tests (nightly)
         if: matrix.run == 'nightly'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
 
       - name: Run diesel_tests (beta)
         if: matrix.run == 'beta'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }},returning_clauses_for_sqlite_3_35"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }},returning_clauses_for_sqlite_3_35"
 
       - name: Run diesel_tests
         if: matrix.run == 'stable'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
 
       - name: Run diesel_dynamic_schema tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_dynamic_schema/Cargo.toml --no-default-features --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
 
       - name: Run diesel_benches
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" --bench benchmarks
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" --bench benchmarks
 
       - name: Run rustdoc (nightly)
         if: matrix.run == 'nightly'
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+        shell: bash
+        run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable i-implement-a-third-party-backend-and-opt-into-breaking-changes extras"
 
       - name: Run rustdoc
-        if: matrix.run != 'nightly'
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }}"
+        if: matrix.run == 'stable'
+        shell: bash
+        run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }}"
+
+      - name: Run rustdoc (with-deprecated)
+        if: matrix.run == 'beta'
+        shell: bash
+        run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} with-deprecated"
 
   compile_tests:
     name: Compiletests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.56.0
-          profile: minimal
-          override: true
+      - uses: dtolnay/rust-toolchain@1.56.0
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -335,22 +307,17 @@ jobs:
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
 
       - name: Run compile tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_compile_tests/Cargo.toml
+        shell: bash
+        run: cargo +1.56.0 test --manifest-path diesel_compile_tests/Cargo.toml
 
   rustfmt_and_clippy:
     name: Check rustfmt style && run clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.57.0
-          profile: minimal
           components: clippy, rustfmt
-          override: true
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -377,63 +344,57 @@ jobs:
 
       - name: Run clippy
         run: |
-          cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "postgres diesel/postgres"
-          cargo clippy --tests --manifest-path diesel/Cargo.toml --features "postgres"
-          cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "postgres diesel/postgres"
-          cargo clippy --tests --manifest-path diesel_migrations/migrations_internals/Cargo.toml
-          cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "postgres diesel/postgres"
-          cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "postgres diesel/postgres"
-          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "postgres" --no-default-features
-          cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "postgres"
-          cargo clippy --tests --manifest-path examples/postgres/getting_started_step_1/Cargo.toml
-          cargo clippy --tests --manifest-path examples/postgres/getting_started_step_2/Cargo.toml
-          cargo clippy --tests --manifest-path examples/postgres/getting_started_step_3/Cargo.toml
-          cargo clippy --tests --manifest-path examples/postgres/advanced-blog-cli/Cargo.toml
-          cargo clippy --tests --manifest-path examples/postgres/all_about_inserts/Cargo.toml
-          cargo clippy --tests --manifest-path examples/postgres/all_about_updates/Cargo.toml
-          cargo clippy --tests --manifest-path examples/postgres/custom_types/Cargo.toml
+          cargo +stable clippy --tests --manifest-path diesel_derives/Cargo.toml --features "postgres diesel/postgres"
+          cargo +stable clippy --tests --manifest-path diesel/Cargo.toml --features "postgres"
+          cargo +stable clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "postgres diesel/postgres"
+          cargo +stable clippy --tests --manifest-path diesel_migrations/migrations_internals/Cargo.toml
+          cargo +stable clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "postgres diesel/postgres"
+          cargo +stable clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "postgres diesel/postgres"
+          cargo +stable clippy --tests --manifest-path diesel_cli/Cargo.toml --features "postgres" --no-default-features
+          cargo +stable clippy --tests --manifest-path diesel_tests/Cargo.toml --features "postgres"
+          cargo +stable clippy --tests --manifest-path examples/postgres/getting_started_step_1/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/postgres/getting_started_step_2/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/postgres/getting_started_step_3/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/postgres/advanced-blog-cli/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/postgres/all_about_inserts/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/postgres/all_about_updates/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/postgres/custom_types/Cargo.toml
 
-          cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "sqlite diesel/sqlite"
-          cargo clippy --tests --manifest-path diesel/Cargo.toml --features "sqlite"
-          cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "sqlite diesel/sqlite"
-          cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "sqlite diesel/sqlite"
-          cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "sqlite diesel/sqlite"
-          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "sqlite" --no-default-features
-          cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "sqlite"
-          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step_1/Cargo.toml
-          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step_2/Cargo.toml
-          cargo clippy --tests --manifest-path examples/sqlite/getting_started_step_3/Cargo.toml
-          cargo clippy --tests --manifest-path examples/sqlite/all_about_inserts/Cargo.toml
+          cargo +stable clippy --tests --manifest-path diesel_derives/Cargo.toml --features "sqlite diesel/sqlite"
+          cargo +stable clippy --tests --manifest-path diesel/Cargo.toml --features "sqlite"
+          cargo +stable clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "sqlite diesel/sqlite"
+          cargo +stable clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "sqlite diesel/sqlite"
+          cargo +stable clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "sqlite diesel/sqlite"
+          cargo +stable clippy --tests --manifest-path diesel_cli/Cargo.toml --features "sqlite" --no-default-features
+          cargo +stable clippy --tests --manifest-path diesel_tests/Cargo.toml --features "sqlite"
+          cargo +stable clippy --tests --manifest-path examples/sqlite/getting_started_step_1/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/sqlite/getting_started_step_2/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/sqlite/getting_started_step_3/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/sqlite/all_about_inserts/Cargo.toml
 
-          cargo clippy --tests --manifest-path diesel_derives/Cargo.toml --features "mysql diesel/mysql"
-          cargo clippy --tests --manifest-path diesel/Cargo.toml --features "mysql"
-          cargo clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "mysql diesel/mysql"
-          cargo clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "mysql diesel/mysql"
-          cargo clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "mysql diesel/mysql"
-          cargo clippy --tests --manifest-path diesel_cli/Cargo.toml --features "mysql" --no-default-features
-          cargo clippy --tests --manifest-path diesel_tests/Cargo.toml --features "mysql"
-          cargo clippy --tests --manifest-path examples/mysql/getting_started_step_1/Cargo.toml
-          cargo clippy --tests --manifest-path examples/mysql/getting_started_step_2/Cargo.toml
-          cargo clippy --tests --manifest-path examples/mysql/getting_started_step_3/Cargo.toml
-          cargo clippy --tests --manifest-path examples/mysql/all_about_inserts/Cargo.toml
+          cargo +stable clippy --tests --manifest-path diesel_derives/Cargo.toml --features "mysql diesel/mysql"
+          cargo +stable clippy --tests --manifest-path diesel/Cargo.toml --features "mysql"
+          cargo +stable clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "mysql diesel/mysql"
+          cargo +stable clippy --tests --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "mysql diesel/mysql"
+          cargo +stable clippy --tests --manifest-path diesel_migrations/Cargo.toml --features "mysql diesel/mysql"
+          cargo +stable clippy --tests --manifest-path diesel_cli/Cargo.toml --features "mysql" --no-default-features
+          cargo +stable clippy --tests --manifest-path diesel_tests/Cargo.toml --features "mysql"
+          cargo +stable clippy --tests --manifest-path examples/mysql/getting_started_step_1/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/mysql/getting_started_step_2/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/mysql/getting_started_step_3/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/mysql/all_about_inserts/Cargo.toml
 
       - name: Check formating
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
+        run: cargo +stable fmt --all -- --check
 
   sqlite_bundled:
     name: Check sqlite bundled + Sqlite with asan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: nightly
-          profile: minimal
-          override: true
-          components: rust-src
+          components: "rust-src"
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -443,34 +404,30 @@ jobs:
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Test diesel-cli
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
+        run: cargo +nightly test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "sqlite-bundled"
 
       - name: Run diesel_tests with ASAN enabled
         env:
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
-        run: cargo -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "sqlite libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
+        run: cargo +nightly -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "sqlite libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
 
       - name: Run diesel tests with ASAN enabled
         env:
           RUSTDOCFLAGS: -Zsanitizer=address
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
-        run: cargo -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
+        run: cargo +nightly -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
 
   minimal_rust_version:
     name: Check Minimal supported rust version (1.56.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.56.0
-          profile: minimal
-          override: true
+      - uses: dtolnay/rust-toolchain@1.56.0
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: taiki-e/install-action@cargo-hack
+      - uses: taiki-e/install-action@cargo-minimal-versions
       - name: Cache cargo registry
         uses: actions/cache@v2
         with:
@@ -482,14 +439,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
-      - name: Use minimal dependencies
-        run: |
-          RUSTC_BOOTSTRAP=1 cargo update -Z minimal-versions
-
-      - name: Check building with rust 1.54.0
-        uses: actions-rs/cargo@v1
-        with:
-          command: check
-          # This example pulls generic-array v0.14.1 that cannot compile with rustc 1.40.0.
-          # We could exclude it as it won't affect our MSRV.
-          args: --all --exclude=advanced-blog-cli
+      - name: Check diesel_derives
+        run: cargo +1.56.0 minimal-versions check -p diesel_derives --all-features
+      - name: Check diesel
+        run: cargo +1.56.0 minimal-versions check -p diesel --features "postgres mysql sqlite extras"
+      - name: Check diesel_dynamic_schema
+        run: cargo +1.56.0 minimal-versions check -p diesel-dynamic-schema --all-features
+      - name: Check diesel_migrations
+        run: cargo +1.56.0 minimal-versions check -p diesel_migrations --all-features
+      - name: Check diesel_cli
+        run: cargo +1.56.0 minimal-versions check -p diesel_cli --all-features

@@ -2,6 +2,7 @@
 name = "all_about_updates"
 version = "0.1.0"
 edition = "2018"
+publish = false
 
 [dependencies]
 diesel = { version = "2.0.0-rc.1", path = "../../../diesel", features = ["postgres"] }

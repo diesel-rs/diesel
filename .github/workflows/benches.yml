@@ -45,23 +45,13 @@ jobs:
           echo 'DATABASE_URL=mysql://root:root@localhost/diesel_test' >> $GITHUB_ENV
 
       - name: Install rust toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install critcmp
-        uses: actions-rs/cargo@v1
-        with:
-          command: install
-          args: critcmp
+        run: cargo +stable install critcmp
 
       - name: Benchmark changes
-        uses: actions-rs/cargo@v1
-        with:
-          command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}" -- --save-baseline changes
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}" -- --save-baseline changes
 
       - name: Checkout master
         run: |
@@ -69,10 +59,7 @@ jobs:
           git reset --hard origin/master
 
       - name: Benchmark master
-        uses: actions-rs/cargo@v1
-        with:
-          command: bench
-          args: --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}" -- --save-baseline master
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}" -- --save-baseline master
 
       - name: Critcmp
         run: |

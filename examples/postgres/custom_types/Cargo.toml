@@ -2,6 +2,7 @@
 name = "custom-types"
 version = "0.1.0"
 edition = "2018"
+publish = false
 
 [dependencies]
 diesel = { path = "../../../diesel", version = "2.0.0-rc.1", features = ["postgres"] }
