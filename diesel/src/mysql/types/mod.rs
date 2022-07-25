@@ -219,10 +219,14 @@ impl HasSqlType<Unsigned<BigInt>> for Mysql {
 /// ### [`ToSql`] impls
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"`
 ///
 /// ### [`FromSql`] impls
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"`
 ///
 /// [`ToSql`]: crate::serialize::ToSql
 /// [`FromSql`]: crate::deserialize::FromSql
@@ -233,6 +237,22 @@ impl HasSqlType<Unsigned<BigInt>> for Mysql {
 #[cfg_attr(
     not(feature = "chrono"),
     doc = " [`chrono::NaiveDateTime`]: https://docs.rs/chrono/0.4.19/chrono/naive/struct.NaiveDateTime.html"
+)]
+#[cfg_attr(
+    feature = "time",
+    doc = " [`time::PrimitiveDateTime`]: time::PrimitiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "time"),
+    doc = " [`time::PrimitiveDateTime`]: https://docs.rs/time/0.3.9/time/struct.PrimitiveDateTime.html"
+)]
+#[cfg_attr(
+    feature = "time",
+    doc = " [`time::OffsetDateTime`]: time::OffsetDateTime"
+)]
+#[cfg_attr(
+    not(feature = "time"),
+    doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
 )]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(mysql_type(name = "DateTime"))]
