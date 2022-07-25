@@ -15,7 +15,9 @@ use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
-const ENCODE_TIME_FORMAT: &[FormatItem<'_>] =
+const ENCODE_TIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
+    format_description!("[hour]:[minute]:[second]");
+const ENCODE_TIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[hour]:[minute]:[second].[subsecond digits:6]");
 
 const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
@@ -116,9 +118,12 @@ impl FromSql<Time, Sqlite> for NaiveTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Time, Sqlite> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(dbg!(self
-            .format(ENCODE_TIME_FORMAT)
-            .map_err(|err| err.to_string()))?);
+        let format = if self.microsecond() == 0 {
+            ENCODE_TIME_FORMAT_WHOLE_SECOND
+        } else {
+            ENCODE_TIME_FORMAT_SUBSECOND
+        };
+        out.set_value(self.format(format).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
