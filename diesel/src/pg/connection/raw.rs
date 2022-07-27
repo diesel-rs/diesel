@@ -176,11 +176,9 @@ impl Drop for RawConnection {
 }
 
 fn last_error_message(conn: *const PGconn) -> String {
-    unsafe {
-        let error_ptr = PQerrorMessage(conn);
-        let bytes = CStr::from_ptr(error_ptr).to_bytes();
-        String::from_utf8_lossy(bytes).to_string()
-    }
+    let error_ptr = unsafe { PQerrorMessage(conn) };
+    let bytes = unsafe { CStr::from_ptr(error_ptr).to_bytes() };
+    String::from_utf8_lossy(bytes).to_string()
 }
 
 /// Internal wrapper around a `*mut PGresult` which is known to be not-null, and

@@ -15,15 +15,13 @@ impl StatementMetadata {
     }
 
     pub(in crate::mysql::connection) fn fields(&'_ self) -> &'_ [MysqlFieldMetadata<'_>] {
-        unsafe {
-            let num_fields = ffi::mysql_num_fields(self.result.as_ptr());
-            let field_ptr = ffi::mysql_fetch_fields(self.result.as_ptr());
+        let num_fields = unsafe { ffi::mysql_num_fields(self.result.as_ptr()) };
+        let field_ptr = unsafe { ffi::mysql_fetch_fields(self.result.as_ptr()) };
             if field_ptr.is_null() {
                 &[]
             } else {
-                slice::from_raw_parts(field_ptr as _, num_fields as usize)
+                unsafe { slice::from_raw_parts(field_ptr as _, num_fields as usize) }
             }
-        }
     }
 }
 

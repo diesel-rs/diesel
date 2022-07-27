@@ -113,8 +113,8 @@ macro_rules! mysql_time_impls {
         #[cfg(feature = "mysql_backend")]
         impl ToSql<$ty, Mysql> for MysqlTime {
             fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
+                let bytes_ptr = self as *const MysqlTime as *const u8;
                 let bytes = unsafe {
-                    let bytes_ptr = self as *const MysqlTime as *const u8;
                     slice::from_raw_parts(bytes_ptr, mem::size_of::<MysqlTime>())
                 };
                 out.write_all(bytes)?;
