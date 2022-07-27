@@ -33,9 +33,7 @@ bigdecimal = { version = ">=0.0.13, < 0.4.0", optional = true }
 bitflags = { version = "1.2.0", optional = true }
 r2d2 = { version = ">= 0.8.2, < 0.9.0", optional = true }
 itoa = { version = "1.0.0", optional = true }
-# newer versions of `time` have a MSRV of 1.57.0, which is newer than
-# diesel's own MSRV of 1.56.0
-time = { version = "=0.3.9", optional = true, features = ["macros", "formatting", "parsing"] }
+time = { version = "0.3.9", optional = true, features = ["macros", "formatting", "parsing"] }
 
 [dependencies.diesel_derives]
 version = "~2.0.0-rc.1"
@@ -49,7 +47,7 @@ quickcheck = "1.0.3"
 
 [features]
 default = ["with-deprecated", "32-column-tables"]
-extras = ["chrono", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
+extras = ["chrono", "time", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]
 huge-tables = ["64-column-tables"]
