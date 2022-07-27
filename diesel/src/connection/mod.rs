@@ -299,7 +299,13 @@ where
             }
             TransactionManagerStatus::InError => panic!("Transaction manager in error"),
         };
-        Self::TransactionManager::begin_transaction(self)
+        Self::TransactionManager::begin_transaction(self)?;
+        // set the test transaction flag
+        // to pervent that this connection gets droped in connection pools
+        // Tests commonly set the poolsize to 1 and use `begin_test_transaction`
+        // to prevent modifications to the schema
+        Self::TransactionManager::transaction_manager_status_mut(self).set_test_transaction_flag();
+        Ok(())
     }
 
     /// Executes the given function inside a transaction, but does not commit

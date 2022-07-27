@@ -205,15 +205,7 @@ impl crate::r2d2::R2D2Connection for MysqlConnection {
     }
 
     fn is_broken(&mut self) -> bool {
-        match self.transaction_state.status.transaction_depth() {
-            // all transactions are closed
-            // so we don't consider this connection broken
-            Ok(None) => false,
-            // The transaction manager is in an error state
-            // or contains an open transaction
-            // Therefore we consider this connection broken
-            Err(_) | Ok(Some(_)) => true,
-        }
+        AnsiTransactionManager::is_broken_transaction_manager(self)
     }
 }
 
