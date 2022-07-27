@@ -25,6 +25,9 @@ values by iterator from the database.
 * We've added support for loading values using libpq's row-by-row mode via 
 the new iterator interface
 
+* Adds `Timestamp`, `Timestamptz` support for appropriate types for `time v0.3.9`.
+  This feature enables using the `time` crate as an alternative to `chrono`.
+
 ### Fixed
 
 * Updated `ipnetwork` to allow version 0.20.

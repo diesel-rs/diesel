@@ -33,6 +33,7 @@ bigdecimal = { version = ">=0.0.13, < 0.4.0", optional = true }
 bitflags = { version = "1.2.0", optional = true }
 r2d2 = { version = ">= 0.8.2, < 0.9.0", optional = true }
 itoa = { version = "1.0.0", optional = true }
+time = { version = "0.3.9", optional = true, features = ["macros", "formatting", "parsing"] }
 
 [dependencies.diesel_derives]
 version = "~2.0.0-rc.1"
@@ -46,7 +47,7 @@ quickcheck = "1.0.3"
 
 [features]
 default = ["with-deprecated", "32-column-tables"]
-extras = ["chrono", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
+extras = ["chrono", "time", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]
 huge-tables = ["64-column-tables"]
@@ -54,6 +55,10 @@ huge-tables = ["64-column-tables"]
 64-column-tables = ["32-column-tables", "diesel_derives/64-column-tables"]
 128-column-tables = ["64-column-tables", "diesel_derives/128-column-tables"]
 postgres = ["pq-sys", "postgres_backend"]
+# If we bumped the diesel MSRV to 1.60, we could eliminate the `time` "formatting" and "parsing" features
+# from the main import and instead put them into the `sqlite` dependency here, as
+# sqlite = ["libsqlite3-sys", "diesel_derives/sqlite", "time?/formatting", "time?/parsing"]
+# https://doc.rust-lang.org/cargo/reference/features.html#dependency-features
 sqlite = ["libsqlite3-sys", "diesel_derives/sqlite"]
 mysql = ["mysqlclient-sys", "url", "percent-encoding", "bitflags", "mysql_backend"]
 without-deprecated = ["diesel_derives/without-deprecated"]

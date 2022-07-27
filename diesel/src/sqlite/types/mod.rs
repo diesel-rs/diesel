@@ -147,11 +147,15 @@ impl ToSql<sql_types::Double, Sqlite> for f64 {
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 /// - [`chrono::DateTime`] with `feature = "chrono"`
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"`
 ///
 /// ### [`FromSql`] impls
 ///
 /// - [`chrono::NaiveDateTime`] with `feature = "chrono"`
 /// - [`chrono::DateTime`] with `feature = "chrono"`
+/// - [`time::PrimitiveDateTime`] with `feature = "time"`
+/// - [`time::OffsetDateTime`] with `feature = "time"`
 ///
 /// [`ToSql`]: crate::serialize::ToSql
 /// [`FromSql`]: crate::deserialize::FromSql
@@ -167,6 +171,22 @@ impl ToSql<sql_types::Double, Sqlite> for f64 {
 #[cfg_attr(
     not(feature = "chrono"),
     doc = " [`chrono::DateTime`]: https://docs.rs/chrono/0.4.19/chrono/struct.DateTime.html"
+)]
+#[cfg_attr(
+    feature = "time",
+    doc = " [`time::PrimitiveDateTime`]: time::PrimitiveDateTime"
+)]
+#[cfg_attr(
+    not(feature = "time"),
+    doc = " [`time::PrimitiveDateTime`]: https://docs.rs/time/0.3.9/time/struct.PrimitiveDateTime.html"
+)]
+#[cfg_attr(
+    feature = "time",
+    doc = " [`time::OffsetDateTime`]: time::OffsetDateTime"
+)]
+#[cfg_attr(
+    not(feature = "time"),
+    doc = " [`time::OffsetDateTime`]: https://docs.rs/time/0.3.9/time/struct.OffsetDateTime.html"
 )]
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(sqlite_type(name = "Text"))]

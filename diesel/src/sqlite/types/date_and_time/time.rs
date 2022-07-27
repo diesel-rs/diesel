@@ -1,5 +1,12 @@
-extern crate chrono;
-use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+//! This module makes it possible to map `time` date and time values to sqlite `NUMERIC`
+//! fields. It is enabled with the `time` feature.
+
+extern crate time;
+
+use self::time::{
+    error::ComponentRange, format_description::FormatItem, macros::format_description,
+    Date as NaiveDate, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
+};
 
 use crate::backend;
 use crate::deserialize::{self, FromSql};
@@ -7,37 +14,101 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
-const SQLITE_DATE_FORMAT: &str = "%F";
+const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
+const ENCODE_TIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
+    format_description!("[hour]:[minute]:[second]");
+const ENCODE_TIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
+    format_description!("[hour]:[minute]:[second].[subsecond digits:6]");
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
+    // Most likely
+    format_description!("[hour]:[minute]:[second].[subsecond]"),
+    // All other valid formats in order of increasing specificity
+    format_description!("[hour]:[minute]"),
+    format_description!("[hour]:[minute]Z"),
+    format_description!("[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[hour]:[minute]:[second]"),
+    format_description!("[hour]:[minute]:[second]Z"),
+    format_description!("[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    // here is where the most likely format would go according to the pattern
+    format_description!("[hour]:[minute]:[second].[subsecond]Z"),
+    format_description!(
+        "[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
+    ),
+];
+
+const ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
+const ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6]");
+
+const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] = format_description!(
+    "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
+);
+const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3][offset_hour sign:mandatory]:[offset_minute]");
+
+const DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
+    // Most likely format
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]"),
+    // Other formats in order of increasing specificity
+    format_description!("[year]-[month]-[day] [hour]:[minute]"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]Z"),
+    format_description!("[year]-[month]-[day] [hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]Z"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    // here is where the most likely format would go according to the pattern
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]Z"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
+    // now the same thing, with T
+    format_description!("[year]-[month]-[day]T[hour]:[minute]"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]Z"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]Z"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]Z"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
+];
+
+fn naive_utc(dt: OffsetDateTime) -> PrimitiveDateTime {
+    let dt = dt.to_offset(UtcOffset::UTC);
+    PrimitiveDateTime::new(dt.date(), dt.time())
+}
+
+fn parse_julian(julian_days: f64) -> Result<PrimitiveDateTime, ComponentRange> {
+    const EPOCH_IN_JULIAN_DAYS: f64 = 2_440_587.5;
+    const SECONDS_IN_DAY: f64 = 86400.0;
+    let timestamp = (julian_days - EPOCH_IN_JULIAN_DAYS) * SECONDS_IN_DAY;
+    OffsetDateTime::from_unix_timestamp_nanos((timestamp * 1E9) as i128)
+        .map(|timestamp| naive_utc(timestamp))
+}
+
+#[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Date, Sqlite> for NaiveDate {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value
-            .parse_string(|s| Self::parse_from_str(s, SQLITE_DATE_FORMAT))
+            .parse_string(|s| Self::parse(s, DATE_FORMAT))
             .map_err(Into::into)
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Date, Sqlite> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format(SQLITE_DATE_FORMAT).to_string());
+        out.set_value(self.format(DATE_FORMAT).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Time, Sqlite> for NaiveTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            let valid_time_formats = &[
-                // Most likely
-                "%T%.f", // All other valid formats in order of documentation
-                "%R", "%RZ", "%T%.fZ", "%R%:z", "%T%.f%:z",
-            ];
-
-            for format in valid_time_formats {
-                if let Ok(time) = Self::parse_from_str(text, format) {
+            for format in TIME_FORMATS {
+                if let Ok(time) = Self::parse(text, format) {
                     return Ok(time);
                 }
             }
@@ -47,48 +118,31 @@ impl FromSql<Time, Sqlite> for NaiveTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
+#[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Time, Sqlite> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format("%T%.f").to_string());
+        let format = if self.microsecond() == 0 {
+            ENCODE_TIME_FORMAT_WHOLE_SECOND
+        } else {
+            ENCODE_TIME_FORMAT_SUBSECOND
+        };
+        out.set_value(self.format(format).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
-impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
+#[cfg(all(feature = "sqlite", feature = "time"))]
+impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            let sqlite_datetime_formats = &[
-                // Most likely format
-                "%F %T%.f",
-                // Other formats in order of appearance in docs
-                "%F %R",
-                "%F %RZ",
-                "%F %R%:z",
-                "%F %T%.fZ",
-                "%F %T%.f%:z",
-                "%FT%R",
-                "%FT%RZ",
-                "%FT%R%:z",
-                "%FT%T%.f",
-                "%FT%T%.fZ",
-                "%FT%T%.f%:z",
-            ];
-
-            for format in sqlite_datetime_formats {
-                if let Ok(dt) = Self::parse_from_str(text, format) {
+            for format in DATETIME_FORMATS {
+                if let Ok(dt) = Self::parse(text, format) {
                     return Ok(dt);
                 }
             }
 
             if let Ok(julian_days) = text.parse::<f64>() {
-                let epoch_in_julian_days = 2_440_587.5;
-                let seconds_in_day = 86400.0;
-                let timestamp = (julian_days - epoch_in_julian_days) * seconds_in_day;
-                let seconds = timestamp as i64;
-                let nanos = (timestamp.fract() * 1E9) as u32;
-                if let Some(timestamp) = Self::from_timestamp_opt(seconds, nanos) {
+                if let Ok(timestamp) = parse_julian(julian_days) {
                     return Ok(timestamp);
                 }
             }
@@ -98,46 +152,31 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
-impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
+#[cfg(all(feature = "sqlite", feature = "time"))]
+impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format("%F %T%.f").to_string());
+        let format = if self.microsecond() == 0 {
+            ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND
+        } else {
+            ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND
+        };
+        out.set_value(self.format(format).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
-impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
+#[cfg(all(feature = "sqlite", feature = "time"))]
+impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            let sqlite_datetime_formats = &[
-                "%F %RZ",
-                "%F %R%:z",
-                "%F %TZ",
-                "%F %T%:z",
-                "%F %T%.fZ",
-                "%F %T%.f%:z",
-                "%FT%RZ",
-                "%FT%R%:z",
-                "%FT%TZ",
-                "%FT%T%:z",
-                "%FT%T%.fZ",
-                "%FT%T%.f%:z",
-            ];
-
-            for format in sqlite_datetime_formats {
-                if let Ok(dt) = Self::parse_from_str(text, format) {
+            for format in DATETIME_FORMATS {
+                if let Ok(dt) = Self::parse(text, format) {
                     return Ok(dt);
                 }
             }
 
             if let Ok(julian_days) = text.parse::<f64>() {
-                let epoch_in_julian_days = 2_440_587.5;
-                let seconds_in_day = 86400.0;
-                let timestamp = (julian_days - epoch_in_julian_days) * seconds_in_day;
-                let seconds = timestamp as i64;
-                let nanos = (timestamp.fract() * 1E9) as u32;
-                if let Some(timestamp) = Self::from_timestamp_opt(seconds, nanos) {
+                if let Ok(timestamp) = parse_julian(julian_days) {
                     return Ok(timestamp);
                 }
             }
@@ -147,49 +186,52 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
-impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
+#[cfg(all(feature = "sqlite", feature = "time"))]
+impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format("%F %T%.f+00:00").to_string());
+        let format = if self.microsecond() == 0 {
+            ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND
+        } else {
+            ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND
+        };
+        out.set_value(self.format(format).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
-impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
+#[cfg(all(feature = "sqlite", feature = "time"))]
+impl FromSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
     fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
-        let naive_date_time =
-            <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
-        Ok(DateTime::from_utc(naive_date_time, Utc))
+        let primitive_date_time =
+            <PrimitiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
+        Ok(primitive_date_time.assume_utc())
     }
 }
 
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
-impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
-        let naive_date_time =
-            <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
-        Ok(Local::from_utc_datetime(&Local, &naive_date_time))
-    }
-}
-
-#[cfg(all(feature = "sqlite", feature = "chrono"))]
-impl<TZ: TimeZone> ToSql<TimestamptzSqlite, Sqlite> for DateTime<TZ> {
+#[cfg(all(feature = "sqlite", feature = "time"))]
+impl ToSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.naive_utc().format("%F %T%.f+00:00").to_string());
+        let dt_utc = self.to_offset(UtcOffset::UTC);
+        let format = if self.millisecond() == 0 {
+            ENCODE_DATETIME_FORMAT_WHOLE_SECOND
+        } else {
+            ENCODE_DATETIME_FORMAT_SUBSECOND
+        };
+        out.set_value(dt_utc.format(format).map_err(|err| err.to_string())?);
         Ok(IsNull::No)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    extern crate chrono;
     extern crate dotenvy;
 
-    use self::chrono::{
-        DateTime, Duration, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Timelike,
-        Utc,
+    use ::time::{
+        macros::{date, datetime},
+        Date as NaiveDate, Duration, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime,
     };
+
+    use super::naive_utc;
 
     use crate::dsl::{now, sql};
     use crate::prelude::*;
@@ -204,7 +246,7 @@ mod tests {
     #[test]
     fn unix_epoch_encodes_correctly() {
         let connection = &mut connection();
-        let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let time = datetime!(1970-1-1 0:0:0);
         let query = select(datetime("1970-01-01 00:00:00.000000").eq(time));
         assert_eq!(Ok(true), query.get_result(connection));
     }
@@ -212,7 +254,7 @@ mod tests {
     #[test]
     fn unix_epoch_decodes_correctly_in_all_possible_formats() {
         let connection = &mut connection();
-        let time = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let time = datetime!(1970-1-1 0:0:0);
         let valid_epoch_formats = vec![
             "1970-01-01 00:00",
             "1970-01-01 00:00:00",
@@ -267,11 +309,11 @@ mod tests {
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
-        let time = Utc::now().naive_utc() + Duration::seconds(60);
+        let time = naive_utc(OffsetDateTime::now_utc()) + Duration::seconds(60);
         let query = select(now.lt(time));
         assert_eq!(Ok(true), query.get_result(connection));
 
-        let time = Utc::now().naive_utc() - Duration::seconds(600);
+        let time = naive_utc(OffsetDateTime::now_utc()) - Duration::seconds(600);
         let query = select(now.gt(time));
         assert_eq!(Ok(true), query.get_result(connection));
     }
@@ -280,23 +322,23 @@ mod tests {
     fn times_of_day_encode_correctly() {
         let connection = &mut connection();
 
-        let midnight = NaiveTime::from_hms(0, 0, 0);
+        let midnight = NaiveTime::from_hms(0, 0, 0).unwrap();
         let query = select(time("00:00:00.000000").eq(midnight));
-        assert!(query.get_result::<bool>(connection).unwrap());
+        assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
 
-        let noon = NaiveTime::from_hms(12, 0, 0);
+        let noon = NaiveTime::from_hms(12, 0, 0).unwrap();
         let query = select(time("12:00:00.000000").eq(noon));
-        assert!(query.get_result::<bool>(connection).unwrap());
+        assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
 
-        let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
+        let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200).unwrap();
         let query = select(sql::<Time>("'23:37:04.002200'").eq(roughly_half_past_eleven));
-        assert!(query.get_result::<bool>(connection).unwrap());
+        assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
     }
 
     #[test]
     fn times_of_day_decode_correctly() {
         let connection = &mut connection();
-        let midnight = NaiveTime::from_hms(0, 0, 0);
+        let midnight = NaiveTime::from_hms(0, 0, 0).unwrap();
         let valid_midnight_formats = &[
             "00:00",
             "00:00:00",
@@ -329,11 +371,11 @@ mod tests {
             );
         }
 
-        let noon = NaiveTime::from_hms(12, 0, 0);
+        let noon = NaiveTime::from_hms(12, 0, 0).unwrap();
         let query = select(sql::<Time>("'12:00:00'"));
         assert_eq!(Ok(noon), query.get_result::<NaiveTime>(connection));
 
-        let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200);
+        let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200).unwrap();
         let query = select(sql::<Time>("'23:37:04.002200'"));
         assert_eq!(
             Ok(roughly_half_past_eleven),
@@ -344,19 +386,19 @@ mod tests {
     #[test]
     fn dates_encode_correctly() {
         let connection = &mut connection();
-        let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
+        let january_first_2000 = date!(2000 - 1 - 1);
         let query = select(date("2000-01-01").eq(january_first_2000));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let distant_past = NaiveDate::from_ymd(0, 4, 11);
+        let distant_past = date!(0 - 4 - 11);
         let query = select(date("0000-04-11").eq(distant_past));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
+        let january_first_2018 = date!(2018 - 1 - 1);
         let query = select(date("2018-01-01").eq(january_first_2018));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let distant_future = NaiveDate::from_ymd(9999, 1, 8);
+        let distant_future = date!(9999 - 1 - 8);
         let query = select(date("9999-01-08").eq(distant_future));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -364,25 +406,25 @@ mod tests {
     #[test]
     fn dates_decode_correctly() {
         let connection = &mut connection();
-        let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1);
+        let january_first_2000 = date!(2000 - 1 - 1);
         let query = select(date("2000-01-01"));
         assert_eq!(
             Ok(january_first_2000),
             query.get_result::<NaiveDate>(connection)
         );
 
-        let distant_past = NaiveDate::from_ymd(0, 4, 11);
+        let distant_past = date!(0 - 4 - 11);
         let query = select(date("0000-04-11"));
         assert_eq!(Ok(distant_past), query.get_result::<NaiveDate>(connection));
 
-        let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
+        let january_first_2018 = date!(2018 - 1 - 1);
         let query = select(date("2018-01-01"));
         assert_eq!(
             Ok(january_first_2018),
             query.get_result::<NaiveDate>(connection)
         );
 
-        let distant_future = NaiveDate::from_ymd(9999, 1, 8);
+        let distant_future = date!(9999 - 1 - 8);
         let query = select(date("9999-01-08"));
         assert_eq!(
             Ok(distant_future),
@@ -393,57 +435,51 @@ mod tests {
     #[test]
     fn datetimes_decode_correctly() {
         let connection = &mut connection();
-        let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1).and_hms(1, 1, 1);
+        let january_first_2000 = datetime!(2000-1-1 1:1:1);
         let query = select(datetime("2000-01-01 01:01:01.000000"));
         assert_eq!(
             Ok(january_first_2000),
-            query.get_result::<NaiveDateTime>(connection)
+            query.get_result::<PrimitiveDateTime>(connection)
         );
 
-        let distant_past = NaiveDate::from_ymd(0, 4, 11).and_hms(2, 2, 2);
+        let distant_past = datetime!(0-4-11 2:2:2);
         let query = select(datetime("0000-04-11 02:02:02.000000"));
         assert_eq!(
             Ok(distant_past),
-            query.get_result::<NaiveDateTime>(connection)
+            query.get_result::<PrimitiveDateTime>(connection)
         );
 
-        let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1);
+        let january_first_2018 = date!(2018 - 1 - 1);
         let query = select(date("2018-01-01"));
         assert_eq!(
             Ok(january_first_2018),
             query.get_result::<NaiveDate>(connection)
         );
 
-        let distant_future = NaiveDate::from_ymd(9999, 1, 8)
-            .and_hms(23, 59, 59)
-            .with_nanosecond(100_000)
-            .unwrap();
+        let distant_future = datetime!(9999 - 1 - 8 23:59:59.0001);
         let query = select(sql::<Timestamp>("'9999-01-08 23:59:59.000100'"));
         assert_eq!(
             Ok(distant_future),
-            query.get_result::<NaiveDateTime>(connection)
+            query.get_result::<PrimitiveDateTime>(connection)
         );
     }
 
     #[test]
     fn datetimes_encode_correctly() {
         let connection = &mut connection();
-        let january_first_2000 = NaiveDate::from_ymd(2000, 1, 1).and_hms(0, 0, 0);
+        let january_first_2000 = datetime!(2000-1-1 0:0:0);
         let query = select(datetime("2000-01-01 00:00:00.000000").eq(january_first_2000));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let distant_past = NaiveDate::from_ymd(0, 4, 11).and_hms(20, 00, 20);
+        let distant_past = datetime!(0-4-11 20:00:20);
         let query = select(datetime("0000-04-11 20:00:20.000000").eq(distant_past));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let january_first_2018 = NaiveDate::from_ymd(2018, 1, 1)
-            .and_hms(12, 00, 00)
-            .with_nanosecond(500_000)
-            .unwrap();
+        let january_first_2018 = datetime!(2018 - 1 - 1 12:00:00.0005);
         let query = select(sql::<Timestamp>("'2018-01-01 12:00:00.000500'").eq(january_first_2018));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let distant_future = NaiveDate::from_ymd(9999, 1, 8).and_hms(0, 0, 0);
+        let distant_future = datetime!(9999-1-8 0:0:0);
         let query = select(datetime("9999-01-08 00:00:00.000000").eq(distant_future));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -464,7 +500,7 @@ mod tests {
         .execute(conn)
         .unwrap();
 
-        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
+        let time: OffsetDateTime = datetime!(1970-1-1 0:0:0.0 utc);
 
         crate::insert_into(test_insert_timestamptz_into_table_as_text::table)
             .values(vec![(
@@ -480,7 +516,7 @@ mod tests {
 
         let result = test_insert_timestamptz_into_table_as_text::table
             .select(test_insert_timestamptz_into_table_as_text::timestamp_with_tz)
-            .get_result::<DateTime<Utc>>(conn)
+            .get_result::<OffsetDateTime>(conn)
             .unwrap();
         assert_eq!(result, time);
     }
@@ -543,11 +579,11 @@ mod tests {
             .select(test_query_timestamptz_column_with_between::timestamp_with_tz)
             .filter(
                 test_query_timestamptz_column_with_between::timestamp_with_tz
-                    .gt(Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0)),
+                    .gt(datetime!(1970-1-1 0:0:0.0 utc)),
             )
             .filter(
                 test_query_timestamptz_column_with_between::timestamp_with_tz
-                    .lt(Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 4, 0)),
+                    .lt(datetime!(1970-1-1 0:0:4.0 utc)),
             )
             .count()
             .get_result::<_>(conn);
@@ -558,9 +594,7 @@ mod tests {
     fn unix_epoch_encodes_correctly_with_timezone() {
         let connection = &mut connection();
         // West one hour is negative offset
-        let time = FixedOffset::west(3600)
-            .ymd(1970, 1, 1)
-            .and_hms_milli(0, 0, 0, 1);
+        let time = datetime!(1970-1-1 0:00:00.001 -1:00);
         let query = select(sql::<TimestamptzSqlite>("'1970-01-01 01:00:00.001+00:00'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -568,12 +602,12 @@ mod tests {
     #[test]
     fn unix_epoch_encodes_correctly_with_utc_timezone() {
         let connection = &mut connection();
-        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 1);
+        let time: OffsetDateTime = datetime!(1970-1-1 0:0:0.001 utc);
         let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00.001+00:00'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
 
         // and without millisecond
-        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
+        let time: OffsetDateTime = datetime!(1970-1-1 0:0:0 utc);
         let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00+00:00'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -581,7 +615,7 @@ mod tests {
     #[test]
     fn unix_epoch_decodes_correctly_with_utc_timezone_in_all_possible_formats() {
         let connection = &mut connection();
-        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms(0, 0, 0);
+        let time: OffsetDateTime = datetime!(1970-1-1 0:0:0 utc);
         let valid_epoch_formats = vec![
             "1970-01-01 00:00Z",
             "1970-01-01 00:00:00Z",
