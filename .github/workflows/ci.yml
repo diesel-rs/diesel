@@ -216,20 +216,6 @@ jobs:
           command: test
           args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} extras r2d2"
 
-      - name: "Test diesel (feature: chrono)"
-        if: matrix.rust != 'nightly'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} chrono"
-
-      - name: "Test diesel (feature: time)"
-        if: matrix.rust != 'nightly'
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --manifest-path diesel/Cargo.toml --no-default-features --features "${{ matrix.backend }} time"
-
       - name: Test diesel (with-deprecated)
         uses: actions-rs/cargo@v1
         with:
