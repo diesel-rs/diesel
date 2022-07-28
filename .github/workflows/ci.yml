@@ -235,7 +235,7 @@ jobs:
         env:
           BACKEND: ${{ matrix.backend }}
         run: |
-           (cd examples/${{ matrix.backend}} && rustup run ${{ matrix.rust}} bash test_all)
+           (cd examples/${{ matrix.backend }} && rustup run ${{ matrix.rust }} bash test_all)
 
       - name: Test migrations-internals
         shell: bash
@@ -250,7 +250,7 @@ jobs:
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/Cargo.toml --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"
 
       - name: Run diesel_tests (nightly)
-        if: matrix.run == 'nightly'
+        if: matrix.rust == 'nightly'
         shell: bash
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
 
