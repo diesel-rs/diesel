@@ -73,7 +73,7 @@ impl Field {
                 }
                 FieldAttr::SelectExpressionType(_, value) => {
                     select_expression_type = Some(AttributeSpanWrapper {
-                        item: Type::Path(value),
+                        item: value,
                         attribute_span,
                         ident_span,
                     })

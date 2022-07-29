@@ -8,7 +8,7 @@ use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream, Parser, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parenthesized, Attribute, Expr, Ident, LitBool, LitStr, Path, TypePath};
+use syn::{parenthesized, Attribute, Expr, Ident, LitBool, LitStr, Path, Type, TypePath};
 
 use deprecated::ParseDeprecated;
 use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
@@ -33,7 +33,7 @@ pub enum FieldAttr {
     SerializeAs(Ident, TypePath),
     DeserializeAs(Ident, TypePath),
     SelectExpression(Ident, Expr),
-    SelectExpressionType(Ident, TypePath),
+    SelectExpressionType(Ident, Type),
 }
 
 #[derive(Clone)]
