@@ -257,7 +257,7 @@ jobs:
       - name: Run diesel_tests (beta)
         if: matrix.rust == 'beta'
         shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }},returning_clauses_for_sqlite_3_35"
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} returning_clauses_for_sqlite_3_35 libsqlite3-sys/bundled"
 
       - name: Run diesel_tests
         if: matrix.rust == 'stable'
