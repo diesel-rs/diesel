@@ -121,6 +121,7 @@ fn manually_specified_expression() {
         my_structs (foo) {
             foo -> Integer,
             bar -> Nullable<Text>,
+            some_int -> Nullable<Integer>,
         }
     }
 
@@ -129,10 +130,10 @@ fn manually_specified_expression() {
     struct A {
         foo: i32,
         #[diesel(
-            select_expression = my_structs::bar.is_not_null(),
-            select_expression_type = dsl::IsNotNull<my_structs::bar>
+            select_expression = (my_structs::bar.is_not_null(), my_structs::some_int),
+            select_expression_type = (dsl::IsNotNull<my_structs::bar>, my_structs::some_int),
         )]
-        bar_is_set: bool,
+        bar_is_set_and_some_int: (bool, Option<i32>),
     }
 
     let conn = &mut connection();
