@@ -130,6 +130,8 @@ impl Parse for FieldAttr {
                     "sql_type",
                     "serialize_as",
                     "deserialize_as",
+                    "select_expression",
+                    "select_expression_type",
                 ],
             ),
         }
