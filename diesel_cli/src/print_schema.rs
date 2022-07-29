@@ -245,6 +245,7 @@ impl CustomTypeList {
     }
 }
 
+#[allow(clippy::print_in_format_impl)]
 impl Display for CustomTypeList {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.types_sorted.is_empty() {
