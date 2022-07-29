@@ -255,12 +255,12 @@ jobs:
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }} unstable"
 
       - name: Run diesel_tests (beta)
-        if: matrix.run == 'beta'
+        if: matrix.rust == 'beta'
         shell: bash
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }},returning_clauses_for_sqlite_3_35"
 
       - name: Run diesel_tests
-        if: matrix.run == 'stable'
+        if: matrix.rust == 'stable'
         shell: bash
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "${{ matrix.backend }}"
 
@@ -273,17 +273,17 @@ jobs:
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" --bench benchmarks
 
       - name: Run rustdoc (nightly)
-        if: matrix.run == 'nightly'
+        if: matrix.rust == 'nightly'
         shell: bash
         run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} unstable i-implement-a-third-party-backend-and-opt-into-breaking-changes extras"
 
       - name: Run rustdoc
-        if: matrix.run == 'stable'
+        if: matrix.rust == 'stable'
         shell: bash
         run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }}"
 
       - name: Run rustdoc (with-deprecated)
-        if: matrix.run == 'beta'
+        if: matrix.rust == 'beta'
         shell: bash
         run: cargo +${{ matrix.rust }} doc --manifest-path diesel/Cargo.toml --no-deps --no-default-features --features "${{ matrix.backend }} with-deprecated"
 
