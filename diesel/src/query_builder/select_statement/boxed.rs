@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::backend::{sql_dialect, Backend, DieselReserveSpecialization};
 use crate::dsl::AsExprOf;
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
@@ -25,16 +25,40 @@ use crate::result::QueryResult;
 use crate::sql_types::{BigInt, BoolOrNullableBool, IntoNullable};
 
 // This is used by the table macro internally
-#[doc(hidden)]
+/// This type represents a boxed select query
+///
+/// Using this type directly is only meaningful for custom backends
+/// that need to provide a custom [`QueryFragment`] implementation
 #[allow(missing_debug_implementations)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(
+        select,
+        from,
+        distinct,
+        where_clause,
+        order,
+        limit_offset,
+        group_by,
+        having
+    )
+)]
 pub struct BoxedSelectStatement<'a, ST, QS, DB, GB = ()> {
+    /// The select clause of the query
     select: Box<dyn QueryFragment<DB> + Send + 'a>,
+    /// The from clause of the query
     from: QS,
+    /// The distinct clause of the query
     distinct: Box<dyn QueryFragment<DB> + Send + 'a>,
+    /// The where clause of the query
     where_clause: BoxedWhereClause<'a, DB>,
+    /// The order clause of the query
     order: Option<Box<dyn QueryFragment<DB> + Send + 'a>>,
+    /// The combined limit/offset clause of the query
     limit_offset: BoxedLimitOffsetClause<'a, DB>,
+    /// The group by clause of the query
     group_by: Box<dyn QueryFragment<DB> + Send + 'a>,
+    /// The having clause of the query
     having: Box<dyn QueryFragment<DB> + Send + 'a>,
     _marker: PhantomData<(ST, GB)>,
 }
@@ -162,7 +186,21 @@ impl<'a, ST, QS, QS2, DB, GB> ValidSubselect<QS2> for BoxedSelectStatement<'a, S
 
 impl<'a, ST, QS, DB, GB> QueryFragment<DB> for BoxedSelectStatement<'a, ST, QS, DB, GB>
 where
-    DB: Backend + DieselReserveSpecialization,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::SelectStatementSyntax>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::SelectStatementSyntax>>::walk_ast(self, pass)
+    }
+}
+
+impl<'a, ST, QS, DB, GB>
+    QueryFragment<DB, sql_dialect::select_statement_syntax::AnsiSqlSelectStatement>
+    for BoxedSelectStatement<'a, ST, QS, DB, GB>
+where
+    DB: Backend<
+            SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement,
+        > + DieselReserveSpecialization,
     QS: QueryFragment<DB>,
     BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
 {

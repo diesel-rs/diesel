@@ -1,5 +1,69 @@
-pub(crate) fn expand(cfg: syn::Meta, item: EntryWithVisibility) -> proc_macro2::TokenStream {
-    item.hide_for_cfg(cfg)
+use syn::{punctuated::Punctuated, DeriveInput};
+
+pub(crate) fn expand(cfg: CfgInput, item: EntryWithVisibility) -> proc_macro2::TokenStream {
+    item.hide_for_cfg(cfg.cfg, cfg.field_list)
+}
+
+pub struct CfgInput {
+    cfg: syn::Meta,
+    field_list: Vec<syn::Ident>,
+}
+
+impl syn::parse::Parse for CfgInput {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let mut cfg = Punctuated::<syn::Meta, Token![,]>::parse_terminated(input)?;
+        if cfg.len() == 1 {
+            Ok(Self {
+                cfg: cfg
+                    .pop()
+                    .expect("There is exactly one element")
+                    .into_value(),
+                field_list: Vec::new(),
+            })
+        } else if cfg.len() == 2 {
+            let value_1 = cfg
+                .pop()
+                .expect("There is exactly one element")
+                .into_value();
+            let value_2 = cfg
+                .pop()
+                .expect("There is exactly one element")
+                .into_value();
+            let (cfg, fields) = if matches!(&value_1, syn::Meta::List(v) if v.path.is_ident("public_fields"))
+            {
+                (value_2, value_1)
+            } else if matches!(&value_2, syn::Meta::List(v) if v.path.is_ident("public_fields")) {
+                (value_1, value_2)
+            } else {
+                panic!(
+                    "Incompatible argument list detected. `__diesel_public_if` \
+                     expects a cfg argument and a optional public_fields"
+                )
+            };
+            let field_list = if let syn::Meta::List(v) = fields {
+                v.nested
+                    .into_iter()
+                    .map(|v| {
+                        if let syn::NestedMeta::Meta(syn::Meta::Path(p)) = v {
+                            p.get_ident()
+                                .expect("Field names need to be idents")
+                                .clone()
+                        } else {
+                            panic!("The field name key requires a list of field names as argument")
+                        }
+                    })
+                    .collect()
+            } else {
+                unreachable!()
+            };
+            Ok(Self { cfg, field_list })
+        } else {
+            panic!(
+                "Incompatible argument list detected. `__diesel_public_if` \
+                 expects a cfg argument and a optional public_fields"
+            )
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -13,6 +77,13 @@ pub enum EntryWithVisibility {
         vis: syn::Visibility,
         tail: proc_macro2::TokenStream,
     },
+    Struct {
+        meta: Vec<syn::Attribute>,
+        vis: syn::Visibility,
+        def: syn::DataStruct,
+        ident: syn::Ident,
+        generics: syn::Generics,
+    },
 }
 
 impl syn::parse::Parse for EntryWithVisibility {
@@ -23,22 +94,41 @@ impl syn::parse::Parse for EntryWithVisibility {
             Ok(Self::TraitFunction { meta, tail })
         } else {
             let vis = input.parse()?;
-            let tail = input.parse()?;
-            Ok(Self::Item { meta, vis, tail })
+            if input.peek(Token![struct]) {
+                let s = DeriveInput::parse(input)?;
+                if let syn::Data::Struct(def) = s.data {
+                    Ok(Self::Struct {
+                        meta,
+                        vis,
+                        def,
+                        generics: s.generics,
+                        ident: s.ident,
+                    })
+                } else {
+                    unreachable!()
+                }
+            } else {
+                let tail = input.parse()?;
+                Ok(Self::Item { meta, vis, tail })
+            }
         }
     }
 }
 
 impl EntryWithVisibility {
-    fn hide_for_cfg(&self, cfg: syn::Meta) -> proc_macro2::TokenStream {
+    fn hide_for_cfg(
+        &self,
+        cfg: syn::Meta,
+        field_list: Vec<syn::Ident>,
+    ) -> proc_macro2::TokenStream {
         match self {
-            EntryWithVisibility::TraitFunction { meta, tail } => quote! {
+            EntryWithVisibility::TraitFunction { meta, tail } if field_list.is_empty() => quote! {
                 #(#meta)*
                 #[cfg_attr(not(#cfg), doc(hidden))]
                 #[cfg_attr(doc_cfg, doc(cfg(#cfg)))]
                 #tail
             },
-            EntryWithVisibility::Item { meta, vis, tail } => {
+            EntryWithVisibility::Item { meta, vis, tail } if field_list.is_empty() => {
                 quote! {
                     #(#meta)*
                     #[cfg(not(#cfg))]
@@ -48,6 +138,47 @@ impl EntryWithVisibility {
                     #[cfg(#cfg)]
                     pub #tail
                 }
+            }
+            EntryWithVisibility::Struct {
+                meta,
+                vis,
+                def,
+                ident,
+                generics,
+            } => {
+                let fields1 = def.fields.iter();
+                let fields2 = def.fields.iter().map(|f| {
+                    let mut ret = f.clone();
+                    if ret
+                        .ident
+                        .as_ref()
+                        .map(|i| field_list.contains(i))
+                        .unwrap_or(false)
+                    {
+                        ret.vis = syn::Visibility::Public(syn::VisPublic {
+                            pub_token: Default::default(),
+                        });
+                    }
+                    ret
+                });
+
+                quote! {
+                    #(#meta)*
+                    #[cfg(not(#cfg))]
+                    #vis struct #ident #generics {
+                        #(#fields1,)*
+                    }
+
+                    #(#meta)*
+                    #[cfg(#cfg)]
+                    #[non_exhaustive]
+                    pub struct #ident #generics {
+                        #(#fields2,)*
+                    }
+                }
+            }
+            EntryWithVisibility::TraitFunction { .. } | EntryWithVisibility::Item { .. } => {
+                panic!("Public field list is only supported for structs")
             }
         }
     }
