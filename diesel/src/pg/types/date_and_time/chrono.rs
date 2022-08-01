@@ -3,7 +3,6 @@
 
 extern crate chrono;
 
-use self::chrono::naive::MAX_DATE;
 use self::chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use std::io::Write;
 
@@ -116,7 +115,7 @@ impl FromSql<Date, Pg> for NaiveDate {
         match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
             Some(date) => Ok(date),
             None => {
-                let error_message = format!("Chrono can only represent dates up to {:?}", MAX_DATE);
+                let error_message = format!("Chrono can only represent dates up to {:?}", NaiveDate::MAX);
                 Err(error_message.into())
             }
         }
