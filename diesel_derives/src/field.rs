@@ -1,7 +1,6 @@
 use proc_macro2::{Span, TokenStream};
-use quote::ToTokens;
 use syn::spanned::Spanned;
-use syn::{Expr, Field as SynField, Ident, Index, Type};
+use syn::{Field as SynField, Ident, Index, Type};
 
 use attrs::{parse_attributes, AttributeSpanWrapper, FieldAttr, SqlIdentifier};
 
@@ -13,7 +12,7 @@ pub struct Field {
     pub sql_type: Option<AttributeSpanWrapper<Type>>,
     pub serialize_as: Option<AttributeSpanWrapper<Type>>,
     pub deserialize_as: Option<AttributeSpanWrapper<Type>>,
-    pub select_expression: Option<AttributeSpanWrapper<Expr>>,
+    pub select_expression: Option<AttributeSpanWrapper<SelectExpr>>,
     pub select_expression_type: Option<AttributeSpanWrapper<Type>>,
     pub embed: Option<AttributeSpanWrapper<bool>>,
 }
@@ -145,11 +144,48 @@ pub enum FieldName {
     Unnamed(Index),
 }
 
-impl ToTokens for FieldName {
+impl quote::ToTokens for FieldName {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match *self {
             FieldName::Named(ref x) => x.to_tokens(tokens),
             FieldName::Unnamed(ref x) => x.to_tokens(tokens),
+        }
+    }
+}
+
+pub enum SelectExpr {
+    Expr(syn::Expr),
+    Tuple {
+        paren_token: syn::token::Paren,
+        content: proc_macro2::TokenStream,
+    },
+}
+
+impl quote::ToTokens for SelectExpr {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            SelectExpr::Expr(ref e) => e.to_tokens(tokens),
+            SelectExpr::Tuple {
+                ref paren_token,
+                ref content,
+            } => paren_token.surround(tokens, |tokens| content.to_tokens(tokens)),
+        }
+    }
+}
+
+impl syn::parse::Parse for SelectExpr {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let lookahead = input.lookahead1();
+
+        if lookahead.peek(syn::token::Paren) {
+            let content;
+            let paren_token = syn::parenthesized!(content in input);
+            Ok(Self::Tuple {
+                paren_token,
+                content: content.parse()?,
+            })
+        } else {
+            input.parse::<syn::Expr>().map(Self::Expr)
         }
     }
 }

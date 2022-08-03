@@ -134,6 +134,11 @@ fn manually_specified_expression() {
             select_expression_type = (dsl::IsNotNull<my_structs::bar>, my_structs::some_int),
         )]
         bar_is_set_and_some_int: (bool, Option<i32>),
+        #[diesel(
+            select_expression = my_structs::bar.is_not_null(),
+            select_expression_type =  dsl::IsNotNull<my_structs::bar>,
+        )]
+        bar_is_set: bool,
     }
 
     let conn = &mut connection();

@@ -1,0 +1,35 @@
+error[E0412]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:26:5
+   |
+26 |     non_existing: String,
+   |     ^^^^^^^^^^^^ not found in `users`
+
+error[E0412]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:29:41
+   |
+29 |         select_expression_type = users::non_existing
+   |                                         ^^^^^^^^^^^^ not found in `users`
+
+error[E0412]: cannot find type `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:34:53
+   |
+34 |         select_expression_type = (users::id, users::non_existing)
+   |                                                     ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:26:5
+   |
+26 |     non_existing: String,
+   |     ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:28:36
+   |
+28 |         select_expression = users::non_existing,
+   |                                    ^^^^^^^^^^^^ not found in `users`
+
+error[E0425]: cannot find value `non_existing` in module `users`
+  --> tests/fail/derive/selectable.rs:33:48
+   |
+33 |         select_expression = (users::id, users::non_existing),
+   |                                                ^^^^^^^^^^^^ not found in `users`
