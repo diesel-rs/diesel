@@ -11,7 +11,7 @@ autobenches = false
 [dependencies]
 dotenvy = "0.15"
 criterion = "0.3.2"
-sqlx = {version = "0.5.13", features = ["runtime-tokio-rustls"], optional = true}
+sqlx = {version = "0.6", features = ["runtime-tokio-rustls"], optional = true}
 tokio = {version = "1", optional = true}
 rusqlite = {version = "0.27", optional = true}
 rust_postgres = {version = "0.19", optional = true, package = "postgres"}
@@ -20,9 +20,9 @@ rustorm = {version = "0.20", optional = true}
 rustorm_dao = {version = "0.20", optional = true}
 quaint = {version = "=0.2.0-alpha.13", optional = true}
 serde = {version = "1", optional = true, features = ["derive"]}
-sea-orm = {version = "0.7", optional = true, features = ["runtime-tokio-rustls"]}
+sea-orm = {version = "0.9", optional = true, features = ["runtime-tokio-rustls"]}
 futures = {version = "0.3", optional = true}
-#diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "61183dc252e85935d3605f1e3206cd7065d456de", optional = true, default-features = false}
+diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "acf3ed3", optional = true, default-features = false}
 criterion-perf-events = { version = "0.2", optional = true}
 perfcnt = {version = "0.8", optional = true}
 
@@ -52,6 +52,7 @@ sqlx-bench = ["sqlx", "tokio", "sqlx/runtime-tokio-rustls"]
 instruction_count = ["criterion-perf-events", "perfcnt"]
 fast_run = []
 
-[replace]
-"quaint:0.2.0-alpha.13" = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
-#"https://github.com/diesel-rs/diesel#2.0.0-rc.0" = { path = "../diesel"}
+
+[patch.crates-io]
+quaint = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
+diesel = { path = "../diesel"}
