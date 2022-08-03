@@ -54,8 +54,6 @@ where
 
                     if let Some(raw) = field.raw_value(){
                         if raw[0] == 0{
-
-                            println!("null string");  
                             return Ok(None);
                         }
                     }
