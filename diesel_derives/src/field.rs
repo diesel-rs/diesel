@@ -157,6 +157,7 @@ impl quote::ToTokens for FieldName {
 ///
 /// `syn::Expr` does not properly support tuples when `syn/full` feature is
 /// not enabled, and that feature slightly increases compilation time
+#[allow(clippy::large_enum_variant)]
 pub enum SelectExpr {
     Expr(syn::Expr),
     Tuple {
