@@ -153,6 +153,10 @@ impl quote::ToTokens for FieldName {
     }
 }
 
+/// We use this instead of directly `syn::Expr` to reduce compilation time
+///
+/// `syn::Expr` does not properly support tuples when `syn/full` feature is
+/// not enabled, and that feature slightly increases compilation time
 pub enum SelectExpr {
     Expr(syn::Expr),
     Tuple {
