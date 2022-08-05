@@ -625,10 +625,8 @@ fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
 
 #[cfg(feature = "postgres")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    use chrono::naive::MAX_DATE;
-
     let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
-    let latest_chrono_date = MAX_DATE;
+    let latest_chrono_date = NaiveDate::MAX;
     let num_days_representable = latest_chrono_date
         .signed_duration_since(earliest_pg_date)
         .num_days();
@@ -647,10 +645,8 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 
 #[cfg(feature = "sqlite")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    use chrono::naive::{MAX_DATE, MIN_DATE};
-
-    let earliest_sqlite_date = MIN_DATE;
-    let latest_sqlite_date = MAX_DATE;
+    let earliest_sqlite_date = NaiveDate::MIN;
+    let latest_sqlite_date = NaiveDate::MAX;
     let num_days_representable = latest_sqlite_date
         .signed_duration_since(earliest_sqlite_date)
         .num_days();
