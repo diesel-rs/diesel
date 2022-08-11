@@ -22,7 +22,7 @@ impl From<BcryptError> for AuthenticationError {
 
 pub use self::AuthenticationError::{IncorrectPassword, NoPasswordSet, NoUsernameSet};
 
-#[derive(Queryable, Identifiable, Debug, PartialEq)]
+#[derive(Queryable, Identifiable, Debug, PartialEq, Eq)]
 pub struct User {
     pub id: i32,
     pub username: String,
