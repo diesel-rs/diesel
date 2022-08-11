@@ -196,7 +196,7 @@ pub struct DynamicRow<I> {
 /// A helper struct used as field type in `DynamicRow`
 /// to also return the name of the field along with the
 /// value
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct NamedField<I> {
     /// Name of the field
     pub name: String,

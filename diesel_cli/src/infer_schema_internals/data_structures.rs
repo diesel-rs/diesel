@@ -16,7 +16,7 @@ pub struct ColumnInformation {
     pub nullable: bool,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq)]
 pub struct ColumnType {
     pub schema: Option<String>,
     pub rust_name: String,
