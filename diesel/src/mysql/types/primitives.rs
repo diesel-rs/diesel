@@ -153,16 +153,27 @@ impl FromSql<Double, Mysql> for f64 {
     }
 }
 
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `String`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
 #[cfg(feature = "mysql_backend")]
-impl FromSql<Text, Mysql> for String {
+impl FromSql<Text, Mysql> for *const str {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        String::from_utf8(value.as_bytes().into()).map_err(Into::into)
+        let string = str::from_utf8(value.as_bytes())?;
+        Ok(string as *const str)
     }
 }
 
+/// The returned pointer is *only* valid for the lifetime to the argument of
+/// `from_sql`. This impl is intended for uses where you want to write a new
+/// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
+/// raw pointer instead of a reference with a lifetime due to the structure of
+/// `FromSql`
 #[cfg(feature = "mysql_backend")]
-impl FromSql<Binary, Mysql> for Vec<u8> {
+impl FromSql<Binary, Mysql> for *const [u8] {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
-        Ok(value.as_bytes().into())
+        Ok(value.as_bytes() as *const [u8])
     }
 }
