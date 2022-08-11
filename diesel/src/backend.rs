@@ -419,7 +419,6 @@ pub(crate) mod sql_dialect {
         pub struct ConcatClause;
     }
 
-
     /// This module contains all reusable options to configure
     /// [`SqlDialect::DefaultValueClauseForInsert`]
     #[diesel_derives::__diesel_public_if(
