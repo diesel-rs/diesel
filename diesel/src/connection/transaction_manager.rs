@@ -70,8 +70,7 @@ pub trait TransactionManager<Conn: Connection> {
 
 /// An implementation of `TransactionManager` which can be used for backends
 /// which use ANSI standard syntax for savepoints such as SQLite and PostgreSQL.
-#[allow(missing_debug_implementations, missing_copy_implementations)]
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct AnsiTransactionManager {
     pub(crate) status: TransactionManagerStatus,
 }
