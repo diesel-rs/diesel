@@ -605,7 +605,7 @@ where
 
 impl_selectable_expression!(Concat<L, R>);
 
-impl<L, R, DB> QueryFragment<DB> for Concat<L, R>
+impl<L, R, DB> QueryFragment<DB, sql_dialect::concat_clause::ConcatClause> for Concat<L, R>
 where
     L: QueryFragment<DB>,
     R: QueryFragment<DB>,
