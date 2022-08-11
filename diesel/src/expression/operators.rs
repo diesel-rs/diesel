@@ -615,8 +615,8 @@ where
         &'b self,
         mut out: crate::query_builder::AstPass<'_, 'b, DB>,
     ) -> crate::result::QueryResult<()> {
-        // Those brackets are required because mysql is broken
-        // https://github.com/diesel-rs/diesel/issues/2133#issuecomment-517432317
+        // Since popular MySQL scalability layer Vitess does not support pipes in query parsing
+        // CONCAT has been implemented separately for MySQL
         out.push_sql("(");
         self.left.walk_ast(out.reborrow())?;
         out.push_sql(" || ");

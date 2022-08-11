@@ -202,6 +202,15 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::batch_insert_support`] for provided default implementations"
     )]
     type BatchInsertSupport;
+    /// Configures how this backend handles the `CONCAT` clause in
+    /// select statements.
+    ///
+    /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::concat_clause`] for provided default implementations"
+    )]
+    type ConcatClause;
     /// Configures how this backend handles the `DEFAULT VALUES` clause for
     /// insert statements.
     ///
@@ -396,6 +405,20 @@ pub(crate) mod sql_dialect {
 
         impl SupportsBatchInsert for PostgresLikeBatchInsertSupport {}
     }
+    /// This module contains all reusable options to configure
+    /// [`SqlDialect::ConcatClause`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(crate) mod concat_clause {
+
+        /// Indicates that this backend uses the
+        /// `CONCAT` syntax to select a concatenation
+        /// of two variables or string
+        #[derive(Debug, Clone, Copy)]
+        pub struct ConcatClause;
+    }
+
 
     /// This module contains all reusable options to configure
     /// [`SqlDialect::DefaultValueClauseForInsert`]
