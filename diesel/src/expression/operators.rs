@@ -552,7 +552,7 @@ postfix_operator!(
 
 prefix_operator!(Not, " NOT ");
 
-use crate::backend::Backend;
+use crate::backend::{Backend, sql_dialect, SqlDialect};
 use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::insertable::{ColumnInsertValue, Insertable};
 use crate::query_builder::{QueryFragment, QueryId, ValuesClause};
@@ -609,7 +609,10 @@ impl<L, R, DB> QueryFragment<DB> for Concat<L, R>
 where
     L: QueryFragment<DB>,
     R: QueryFragment<DB>,
-    DB: Backend,
+    DB: Backend
+        + SqlDialect<
+            ConcatClause = sql_dialect::concat_clause::ConcatClause,
+        >,
 {
     fn walk_ast<'b>(
         &'b self,
