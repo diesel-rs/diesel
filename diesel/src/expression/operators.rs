@@ -615,13 +615,33 @@ where
         &'b self,
         mut out: crate::query_builder::AstPass<'_, 'b, DB>,
     ) -> crate::result::QueryResult<()> {
-        // Those brackets are required because mysql is broken
-        // https://github.com/diesel-rs/diesel/issues/2133#issuecomment-517432317
-        out.push_sql("(");
-        self.left.walk_ast(out.reborrow())?;
-        out.push_sql(" || ");
-        self.right.walk_ast(out.reborrow())?;
-        out.push_sql(")");
-        Ok(())
+
+        #[cfg_attr(
+            feature = "mysql",
+            doc = "//The popular MySQL scalability layer, Vitess, does not support pipes during query parsing"
+        )]
+        {
+            out.push_sql("CONCAT(");
+            self.left.walk_ast(out.reborrow())?;
+            out.push_sql(", ");
+            self.right.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+            return Ok(())
+        }
+
+        #[cfg_attr(
+            not(
+                feature = "mysql"
+            ), 
+            doc = "//For all non-mysql dialects, use pipes for concatenation"
+        )]
+        {
+            out.push_sql("(");
+            self.left.walk_ast(out.reborrow())?;
+            out.push_sql(" || ");
+            self.right.walk_ast(out.reborrow())?;
+            out.push_sql(")");
+            return Ok(())
+        }
     }
 }
