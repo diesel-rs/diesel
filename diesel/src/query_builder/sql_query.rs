@@ -369,7 +369,7 @@ mod tests {
 
     #[test]
     fn check_boxed_sql_query_is_send() {
-        let query = crate::sql_query("…")
+        let query = crate::sql_query("SELECT 1")
             .into_boxed::<<crate::test_helpers::TestConnection as crate::Connection>::Backend>(
         );
 
