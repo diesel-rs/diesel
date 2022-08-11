@@ -1,4 +1,4 @@
-use ::chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
+use chrono::{Datelike, NaiveDate, NaiveDateTime, NaiveTime, Timelike};
 use std::os::raw as libc;
 
 use crate::deserialize::{self, FromSql};

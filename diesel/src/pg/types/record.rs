@@ -28,7 +28,7 @@ macro_rules! tuple_impls {
             // Yes, we're relying on the order of evaluation of subexpressions
             // but the only other option would be to use `mem::uninitialized`
             // and `ptr::write`.
-            #[allow(clippy::eval_order_dependence)]
+            #[allow(clippy::mixed_read_write_in_expression)]
             fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
                 let mut bytes = value.as_bytes();
                 let num_elements = bytes.read_i32::<NetworkEndian>()?;

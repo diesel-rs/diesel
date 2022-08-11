@@ -202,7 +202,7 @@ impl<DB: Backend> Migration<DB> for SqlFileMigration {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct DieselMigrationName {
     name: String,
     version: MigrationVersion<'static>,
