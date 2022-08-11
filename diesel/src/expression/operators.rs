@@ -605,6 +605,17 @@ where
 
 impl_selectable_expression!(Concat<L, R>);
 
+
+impl<L, R, DB> QueryFragment<DB> for Concat<L, R>
+where
+    DB: Backend,
+    Self: QueryFragment<DB, DB::ConcatClause>,
+{
+    fn walk_ast<'b>(&'b self, pass: crate::query_builder::AstPass<'_, 'b, DB>) -> crate::result::QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ConcatClause>>::walk_ast(self, pass)
+    }
+}
+
 impl<L, R, DB> QueryFragment<DB, sql_dialect::concat_clause::ConcatClause> for Concat<L, R>
 where
     L: QueryFragment<DB>,
