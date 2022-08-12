@@ -14,7 +14,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * We've changed the `RunQueryDsl::load_iter` interface to support different
 loading modes. This enables us to support more than one strategy for loading 
-values by iterator from the database. 
+values by iterator from the database.
+* **Potentially Breaking Change:** The `PIPES_AS_CONCAT` sql_mode is no longer set
+by default. This setting requires a modification to MySQL query parsing that is
+not supported by certain systems (such as Vitess). If you are using MySQL and
+executing raw queries with the `||` operator, you will need to rewrite your
+queries or set `PIPES_AS_CONCAT` manually.
 
 ### Added
 

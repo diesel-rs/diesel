@@ -208,6 +208,15 @@ pub trait SqlDialect: self::private::TrustedBackend {
     /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementation for [`Concat`](crate::operators::Concat)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementation for `Concat`"
+    )]
+    ///
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         doc = "See [`sql_dialect::concat_clause`] for provided default implementations"
     )]
     type ConcatClause;
@@ -413,10 +422,10 @@ pub(crate) mod sql_dialect {
     pub(crate) mod concat_clause {
 
         /// Indicates that this backend uses the
-        /// `CONCAT` syntax to select a concatenation
-        /// of two variables or string
+        /// `||` operator to select a concatenation
+        /// of two variables or strings
         #[derive(Debug, Clone, Copy)]
-        pub struct ConcatClause;
+        pub struct ConcatWithPipesClause;
     }
 
     /// This module contains all reusable options to configure

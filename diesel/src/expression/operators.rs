@@ -618,18 +618,18 @@ where
     }
 }
 
-impl<L, R, DB> QueryFragment<DB, sql_dialect::concat_clause::ConcatClause> for Concat<L, R>
+impl<L, R, DB> QueryFragment<DB, sql_dialect::concat_clause::ConcatWithPipesClause> for Concat<L, R>
 where
     L: QueryFragment<DB>,
     R: QueryFragment<DB>,
-    DB: Backend + SqlDialect<ConcatClause = sql_dialect::concat_clause::ConcatClause>,
+    DB: Backend + SqlDialect<ConcatClause = sql_dialect::concat_clause::ConcatWithPipesClause>,
 {
     fn walk_ast<'b>(
         &'b self,
         mut out: crate::query_builder::AstPass<'_, 'b, DB>,
     ) -> crate::result::QueryResult<()> {
         // Since popular MySQL scalability layer Vitess does not support pipes in query parsing
-        // CONCAT has been implemented separately for MySQL
+        // CONCAT has been implemented separately for MySQL (see MysqlConcatClause)
         out.push_sql("(");
         self.left.walk_ast(out.reborrow())?;
         out.push_sql(" || ");
