@@ -202,7 +202,7 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::batch_insert_support`] for provided default implementations"
     )]
     type BatchInsertSupport;
-    /// Configures how this backend handles the `CONCAT` clause in
+    /// Configures how this backend handles the Concat clauses in
     /// select statements.
     ///
     /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
