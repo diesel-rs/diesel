@@ -552,7 +552,7 @@ postfix_operator!(
 
 prefix_operator!(Not, " NOT ");
 
-use crate::backend::Backend;
+use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::{TypedExpressionType, ValidGrouping};
 use crate::insertable::{ColumnInsertValue, Insertable};
 use crate::query_builder::{QueryFragment, QueryId, ValuesClause};
@@ -607,16 +607,29 @@ impl_selectable_expression!(Concat<L, R>);
 
 impl<L, R, DB> QueryFragment<DB> for Concat<L, R>
 where
+    DB: Backend,
+    Self: QueryFragment<DB, DB::ConcatClause>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        pass: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()> {
+        <Self as QueryFragment<DB, DB::ConcatClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<L, R, DB> QueryFragment<DB, sql_dialect::concat_clause::ConcatWithPipesClause> for Concat<L, R>
+where
     L: QueryFragment<DB>,
     R: QueryFragment<DB>,
-    DB: Backend,
+    DB: Backend + SqlDialect<ConcatClause = sql_dialect::concat_clause::ConcatWithPipesClause>,
 {
     fn walk_ast<'b>(
         &'b self,
         mut out: crate::query_builder::AstPass<'_, 'b, DB>,
     ) -> crate::result::QueryResult<()> {
-        // Those brackets are required because mysql is broken
-        // https://github.com/diesel-rs/diesel/issues/2133#issuecomment-517432317
+        // Since popular MySQL scalability layer Vitess does not support pipes in query parsing
+        // CONCAT has been implemented separately for MySQL (see MysqlConcatClause)
         out.push_sql("(");
         self.left.walk_ast(out.reborrow())?;
         out.push_sql(" || ");

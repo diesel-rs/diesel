@@ -64,6 +64,7 @@ impl SqlDialect for Sqlite {
     type InsertWithDefaultKeyword =
         sql_dialect::default_keyword_for_insert::DoesNotSupportDefaultKeyword;
     type BatchInsertSupport = SqliteBatchInsert;
+    type ConcatClause = sql_dialect::concat_clause::ConcatWithPipesClause;
     type DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause;
 
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;

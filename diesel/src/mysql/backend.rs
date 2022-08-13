@@ -90,6 +90,8 @@ impl SqlDialect for Mysql {
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
 
     type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
+
+    type ConcatClause = MysqlConcatClause;
 }
 
 impl DieselReserveSpecialization for Mysql {}
@@ -97,3 +99,6 @@ impl TrustedBackend for Mysql {}
 
 #[derive(Debug, Clone, Copy)]
 pub struct MysqlStyleDefaultValueClause;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MysqlConcatClause;
