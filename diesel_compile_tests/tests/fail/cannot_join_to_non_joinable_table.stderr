@@ -4,12 +4,13 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
 30 |     let _ = users::table.inner_join(posts::table);
    |                          ^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
    |
-   = help: the following implementations were found:
+   = help: the following other types implement trait `JoinTo<T>`:
              <users::table as JoinTo<Alias<S>>>
              <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
              <users::table as JoinTo<JoinOn<Join, On>>>
              <users::table as JoinTo<Only<S>>>
-           and 2 others
+             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
+             <users::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
    = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<posts::table, Inner>` for `users::table`
 
 error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisfied
@@ -18,25 +19,28 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
 31 |     let _ = users::table.left_outer_join(posts::table);
    |                          ^^^^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
    |
-   = help: the following implementations were found:
+   = help: the following other types implement trait `JoinTo<T>`:
              <users::table as JoinTo<Alias<S>>>
              <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
              <users::table as JoinTo<JoinOn<Join, On>>>
              <users::table as JoinTo<Only<S>>>
-           and 2 others
+             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
+             <users::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
    = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<posts::table, LeftOuter>` for `users::table`
 
 error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisfied
-  --> tests/fail/cannot_join_to_non_joinable_table.rs:36:37
+  --> tests/fail/cannot_join_to_non_joinable_table.rs:36:26
    |
 36 |     let _ = users::table.inner_join(join);
-   |                                     ^^^^ the trait `JoinTo<users::table>` is not implemented for `posts::table`
+   |                          ^^^^^^^^^^ the trait `JoinTo<users::table>` is not implemented for `posts::table`
    |
-   = help: the following implementations were found:
+   = help: the following other types implement trait `JoinTo<T>`:
              <posts::table as JoinTo<Alias<S>>>
              <posts::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
              <posts::table as JoinTo<JoinOn<Join, On>>>
              <posts::table as JoinTo<Only<S>>>
-           and 3 others
-   = note: required because of the requirements on the impl of `JoinTo<users::table>` for `diesel::internal::table_macro::Join<posts::table, comments::table, Inner>`
-   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<diesel::internal::table_macro::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>` for `users::table`
+             <posts::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
+             <posts::table as JoinTo<comments::table>>
+             <posts::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
+   = note: required because of the requirements on the impl of `JoinTo<users::table>` for `query_source::joins::Join<posts::table, comments::table, Inner>`
+   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>` for `users::table`

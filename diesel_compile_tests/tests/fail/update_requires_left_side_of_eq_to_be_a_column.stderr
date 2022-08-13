@@ -1,8 +1,19 @@
-error[E0277]: the trait bound `diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>: Column` is not satisfied
+error[E0277]: the trait bound `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>: Column` is not satisfied
   --> tests/fail/update_requires_left_side_of_eq_to_be_a_column.rs:16:37
    |
 16 |     let command = update(users).set(foo.eq(name));
-   |                                     ^^^^^^^^^^^^ the trait `Column` is not implemented for `diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>`
+   |                                 --- ^^^^^^^^^^^^ the trait `Column` is not implemented for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>`
+   |                                 |
+   |                                 required by a bound introduced by this call
    |
-   = note: required because of the requirements on the impl of `diesel::query_builder::update_statement::changeset::AssignmentTarget` for `diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>`
-   = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>, columns::name>`
+   = help: the following other types implement trait `Column`:
+             columns::id
+             columns::name
+             pg::metadata_lookup::pg_namespace::columns::nspname
+             pg::metadata_lookup::pg_namespace::columns::oid
+             pg::metadata_lookup::pg_type::columns::oid
+             pg::metadata_lookup::pg_type::columns::typarray
+             pg::metadata_lookup::pg_type::columns::typname
+             pg::metadata_lookup::pg_type::columns::typnamespace
+   = note: required because of the requirements on the impl of `diesel::query_builder::update_statement::changeset::AssignmentTarget` for `diesel::expression::bound::Bound<diesel::sql_types::Text, &str>`
+   = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<diesel::expression::bound::Bound<diesel::sql_types::Text, &str>, columns::name>`

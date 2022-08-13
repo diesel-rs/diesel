@@ -1,11 +1,10 @@
 error: unexpected end of input, expected parentheses
-
-  = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
-
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:29:3
    |
 29 | #[belongs_to]
    |   ^^^^^^^^^^
+   |
+   = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
 
 error: expected parentheses
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:36:14
@@ -14,10 +13,10 @@ error: expected parentheses
    |              ^
 
 error: unexpected end of input, expected identifier
-  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:43:13
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:43:14
    |
 43 | #[belongs_to()]
-   |             ^^
+   |              ^
 
 error: expected identifier
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:50:14
@@ -26,19 +25,18 @@ error: expected identifier
    |              ^^^^^^
 
 error: unexpected end of input, expected `=`
-
-  = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
-
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:57:14
    |
 57 | #[belongs_to(parent)]
    |              ^^^^^^
+   |
+   = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
 
 error: expected `=`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:64:20
    |
 64 | #[belongs_to(parent())]
-   |                    ^^
+   |                    ^
 
 error: expected string literal
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:71:23
@@ -62,13 +60,12 @@ error: expected `foreign_key`
    |                   ^^^^
 
 error: unexpected end of input, expected `=`
-
-  = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
-
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:99:19
    |
 99 | #[belongs_to(Bar, foreign_key)]
    |                   ^^^^^^^^^^^
+   |
+   = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
 
 error: expected string literal
    --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:106:33
@@ -85,19 +82,8 @@ error: expected identifier
 warning: #[belongs_to] attribute form is deprecated
   = help: use `#[diesel(belongs_to(Baz, foreign_key = bar_id))]` instead
 
-error: unexpected token: `Bar`
+error: unexpected expression: `Bar`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:36:16
    |
 36 | #[belongs_to = Bar]
    |                ^^^
-
-error[E0423]: expected value, found struct `Bar`
-  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:36:16
-   |
-18 | / struct Bar {
-19 | |     id: i32,
-20 | | }
-   | |_- `Bar` defined here
-...
-36 |   #[belongs_to = Bar]
-   |                  ^^^ help: use struct literal syntax instead: `Bar { id: val }`

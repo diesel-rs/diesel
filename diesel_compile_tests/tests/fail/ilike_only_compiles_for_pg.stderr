@@ -1,25 +1,33 @@
-error[E0277]: the trait bound `diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>: QueryFragment<Sqlite>` is not satisfied
-  --> tests/fail/ilike_only_compiles_for_pg.rs:21:53
-   |
-21 |     users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
-   |                                                     ^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>`
-   |
-   = help: the following implementations were found:
-             <diesel::pg::expression::operators::ILike<T, U> as QueryFragment<Pg>>
-   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>`
-   = note: 3 redundant requirements hidden
-   = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>>>`
-   = note: required because of the requirements on the impl of `ExecuteDsl<diesel::SqliteConnection, Sqlite>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>>>`
+error[E0277]: the trait bound `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>: QueryFragment<Sqlite>` is not satisfied
+    --> tests/fail/ilike_only_compiles_for_pg.rs:21:53
+     |
+21   |     users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
+     |                                                     ^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+     |
+     = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ILike<T, U>`
+     = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
+     = note: 3 redundant requirements hidden
+     = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>`
+     = note: required because of the requirements on the impl of `ExecuteDsl<diesel::SqliteConnection, Sqlite>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+    --> $DIESEL/src/query_dsl/mod.rs
+     |
+     |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::execute`
 
-error[E0277]: the trait bound `diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>: QueryFragment<Mysql>` is not satisfied
-  --> tests/fail/ilike_only_compiles_for_pg.rs:24:53
-   |
-24 |     users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
-   |                                                     ^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>`
-   |
-   = help: the following implementations were found:
-             <diesel::pg::expression::operators::ILike<T, U> as QueryFragment<Pg>>
-   = note: required because of the requirements on the impl of `QueryFragment<Mysql>` for `diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>`
-   = note: 3 redundant requirements hidden
-   = note: required because of the requirements on the impl of `QueryFragment<Mysql>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>>>`
-   = note: required because of the requirements on the impl of `ExecuteDsl<diesel::MysqlConnection, Mysql>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>>>>`
+error[E0277]: the trait bound `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>: QueryFragment<Mysql>` is not satisfied
+    --> tests/fail/ilike_only_compiles_for_pg.rs:24:53
+     |
+24   |     users::table.filter(users::name.ilike("%hey%")).execute(&mut connection);
+     |                                                     ^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+     |
+     = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ILike<T, U>`
+     = note: required because of the requirements on the impl of `QueryFragment<Mysql>` for `diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
+     = note: 3 redundant requirements hidden
+     = note: required because of the requirements on the impl of `QueryFragment<Mysql>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>`
+     = note: required because of the requirements on the impl of `ExecuteDsl<diesel::MysqlConnection, Mysql>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::ILike<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+    --> $DIESEL/src/query_dsl/mod.rs
+     |
+     |         Self: methods::ExecuteDsl<Conn>,
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::execute`

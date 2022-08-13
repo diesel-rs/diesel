@@ -292,7 +292,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@1.56.0
+      - uses: dtolnay/rust-toolchain@nightly-2022-08-12
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
@@ -308,7 +308,7 @@ jobs:
 
       - name: Run compile tests
         shell: bash
-        run: cargo +1.56.0 test --manifest-path diesel_compile_tests/Cargo.toml
+        run: cargo +nightly-2022-08-12 test --manifest-path diesel_compile_tests/Cargo.toml
 
   rustfmt_and_clippy:
     name: Check rustfmt style && run clippy

@@ -1,9 +1,20 @@
 error[E0369]: cannot add `columns::name` to `columns::name`
-  --> $DIR/numeric_ops_require_numeric_column.rs:15:31
+  --> tests/fail/numeric_ops_require_numeric_column.rs:15:31
    |
 15 |     let _ = users.select(name + name);
    |                          ---- ^ ---- columns::name
    |                          |
    |                          columns::name
    |
-   = note: an implementation of `std::ops::Add` might be missing for `columns::name`
+note: an implementation of `std::ops::Add<_>` might be missing for `columns::name`
+  --> tests/fail/numeric_ops_require_numeric_column.rs:5:1
+   |
+5  | / table! {
+6  | |     users {
+7  | |         id -> Integer,
+8  | |         name -> VarChar,
+9  | |     }
+10 | | }
+   | |_^ must implement `std::ops::Add<_>`
+note: the following trait must be implemented
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

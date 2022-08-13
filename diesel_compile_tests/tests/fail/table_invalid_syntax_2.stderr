@@ -6,4 +6,4 @@ error: Invalid `table!` syntax. Please see the `table!` macro docs for more info
 5 | | }
   | |_^
   |
-  = note: this error originates in the macro `$crate::__diesel_invalid_table_syntax` (in Nightly builds, run with -Z macro-backtrace for more info)
+  = note: this error originates in the macro `$crate::__diesel_invalid_table_syntax` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
