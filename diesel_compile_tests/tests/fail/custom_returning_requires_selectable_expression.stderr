@@ -1,9 +1,10 @@
-error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `bad::columns::age` from `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:28:68
     |
 28  |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(bad::age);
     |                                                                    ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
     |
+    = note: `bad::columns::age` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
               <bad::columns::age as SelectableExpression<Only<bad::table>>>
@@ -18,12 +19,13 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
     |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
-error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `bad::columns::age` from `users::table`
    --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
     |
 33  |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
     |                                                     ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
     |
+    = note: `bad::columns::age` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
               <bad::columns::age as SelectableExpression<Only<bad::table>>>

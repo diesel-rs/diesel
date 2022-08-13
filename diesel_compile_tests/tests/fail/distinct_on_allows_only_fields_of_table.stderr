@@ -1,9 +1,10 @@
-error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:23:18
    |
 23 |     users::table.distinct_on(posts::id).get_results(&mut connection);
    |                  ^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
+   = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
@@ -31,12 +32,13 @@ error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text
            and 22 others
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
 
-error[E0277]: the trait bound `users::columns::name: SelectableExpression<posts::table>` is not satisfied
+error[E0277]: Cannot select `users::columns::name` from `posts::table`
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:25:18
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
    |                  ^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
    |
+   = note: `users::columns::name` is no valid selection for `posts::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <users::columns::name as SelectableExpression<JoinOn<Join, On>>>
              <users::columns::name as SelectableExpression<Only<users::table>>>

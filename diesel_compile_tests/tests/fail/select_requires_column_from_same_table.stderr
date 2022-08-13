@@ -1,9 +1,10 @@
-error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/select_requires_column_from_same_table.rs:20:34
    |
 20 |     let select_id = users::table.select(posts::id);
    |                                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
+   = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>

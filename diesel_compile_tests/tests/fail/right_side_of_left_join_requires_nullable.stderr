@@ -20,12 +20,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
    = note: required because of the requirements on the impl of `SelectDsl<posts::columns::title>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:40:18
    |
 40 |     let _ = join.select(posts::title);
    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
+   = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -71,12 +72,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
    = note: required because of the requirements on the impl of `SelectDsl<lower::lower<posts::columns::title>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:46:18
    |
 46 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
+   = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -150,12 +152,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
    = note: required because of the requirements on the impl of `SelectDsl<posts::columns::title>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:57:18
    |
 57 |     let _ = join.select(posts::title);
    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
+   = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -201,12 +204,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
    = note: required because of the requirements on the impl of `SelectDsl<lower::lower<posts::columns::title>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:63:18
    |
 63 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
+   = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -280,12 +284,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
    = note: required because of the requirements on the impl of `SelectDsl<posts::columns::title>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:74:18
    |
 74 |     let _ = join.select(posts::title);
    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
+   = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -331,12 +336,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
    = note: required because of the requirements on the impl of `SelectDsl<lower::lower<posts::columns::title>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `users::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:80:18
    |
 80 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
    |
+   = note: `posts::columns::title` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -410,12 +416,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
    = note: required because of the requirements on the impl of `SelectDsl<posts::columns::title>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<pets::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `pets::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:89:18
    |
 89 |     let _ = join.select(posts::title);
    |                  ^^^^^^ the trait `SelectableExpression<pets::table>` is not implemented for `posts::columns::title`
    |
+   = note: `posts::columns::title` is no valid selection for `pets::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -461,12 +468,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
    = note: required because of the requirements on the impl of `SelectDsl<lower::lower<posts::columns::title>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<pets::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `pets::table`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:95:18
    |
 95 |     let _ = join.select(lower(posts::title));
    |                  ^^^^^^ the trait `SelectableExpression<pets::table>` is not implemented for `posts::columns::title`
    |
+   = note: `posts::columns::title` is no valid selection for `pets::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -540,12 +548,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
     = note: required because of the requirements on the impl of `SelectDsl<posts::columns::title>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `users::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:104:18
     |
 104 |     let _ = join.select(posts::title);
     |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |
+    = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
@@ -591,12 +600,13 @@ note: required because of the requirements on the impl of `SelectableExpression<
     = note: required because of the requirements on the impl of `SelectDsl<lower::lower<posts::columns::title>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0277]: the trait bound `posts::columns::title: SelectableExpression<users::table>` is not satisfied
+error[E0277]: Cannot select `posts::columns::title` from `users::table`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:110:18
     |
 110 |     let _ = join.select(lower(posts::title));
     |                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::title`
     |
+    = note: `posts::columns::title` is no valid selection for `users::table`
     = help: the following other types implement trait `SelectableExpression<QS>`:
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
