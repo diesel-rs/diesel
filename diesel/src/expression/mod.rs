@@ -308,6 +308,13 @@ where
 /// Notably, columns will not implement this trait for the right side of a left
 /// join. To select a column or expression using a column from the right side of
 /// a left join, you must call `.nullable()` on it.
+#[cfg_attr(
+    feature = "nightly-error-messages",
+    rustc_on_unimplemented(
+        message = "Cannot select `{Self}` from `{QS}`",
+        note = "`{Self}` is no valid selection for `{QS}`"
+    )
+)]
 pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {}
 
 impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T>

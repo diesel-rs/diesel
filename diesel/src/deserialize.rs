@@ -435,6 +435,14 @@ pub trait FromSql<A, DB: Backend>: Sized {
 /// that implement one of the following traits:
 ///    * [`Queryable`]
 ///    * [`QueryableByName`]
+#[cfg_attr(
+    feature = "nightly-error-messages",
+    rustc_on_unimplemented(on(
+        ST = "diesel::sql_types::Untyped",
+        note = "`diesel::sql_query` requires the loading target to column names for loading values.\n\
+                 You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`",
+    ))
+)]
 pub trait FromSqlRow<ST, DB: Backend>: Sized {
     /// See the trait documentation.
     fn build_from_row<'a>(row: &impl Row<'a, DB>) -> Result<Self>;
