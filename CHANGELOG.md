@@ -8,6 +8,15 @@ default features enabled using some set of dependencies. Those set of dependenci
 an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
+## [2.0.0] Unreleased
+* **Potentially Breaking Change:** The `PIPES_AS_CONCAT` sql_mode is no longer set
+by default. This setting requires a modification to MySQL query parsing that is
+not supported by certain systems (such as Vitess). If you are using MySQL and
+executing raw queries with the `||` operator, you will need to rewrite your
+queries or set `PIPES_AS_CONCAT` manually.
+
+This should likely be moved into the 2.0 release PR here: https://github.com/weiznich/diesel/blob/prepare_2.0_release/CHANGELOG.md
+
 ## [2.0.0 Rc1] 2022-07-22 
 
 ### Changed
@@ -15,11 +24,6 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * We've changed the `RunQueryDsl::load_iter` interface to support different
 loading modes. This enables us to support more than one strategy for loading 
 values by iterator from the database.
-* **Potentially Breaking Change:** The `PIPES_AS_CONCAT` sql_mode is no longer set
-by default. This setting requires a modification to MySQL query parsing that is
-not supported by certain systems (such as Vitess). If you are using MySQL and
-executing raw queries with the `||` operator, you will need to rewrite your
-queries or set `PIPES_AS_CONCAT` manually.
 
 ### Added
 
