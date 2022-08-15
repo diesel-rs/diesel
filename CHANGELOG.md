@@ -9,6 +9,9 @@ an up to date version of the specific dependency. We check this by using the uns
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
 ## [2.0.0] Unreleased
+
+### Changed
+
 * **Potentially Breaking Change:** The `PIPES_AS_CONCAT` sql_mode is no longer set
 by default. This setting requires a modification to MySQL query parsing that is
 not supported by certain systems (such as Vitess). If you are using MySQL and
