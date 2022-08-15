@@ -528,4 +528,57 @@ mod tests {
         assert_eq!(checkin_count.load(Ordering::Relaxed), 3);
         assert_eq!(checkout_count.load(Ordering::Relaxed), 3);
     }
+
+    #[cfg(feature = "postgres")]
+    #[test]
+    fn verify_that_begin_test_transaction_works_with_pools() {
+        use crate::prelude::*;
+        use crate::r2d2::*;
+
+        table! {
+            users {
+                id -> Integer,
+                name -> Text,
+            }
+        }
+
+        #[derive(Debug)]
+        struct TestConnectionCustomizer;
+
+        impl<E> CustomizeConnection<PgConnection, E> for TestConnectionCustomizer {
+            fn on_acquire(&self, conn: &mut PgConnection) -> Result<(), E> {
+                conn.begin_test_transaction()
+                    .expect("Failed to start test transaction");
+
+                Ok(())
+            }
+        }
+
+        let manager = ConnectionManager::<PgConnection>::new(database_url());
+        let pool = Pool::builder()
+            .max_size(1)
+            .connection_customizer(Box::new(TestConnectionCustomizer))
+            .build(manager)
+            .unwrap();
+
+        let mut conn = pool.get().unwrap();
+
+        crate::sql_query(
+            "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, name TEXT NOT NULL)",
+        )
+        .execute(&mut conn)
+        .unwrap();
+
+        crate::insert_into(users::table)
+            .values(users::name.eq("John"))
+            .execute(&mut conn)
+            .unwrap();
+
+        std::mem::drop(conn);
+
+        let mut conn2 = pool.get().unwrap();
+
+        let user_count = users::table.count().get_result::<i64>(&mut conn2).unwrap();
+        assert_eq!(user_count, 1);
+    }
 }
