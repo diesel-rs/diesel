@@ -188,12 +188,11 @@ fn isolation_errors_are_detected() {
 #[test]
 #[cfg(not(feature = "sqlite"))]
 fn read_only_errors_are_detected() {
+    use diesel::connection::SimpleConnection;
     use diesel::result::DatabaseErrorKind::ReadOnlyTransaction;
 
     let conn = &mut connection_without_transaction();
-    diesel::sql_query("START TRANSACTION READ ONLY")
-        .execute(conn)
-        .unwrap();
+    conn.batch_execute("START TRANSACTION READ ONLY").unwrap();
 
     let result = users::table.for_update().load::<User>(conn);
 

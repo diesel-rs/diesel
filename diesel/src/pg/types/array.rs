@@ -112,8 +112,7 @@ where
         for elem in self.iter() {
             let is_null = {
                 let mut temp_buffer = Output::new(ByteWrapper(&mut buffer), out.metadata_lookup());
-                let is_null = elem.to_sql(&mut temp_buffer)?;
-                is_null
+                elem.to_sql(&mut temp_buffer)?
             };
 
             if let IsNull::No = is_null {

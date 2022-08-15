@@ -65,12 +65,12 @@ mod eager_loading_with_string_keys {
     table! { posts { id -> Text, user_id -> Text, } }
     allow_tables_to_appear_in_same_query!(users, posts);
 
-    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone)]
+    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone, Eq)]
     pub struct User {
         id: String,
     }
 
-    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone, Associations)]
+    #[derive(Queryable, Identifiable, Debug, PartialEq, Clone, Associations, Eq)]
     #[diesel(belongs_to(User))]
     pub struct Post {
         id: String,
@@ -300,14 +300,14 @@ fn custom_foreign_key() {
 
     allow_tables_to_appear_in_same_query!(users1, posts1);
 
-    #[derive(Clone, Debug, PartialEq, Identifiable, Queryable)]
+    #[derive(Clone, Debug, PartialEq, Identifiable, Queryable, Eq)]
     #[diesel(table_name = users1)]
     pub struct User {
         id: i32,
         name: String,
     }
 
-    #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable)]
+    #[derive(Clone, Debug, PartialEq, Associations, Identifiable, Queryable, Eq)]
     #[diesel(belongs_to(User, foreign_key = belongs_to_user))]
     #[diesel(table_name = posts1)]
     pub struct Post {

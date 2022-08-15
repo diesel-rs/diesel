@@ -62,9 +62,12 @@ fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
 }
 
 fn field_column_inst(field: &Field, model: &Model) -> TokenStream {
+    use syn::spanned::Spanned;
+
     if let Some(ref select_expression) = field.select_expression {
         let expr = &select_expression.item;
-        quote!(#expr)
+        let span = expr.span();
+        quote::quote_spanned!(span => #expr)
     } else if field.embed() {
         let embed_ty = &field.ty;
         quote!(<#embed_ty as Selectable<__DB>>::construct_selection())

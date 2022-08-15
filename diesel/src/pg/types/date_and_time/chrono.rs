@@ -2,8 +2,6 @@
 //! and `Timestamp` fields. It is enabled with the `chrono` feature.
 
 extern crate chrono;
-
-use self::chrono::naive::MAX_DATE;
 use self::chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
 use super::{PgDate, PgTime, PgTimestamp};
@@ -126,7 +124,10 @@ impl FromSql<Date, Pg> for NaiveDate {
         match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
             Some(date) => Ok(date),
             None => {
-                let error_message = format!("Chrono can only represent dates up to {:?}", MAX_DATE);
+                let error_message = format!(
+                    "Chrono can only represent dates up to {:?}",
+                    chrono::Date::<Utc>::MAX_UTC
+                );
                 Err(error_message.into())
             }
         }
@@ -138,7 +139,6 @@ mod tests {
     extern crate chrono;
     extern crate dotenvy;
 
-    use self::chrono::naive::MAX_DATE;
     use self::chrono::{Duration, FixedOffset, NaiveDate, NaiveTime, TimeZone, Utc};
 
     use crate::dsl::{now, sql};
@@ -261,7 +261,7 @@ mod tests {
         let query = select(sql::<Date>("'J0'::date").eq(julian_epoch));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let max_date = MAX_DATE;
+        let max_date = NaiveDate::MAX;
         let query = select(sql::<Date>("'262143-12-31'::date").eq(max_date));
         assert!(query.get_result::<bool>(connection).unwrap());
 
@@ -292,7 +292,7 @@ mod tests {
         let query = select(sql::<Date>("'J0'::date"));
         assert_eq!(Ok(julian_epoch), query.get_result::<NaiveDate>(connection));
 
-        let max_date = MAX_DATE;
+        let max_date = NaiveDate::MAX;
         let query = select(sql::<Date>("'262143-12-31'::date"));
         assert_eq!(Ok(max_date), query.get_result::<NaiveDate>(connection));
 
