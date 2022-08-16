@@ -94,7 +94,10 @@ fn check_group_by_primary_key_allows_other_columns_in_select_clause() {
         expected_sql = expected_sql.replace('`', "\"");
     }
 
-    assert_eq!(expected_sql, debug_query(&source).to_string());
+    assert_eq!(
+        expected_sql,
+        debug_query::<TestBackend, _>(&source).to_string()
+    );
 
     let conn = &mut connection();
 
@@ -118,7 +121,10 @@ fn check_group_by_multiple_columns_in_group_by_clause_single_select() {
         expected_sql = expected_sql.replace('`', "\"");
     }
 
-    assert_eq!(expected_sql, debug_query(&source).to_string());
+    assert_eq!(
+        expected_sql,
+        debug_query::<TestBackend, _>(&source).to_string()
+    );
 
     let conn = &mut connection();
 
@@ -142,7 +148,10 @@ fn check_group_by_multiple_columns_in_group_by_clause_complex_select() {
         expected_sql = expected_sql.replace('`', "\"");
     }
 
-    assert_eq!(expected_sql, debug_query(&source).to_string());
+    assert_eq!(
+        expected_sql,
+        debug_query::<TestBackend, _>(&source).to_string()
+    );
 
     let conn = &mut connection();
 
@@ -178,7 +187,10 @@ fn check_group_by_multiple_tables() {
         expected_sql = expected_sql.replace('`', "\"");
     }
 
-    assert_eq!(expected_sql, debug_query(&source).to_string());
+    assert_eq!(
+        expected_sql,
+        debug_query::<TestBackend, _>(&source).to_string()
+    );
 
     let conn = &mut connection();
 
@@ -218,7 +230,10 @@ fn check_filter_with_group_by_subselect() {
             .to_string()
     };
 
-    assert_eq!(expected_sql, debug_query(&source).to_string());
+    assert_eq!(
+        expected_sql,
+        debug_query::<TestBackend, _>(&source).to_string()
+    );
 
     let conn = &mut connection();
 
@@ -260,7 +275,10 @@ fn check_filter_with_boxed_group_by_subselect() {
             .to_string()
     };
 
-    assert_eq!(expected_sql, debug_query(&source).to_string());
+    assert_eq!(
+        expected_sql,
+        debug_query::<TestBackend, _>(&source).to_string()
+    );
 
     let conn = &mut connection();
 

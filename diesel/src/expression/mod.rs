@@ -40,6 +40,9 @@ pub(crate) mod select_by;
 mod sql_literal;
 pub(crate) mod subselect;
 
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::operators::Concat;
+
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
 // for every item in this module. We reexport
