@@ -583,11 +583,11 @@ where
 }
 
 /// This type represents a string concat operator
-#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
     public_fields(left, right)
 )]
+#[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 pub struct Concat<L, R> {
     /// The left side expression of the operator
     pub(crate) left: L,
