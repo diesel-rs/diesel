@@ -208,7 +208,7 @@ pub trait SqlDialect: self::private::TrustedBackend {
     /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        doc = "implementation for [`Concat`](crate::operators::Concat)"
+        doc = "implementation for [`Concat`](crate::expression::Concat)"
     )]
     #[cfg_attr(
         not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
