@@ -1,5 +1,6 @@
 //! Support for Money values under PostgreSQL.
 use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::fmt;
 
 use crate::deserialize::{self, FromSql, FromSqlRow};
 use crate::expression::AsExpression;
@@ -35,6 +36,13 @@ impl ToSql<Money, Pg> for PgMoney {
         ToSql::<BigInt, Pg>::to_sql(&self.0, out)
     }
 }
+
+impl fmt::Display for PgMoney {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "{}", self.0)
+    }
+}
+
 
 impl Add for PgMoney {
     type Output = Self;
