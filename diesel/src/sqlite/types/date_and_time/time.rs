@@ -226,7 +226,7 @@ impl ToSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
 mod tests {
     extern crate dotenvy;
 
-    use ::time::{
+    use time::{
         macros::{date, datetime},
         Date as NaiveDate, Duration, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime,
     };

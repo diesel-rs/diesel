@@ -155,6 +155,10 @@
 //! explicitly opts out the stability guarantee given by diesel. This feature overrides the `with-deprecated`.
 //! Note that this may also remove items that are not shown as `#[deprecated]` in our documentation, due to
 //! various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
+//! - `nightly-error-messages`: This feature enables the generation of improved compiler error messages for
+//! common mistakes using diesel. This feature requires a nightly rust compiler and is considered to be unstable.
+//! We might remove it in future diesel versions without replacement or deprecation.
+//!
 //!
 //! By default the following features are enabled:
 //!
