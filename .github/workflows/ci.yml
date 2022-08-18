@@ -292,7 +292,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: dtolnay/rust-toolchain@nightly-2022-08-12
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: nightly-2022-08-12
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
