@@ -4,8 +4,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
 26 |     users::table.select(users::name).having(users::id.gt(1)).load(&mut conn);
    |                                      ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>>`
    |
-   = help: the following implementations were found:
-             <SelectStatement<F, S, D, W, O, LOf, diesel::query_builder::group_by_clause::GroupByClause<G>, H> as HavingDsl<Predicate>>
+   = help: the trait `HavingDsl<Predicate>` is implemented for `SelectStatement<F, S, D, W, O, LOf, diesel::query_builder::group_by_clause::GroupByClause<G>, H>`
 
 error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
   --> tests/fail/having_cant_be_used_without_group_by.rs:28:31
@@ -13,6 +12,16 @@ error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
 28 |     users::table.into_boxed().having(users::id.gt(1)).load(&mut conn);
    |                               ^^^^^^ the trait `diesel::Expression` is not implemented for `()`
    |
+   = help: the following other types implement trait `diesel::Expression`:
+             (T0, T1)
+             (T0, T1, T2)
+             (T0, T1, T2, T3)
+             (T0, T1, T2, T3, T4)
+             (T0, T1, T2, T3, T4, T5)
+             (T0, T1, T2, T3, T4, T5, T6)
+             (T0, T1, T2, T3, T4, T5, T6, T7)
+             (T0, T1, T2, T3, T4, T5, T6, T7, T8)
+           and 8 others
    = note: required because of the requirements on the impl of `HavingDsl<_>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`
 
 error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
@@ -33,9 +42,9 @@ note: required because of the requirements on the impl of `AppearsOnTable<FromCl
 18 | | }
    | |_^
    = note: 2 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>`
-   = note: required because of the requirements on the impl of `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
-   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
+   = note: required because of the requirements on the impl of `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:32:71
@@ -55,6 +64,6 @@ note: required because of the requirements on the impl of `AppearsOnTable<FromCl
 18 | | }
    | |_^
    = note: 2 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>`
-   = note: required because of the requirements on the impl of `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::id>`
-   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
+   = note: required because of the requirements on the impl of `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::id>`
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -1,24 +1,27 @@
 error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
-  --> tests/fail/exists_can_only_take_subselects.rs:23:25
+  --> tests/fail/exists_can_only_take_subselects.rs:23:18
    |
 23 |     users::table.filter(exists(true));
-   |                         ^^^^^^^^^^^^ the trait `SelectQuery` is not implemented for `bool`
+   |                  ^^^^^^ the trait `SelectQuery` is not implemented for `bool`
    |
+   = help: the following other types implement trait `SelectQuery`:
+             BoxedSelectStatement<'a, ST, QS, DB, GB>
+             SelectStatement<F, S, D, W, O, LOf, G, H, LC>
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::subselect::Subselect<bool, Bool>`
-   = note: 1 redundant requirements hidden
+   = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::exists::Exists<bool>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::exists::Exists<bool>>` for `SelectStatement<FromClause<users::table>>`
 
-error[E0277]: the trait bound `users::columns::id: diesel::Expression` is not satisfied
-  --> tests/fail/exists_can_only_take_subselects.rs:24:25
+error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
+  --> tests/fail/exists_can_only_take_subselects.rs:24:18
    |
 24 |     users::table.filter(exists(users::id));
-   |                         ^^^^^^^^^^^^^^^^^
-   |                         |
-   |                         expected an implementor of trait `diesel::Expression`
-   |                         help: consider borrowing here: `&exists(users::id)`
+   |                  ^^^^^^ the trait `SelectQuery` is not implemented for `users::columns::id`
    |
+   = help: the following other types implement trait `SelectQuery`:
+             BoxedSelectStatement<'a, ST, QS, DB, GB>
+             SelectStatement<F, S, D, W, O, LOf, G, H, LC>
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::subselect::Subselect<users::columns::id, Bool>`
-   = note: 1 redundant requirements hidden
+   = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::exists::Exists<users::columns::id>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::exists::Exists<users::columns::id>>` for `SelectStatement<FromClause<users::table>>`
