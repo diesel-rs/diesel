@@ -4,6 +4,7 @@ use crate::backend::DieselReserveSpecialization;
 use crate::expression::grouped::Grouped;
 use crate::expression::nullable::Nullable;
 use crate::expression::SelectableExpression;
+use crate::expression::ValidGrouping;
 use crate::prelude::*;
 use crate::query_builder::*;
 use crate::query_dsl::InternalJoinDsl;
@@ -102,24 +103,75 @@ where
     }
 }
 
+// TODO: figure out where to put this thing
+// and make really sure that it cannot leak into the
+// public api at all
+#[derive(Debug, QueryId, Copy, Clone)]
+pub struct SkipSelectableExpressionWrapper<T>(T);
+
+impl<DB, T> QueryFragment<DB> for SkipSelectableExpressionWrapper<T>
+where
+    T: QueryFragment<DB>,
+    DB: Backend,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.0.walk_ast(pass)
+    }
+}
+
+impl<GB, T> ValidGrouping<GB> for SkipSelectableExpressionWrapper<T>
+where
+    T: ValidGrouping<GB>,
+{
+    type IsAggregate = T::IsAggregate;
+}
+
+impl<QS, T> SelectClauseExpression<QS> for SkipSelectableExpressionWrapper<T>
+where
+    T: SelectClauseExpression<QS>,
+{
+    type Selection = T::Selection;
+
+    type SelectClauseSqlType = T::SelectClauseSqlType;
+}
+
+impl<QS, T> SelectableExpression<QS> for SkipSelectableExpressionWrapper<T> where
+    Self: AppearsOnTable<QS>
+{
+}
+impl<QS, T> AppearsOnTable<QS> for SkipSelectableExpressionWrapper<T> where Self: Expression {}
+impl<T> Expression for SkipSelectableExpressionWrapper<T>
+where
+    T: Expression,
+{
+    type SqlType = T::SqlType;
+}
+
 impl<Left, Right> QuerySource for Join<Left, Right, Inner>
 where
     Left: QuerySource + AppendSelection<Right::DefaultSelection>,
     Right: QuerySource,
-    Left::Output: SelectableExpression<Self>,
+    Left::Output: Expression,
     Self: Clone,
 {
     type FromClause = Self;
-    type DefaultSelection = Left::Output;
+    // combining two valid selectable expressions for both tables will always yield a
+    // valid selectable expressions for the whole join, so no need to check that here
+    // again. These checked turned out to be quite expensive in terms of compile time
+    // so we use a wrapper type to just skip the check and forward other more relevant
+    // trait implementations to the inner type
+    type DefaultSelection = SkipSelectableExpressionWrapper<Left::Output>;
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self.left
-            .source
-            .append_selection(self.right.source.default_selection())
+        SkipSelectableExpressionWrapper(
+            self.left
+                .source
+                .append_selection(self.right.source.default_selection()),
+        )
     }
 }
 
@@ -131,6 +183,7 @@ where
     Self: Clone,
 {
     type FromClause = Self;
+    // TODO: we want to do the same as for the Inner join impl here
     type DefaultSelection = Left::Output;
 
     fn from_clause(&self) -> Self::FromClause {
