@@ -83,9 +83,7 @@ fn get_table_comment(
 ) -> Result<Option<String>, Box<dyn Error + Send + Sync + 'static>> {
     let table_comment = match *conn {
         #[cfg(feature = "sqlite")]
-        InferConnection::Sqlite(_) => {
-            return Ok(None);
-        }
+        InferConnection::Sqlite(_) => Ok(None),
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => super::pg::get_table_comment(c, table),
         #[cfg(feature = "mysql")]

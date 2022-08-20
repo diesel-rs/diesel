@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 use std::error::Error;
 
+#[cfg(feature = "postgres")]
+use super::ForeignKeyConstraint;
 use diesel::backend::Backend;
 use diesel::connection::LoadConnection;
 use diesel::deserialize::FromSql;
@@ -14,7 +16,6 @@ use diesel::query_builder::QueryFragment;
 use diesel::*;
 
 use self::information_schema::{key_column_usage, table_constraints, tables};
-use super::data_structures::*;
 use super::inference;
 use super::table_data::TableName;
 
