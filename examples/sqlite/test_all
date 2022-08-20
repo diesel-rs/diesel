@@ -12,10 +12,10 @@ fi
 cd "$SCRIPTPATH"
 
 if [ -z "${BACKEND##*sqlite*}" ]; then
-  find . -maxdepth 1 -mindepth 1 -type d | while read -r dir; do
-    cd "$dir"
-    ../../../bin/diesel database reset
-    cargo build
-    cd ..
-  done
+    find . -maxdepth 1 -mindepth 1 -type d | while read -r dir; do
+        cd "$dir"
+        ../../../bin/diesel database reset
+        cargo build
+        cd ..
+    done
 fi

@@ -13,14 +13,14 @@ fi
 set +a
 
 if [ -z "${BACKEND##*postgres*}" ]; then
-  find . -maxdepth 1 -mindepth 1 -type d | while read -r dir; do
-    cd "$dir"
-  
-    if [ -d "migrations" ]; then
-      ../../../bin/diesel database reset
-    fi
+    find . -maxdepth 1 -mindepth 1 -type d | while read -r dir; do
+        cd "$dir"
 
-    cargo test
-    cd ..
-  done
+        if [ -d "migrations" ]; then
+            ../../../bin/diesel database reset
+        fi
+
+        cargo test
+        cd ..
+    done
 fi
