@@ -1,14 +1,58 @@
-use diesel::mysql::Mysql;
+use diesel::mysql::{Mysql, MysqlConnection};
 use diesel::*;
 use heck::ToUpperCamelCase;
-use std::error::Error;
+use std::{borrow::Cow, error::Error};
 
 use super::data_structures::*;
-use super::information_schema::UsesInformationSchema;
+use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
+use crate::print_schema::ColumnSorting;
+
+diesel::sql_function! {
+    #[sql_name = "NULLIF"]
+    fn null_if_text(lhs: sql_types::Text, rhs: sql_types::Text) -> sql_types::Nullable<sql_types::Text>
+}
+
+pub fn get_table_data<'a>(
+    conn: &mut MysqlConnection,
+    table: &'a TableName,
+    column_sorting: &ColumnSorting,
+) -> QueryResult<Vec<ColumnInformation>> {
+    use self::information_schema::columns::dsl::*;
+
+    let schema_name = match table.schema {
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Mysql::default_schema(conn)?),
+    };
+
+    let type_schema = None::<String>.into_sql();
+    let query = columns
+        .select((
+            column_name,
+            column_type,
+            type_schema,
+            __is_nullable,
+            // MySQL comments are not nullable and are empty strings if not set
+            null_if_text(column_comment, ""),
+        ))
+        .filter(table_name.eq(&table.sql_name))
+        .filter(table_schema.eq(schema_name));
+    match column_sorting {
+        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
+        ColumnSorting::Name => query.order(column_name).load(conn),
+    }
+}
 
 mod information_schema {
     use diesel::prelude::{allow_tables_to_appear_in_same_query, table};
+
+    table! {
+        information_schema.tables (table_schema, table_name) {
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            table_comment -> VarChar,
+        }
+    }
 
     table! {
         information_schema.table_constraints (constraint_schema, constraint_name) {
@@ -29,6 +73,21 @@ mod information_schema {
             referenced_table_schema -> VarChar,
             referenced_table_name -> VarChar,
             referenced_column_name -> VarChar,
+        }
+    }
+
+    table! {
+        information_schema.columns (table_schema, table_name, column_name) {
+            table_schema -> VarChar,
+            table_name -> VarChar,
+            column_name -> VarChar,
+            #[sql_name = "is_nullable"]
+            __is_nullable -> VarChar,
+            ordinal_position -> BigInt,
+            udt_name -> VarChar,
+            udt_schema -> VarChar,
+            column_type -> VarChar,
+            column_comment -> VarChar,
         }
     }
 
@@ -99,6 +158,30 @@ pub fn determine_column_type(
         is_nullable: attr.nullable,
         is_unsigned: unsigned,
     })
+}
+
+pub fn get_table_comment(
+    conn: &mut MysqlConnection,
+    table: &TableName,
+) -> QueryResult<Option<String>> {
+    use self::information_schema::tables::dsl::*;
+
+    let schema_name = match table.schema {
+        Some(ref name) => Cow::Borrowed(name),
+        None => Cow::Owned(Mysql::default_schema(conn)?),
+    };
+
+    let comment: String = tables
+        .select(table_comment)
+        .filter(table_name.eq(&table.sql_name))
+        .filter(table_schema.eq(schema_name))
+        .get_result(conn)?;
+
+    if comment.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(comment))
+    }
 }
 
 fn determine_type_name(
@@ -172,4 +255,86 @@ fn unsigned_types_are_supported() {
 #[test]
 fn types_with_space_are_not_supported() {
     assert!(determine_type_name("lol wat").is_err());
+}
+
+#[cfg(test)]
+mod test {
+    extern crate dotenvy;
+
+    use self::dotenvy::dotenv;
+    use super::*;
+    use std::env;
+
+    fn connection() -> MysqlConnection {
+        dotenv().ok();
+
+        let connection_url = env::var("MYSQL_DATABASE_URL")
+            .or_else(|_| env::var("DATABASE_URL"))
+            .expect("DATABASE_URL must be set in order to run tests");
+        let mut connection = MysqlConnection::establish(&connection_url).unwrap();
+        connection.begin_test_transaction().unwrap();
+        connection
+    }
+    #[test]
+    #[ignore = "FIXME: Figure out how to handle tests that modify schema"]
+    fn get_table_data_loads_column_information() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query(
+                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY COMMENT 'column comment') COMMENT 'table comment'",
+            ).execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
+
+        let id_with_comment = ColumnInformation::new(
+            "id",
+            "bigint unsigned",
+            None,
+            false,
+            Some("column comment".to_string()),
+        );
+        let id_without_comment = ColumnInformation::new("id", "bigint unsigned", None, false, None);
+        assert_eq!(
+            Ok(vec![id_with_comment]),
+            get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)
+        );
+        assert_eq!(
+            Ok(vec![id_without_comment]),
+            get_table_data(&mut connection, &table_2, &ColumnSorting::OrdinalPosition)
+        );
+    }
+
+    #[test]
+    #[ignore = "FIXME: Figure out how to handle tests that modify schema"]
+    fn gets_table_comment() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query(
+            "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY) COMMENT 'table comment'",
+        )
+        .execute(&mut connection)
+        .unwrap();
+        diesel::sql_query("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
+        assert_eq!(
+            Ok(Some("table comment".to_string())),
+            get_table_comment(&mut connection, &table_1)
+        );
+        assert_eq!(Ok(None), get_table_comment(&mut connection, &table_2));
+    }
 }

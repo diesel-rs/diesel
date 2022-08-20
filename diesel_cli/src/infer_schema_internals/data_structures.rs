@@ -5,7 +5,7 @@ use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
 use diesel::sqlite::Sqlite;
 
 #[cfg(feature = "uses_information_schema")]
-use super::information_schema::UsesInformationSchema;
+use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,6 +14,7 @@ pub struct ColumnInformation {
     pub type_name: String,
     pub type_schema: Option<String>,
     pub nullable: bool,
+    pub comment: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Clone, Eq)]
@@ -67,6 +68,7 @@ impl ColumnInformation {
         type_name: U,
         type_schema: Option<String>,
         nullable: bool,
+        comment: Option<String>,
     ) -> Self
     where
         T: Into<String>,
@@ -77,6 +79,7 @@ impl ColumnInformation {
             type_name: type_name.into(),
             type_schema,
             nullable,
+            comment,
         }
     }
 }
@@ -84,13 +87,19 @@ impl ColumnInformation {
 #[cfg(feature = "uses_information_schema")]
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation
 where
-    DB: Backend + UsesInformationSchema,
-    (String, String, Option<String>, String): FromStaticSqlRow<ST, DB>,
+    DB: Backend + DefaultSchema,
+    (String, String, Option<String>, String, Option<String>): FromStaticSqlRow<ST, DB>,
 {
-    type Row = (String, String, Option<String>, String);
+    type Row = (String, String, Option<String>, String, Option<String>);
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(row.0, row.1, row.2, row.3 == "YES"))
+        Ok(ColumnInformation::new(
+            row.0,
+            row.1,
+            row.2,
+            row.3 == "YES",
+            row.4,
+        ))
     }
 }
 
@@ -102,7 +111,7 @@ where
     type Row = (i32, String, String, bool, Option<String>, bool, i32);
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(row.1, row.2, None, !row.3))
+        Ok(ColumnInformation::new(row.1, row.2, None, !row.3, None))
     }
 }
 

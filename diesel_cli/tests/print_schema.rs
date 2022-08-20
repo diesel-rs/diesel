@@ -229,6 +229,12 @@ fn print_schema_sqlite_implicit_foreign_key_reference() {
     test_print_schema("print_schema_sqlite_implicit_foreign_key_reference", vec![]);
 }
 
+#[test]
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+fn print_schema_comments() {
+    test_print_schema("print_schema_comments", vec!["--with-docs"])
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
