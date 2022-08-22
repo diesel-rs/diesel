@@ -20,7 +20,7 @@ pub struct SqliteValue<'row, 'stmt, 'query> {
     _row: Ref<'row, PrivateSqliteRow<'stmt, 'query>>,
     // we extract the raw value pointer as part of the constructor
     // to safe the match statements for each method
-    // Acconding to benchmarks this leads to a ~20-30% speedup
+    // According to benchmarks this leads to a ~20-30% speedup
     //
     // This is sound as long as nobody calls `stmt.step()`
     // while holding this value. We ensure this by including

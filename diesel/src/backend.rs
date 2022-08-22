@@ -31,7 +31,7 @@ pub(crate) use self::private::{
 ///
 /// Implementing a custom backend requires enabling the
 /// `i-implement-a-third-party-backend-and-opt-into-breaking-changes` crate feature
-/// to get access to all nessesary type and trait implementations.
+/// to get access to all necessary type and trait implementations.
 ///
 /// Implementations of this trait should not assume details about how the
 /// connection is implemented.

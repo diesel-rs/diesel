@@ -151,7 +151,7 @@ where
         }
     }
 
-    /// Get the current lenght of the statement cache
+    /// Get the current length of the statement cache
     #[allow(unreachable_pub)]
     #[cfg(any(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
@@ -174,7 +174,7 @@ where
     /// the cached prepared statement will be returned, otherwise `prepare_fn`
     /// will be called to create a new prepared statement for this query source.
     /// The first parameter of the callback contains the query string, the second
-    /// paramater indicates if the constructed prepared statement will be cached or not.
+    /// parameter indicates if the constructed prepared statement will be cached or not.
     /// See the [module](self) documentation for details
     /// about which statements are cached and which are not cached.
     #[allow(unreachable_pub)]

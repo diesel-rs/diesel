@@ -45,7 +45,7 @@ pub trait TransactionManager<Conn: Connection> {
 
     /// Executes the given function inside of a database transaction
     ///
-    /// Each implementation of this function needs to fullfill the documented
+    /// Each implementation of this function needs to fulfill the documented
     /// behaviour of [`Connection::transaction`]
     fn transaction<F, R, E>(conn: &mut Conn, callback: F) -> Result<R, E>
     where
@@ -840,14 +840,14 @@ mod test {
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
                     let second_trans_result = conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
                     result
                 })
             })
             .collect::<Vec<_>>();
         let second_trans_result =
             conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
 
         let mut results = threads
             .into_iter()
@@ -949,14 +949,14 @@ mod test {
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
                     let second_trans_result = conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
                     result
                 })
             })
             .collect::<Vec<_>>();
         let second_trans_result =
             conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
 
         let mut results = threads
             .into_iter()

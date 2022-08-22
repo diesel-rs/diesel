@@ -206,9 +206,9 @@ impl Drop for BindData {
             std::mem::drop(unsafe {
                 // We know that this buffer was allocated by a vector, so constructing a vector from it is fine
                 // We know the correct capacity here
-                // We use 0 as lenght to prevent situations where the lenght is already updated but
+                // We use 0 as length to prevent situations where the length is already updated but
                 // no date are already written as we could touch uninitialized memory otherwise
-                // Using 0 as lenght is fine as we don't need to call drop for `u8`
+                // Using 0 as length is fine as we don't need to call drop for `u8`
                 // (as there is no drop impl for primitive types)
                 Vec::from_raw_parts(bytes.as_ptr(), 0, self.capacity)
             });
@@ -501,7 +501,7 @@ impl BindData {
                 Some((bind, offset))
             } else {
                 // offset is zero here as we don't have a buffer yet
-                // we know the requested lenght here so we can just request
+                // we know the requested length here so we can just request
                 // the correct size
                 let mut vec = vec![0_u8; self.length as usize];
                 self.capacity = vec.capacity();

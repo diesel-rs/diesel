@@ -456,7 +456,7 @@ where
 /// Implementations of this trait must ensure that aggregate expressions are
 /// not mixed with non-aggregate expressions.
 ///
-/// For generic types, you can determine if your sub-expresssions can appear
+/// For generic types, you can determine if your sub-expressions can appear
 /// together using the [`MixedAggregates`] trait.
 ///
 /// `GroupByClause` will be a tuple containing the set of expressions appearing

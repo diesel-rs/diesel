@@ -75,7 +75,7 @@ impl Statement {
             }
             (SqliteType::Binary, InternalSqliteBindValue::Binary(mut bytes)) => {
                 let len = bytes.len();
-                // We need a seperate pointer here to pass it to sqlite
+                // We need a separate pointer here to pass it to sqlite
                 // as the returned pointer is a pointer to a dyn sized **slice**
                 // and not the pointer to the first element of the slice
                 let ptr;
@@ -106,7 +106,7 @@ impl Statement {
             (SqliteType::Text, InternalSqliteBindValue::String(bytes)) => {
                 let mut bytes = Box::<[u8]>::from(bytes);
                 let len = bytes.len();
-                // We need a seperate pointer here to pass it to sqlite
+                // We need a separate pointer here to pass it to sqlite
                 // as the returned pointer is a pointer to a dyn sized **slice**
                 // and not the pointer to the first element of the slice
                 let ptr;
@@ -225,7 +225,7 @@ impl Drop for Statement {
     }
 }
 
-// A warning for future editiors:
+// A warning for future editors:
 // Changing this code to something "simplier" may
 // introduce undefined behaviour. Make sure you read
 // the following discussions for details about
@@ -242,7 +242,7 @@ struct BoundStatement<'stmt, 'query> {
     // generic type, we use NonNull to communicate
     // that this is a shared buffer
     query: Option<NonNull<dyn QueryFragment<Sqlite> + 'query>>,
-    // we need to store any owned bind values speratly, as they are not
+    // we need to store any owned bind values separately, as they are not
     // contained in the query itself. We use NonNull to
     // communicate that this is a shared buffer
     binds_to_free: Vec<(i32, Option<NonNull<[u8]>>)>,
@@ -280,8 +280,8 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         Ok(ret)
     }
 
-    // This is a seperate function so that
-    // not the whole construtor is generic over the query type T.
+    // This is a separated function so that
+    // not the whole constructor is generic over the query type T.
     // This hopefully prevents binary bloat.
     fn bind_buffers(
         &mut self,
@@ -352,7 +352,7 @@ impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
             if let Some(buffer) = buffer {
                 unsafe {
                     // Constructing the `Box` here is safe as we
-                    // got the pointer from a box + it is guarenteed to be not null.
+                    // got the pointer from a box + it is guaranteed to be not null.
                     std::mem::drop(Box::from_raw(buffer.as_ptr()));
                 }
             }
@@ -361,7 +361,7 @@ impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
         if let Some(query) = self.query {
             unsafe {
                 // Constructing the `Box` here is safe as we
-                // got the pointer from a box + it is guarenteed to be not null.
+                // got the pointer from a box + it is guaranteed to be not null.
                 std::mem::drop(Box::from_raw(query.as_ptr()));
             }
             self.query = None;
@@ -393,7 +393,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         unsafe {
             // This is safe as we pass `first_step = true`
             // and we consume the statement so nobody could
-            // access the columnns later on anyway.
+            // access the columns later on anyway.
             self.step(true).map(|_| ())
         }
     }
@@ -441,7 +441,7 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
         name.to_str().expect(
             "The Sqlite documentation states that this is UTF8. \
              If you see this error message something has gone \
-             horribliy wrong. Please open an issue at the \
+             horribly wrong. Please open an issue at the \
              diesel repository.",
         ) as *const str
     }

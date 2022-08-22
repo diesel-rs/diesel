@@ -264,7 +264,7 @@ where
     ///
     /// This function executes the provided closure `f` inside a database
     /// transaction. If there is already an open transaction for the current
-    /// connection it will return an error. The connection is commited if
+    /// connection it will return an error. The connection is committed if
     /// the closure returns `Ok(_)`, it will be rolled back if it returns `Err(_)`.
     /// For both cases the original result value will be returned from this function.
     ///

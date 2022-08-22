@@ -87,7 +87,7 @@ impl PgTypeMetadata {
 
     /// Create a new instance of this type based on dynamically lookup informations
     ///
-    /// This function is usfull for third party crates that may implement a custom
+    /// This function is useful for third party crates that may implement a custom
     /// postgres connection type and want to bring their own lookup mechanism.
     ///
     /// Otherwise refer to [PgMetadataLookup] for a way to automatically
