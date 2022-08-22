@@ -147,11 +147,23 @@ where
     type SqlType = T::SqlType;
 }
 
+impl<T, Selection> TupleAppend<Selection> for SkipSelectableExpressionWrapper<T>
+where
+    T: TupleAppend<Selection>,
+{
+    // We're re-wrapping after anyway
+    type Output = T::Output;
+
+    fn tuple_append(self, right: Selection) -> Self::Output {
+        self.0.tuple_append(right)
+    }
+}
+
 impl<Left, Right> QuerySource for Join<Left, Right, Inner>
 where
     Left: QuerySource + AppendSelection<Right::DefaultSelection>,
     Right: QuerySource,
-    Left::Output: Expression,
+    <Left as AppendSelection<Right::DefaultSelection>>::Output: Expression,
     Self: Clone,
 {
     type FromClause = Self;
@@ -179,21 +191,27 @@ impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter>
 where
     Left: QuerySource + AppendSelection<Nullable<Right::DefaultSelection>>,
     Right: QuerySource,
-    Left::Output: SelectableExpression<Self>,
+    <Left as AppendSelection<Nullable<Right::DefaultSelection>>>::Output: Expression,
     Self: Clone,
 {
     type FromClause = Self;
-    // TODO: we want to do the same as for the Inner join impl here
-    type DefaultSelection = Left::Output;
+    // combining two valid selectable expressions for both tables will always yield a
+    // valid selectable expressions for the whole join, so no need to check that here
+    // again. These checked turned out to be quite expensive in terms of compile time
+    // so we use a wrapper type to just skip the check and forward other more relevant
+    // trait implementations to the inner type
+    type DefaultSelection = SkipSelectableExpressionWrapper<Left::Output>;
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self.left
-            .source
-            .append_selection(self.right.source.default_selection().nullable())
+        SkipSelectableExpressionWrapper(
+            self.left
+                .source
+                .append_selection(self.right.source.default_selection().nullable()),
+        )
     }
 }
 
