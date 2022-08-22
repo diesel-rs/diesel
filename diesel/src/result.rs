@@ -65,13 +65,13 @@ pub enum Error {
     /// An error occurred when attempting rollback of a transaction subsequently to a failed
     /// commit attempt.
     ///
-    /// When a commit attempt fails and Diesel beleives that it can attempt a rollback to return
+    /// When a commit attempt fails and Diesel believes that it can attempt a rollback to return
     /// the connection back in a usable state (out of that transaction), it attempts it then
     /// returns the original error.
     ///
     /// If that fails, you get this.
     RollbackErrorOnCommit {
-        /// The error that was encoutered when attempting the rollback
+        /// The error that was encountered when attempting the rollback
         rollback_error: Box<Error>,
         /// If the rollback attempt resulted from a failed attempt to commit the transaction,
         /// you will find the related error here.
@@ -406,7 +406,7 @@ impl fmt::Display for UnexpectedNullError {
 
 impl StdError for UnexpectedNullError {}
 
-/// Expected more fields then present in the current row while deserialising results
+/// Expected more fields then present in the current row while deserializing results
 #[derive(Debug, Clone, Copy)]
 pub struct UnexpectedEndOfRow;
 

@@ -16,7 +16,7 @@ pub(crate) use self::private::{PartialRow, RowGatWorkaround};
 ///
 /// * Crates using existing backends should use existing implementations of
 ///   this traits. Diesel provides `RowIndex<usize>` and `RowIndex<&str>` for
-///   all bulit-in backends
+///   all built-in backends
 ///
 /// * Crates implementing custom backends need to provide `RowIndex<usize>` and
 ///   `RowIndex<&str>` impls for their [`Row`] type.

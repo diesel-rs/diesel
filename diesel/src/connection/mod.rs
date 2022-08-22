@@ -217,7 +217,7 @@ where
     ///
     /// This function executes the provided closure `f` inside a database
     /// transaction. If there is already an open transaction for the current
-    /// connection savepoints will be used instead. The connection is commited if
+    /// connection savepoints will be used instead. The connection is committed if
     /// the closure returns `Ok(_)`, it will be rolled back if it returns `Err(_)`.
     /// For both cases the original result value will be returned from this function.
     ///
@@ -377,7 +377,7 @@ where
 
 /// The specific part of a [`Connection`] which actually loads data from the database
 ///
-/// This is a seperate trait to allow connection implementations to specify
+/// This is a separate trait to allow connection implementations to specify
 /// different loading modes via the generic paramater.
 pub trait LoadConnection<B = DefaultLoadingMode>: Connection
 where

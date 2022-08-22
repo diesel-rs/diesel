@@ -474,8 +474,8 @@ where
 
 /// A helper trait to deserialize a statically sized row into an tuple
 ///
-/// **If you see an error message mentioning this trait you likly
-///   trying to map the result of an query to an struct with missmatching
+/// **If you see an error message mentioning this trait you likely
+///   trying to map the result of an query to an struct with mismatching
 ///   field types. Recheck your field order and the concrete field types**
 ///
 /// You should not need to implement this trait directly.
@@ -538,7 +538,7 @@ where
 // then complains in third party crates that
 // diesel may implement `SingleValue` for tuples
 // in the future. While that is theoretically true,
-// that will likly not happen in practice.
+// that will likely not happen in practice.
 // If we get negative trait impls at some point in time
 // it should be possible to make this work.
 /*impl<T, ST, DB> Queryable<ST, DB> for T
