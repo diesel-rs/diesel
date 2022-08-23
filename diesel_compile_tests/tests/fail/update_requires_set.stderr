@@ -13,7 +13,7 @@ error[E0277]: the trait bound `diesel::query_builder::update_statement::SetNotCa
                <(T0, T1, T2, T3, T4) as QueryFragment<__DB>>
                <(T0, T1, T2, T3, T4, T5) as QueryFragment<__DB>>
                <(T0, T1, T2, T3, T4, T5, T6) as QueryFragment<__DB>>
-             and 270 others
+             and 271 others
      = note: required because of the requirements on the impl of `QueryFragment<_>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>`
      = note: required because of the requirements on the impl of `ExecuteDsl<_, _>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
