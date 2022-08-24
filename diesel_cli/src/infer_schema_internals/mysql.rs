@@ -285,9 +285,10 @@ mod test {
         )
         .execute(&mut connection)
         .unwrap();
+        // uses VARCHAR(255) as the type because SERIAL returned bigint on most platforms and bigint(20) on MacOS
         diesel::sql_query(
             "CREATE TABLE diesel_test.table_1 \
-            (id SERIAL PRIMARY KEY COMMENT 'column comment') \
+            (id VARCHAR(255) PRIMARY KEY COMMENT 'column comment') \
             COMMENT 'table comment'",
         )
         .execute(&mut connection)
@@ -298,7 +299,7 @@ mod test {
         .execute(&mut connection)
         .unwrap();
         diesel::sql_query(
-            "CREATE TABLE diesel_test.table_2 (id SERIAL PRIMARY KEY)",
+            "CREATE TABLE diesel_test.table_2 (id VARCHAR(255) PRIMARY KEY)",
         )
         .execute(&mut connection)
         .unwrap();
@@ -308,12 +309,12 @@ mod test {
 
         let id_with_comment = ColumnInformation::new(
             "id",
-            "bigint unsigned",
+            "varchar(255)",
             None,
             false,
             Some("column comment".to_string()),
         );
-        let id_without_comment = ColumnInformation::new("id", "bigint unsigned", None, false, None);
+        let id_without_comment = ColumnInformation::new("id", "varchar(255)", None, false, None);
         assert_eq!(
             Ok(vec![id_with_comment]),
             get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)
