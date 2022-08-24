@@ -275,24 +275,36 @@ mod test {
         connection.begin_test_transaction().unwrap();
         connection
     }
+
     #[test]
-    #[ignore = "FIXME: Figure out how to handle tests that modify schema"]
     fn get_table_data_loads_column_information() {
         let mut connection = connection();
 
-        diesel::sql_query("CREATE SCHEMA test_schema")
-            .execute(&mut connection)
-            .unwrap();
         diesel::sql_query(
-                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY COMMENT 'column comment') COMMENT 'table comment'",
-            ).execute(&mut connection)
-            .unwrap();
-        diesel::sql_query("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
-            .execute(&mut connection)
-            .unwrap();
+            "DROP TABLE IF EXISTS diesel_test.table_1",
+        )
+        .execute(&mut connection)
+        .unwrap();
+        diesel::sql_query(
+            "CREATE TABLE diesel_test.table_1 \
+            (id SERIAL PRIMARY KEY COMMENT 'column comment') \
+            COMMENT 'table comment'",
+        )
+        .execute(&mut connection)
+        .unwrap();
+        diesel::sql_query(
+            "DROP TABLE IF EXISTS diesel_test.table_2",
+        )
+        .execute(&mut connection)
+        .unwrap();
+        diesel::sql_query(
+            "CREATE TABLE diesel_test.table_2 (id SERIAL PRIMARY KEY)",
+        )
+        .execute(&mut connection)
+        .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema");
-        let table_2 = TableName::new("table_2", "test_schema");
+        let table_1 = TableName::new("table_1", "diesel_test");
+        let table_2 = TableName::new("table_2", "diesel_test");
 
         let id_with_comment = ColumnInformation::new(
             "id",
@@ -313,24 +325,26 @@ mod test {
     }
 
     #[test]
-    #[ignore = "FIXME: Figure out how to handle tests that modify schema"]
     fn gets_table_comment() {
         let mut connection = connection();
 
-        diesel::sql_query("CREATE SCHEMA test_schema")
+        diesel::sql_query("DROP TABLE IF EXISTS diesel_test.table_1")
             .execute(&mut connection)
             .unwrap();
         diesel::sql_query(
-            "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY) COMMENT 'table comment'",
+            "CREATE TABLE diesel_test.table_1 (id SERIAL PRIMARY KEY) COMMENT 'table comment'",
         )
         .execute(&mut connection)
         .unwrap();
-        diesel::sql_query("CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("DROP TABLE IF EXISTS diesel_test.table_2")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE diesel_test.table_2 (id SERIAL PRIMARY KEY)")
             .execute(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "test_schema");
-        let table_2 = TableName::new("table_2", "test_schema");
+        let table_1 = TableName::new("table_1", "diesel_test");
+        let table_2 = TableName::new("table_2", "diesel_test");
         assert_eq!(
             Ok(Some("table comment".to_string())),
             get_table_comment(&mut connection, &table_1)

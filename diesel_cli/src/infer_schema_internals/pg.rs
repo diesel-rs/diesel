@@ -2,7 +2,7 @@ use super::data_structures::*;
 use super::information_schema::DefaultSchema;
 use super::TableName;
 use crate::print_schema::ColumnSorting;
-use diesel::{expression::AsExpression, pg::Pg, prelude::*, sql_types};
+use diesel::{dsl::AsExprOf, expression::AsExpression, pg::Pg, prelude::*, sql_types};
 use heck::ToUpperCamelCase;
 use std::borrow::Cow;
 use std::error::Error;
@@ -52,7 +52,8 @@ pub fn determine_column_type(
 }
 
 diesel::postfix_operator!(Regclass, "::regclass", sql_types::Oid, backend: Pg);
-fn regclass(table: &TableName) -> Regclass<<String as AsExpression<sql_types::Text>>::Expression> {
+
+fn regclass(table: &TableName) -> Regclass<AsExprOf<String, sql_types::Text>> {
     Regclass::new(<String as AsExpression<sql_types::Text>>::as_expression(
         table.full_sql_name(),
     ))
