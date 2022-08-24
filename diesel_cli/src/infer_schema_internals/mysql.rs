@@ -280,11 +280,9 @@ mod test {
     fn get_table_data_loads_column_information() {
         let mut connection = connection();
 
-        diesel::sql_query(
-            "DROP TABLE IF EXISTS diesel_test.table_1",
-        )
-        .execute(&mut connection)
-        .unwrap();
+        diesel::sql_query("DROP TABLE IF EXISTS diesel_test.table_1")
+            .execute(&mut connection)
+            .unwrap();
         // uses VARCHAR(255) as the type because SERIAL returned bigint on most platforms and bigint(20) on MacOS
         diesel::sql_query(
             "CREATE TABLE diesel_test.table_1 \
@@ -293,16 +291,12 @@ mod test {
         )
         .execute(&mut connection)
         .unwrap();
-        diesel::sql_query(
-            "DROP TABLE IF EXISTS diesel_test.table_2",
-        )
-        .execute(&mut connection)
-        .unwrap();
-        diesel::sql_query(
-            "CREATE TABLE diesel_test.table_2 (id VARCHAR(255) PRIMARY KEY)",
-        )
-        .execute(&mut connection)
-        .unwrap();
+        diesel::sql_query("DROP TABLE IF EXISTS diesel_test.table_2")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE diesel_test.table_2 (id VARCHAR(255) PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
 
         let table_1 = TableName::new("table_1", "diesel_test");
         let table_2 = TableName::new("table_2", "diesel_test");
