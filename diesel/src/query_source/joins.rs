@@ -106,20 +106,29 @@ impl<Left, Right> QuerySource for Join<Left, Right, Inner>
 where
     Left: QuerySource + AppendSelection<Right::DefaultSelection>,
     Right: QuerySource,
-    Left::Output: SelectableExpression<Self>,
+    Left::Output: AppearsOnTable<Self>,
     Self: Clone,
 {
     type FromClause = Self;
-    type DefaultSelection = Left::Output;
+    // combining two valid selectable expressions for both tables will always yield a
+    // valid selectable expressions for the whole join, so no need to check that here
+    // again. These checked turned out to be quite expensive in terms of compile time
+    // so we use a wrapper type to just skip the check and forward other more relevant
+    // trait implementations to the inner type
+    //
+    // See https://github.com/diesel-rs/diesel/issues/3223 for details
+    type DefaultSelection = self::private::SkipSelectableExpressionBoundCheckWrapper<Left::Output>;
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self.left
-            .source
-            .append_selection(self.right.source.default_selection())
+        self::private::SkipSelectableExpressionBoundCheckWrapper(
+            self.left
+                .source
+                .append_selection(self.right.source.default_selection()),
+        )
     }
 }
 
@@ -127,20 +136,29 @@ impl<Left, Right> QuerySource for Join<Left, Right, LeftOuter>
 where
     Left: QuerySource + AppendSelection<Nullable<Right::DefaultSelection>>,
     Right: QuerySource,
-    Left::Output: SelectableExpression<Self>,
+    Left::Output: AppearsOnTable<Self>,
     Self: Clone,
 {
     type FromClause = Self;
-    type DefaultSelection = Left::Output;
+    // combining two valid selectable expressions for both tables will always yield a
+    // valid selectable expressions for the whole join, so no need to check that here
+    // again. These checked turned out to be quite expensive in terms of compile time
+    // so we use a wrapper type to just skip the check and forward other more relevant
+    // trait implementations to the inner type
+    //
+    // See https://github.com/diesel-rs/diesel/issues/3223 for details
+    type DefaultSelection = self::private::SkipSelectableExpressionBoundCheckWrapper<Left::Output>;
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self.left
-            .source
-            .append_selection(self.right.source.default_selection().nullable())
+        self::private::SkipSelectableExpressionBoundCheckWrapper(
+            self.left
+                .source
+                .append_selection(self.right.source.default_selection().nullable()),
+        )
     }
 }
 
@@ -421,4 +439,76 @@ where
 
 impl<T: Table> ToInnerJoin for T {
     type InnerJoin = T;
+}
+
+mod private {
+    use crate::backend::Backend;
+    use crate::expression::{Expression, ValidGrouping};
+    use crate::query_builder::{AstPass, QueryFragment, SelectClauseExpression};
+    use crate::{AppearsOnTable, QueryResult, SelectableExpression};
+
+    #[derive(Debug, crate::query_builder::QueryId, Copy, Clone)]
+    pub struct SkipSelectableExpressionBoundCheckWrapper<T>(pub(super) T);
+
+    impl<DB, T> QueryFragment<DB> for SkipSelectableExpressionBoundCheckWrapper<T>
+    where
+        T: QueryFragment<DB>,
+        DB: Backend,
+    {
+        fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+            self.0.walk_ast(pass)
+        }
+    }
+
+    // The default select clause is only valid for no group by clause
+    // anyway so we can just skip the recursive check here
+    impl<T> ValidGrouping<()> for SkipSelectableExpressionBoundCheckWrapper<T> {
+        type IsAggregate = crate::expression::is_aggregate::No;
+    }
+
+    // This needs to use the expression impl
+    impl<QS, T> SelectClauseExpression<QS> for SkipSelectableExpressionBoundCheckWrapper<T>
+    where
+        T: SelectClauseExpression<QS>,
+    {
+        type Selection = T::Selection;
+
+        type SelectClauseSqlType = T::SelectClauseSqlType;
+    }
+
+    // The default select clause for joins is always valid assuming that
+    // the default select clause of all involved query sources is
+    // valid too. We can skip the recursive check here.
+    // This is the main optimization.
+    impl<QS, T> SelectableExpression<QS> for SkipSelectableExpressionBoundCheckWrapper<T> where
+        Self: AppearsOnTable<QS>
+    {
+    }
+
+    impl<QS, T> AppearsOnTable<QS> for SkipSelectableExpressionBoundCheckWrapper<T> where
+        Self: Expression
+    {
+    }
+
+    // Expression must recurse the whole expression
+    // as this is required for the return type of the query
+    impl<T> Expression for SkipSelectableExpressionBoundCheckWrapper<T>
+    where
+        T: Expression,
+    {
+        type SqlType = T::SqlType;
+    }
+
+    impl<T, Selection> crate::util::TupleAppend<Selection>
+        for SkipSelectableExpressionBoundCheckWrapper<T>
+    where
+        T: crate::util::TupleAppend<Selection>,
+    {
+        // We're re-wrapping after anyway
+        type Output = T::Output;
+
+        fn tuple_append(self, right: Selection) -> Self::Output {
+            self.0.tuple_append(right)
+        }
+    }
 }

@@ -13,7 +13,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-           and 122 others
+           and 123 others
    = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Integer>` for `std::string::String`
 
 error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
@@ -31,7 +31,7 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-           and 122 others
+           and 123 others
    = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Text>` for `i32`
 
 error[E0277]: the trait bound `std::string::String: diesel::Expression` is not satisfied
@@ -49,7 +49,7 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-           and 122 others
+           and 123 others
    = note: required because of the requirements on the impl of `diesel::Expression` for `&'insert std::string::String`
    = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Integer>` for `&'insert std::string::String`
 
@@ -68,6 +68,6 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-           and 122 others
+           and 123 others
    = note: required because of the requirements on the impl of `diesel::Expression` for `&'insert i32`
    = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Text>` for `&'insert i32`
