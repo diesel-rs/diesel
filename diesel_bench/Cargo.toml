@@ -22,7 +22,7 @@ quaint = {version = "=0.2.0-alpha.13", optional = true}
 serde = {version = "1", optional = true, features = ["derive"]}
 sea-orm = {version = "0.9", optional = true, features = ["runtime-tokio-rustls"]}
 futures = {version = "0.3", optional = true}
-diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "acf3ed3", optional = true, default-features = false}
+diesel-async = {git = "https://github.com/weiznich/diesel_async", rev = "3ab3cf8", optional = true, default-features = false}
 criterion-perf-events = { version = "0.2", optional = true}
 perfcnt = {version = "0.8", optional = true}
 
