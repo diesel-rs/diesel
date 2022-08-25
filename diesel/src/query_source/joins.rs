@@ -117,14 +117,14 @@ where
     // trait implementations to the inner type
     //
     // See https://github.com/diesel-rs/diesel/issues/3223 for details
-    type DefaultSelection = self::private::SkipSelectableExpressionWrapper<Left::Output>;
+    type DefaultSelection = self::private::SkipSelectableExpressionBoundCheckWrapper<Left::Output>;
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self::private::SkipSelectableExpressionWrapper(
+        self::private::SkipSelectableExpressionBoundCheckWrapper(
             self.left
                 .source
                 .append_selection(self.right.source.default_selection()),
@@ -147,14 +147,14 @@ where
     // trait implementations to the inner type
     //
     // See https://github.com/diesel-rs/diesel/issues/3223 for details
-    type DefaultSelection = self::private::SkipSelectableExpressionWrapper<Left::Output>;
+    type DefaultSelection = self::private::SkipSelectableExpressionBoundCheckWrapper<Left::Output>;
 
     fn from_clause(&self) -> Self::FromClause {
         self.clone()
     }
 
     fn default_selection(&self) -> Self::DefaultSelection {
-        self::private::SkipSelectableExpressionWrapper(
+        self::private::SkipSelectableExpressionBoundCheckWrapper(
             self.left
                 .source
                 .append_selection(self.right.source.default_selection().nullable()),
@@ -448,9 +448,9 @@ mod private {
     use crate::{AppearsOnTable, QueryResult, SelectableExpression};
 
     #[derive(Debug, crate::query_builder::QueryId, Copy, Clone)]
-    pub struct SkipSelectableExpressionWrapper<T>(pub(super) T);
+    pub struct SkipSelectableExpressionBoundCheckWrapper<T>(pub(super) T);
 
-    impl<DB, T> QueryFragment<DB> for SkipSelectableExpressionWrapper<T>
+    impl<DB, T> QueryFragment<DB> for SkipSelectableExpressionBoundCheckWrapper<T>
     where
         T: QueryFragment<DB>,
         DB: Backend,
@@ -462,12 +462,12 @@ mod private {
 
     // The default select clause is only valid for no group by clause
     // anyway so we can just skip the recursive check here
-    impl<T> ValidGrouping<()> for SkipSelectableExpressionWrapper<T> {
+    impl<T> ValidGrouping<()> for SkipSelectableExpressionBoundCheckWrapper<T> {
         type IsAggregate = crate::expression::is_aggregate::No;
     }
 
     // This needs to use the expression impl
-    impl<QS, T> SelectClauseExpression<QS> for SkipSelectableExpressionWrapper<T>
+    impl<QS, T> SelectClauseExpression<QS> for SkipSelectableExpressionBoundCheckWrapper<T>
     where
         T: SelectClauseExpression<QS>,
     {
@@ -480,23 +480,27 @@ mod private {
     // the default select clause of all involved query sources is
     // valid too. We can skip the recursive check here.
     // This is the main optimization.
-    impl<QS, T> SelectableExpression<QS> for SkipSelectableExpressionWrapper<T> where
+    impl<QS, T> SelectableExpression<QS> for SkipSelectableExpressionBoundCheckWrapper<T> where
         Self: AppearsOnTable<QS>
     {
     }
 
-    impl<QS, T> AppearsOnTable<QS> for SkipSelectableExpressionWrapper<T> where Self: Expression {}
+    impl<QS, T> AppearsOnTable<QS> for SkipSelectableExpressionBoundCheckWrapper<T> where
+        Self: Expression
+    {
+    }
 
     // Expression must recurse the whole expression
     // as this is required for the return type of the query
-    impl<T> Expression for SkipSelectableExpressionWrapper<T>
+    impl<T> Expression for SkipSelectableExpressionBoundCheckWrapper<T>
     where
         T: Expression,
     {
         type SqlType = T::SqlType;
     }
 
-    impl<T, Selection> crate::util::TupleAppend<Selection> for SkipSelectableExpressionWrapper<T>
+    impl<T, Selection> crate::util::TupleAppend<Selection>
+        for SkipSelectableExpressionBoundCheckWrapper<T>
     where
         T: crate::util::TupleAppend<Selection>,
     {
