@@ -205,15 +205,7 @@ impl crate::r2d2::R2D2Connection for MysqlConnection {
     }
 
     fn is_broken(&mut self) -> bool {
-        match self.transaction_state.status.transaction_depth() {
-            // all transactions are closed
-            // so we don't consider this connection broken
-            Ok(None) => false,
-            // The transaction manager is in an error state
-            // or contains an open transaction
-            // Therefore we consider this connection broken
-            Err(_) | Ok(Some(_)) => true,
-        }
+        AnsiTransactionManager::is_broken_transaction_manager(self)
     }
 }
 
@@ -236,8 +228,6 @@ fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
 
 impl MysqlConnection {
     fn set_config_options(&mut self) -> QueryResult<()> {
-        crate::sql_query("SET sql_mode=(SELECT CONCAT(@@sql_mode, ',PIPES_AS_CONCAT'))")
-            .execute(self)?;
         crate::sql_query("SET time_zone = '+00:00';").execute(self)?;
         crate::sql_query("SET character_set_client = 'utf8mb4'").execute(self)?;
         crate::sql_query("SET character_set_connection = 'utf8mb4'").execute(self)?;

@@ -14,7 +14,7 @@ rust-version = "1.56.0"
 
 [dependencies]
 byteorder = { version = "1.0", optional = true }
-chrono = { version = "0.4.19", optional = true, default-features = false, features = ["clock", "std"] }
+chrono = { version = "0.4.20", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
 libsqlite3-sys = { version = ">=0.17.2, <0.26.0", optional = true, features = ["bundled_bindings"] }
 mysqlclient-sys = { version = "0.2.5", optional = true }
@@ -70,6 +70,7 @@ postgres_backend = ["diesel_derives/postgres", "bitflags", "byteorder", "itoa"]
 mysql_backend = ["diesel_derives/mysql", "byteorder"]
 returning_clauses_for_sqlite_3_35 = []
 i-implement-a-third-party-backend-and-opt-into-breaking-changes = []
+nightly-error-messages = []
 
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]

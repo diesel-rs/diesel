@@ -31,7 +31,7 @@ pub(crate) use self::private::{
 ///
 /// Implementing a custom backend requires enabling the
 /// `i-implement-a-third-party-backend-and-opt-into-breaking-changes` crate feature
-/// to get access to all nessesary type and trait implementations.
+/// to get access to all necessary type and trait implementations.
 ///
 /// Implementations of this trait should not assume details about how the
 /// connection is implemented.
@@ -202,6 +202,24 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::batch_insert_support`] for provided default implementations"
     )]
     type BatchInsertSupport;
+    /// Configures how this backend handles the Concat clauses in
+    /// select statements.
+    ///
+    /// This allows backends to provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "implementation for [`Concat`](crate::expression::Concat)"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "implementation for `Concat`"
+    )]
+    ///
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::concat_clause`] for provided default implementations"
+    )]
+    type ConcatClause;
     /// Configures how this backend handles the `DEFAULT VALUES` clause for
     /// insert statements.
     ///
@@ -274,6 +292,26 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::array_comparison`] for provided default implementations"
     )]
     type ArrayComparison;
+
+    /// Configures how this backend structures `SELECT` queries
+    ///
+    /// This allows backends to provide custom [`QueryFragment`](crate::query_builder::QueryFragment)
+    /// implementations for
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "`SelectStatement` and `BoxedSelectStatement`"
+    )]
+    #[cfg_attr(
+        not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+        doc = "[`SelectStatement`](crate::query_builder::SelectStatement) and
+               [`BoxedSelectStatement`](crate::query_builder::BoxedSelectStatement)"
+    )]
+    ///
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::select_statement_syntax`] for provided default implementations"
+    )]
+    type SelectStatementSyntax;
 }
 
 /// This module contains all options provided by diesel to configure the [`SqlDialect`] trait.
@@ -396,6 +434,19 @@ pub(crate) mod sql_dialect {
 
         impl SupportsBatchInsert for PostgresLikeBatchInsertSupport {}
     }
+    /// This module contains all reusable options to configure
+    /// [`SqlDialect::ConcatClause`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(crate) mod concat_clause {
+
+        /// Indicates that this backend uses the
+        /// `||` operator to select a concatenation
+        /// of two variables or strings
+        #[derive(Debug, Clone, Copy)]
+        pub struct ConcatWithPipesClause;
+    }
 
     /// This module contains all reusable options to configure
     /// [`SqlDialect::DefaultValueClauseForInsert`]
@@ -451,6 +502,18 @@ pub(crate) mod sql_dialect {
         /// per array element in `IN()` and `NOT IN()` expression
         #[derive(Debug, Copy, Clone)]
         pub struct AnsiSqlArrayComparison;
+    }
+
+    /// This module contains all reusable options to configure
+    /// [`SqlDialect::SelectStatementSyntax`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(crate) mod select_statement_syntax {
+        /// Indicates that this backend uses the default
+        /// ANSI select statement structure
+        #[derive(Debug, Copy, Clone)]
+        pub struct AnsiSqlSelectStatement;
     }
 }
 

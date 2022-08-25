@@ -1,8 +1,8 @@
-use ::time::{
-    Date as NaiveDate, Month, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
-};
 use std::convert::TryInto;
 use std::os::raw as libc;
+use time::{
+    Date as NaiveDate, Month, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
+};
 
 use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue};
@@ -211,7 +211,7 @@ mod tests {
     extern crate dotenvy;
     extern crate time;
 
-    use ::time::{
+    use time::{
         macros::{date, datetime, time},
         Date as NaiveDate, Duration, OffsetDateTime, Time as NaiveTime,
     };

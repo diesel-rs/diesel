@@ -2,11 +2,11 @@
 set -e
 
 SCRIPT=$(readlink -f $0)
-SCRIPTPATH=`dirname $SCRIPT`
+SCRIPTPATH=$(dirname "$SCRIPT")
 
-cd $SCRIPTPATH
+cd "$SCRIPTPATH"
 
-for dir in $(find . -maxdepth 1 -mindepth 1 -type d); do
-    echo $dir
-    (cd $dir && ./test_all)
+find . -maxdepth 1 -mindepth 1 -type d | while read -r dir; do
+    echo "$dir"
+    (cd "$dir" && ./test_all)
 done

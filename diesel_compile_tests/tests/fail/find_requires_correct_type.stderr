@@ -1,53 +1,81 @@
 error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
-  --> tests/fail/find_requires_correct_type.rs:20:33
+  --> tests/fail/find_requires_correct_type.rs:20:28
    |
 20 |     int_primary_key::table.find("1");
-   |                                 ^^^ the trait `diesel::Expression` is not implemented for `str`
+   |                            ^^^^ the trait `diesel::Expression` is not implemented for `str`
    |
+   = help: the following other types implement trait `diesel::Expression`:
+             &'a T
+             (T0, T1)
+             (T0, T1, T2)
+             (T0, T1, T2, T3)
+             (T0, T1, T2, T3, T4)
+             (T0, T1, T2, T3, T4, T5)
+             (T0, T1, T2, T3, T4, T5, T6)
+             (T0, T1, T2, T3, T4, T5, T6, T7)
+           and 124 others
    = note: required because of the requirements on the impl of `diesel::Expression` for `&str`
-   = note: 1 redundant requirements hidden
+   = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::operators::Eq<int_primary_key::columns::id, &str>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, &str>>>` for `SelectStatement<FromClause<int_primary_key::table>>`
 
 error[E0277]: the trait bound `str: ValidGrouping<()>` is not satisfied
-  --> tests/fail/find_requires_correct_type.rs:20:33
+  --> tests/fail/find_requires_correct_type.rs:20:28
    |
 20 |     int_primary_key::table.find("1");
-   |                                 ^^^ the trait `ValidGrouping<()>` is not implemented for `str`
+   |                            ^^^^ the trait `ValidGrouping<()>` is not implemented for `str`
    |
+   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+             <&'a T as ValidGrouping<GB>>
+             <(T0, T1) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2, T3) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2, T3, T4) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2, T3, T4, T5) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2, T3, T4, T5, T6) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
+           and 146 others
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `&str`
-   = note: 1 redundant requirements hidden
+   = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::operators::Eq<int_primary_key::columns::id, &str>`
    = note: required because of the requirements on the impl of `NonAggregate` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, &str>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<int_primary_key::columns::id, &str>>>` for `SelectStatement<FromClause<int_primary_key::table>>`
 
 error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
-  --> tests/fail/find_requires_correct_type.rs:22:36
+  --> tests/fail/find_requires_correct_type.rs:22:31
    |
 22 |     string_primary_key::table.find(1);
-   |                                    ^ the trait `diesel::Expression` is not implemented for `{integer}`
+   |                               ^^^^ the trait `diesel::Expression` is not implemented for `{integer}`
    |
-   = help: the following implementations were found:
-             <&'a T as diesel::Expression>
-             <(T0, T1) as diesel::Expression>
-             <(T0, T1, T2) as diesel::Expression>
-             <(T0, T1, T2, T3) as diesel::Expression>
-           and 127 others
+   = help: the following other types implement trait `diesel::Expression`:
+             &'a T
+             (T0, T1)
+             (T0, T1, T2)
+             (T0, T1, T2, T3)
+             (T0, T1, T2, T3, T4)
+             (T0, T1, T2, T3, T4, T5)
+             (T0, T1, T2, T3, T4, T5, T6)
+             (T0, T1, T2, T3, T4, T5, T6, T7)
+           and 124 others
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>>` for `SelectStatement<FromClause<string_primary_key::table>>`
 
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
-  --> tests/fail/find_requires_correct_type.rs:22:36
+  --> tests/fail/find_requires_correct_type.rs:22:31
    |
 22 |     string_primary_key::table.find(1);
-   |                                    ^ the trait `ValidGrouping<()>` is not implemented for `{integer}`
+   |                               ^^^^ the trait `ValidGrouping<()>` is not implemented for `{integer}`
    |
-   = help: the following implementations were found:
+   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
              <&'a T as ValidGrouping<GB>>
              <(T0, T1) as ValidGrouping<__GroupByClause>>
              <(T0, T1, T2) as ValidGrouping<__GroupByClause>>
              <(T0, T1, T2, T3) as ValidGrouping<__GroupByClause>>
-           and 149 others
+             <(T0, T1, T2, T3, T4) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2, T3, T4, T5) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2, T3, T4, T5, T6) as ValidGrouping<__GroupByClause>>
+             <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
+           and 146 others
    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>`
    = note: required because of the requirements on the impl of `NonAggregate` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>>` for `SelectStatement<FromClause<string_primary_key::table>>`

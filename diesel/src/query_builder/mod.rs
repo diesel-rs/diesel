@@ -103,10 +103,19 @@ pub(crate) use self::select_clause::SelectClauseExpression;
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
 pub(crate) use self::from_clause::{FromClause, NoFromClause};
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::select_statement::BoxedSelectStatement;
+
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
+#[doc(inline)]
+pub(crate) use self::select_statement::SelectStatement;
 
 pub(crate) use self::insert_statement::ColumnList;
-pub(crate) use self::select_statement::BoxedSelectStatement;
-pub(crate) use self::select_statement::SelectStatement;
 
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::query_builder::only::Only;

@@ -19,7 +19,7 @@ table! {
 #[diesel(postgres_type(name = "My_Type"))]
 pub struct MyType;
 
-#[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
+#[derive(Debug, PartialEq, FromSqlRow, AsExpression, Eq)]
 #[diesel(sql_type = MyType)]
 pub enum MyEnum {
     Foo,
@@ -98,7 +98,7 @@ table! {
 #[diesel(postgres_type(name = "My_Type", schema = "custom_schema"))]
 pub struct MyTypeInCustomSchema;
 
-#[derive(Debug, PartialEq, FromSqlRow, AsExpression)]
+#[derive(Debug, PartialEq, FromSqlRow, AsExpression, Eq)]
 #[diesel(sql_type = MyTypeInCustomSchema)]
 pub enum MyEnumInCustomSchema {
     Foo,

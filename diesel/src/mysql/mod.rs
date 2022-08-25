@@ -18,7 +18,7 @@ pub use self::connection::MysqlConnection;
 pub use self::query_builder::MysqlQueryBuilder;
 pub use self::value::{MysqlValue, NumericRepresentation};
 
-/// Data structures for MysqSQL types which have no corresponding Rust type
+/// Data structures for MySQL types which have no corresponding Rust type
 ///
 /// Most of these types are used to implement `ToSql` and `FromSql` for higher
 /// level types.

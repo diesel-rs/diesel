@@ -8,7 +8,7 @@ use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream, Parser, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parenthesized, Attribute, Expr, Ident, LitBool, LitStr, Path, TypePath};
+use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, Type, TypePath};
 
 use deprecated::ParseDeprecated;
 use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
@@ -18,6 +18,8 @@ use util::{
     SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE,
     TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
 };
+
+use crate::field::SelectExpr;
 
 pub struct AttributeSpanWrapper<T> {
     pub item: T,
@@ -32,8 +34,8 @@ pub enum FieldAttr {
     SqlType(Ident, TypePath),
     SerializeAs(Ident, TypePath),
     DeserializeAs(Ident, TypePath),
-    SelectExpression(Ident, Expr),
-    SelectExpressionType(Ident, TypePath),
+    SelectExpression(Ident, SelectExpr),
+    SelectExpressionType(Ident, Type),
 }
 
 #[derive(Clone)]
@@ -130,6 +132,8 @@ impl Parse for FieldAttr {
                     "sql_type",
                     "serialize_as",
                     "deserialize_as",
+                    "select_expression",
+                    "select_expression_type",
                 ],
             ),
         }

@@ -10,7 +10,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased 
 
-## [2.0.0] 2022-08-11
+## [2.0.0] 2022-08-29
 
 ### Added
 
@@ -219,6 +219,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   copying the value itself. This is useful for database backends like sqlite where you can directly share a buffer
   with the database. Beside of the changed signature, existing impls of this trait should remain unchanged in almost 
   all cases.
+
+* The `PIPES_AS_CONCAT` sql_mode is no longer set
+by default. This setting requires a modification to MySQL query parsing that is
+not supported by certain systems (such as Vitess). If you are using MySQL and
+executing raw queries with the `||` operator, you will need to rewrite your
+queries or set `PIPES_AS_CONCAT` manually.
 
 ### Fixed
 

@@ -294,7 +294,7 @@ fn foreign_key_field_with_column_rename() {
         id: i32,
     }
 
-    #[derive(Associations, Identifiable, Clone, Copy, PartialEq, Debug)]
+    #[derive(Associations, Identifiable, Clone, Copy, PartialEq, Debug, Eq)]
     #[diesel(belongs_to(User))]
     pub struct Post {
         id: i32,

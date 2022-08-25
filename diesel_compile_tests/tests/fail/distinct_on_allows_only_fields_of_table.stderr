@@ -1,15 +1,17 @@
-error[E0277]: the trait bound `posts::columns::id: SelectableExpression<users::table>` is not satisfied
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:23:30
+error[E0277]: Cannot select `posts::columns::id` from `users::table`
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:23:18
    |
 23 |     users::table.distinct_on(posts::id).get_results(&mut connection);
-   |                              ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |                  ^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
    |
-   = help: the following implementations were found:
+   = note: `posts::columns::id` is no valid selection for `users::table`
+   = help: the following other types implement trait `SelectableExpression<QS>`:
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <posts::columns::id as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
-           and 2 others
+             <posts::columns::id as SelectableExpression<posts::table>>
+             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
+             <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
    = note: required because of the requirements on the impl of `DistinctOnDsl<posts::columns::id>` for `users::table`
 
 error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text): SingleValue` is not satisfied
@@ -18,20 +20,32 @@ error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
    |                  ^^^^^^^^^^^ the trait `SingleValue` is not implemented for `(diesel::sql_types::Text, diesel::sql_types::Text)`
    |
+   = help: the following other types implement trait `SingleValue`:
+             Array<ST>
+             BigInt
+             Bool
+             Cidr
+             Datetime
+             Inet
+             Interval
+             Json
+           and 22 others
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
 
-error[E0277]: the trait bound `users::columns::name: SelectableExpression<posts::table>` is not satisfied
-  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:25:30
+error[E0277]: Cannot select `users::columns::name` from `posts::table`
+  --> tests/fail/distinct_on_allows_only_fields_of_table.rs:25:18
    |
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
-   |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
+   |                  ^^^^^^^^^^^ the trait `SelectableExpression<posts::table>` is not implemented for `users::columns::name`
    |
-   = help: the following implementations were found:
+   = note: `users::columns::name` is no valid selection for `posts::table`
+   = help: the following other types implement trait `SelectableExpression<QS>`:
              <users::columns::name as SelectableExpression<JoinOn<Join, On>>>
              <users::columns::name as SelectableExpression<Only<users::table>>>
              <users::columns::name as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <users::columns::name as SelectableExpression<diesel::internal::table_macro::Join<Left, Right, Inner>>>
-           and 2 others
+             <users::columns::name as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
+             <users::columns::name as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             <users::columns::name as SelectableExpression<users::table>>
    = note: required because of the requirements on the impl of `SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
 
@@ -51,11 +65,11 @@ note: required because of the requirements on the impl of `AppearsOnTable<posts:
 9  | |     }
 10 | | }
    | |_^
-   = note: 1 redundant requirements hidden
+   = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<posts::table>` for `(posts::columns::name, users::columns::name)`
    = note: required because of the requirements on the impl of `SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
-   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::table: TableNotEqual<users::table>` is not satisfied
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:25:18
@@ -63,6 +77,13 @@ error[E0277]: the trait bound `posts::table: TableNotEqual<users::table>` is not
 25 |     posts::table.distinct_on((posts::name, users::name)).get_result(&mut connection);
    |                  ^^^^^^^^^^^ the trait `TableNotEqual<users::table>` is not implemented for `posts::table`
    |
+   = help: the following other types implement trait `TableNotEqual<T>`:
+             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
+             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
+             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
    = note: required because of the requirements on the impl of `AppearsInFromClause<users::table>` for `posts::table`
 note: required because of the requirements on the impl of `AppearsOnTable<posts::table>` for `users::columns::name`
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:5:1
@@ -74,8 +95,8 @@ note: required because of the requirements on the impl of `AppearsOnTable<posts:
 9  | |     }
 10 | | }
    | |_^
-   = note: 1 redundant requirements hidden
+   = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<posts::table>` for `(posts::columns::name, users::columns::name)`
    = note: required because of the requirements on the impl of `SelectableExpression<posts::table>` for `(posts::columns::name, users::columns::name)`
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
-   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
