@@ -479,6 +479,7 @@ mod private {
     // The default select clause for joins is always valid assuming that
     // the default select clause of all involved query sources is
     // valid too. We can skip the recursive check here.
+    // This is the main optimization.
     impl<QS, T> SelectableExpression<QS> for SkipSelectableExpressionWrapper<T> where
         Self: AppearsOnTable<QS>
     {
