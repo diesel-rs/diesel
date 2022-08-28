@@ -10,7 +10,23 @@ pub trait ExpressionMethods: Expression + Sized {
     /// Creates a SQL `=` expression.
     ///
     /// Note that this function follows SQL semantics around `None`/`null` values,
-    /// so `column.eq(None)` will never match. Use [`column.is_null()`](ExpressionMethods::is_null()) instead.
+    /// so `eq(None)` will never match. Use [`is_null`](ExpressionMethods::is_null()) instead.
+    ///
+    ///
+    #[cfg_attr(
+        any(feature = "sqlite", feature = "postgres"),
+        doc = "To get behavior that is more like the Rust `=` operator you can also use the"
+    )]
+    #[cfg_attr(
+        feature = "sqlite",
+        doc = "sqlite-specific [`is`](crate::SqliteExpressionMethods::is())"
+    )]
+    #[cfg_attr(all(feature = "sqlite", feature = "postgres"), doc = "or the")]
+    #[cfg_attr(
+        feature = "postgres",
+        doc = "postgres-specific [`is_not_distinct_from`](crate::PgExpressionMethods::is_not_distinct_from())"
+    )]
+    #[cfg_attr(any(feature = "sqlite", feature = "postgres"), doc = ".")]
     ///
     /// # Example
     ///
