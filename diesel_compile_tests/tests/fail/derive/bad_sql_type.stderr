@@ -1,26 +1,25 @@
 error: unexpected end of input, expected `=`
-
-  = help: The correct format looks like `#[diesel(sql_type = Foo)]`
-
- --> $DIR/bad_sql_type.rs:5:9
+ --> tests/fail/derive/bad_sql_type.rs:5:18
   |
 5 | #[diesel(sql_type)]
-  |         ^^^^^^^^^^
+  |                  ^
+  |
+  = help: The correct format looks like `#[diesel(sql_type = Foo)]`
 
 error: expected `=`
- --> $DIR/bad_sql_type.rs:9:18
+ --> tests/fail/derive/bad_sql_type.rs:9:18
   |
 9 | #[diesel(sql_type(Foo))]
-  |                  ^^^^^
+  |                  ^
 
 error: expected identifier
-  --> $DIR/bad_sql_type.rs:13:21
+  --> tests/fail/derive/bad_sql_type.rs:13:21
    |
 13 | #[diesel(sql_type = "foo")]
    |                     ^^^^^
 
 error: expected identifier
-  --> $DIR/bad_sql_type.rs:17:21
+  --> tests/fail/derive/bad_sql_type.rs:17:21
    |
 17 | #[diesel(sql_type = 1omg)]
    |                     ^^^^

@@ -8,15 +8,18 @@ use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream, Parser, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, TypePath};
+use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, Type, TypePath};
 
 use deprecated::ParseDeprecated;
 use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use util::{
     parse_eq, parse_paren, unknown_attribute, BELONGS_TO_NOTE, COLUMN_NAME_NOTE,
-    DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE,
-    SQL_TYPE_NOTE, TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
+    DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, SELECT_EXPRESSION_NOTE,
+    SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE,
+    TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
 };
+
+use crate::field::SelectExpr;
 
 pub struct AttributeSpanWrapper<T> {
     pub item: T,
@@ -31,6 +34,8 @@ pub enum FieldAttr {
     SqlType(Ident, TypePath),
     SerializeAs(Ident, TypePath),
     DeserializeAs(Ident, TypePath),
+    SelectExpression(Ident, SelectExpr),
+    SelectExpressionType(Ident, Type),
 }
 
 #[derive(Clone)]
@@ -110,6 +115,14 @@ impl Parse for FieldAttr {
                 name,
                 parse_eq(input, DESERIALIZE_AS_NOTE)?,
             )),
+            "select_expression" => Ok(FieldAttr::SelectExpression(
+                name,
+                parse_eq(input, SELECT_EXPRESSION_NOTE)?,
+            )),
+            "select_expression_type" => Ok(FieldAttr::SelectExpressionType(
+                name,
+                parse_eq(input, SELECT_EXPRESSION_TYPE_NOTE)?,
+            )),
 
             _ => unknown_attribute(
                 &name,
@@ -119,6 +132,8 @@ impl Parse for FieldAttr {
                     "sql_type",
                     "serialize_as",
                     "deserialize_as",
+                    "select_expression",
+                    "select_expression_type",
                 ],
             ),
         }
@@ -132,7 +147,9 @@ impl Spanned for FieldAttr {
             | FieldAttr::ColumnName(ident, _)
             | FieldAttr::SqlType(ident, _)
             | FieldAttr::SerializeAs(ident, _)
-            | FieldAttr::DeserializeAs(ident, _) => ident.span(),
+            | FieldAttr::DeserializeAs(ident, _)
+            | FieldAttr::SelectExpression(ident, _)
+            | FieldAttr::SelectExpressionType(ident, _) => ident.span(),
         }
     }
 }

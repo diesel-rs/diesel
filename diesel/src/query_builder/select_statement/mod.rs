@@ -13,6 +13,9 @@
 
 pub(crate) mod boxed;
 mod dsl_impls;
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 pub(crate) use self::boxed::BoxedSelectStatement;
 
 use super::distinct_clause::NoDistinctClause;
@@ -27,8 +30,7 @@ use super::select_clause::*;
 use super::where_clause::*;
 use super::NoFromClause;
 use super::{AstPass, Query, QueryFragment};
-use crate::backend::Backend;
-use crate::backend::DieselReserveSpecialization;
+use crate::backend::{sql_dialect, Backend};
 use crate::expression::subselect::ValidSubselect;
 use crate::expression::*;
 use crate::query_builder::having_clause::NoHavingClause;
@@ -39,8 +41,25 @@ use crate::query_source::joins::{AppendSelection, Inner, Join};
 use crate::query_source::*;
 use crate::result::QueryResult;
 
+/// This type represents a select query
+///
+/// Using this type directly is only meaningful for custom backends
+/// that need to provide a custom [`QueryFragment`] implementation
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(
+        select,
+        from,
+        distinct,
+        where_clause,
+        order,
+        limit_offset,
+        group_by,
+        having,
+        locking
+    )
+)]
 #[derive(Debug, Clone, Copy, QueryId)]
-#[doc(hidden)]
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct SelectStatement<
     From,
@@ -53,14 +72,23 @@ pub struct SelectStatement<
     Having = NoHavingClause,
     Locking = NoLockingClause,
 > {
+    /// The select clause of the query
     pub(crate) select: Select,
+    /// The from clause of the query
     pub(crate) from: From,
+    /// The distinct clause of the query
     pub(crate) distinct: Distinct,
+    /// The where clause of the query
     pub(crate) where_clause: Where,
+    /// The order clause of the query
     pub(crate) order: Order,
+    /// The combined limit/offset clause of the query
     pub(crate) limit_offset: LimitOffset,
+    /// The group by clause of the query
     pub(crate) group_by: GroupBy,
+    /// The having clause of the query
     pub(crate) having: Having,
+    /// The locking clauise of the query
     pub(crate) locking: Locking,
 }
 
@@ -134,7 +162,21 @@ where
 impl<F, S, D, W, O, LOf, G, H, LC, DB> QueryFragment<DB>
     for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
 where
-    DB: Backend + DieselReserveSpecialization,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::SelectStatementSyntax>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::SelectStatementSyntax>>::walk_ast(self, pass)
+    }
+}
+
+impl<F, S, D, W, O, LOf, G, H, LC, DB>
+    QueryFragment<DB, sql_dialect::select_statement_syntax::AnsiSqlSelectStatement>
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+where
+    DB: Backend<
+        SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement,
+    >,
     S: QueryFragment<DB>,
     F: QueryFragment<DB>,
     D: QueryFragment<DB>,

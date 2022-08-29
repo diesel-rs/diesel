@@ -8,4 +8,4 @@ error[E0505]: cannot move out of `buf` because it is borrowed
    |                        ^^^ move out of `buf` occurs here
 18 |
 19 |         assert_eq!(iter.next().is_some(), true);
-   |                    ---- borrow later used here
+   |                    ----------- borrow later used here

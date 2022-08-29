@@ -356,7 +356,7 @@ extern "C" fn run_aggregator_step_function<ArgsSqlType, RetSqlType, Args, Ret, A
     .unwrap_or_else(|e| {
         Err(SqliteCallbackError::Panic(
             e,
-            format!("{}::step() paniced", std::any::type_name::<A>()),
+            format!("{}::step() panicked", std::any::type_name::<A>()),
         ))
     });
 
@@ -470,7 +470,7 @@ extern "C" fn run_aggregator_final_function<ArgsSqlType, RetSqlType, Args, Ret, 
     .unwrap_or_else(|e| {
         Err(SqliteCallbackError::Panic(
             e,
-            format!("{}::finalize() paniced", std::any::type_name::<A>()),
+            format!("{}::finalize() panicked", std::any::type_name::<A>()),
         ))
     });
     if let Err(e) = result {
@@ -573,7 +573,7 @@ where
             std::process::abort()
         }
         Err(SqliteCallbackError::Panic(_, msg)) => {
-            eprintln!("Collation function {} paniced", msg);
+            eprintln!("Collation function {} panicked", msg);
             std::process::abort()
         }
     }

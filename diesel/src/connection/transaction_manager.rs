@@ -38,11 +38,14 @@ pub trait TransactionManager<Conn: Connection> {
     /// Used to ensure that `begin_test_transaction` is not called when already
     /// inside of a transaction, and that operations are not run in a `InError`
     /// transaction manager.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     fn transaction_manager_status_mut(conn: &mut Conn) -> &mut TransactionManagerStatus;
 
     /// Executes the given function inside of a database transaction
     ///
-    /// Each implementation of this function needs to fullfill the documented
+    /// Each implementation of this function needs to fulfill the documented
     /// behaviour of [`Connection::transaction`]
     fn transaction<F, R, E>(conn: &mut Conn, callback: F) -> Result<R, E>
     where
@@ -66,17 +69,48 @@ pub trait TransactionManager<Conn: Connection> {
             },
         }
     }
+
+    /// This methods checks if the connection manager is considered to be broken
+    /// by connection pool implementations
+    ///
+    /// A connection manager is considered to be broken by default if it either
+    /// contains an open transaction (because you don't want to have connections
+    /// with open transactions in your pool) or when the transaction manager is
+    /// in an error state.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn is_broken_transaction_manager(conn: &mut Conn) -> bool {
+        match Self::transaction_manager_status_mut(conn).transaction_state() {
+            // all transactions are closed
+            // so we don't consider this connection broken
+            Ok(ValidTransactionManagerStatus {
+                in_transaction: None,
+            }) => false,
+            // The transaction manager is in an error state
+            // Therefore we consider this connection broken
+            Err(_) => true,
+            // The transaction manager contains a open transaction
+            // we do consider this connection broken
+            // if that transaction was not opened by `begin_test_transaction`
+            Ok(ValidTransactionManagerStatus {
+                in_transaction: Some(s),
+            }) => !s.test_transaction,
+        }
+    }
 }
 
 /// An implementation of `TransactionManager` which can be used for backends
 /// which use ANSI standard syntax for savepoints such as SQLite and PostgreSQL.
-#[allow(missing_debug_implementations, missing_copy_implementations)]
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct AnsiTransactionManager {
     pub(crate) status: TransactionManagerStatus,
 }
 
 /// Status of the transaction manager
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+)]
 #[derive(Debug)]
 pub enum TransactionManagerStatus {
     /// Valid status, the manager can run operations
@@ -157,6 +191,15 @@ impl TransactionManagerStatus {
             TransactionManagerStatus::InError => Err(Error::BrokenTransactionManager),
         }
     }
+
+    pub(crate) fn set_test_transaction_flag(&mut self) {
+        if let TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
+            in_transaction: Some(s),
+        }) = self
+        {
+            s.test_transaction = true;
+        }
+    }
 }
 
 /// Valid transaction status for the manager. Can return the current transaction depth
@@ -171,6 +214,7 @@ pub struct ValidTransactionManagerStatus {
 struct InTransactionStatus {
     transaction_depth: NonZeroU32,
     top_level_transaction_requires_rollback: bool,
+    test_transaction: bool,
 }
 
 impl ValidTransactionManagerStatus {
@@ -209,6 +253,7 @@ impl ValidTransactionManagerStatus {
                 self.in_transaction = Some(InTransactionStatus {
                     transaction_depth: NonZeroU32::new(1).expect("1 is non-zero"),
                     top_level_transaction_requires_rollback: false,
+                    test_transaction: false,
                 });
                 Ok(())
             }
@@ -331,6 +376,7 @@ where
                             Some(InTransactionStatus {
                                 transaction_depth,
                                 top_level_transaction_requires_rollback,
+                                ..
                             }),
                     }) if transaction_depth.get() > 1
                         && !*top_level_transaction_requires_rollback =>
@@ -376,6 +422,7 @@ where
                         Some(InTransactionStatus {
                             ref mut transaction_depth,
                             top_level_transaction_requires_rollback: true,
+                            ..
                         }),
                 }) = conn.transaction_state().status
                 {
@@ -793,14 +840,14 @@ mod test {
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
                     let second_trans_result = conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
                     result
                 })
             })
             .collect::<Vec<_>>();
         let second_trans_result =
             conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
 
         let mut results = threads
             .into_iter()
@@ -902,14 +949,14 @@ mod test {
                     assert_eq!(None, <AnsiTransactionManager as TransactionManager<MysqlConnection>>::transaction_manager_status_mut(conn).transaction_depth().expect("Transaction depth"));
 
                     let second_trans_result = conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+                    assert!(second_trans_result.is_ok(), "Expected the thread connections to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
                     result
                 })
             })
             .collect::<Vec<_>>();
         let second_trans_result =
             conn.transaction(|conn| crate::sql_query("SELECT 1").execute(conn));
-        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or commited, but second transaction exited with {:?}", second_trans_result);
+        assert!(second_trans_result.is_ok(), "Expected the main connection to have been rolled back or committed, but second transaction exited with {:?}", second_trans_result);
 
         let mut results = threads
             .into_iter()

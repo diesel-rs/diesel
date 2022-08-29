@@ -8,30 +8,9 @@ default features enabled using some set of dependencies. Those set of dependenci
 an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
-## [2.0.0 Rc1] 2022-07-22 
+## Unreleased 
 
-### Changed
-
-* We've changed the `RunQueryDsl::load_iter` interface to support different
-loading modes. This enables us to support more than one strategy for loading 
-values by iterator from the database. 
-
-### Added
-
-* Adds an `ipnet-address` feature flag, allowing support (de)serializing IP
-  values from the database using types provided by `ipnet`. This feature
-  may be enabled concurrently with the previously existing `network-address`
-  feature.
-* We've added support for loading values using libpq's row-by-row mode via 
-the new iterator interface
-
-### Fixed
-
-* Updated `ipnetwork` to allow version 0.20.
-* Updated `libsqlite3-sys` to allow version 0.25
-* Fix a bug that prevents connection reusing with r2d2 
-
-## [2.0.0 Rc0] 2022-04-22
+## [2.0.0] 2022-08-29
 
 ### Added
 
@@ -108,6 +87,17 @@ the new iterator interface
 * Added support for the usage of slices of references with `belonging_to` from `BelongingToDsl`
 
 * Added support for updating individual array elements `UPDATE table SET array_column[1] = true`
+
+* Adds an `ipnet-address` feature flag, allowing support (de)serializing IP
+  values from the database using types provided by `ipnet`. This feature
+  may be enabled concurrently with the previously existing `network-address`
+  feature.
+
+* We've added support for loading values using libpq's row-by-row mode via
+  the new iterator interface
+
+* Adds `Timestamp`, `Timestamptz` support for appropriate types for `time v0.3.9`.
+  This feature enables using the `time` crate as an alternative to `chrono`.
 
 ### Removed
 
@@ -229,6 +219,12 @@ the new iterator interface
   copying the value itself. This is useful for database backends like sqlite where you can directly share a buffer
   with the database. Beside of the changed signature, existing impls of this trait should remain unchanged in almost 
   all cases.
+
+* The `PIPES_AS_CONCAT` sql_mode is no longer set
+by default. This setting requires a modification to MySQL query parsing that is
+not supported by certain systems (such as Vitess). If you are using MySQL and
+executing raw queries with the `||` operator, you will need to rewrite your
+queries or set `PIPES_AS_CONCAT` manually.
 
 ### Fixed
 
@@ -1960,3 +1956,4 @@ the new iterator interface
 [1.4.8]: https://github.com/diesel-rs/diesel/compare/v1.4.7...v1.4.8
 [2.0.0 Rc0]: https://github.com/diesel-rs/diesel/compare/v.1.4.0...v2.0.0-rc0
 [2.0.0 Rc1]: https://github.com/diesel-rs/diesel/compare/v.2.0.0-rc0...v2.0.0-rc1
+[2.0.0]: https://github.com/diesel-rs/diesel/compare/v.1.4.0...v2.0.0

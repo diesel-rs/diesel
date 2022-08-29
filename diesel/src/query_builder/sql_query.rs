@@ -259,7 +259,7 @@ impl<Conn, Query, Value, ST> RunQueryDsl<Conn> for UncheckedBind<Query, Value, S
 pub struct BoxedSqlQuery<'f, DB: Backend, Query> {
     query: Query,
     sql: String,
-    binds: Vec<Box<dyn QueryFragment<DB> + 'f>>,
+    binds: Vec<Box<dyn QueryFragment<DB> + Send + 'f>>,
 }
 
 struct RawBind<ST, U> {
@@ -292,8 +292,8 @@ impl<'f, DB: Backend, Query> BoxedSqlQuery<'f, DB, Query> {
     pub fn bind<BindSt, Value>(mut self, b: Value) -> Self
     where
         DB: HasSqlType<BindSt>,
-        Value: ToSql<BindSt, DB> + 'f,
-        BindSt: 'f,
+        Value: ToSql<BindSt, DB> + Send + 'f,
+        BindSt: Send + 'f,
     {
         self.binds.push(Box::new(RawBind {
             value: b,
@@ -360,5 +360,19 @@ mod private {
         ) -> crate::QueryResult<()> {
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    fn assert_send<S: Send>(_: S) {}
+
+    #[test]
+    fn check_boxed_sql_query_is_send() {
+        let query = crate::sql_query("SELECT 1")
+            .into_boxed::<<crate::test_helpers::TestConnection as crate::Connection>::Backend>(
+        );
+
+        assert_send(query);
     }
 }

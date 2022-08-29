@@ -87,7 +87,7 @@ impl PgTypeMetadata {
 
     /// Create a new instance of this type based on dynamically lookup informations
     ///
-    /// This function is usfull for third party crates that may implement a custom
+    /// This function is useful for third party crates that may implement a custom
     /// postgres connection type and want to bring their own lookup mechanism.
     ///
     /// Otherwise refer to [PgMetadataLookup] for a way to automatically
@@ -136,9 +136,13 @@ impl SqlDialect for Pg {
 
     type InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword;
     type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
+    type ConcatClause = sql_dialect::concat_clause::ConcatWithPipesClause;
+
     type DefaultValueClauseForInsert = sql_dialect::default_value_clause::AnsiDefaultValueClause;
 
     type EmptyFromClauseSyntax = sql_dialect::from_clause_syntax::AnsiSqlFromClauseSyntax;
+    type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;
+
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
     type ArrayComparison = PgStyleArrayComparision;
 }

@@ -146,7 +146,7 @@ impl<'a> Drop for FunctionRow<'a> {
 
 impl<'a> FunctionRow<'a> {
     fn new(args: &mut [*mut ffi::sqlite3_value]) -> Self {
-        let lenghts = args.len();
+        let lengths = args.len();
         let args = unsafe {
             Vec::from_raw_parts(
                 // This cast is safe because:
@@ -166,17 +166,17 @@ impl<'a> FunctionRow<'a> {
                 // Into `ManualDrop` to prevent the dropping
                 args as *mut [*mut ffi::sqlite3_value] as *mut ffi::sqlite3_value
                     as *mut Option<OwnedSqliteValue>,
-                lenghts,
-                lenghts,
+                lengths,
+                lengths,
             )
         };
 
         Self {
-            field_count: lenghts,
+            field_count: lengths,
             args: Rc::new(RefCell::new(ManuallyDrop::new(
                 PrivateSqliteRow::Duplicated {
                     values: args,
-                    column_names: Rc::from(vec![None; lenghts]),
+                    column_names: Rc::from(vec![None; lengths]),
                 },
             ))),
             marker: PhantomData,

@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.0.0-rc.1"
+version = "2.0.0"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
@@ -14,7 +14,7 @@ rust-version = "1.56.0"
 
 [dependencies]
 byteorder = { version = "1.0", optional = true }
-chrono = { version = "0.4.19", optional = true, default-features = false, features = ["clock", "std"] }
+chrono = { version = "0.4.20", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
 libsqlite3-sys = { version = ">=0.17.2, <0.26.0", optional = true, features = ["bundled_bindings"] }
 mysqlclient-sys = { version = "0.2.5", optional = true }
@@ -33,9 +33,10 @@ bigdecimal = { version = ">=0.0.13, < 0.4.0", optional = true }
 bitflags = { version = "1.2.0", optional = true }
 r2d2 = { version = ">= 0.8.2, < 0.9.0", optional = true }
 itoa = { version = "1.0.0", optional = true }
+time = { version = "0.3.9", optional = true, features = ["macros", "formatting", "parsing"] }
 
 [dependencies.diesel_derives]
-version = "~2.0.0-rc.1"
+version = "~2.0.0"
 path = "../diesel_derives"
 
 [dev-dependencies]
@@ -46,7 +47,7 @@ quickcheck = "1.0.3"
 
 [features]
 default = ["with-deprecated", "32-column-tables"]
-extras = ["chrono", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
+extras = ["chrono", "time", "serde_json", "uuid", "network-address", "numeric", "r2d2"]
 unstable = ["diesel_derives/nightly"]
 large-tables = ["32-column-tables"]
 huge-tables = ["64-column-tables"]
@@ -54,6 +55,10 @@ huge-tables = ["64-column-tables"]
 64-column-tables = ["32-column-tables", "diesel_derives/64-column-tables"]
 128-column-tables = ["64-column-tables", "diesel_derives/128-column-tables"]
 postgres = ["pq-sys", "postgres_backend"]
+# If we bumped the diesel MSRV to 1.60, we could eliminate the `time` "formatting" and "parsing" features
+# from the main import and instead put them into the `sqlite` dependency here, as
+# sqlite = ["libsqlite3-sys", "diesel_derives/sqlite", "time?/formatting", "time?/parsing"]
+# https://doc.rust-lang.org/cargo/reference/features.html#dependency-features
 sqlite = ["libsqlite3-sys", "diesel_derives/sqlite"]
 mysql = ["mysqlclient-sys", "url", "percent-encoding", "bitflags", "mysql_backend"]
 without-deprecated = ["diesel_derives/without-deprecated"]
@@ -65,6 +70,7 @@ postgres_backend = ["diesel_derives/postgres", "bitflags", "byteorder", "itoa"]
 mysql_backend = ["diesel_derives/mysql", "byteorder"]
 returning_clauses_for_sqlite_3_35 = []
 i-implement-a-third-party-backend-and-opt-into-breaking-changes = []
+nightly-error-messages = []
 
 [package.metadata.docs.rs]
 features = ["postgres", "mysql", "sqlite", "extras"]

@@ -571,6 +571,11 @@ mod tests {
         let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 1);
         let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00.001+00:00'").eq(time));
         assert!(query.get_result::<bool>(connection).unwrap());
+
+        // and without millisecond
+        let time: DateTime<Utc> = Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0);
+        let query = select(sql::<TimestamptzSqlite>("'1970-01-01 00:00:00+00:00'").eq(time));
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]

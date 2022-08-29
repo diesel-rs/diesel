@@ -4,7 +4,7 @@ error: unknown attribute, expected one of `aggregate`, `not_sized`, `foreign_der
 5 | #[diesel(what = true)]
   |          ^^^^
 
-error: unknown attribute, expected one of `embed`, `column_name`, `sql_type`, `serialize_as`, `deserialize_as`
+error: unknown attribute, expected one of `embed`, `column_name`, `sql_type`, `serialize_as`, `deserialize_as`, `select_expression`, `select_expression_type`
   --> $DIR/unknown_attribute.rs:12:14
    |
 12 |     #[diesel(what = true)]

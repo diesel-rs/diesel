@@ -1,73 +1,104 @@
-error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::table>` is not satisfied
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:28:78
-   |
-28 |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(bad::age);
-   |                                                                              ^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
-   |
-   = help: the following implementations were found:
-             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
-             <bad::columns::age as SelectableExpression<Only<bad::table>>>
-             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <bad::columns::age as SelectableExpression<bad::table>>
-           and 2 others
-   = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<bad::columns::age>>`
+error[E0277]: Cannot select `bad::columns::age` from `users::table`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:28:68
+    |
+28  |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(bad::age);
+    |                                                                    ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+    |
+    = note: `bad::columns::age` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
+              <bad::columns::age as SelectableExpression<Only<bad::table>>>
+              <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
+              <bad::columns::age as SelectableExpression<bad::table>>
+              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
+              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+    = note: required because of the requirements on the impl of `Query` for `UpdateStatement<users::table, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::name>, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, diesel::query_builder::returning_clause::ReturningClause<bad::columns::age>>`
+note: required by a bound in `UpdateStatement::<T, U, V>::returning`
+   --> $DIESEL/src/query_builder/update_statement/mod.rs
+    |
+    |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
+    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
-error[E0277]: the trait bound `bad::columns::age: SelectableExpression<users::table>` is not satisfied
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:33:63
-   |
-33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
-   |                                                               ^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
-   |
-   = help: the following implementations were found:
-             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
-             <bad::columns::age as SelectableExpression<Only<bad::table>>>
-             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
-             <bad::columns::age as SelectableExpression<bad::table>>
-           and 2 others
-   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
-   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+error[E0277]: Cannot select `bad::columns::age` from `users::table`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
+    |
+33  |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+    |                                                     ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
+    |
+    = note: `bad::columns::age` is no valid selection for `users::table`
+    = help: the following other types implement trait `SelectableExpression<QS>`:
+              <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
+              <bad::columns::age as SelectableExpression<Only<bad::table>>>
+              <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
+              <bad::columns::age as SelectableExpression<bad::table>>
+              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
+              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> $DIESEL/src/query_builder/insert_statement/mod.rs
+    |
+    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<bad::table>>::Count == diesel::query_source::Once`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
-   |
-33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
-   |                                                     ^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
-   |
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
+    |
+33  |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+    |                                                     ^^^^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
+    |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:12:1
-   |
-12 | / table! {
-13 | |     bad {
-14 | |       id -> Integer,
-15 | |       age -> Integer,
-16 | |     }
-17 | | }
-   | |_^
-   = note: 1 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
-   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
-   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
-   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:12:1
+    |
+12  | / table! {
+13  | |     bad {
+14  | |       id -> Integer,
+15  | |       age -> Integer,
+16  | |     }
+17  | | }
+    | |_^
+    = note: 1 redundant requirement hidden
+    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
+    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> $DIESEL/src/query_builder/insert_statement/mod.rs
+    |
+    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not satisfied
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
-   |
-33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
-   |                                                     ^^^^^^^^^ the trait `TableNotEqual<bad::table>` is not implemented for `users::table`
-   |
-   = note: required because of the requirements on the impl of `AppearsInFromClause<bad::table>` for `users::table`
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
+    |
+33  |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+    |                                                     ^^^^^^^^^ the trait `TableNotEqual<bad::table>` is not implemented for `users::table`
+    |
+    = help: the following other types implement trait `TableNotEqual<T>`:
+              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
+              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+              <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
+              <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+    = note: required because of the requirements on the impl of `AppearsInFromClause<bad::table>` for `users::table`
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:12:1
-   |
-12 | / table! {
-13 | |     bad {
-14 | |       id -> Integer,
-15 | |       age -> Integer,
-16 | |     }
-17 | | }
-   | |_^
-   = note: 1 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
-   = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
-   = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::internal::derives::as_expression::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
-   = note: this error originates in the macro `$crate::__diesel_column` (in Nightly builds, run with -Z macro-backtrace for more info)
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:12:1
+    |
+12  | / table! {
+13  | |     bad {
+14  | |       id -> Integer,
+15  | |       age -> Integer,
+16  | |     }
+17  | | }
+    | |_^
+    = note: 1 redundant requirement hidden
+    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
+    = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
+    = note: required because of the requirements on the impl of `Query` for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &std::string::String>>>,), users::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<(users::columns::name, bad::columns::age)>>`
+note: required by a bound in `InsertStatement::<T, U, Op>::returning`
+   --> $DIESEL/src/query_builder/insert_statement/mod.rs
+    |
+    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
+    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
+    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

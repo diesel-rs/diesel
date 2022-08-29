@@ -27,11 +27,7 @@ jobs:
       shell: bash
       run: |
         echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly
-        profile: minimal
-        override: true
+    - uses: dtolnay/rust-toolchain@nightly
     - name: Install dependencies
       run: |
         sudo apt-get update

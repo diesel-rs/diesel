@@ -40,6 +40,9 @@ pub(crate) mod select_by;
 mod sql_literal;
 pub(crate) mod subselect;
 
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::operators::Concat;
+
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
 // for every item in this module. We reexport
@@ -305,6 +308,13 @@ where
 /// Notably, columns will not implement this trait for the right side of a left
 /// join. To select a column or expression using a column from the right side of
 /// a left join, you must call `.nullable()` on it.
+#[cfg_attr(
+    feature = "nightly-error-messages",
+    rustc_on_unimplemented(
+        message = "Cannot select `{Self}` from `{QS}`",
+        note = "`{Self}` is no valid selection for `{QS}`"
+    )
+)]
 pub trait SelectableExpression<QS: ?Sized>: AppearsOnTable<QS> {}
 
 impl<T: ?Sized, QS> SelectableExpression<QS> for Box<T>
@@ -446,7 +456,7 @@ where
 /// Implementations of this trait must ensure that aggregate expressions are
 /// not mixed with non-aggregate expressions.
 ///
-/// For generic types, you can determine if your sub-expresssions can appear
+/// For generic types, you can determine if your sub-expressions can appear
 /// together using the [`MixedAggregates`] trait.
 ///
 /// `GroupByClause` will be a tuple containing the set of expressions appearing

@@ -1,5 +1,4 @@
 use proc_macro2::{Span, TokenStream};
-use quote::ToTokens;
 use syn::spanned::Spanned;
 use syn::{Field as SynField, Ident, Index, Type};
 
@@ -13,6 +12,8 @@ pub struct Field {
     pub sql_type: Option<AttributeSpanWrapper<Type>>,
     pub serialize_as: Option<AttributeSpanWrapper<Type>>,
     pub deserialize_as: Option<AttributeSpanWrapper<Type>>,
+    pub select_expression: Option<AttributeSpanWrapper<SelectExpr>>,
+    pub select_expression_type: Option<AttributeSpanWrapper<Type>>,
     pub embed: Option<AttributeSpanWrapper<bool>>,
 }
 
@@ -27,6 +28,8 @@ impl Field {
         let mut serialize_as = None;
         let mut deserialize_as = None;
         let mut embed = None;
+        let mut select_expression = None;
+        let mut select_expression_type = None;
 
         for attr in parse_attributes(attrs) {
             let attribute_span = attr.attribute_span;
@@ -60,6 +63,20 @@ impl Field {
                         ident_span,
                     })
                 }
+                FieldAttr::SelectExpression(_, value) => {
+                    select_expression = Some(AttributeSpanWrapper {
+                        item: value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SelectExpressionType(_, value) => {
+                    select_expression_type = Some(AttributeSpanWrapper {
+                        item: value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
                 FieldAttr::Embed(_) => {
                     embed = Some(AttributeSpanWrapper {
                         item: true,
@@ -88,6 +105,8 @@ impl Field {
             sql_type,
             serialize_as,
             deserialize_as,
+            select_expression,
+            select_expression_type,
             embed,
         }
     }
@@ -125,11 +144,53 @@ pub enum FieldName {
     Unnamed(Index),
 }
 
-impl ToTokens for FieldName {
+impl quote::ToTokens for FieldName {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match *self {
             FieldName::Named(ref x) => x.to_tokens(tokens),
             FieldName::Unnamed(ref x) => x.to_tokens(tokens),
+        }
+    }
+}
+
+/// We use this instead of directly `syn::Expr` to reduce compilation time
+///
+/// `syn::Expr` does not properly support tuples when `syn/full` feature is
+/// not enabled, and that feature slightly increases compilation time
+#[allow(clippy::large_enum_variant)]
+pub enum SelectExpr {
+    Expr(syn::Expr),
+    Tuple {
+        paren_token: syn::token::Paren,
+        content: proc_macro2::TokenStream,
+    },
+}
+
+impl quote::ToTokens for SelectExpr {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            SelectExpr::Expr(ref e) => e.to_tokens(tokens),
+            SelectExpr::Tuple {
+                ref paren_token,
+                ref content,
+            } => paren_token.surround(tokens, |tokens| content.to_tokens(tokens)),
+        }
+    }
+}
+
+impl syn::parse::Parse for SelectExpr {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let lookahead = input.lookahead1();
+
+        if lookahead.peek(syn::token::Paren) {
+            let content;
+            let paren_token = syn::parenthesized!(content in input);
+            Ok(Self::Tuple {
+                paren_token,
+                content: content.parse()?,
+            })
+        } else {
+            input.parse::<syn::Expr>().map(Self::Expr)
         }
     }
 }

@@ -19,7 +19,7 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
         column_names: &mut Option<Rc<[Option<String>]>>,
         field_count: usize,
     ) -> Option<QueryResult<SqliteRow<'stmt, 'query>>> {
-        // We don't own the statement. There is another existing reference, likly because
+        // We don't own the statement. There is another existing reference, likely because
         // a user stored the row in some long time container before calling next another time
         // In this case we copy out the current values into a temporary store and advance
         // the statement iterator internally afterwards
