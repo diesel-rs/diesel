@@ -1,40 +1,25 @@
 use std::borrow::Cow;
 use std::error::Error;
 
+#[cfg(feature = "postgres")]
+use super::ForeignKeyConstraint;
 use diesel::backend::Backend;
 use diesel::connection::LoadConnection;
-use diesel::deserialize::{FromSql, FromSqlRow};
+use diesel::deserialize::FromSql;
 use diesel::dsl::*;
-use diesel::expression::{is_aggregate, QueryMetadata, ValidGrouping};
+use diesel::expression::QueryMetadata;
 #[cfg(feature = "mysql")]
 use diesel::mysql::Mysql;
 #[cfg(feature = "postgres")]
 use diesel::pg::Pg;
-use diesel::query_builder::{QueryFragment, QueryId};
+use diesel::query_builder::QueryFragment;
 use diesel::*;
 
-use self::information_schema::{columns, key_column_usage, table_constraints, tables};
-use super::data_structures::*;
+use self::information_schema::{key_column_usage, table_constraints, tables};
 use super::inference;
 use super::table_data::TableName;
-use crate::print_schema::ColumnSorting;
 
-pub trait UsesInformationSchema: Backend {
-    type TypeColumn: SelectableExpression<self::information_schema::columns::table, SqlType = sql_types::Text>
-        + ValidGrouping<(), IsAggregate = is_aggregate::No>
-        + QueryId
-        + QueryFragment<Self>;
-
-    type TypeSchema: SelectableExpression<
-            self::information_schema::columns::table,
-            SqlType = sql_types::Nullable<sql_types::Text>,
-        > + ValidGrouping<()>
-        + QueryId
-        + QueryFragment<Self>;
-
-    fn type_column() -> Self::TypeColumn;
-    fn type_schema() -> Self::TypeSchema;
-
+pub trait DefaultSchema: Backend {
     fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
         C: LoadConnection<Backend = Self>,
@@ -42,18 +27,7 @@ pub trait UsesInformationSchema: Backend {
 }
 
 #[cfg(feature = "postgres")]
-impl UsesInformationSchema for Pg {
-    type TypeColumn = self::information_schema::columns::udt_name;
-    type TypeSchema = diesel::dsl::Nullable<self::information_schema::columns::udt_schema>;
-
-    fn type_column() -> Self::TypeColumn {
-        self::information_schema::columns::udt_name
-    }
-
-    fn type_schema() -> Self::TypeSchema {
-        self::information_schema::columns::udt_schema.nullable()
-    }
-
+impl DefaultSchema for Pg {
     fn default_schema<C>(_conn: &mut C) -> QueryResult<String> {
         Ok("public".into())
     }
@@ -63,18 +37,7 @@ impl UsesInformationSchema for Pg {
 sql_function!(fn database() -> VarChar);
 
 #[cfg(feature = "mysql")]
-impl UsesInformationSchema for Mysql {
-    type TypeColumn = self::information_schema::columns::column_type;
-    type TypeSchema = diesel::dsl::AsExprOf<Option<String>, sql_types::Nullable<sql_types::Text>>;
-
-    fn type_column() -> Self::TypeColumn {
-        self::information_schema::columns::column_type
-    }
-
-    fn type_schema() -> Self::TypeSchema {
-        None.into_sql()
-    }
-
+impl DefaultSchema for Mysql {
     fn default_schema<C>(conn: &mut C) -> QueryResult<String>
     where
         C: LoadConnection<Backend = Self>,
@@ -85,7 +48,7 @@ impl UsesInformationSchema for Mysql {
 }
 
 #[allow(clippy::module_inception)]
-mod information_schema {
+pub mod information_schema {
     use diesel::prelude::{allow_tables_to_appear_in_same_query, table};
 
     table! {
@@ -93,20 +56,6 @@ mod information_schema {
             table_schema -> VarChar,
             table_name -> VarChar,
             table_type -> VarChar,
-        }
-    }
-
-    table! {
-        information_schema.columns (table_schema, table_name, column_name) {
-            table_schema -> VarChar,
-            table_name -> VarChar,
-            column_name -> VarChar,
-            #[sql_name = "is_nullable"]
-            __is_nullable -> VarChar,
-            ordinal_position -> BigInt,
-            udt_name -> VarChar,
-            udt_schema -> VarChar,
-            column_type -> VarChar,
         }
     }
 
@@ -144,97 +93,10 @@ mod information_schema {
     allow_tables_to_appear_in_same_query!(key_column_usage, table_constraints);
 }
 
-pub fn get_table_data<'a, Conn>(
-    conn: &mut Conn,
-    table: &'a TableName,
-    column_sorting: &ColumnSorting,
-) -> QueryResult<Vec<ColumnInformation>>
-where
-    Conn: LoadConnection,
-    Conn::Backend: UsesInformationSchema,
-    ColumnInformation: FromSqlRow<
-        SqlTypeOf<(
-            columns::column_name,
-            <Conn::Backend as UsesInformationSchema>::TypeColumn,
-            <Conn::Backend as UsesInformationSchema>::TypeSchema,
-            columns::__is_nullable,
-        )>,
-        Conn::Backend,
-    >,
-    (
-        columns::column_name,
-        <Conn::Backend as UsesInformationSchema>::TypeColumn,
-        <Conn::Backend as UsesInformationSchema>::TypeSchema,
-        columns::__is_nullable,
-    ): ValidGrouping<()>,
-    String: FromSql<sql_types::Text, Conn::Backend>,
-    Option<String>: FromSql<sql_types::Nullable<sql_types::Text>, Conn::Backend>,
-    Order<
-        Filter<
-            Filter<
-                Select<
-                    columns::table,
-                    (
-                        columns::column_name,
-                        <Conn::Backend as UsesInformationSchema>::TypeColumn,
-                        <Conn::Backend as UsesInformationSchema>::TypeSchema,
-                        columns::__is_nullable,
-                    ),
-                >,
-                Eq<columns::table_name, &'a String>,
-            >,
-            Eq<columns::table_schema, Cow<'a, String>>,
-        >,
-        columns::ordinal_position,
-    >: QueryFragment<Conn::Backend>,
-    Order<
-        Filter<
-            Filter<
-                Select<
-                    columns::table,
-                    (
-                        columns::column_name,
-                        <Conn::Backend as UsesInformationSchema>::TypeColumn,
-                        <Conn::Backend as UsesInformationSchema>::TypeSchema,
-                        columns::__is_nullable,
-                    ),
-                >,
-                Eq<columns::table_name, &'a String>,
-            >,
-            Eq<columns::table_schema, Cow<'a, String>>,
-        >,
-        columns::column_name,
-    >: QueryFragment<Conn::Backend>,
-    Conn::Backend: QueryMetadata<(
-            sql_types::Text,
-            sql_types::Text,
-            sql_types::Nullable<sql_types::Text>,
-            sql_types::Text,
-        )> + 'static,
-{
-    use self::information_schema::columns::dsl::*;
-
-    let schema_name = match table.schema {
-        Some(ref name) => Cow::Borrowed(name),
-        None => Cow::Owned(Conn::Backend::default_schema(conn)?),
-    };
-
-    let type_column = Conn::Backend::type_column();
-    let type_schema = Conn::Backend::type_schema();
-    let query = columns
-        .select((column_name, type_column, type_schema, __is_nullable))
-        .filter(table_name.eq(&table.sql_name))
-        .filter(table_schema.eq(schema_name));
-    match column_sorting {
-        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
-        ColumnSorting::Name => query.order(column_name).load(conn),
-    }
-}
-
 pub fn get_primary_keys<'a, Conn>(conn: &mut Conn, table: &'a TableName) -> QueryResult<Vec<String>>
 where
     Conn: LoadConnection,
-    Conn::Backend: UsesInformationSchema,
+    Conn::Backend: DefaultSchema,
     String: FromSql<sql_types::Text, Conn::Backend>,
     Order<
         Filter<
@@ -284,7 +146,7 @@ pub fn load_table_names<'a, Conn>(
 ) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>>
 where
     Conn: LoadConnection,
-    Conn::Backend: UsesInformationSchema + 'static,
+    Conn::Backend: DefaultSchema + 'static,
     String: FromSql<sql_types::Text, Conn::Backend>,
     Filter<
         Filter<
@@ -536,38 +398,6 @@ mod tests {
         assert_eq!(
             vec!["id".to_string(), "id2".to_string()],
             get_primary_keys(&mut connection, &table_2).unwrap()
-        );
-    }
-
-    #[test]
-    fn get_table_data_loads_column_information() {
-        let mut connection = connection();
-
-        diesel::sql_query("CREATE SCHEMA test_schema")
-            .execute(&mut connection)
-            .unwrap();
-        diesel::sql_query(
-                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)",
-            ).execute(&mut connection)
-            .unwrap();
-        diesel::sql_query("CREATE TABLE test_schema.table_2 (array_col VARCHAR[] NOT NULL)")
-            .execute(&mut connection)
-            .unwrap();
-
-        let table_1 = TableName::new("table_1", "test_schema");
-        let table_2 = TableName::new("table_2", "test_schema");
-        let pg_catalog = Some(String::from("pg_catalog"));
-        let id = ColumnInformation::new("id", "int4", pg_catalog.clone(), false);
-        let text_col = ColumnInformation::new("text_col", "varchar", pg_catalog.clone(), true);
-        let not_null = ColumnInformation::new("not_null", "text", pg_catalog.clone(), false);
-        let array_col = ColumnInformation::new("array_col", "_varchar", pg_catalog, false);
-        assert_eq!(
-            Ok(vec![id, text_col, not_null]),
-            get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)
-        );
-        assert_eq!(
-            Ok(vec![array_col]),
-            get_table_data(&mut connection, &table_2, &ColumnSorting::OrdinalPosition)
         );
     }
 
