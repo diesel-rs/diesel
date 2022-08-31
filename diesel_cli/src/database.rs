@@ -172,7 +172,8 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
         }
         #[cfg(feature = "sqlite")]
         Backend::Sqlite => {
-            if !::std::path::Path::new(database_url).exists() {
+            let path = path_from_sqlite_url(database_url)?;
+            if !path.exists() {
                 println!("Creating database: {}", database_url);
                 SqliteConnection::establish(database_url)?;
             }
@@ -359,6 +360,23 @@ fn change_database_of_url(database_url: &str, default_database: &str) -> (String
     let mut new_url = base.join(default_database).unwrap();
     new_url.set_query(base.query());
     (database, new_url.into())
+}
+
+#[cfg(feature = "sqlite")]
+fn path_from_sqlite_url(database_url: &str) -> DatabaseResult<::std::path::PathBuf> {
+    match ::url::Url::parse(database_url) {
+        Ok(url) if url.scheme() == "file" => Ok(url.to_file_path().map_err(|_err| {
+            result::ConnectionError::InvalidConnectionUrl(String::from(database_url))
+        })?),
+        Err(::url::ParseError::RelativeUrlWithoutBase) => {
+            // assume a bare path
+            Ok(::std::path::PathBuf::from(database_url))
+        }
+        _ => {
+            // invalid URL or scheme
+            Err(result::ConnectionError::InvalidConnectionUrl(String::from(database_url)).into())
+        }
+    }
 }
 
 fn handle_error<E: Error, T>(error: E) -> T {
