@@ -9,6 +9,25 @@ use crate::sql_types::{SingleValue, SqlType};
 pub trait ExpressionMethods: Expression + Sized {
     /// Creates a SQL `=` expression.
     ///
+    /// Note that this function follows SQL semantics around `None`/`null` values,
+    /// so `eq(None)` will never match. Use [`is_null`](ExpressionMethods::is_null()) instead.
+    ///
+    ///
+    #[cfg_attr(
+        any(feature = "sqlite", feature = "postgres"),
+        doc = "To get behavior that is more like the Rust `=` operator you can also use the"
+    )]
+    #[cfg_attr(
+        feature = "sqlite",
+        doc = "sqlite-specific [`is`](crate::SqliteExpressionMethods::is())"
+    )]
+    #[cfg_attr(all(feature = "sqlite", feature = "postgres"), doc = "or the")]
+    #[cfg_attr(
+        feature = "postgres",
+        doc = "postgres-specific [`is_not_distinct_from`](crate::PgExpressionMethods::is_not_distinct_from())"
+    )]
+    #[cfg_attr(any(feature = "sqlite", feature = "postgres"), doc = ".")]
+    ///
     /// # Example
     ///
     /// ```rust
@@ -21,6 +40,32 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(1), data.first(connection));
     /// # }
     /// ```
+    ///
+    /// Matching against `None` follows SQL semantics:
+    /// ```rust
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use schema::animals::dsl::*;
+    /// #     let connection = &mut establish_connection();
+    /// #
+    /// let data = animals
+    ///     .select(species)
+    ///     .filter(name.eq::<Option<String>>(None))
+    ///     .first::<String>(connection);
+    /// assert_eq!(Err(diesel::NotFound), data);
+    ///
+    /// let data = animals
+    ///     .select(species)
+    ///     .filter(name.is_null())
+    ///     .first::<String>(connection)?;
+    /// assert_eq!("spider", data);
+    /// #     Ok(())
+    /// # }
     #[doc(alias = "=")]
     fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
     where
