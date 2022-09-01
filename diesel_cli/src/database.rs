@@ -363,6 +363,8 @@ fn change_database_of_url(database_url: &str, default_database: &str) -> (String
 }
 
 #[cfg(feature = "sqlite")]
+/// sqlite accepts either file: URLs, or bare paths (the latter of which may be relative).
+/// Check for which case we're in and return the path if we can retrieve it.
 fn path_from_sqlite_url(database_url: &str) -> DatabaseResult<::std::path::PathBuf> {
     if database_url.starts_with("file:/") {
         // looks like a file URL
