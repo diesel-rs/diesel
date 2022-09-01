@@ -364,18 +364,23 @@ fn change_database_of_url(database_url: &str, default_database: &str) -> (String
 
 #[cfg(feature = "sqlite")]
 fn path_from_sqlite_url(database_url: &str) -> DatabaseResult<::std::path::PathBuf> {
-    match ::url::Url::parse(database_url) {
-        Ok(url) if url.scheme() == "file" => Ok(url.to_file_path().map_err(|_err| {
-            result::ConnectionError::InvalidConnectionUrl(String::from(database_url))
-        })?),
-        Err(::url::ParseError::RelativeUrlWithoutBase) => {
-            // assume a bare path
-            Ok(::std::path::PathBuf::from(database_url))
+    if database_url.starts_with("file:/") {
+        // looks like a file URL
+        match ::url::Url::parse(database_url) {
+            Ok(url) if url.scheme() == "file" => Ok(url.to_file_path().map_err(|_err| {
+                result::ConnectionError::InvalidConnectionUrl(String::from(database_url))
+            })?),
+            _ => {
+                // invalid URL or scheme
+                Err(
+                    result::ConnectionError::InvalidConnectionUrl(String::from(database_url))
+                        .into(),
+                )
+            }
         }
-        _ => {
-            // invalid URL or scheme
-            Err(result::ConnectionError::InvalidConnectionUrl(String::from(database_url)).into())
-        }
+    } else {
+        // assume it's a bare path
+        Ok(::std::path::PathBuf::from(database_url))
     }
 }
 
