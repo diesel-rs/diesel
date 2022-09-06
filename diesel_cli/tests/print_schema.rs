@@ -206,6 +206,30 @@ fn print_schema_specifying_schema_name_with_custom_type() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_custom_types_check_default_derives() {
+    test_print_schema(
+        "print_schema_custom_types_check_default_derives",
+        vec!["--with-docs"],
+    )
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_custom_types_overriding_derives_works() {
+    test_print_schema(
+        "print_schema_custom_types_overriding_derives_works",
+        vec![
+            "--with-docs",
+            "--custom-type-derives",
+            "diesel::sql_types::SqlType",
+            "--custom-type-derives",
+            "core::fmt::Debug",
+        ],
+    )
+}
+
+#[test]
 #[cfg(feature = "sqlite")]
 fn print_schema_generated_columns() {
     test_print_schema("print_schema_generated_columns", vec![])

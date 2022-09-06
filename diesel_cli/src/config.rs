@@ -69,6 +69,8 @@ pub struct PrintSchema {
     pub import_types: Option<Vec<String>>,
     #[serde(default)]
     pub generate_missing_sql_type_definitions: Option<bool>,
+    #[serde(default)]
+    pub custom_type_derives: Option<Vec<String>>,
 }
 
 impl PrintSchema {
@@ -96,6 +98,10 @@ impl PrintSchema {
                 *patch_file = base.join(&patch_file);
             }
         }
+    }
+
+    pub fn custom_type_derives(&self) -> &[String] {
+        self.custom_type_derives.as_deref().unwrap_or_default()
     }
 }
 

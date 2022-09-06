@@ -543,6 +543,11 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
         config.generate_missing_sql_type_definitions = Some(false);
     }
 
+    if let Some(derives) = matches.get_many("custom-type-derives") {
+        let derives = derives.cloned().collect();
+        config.custom_type_derives = Some(derives);
+    }
+
     run_print_schema(&database_url, &config, &mut stdout())?;
     Ok(())
 }
