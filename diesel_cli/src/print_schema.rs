@@ -209,6 +209,7 @@ pub fn output_schema(
             backend,
             types_sorted: custom_types_sorted,
             with_docs: config.with_docs,
+            #[cfg(feature = "postgres")]
             derives: config.custom_type_derives(),
         },
         import_types: config.import_types(),
@@ -231,14 +232,15 @@ pub fn output_schema(
     Ok(out)
 }
 
-struct CustomTypeList<'a> {
+struct CustomTypeList {
     backend: Backend,
     types_sorted: Vec<ColumnType>,
     with_docs: bool,
-    derives: &'a [String],
+    #[cfg(feature = "postgres")]
+    derives: Vec<String>,
 }
 
-impl<'a> CustomTypeList<'a> {
+impl CustomTypeList {
     #[cfg(feature = "postgres")]
     fn position(&self, tpe: &str) -> Option<usize> {
         self.types_sorted
@@ -248,7 +250,7 @@ impl<'a> CustomTypeList<'a> {
 }
 
 #[allow(clippy::print_in_format_impl)]
-impl<'a> Display for CustomTypeList<'a> {
+impl<'a> Display for CustomTypeList {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.types_sorted.is_empty() {
             return Ok(());
@@ -350,7 +352,7 @@ struct TableDefinitions<'a> {
     fk_constraints: Vec<ForeignKeyConstraint>,
     include_docs: bool,
     import_types: Option<&'a [String]>,
-    custom_type_defs: CustomTypeList<'a>,
+    custom_type_defs: CustomTypeList,
 }
 
 impl<'a> Display for TableDefinitions<'a> {
@@ -406,7 +408,7 @@ struct TableDefinition<'a> {
     table: &'a TableData,
     include_docs: bool,
     import_types: Option<&'a [String]>,
-    custom_type_defs: &'a CustomTypeList<'a>,
+    custom_type_defs: &'a CustomTypeList,
 }
 
 impl<'a> Display for TableDefinition<'a> {
