@@ -66,6 +66,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
+    /// ```
     #[doc(alias = "=")]
     fn eq<T>(self, other: T) -> dsl::Eq<Self, T>
     where
@@ -202,6 +203,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
+    /// ```
     // This method is part of the public API,
     // so we cannot just change the name to appease clippy
     // (Otherwise it's also named after the `IS NULL` sql expression
@@ -233,6 +235,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("dog", data);
     /// #     Ok(())
     /// # }
+    /// ```
     // This method is part of the public API,
     // so we cannot just change the name to appease clippy
     // (Otherwise it's also named after the `IS NOT NULL` sql expression
@@ -356,6 +359,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("Sean", data);
     /// #     Ok(())
     /// # }
+    /// ```
     #[doc(alias = "<=")]
     fn le<T>(self, other: T) -> dsl::LtEq<Self, T>
     where
@@ -420,6 +424,7 @@ pub trait ExpressionMethods: Expression + Sized {
     /// assert_eq!("spider", data);
     /// #     Ok(())
     /// # }
+    /// ```
     fn not_between<T, U>(self, lower: T, upper: U) -> dsl::NotBetween<Self, T, U>
     where
         Self::SqlType: SqlType,
