@@ -6,7 +6,7 @@ use crate::query_source::QuerySource;
 
 #[doc(hidden)]
 pub struct DefaultSelectClause<QS: AsQuerySource> {
-    default_seletion: <QS::QuerySource as QuerySource>::DefaultSelection,
+    default_selection: <QS::QuerySource as QuerySource>::DefaultSelection,
 }
 
 impl<QS> std::fmt::Debug for DefaultSelectClause<QS>
@@ -16,7 +16,7 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DefaultSelectClause")
-            .field("default_seletion", &self.default_seletion)
+            .field("default_selection", &self.default_selection)
             .finish()
     }
 }
@@ -28,7 +28,7 @@ where
 {
     fn clone(&self) -> Self {
         Self {
-            default_seletion: self.default_seletion.clone(),
+            default_selection: self.default_selection.clone(),
         }
     }
 }
@@ -43,7 +43,7 @@ where
 impl<QS: AsQuerySource> DefaultSelectClause<QS> {
     pub(crate) fn new(qs: &QS) -> Self {
         Self {
-            default_seletion: qs.as_query_source().default_selection(),
+            default_selection: qs.as_query_source().default_selection(),
         }
     }
 }
@@ -119,6 +119,6 @@ where
     <QS::QuerySource as QuerySource>::DefaultSelection: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        self.default_seletion.walk_ast(pass)
+        self.default_selection.walk_ast(pass)
     }
 }
