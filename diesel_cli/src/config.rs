@@ -102,9 +102,19 @@ impl PrintSchema {
 
     #[cfg(feature = "postgres")]
     pub fn custom_type_derives(&self) -> Vec<String> {
-        self.custom_type_derives
+        let mut derives = self
+            .custom_type_derives
             .as_ref()
-            .map_or(Vec::new(), |derives| derives.to_vec())
+            .map_or(Vec::new(), |derives| derives.to_vec());
+        if derives
+            .iter()
+            .any(|item| item == "diesel::sql_types::SqlType")
+        {
+            derives
+        } else {
+            derives.push("diesel::sql_types::SqlType".to_owned());
+            derives
+        }
     }
 }
 
