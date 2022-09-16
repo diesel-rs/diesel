@@ -219,13 +219,7 @@ fn print_schema_custom_types_check_default_derives() {
 fn print_schema_custom_types_overriding_derives_works() {
     test_print_schema(
         "print_schema_custom_types_overriding_derives_works",
-        vec![
-            "--with-docs",
-            "--custom-type-derives",
-            "diesel::sql_types::SqlType",
-            "--custom-type-derives",
-            "core::fmt::Debug",
-        ],
+        vec!["--with-docs", "--custom-type-derives", "core::fmt::Debug"],
     )
 }
 
