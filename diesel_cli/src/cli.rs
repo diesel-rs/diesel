@@ -237,7 +237,7 @@ pub fn build_cli() -> Command<'static> {
                 .multiple_values(true)
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)
-                .help("A list of derives to implement for every custom type, separated by commas."),
+                .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
         );
 
     let config_arg = Arg::new("CONFIG_FILE")
