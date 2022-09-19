@@ -43,7 +43,7 @@ pub fn determine_column_type(
                 Some(s.clone())
             }
         }),
-        sql_name: tpe.to_lowercase(),
+        sql_name: tpe.to_string(),
         rust_name: tpe.to_upper_camel_case(),
         is_array,
         is_nullable: attr.nullable,
