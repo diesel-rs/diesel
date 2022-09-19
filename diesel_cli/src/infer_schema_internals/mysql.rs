@@ -93,7 +93,7 @@ pub fn determine_column_type(
 
     Ok(ColumnType {
         schema: None,
-        sql_name: tpe.trim().to_lowercase(),
+        sql_name: tpe.trim().to_string(),
         rust_name: tpe.trim().to_upper_camel_case(),
         is_array: false,
         is_nullable: attr.nullable,

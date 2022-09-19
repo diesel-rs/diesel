@@ -229,6 +229,15 @@ fn print_schema_sqlite_implicit_foreign_key_reference() {
     test_print_schema("print_schema_sqlite_implicit_foreign_key_reference", vec![]);
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_respect_type_name_case() {
+    test_print_schema(
+        "print_schema_respect_type_name_case",
+        vec!["--with-docs"],
+    )
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
