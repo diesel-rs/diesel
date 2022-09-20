@@ -120,9 +120,9 @@ jobs:
       - name: Install postgres (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'postgres'
         run: |
-          /usr/local/opt/postgres/bin/pg_ctl -D /usr/local/var/postgres start
+          pg_ctl -D /usr/local/var/postgres start
           sleep 3
-          /usr/local/opt/postgres/bin/createuser -s postgres
+          createuser -s postgres
           echo "PG_DATABASE_URL=postgres://postgres@localhost/" >> $GITHUB_ENV
           echo "PG_EXAMPLE_DATABASE_URL=postgres://postgres@localhost/diesel_example" >> $GITHUB_ENV
 
