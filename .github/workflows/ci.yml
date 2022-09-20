@@ -120,6 +120,7 @@ jobs:
       - name: Install postgres (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'postgres'
         run: |
+          mkdir -p /usr/local/var/postgres
           pg_ctl -D /usr/local/var/postgres start
           sleep 3
           createuser -s postgres
