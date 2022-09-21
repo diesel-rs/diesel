@@ -31,7 +31,6 @@ where
     P::SqlType: BoolOrNullableBool,
     T: UndecoratedConflictTarget,
 {
-    println!("test");
     type FilterOutput = DecoratedConflictTarget<T, WhereClause<P>>;
 
     fn filter_target(self, predicate: P) -> Self::FilterOutput {

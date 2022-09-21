@@ -4,6 +4,7 @@ use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
 use crate::query_builder::upsert::on_conflict_target::*;
 pub use crate::query_builder::upsert::on_conflict_target_decorations::DecoratableTarget;
+use crate::query_builder::where_clause::WhereClause;
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
 use crate::query_source::QuerySource;
 use crate::sql_types::BoolOrNullableBool;
@@ -383,7 +384,13 @@ impl<T: QuerySource, U, Op, Ret, Target>
     pub fn set<Changes>(
         self,
         changes: Changes,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset>>, Op, Ret>
+        predicate: Expression,
+    ) -> InsertStatement<
+        T,
+        OnConflictValues<U, Target, DoUpdate<Changes::Changeset, WhereClause<Expression>>>,
+        Op,
+        Ret,
+    >
     where
         T: QuerySource,
         Changes: AsChangeset<Target = T>,

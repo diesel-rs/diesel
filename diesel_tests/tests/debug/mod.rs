@@ -172,4 +172,19 @@ fn test_upsert() {
         upsert_second_where_sql_display,
         r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color") WHERE (("users"."hair_color" = $5) AND ("users"."name" = $6)) DO NOTHING -- binds: ["Sean", Some("black"), "Tess", None, "black", "Sean"]"#
     );
+
+    let upsert_command_correct_where = insert_into(users)
+        .values(&values)
+        .on_conflict(hair_color)
+        .do_update()
+        .set(name.eq("josh"))
+        .where(hair_color.eq("black"));
+
+    let upsert_second_where_sql_display =
+        debug_query::<TestBackend, _>(&upsert_command_second_where).to_string();
+
+    assert_eq!(
+        upsert_second_where_sql_display,
+        r#"INSERT INTO "users" ("name", "hair_color") VALUES ($1, $2), ($3, $4) ON CONFLICT ("hair_color")  DO NOTHING WHERE (("users"."hair_color" = $5) AND ("users"."nname" = $6)) -- bids: ["Sean", Some("black"), "Tess", None, "black", "josh"]"#
+    );
 }

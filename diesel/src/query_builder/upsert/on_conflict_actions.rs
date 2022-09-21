@@ -1,5 +1,6 @@
 use crate::backend::{sql_dialect, Backend};
 use crate::expression::{AppearsOnTable, Expression};
+use crate::query_builder::where_clause::{WhereClause, NoWhereClause};
 use crate::query_builder::*;
 use crate::query_source::*;
 use crate::result::QueryResult;
@@ -31,17 +32,24 @@ where
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct DoUpdate<T> {
+pub struct DoUpdate<T, WhereClause> {
     changeset: T,
+    where_clause: WhereClause,
 }
 
-impl<T> DoUpdate<T> {
-    pub(crate) fn new(changeset: T) -> Self {
-        DoUpdate { changeset }
+impl<T, P> DoUpdate<T, P>
+where
+    P: Expression,
+{
+    pub(crate) fn new(changeset: T, predicate: P) -> Self {
+        DoUpdate {
+            changeset,
+            where_clause: NoWhereClause.and(predicate),
+        }
     }
 }
 
-impl<DB, T> QueryFragment<DB> for DoUpdate<T>
+impl<DB, T, U> QueryFragment<DB> for DoUpdate<T, U>
 where
     DB: Backend,
     Self: QueryFragment<DB, DB::OnConflictClause>,
@@ -51,7 +59,7 @@ where
     }
 }
 
-impl<DB, T, SP> QueryFragment<DB, SP> for DoUpdate<T>
+impl<DB, T, SP, U> QueryFragment<DB, SP> for DoUpdate<T, U>
 where
     DB: Backend,
     SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,

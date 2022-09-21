@@ -32,7 +32,7 @@ pub(crate) mod select_statement;
 mod sql_query;
 pub(crate) mod update_statement;
 pub(crate) mod upsert;
-mod where_clause;
+pub(crate) mod where_clause;
 
 #[doc(inline)]
 pub use self::ast_pass::AstPass;
