@@ -174,7 +174,7 @@ impl<T: QuerySource, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub fn new(target: T, records: U, operator: Op, returning: Ret) -> Self {
+    pub(crate) fn new(target: T, records: U, operator: Op, returning: Ret) -> Self {
         InsertStatement {
             into_clause: target.from_clause(),
             operator,
