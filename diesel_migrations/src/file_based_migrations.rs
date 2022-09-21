@@ -254,14 +254,23 @@ pub struct TomlMetadataWrapper(TomlMetadata);
 
 impl TomlMetadataWrapper {
     #[doc(hidden)]
-    pub const fn new(run_in_transaction: bool) -> Self {
+    pub fn new(run_in_transaction: bool) -> Self {
         Self(TomlMetadata::new(run_in_transaction))
+    }
+
+    #[doc(hidden)]
+    pub fn from_toml_str_or_default(toml: &'static str) -> Self {
+        Self(TomlMetadata::from_toml_str(toml).unwrap_or_default())
     }
 }
 
 impl MigrationMetadata for TomlMetadataWrapper {
     fn run_in_transaction(&self) -> bool {
         self.0.run_in_transaction
+    }
+
+    fn additional_fields(&self) -> std::collections::HashMap<String, String> {
+        self.0.serialized_additional_fields()
     }
 }
 

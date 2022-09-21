@@ -55,7 +55,9 @@ fn migration_literal_from_path(path: &Path) -> proc_macro2::TokenStream {
     let up_sql_path = up_sql_path.to_str();
     let down_sql_path = path.join("down.sql");
     let metadata = TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default();
-    let run_in_transaction = metadata.run_in_transaction;
+    let metadata_str = metadata
+        .to_toml_string()
+        .unwrap_or_else(|_| panic!("Could not serialize the migration metadata as string"));
 
     let down_sql = match down_sql_path.metadata() {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => quote! { None },
@@ -69,6 +71,6 @@ fn migration_literal_from_path(path: &Path) -> proc_macro2::TokenStream {
         include_str!(#up_sql_path),
         #down_sql,
         diesel_migrations::EmbeddedName::new(#name),
-        diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction)
+        diesel_migrations::TomlMetadataWrapper::from_toml_str_or_default(#metadata_str)
     ))
 }
