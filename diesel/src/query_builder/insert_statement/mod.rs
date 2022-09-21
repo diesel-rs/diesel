@@ -122,8 +122,6 @@ where
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// A fully constructed insert statement.
 ///
 /// The parameters of this struct represent:
@@ -140,6 +138,8 @@ where
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
     public_fields(operator, target, records, returning)
 )]
+#[derive(Debug, Copy, Clone)]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct InsertStatement<T: QuerySource, U, Op = Insert, Ret = NoReturningClause> {
     /// The operator used by this InsertStatement
     ///
