@@ -389,7 +389,7 @@ where
 impl<F, S, D, W, O, LOf, G, H, Expr> GroupByDsl<Expr> for SelectStatement<F, S, D, W, O, LOf, G, H>
 where
     SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>, H>: SelectQuery,
-    Expr: Expression,
+    Expr: Expression + AppearsOnTable<F>,
 {
     type Output = SelectStatement<F, S, D, W, O, LOf, GroupByClause<Expr>, H>;
 

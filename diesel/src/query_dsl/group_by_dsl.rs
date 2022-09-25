@@ -27,6 +27,7 @@ where
     T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,
     T::SqlType: TypedExpressionType,
+    T::Query: GroupByDsl<Expr>,
 {
     type Output = dsl::GroupBy<SelectStatement<FromClause<T>>, Expr>;
 
