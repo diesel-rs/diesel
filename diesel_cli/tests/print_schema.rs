@@ -254,6 +254,12 @@ fn print_schema_sqlite_implicit_foreign_key_reference() {
 }
 
 #[test]
+#[cfg(feature = "postgres")]
+fn print_schema_respects_type_name_case() {
+    test_print_schema("print_schema_respects_type_name_case", vec!["--with-docs"])
+}
+
+#[test]
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 fn print_schema_comments() {
     test_print_schema("print_schema_comments", vec!["--with-docs"])

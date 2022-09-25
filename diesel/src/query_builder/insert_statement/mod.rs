@@ -122,8 +122,6 @@ where
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// A fully constructed insert statement.
 ///
 /// The parameters of this struct represent:
@@ -136,10 +134,22 @@ where
 /// - `Ret`: The `RETURNING` clause of the query. The specific types used to
 ///   represent this are private. You can safely rely on the default type
 ///   representing a query without a `RETURNING` clause.
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(operator, target, records, returning)
+)]
+#[derive(Debug, Copy, Clone)]
+#[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 pub struct InsertStatement<T: QuerySource, U, Op = Insert, Ret = NoReturningClause> {
+    /// The operator used by this InsertStatement
+    ///
+    /// Corresponds to either `Insert` or `Replace`
     operator: Op,
+    /// The table we are inserting into
     target: T,
+    /// The data which should be inserted
     records: U,
+    /// An optional returning clause
     returning: Ret,
     into_clause: T::FromClause,
 }
@@ -160,7 +170,11 @@ where
 }
 
 impl<T: QuerySource, U, Op, Ret> InsertStatement<T, U, Op, Ret> {
-    fn new(target: T, records: U, operator: Op, returning: Ret) -> Self {
+    /// Create a new InsertStatement instance
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(crate) fn new(target: T, records: U, operator: Op, returning: Ret) -> Self {
         InsertStatement {
             into_clause: target.from_clause(),
             operator,
