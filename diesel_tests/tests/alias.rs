@@ -184,9 +184,10 @@ fn aliasing_with_group_by_and_primary_key() {
     let res = user_alias
         .group_by(user_alias.field(users::id))
         .select(user_alias.field(users::name))
+        .order_by(user_alias.field(users::id))
         .load::<String>(connection)
         .unwrap();
     assert!(res.len() == 2);
-    assert_eq!(res[1], "Sean");
-    assert_eq!(res[0], "Tess");
+    assert_eq!(res[0], "Sean");
+    assert_eq!(res[1], "Tess");
 }
