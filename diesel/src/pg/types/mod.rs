@@ -542,6 +542,27 @@ pub mod sql_types {
     #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
     #[diesel(postgres_type(oid = 650, array_oid = 651))]
     pub struct Cidr;
+
+    /// The [`"char"`] SQL type. This is a PostgreSQL specific type. Used for e.g. [setweight]. [Do not use in user tables].
+    ///
+    /// ### [`ToSql`] impls
+    ///
+    /// - [`char`]
+    ///
+    /// ### [`FromSql`] impls
+    ///
+    /// - [`char`]
+    ///
+    /// [`ToSql`]: crate::serialize::ToSql
+    /// [`FromSql`]: crate::deserialize::FromSql
+    /// [`char`]: https://doc.rust-lang.org/nightly/std/primitive.char.html
+    /// [`"char"`]: https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
+    /// [setweight]: https://www.postgresql.org/docs/current/functions-textsearch.html
+    /// [Do not use in user tables]: https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
+    #[cfg(feature = "postgres_backend")]
+    #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
+    #[diesel(postgres_type(oid = 18, array_oid = 1002))]
+    pub struct CChar;
 }
 
 mod ops {

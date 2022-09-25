@@ -255,6 +255,8 @@ mod pg_types {
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
     test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
 
+    test_round_trip!(char_roundtrips, CChar, char, mk_char);
+
     #[allow(clippy::type_complexity)]
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;
@@ -366,6 +368,14 @@ mod pg_types {
 
     pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
         DateTime::from_utc(mk_pg_naive_datetime(data), Utc)
+    }
+
+    pub fn mk_char(data: char) -> char {
+        use core::convert::TryInto;
+        match TryInto::<u8>::try_into(data) {
+            Ok(_) => data,
+            Err(_) => ' ', // only single byte encodings are supported
+        }
     }
 }
 
