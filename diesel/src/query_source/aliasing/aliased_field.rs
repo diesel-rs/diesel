@@ -77,10 +77,13 @@ where
 {
     type IsAggregate = is_aggregate::No;
 }
-impl<S, C> ValidGrouping<AliasedField<S, C>> for AliasedField<S, C>
+
+impl<S, C1, C2> ValidGrouping<AliasedField<S, C1>> for AliasedField<S, C2>
 where
     S: AliasSource,
-    C: Column<Table = S::Target>,
+    C1: Column<Table = S::Target>,
+    C2: Column<Table = S::Target>,
+    C2: ValidGrouping<C1, IsAggregate = is_aggregate::Yes>,
 {
     type IsAggregate = is_aggregate::Yes;
 }
