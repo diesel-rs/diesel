@@ -1,0 +1,183 @@
+error[E0277]: the trait bound `FromClause<users::table>: AppearsInFromClause<posts::table>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:26:10
+   |
+26 |         .group_by(posts::id)
+   |          ^^^^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `FromClause<users::table>`
+   |
+   = help: the trait `AppearsInFromClause<QS1>` is implemented for `FromClause<QS2>`
+note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::id`
+  --> tests/fail/invalid_group_by.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |     }
+17 | | }
+   | |_^
+   = note: required because of the requirements on the impl of `GroupByDsl<posts::columns::id>` for `SelectStatement<FromClause<users::table>>`
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<posts::columns::id as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+  --> tests/fail/invalid_group_by.rs:27:10
+   |
+27 |         .select(users::id)
+   |          ^^^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
+   |
+note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::id`
+  --> tests/fail/invalid_group_by.rs:6:1
+   |
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |         name -> VarChar,
+10 | |     }
+11 | | }
+   | |_^
+   = note: required because of the requirements on the impl of `SelectDsl<users::columns::id>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `FromClause<users::table>: AppearsInFromClause<posts::table>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:34:10
+   |
+34 |         .group_by(posts::id)
+   |          ^^^^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `FromClause<users::table>`
+   |
+   = help: the trait `AppearsInFromClause<QS1>` is implemented for `FromClause<QS2>`
+note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::id`
+  --> tests/fail/invalid_group_by.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |     }
+17 | | }
+   | |_^
+   = note: required because of the requirements on the impl of `GroupByDsl<posts::columns::id>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `FromClause<Alias<user1>>: AppearsInFromClause<posts::table>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:42:10
+   |
+42 |         .group_by(posts::id)
+   |          ^^^^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `FromClause<Alias<user1>>`
+   |
+   = help: the trait `AppearsInFromClause<QS1>` is implemented for `FromClause<QS2>`
+note: required because of the requirements on the impl of `AppearsOnTable<FromClause<Alias<user1>>>` for `posts::columns::id`
+  --> tests/fail/invalid_group_by.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |     }
+17 | | }
+   | |_^
+   = note: required because of the requirements on the impl of `GroupByDsl<posts::columns::id>` for `SelectStatement<FromClause<Alias<user1>>>`
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `AliasedField<user1, users::columns::id>: ValidGrouping<posts::columns::id>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:43:10
+   |
+43 |         .select(user_alias.field(users::id))
+   |          ^^^^^^ the trait `ValidGrouping<posts::columns::id>` is not implemented for `AliasedField<user1, users::columns::id>`
+   |
+   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+             <AliasedField<S, C2> as ValidGrouping<AliasedField<S, C1>>>
+             <AliasedField<S, C> as ValidGrouping<()>>
+   = note: required because of the requirements on the impl of `SelectDsl<AliasedField<user1, users::columns::id>>` for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
+
+error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<Alias<post1>>>::Count == diesel::query_source::Once`
+  --> tests/fail/invalid_group_by.rs:48:10
+   |
+48 |         .group_by(post_alias.field(posts::id))
+   |          ^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `AliasedField<post1, posts::columns::id>`
+   = note: required because of the requirements on the impl of `GroupByDsl<AliasedField<post1, posts::columns::id>>` for `SelectStatement<FromClause<users::table>>`
+
+error[E0277]: the trait bound `AliasedField<post1, posts::columns::id>: IsContainedInGroupBy<users::columns::id>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:49:10
+   |
+49 |         .select(users::id)
+   |          ^^^^^^ the trait `IsContainedInGroupBy<users::columns::id>` is not implemented for `AliasedField<post1, posts::columns::id>`
+   |
+   = help: the following other types implement trait `IsContainedInGroupBy<T>`:
+             <(T0, T1) as IsContainedInGroupBy<Col>>
+             <(T0, T1, T2) as IsContainedInGroupBy<Col>>
+             <(T0, T1, T2, T3) as IsContainedInGroupBy<Col>>
+             <(T0, T1, T2, T3, T4) as IsContainedInGroupBy<Col>>
+             <(T0, T1, T2, T3, T4, T5) as IsContainedInGroupBy<Col>>
+             <(T0, T1, T2, T3, T4, T5, T6) as IsContainedInGroupBy<Col>>
+             <(T0, T1, T2, T3, T4, T5, T6, T7) as IsContainedInGroupBy<Col>>
+             <(T0, T1, T2, T3, T4, T5, T6, T7, T8) as IsContainedInGroupBy<Col>>
+           and 35 others
+note: required because of the requirements on the impl of `ValidGrouping<AliasedField<post1, posts::columns::id>>` for `users::columns::id`
+  --> tests/fail/invalid_group_by.rs:6:1
+   |
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |         name -> VarChar,
+10 | |     }
+11 | | }
+   | |_^
+   = note: required because of the requirements on the impl of `SelectDsl<users::columns::id>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<post1, posts::columns::id>>>`
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `FromClause<Alias<user1>>: AppearsInFromClause<Alias<post1>>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:54:10
+   |
+54 |         .group_by(post_alias.field(posts::id))
+   |          ^^^^^^^^ the trait `AppearsInFromClause<Alias<post1>>` is not implemented for `FromClause<Alias<user1>>`
+   |
+   = help: the trait `AppearsInFromClause<QS1>` is implemented for `FromClause<QS2>`
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<Alias<user1>>>` for `AliasedField<post1, posts::columns::id>`
+   = note: required because of the requirements on the impl of `GroupByDsl<AliasedField<post1, posts::columns::id>>` for `SelectStatement<FromClause<Alias<user1>>>`
+
+error[E0277]: the trait bound `AliasedField<user1, users::columns::id>: ValidGrouping<AliasedField<post1, posts::columns::id>>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:55:10
+   |
+55 |         .select(user_alias.field(users::id))
+   |          ^^^^^^ the trait `ValidGrouping<AliasedField<post1, posts::columns::id>>` is not implemented for `AliasedField<user1, users::columns::id>`
+   |
+   = help: the following other types implement trait `ValidGrouping<GroupByClause>`:
+             <AliasedField<S, C2> as ValidGrouping<AliasedField<S, C1>>>
+             <AliasedField<S, C> as ValidGrouping<()>>
+   = note: required because of the requirements on the impl of `SelectDsl<AliasedField<user1, users::columns::id>>` for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<post1, posts::columns::id>>>`
+
+error[E0277]: the trait bound `FromClause<Alias<user1>>: AppearsInFromClause<posts::table>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:61:10
+   |
+61 |         .group_by(posts::id)
+   |          ^^^^^^^^ the trait `AppearsInFromClause<posts::table>` is not implemented for `FromClause<Alias<user1>>`
+   |
+   = help: the trait `AppearsInFromClause<QS1>` is implemented for `FromClause<QS2>`
+note: required because of the requirements on the impl of `AppearsOnTable<FromClause<Alias<user1>>>` for `posts::columns::id`
+  --> tests/fail/invalid_group_by.rs:13:1
+   |
+13 | / table! {
+14 | |     posts {
+15 | |         id -> Integer,
+16 | |     }
+17 | | }
+   | |_^
+   = note: required because of the requirements on the impl of `GroupByDsl<posts::columns::id>` for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::SelectClause<AliasedField<user1, users::columns::id>>>`
+   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<Alias<post1>>>::Count == diesel::query_source::Once`
+  --> tests/fail/invalid_group_by.rs:67:10
+   |
+67 |         .group_by(post_alias.field(posts::id))
+   |          ^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `AliasedField<post1, posts::columns::id>`
+   = note: required because of the requirements on the impl of `GroupByDsl<AliasedField<post1, posts::columns::id>>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>`
+
+error[E0277]: the trait bound `FromClause<Alias<user1>>: AppearsInFromClause<Alias<post1>>` is not satisfied
+  --> tests/fail/invalid_group_by.rs:73:10
+   |
+73 |         .group_by(post_alias.field(posts::id))
+   |          ^^^^^^^^ the trait `AppearsInFromClause<Alias<post1>>` is not implemented for `FromClause<Alias<user1>>`
+   |
+   = help: the trait `AppearsInFromClause<QS1>` is implemented for `FromClause<QS2>`
+   = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<Alias<user1>>>` for `AliasedField<post1, posts::columns::id>`
+   = note: required because of the requirements on the impl of `GroupByDsl<AliasedField<post1, posts::columns::id>>` for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::SelectClause<AliasedField<user1, users::columns::id>>>`
