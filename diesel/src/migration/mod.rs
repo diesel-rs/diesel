@@ -142,37 +142,37 @@ pub trait MigrationSource<DB: Backend> {
 
 impl<'a, DB: Backend> Migration<DB> for Box<dyn Migration<DB> + 'a> {
     fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
-        (&**self).run(conn)
+        (**self).run(conn)
     }
 
     fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
-        (&**self).revert(conn)
+        (**self).revert(conn)
     }
 
     fn metadata(&self) -> &dyn MigrationMetadata {
-        (&**self).metadata()
+        (**self).metadata()
     }
 
     fn name(&self) -> &dyn MigrationName {
-        (&**self).name()
+        (**self).name()
     }
 }
 
 impl<'a, DB: Backend> Migration<DB> for &'a dyn Migration<DB> {
     fn run(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
-        (&**self).run(conn)
+        (**self).run(conn)
     }
 
     fn revert(&self, conn: &mut dyn BoxableConnection<DB>) -> Result<()> {
-        (&**self).revert(conn)
+        (**self).revert(conn)
     }
 
     fn metadata(&self) -> &dyn MigrationMetadata {
-        (&**self).metadata()
+        (**self).metadata()
     }
 
     fn name(&self) -> &dyn MigrationName {
-        (&**self).name()
+        (**self).name()
     }
 }
 
