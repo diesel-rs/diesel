@@ -2,21 +2,22 @@ use crate::schema::*;
 use diesel::connection::BoxableConnection;
 use diesel::*;
 
-table! {
-    auto_time {
-        id -> Integer,
-        n -> Integer,
-        updated_at -> Timestamp,
-    }
-}
-
 #[test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn managing_updated_at_for_table() {
-    use self::auto_time::dsl::*;
     use crate::schema_dsl::*;
     use chrono::NaiveDateTime;
     use std::{thread, time::Duration};
+
+    table! {
+        #[sql_name = "auto_time"]
+            auto_time_table {
+            id -> Integer,
+            n -> Integer,
+            updated_at -> Timestamp,
+        }
+    }
+    use auto_time_table::dsl::{auto_time_table as auto_time, n, updated_at};
 
     // transactions have frozen time, so we can't use them
     let connection = &mut connection_without_transaction();
