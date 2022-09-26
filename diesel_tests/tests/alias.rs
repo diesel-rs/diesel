@@ -173,3 +173,21 @@ fn visibility() {
         const USERS_ALIAS_2: Alias<UsersAlias2> = users as users_alias_2;
     }
 }
+
+// regression test for
+// https://github.com/diesel-rs/diesel/issues/3319
+#[test]
+fn aliasing_with_group_by_and_primary_key() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let user_alias = alias!(users as user1);
+
+    let res = user_alias
+        .group_by(user_alias.field(users::id))
+        .select(user_alias.field(users::name))
+        .order_by(user_alias.field(users::id))
+        .load::<String>(connection)
+        .unwrap();
+    assert!(res.len() == 2);
+    assert_eq!(res[0], "Sean");
+    assert_eq!(res[1], "Tess");
+}
