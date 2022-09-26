@@ -194,6 +194,7 @@ where
     <Self as QuerySource>::DefaultSelection:
         Expression<SqlType = <Self as AsQuery>::SqlType> + ValidGrouping<()>,
     <Self as AsQuery>::SqlType: TypedExpressionType,
+    <Self as AsQuery>::Query: GroupByDsl<Expr>,
 {
     type Output = dsl::GroupBy<SelectStatement<FromClause<Self>>, Expr>;
 
