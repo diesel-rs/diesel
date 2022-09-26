@@ -116,3 +116,77 @@ fn boxable_connection_downcast_mut_usable() {
 
     assert_eq!(Ok(String::from("Sean")), sean);
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn use_the_same_connection_multiple_times() {
+    use crate::*;
+    use diesel::result::DatabaseErrorKind;
+    use diesel::result::Error::DatabaseError;
+
+    table! {
+        #[sql_name = "github_issue_3342"]
+        github_issue_3342_table {
+            id -> Serial,
+            uid -> Integer,
+        }
+    }
+    use github_issue_3342_table::dsl::{github_issue_3342_table as github_issue_3342, uid};
+
+    let connection = &mut connection_without_transaction();
+
+    // We can extend `schema_dsl` module to accommodate UNIQUE constraint.
+    sql_query(
+        r#"
+          CREATE TABLE github_issue_3342 (
+            id SERIAL PRIMARY KEY,
+            uid INTEGER NOT NULL UNIQUE
+          )
+        "#,
+    )
+    .execute(connection)
+    .unwrap();
+
+    let mut _drop_conn = connection_without_transaction();
+    let _guard = DropTable {
+        connection: &mut _drop_conn,
+        table_name: "github_issue_3342",
+        can_drop: true,
+    };
+
+    // helper method to simulate database error.
+    fn insert_or_fetch(conn: &mut PgConnection, input: i32) {
+        let result = insert_into(github_issue_3342)
+            .values(uid.eq(input))
+            .get_result::<(i32, i32)>(conn);
+
+        match result {
+            Ok((_, r)) => assert_eq!(r, input),
+            Err(DatabaseError(DatabaseErrorKind::UniqueViolation, _)) => {
+                let result = github_issue_3342
+                    .filter(uid.eq(input))
+                    .first::<(i32, i32)>(conn);
+                match result {
+                    Ok((_, r)) => assert_eq!(r, input),
+                    Err(DatabaseError(DatabaseErrorKind::UnableToSendCommand, message))
+                        if message.message() == "another command is already in progress\n" =>
+                    {
+                        panic!("The fix didn't solve the problem!?")
+                    }
+                    Err(e) => panic!("Caused by: {}", e),
+                }
+            }
+            Err(DatabaseError(DatabaseErrorKind::UnableToSendCommand, message))
+                if message.message() == "another command is already in progress\n" =>
+            {
+                panic!("The fix didn't solve the problem!?")
+            }
+            Err(e) => panic!("Caused by: {}", e),
+        }
+    }
+
+    // simulate multiple queries using the same connection sequentially.
+    for _ in 0..5 {
+        insert_or_fetch(connection, 1);
+    }
+}
