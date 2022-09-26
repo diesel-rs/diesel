@@ -229,6 +229,15 @@ pub fn build_cli() -> Command<'static> {
             Arg::new("generate-custom-type-definitions")
                 .long("no-generate-missing-sql-type-definitions")
                 .help("Generate SQL type definitions for types not provided by diesel"),
+        )
+        .arg(
+            Arg::new("custom-type-derives")
+                .long("custom-type-derives")
+                .takes_value(true)
+                .multiple_values(true)
+                .action(clap::ArgAction::Append)
+                .number_of_values(1)
+                .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
         );
 
     let config_arg = Arg::new("CONFIG_FILE")

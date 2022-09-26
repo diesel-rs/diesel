@@ -1,0 +1,4 @@
+[print_schema]
+file = "src/schema.rs"
+with_docs = true
+custom_type_derives = ["diesel::sql_types::SqlType", "core::fmt::Debug"]

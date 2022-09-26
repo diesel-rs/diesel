@@ -69,6 +69,8 @@ pub struct PrintSchema {
     pub import_types: Option<Vec<String>>,
     #[serde(default)]
     pub generate_missing_sql_type_definitions: Option<bool>,
+    #[serde(default)]
+    pub custom_type_derives: Option<Vec<String>>,
 }
 
 impl PrintSchema {
@@ -95,6 +97,23 @@ impl PrintSchema {
             if patch_file.is_relative() {
                 *patch_file = base.join(&patch_file);
             }
+        }
+    }
+
+    #[cfg(feature = "postgres")]
+    pub fn custom_type_derives(&self) -> Vec<String> {
+        let mut derives = self
+            .custom_type_derives
+            .as_ref()
+            .map_or(Vec::new(), |derives| derives.to_vec());
+        if derives
+            .iter()
+            .any(|item| item == "diesel::sql_types::SqlType")
+        {
+            derives
+        } else {
+            derives.push("diesel::sql_types::SqlType".to_owned());
+            derives
         }
     }
 }
