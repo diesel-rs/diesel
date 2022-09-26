@@ -48,6 +48,12 @@ impl PgResult {
                 ))
             }
             _ => {
+                // "clearing" the connection by polling result till we get a null.
+                // this will indicate that the previous command is complete and
+                // the same connection is ready to process next command.
+                // https://www.postgresql.org/docs/current/libpq-async.html
+                while conn.get_next_result().map_or(true, |r| r.is_some()) {}
+
                 let mut error_kind =
                     match get_result_field(internal_result.as_ptr(), ResultField::SqlState) {
                         Some(error_codes::UNIQUE_VIOLATION) => DatabaseErrorKind::UniqueViolation,
