@@ -99,7 +99,7 @@ to
 ```rust
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!();
 
-fn run_migration(conn: &PgConnection) {
+fn run_migration(conn: &mut PgConnection) {
     conn.run_pending_migrations(MIGRATIONS).unwrap();
 }
 ```
