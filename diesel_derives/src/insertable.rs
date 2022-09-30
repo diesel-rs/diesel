@@ -122,7 +122,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         #[allow(unused_qualifications)]
         #insert_owned
 
-    #[allow(unused_qualifications)]
+        #[allow(unused_qualifications)]
         #insert_borrowed
 
         impl #impl_generics UndecoratedInsertRecord<#table_name::table>
