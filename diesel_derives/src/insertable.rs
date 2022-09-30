@@ -119,8 +119,10 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         use diesel::internal::derives::insertable::UndecoratedInsertRecord;
         use diesel::prelude::*;
 
+        #[allow(unused_qualifications)]
         #insert_owned
 
+	#[allow(unused_qualifications)]
         #insert_borrowed
 
         impl #impl_generics UndecoratedInsertRecord<#table_name::table>
