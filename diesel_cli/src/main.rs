@@ -75,7 +75,7 @@ fn run_migration_command(
             let database_url = database::database_url(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
-            if args.contains_id("REVERT_ALL") {
+            if args.get_flag("REVERT_ALL") {
                 call_with_conn!(database_url, revert_all_migrations_with_output(dir))?;
             } else {
                 let number = args.get_one::<u64>("REVERT_NUMBER").unwrap();
@@ -131,10 +131,9 @@ fn run_migration_command(
                 .get_one::<String>("MIGRATION_FORMAT")
                 .map(|s| s as &str)
             {
-                Some("sql") => generate_sql_migration(
-                    &migration_dir,
-                    !args.contains_id("MIGRATION_NO_DOWN_FILE"),
-                ),
+                Some("sql") => {
+                    generate_sql_migration(&migration_dir, !args.get_flag("MIGRATION_NO_DOWN_FILE"))
+                }
                 Some(x) => return Err(format!("Unrecognized migration format `{}`", x).into()),
                 None => unreachable!("MIGRATION_FORMAT has a default value"),
             }
@@ -407,7 +406,7 @@ fn redo_migrations<Conn, DB>(
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
 {
     let migrations_inner = |harness: &mut HarnessWithOutput<Conn, _>| -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-        let reverted_versions = if args.contains_id("REDO_ALL") {
+        let reverted_versions = if args.get_flag("REDO_ALL") {
             harness.revert_all_migrations(migrations_dir.clone())?
         } else {
             let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
@@ -512,13 +511,13 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
         .collect::<Result<_, _>>()
         .map_err(|e| format!("invalid argument for table filtering regex: {}", e));
 
-    if matches.contains_id("only-tables") {
+    if matches.get_flag("only-tables") {
         config.filter = Filtering::OnlyTables(filter?)
-    } else if matches.contains_id("except-tables") {
+    } else if matches.get_flag("except-tables") {
         config.filter = Filtering::ExceptTables(filter?)
     }
 
-    if matches.contains_id("with-docs") {
+    if matches.get_flag("with-docs") {
         config.with_docs = true;
     }
 
@@ -539,7 +538,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
         config.import_types = Some(types);
     }
 
-    if matches.contains_id("generate-custom-type-definitions") {
+    if matches.get_flag("generate-custom-type-definitions") {
         config.generate_missing_sql_type_definitions = Some(false);
     }
 
@@ -565,7 +564,7 @@ fn regenerate_schema_if_file_specified(
 
         let database_url = database::database_url(matches);
 
-        if matches.contains_id("LOCKED_SCHEMA") {
+        if matches.get_flag("LOCKED_SCHEMA") {
             let mut buf = Vec::new();
             print_schema::run_print_schema(&database_url, &config.print_schema, &mut buf)?;
 
