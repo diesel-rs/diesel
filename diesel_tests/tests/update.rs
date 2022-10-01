@@ -308,6 +308,50 @@ fn upsert_with_sql_literal_for_target() {
     assert_eq!(Ok(expected_data), data);
 }
 
+// regression test for https://github.com/diesel-rs/diesel/issues/3330
+#[test]
+#[cfg(feature = "postgres")]
+fn upsert_with_target_filter() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct Changes<'a> {
+        hair_color: Option<&'a str>,
+    }
+
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    let users = [User::new(1, "Sean"), User::new(2, "Tess")];
+    let query = insert_into(users::table)
+        .values(&users)
+        .on_conflict(users::id)
+        .filter_target(users::name.eq("Sean"))
+        .do_update()
+        .set(&Changes {
+            hair_color: Some("red"),
+        });
+
+    let upsert_single_where_sql_display = debug_query::<TestBackend, _>(&query).to_string();
+
+    assert_eq!(
+        upsert_single_where_sql_display,
+        r#"INSERT INTO "users" ("id", "name", "hair_color") VALUES ($1, $2, DEFAULT), ($3, $4, DEFAULT) ON CONFLICT ("id") DO UPDATE SET "hair_color" = $5 WHERE ("users"."name" = $6) -- binds: [1, "Sean", 2, "Tess", "red", "Sean"]"#
+    );
+
+    let result = query.execute(conn);
+
+    assert_eq!(result, Ok(1));
+    let users = users::table
+        .order_by(users::id)
+        .load::<(i32, String, Option<String>)>(conn)
+        .unwrap();
+
+    assert_eq!(
+        users[0],
+        (1, String::from("Sean"), Some(String::from("red")))
+    );
+    assert_eq!(users[1], (2, String::from("Tess"), None));
+}
+
 #[test]
 #[cfg(feature = "postgres")]
 fn update_array_index_expression() {

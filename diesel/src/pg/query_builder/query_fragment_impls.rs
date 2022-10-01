@@ -5,6 +5,8 @@ use crate::pg::Pg;
 use crate::query_builder::locking_clause::{
     ForKeyShare, ForNoKeyUpdate, ForShare, ForUpdate, NoModifier, NoWait, SkipLocked,
 };
+use crate::query_builder::upsert::on_conflict_actions::DoUpdate;
+use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::upsert::on_conflict_target_decorations::DecoratedConflictTarget;
 use crate::query_builder::{AstPass, QueryFragment};
 use crate::result::QueryResult;
@@ -98,15 +100,20 @@ where
     }
 }
 
-impl<T, U> QueryFragment<Pg, crate::pg::backend::PgOnConflictClaues>
-    for DecoratedConflictTarget<T, U>
+impl<Values, Target, Action, Where> QueryFragment<Pg, crate::pg::backend::PgOnConflictClaues>
+    for OnConflictValues<Values, DecoratedConflictTarget<Target, Where>, DoUpdate<Action>>
 where
-    T: QueryFragment<Pg>,
-    U: QueryFragment<Pg>,
+    Values: QueryFragment<Pg>,
+    Target: QueryFragment<Pg>,
+    DoUpdate<Action>: QueryFragment<Pg>,
+    Where: QueryFragment<Pg>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
-        self.target.walk_ast(out.reborrow())?;
-        self.where_clause.walk_ast(out.reborrow())?;
+        self.values.walk_ast(out.reborrow())?;
+        out.push_sql(" ON CONFLICT");
+        self.target.target.walk_ast(out.reborrow())?;
+        self.action.walk_ast(out.reborrow())?;
+        self.target.where_clause.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
