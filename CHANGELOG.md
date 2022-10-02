@@ -10,6 +10,16 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased 
 
+## [2.0.1] 2022-10-xx
+
+### Fixed
+
+* Fixed an issue with `diesel_cli` generating incompatible type names for the `generate_missing_sql_type_definitions` feature on PostgreSQL
+* Fixed an issue how `diesel_cli` handles sqlite urls while checking if a given database exists
+* Fixed an issue with `PgConnection` becoming unusable after hitting a database error in certain situations
+* Fixed an issue with diesel generating invalid SQL for certain `INSERT … ON CONFLICT` queries
+* Fixed `diesel_derives` generating code that triggers the disabled by default `unused_qualifications` lint
+
 ## [2.0.0] 2022-08-29
 
 ### Added
@@ -1957,3 +1967,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.0.0 Rc0]: https://github.com/diesel-rs/diesel/compare/v.1.4.0...v2.0.0-rc0
 [2.0.0 Rc1]: https://github.com/diesel-rs/diesel/compare/v.2.0.0-rc0...v2.0.0-rc1
 [2.0.0]: https://github.com/diesel-rs/diesel/compare/v.1.4.0...v2.0.0
+[2.0.1]: https://github.com/diesel-rs/diesel/compare/v.2.0.0...v2.0.1
