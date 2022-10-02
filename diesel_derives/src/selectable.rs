@@ -1,4 +1,5 @@
 use proc_macro2::TokenStream;
+use syn::spanned::Spanned;
 use syn::DeriveInput;
 
 use field::Field;
@@ -28,8 +29,39 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 
     let struct_name = &item.ident;
 
-    let field_columns_ty = model.fields().iter().map(|f| field_column_ty(f, &model));
+    let field_columns_ty = model
+        .fields()
+        .iter()
+        .map(|f| field_column_ty(f, &model))
+        .collect::<Vec<_>>();
     let field_columns_inst = model.fields().iter().map(|f| field_column_inst(f, &model));
+
+    let field_check_bound = model
+        .fields()
+        .iter()
+        .zip(&field_columns_ty)
+        .flat_map(|(f, ty)| {
+            let field_ty = &f.ty;
+            let span = field_ty.span();
+            let mut out = Vec::new();
+
+            if cfg!(feature = "postgres") {
+                out.push(quote::quote_spanned! { span =>
+                    #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::pg::Pg>
+                });
+            }
+            if cfg!(feature = "sqlite") {
+                out.push(quote::quote_spanned! { span =>
+                    #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::sqlite::Sqlite>
+                });
+            }
+            if cfg!(feature = "mysql") {
+                out.push(quote::quote_spanned! { span =>
+                    #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::mysql::Mysql>
+                });
+            }
+            out
+        });
 
     wrap_in_dummy_mod(quote! {
         use diesel::expression::Selectable;
@@ -43,6 +75,13 @@ pub fn derive(item: DeriveInput) -> TokenStream {
             fn construct_selection() -> Self::SelectExpression {
                 (#(#field_columns_inst,)*)
             }
+        }
+
+        fn _check_field_compatibility()
+        where
+            #(#field_check_bound,)*
+        {
+
         }
     })
 }
@@ -62,8 +101,6 @@ fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
 }
 
 fn field_column_inst(field: &Field, model: &Model) -> TokenStream {
-    use syn::spanned::Spanned;
-
     if let Some(ref select_expression) = field.select_expression {
         let expr = &select_expression.item;
         let span = expr.span();
