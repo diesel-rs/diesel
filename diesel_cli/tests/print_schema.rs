@@ -297,16 +297,23 @@ fn test_print_schema(test_name: &str, args: Vec<&str>) {
     let result = p.command("print-schema").args(args).run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    let expected = read_file(&backend_file_path(test_name, "expected.rs")).replace("\r\n", "\n");
 
     let result = result.stdout().replace("\r\n", "\n");
 
-    assert_diff!(&expected, &result, "\n", 0);
+    let mut setting = insta::Settings::new();
+    setting.set_snapshot_path(backend_file_path(test_name, ""));
+    setting.set_omit_expression(true);
+    setting.set_description(format!("Test: {test_name}"));
+    setting.set_prepend_module_to_snapshot(false);
 
-    test_print_schema_config(test_name, &test_path, schema, expected);
+    setting.bind(|| {
+        insta::assert_snapshot!("expected", result);
+
+        test_print_schema_config(test_name, &test_path, schema);
+    });
 }
 
-fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String, expected: String) {
+fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let config = read_file(&test_path.join("diesel.toml"));
     let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
 
@@ -325,13 +332,14 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String, e
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
     let schema = p.file_contents("src/schema.rs").replace("\r\n", "\n");
-    assert_diff!(&expected, &schema, "\n", 0);
+    insta::assert_snapshot!("expected", schema);
 
     let result = p.command("print-schema").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
     let result = result.stdout().replace("\r\n", "\n");
-    assert_diff!(&expected, &result, "\n", 0);
+
+    insta::assert_snapshot!("expected", result);
 }
 
 fn read_file(path: &Path) -> String {

@@ -24,3 +24,9 @@ members = [
     "examples/sqlite/getting_started_step_2",
     "examples/sqlite/getting_started_step_3",
 ]
+
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3

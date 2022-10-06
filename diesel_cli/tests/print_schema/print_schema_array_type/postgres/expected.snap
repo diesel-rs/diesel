@@ -1,0 +1,13 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_array_type"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users (id) {
+        id -> Int4,
+        tags -> Array<Nullable<Text>>,
+    }
+}
+
