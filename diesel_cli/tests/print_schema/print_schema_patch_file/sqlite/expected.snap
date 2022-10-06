@@ -1,0 +1,24 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_patch_file"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users1 (id) {
+        id -> Integer,
+    }
+}
+
+diesel::table! {
+    users2 (myid) {
+        #[sql_name = "id"]
+        myid -> Integer,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    users1,
+    users2,
+);
+

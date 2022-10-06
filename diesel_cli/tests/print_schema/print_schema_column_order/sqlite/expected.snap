@@ -1,0 +1,14 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_column_order"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    abc (a) {
+        a -> Nullable<Integer>,
+        b -> Text,
+        c -> Nullable<Bool>,
+    }
+}
+

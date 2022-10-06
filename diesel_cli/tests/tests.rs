@@ -1,10 +1,3 @@
-extern crate chrono;
-extern crate diesel;
-#[macro_use]
-extern crate difference;
-extern crate regex;
-extern crate tempfile;
-
 mod completion_generation;
 mod database_drop;
 mod database_reset;
