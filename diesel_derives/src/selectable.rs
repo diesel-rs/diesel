@@ -40,25 +40,28 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         .fields()
         .iter()
         .zip(&field_columns_ty)
+        .filter(|(f, _)| !f.embed())
         .flat_map(|(f, ty)| {
-            let field_ty = &f.ty;
+            let field_ty = to_field_ty_bound(&f.ty);
             let span = field_ty.span();
             let mut out = Vec::new();
+            if let Some(field_ty) = field_ty {
 
-            if cfg!(feature = "postgres") {
-                out.push(quote::quote_spanned! { span =>
-                    #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::pg::Pg>
-                });
-            }
-            if cfg!(feature = "sqlite") {
-                out.push(quote::quote_spanned! { span =>
-                    #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::sqlite::Sqlite>
-                });
-            }
-            if cfg!(feature = "mysql") {
-                out.push(quote::quote_spanned! { span =>
-                    #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::mysql::Mysql>
-                });
+                if cfg!(feature = "postgres") {
+                    out.push(quote::quote_spanned! {span=>
+                                                     #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::pg::Pg>
+                    });
+                }
+                if cfg!(feature = "sqlite") {
+                    out.push(quote::quote_spanned! {span=>
+                                                     #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::sqlite::Sqlite>
+                    });
+                }
+                if cfg!(feature = "mysql") {
+                    out.push(quote::quote_spanned! {span=>
+                                                     #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::mysql::Mysql>
+                    });
+                }
             }
             out
         });
@@ -84,6 +87,54 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 
         }
     })
+}
+
+fn to_field_ty_bound(field_ty: &syn::Type) -> Option<TokenStream> {
+    match field_ty {
+        syn::Type::Path(p) => {
+            if let syn::PathArguments::AngleBracketed(ref args) =
+                p.path.segments.last().unwrap().arguments
+            {
+                let lt = args
+                    .args
+                    .iter()
+                    .filter_map(|f| {
+                        if let syn::GenericArgument::Lifetime(lt) = f {
+                            Some(lt)
+                        } else {
+                            None
+                        }
+                    })
+                    .collect::<Vec<_>>();
+                if lt.is_empty() {
+                    Some(quote::quote! {
+                        #field_ty
+                    })
+                } else if lt.len() == args.args.len() {
+                    Some(quote::quote! {
+                        for<#(#lt,)*> #field_ty
+                    })
+                } else {
+                    // type parameters are not supported for checking
+                    // for now
+                    None
+                }
+            } else {
+                Some(quote::quote! {
+                    #field_ty
+                })
+            }
+        }
+        syn::Type::Reference(_r) => {
+            // references are not supported for checking for now
+            //
+            // (How ever you can even have references in a `Queryable` struct anyway)
+            None
+        }
+        field_ty => Some(quote::quote! {
+            #field_ty
+        }),
+    }
 }
 
 fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
