@@ -1,10 +1,10 @@
 use clap::{
     builder::{EnumValueParser, PossibleValuesParser},
-    Arg, Command,
+    Arg, ArgAction, Command,
 };
 use clap_complete::Shell;
 
-pub fn build_cli() -> Command<'static> {
+pub fn build_cli() -> Command {
     let database_arg = Arg::new("DATABASE_URL")
         .long("database-url")
         .help(
@@ -12,7 +12,7 @@ pub fn build_cli() -> Command<'static> {
              the DATABASE_URL environment variable if unspecified.",
         )
         .global(true)
-        .takes_value(true);
+        .num_args(1);
 
     let migration_subcommand = Command::new("migration")
         .about(
@@ -29,7 +29,7 @@ pub fn build_cli() -> Command<'static> {
                         .long("all")
                         .short('a')
                         .help("Reverts previously run migration files.")
-                        .takes_value(false)
+                        .action(ArgAction::SetTrue)
                         .conflicts_with("REVERT_NUMBER"),
                 )
                 .arg(
@@ -42,7 +42,7 @@ pub fn build_cli() -> Command<'static> {
                              will be reverted. By default revert the last one.",
                         )
                         .default_value("1")
-                        .takes_value(true)
+                        .num_args(1)
                         .value_parser(clap::value_parser!(u64))
                         .conflicts_with("REVERT_ALL"),
                 ),
@@ -63,7 +63,7 @@ pub fn build_cli() -> Command<'static> {
                              will be reverted and re-runs. Useful for testing \
                              that your migrations can be reverted and applied.",
                         )
-                        .takes_value(false)
+                        .action(ArgAction::SetTrue)
                         .conflicts_with("REDO_NUMBER"),
                 )
                 .arg(
@@ -76,7 +76,7 @@ pub fn build_cli() -> Command<'static> {
                              will be reverted and re-runs. By default redo the last migration.",
                         )
                         .default_value("1")
-                        .takes_value(true)
+                        .num_args(1)
                         .value_parser(clap::value_parser!(u64))
                         .conflicts_with("REDO_ALL"),
                 ),
@@ -107,7 +107,7 @@ pub fn build_cli() -> Command<'static> {
                              Defaults to the current timestamp, which should suffice \
                              for most use cases.",
                         )
-                        .takes_value(true),
+                        .num_args(1),
                 )
                 .arg(
                     Arg::new("MIGRATION_NO_DOWN_FILE")
@@ -117,15 +117,14 @@ pub fn build_cli() -> Command<'static> {
                             "Don't generate a down.sql file. \
                             You won't be able to run migration `revert` or `redo`.",
                         )
-                        .takes_value(false),
+                        .action(ArgAction::SetTrue),
                 )
                 .arg(
                     Arg::new("MIGRATION_FORMAT")
                         .long("format")
                         .value_parser(PossibleValuesParser::new(["sql"]))
-                        .takes_value(true)
+                        .num_args(1)
                         .default_value("sql")
-                        .takes_value(true)
                         .help("The format of the migration to be generated."),
                 ),
         )
@@ -172,14 +171,13 @@ pub fn build_cli() -> Command<'static> {
             Arg::new("schema")
                 .long("schema")
                 .short('s')
-                .takes_value(true)
+                .num_args(1)
                 .help("The name of the schema."),
         )
         .arg(
             Arg::new("table-name")
                 .index(1)
-                .takes_value(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .action(clap::ArgAction::Append)
                 .help("Table names to filter (default only-tables if not empty)."),
         )
@@ -187,6 +185,7 @@ pub fn build_cli() -> Command<'static> {
             Arg::new("only-tables")
                 .short('o')
                 .long("only-tables")
+                .action(ArgAction::SetTrue)
                 .help("Only include tables from table-name that matches regexp.")
                 .conflicts_with("except-tables"),
         )
@@ -194,33 +193,34 @@ pub fn build_cli() -> Command<'static> {
             Arg::new("except-tables")
                 .short('e')
                 .long("except-tables")
+                .action(ArgAction::SetTrue)
                 .help("Exclude tables from table-name that matches regex.")
                 .conflicts_with("only-tables"),
         )
         .arg(
             Arg::new("with-docs")
                 .long("with-docs")
+                .action(ArgAction::SetTrue)
                 .help("Render documentation comments for tables and columns."),
         )
         .arg(
             Arg::new("column-sorting")
                 .long("column-sorting")
                 .help("Sort order for table columns.")
-                .takes_value(true)
+                .num_args(1)
                 .value_parser(PossibleValuesParser::new(["ordinal_position", "name"])),
         )
         .arg(
             Arg::new("patch-file")
                 .long("patch-file")
-                .takes_value(true)
+                .num_args(1)
                 .value_parser(clap::value_parser!(std::path::PathBuf))
                 .help("A unified diff file to be applied to the final schema."),
         )
         .arg(
             Arg::new("import-types")
                 .long("import-types")
-                .takes_value(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of types to import for every table, separated by commas."),
@@ -228,13 +228,13 @@ pub fn build_cli() -> Command<'static> {
         .arg(
             Arg::new("generate-custom-type-definitions")
                 .long("no-generate-missing-sql-type-definitions")
+                .action(ArgAction::SetTrue)
                 .help("Generate SQL type definitions for types not provided by diesel"),
         )
         .arg(
             Arg::new("custom-type-derives")
                 .long("custom-type-derives")
-                .takes_value(true)
-                .multiple_values(true)
+                .num_args(1..)
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
@@ -250,7 +250,7 @@ pub fn build_cli() -> Command<'static> {
              diesel.rs/guides/configuring-diesel-cli for documentation on this file.",
         )
         .global(true)
-        .takes_value(true);
+        .num_args(1);
 
     let locked_schema_arg = Arg::new("LOCKED_SCHEMA")
         .long("locked-schema")
@@ -261,6 +261,7 @@ pub fn build_cli() -> Command<'static> {
              changes to that file. It is recommended that you use this flag when \
              running migrations in CI or production.",
         )
+        .action(ArgAction::SetTrue)
         .global(true);
 
     Command::new("diesel")
@@ -280,7 +281,7 @@ pub fn build_cli() -> Command<'static> {
         .arg_required_else_help(true)
 }
 
-fn migration_dir_arg<'a>() -> Arg<'a> {
+fn migration_dir_arg() -> Arg {
     Arg::new("MIGRATION_DIRECTORY")
         .long("migration-dir")
         .help(
@@ -288,7 +289,7 @@ fn migration_dir_arg<'a>() -> Arg<'a> {
              will look for a directory called `migrations` in the \
              current directory and its parents.",
         )
-        .takes_value(true)
+        .num_args(1)
         .value_parser(clap::value_parser!(std::path::PathBuf))
         .global(true)
 }

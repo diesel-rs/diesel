@@ -10,6 +10,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased 
 
+### Changed 
+
+* The minimal officially supported rustc version is now 1.60.0
+
 ### Added
 
 * Added the `custom_type_derives` config option to customize the derives for SQL

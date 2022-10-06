@@ -64,7 +64,6 @@ fn migration_redo_runs_the_last_two_migrations_down_and_up() {
     let result = p.command("migration").arg("redo").arg("-n").arg("2").run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-
     assert!(
         result.stdout()
             == "Rolling back migration 2017-09-12-210424_create_bills\n\
@@ -340,7 +339,7 @@ fn migration_redo_n_with_a_string_should_throw_an_error() {
         result.stderr()
             == "error: Invalid value \"infinite\" for '--number <REDO_NUMBER>': \
                 invalid digit found in string\n\n\
-                For more information try --help\n",
+                For more information try '--help'\n",
         "Unexpected stderr : '{}'",
         result.stderr()
     );
