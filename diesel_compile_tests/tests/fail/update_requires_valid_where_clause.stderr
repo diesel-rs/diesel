@@ -20,18 +20,13 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
    |                          ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-  --> tests/fail/update_requires_valid_where_clause.rs:11:1
+  --> tests/fail/update_requires_valid_where_clause.rs:13:9
    |
-11 | / table! {
-12 | |     posts {
-13 | |         id -> Integer,
-14 | |     }
-15 | | }
-   | |_^
+13 |         id -> Integer,
+   |         ^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/update_requires_valid_where_clause.rs:23:26
@@ -48,18 +43,13 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
              <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
    = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-  --> tests/fail/update_requires_valid_where_clause.rs:11:1
+  --> tests/fail/update_requires_valid_where_clause.rs:13:9
    |
-11 | / table! {
-12 | |     posts {
-13 | |         id -> Integer,
-14 | |     }
-15 | | }
-   | |_^
+13 |         id -> Integer,
+   |         ^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/update_requires_valid_where_clause.rs:26:10
@@ -68,18 +58,13 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
    |          ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-  --> tests/fail/update_requires_valid_where_clause.rs:11:1
+  --> tests/fail/update_requires_valid_where_clause.rs:13:9
    |
-11 | / table! {
-12 | |     posts {
-13 | |         id -> Integer,
-14 | |     }
-15 | | }
-   | |_^
+13 |         id -> Integer,
+   |         ^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::id>, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/update_requires_valid_where_clause.rs:26:10
@@ -96,18 +81,13 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
              <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
    = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-  --> tests/fail/update_requires_valid_where_clause.rs:11:1
+  --> tests/fail/update_requires_valid_where_clause.rs:13:9
    |
-11 | / table! {
-12 | |     posts {
-13 | |         id -> Integer,
-14 | |     }
-15 | | }
-   | |_^
+13 |         id -> Integer,
+   |         ^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::update_statement::changeset::Assign<diesel::query_builder::update_statement::changeset::ColumnWrapperForUpdate<users::columns::id>, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>: IntoUpdateTarget` is not satisfied
   --> tests/fail/update_requires_valid_where_clause.rs:21:5

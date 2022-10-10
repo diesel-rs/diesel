@@ -5,19 +5,13 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
    |                                     ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
-  --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:13:1
+  --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:16:9
    |
-13 | / table! {
-14 | |     posts {
-15 | |         id -> Integer,
-16 | |         title -> VarChar,
-17 | |     }
-18 | | }
-   | |_^
+16 |         title -> VarChar,
+   |         ^^^^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:21:37
@@ -34,16 +28,10 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
              <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
    = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
-  --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:13:1
+  --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:16:9
    |
-13 | / table! {
-14 | |     posts {
-15 | |         id -> Integer,
-16 | |         title -> VarChar,
-17 | |     }
-18 | | }
-   | |_^
+16 |         title -> VarChar,
+   |         ^^^^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
    = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>` for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, Pg>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -23,20 +23,13 @@ error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<post
     |          ^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
     |
 note: required because of the requirements on the impl of `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
-   --> tests/fail/selectable.rs:12:1
+   --> tests/fail/selectable.rs:14:9
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |         title -> Text,
-16  | |         user_id -> Integer,
-17  | |     }
-18  | | }
-    | |_^
+14  |         id -> Integer,
+    |         ^^
     = note: 4 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:149:10
@@ -53,20 +46,13 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
               <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
 note: required because of the requirements on the impl of `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
-   --> tests/fail/selectable.rs:12:1
+   --> tests/fail/selectable.rs:14:9
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |         title -> Text,
-16  | |         user_id -> Integer,
-17  | |     }
-18  | | }
-    | |_^
+14  |         id -> Integer,
+    |         ^^
     = note: 4 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
    --> tests/fail/selectable.rs:149:10
@@ -83,20 +69,13 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
               <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
 note: required because of the requirements on the impl of `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::title`
-   --> tests/fail/selectable.rs:12:1
+   --> tests/fail/selectable.rs:15:9
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |         title -> Text,
-16  | |         user_id -> Integer,
-17  | |     }
-18  | | }
-    | |_^
+15  |         title -> Text,
+    |         ^^^^^
     = note: 4 redundant requirements hidden
     = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
     --> tests/fail/selectable.rs:150:10
@@ -105,16 +84,10 @@ error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<post
      |          ^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
      |
 note: required because of the requirements on the impl of `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
-    --> tests/fail/selectable.rs:12:1
+    --> tests/fail/selectable.rs:14:9
      |
-12   | / table! {
-13   | |     posts {
-14   | |         id -> Integer,
-15   | |         title -> Text,
-16   | |         user_id -> Integer,
-17   | |     }
-18   | | }
-     | |_^
+14   |         id -> Integer,
+     |         ^^
      = note: 4 redundant requirements hidden
      = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
@@ -125,7 +98,6 @@ note: required by a bound in `diesel::RunQueryDsl::load`
      |
      |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
-     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:150:10
@@ -142,16 +114,10 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
                <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
                <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
 note: required because of the requirements on the impl of `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::id`
-    --> tests/fail/selectable.rs:12:1
+    --> tests/fail/selectable.rs:14:9
      |
-12   | / table! {
-13   | |     posts {
-14   | |         id -> Integer,
-15   | |         title -> Text,
-16   | |         user_id -> Integer,
-17   | |     }
-18   | | }
-     | |_^
+14   |         id -> Integer,
+     |         ^^
      = note: 4 redundant requirements hidden
      = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
@@ -162,7 +128,6 @@ note: required by a bound in `diesel::RunQueryDsl::load`
      |
      |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
-     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::title` from `users::table`
     --> tests/fail/selectable.rs:150:10
@@ -179,16 +144,10 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
                <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
                <posts::columns::title as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
 note: required because of the requirements on the impl of `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>` for `posts::columns::title`
-    --> tests/fail/selectable.rs:12:1
+    --> tests/fail/selectable.rs:15:9
      |
-12   | / table! {
-13   | |     posts {
-14   | |         id -> Integer,
-15   | |         title -> Text,
-16   | |         user_id -> Integer,
-17   | |     }
-18   | | }
-     | |_^
+15   |         title -> Text,
+     |         ^^^^^
      = note: 4 redundant requirements hidden
      = note: required because of the requirements on the impl of `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
      = note: required because of the requirements on the impl of `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>` for `diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
@@ -199,7 +158,6 @@ note: required by a bound in `diesel::RunQueryDsl::load`
      |
      |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
-     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::id>` is not satisfied
    --> tests/fail/selectable.rs:157:10
@@ -212,19 +170,13 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
               <posts::columns::id as IsContainedInGroupBy<posts::columns::title>>
               <posts::columns::id as IsContainedInGroupBy<posts::columns::user_id>>
 note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::id`
-   --> tests/fail/selectable.rs:5:1
+   --> tests/fail/selectable.rs:7:9
     |
-5   | / table! {
-6   | |     users {
-7   | |         id -> Integer,
-8   | |         name -> Text,
-9   | |     }
-10  | | }
-    | |_^
+7   |         id -> Integer,
+    |         ^^
     = note: 2 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::columns::name>` is not satisfied
    --> tests/fail/selectable.rs:157:10
@@ -237,19 +189,13 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<users::c
               <posts::columns::id as IsContainedInGroupBy<posts::columns::title>>
               <posts::columns::id as IsContainedInGroupBy<posts::columns::user_id>>
 note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `users::columns::name`
-   --> tests/fail/selectable.rs:5:1
+   --> tests/fail/selectable.rs:8:9
     |
-5   | / table! {
-6   | |     users {
-7   | |         id -> Integer,
-8   | |         name -> Text,
-9   | |     }
-10  | | }
-    | |_^
+8   |         name -> Text,
+    |         ^^^^
     = note: 3 redundant requirements hidden
     = note: required because of the requirements on the impl of `ValidGrouping<posts::columns::id>` for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>`
     = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>` for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<posts::columns::id>>`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
    --> tests/fail/selectable.rs:164:10
@@ -320,16 +266,10 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     |          ^^^^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
     |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-   --> tests/fail/selectable.rs:12:1
+   --> tests/fail/selectable.rs:14:9
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |         title -> Text,
-16  | |         user_id -> Integer,
-17  | |     }
-18  | | }
-    | |_^
+14  |         id -> Integer,
+    |         ^^
     = note: 1 redundant requirement hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -341,7 +281,6 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
     |
     |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:173:10
@@ -400,16 +339,10 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
      |          ^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
      |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-    --> tests/fail/selectable.rs:12:1
+    --> tests/fail/selectable.rs:14:9
      |
-12   | / table! {
-13   | |     posts {
-14   | |         id -> Integer,
-15   | |         title -> Text,
-16   | |         user_id -> Integer,
-17   | |     }
-18   | | }
-     | |_^
+14   |         id -> Integer,
+     |         ^^
      = note: 1 redundant requirement hidden
      = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
      = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -422,7 +355,6 @@ note: required by a bound in `diesel::RunQueryDsl::load`
      |
      |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
-     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:180:10
@@ -479,16 +411,10 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     |          ^^^^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
     |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-   --> tests/fail/selectable.rs:12:1
+   --> tests/fail/selectable.rs:14:9
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |         title -> Text,
-16  | |         user_id -> Integer,
-17  | |     }
-18  | | }
-    | |_^
+14  |         id -> Integer,
+    |         ^^
     = note: 1 redundant requirement hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -500,7 +426,6 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
     |
     |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:181:10
@@ -559,16 +484,10 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
      |          ^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
      |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-    --> tests/fail/selectable.rs:12:1
+    --> tests/fail/selectable.rs:14:9
      |
-12   | / table! {
-13   | |     posts {
-14   | |         id -> Integer,
-15   | |         title -> Text,
-16   | |         user_id -> Integer,
-17   | |     }
-18   | | }
-     | |_^
+14   |         id -> Integer,
+     |         ^^
      = note: 1 redundant requirement hidden
      = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
      = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -581,7 +500,6 @@ note: required by a bound in `diesel::RunQueryDsl::load`
      |
      |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
-     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
    --> tests/fail/selectable.rs:187:20
@@ -642,16 +560,10 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
     |          required by a bound introduced by this call
     |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-   --> tests/fail/selectable.rs:12:1
+   --> tests/fail/selectable.rs:14:9
     |
-12  | / table! {
-13  | |     posts {
-14  | |         id -> Integer,
-15  | |         title -> Text,
-16  | |         user_id -> Integer,
-17  | |     }
-18  | | }
-    | |_^
+14  |         id -> Integer,
+    |         ^^
     = note: 1 redundant requirement hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -662,7 +574,6 @@ note: required by a bound in `DeleteStatement::<T, U>::returning`
     |
     |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
     --> tests/fail/selectable.rs:188:10
@@ -721,16 +632,10 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
      |          ^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
      |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::id`
-    --> tests/fail/selectable.rs:12:1
+    --> tests/fail/selectable.rs:14:9
      |
-12   | / table! {
-13   | |     posts {
-14   | |         id -> Integer,
-15   | |         title -> Text,
-16   | |         user_id -> Integer,
-17   | |     }
-18   | | }
-     | |_^
+14   |         id -> Integer,
+     |         ^^
      = note: 1 redundant requirement hidden
      = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(posts::columns::id, posts::columns::title)`
      = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(posts::columns::id, posts::columns::title)`
@@ -743,7 +648,6 @@ note: required by a bound in `diesel::RunQueryDsl::load`
      |
      |         Self: LoadQuery<'query, Conn, U>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
-     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0599]: the function or associated item `as_select` exists for struct `UserWithoutSelectable`, but its trait bounds were not satisfied
    --> tests/fail/selectable.rs:192:56
