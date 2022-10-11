@@ -10,6 +10,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased 
 
+## [2.0.2] 2022-10-xx
+
+### Fixed
+
+* Reverted a fix from the 2.0.1 release that breaks valid `INSERT … ON CONFLICT` queries
+
 ## [2.0.1] 2022-10-07
 
 ### Fixed
@@ -1968,3 +1974,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.0.0 Rc1]: https://github.com/diesel-rs/diesel/compare/v.2.0.0-rc0...v2.0.0-rc1
 [2.0.0]: https://github.com/diesel-rs/diesel/compare/v.1.4.0...v2.0.0
 [2.0.1]: https://github.com/diesel-rs/diesel/compare/v.2.0.0...v2.0.1
+[2.0.2]: https://github.com/diesel-rs/diesel/compare/v.2.0.1...v2.0.2
