@@ -107,6 +107,11 @@ impl ColumnDefinition {
             null: true,
         }
     }
+
+    fn not_null(mut self) -> Self {
+        self.null = false;
+        self
+    }
 }
 
 impl<DB: Backend> QueryFragment<DB> for ColumnDefinition {
@@ -124,6 +129,31 @@ impl<DB: Backend> QueryFragment<DB> for ColumnDefinition {
 #[derive(Debug, Clone)]
 pub struct TableColumnDefinition {
     columns: Vec<ColumnDefinition>,
+}
+
+impl TableColumnDefinition {
+    pub fn primary_key<K>(self, key: K) -> CreateTableColumnDefinition
+    where
+        K: Into<String>,
+    {
+        CreateTableColumnDefinition {
+            columns: self,
+            primary_key: PrimaryKey {
+                keys: vec![key.into()],
+            },
+        }
+    }
+}
+
+impl<T> From<T> for TableColumnDefinition
+where
+    T: Into<Vec<ColumnDefinition>>,
+{
+    fn from(vec: T) -> Self {
+        Self {
+            columns: vec.into(),
+        }
+    }
 }
 
 impl<DB: Backend> QueryFragment<DB> for TableColumnDefinition {
