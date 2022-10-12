@@ -79,6 +79,7 @@
 #![warn(missing_docs)]
 
 mod column;
+pub mod dsl;
 mod dummy_expression;
 mod dynamic_select;
 pub mod dynamic_value;

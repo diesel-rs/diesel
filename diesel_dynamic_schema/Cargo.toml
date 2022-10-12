@@ -42,7 +42,7 @@ path = "tests/lib.rs"
 harness = true
 
 [features]
-default = []
+default = ["postgres"]
 postgres = ["diesel/postgres_backend"]
 sqlite = ["diesel/sqlite"]
 mysql = ["diesel/mysql_backend"]
