@@ -181,6 +181,16 @@ pub struct CreateTableColumnDefinition {
     primary_key: PrimaryKey,
 }
 
+impl CreateTableColumnDefinition {
+    fn primary_key<K>(mut self, key: K) -> Self
+    where
+        K: Into<String>,
+    {
+        self.primary_key = self.primary_key.primary_key(key);
+        self
+    }
+}
+
 impl<DB: Backend> QueryFragment<DB> for CreateTableColumnDefinition {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("(");
