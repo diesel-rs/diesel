@@ -1,3 +1,4 @@
+use diesel::associations::HasTable;
 use diesel::backend::Backend;
 use diesel::expression::expression_types;
 use diesel::internal::table_macro::{FromClause, SelectStatement};
@@ -111,4 +112,19 @@ where
 impl<T, U> QueryId for Table<T, U> {
     type QueryId = ();
     const HAS_STATIC_QUERY_ID: bool = false;
+}
+
+impl<T, U> HasTable for Table<T, U>
+where
+    T: Default,
+    Self: QuerySource + AsQuery,
+{
+    type Table = Self;
+
+    fn table() -> Self {
+        Self {
+            name: T::default(),
+            schema: None,
+        }
+    }
 }
