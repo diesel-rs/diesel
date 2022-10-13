@@ -115,9 +115,7 @@ use crate::query_builder::{Query, QueryFragment, QueryId};
 
 /// An r2d2 connection manager for use with Diesel.
 ///
-/// See the [r2d2 documentation] for usage examples.
-///
-/// [r2d2 documentation]: r2d2
+/// See the [r2d2 documentation](https://docs.rs/r2d2/latest/r2d2/) for usage examples.
 #[derive(Clone)]
 pub struct ConnectionManager<T> {
     database_url: String,
