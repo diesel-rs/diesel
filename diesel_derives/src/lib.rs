@@ -1485,10 +1485,8 @@ pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream
 /// -------
 ///
 /// A type alias called `SqlType` will be created. It will be the SQL type of
-/// `all_columns`. The SQL type is needed for things like [returning boxed
-/// queries][boxed_queries].
-///
-/// [boxed_queries]: crate::query_dsl::QueryDsl::into_boxed()
+/// `all_columns`. The SQL type is needed for things like returning boxed
+/// queries.
 ///
 /// `BoxedQuery`
 /// ----------
