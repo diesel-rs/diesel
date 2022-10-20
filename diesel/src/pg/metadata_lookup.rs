@@ -173,8 +173,6 @@ impl PgMetadataCache {
     }
 }
 
-//trace_macros!(true);
-//diesel_derives::table_proc! {
 table! {
     pg_type (oid) {
         oid -> Oid,
@@ -183,7 +181,6 @@ table! {
         typnamespace -> Oid,
     }
 }
-//trace_macros!(false);
 
 table! {
     pg_namespace (oid) {

@@ -1496,5 +1496,14 @@ pub fn __diesel_public_if(attrs: TokenStream, input: TokenStream) -> TokenStream
 /// ```
 #[proc_macro]
 pub fn table_proc(input: TokenStream) -> TokenStream {
-    table::expand(parse_macro_input!(input)).into()
+    match syn::parse(input) {
+        Ok(input) => table::expand(input).into(),
+        Err(_) => quote::quote! {
+            compile_error!(
+                "Invalid `table!` syntax. Please see the `table!` macro docs for more info.\n\
+                 Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
+            );
+        }
+        .into(),
+    }
 }

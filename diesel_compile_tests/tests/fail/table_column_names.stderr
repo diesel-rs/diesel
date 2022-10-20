@@ -1,22 +1,6 @@
-error: macros that expand to items must be delimited with braces or followed by a semicolon
- --> tests/fail/table_column_names.rs:6:9
-  |
-6 |         users -> Integer,
-  |         ^^^^^
-  |
-help: change the delimiters to curly braces
-  |
-6 |         {} -> Integer,
-  |         ~
-help: add a semicolon
-  |
-6 |         users; -> Integer,
-  |              +
-
 error: Column `users` cannot be named the same as it's table.
        You may use `#[sql_name = "users"]` to reference the table's `users` column
-
-                        Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
+       Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`
  --> tests/fail/table_column_names.rs:6:9
   |
 6 |         users -> Integer,

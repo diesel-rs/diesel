@@ -137,11 +137,11 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
             let message = format!(
                 "Column `{column_name}` cannot be named the same as it's table.\n\
                  You may use `#[sql_name = \"{column_name}\"]` to reference the table's \
-                 `{column_name}` column \n
+                 `{column_name}` column \n\
                  Docs available at: `https://docs.diesel.rs/master/diesel/macro.table.html`\n"
             );
             quote::quote_spanned! { span =>
-                compile_error!(#message)
+                compile_error!(#message);
             }
         } else {
             quote::quote! {
