@@ -3,14 +3,12 @@ use syn::Ident;
 
 const DEFAULT_PRIMARY_KEY_NAME: &str = "id";
 
-#[derive(Debug)]
 #[allow(dead_code)] // paren_token is currently unused
 pub struct PrimaryKey {
     paren_token: syn::token::Paren,
     keys: syn::punctuated::Punctuated<Ident, syn::Token![,]>,
 }
 
-#[derive(Debug)]
 #[allow(dead_code)] // arrow is currently unused
 pub struct ColumnDef {
     meta: Vec<syn::Attribute>,
@@ -20,7 +18,6 @@ pub struct ColumnDef {
     tpe: syn::TypePath,
 }
 
-#[derive(Debug)]
 #[allow(dead_code)] // punct and brace_token is currently unused
 pub struct TableDecl {
     use_statements: Vec<syn::ItemUse>,
