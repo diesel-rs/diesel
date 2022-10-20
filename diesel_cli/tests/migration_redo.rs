@@ -337,7 +337,7 @@ fn migration_redo_n_with_a_string_should_throw_an_error() {
 
     assert!(
         result.stderr()
-            == "error: Invalid value \"infinite\" for '--number <REDO_NUMBER>': \
+            == "error: Invalid value 'infinite' for '--number <REDO_NUMBER>': \
                 invalid digit found in string\n\n\
                 For more information try '--help'\n",
         "Unexpected stderr : '{}'",
