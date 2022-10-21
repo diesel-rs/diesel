@@ -1,4 +1,10 @@
 on:
+  workflow_dispatch:
+    inputs:
+      test:
+        required: true
+        type: boolean
+        description: 'bar'
   schedule:
     - cron: "23 03 * * *"
 
