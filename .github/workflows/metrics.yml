@@ -83,7 +83,12 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           echo "${{ secrets.METRIC_ACCESS_KEY }}" >> ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          df -h
           rm diesel_bench/target/release -rf
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          df -h
 
           git clone --depth 1 git@github.com:diesel-rs/metrics.git
 
