@@ -146,3 +146,33 @@ fn union_with_order() {
 
     assert_eq!(vec![String::from("Jim"), "Sean".into()], users);
 }
+
+#[test]
+fn as_subquery_for_eq_in() {
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    insert_into(posts::table)
+        .values(&[
+            (posts::user_id.eq(1), posts::title.eq("First post")),
+            (posts::user_id.eq(2), posts::title.eq("Second post")),
+        ])
+        .execute(conn)
+        .unwrap();
+
+    let subquery = users::table
+        .select(users::id)
+        .filter(users::name.eq("Sean"))
+        .union(
+            users::table
+                .select(users::id)
+                .filter(users::name.ne("Sean")),
+        );
+
+    let out = posts::table
+        .filter(posts::user_id.eq_any(subquery))
+        .select(posts::title)
+        .load::<String>(conn)
+        .unwrap();
+
+    assert_eq!(out, vec!["First post", "Second post"]);
+}
