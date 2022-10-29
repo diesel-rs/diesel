@@ -7,6 +7,7 @@ error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
    = help: the following other types implement trait `SelectQuery`:
              BoxedSelectStatement<'a, ST, QS, DB, GB>
              SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+             diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs>
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::subselect::Subselect<bool, Bool>`
    = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::exists::Exists<bool>`
@@ -21,6 +22,7 @@ error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
    = help: the following other types implement trait `SelectQuery`:
              BoxedSelectStatement<'a, ST, QS, DB, GB>
              SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+             diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs>
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::subselect::Subselect<users::columns::id, Bool>`
    = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::exists::Exists<users::columns::id>`
