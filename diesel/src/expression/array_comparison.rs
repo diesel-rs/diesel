@@ -9,6 +9,7 @@ use crate::expression::{
     AppearsOnTable, AsExpression, Expression, SelectableExpression, TypedExpressionType,
     ValidGrouping,
 };
+use crate::query_builder::combination_clause::CombinationClause;
 use crate::query_builder::{
     AstPass, BoxedSelectStatement, QueryFragment, QueryId, SelectQuery, SelectStatement,
 };
@@ -220,6 +221,20 @@ impl<'a, ST, QS, DB, GB> AsInExpression<ST> for BoxedSelectStatement<'a, ST, QS,
 where
     ST: SqlType + TypedExpressionType,
     Subselect<BoxedSelectStatement<'a, ST, QS, DB, GB>, ST>: Expression<SqlType = ST>,
+{
+    type InExpression = Subselect<Self, ST>;
+
+    fn as_in_expression(self) -> Self::InExpression {
+        Subselect::new(self)
+    }
+}
+
+impl<ST, Combinator, Rule, Source, Rhs> AsInExpression<ST>
+    for CombinationClause<Combinator, Rule, Source, Rhs>
+where
+    ST: SqlType + TypedExpressionType,
+    Self: SelectQuery<SqlType = ST>,
+    Subselect<Self, ST>: Expression<SqlType = ST>,
 {
     type InExpression = Subselect<Self, ST>;
 

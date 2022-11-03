@@ -9,9 +9,9 @@ use crate::result::QueryResult;
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct OnConflictValues<Values, Target, Action> {
-    pub(crate) values: Values,
-    pub(crate) target: Target,
-    pub(crate) action: Action,
+    values: Values,
+    target: Target,
+    action: Action,
 }
 
 impl<Values, Target, Action> QueryId for OnConflictValues<Values, Target, Action> {
@@ -53,7 +53,7 @@ where
     DB: Backend,
     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     Values: QueryFragment<DB>,
-    Target: QueryFragment<DB> + super::on_conflict_target_decorations::UndecoratedConflictTarget,
+    Target: QueryFragment<DB>,
     Action: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -62,21 +62,5 @@ where
         self.target.walk_ast(out.reborrow())?;
         self.action.walk_ast(out.reborrow())?;
         Ok(())
-    }
-}
-
-impl<DB, Values, Target, Action, Where> QueryFragment<DB>
-    for OnConflictValues<
-        Values,
-        super::on_conflict_target_decorations::DecoratedConflictTarget<Target, Where>,
-        Action,
-    >
-where
-    DB: Backend,
-    DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
-    Self: QueryFragment<DB, DB::OnConflictClause>,
-{
-    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
     }
 }

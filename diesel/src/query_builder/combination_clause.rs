@@ -2,9 +2,10 @@
 //! with or without `ALL` rule for duplicates
 
 use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::expression::subselect::ValidSubselect;
 use crate::expression::NonAggregate;
 use crate::query_builder::insert_statement::InsertFromSelect;
-use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId};
+use crate::query_builder::{AsQuery, AstPass, Query, QueryFragment, QueryId, SelectQuery};
 use crate::{CombineDsl, Insertable, QueryResult, RunQueryDsl, Table};
 
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -53,6 +54,22 @@ where
     Rhs: Query<SqlType = Source::SqlType>,
 {
     type SqlType = Source::SqlType;
+}
+
+impl<Combinator, Rule, Source, Rhs> SelectQuery for CombinationClause<Combinator, Rule, Source, Rhs>
+where
+    Source: SelectQuery,
+    Rhs: SelectQuery<SqlType = Source::SqlType>,
+{
+    type SqlType = Source::SqlType;
+}
+
+impl<Combinator, Rule, Source, Rhs, QS> ValidSubselect<QS>
+    for CombinationClause<Combinator, Rule, Source, Rhs>
+where
+    Source: ValidSubselect<QS>,
+    Rhs: ValidSubselect<QS>,
+{
 }
 
 impl<Combinator, Rule, Source, Rhs, Conn> RunQueryDsl<Conn>
