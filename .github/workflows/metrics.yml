@@ -1,6 +1,9 @@
 on:
   schedule:
     - cron: "23 03 * * *"
+  push:
+    branches:
+      - try_to_fix_metrics_job
 
 name: Metrics
 
@@ -83,9 +86,19 @@ jobs:
           ssh-keyscan github.com >> ~/.ssh/known_hosts
           echo "${{ secrets.METRIC_ACCESS_KEY }}" >> ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
+          df -h
           rm diesel_bench/target/release -rf
-
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          df -h
+          sudo rm -rf /opt/ghc
+          df -h
+          sudo rm -rf "/usr/local/share/boost"
+          df -h
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
           git clone --depth 1 git@github.com:diesel-rs/metrics.git
+          df -h
 
           cd metrics
           export FOLDER_NAME=$(date +%Y%m%d-%H%M%S)
