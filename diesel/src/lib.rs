@@ -513,6 +513,8 @@ pub mod prelude {
     pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
+    #[doc(inline)]
+    pub use diesel_derives::table_proc as table;
 
     #[cfg(feature = "mysql")]
     #[doc(inline)]
@@ -525,6 +527,8 @@ pub mod prelude {
     pub use crate::sqlite::SqliteConnection;
 }
 
+#[doc(inline)]
+pub use crate::macros::table;
 pub use crate::prelude::*;
 #[doc(inline)]
 pub use crate::query_builder::debug_query;
@@ -537,7 +541,3 @@ pub use crate::result::Error::NotFound;
 pub(crate) mod diesel {
     pub(crate) use super::*;
 }
-
-// workaround https://github.com/rust-lang/rust/pull/52234
-#[doc(hidden)]
-pub use __diesel_check_column_count_internal as __diesel_check_column_count;

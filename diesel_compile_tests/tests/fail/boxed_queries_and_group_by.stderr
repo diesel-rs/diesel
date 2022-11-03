@@ -12,20 +12,19 @@ error[E0271]: type mismatch resolving `<users::columns::name as IsContainedInGro
   --> tests/fail/boxed_queries_and_group_by.rs:59:10
    |
 59 |         .select(users::id)
-   |          ^^^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
+   |          ^^^^^^ type mismatch resolving `<users::columns::name as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
    |
+note: expected this to be `diesel::expression::is_contained_in_group_by::No`
+  --> tests/fail/boxed_queries_and_group_by.rs:8:9
+   |
+8  |         name -> Text,
+   |         ^^^^
 note: required because of the requirements on the impl of `ValidGrouping<users::columns::name>` for `users::columns::id`
-  --> tests/fail/boxed_queries_and_group_by.rs:5:1
+  --> tests/fail/boxed_queries_and_group_by.rs:7:9
    |
-5  | / table! {
-6  | |     users {
-7  | |         id -> Integer,
-8  | |         name -> Text,
-9  | |     }
-10 | | }
-   | |_^
+7  |         id -> Integer,
+   |         ^^
    = note: required because of the requirements on the impl of `SelectDsl<users::columns::id>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::name>>: BoxedDsl<'_, _>` is not satisfied
   --> tests/fail/boxed_queries_and_group_by.rs:60:10
@@ -41,20 +40,19 @@ error[E0271]: type mismatch resolving `<users::columns::name as IsContainedInGro
   --> tests/fail/boxed_queries_and_group_by.rs:66:10
    |
 66 |         .select(users::id)
-   |          ^^^^^^ expected struct `diesel::expression::is_contained_in_group_by::No`, found struct `diesel::expression::is_contained_in_group_by::Yes`
+   |          ^^^^^^ type mismatch resolving `<users::columns::name as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
    |
+note: expected this to be `diesel::expression::is_contained_in_group_by::No`
+  --> tests/fail/boxed_queries_and_group_by.rs:8:9
+   |
+8  |         name -> Text,
+   |         ^^^^
 note: required because of the requirements on the impl of `ValidGrouping<users::columns::name>` for `users::columns::id`
-  --> tests/fail/boxed_queries_and_group_by.rs:5:1
+  --> tests/fail/boxed_queries_and_group_by.rs:7:9
    |
-5  | / table! {
-6  | |     users {
-7  | |         id -> Integer,
-8  | |         name -> Text,
-9  | |     }
-10 | | }
-   | |_^
+7  |         id -> Integer,
+   |         ^^
    = note: required because of the requirements on the impl of `SelectDsl<users::columns::id>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>: Table` is not satisfied
   --> tests/fail/boxed_queries_and_group_by.rs:73:10

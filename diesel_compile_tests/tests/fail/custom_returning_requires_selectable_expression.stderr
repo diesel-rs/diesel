@@ -48,15 +48,10 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<bad:
     |                                                     ^^^^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
     |
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:12:1
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
-12  | / table! {
-13  | |     bad {
-14  | |       id -> Integer,
-15  | |       age -> Integer,
-16  | |     }
-17  | | }
-    | |_^
+15  |       age -> Integer,
+    |       ^^^
     = note: 1 redundant requirement hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
@@ -66,7 +61,6 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
     |
     |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not satisfied
    --> tests/fail/custom_returning_requires_selectable_expression.rs:33:53
@@ -83,15 +77,10 @@ error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not s
               <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
     = note: required because of the requirements on the impl of `AppearsInFromClause<bad::table>` for `users::table`
 note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `bad::columns::age`
-   --> tests/fail/custom_returning_requires_selectable_expression.rs:12:1
+   --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
     |
-12  | / table! {
-13  | |     bad {
-14  | |       id -> Integer,
-15  | |       age -> Integer,
-16  | |     }
-17  | | }
-    | |_^
+15  |       age -> Integer,
+    |       ^^^
     = note: 1 redundant requirement hidden
     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `(users::columns::name, bad::columns::age)`
     = note: required because of the requirements on the impl of `SelectableExpression<users::table>` for `(users::columns::name, bad::columns::age)`
@@ -101,4 +90,3 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
     |
     |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
-    = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

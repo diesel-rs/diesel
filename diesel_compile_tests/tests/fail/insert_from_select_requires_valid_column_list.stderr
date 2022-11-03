@@ -32,7 +32,13 @@ error[E0271]: type mismatch resolving `<posts::columns::title as diesel::Express
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:68:10
    |
 68 |         .into_columns(title);
-   |          ^^^^^^^^^^^^ expected struct `diesel::sql_types::Text`, found struct `diesel::sql_types::Integer`
+   |          ^^^^^^^^^^^^ type mismatch resolving `<posts::columns::title as diesel::Expression>::SqlType == diesel::sql_types::Integer`
+   |
+note: expected this to be `diesel::sql_types::Text`
+  --> tests/fail/insert_from_select_requires_valid_column_list.rs:17:18
+   |
+17 |         title -> Text,
+   |                  ^^^^
 
 error[E0277]: the trait bound `(comments::columns::post_id, posts::columns::title): diesel::query_builder::insert_statement::column_list::ColumnList` is not satisfied
    --> tests/fail/insert_from_select_requires_valid_column_list.rs:73:23

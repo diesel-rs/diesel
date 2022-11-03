@@ -5,16 +5,10 @@ error[E0271]: type mismatch resolving `<NoFromClause as AppearsInFromClause<user
      |          ^^^^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
      |
 note: required because of the requirements on the impl of `AppearsOnTable<NoFromClause>` for `columns::hair_color`
-    --> tests/fail/columns_cannot_be_rhs_of_insert.rs:6:1
+    --> tests/fail/columns_cannot_be_rhs_of_insert.rs:10:9
      |
-6    | / table! {
-7    | |     users {
-8    | |         id -> Integer,
-9    | |         name -> Text,
-10   | |         hair_color -> Text,
-11   | |     }
-12   | | }
-     | |_^
+10   |         hair_color -> Text,
+     |         ^^^^^^^^^^
      = note: 1 redundant requirement hidden
      = note: required because of the requirements on the impl of `AppearsOnTable<NoFromClause>` for `&columns::hair_color`
      = note: required because of the requirements on the impl of `InsertValues<users::table, _>` for `ColumnInsertValue<columns::name, &columns::hair_color>`
@@ -27,4 +21,3 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
      |
      |         Self: methods::ExecuteDsl<Conn>,
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::execute`
-     = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

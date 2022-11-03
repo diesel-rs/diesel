@@ -57,19 +57,15 @@ error[E0599]: the method `only` exists for struct `SelectStatement<FromClause<fo
 error[E0599]: the method `only` exists for struct `columns::id`, but its trait bounds were not satisfied
   --> tests/fail/only_only_on_table.rs:15:31
    |
-6  | / table! {
-7  | |     foo (id) {
-8  | |         id -> Int8,
-9  | |     }
-10 | | }
-   | | -
-   | | |
-   | | method `only` not found for this struct
-   | |_doesn't satisfy `columns::id: Table`
-   |   doesn't satisfy `columns::id: diesel::dsl::OnlyDsl`
+8  |         id -> Int8,
+   |         --
+   |         |
+   |         method `only` not found for this struct
+   |         doesn't satisfy `columns::id: Table`
+   |         doesn't satisfy `columns::id: diesel::dsl::OnlyDsl`
 ...
-15 |       foo::table.select(foo::id.only());
-   |                                 ^^^^ method cannot be called on `columns::id` due to unsatisfied trait bounds
+15 |     foo::table.select(foo::id.only());
+   |                               ^^^^ method cannot be called on `columns::id` due to unsatisfied trait bounds
    |
    = note: the following trait bounds were not satisfied:
            `columns::id: Table`

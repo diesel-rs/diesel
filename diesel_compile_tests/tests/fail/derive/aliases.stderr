@@ -2,8 +2,13 @@ error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == 
   --> tests/fail/derive/aliases.rs:36:16
    |
 36 |     user_alias.field(posts::id);
-   |                ^^^^^ expected struct `users::table`, found struct `posts::table`
+   |                ^^^^^ type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
    |
+note: expected this to be `users::table`
+  --> tests/fail/derive/aliases.rs:15:9
+   |
+15 |         id -> Integer,
+   |         ^^
 note: required by a bound in `Alias::<S>::field`
   --> $DIESEL/src/query_source/aliasing/alias.rs
    |
@@ -98,21 +103,16 @@ error[E0277]: the trait bound `Alias<users2>: AppearsInFromClause<pets::table>` 
    = help: the trait `AppearsInFromClause<QS>` is implemented for `Alias<S>`
    = note: required because of the requirements on the impl of `AppearsInFromClause<pets::table>` for `query_source::joins::Join<pets::table, Alias<users2>, Inner>`
 note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<pets::table, Alias<users2>, Inner>>` for `pets::columns::id`
-  --> tests/fail/derive/aliases.rs:21:1
+  --> tests/fail/derive/aliases.rs:23:9
    |
-21 | / table! {
-22 | |     pets {
-23 | |         id -> Integer,
-24 | |     }
-25 | | }
-   | |_^
+23 |         id -> Integer,
+   |         ^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<pets::table, Alias<users2>, Inner>>` for `((pets::columns::id,), (AliasedField<users2, users::columns::id>, AliasedField<users2, users::columns::name>))`
    = note: required because of the requirements on the impl of `QuerySource` for `query_source::joins::Join<pets::table, Alias<users2>, Inner>`
    = note: 1 redundant requirement hidden
    = note: required because of the requirements on the impl of `QuerySource` for `JoinOn<query_source::joins::Join<pets::table, Alias<users2>, Inner>, _>`
    = note: required because of the requirements on the impl of `InternalJoinDsl<Alias<users2>, Inner, _>` for `SelectStatement<FromClause<pets::table>>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfied
   --> tests/fail/derive/aliases.rs:54:10

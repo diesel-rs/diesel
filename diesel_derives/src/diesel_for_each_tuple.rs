@@ -1,13 +1,13 @@
 use proc_macro2::{Ident, Span, TokenStream};
 
 #[cfg(not(feature = "32-column-tables"))]
-const MAX_TUPLE_SIZE: i32 = 16;
+pub const MAX_TUPLE_SIZE: i32 = 16;
 #[cfg(all(not(feature = "64-column-tables"), feature = "32-column-tables"))]
-const MAX_TUPLE_SIZE: i32 = 32;
+pub const MAX_TUPLE_SIZE: i32 = 32;
 #[cfg(all(not(feature = "128-column-tables"), feature = "64-column-tables"))]
-const MAX_TUPLE_SIZE: i32 = 64;
+pub const MAX_TUPLE_SIZE: i32 = 64;
 #[cfg(feature = "128-column-tables")]
-const MAX_TUPLE_SIZE: i32 = 128;
+pub const MAX_TUPLE_SIZE: i32 = 128;
 
 pub(crate) fn expand(input: Ident) -> TokenStream {
     let call_side = Span::mixed_site();

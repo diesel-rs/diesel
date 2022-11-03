@@ -31,20 +31,13 @@ error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFro
    |                                                          ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
 note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::id`
-  --> tests/fail/having_cant_be_used_without_group_by.rs:12:1
+  --> tests/fail/having_cant_be_used_without_group_by.rs:14:9
    |
-12 | / table! {
-13 | |     posts {
-14 | |         id -> Integer,
-15 | |         title -> Text,
-16 | |         user_id -> Integer,
-17 | |     }
-18 | | }
-   | |_^
+14 |         id -> Integer,
+   |         ^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
    = note: required because of the requirements on the impl of `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:32:71
@@ -53,17 +46,10 @@ error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFro
    |                                                                       ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
 note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `posts::columns::id`
-  --> tests/fail/having_cant_be_used_without_group_by.rs:12:1
+  --> tests/fail/having_cant_be_used_without_group_by.rs:14:9
    |
-12 | / table! {
-13 | |     posts {
-14 | |         id -> Integer,
-15 | |         title -> Text,
-16 | |         user_id -> Integer,
-17 | |     }
-18 | | }
-   | |_^
+14 |         id -> Integer,
+   |         ^^
    = note: 2 redundant requirements hidden
    = note: required because of the requirements on the impl of `AppearsOnTable<FromClause<users::table>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
    = note: required because of the requirements on the impl of `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>` for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::id>`
-   = note: this error originates in the macro `$crate::__diesel_column` which comes from the expansion of the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
