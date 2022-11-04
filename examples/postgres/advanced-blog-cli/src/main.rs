@@ -40,14 +40,14 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 .filter(posts::published_at.is_not_null())
                 .inner_join(users::table)
                 .select((posts::all_columns, (users::id, users::username)))
-                .paginate(page);
+                .paginate(Some(page));
 
             if let Some(per_page) = per_page {
                 use std::cmp::min;
-                query = query.per_page(min(per_page, 25));
+                query = query.per_page(Some(min(per_page, 25)));
             }
 
-            let (posts_with_user, total_pages) =
+            let (posts_with_user, total_pages, total) =
                 query.load_and_count_pages::<(Post, User)>(conn)?;
             let (posts, post_users): (Vec<_>, Vec<_>) = posts_with_user.into_iter().unzip();
 
@@ -62,7 +62,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 post::render(&post, &user, &comments);
             }
 
-            println!("Page {} of {}", page, total_pages);
+            println!("Page {} of {}, total: {}", page, total_pages, total);
         }
         Cli::CreatePost { title } => {
             let user = current_user(conn)?;
@@ -135,17 +135,17 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 .order(comments::created_at.desc())
                 .inner_join(posts::table)
                 .select((comments::all_columns, posts::title))
-                .paginate(page);
+                .paginate(Some(page));
 
             if let Some(per_page) = per_page {
                 use std::cmp::min;
-                query = query.per_page(min(per_page, 25));
+                query = query.per_page(Some(min(per_page, 25)));
             }
 
-            let (comments_and_post_title, total_pages) =
+            let (comments_and_post_title, total_pages, total) =
                 query.load_and_count_pages::<(Comment, String)>(conn)?;
             comment::render(&comments_and_post_title);
-            println!("Page {} of {}", page, total_pages);
+            println!("Page {} of {}, total: {}", page, total_pages, total);
         }
         Cli::Register => {
             register_user(conn)?;
