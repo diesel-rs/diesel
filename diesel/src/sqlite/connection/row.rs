@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
-use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
+use crate::row::{Field, PartialRow, Row, RowFieldLifetimeHelper, RowIndex};
 use crate::sqlite::Sqlite;
 
 #[allow(missing_debug_implementations)]
@@ -60,7 +60,7 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
     }
 }
 
-impl<'stmt, 'query> RowSealed<Sqlite> for SqliteRow<'stmt, 'query> {
+impl<'stmt, 'query> RowFieldLifetimeHelper<Sqlite> for SqliteRow<'stmt, 'query> {
     type Field<'field> = SqliteField<'field, 'field>;
 }
 
@@ -71,7 +71,10 @@ impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
         self.field_count
     }
 
-    fn get<'field, I>(&'field self, idx: I) -> Option<<Self as RowSealed<Sqlite>>::Field<'field>>
+    fn get<'field, I>(
+        &'field self,
+        idx: I,
+    ) -> Option<<Self as RowFieldLifetimeHelper<Sqlite>>::Field<'field>>
     where
         'stmt: 'field,
         Self: RowIndex<I>,

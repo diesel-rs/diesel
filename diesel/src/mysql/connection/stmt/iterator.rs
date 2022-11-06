@@ -149,7 +149,7 @@ impl PrivateMysqlRow {
     }
 }
 
-impl RowSealed<Mysql> for MysqlRow {
+impl RowFieldLifetimeHelper<Mysql> for MysqlRow {
     type Field<'f> = MysqlField<'f>;
 }
 
@@ -160,7 +160,7 @@ impl<'a> Row<'a, Mysql> for MysqlRow {
         self.metadata.fields().len()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowSealed<Mysql>>::Field<'b>>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldLifetimeHelper<Mysql>>::Field<'b>>
     where
         'a: 'b,
         Self: RowIndex<I>,

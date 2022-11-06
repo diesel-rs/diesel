@@ -7,10 +7,10 @@ use std::ops::Range;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::private::{PartialRow, RowSealed};
+pub use self::private::{PartialRow, RowFieldLifetimeHelper};
 
 #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-pub(crate) use self::private::{PartialRow, RowSealed};
+pub(crate) use self::private::{PartialRow, RowFieldLifetimeHelper};
 
 /// Representing a way to index into database rows
 ///
@@ -29,7 +29,7 @@ pub trait RowIndex<I> {
 /// Return type of [`Row::get`]
 ///
 /// Users should threat this as opaque [`impl Field<DB>`](Field) type.
-pub type FieldRet<'a, R, DB> = <R as RowSealed<DB>>::Field<'a>;
+pub type FieldRet<'a, R, DB> = <R as RowFieldLifetimeHelper<DB>>::Field<'a>;
 
 /// Represents a single database row.
 ///
@@ -37,7 +37,7 @@ pub type FieldRet<'a, R, DB> = <R as RowSealed<DB>>::Field<'a>;
 ///
 /// [`FromSqlRow`]: crate::deserialize::FromSqlRow
 pub trait Row<'a, DB: Backend>:
-    RowIndex<usize> + for<'b> RowIndex<&'b str> + RowSealed<DB> + Sized
+    RowIndex<usize> + for<'b> RowIndex<&'b str> + RowFieldLifetimeHelper<DB> + Sized
 {
     /// Return type of `PartialRow`
     ///
@@ -99,10 +99,10 @@ pub trait Field<'a, DB: Backend> {
     }
 }
 
-impl<'a, DB, R> RowSealed<DB> for PartialRow<'a, R>
+impl<'a, DB, R> RowFieldLifetimeHelper<DB> for PartialRow<'a, R>
 where
     DB: Backend,
-    R: RowSealed<DB>,
+    R: RowFieldLifetimeHelper<DB>,
 {
     type Field<'f> = R::Field<'f>;
 }
@@ -150,11 +150,14 @@ mod private {
 
     /// A helper trait to indicate the life time bound for a field returned
     /// by [`Row::get`]
+    ///
+    /// This trait only exists to be able to express [`FieldRet`](super::FieldRet) without the
+    /// lifetime of the implementation of [`Row`].
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
     )]
-    pub trait RowSealed<DB: Backend> {
+    pub trait RowFieldLifetimeHelper<DB: Backend> {
         /// Field type returned by a `Row` implementation
         ///
         /// * Crates using existing backend should not concern themself with the
