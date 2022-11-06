@@ -209,14 +209,11 @@ where
     }
 }
 
-impl<DB, M, B> ConnectionSealed<DB, B> for PooledConnection<M>
+impl<M> ConnectionSealed for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection<Backend = DB> + ConnectionSealed<DB, B>,
-    DB: Backend,
+    M::Connection: ConnectionSealed,
 {
-    type Cursor<'conn, 'query> = <M::Connection as ConnectionSealed<DB, B>>::Cursor<'conn, 'query>;
-    type Row<'conn, 'query> = <M::Connection as ConnectionSealed<DB, B>>::Row<'conn, 'query>;
 }
 
 impl<M> Connection for PooledConnection<M>
@@ -257,6 +254,9 @@ where
     M: ManageConnection,
     M::Connection: LoadConnection<B> + R2D2Connection,
 {
+    type Cursor<'conn, 'query> = <M::Connection as LoadConnection<B>>::Cursor<'conn, 'query>;
+    type Row<'conn, 'query> = <M::Connection as LoadConnection<B>>::Row<'conn, 'query>;
+
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,

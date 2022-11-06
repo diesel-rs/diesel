@@ -1,7 +1,7 @@
 use self::private::LoadIter;
 use super::RunQueryDsl;
 use crate::backend::Backend;
-use crate::connection::{Connection, ConnectionSealed, DefaultLoadingMode, LoadConnection};
+use crate::connection::{Connection, DefaultLoadingMode, LoadConnection};
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
@@ -49,10 +49,11 @@ where
 {
     type Ret<'conn> = LoadIter<
         U,
-        <Conn as ConnectionSealed<DB, B>>::Cursor<'conn, 'query>,
+        <Conn as LoadConnection<B>>::Cursor<'conn, 'query>,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
         DB,
     > where Conn: 'conn;
+
     fn internal_load<'conn>(self, conn: &'conn mut Conn) -> QueryResult<Self::Ret<'conn>> {
         Ok(LoadIter {
             cursor: conn.load(self.as_query())?,

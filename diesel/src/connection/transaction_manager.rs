@@ -496,15 +496,7 @@ mod test {
             }
         }
 
-        impl ConnectionSealed<<TestConnection as Connection>::Backend> for MockConnection {
-            type Cursor<'conn, 'query> = <TestConnection as ConnectionSealed<
-                <TestConnection as Connection>::Backend,
-            >>::Cursor<'conn, 'query>;
-
-            type Row<'conn, 'query> = <TestConnection as ConnectionSealed<
-                <TestConnection as Connection>::Backend,
-            >>::Row<'conn, 'query>;
-        }
+        impl ConnectionSealed for MockConnection {}
 
         impl Connection for MockConnection {
             type Backend = <TestConnection as Connection>::Backend;

@@ -133,10 +133,7 @@ impl SimpleConnection for SqliteConnection {
     }
 }
 
-impl ConnectionSealed<Sqlite> for SqliteConnection {
-    type Cursor<'conn, 'query> = StatementIterator<'conn, 'query>;
-    type Row<'conn, 'query> = self::row::SqliteRow<'conn, 'query>;
-}
+impl ConnectionSealed for SqliteConnection {}
 
 impl Connection for SqliteConnection {
     type Backend = Sqlite;
@@ -181,6 +178,9 @@ impl Connection for SqliteConnection {
 }
 
 impl LoadConnection<DefaultLoadingMode> for SqliteConnection {
+    type Cursor<'conn, 'query> = StatementIterator<'conn, 'query>;
+    type Row<'conn, 'query> = self::row::SqliteRow<'conn, 'query>;
+
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,

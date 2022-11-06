@@ -110,10 +110,7 @@ impl SimpleConnection for MysqlConnection {
     }
 }
 
-impl ConnectionSealed<Mysql> for MysqlConnection {
-    type Cursor<'conn, 'query> = self::stmt::iterator::StatementIterator<'conn>;
-    type Row<'conn, 'query> = self::stmt::iterator::MysqlRow;
-}
+impl ConnectionSealed for MysqlConnection {}
 
 impl Connection for MysqlConnection {
     type Backend = Mysql;
@@ -180,6 +177,9 @@ fn update_transaction_manager_status<T>(
 }
 
 impl LoadConnection<DefaultLoadingMode> for MysqlConnection {
+    type Cursor<'conn, 'query> = self::stmt::iterator::StatementIterator<'conn>;
+    type Row<'conn, 'query> = self::stmt::iterator::MysqlRow;
+
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,

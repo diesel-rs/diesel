@@ -203,7 +203,7 @@ where
     // This trait bound is there so that implementing a new connection is
     // gated behind the `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
     // feature flag
-    Self: ConnectionSealed<Self::Backend, DefaultLoadingMode>,
+    Self: ConnectionSealed,
 {
     /// The backend this type connects to
     type Backend: Backend;
@@ -387,9 +387,16 @@ where
 ///
 /// This is a separate trait to allow connection implementations to specify
 /// different loading modes via the generic paramater.
-pub trait LoadConnection<B = DefaultLoadingMode>:
-    Connection + ConnectionSealed<Self::Backend, B>
-{
+pub trait LoadConnection<B = DefaultLoadingMode>: Connection {
+    /// The cursor type returned by [`LoadConnection::load`]
+    ///
+    /// Users should handle this as opaque type that implements [`Iterator`]
+    ///
+    /// [`LoadConnection::load`]: super::LoadConnection::load
+    type Cursor<'conn, 'query>: Iterator<Item = QueryResult<Self::Row<'conn, 'query>>>;
+    /// The row type used as [`Iterator::Item`] for the iterator implementation
+    /// of [`LoadConnection::Cursor`]
+    type Row<'conn, 'query>: crate::row::Row<'conn, Self::Backend>;
     /// Executes a given query and returns any requested values
     ///
     /// This function executes a given query and returns the
@@ -493,7 +500,7 @@ impl<DB: Backend + 'static> dyn BoxableConnection<DB> {
     }
 }
 
-// `ConnectionGatWorkaround` is not part of the public API
+// These traits are not part of the public API
 // because we want to replace them by with an associated type
 // in the child trait later if GAT's are finally stable
 //
@@ -516,17 +523,7 @@ pub(crate) mod private {
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-    pub trait ConnectionSealed<DB: Backend, B = DefaultLoadingMode> {
-        /// The cursor type returned by [`LoadConnection::load`]
-        ///
-        /// Users should handle this as opaque type that implements [`Iterator`]
-        ///
-        /// [`LoadConnection::load`]: super::LoadConnection::load
-        type Cursor<'conn, 'query>: Iterator<Item = QueryResult<Self::Row<'conn, 'query>>>;
-        /// The row type used as [`Iterator::Item`] for the iterator implementation
-        /// of [`ConnectionSealed::Cursor`]
-        type Row<'conn, 'query>: crate::row::Row<'conn, DB>;
-    }
+    pub trait ConnectionSealed {}
 
     /// This trait provides helper methods to convert a database lookup type
     /// to/from an `std::any::Any` reference. This is used internally by the `#[derive(MultiConnection)]`
