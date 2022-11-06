@@ -149,8 +149,8 @@ impl PrivateMysqlRow {
     }
 }
 
-impl<'a> RowGatWorkaround<'a, Mysql> for MysqlRow {
-    type Field = MysqlField<'a>;
+impl RowSealed<Mysql> for MysqlRow {
+    type Field<'f> = MysqlField<'f>;
 }
 
 impl<'a> Row<'a, Mysql> for MysqlRow {
@@ -160,7 +160,7 @@ impl<'a> Row<'a, Mysql> for MysqlRow {
         self.metadata.fields().len()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Mysql>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowSealed<Mysql>>::Field<'b>>
     where
         'a: 'b,
         Self: RowIndex<I>,

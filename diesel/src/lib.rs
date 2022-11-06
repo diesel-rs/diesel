@@ -466,7 +466,7 @@ pub mod helper_types {
     ///
     /// See [`RunQueryDsl::load_iter`] for more information
     pub type LoadIter<'conn, 'query, Q, Conn, U, B = DefaultLoadingMode> =
-        <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U, B>>::Ret;
+        <Q as load_dsl::LoadQuery<'query, Conn, U, B>>::Ret<'conn>;
 
     /// Maps `F` to `Alias<S>`
     ///

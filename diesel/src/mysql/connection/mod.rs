@@ -110,9 +110,9 @@ impl SimpleConnection for MysqlConnection {
     }
 }
 
-impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Mysql> for MysqlConnection {
-    type Cursor = self::stmt::iterator::StatementIterator<'conn>;
-    type Row = self::stmt::iterator::MysqlRow;
+impl ConnectionSealed<Mysql> for MysqlConnection {
+    type Cursor<'conn, 'query> = self::stmt::iterator::StatementIterator<'conn>;
+    type Row<'conn, 'query> = self::stmt::iterator::MysqlRow;
 }
 
 impl Connection for MysqlConnection {

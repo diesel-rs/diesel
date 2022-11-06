@@ -17,8 +17,8 @@ impl PgRow {
     }
 }
 
-impl<'a> RowGatWorkaround<'a, Pg> for PgRow {
-    type Field = PgField<'a>;
+impl RowSealed<Pg> for PgRow {
+    type Field<'a> = PgField<'a>;
 }
 
 impl<'a> Row<'a, Pg> for PgRow {
@@ -28,7 +28,7 @@ impl<'a> Row<'a, Pg> for PgRow {
         self.db_result.column_count()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Pg>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowSealed<Pg>>::Field<'b>>
     where
         'a: 'b,
         Self: RowIndex<I>,

@@ -1,0 +1,23 @@
+{
+	"editor.rulers": [
+		100
+	],
+	"rust-analyzer.cargo.unsetTest": [
+		"core",
+		"diesel"
+	],
+	"rust-analyzer.checkOnSave.enable": false,
+	"rust-analyzer.checkOnSave.allTargets": false,
+	"rust-analyzer.checkOnSave.extraArgs": [
+		"-p",
+		"diesel",
+		"--no-default-features",
+		"--features",
+		"postgres extras"
+	],
+	"rust-analyzer.rustfmt.extraArgs": [
+		"+nightly"
+		//"--config",
+		//"format_code_in_doc_comments=true,format_macro_bodies=true,normalize_doc_attributes=true,wrap_comments=true",
+	]
+}

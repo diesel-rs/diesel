@@ -23,7 +23,7 @@ pub use self::transaction_manager::{
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
-pub(crate) use self::private::ConnectionGatWorkaround;
+pub(crate) use self::private::ConnectionSealed;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::private::MultiConnectionHelper;
@@ -49,7 +49,7 @@ pub trait SimpleConnection {
 ///
 /// Users should threat this type as `impl Iterator<Item = QueryResult<impl Row<DB>>>`
 pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =
-    <C as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor;
+    <C as ConnectionSealed<DB, B>>::Cursor<'conn, 'query>;
 
 /// A connection to a database
 ///
@@ -203,8 +203,7 @@ where
     // This trait bound is there so that implementing a new connection is
     // gated behind the `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
     // feature flag
-    for<'conn, 'query> Self:
-        ConnectionGatWorkaround<'conn, 'query, Self::Backend, DefaultLoadingMode>,
+    Self: ConnectionSealed<Self::Backend, DefaultLoadingMode>,
 {
     /// The backend this type connects to
     type Backend: Backend;
@@ -388,9 +387,8 @@ where
 ///
 /// This is a separate trait to allow connection implementations to specify
 /// different loading modes via the generic paramater.
-pub trait LoadConnection<B = DefaultLoadingMode>: Connection
-where
-    for<'conn, 'query> Self: ConnectionGatWorkaround<'conn, 'query, Self::Backend, B>,
+pub trait LoadConnection<B = DefaultLoadingMode>:
+    Connection + ConnectionSealed<Self::Backend, B>
 {
     /// Executes a given query and returns any requested values
     ///
@@ -518,16 +516,16 @@ pub(crate) mod private {
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-    pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend, B = DefaultLoadingMode> {
+    pub trait ConnectionSealed<DB: Backend, B = DefaultLoadingMode> {
         /// The cursor type returned by [`LoadConnection::load`]
         ///
         /// Users should handle this as opaque type that implements [`Iterator`]
         ///
         /// [`LoadConnection::load`]: super::LoadConnection::load
-        type Cursor: Iterator<Item = QueryResult<Self::Row>>;
+        type Cursor<'conn, 'query>: Iterator<Item = QueryResult<Self::Row<'conn, 'query>>>;
         /// The row type used as [`Iterator::Item`] for the iterator implementation
-        /// of [`ConnectionGatWorkaround::Cursor`]
-        type Row: crate::row::Row<'conn, DB>;
+        /// of [`ConnectionSealed::Cursor`]
+        type Row<'conn, 'query>: crate::row::Row<'conn, DB>;
     }
 
     /// This trait provides helper methods to convert a database lookup type

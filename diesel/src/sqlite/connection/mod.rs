@@ -133,9 +133,9 @@ impl SimpleConnection for SqliteConnection {
     }
 }
 
-impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Sqlite> for SqliteConnection {
-    type Cursor = StatementIterator<'conn, 'query>;
-    type Row = self::row::SqliteRow<'conn, 'query>;
+impl ConnectionSealed<Sqlite> for SqliteConnection {
+    type Cursor<'conn, 'query> = StatementIterator<'conn, 'query>;
+    type Row<'conn, 'query> = self::row::SqliteRow<'conn, 'query>;
 }
 
 impl Connection for SqliteConnection {

@@ -106,7 +106,7 @@ use std::marker::PhantomData;
 
 use crate::backend::Backend;
 use crate::connection::{
-    ConnectionGatWorkaround, LoadConnection, LoadRowIter, SimpleConnection, TransactionManager,
+    ConnectionSealed, LoadConnection, LoadRowIter, SimpleConnection, TransactionManager,
     TransactionManagerStatus,
 };
 use crate::expression::QueryMetadata;
@@ -209,14 +209,14 @@ where
     }
 }
 
-impl<'conn, 'query, DB, M, B> ConnectionGatWorkaround<'conn, 'query, DB, B> for PooledConnection<M>
+impl<DB, M, B> ConnectionSealed<DB, B> for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection<Backend = DB> + ConnectionGatWorkaround<'conn, 'query, DB, B>,
+    M::Connection: Connection<Backend = DB> + ConnectionSealed<DB, B>,
     DB: Backend,
 {
-    type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor;
-    type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Row;
+    type Cursor<'conn, 'query> = <M::Connection as ConnectionSealed<DB, B>>::Cursor<'conn, 'query>;
+    type Row<'conn, 'query> = <M::Connection as ConnectionSealed<DB, B>>::Row<'conn, 'query>;
 }
 
 impl<M> Connection for PooledConnection<M>

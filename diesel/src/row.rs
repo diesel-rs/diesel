@@ -7,10 +7,10 @@ use std::ops::Range;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::private::{PartialRow, RowGatWorkaround};
+pub use self::private::{PartialRow, RowSealed};
 
 #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-pub(crate) use self::private::{PartialRow, RowGatWorkaround};
+pub(crate) use self::private::{PartialRow, RowSealed};
 
 /// Representing a way to index into database rows
 ///
@@ -29,7 +29,7 @@ pub trait RowIndex<I> {
 /// Return type of [`Row::get`]
 ///
 /// Users should threat this as opaque [`impl Field<DB>`](Field) type.
-pub type FieldRet<'a, R, DB> = <R as RowGatWorkaround<'a, DB>>::Field;
+pub type FieldRet<'a, R, DB> = <R as RowSealed<DB>>::Field<'a>;
 
 /// Represents a single database row.
 ///
@@ -37,7 +37,7 @@ pub type FieldRet<'a, R, DB> = <R as RowGatWorkaround<'a, DB>>::Field;
 ///
 /// [`FromSqlRow`]: crate::deserialize::FromSqlRow
 pub trait Row<'a, DB: Backend>:
-    RowIndex<usize> + for<'b> RowIndex<&'b str> + for<'b> RowGatWorkaround<'b, DB> + Sized
+    RowIndex<usize> + for<'b> RowIndex<&'b str> + RowSealed<DB> + Sized
 {
     /// Return type of `PartialRow`
     ///
@@ -99,12 +99,12 @@ pub trait Field<'a, DB: Backend> {
     }
 }
 
-impl<'a, 'b, DB, R> RowGatWorkaround<'a, DB> for PartialRow<'b, R>
+impl<'a, DB, R> RowSealed<DB> for PartialRow<'a, R>
 where
     DB: Backend,
-    R: RowGatWorkaround<'a, DB>,
+    R: RowSealed<DB>,
 {
-    type Field = R::Field;
+    type Field<'f> = R::Field<'f>;
 }
 /// Represents a row of a SQL query, where the values are accessed by name
 /// rather than by index.
@@ -154,7 +154,7 @@ mod private {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
     )]
-    pub trait RowGatWorkaround<'a, DB: Backend> {
+    pub trait RowSealed<DB: Backend> {
         /// Field type returned by a `Row` implementation
         ///
         /// * Crates using existing backend should not concern themself with the
@@ -162,7 +162,7 @@ mod private {
         ///
         /// * Crates implementing custom backends should provide their own type
         ///   meeting the required trait bounds
-        type Field: Field<'a, DB>;
+        type Field<'a>: Field<'a, DB>;
     }
 
     /// A row type that wraps an inner row
@@ -214,7 +214,7 @@ mod private {
             self.range.len()
         }
 
-        fn get<'c, I>(&'c self, idx: I) -> Option<<Self as RowGatWorkaround<'c, DB>>::Field>
+        fn get<'c, I>(&'c self, idx: I) -> Option<Self::Field<'c>>
         where
             'a: 'c,
             Self: RowIndex<I>,

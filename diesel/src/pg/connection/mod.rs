@@ -148,18 +148,14 @@ impl SimpleConnection for PgConnection {
 #[derive(Debug, Copy, Clone)]
 pub struct PgRowByRowLoadingMode;
 
-impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadingMode>
-    for PgConnection
-{
-    type Cursor = Cursor;
-    type Row = self::row::PgRow;
+impl ConnectionSealed<Pg, DefaultLoadingMode> for PgConnection {
+    type Cursor<'conn, 'query> = Cursor;
+    type Row<'conn, 'query> = self::row::PgRow;
 }
 
-impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Pg, PgRowByRowLoadingMode>
-    for PgConnection
-{
-    type Cursor = RowByRowCursor<'conn>;
-    type Row = self::row::PgRow;
+impl ConnectionSealed<Pg, PgRowByRowLoadingMode> for PgConnection {
+    type Cursor<'conn, 'query> = RowByRowCursor<'conn>;
+    type Row<'conn, 'query> = self::row::PgRow;
 }
 
 impl Connection for PgConnection {
@@ -380,14 +376,14 @@ mod private {
 
     pub trait PgLoadingMode<B>
     where
-        for<'conn, 'query> Self: ConnectionGatWorkaround<'conn, 'query, Pg, B>,
+        for<'conn, 'query> Self: ConnectionSealed<Pg, B>,
     {
         const USE_ROW_BY_ROW_MODE: bool;
 
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<<Self as ConnectionGatWorkaround<'conn, 'query, Pg, B>>::Cursor>;
+        ) -> QueryResult<<Self as ConnectionSealed<Pg, B>>::Cursor<'conn, 'query>>;
     }
 
     impl PgLoadingMode<DefaultLoadingMode> for PgConnection {
@@ -396,9 +392,8 @@ mod private {
         fn get_cursor<'conn, 'query>(
             conn: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<
-            <Self as ConnectionGatWorkaround<'conn, 'query, Pg, DefaultLoadingMode>>::Cursor,
-        > {
+        ) -> QueryResult<<Self as ConnectionSealed<Pg, DefaultLoadingMode>>::Cursor<'conn, 'query>>
+        {
             update_transaction_manager_status(Cursor::new(result, &mut conn.raw_connection), conn)
         }
     }
@@ -409,9 +404,8 @@ mod private {
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<
-            <Self as ConnectionGatWorkaround<'conn, 'query, Pg, PgRowByRowLoadingMode>>::Cursor,
-        > {
+        ) -> QueryResult<<Self as ConnectionSealed<Pg, PgRowByRowLoadingMode>>::Cursor<'conn, 'query>>
+        {
             Ok(RowByRowCursor::new(result, raw_connection))
         }
     }

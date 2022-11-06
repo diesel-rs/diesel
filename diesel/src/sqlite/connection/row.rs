@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
-use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
+use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::sqlite::Sqlite;
 
 #[allow(missing_debug_implementations)]
@@ -60,8 +60,8 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
     }
 }
 
-impl<'field, 'stmt, 'query> RowGatWorkaround<'field, Sqlite> for SqliteRow<'stmt, 'query> {
-    type Field = SqliteField<'field, 'field>;
+impl<'stmt, 'query> RowSealed<Sqlite> for SqliteRow<'stmt, 'query> {
+    type Field<'field> = SqliteField<'field, 'field>;
 }
 
 impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
@@ -71,10 +71,7 @@ impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
         self.field_count
     }
 
-    fn get<'field, I>(
-        &'field self,
-        idx: I,
-    ) -> Option<<Self as RowGatWorkaround<'field, Sqlite>>::Field>
+    fn get<'field, I>(&'field self, idx: I) -> Option<<Self as RowSealed<Sqlite>>::Field<'field>>
     where
         'stmt: 'field,
         Self: RowIndex<I>,
