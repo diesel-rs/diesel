@@ -391,12 +391,12 @@ pub trait LoadConnection<B = DefaultLoadingMode>: Connection {
     /// The cursor type returned by [`LoadConnection::load`]
     ///
     /// Users should handle this as opaque type that implements [`Iterator`]
-    ///
-    /// [`LoadConnection::load`]: super::LoadConnection::load
     type Cursor<'conn, 'query>: Iterator<Item = QueryResult<Self::Row<'conn, 'query>>>;
+
     /// The row type used as [`Iterator::Item`] for the iterator implementation
     /// of [`LoadConnection::Cursor`]
     type Row<'conn, 'query>: crate::row::Row<'conn, Self::Backend>;
+
     /// Executes a given query and returns any requested values
     ///
     /// This function executes a given query and returns the
