@@ -295,7 +295,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: nightly-2022-08-12
+          toolchain: nightly-2022-11-05
       - name: Cache cargo registry
         uses: actions/cache@v3
         with:
