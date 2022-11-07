@@ -31,6 +31,8 @@ libsqlite3-sys = { version = ">=0.17.2, <0.26.0", optional = true }
 diffy = "0.3.0"
 regex = "1.0.6"
 serde_regex = "1.1"
+diesel_table_macro_syntax = {version = "0.1", path = "../diesel_table_macro_syntax"}
+syn = { version = "1", features = ["visit"] }
 
 [dependencies.diesel]
 version = "~2.0.0"

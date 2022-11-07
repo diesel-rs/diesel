@@ -128,6 +128,21 @@ pub fn build_cli() -> Command {
                         .num_args(1)
                         .default_value("sql")
                         .help("The format of the migration to be generated."),
+                )
+                .arg(
+                    Arg::new("DIFF_SCHEMA")
+                        .long("diff-schema")
+                        .help(
+                            "Populate the generated migrations \
+                             based on the current difference between \
+                             your `schema.rs` file and the specified \
+                             database. \n\n\
+                             The generated migrations are not expected to\
+                             be perfect. Be sure to check whether they meet\
+                             your expectations. Adjust the generated output\
+                             if that's not the case.",
+                        )
+                        .num_args(1),
                 ),
         )
         .subcommand_required(true)

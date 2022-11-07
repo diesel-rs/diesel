@@ -1,0 +1,8 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 331
+description: "Test: diff_add_table_all_the_types"
+---
+-- This file should undo anything in `up.sql`
+DROP TABLE IF EXISTS `all_the_types`;
+

@@ -73,9 +73,9 @@ jobs:
       - name: Install sqlite (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'sqlite'
         run: |
-          curl -fsS --retry 3 -o sqlite-autoconf-3310100.tar.gz https://sqlite.org/2020/sqlite-autoconf-3310100.tar.gz
-          tar zxf sqlite-autoconf-3310100.tar.gz
-          cd sqlite-autoconf-3310100
+          curl -fsS --retry 3 -o sqlite-autoconf-3400100.tar.gz https://www.sqlite.org/2022/sqlite-autoconf-3400100.tar.gz
+          tar zxf sqlite-autoconf-3400100.tar.gz
+          cd sqlite-autoconf-3400100
           CFLAGS="$CFLAGS -O2 -fno-strict-aliasing \
               -DSQLITE_DEFAULT_FOREIGN_KEYS=1 \
               -DSQLITE_SECURE_DELETE \
@@ -345,6 +345,7 @@ jobs:
 
       - name: Run clippy
         run: |
+          cargo +stable clippy --tests --manifest-path diesel_table_macro_syntax/Cargo.toml
           cargo +stable clippy --tests --manifest-path diesel_derives/Cargo.toml --features "postgres diesel/postgres"
           cargo +stable clippy --tests --manifest-path diesel/Cargo.toml --features "postgres"
           cargo +stable clippy --tests --manifest-path diesel_dynamic_schema/Cargo.toml --features "postgres diesel/postgres"

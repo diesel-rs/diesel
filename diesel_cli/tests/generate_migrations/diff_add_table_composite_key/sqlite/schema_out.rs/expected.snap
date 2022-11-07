@@ -1,0 +1,15 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 359
+description: "Test: diff_add_table_composite_key"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users (id, other_key) {
+        id -> Integer,
+        other_key -> Integer,
+        name -> Text,
+    }
+}
+

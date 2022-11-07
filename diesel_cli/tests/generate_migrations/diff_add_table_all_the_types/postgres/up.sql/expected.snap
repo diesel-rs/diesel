@@ -1,0 +1,52 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 333
+description: "Test: diff_add_table_all_the_types"
+---
+-- Your SQL goes here
+CREATE TABLE "all_the_types"(
+	"id" INTEGER NOT NULL PRIMARY KEY,
+	"bool_column" BOOLEAN NOT NULL,
+	"integer_column" INTEGER NOT NULL,
+	"small_int_col" SMALLINT NOT NULL,
+	"big_int_col" BIGINT NOT NULL,
+	"text_col" TEXT NOT NULL,
+	"float_col" FLOAT NOT NULL,
+	"numeric_col" NUMERIC NOT NULL,
+	"date_col" DATE NOT NULL,
+	"timestamp_col" TIMESTAMP NOT NULL,
+	"time_col" TIME NOT NULL,
+	"float4_col" FLOAT4 NOT NULL,
+	"small_int2_col" SMALLINT NOT NULL,
+	"int2_col" INT2 NOT NULL,
+	"int4_col" INT4 NOT NULL,
+	"int8_col" INT8 NOT NULL,
+	"big_int2_col" BIGINT NOT NULL,
+	"float8_col" FLOAT8 NOT NULL,
+	"decimal_col" DECIMAL NOT NULL,
+	"varchar_col" VARCHAR NOT NULL,
+	"varchar2_col" VARCHAR NOT NULL,
+	"char_col" CHAR NOT NULL,
+	"bit_col" BIT NOT NULL,
+	"cidr_col" CIDR NOT NULL,
+	"inet_col" INET NOT NULL,
+	"jsonb_col" JSONB NOT NULL,
+	"macaddr_col" MACADDR NOT NULL,
+	"money_col" MONEY NOT NULL,
+	"oid_col" OID NOT NULL,
+	"timestamptz_col" TIMESTAMPTZ NOT NULL,
+	"uuid_col" UUID NOT NULL,
+	"json_col" JSON NOT NULL,
+	"int4range_col" INT4RANGE NOT NULL,
+	"int8range_col" INT8RANGE NOT NULL,
+	"daterange_col" DATERANGE NOT NULL,
+	"tsrange_col" TSRANGE NOT NULL,
+	"tstzrange_col" TSTZRANGE NOT NULL,
+	"small_serial_col" SMALLSERIAL NOT NULL,
+	"big_serial_col" BIGSERIAL NOT NULL,
+	"serial_col" SERIAL NOT NULL,
+	"bytea_col" BYTEA NOT NULL,
+	"macaddr2_col" MACADDR NOT NULL
+);
+
+

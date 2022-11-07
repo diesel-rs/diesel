@@ -1,0 +1,9 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 309
+description: "Test: diff_add_table_with_fk"
+---
+-- This file should undo anything in `up.sql`
+
+DROP TABLE IF EXISTS `posts`;
+
