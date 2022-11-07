@@ -445,7 +445,7 @@ fn migrations_can_be_run_with_no_cargo_toml() {
     let db = database(&p.database_url());
 
     let cargo_toml_path = Path::new("Cargo.toml");
-    p.delete_single_file(&cargo_toml_path);
+    p.delete_single_file(cargo_toml_path);
 
     p.command("database").arg("setup").run();
 
@@ -476,7 +476,7 @@ fn migrations_can_be_run_with_no_down() {
     let db = database(&p.database_url());
 
     let cargo_toml_path = Path::new("Cargo.toml");
-    p.delete_single_file(&cargo_toml_path);
+    p.delete_single_file(cargo_toml_path);
 
     p.command("database").arg("setup").run();
 

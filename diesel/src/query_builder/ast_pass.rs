@@ -104,23 +104,24 @@ where
     /// done implicitly for references. For structs with lifetimes it must be
     /// done explicitly. This method matches the semantics of what Rust would do
     /// implicitly if you were passing a mutable reference
+    #[allow(clippy::explicit_auto_deref)] // clippy is wrong here
     pub fn reborrow(&'_ mut self) -> AstPass<'_, 'b, DB> {
         let internals = match self.internals {
             AstPassInternals::ToSql(ref mut builder, ref mut options) => {
-                AstPassInternals::ToSql(&mut **builder, &mut **options)
+                AstPassInternals::ToSql(*builder, options)
             }
             AstPassInternals::CollectBinds {
                 ref mut collector,
                 ref mut metadata_lookup,
             } => AstPassInternals::CollectBinds {
-                collector: &mut **collector,
-                metadata_lookup: &mut **metadata_lookup,
+                collector: *collector,
+                metadata_lookup: *metadata_lookup,
             },
             AstPassInternals::IsSafeToCachePrepared(ref mut result) => {
-                AstPassInternals::IsSafeToCachePrepared(&mut **result)
+                AstPassInternals::IsSafeToCachePrepared(result)
             }
-            AstPassInternals::DebugBinds(ref mut f) => AstPassInternals::DebugBinds(&mut **f),
-            AstPassInternals::IsNoop(ref mut result) => AstPassInternals::IsNoop(&mut **result),
+            AstPassInternals::DebugBinds(ref mut f) => AstPassInternals::DebugBinds(f),
+            AstPassInternals::IsNoop(ref mut result) => AstPassInternals::IsNoop(result),
         };
         AstPass {
             internals,

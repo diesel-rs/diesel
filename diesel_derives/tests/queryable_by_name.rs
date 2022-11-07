@@ -1,4 +1,4 @@
-#![allow(clippy::blacklisted_name)]
+#![allow(clippy::disallowed_names)]
 use diesel::sql_types::Integer;
 use diesel::*;
 
