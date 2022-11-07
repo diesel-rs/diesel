@@ -102,7 +102,7 @@ impl ConnectionOptions {
 
         let host = match url.host() {
             Some(Host::Ipv6(host)) => Some(CString::new(host.to_string())?),
-            Some(host) if host.to_string() == "localhost" && unix_socket != None => None,
+            Some(host) if host.to_string() == "localhost" && unix_socket.is_some() => None,
             Some(host) => Some(CString::new(host.to_string())?),
             None => None,
         };

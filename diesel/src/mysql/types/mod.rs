@@ -129,7 +129,7 @@ impl FromSql<Unsigned<BigInt>, Mysql> for u64 {
 #[cfg(feature = "mysql_backend")]
 impl ToSql<Bool, Mysql> for bool {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
-        let int_value = if *self { 1 } else { 0 };
+        let int_value = i32::from(*self);
         <i32 as ToSql<Integer, Mysql>>::to_sql(&int_value, &mut out.reborrow())
     }
 }
