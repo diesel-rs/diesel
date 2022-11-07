@@ -1,3 +1,5 @@
+use crate::expression::{is_aggregate, MixedAggregates, ValidGrouping};
+
 // Note that these docs are similar to but slightly different than the stable
 // docs below. Make sure if you change these that you also change the docs
 // below.
