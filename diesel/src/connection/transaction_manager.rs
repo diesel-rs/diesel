@@ -322,7 +322,7 @@ where
                 Cow::from(format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
             }
         };
-        conn.batch_execute(&*start_transaction_sql)?;
+        conn.batch_execute(&start_transaction_sql)?;
         Self::get_transaction_state(conn)?
             .change_transaction_depth(TransactionDepthChange::IncreaseDepth)?;
 
@@ -362,7 +362,7 @@ where
             None => return Err(Error::NotInTransaction),
         };
 
-        match conn.batch_execute(&*rollback_sql) {
+        match conn.batch_execute(&rollback_sql) {
             Ok(()) => {
                 Self::get_transaction_state(conn)?
                     .change_transaction_depth(TransactionDepthChange::DecreaseDepth)?;
@@ -410,7 +410,7 @@ where
                 transaction_depth.get() - 1
             )),
         };
-        match conn.batch_execute(&*commit_sql) {
+        match conn.batch_execute(&commit_sql) {
             Ok(()) => {
                 Self::get_transaction_state(conn)?
                     .change_transaction_depth(TransactionDepthChange::DecreaseDepth)?;

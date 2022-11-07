@@ -237,7 +237,7 @@ impl<'a, T> Deref for MaybeCached<'a, T> {
     fn deref(&self) -> &Self::Target {
         match *self {
             MaybeCached::CannotCache(ref x) => x,
-            MaybeCached::Cached(ref x) => &**x,
+            MaybeCached::Cached(ref x) => x,
         }
     }
 }
@@ -246,7 +246,7 @@ impl<'a, T> DerefMut for MaybeCached<'a, T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         match *self {
             MaybeCached::CannotCache(ref mut x) => x,
-            MaybeCached::Cached(ref mut x) => &mut **x,
+            MaybeCached::Cached(ref mut x) => x,
         }
     }
 }
