@@ -201,7 +201,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
             pub const all_columns: (#(#column_names,)*) = (#(#column_names,)*);
 
             #[allow(non_camel_case_types)]
-            #[derive(Debug, Clone, Copy, self::diesel::query_builder::QueryId)]
+            #[derive(Debug, Clone, Copy, self::diesel::query_builder::QueryId, Default)]
             /// The actual table struct
             ///
             /// This is the type which provides the base methods of the query
