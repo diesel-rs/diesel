@@ -42,6 +42,8 @@ mod diesel_public_if;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+mod multiconnection;
 mod query_id;
 mod queryable;
 mod queryable_by_name;
@@ -1506,4 +1508,90 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
         }
         .into(),
     }
+}
+
+/// This derives implements [`diesel::Connection`] and related traits for an enum of
+/// connections to different databases.
+///
+/// By applying this derive to such an enum, you can use the enum as connection type in
+/// any location all of the inner connections are valid. This derive supports enum
+/// variants containing a single tuple field. Each tuple field type must implement
+/// `diesel::Connection` and a number of related traits. Connection types form diesel itself
+/// as well as third party connection types are supported by this derive.
+///
+/// For technical reasons this derive is currently only supported
+/// with the "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+/// feature enabled. As of this we do not give any stability guarantees yet.
+///
+/// # Example
+/// ```
+/// # extern crate diesel;
+/// # use diesel::result::QueryResult;
+/// use diesel::prelude::*;
+///
+/// #[derive(diesel::MultiConnection)]
+/// pub enum AnyConnection {
+/// #   #[cfg(feature = "postgres")]
+///     Postgresql(diesel::PgConnection),
+/// #   #[cfg(feature = "sqlite")]
+///     Sqlite(diesel::SqliteConnection),
+/// #   #[cfg(feature = "mysql")]
+///     Mysql(diesel::MysqlConnection),
+/// }
+///
+/// diesel::table! {
+///     users {
+///         id -> Integer,
+///         name -> Text,
+///     }
+/// }
+///
+/// fn use_multi(conn: &mut AnyConnection) -> QueryResult<()> {
+///    // Use the connection enum as any other connection type
+///    // for inserting/updating/loading/…
+///    diesel::insert_into(users::table)
+///        .values(users::name.eq("Sean"))
+///        .execute(conn)?;
+///
+///    let users = users::table.load::<(i32, String)>(conn)?;
+///
+///    // Match on the connection type to access
+///    // the inner connection. This allows then to use
+///    // backend specifc methods.
+/// #    #[cfg(feature = "postgres")]
+///    if let AnyConnection::Postgresql(ref mut conn) = conn {
+///        // perform a postgresql specific query here
+///        let users = users::table.load::<(i32, String)>(conn)?;
+///    }
+///
+///    Ok(())
+/// }
+///
+/// # fn main() {}
+/// ```
+///
+/// # Limitations
+///
+/// The derived connection implementation can only cover the common subset of
+/// all inner connection types. So if one backend does not support certain SQL features,
+/// like for example returning clauses, the whole connection implementation does not
+/// support this feature. In addition only a limited set of SQL types is supported:
+///
+/// * `diesel::sql_types::SmallInt`
+/// * `diesel::sql_types::Integer`
+/// * `diesel::sql_types::BigInt`
+/// * `diesel::sql_types::Double`
+/// * `diesel::sql_types::Float`
+/// * `diesel::sql_types::Text`
+/// * `diesel::sql_types::Date`
+/// * `diesel::sql_types::Time`
+/// * `diesel::sql_types::Timestamp`
+///
+/// Support for additional types can be added by providing manual implementations of
+/// `HasSqlType`, `FromSql` and `ToSql` for the corresponding type + the generated
+/// database backend.
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+#[proc_macro_derive(MultiConnection)]
+pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
+    multiconnection::derive(syn::parse_macro_input!(input)).into()
 }

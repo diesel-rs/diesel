@@ -255,6 +255,9 @@ pub use diesel_derives::{
     Insertable, QueryId, Queryable, QueryableByName, SqlType,
 };
 
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use diesel_derives::MultiConnection;
+
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
     //! generically to be included in prelude, but are often used when using Diesel.

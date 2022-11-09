@@ -9,7 +9,7 @@ mod query_id;
 #[macro_use]
 mod clause_macro;
 
-mod ast_pass;
+pub(crate) mod ast_pass;
 pub mod bind_collector;
 pub(crate) mod combination_clause;
 mod debug_query;

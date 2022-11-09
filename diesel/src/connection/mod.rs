@@ -25,6 +25,15 @@ pub use self::transaction_manager::{
 )]
 pub(crate) use self::private::ConnectionGatWorkaround;
 
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::private::MultiConnectionHelper;
+
+#[cfg(all(
+    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
+    any(feature = "sqlite", feature = "postgres", feature = "mysql")
+))]
+pub(crate) use self::private::MultiConnectionHelper;
+
 /// Perform simple operations on a backend.
 ///
 /// You should likely use [`Connection`] instead.
@@ -486,10 +495,14 @@ impl<DB: Backend + 'static> dyn BoxableConnection<DB> {
     }
 }
 
-// These traits are not part of the public API
+// `ConnectionGatWorkaround` is not part of the public API
 // because we want to replace them by with an associated type
 // in the child trait later if GAT's are finally stable
-mod private {
+//
+// `MultiConnectionHelper` is a workaround needed for the
+// `MultiConnection` derive. We might stabilize this trait with
+// the corresponding derive
+pub(crate) mod private {
     use crate::backend::Backend;
     use crate::QueryResult;
 
@@ -515,5 +528,24 @@ mod private {
         /// The row type used as [`Iterator::Item`] for the iterator implementation
         /// of [`ConnectionGatWorkaround::Cursor`]
         type Row: crate::row::Row<'conn, DB>;
+    }
+
+    /// This trait provides helper methods to convert a database lookup type
+    /// to/from an `std::any::Any` reference. This is used internally by the `#[derive(MultiConnection)]`
+    /// implementation
+    #[cfg_attr(
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+    )]
+    pub trait MultiConnectionHelper: super::Connection {
+        /// Convert the lookup type to any
+        fn to_any<'a>(
+            lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
+        ) -> &mut (dyn std::any::Any + 'a);
+
+        /// Get the lookup type from any
+        fn from_any(
+            lookup: &mut dyn std::any::Any,
+        ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup>;
     }
 }

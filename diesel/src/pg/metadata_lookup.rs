@@ -28,6 +28,21 @@ pub trait PgMetadataLookup {
     /// come from an extension. This function may perform a SQL query to look
     /// up the type. For built-in types, a static OID should be preferred.
     fn lookup_type(&mut self, type_name: &str, schema: Option<&str>) -> PgTypeMetadata;
+
+    /// Convert this lookup instance to a `std::any::Any` pointer
+    ///
+    /// Implementing this method is required to support `#[derive(MultiConnection)]`
+    // We provide a default implementation here, so that adding this method is no breaking
+    // change
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn as_any<'a>(&mut self) -> &mut (dyn std::any::Any + 'a)
+    where
+        Self: 'a,
+    {
+        unimplemented!()
+    }
 }
 
 impl<T> PgMetadataLookup for T
@@ -60,6 +75,13 @@ where
                 cache_key.into_owned(),
             ))),
         }
+    }
+
+    fn as_any<'a>(&mut self) -> &mut (dyn std::any::Any + 'a)
+    where
+        Self: 'a,
+    {
+        self
     }
 }
 

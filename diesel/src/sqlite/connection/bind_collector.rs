@@ -4,7 +4,7 @@ use crate::sql_types::HasSqlType;
 use crate::sqlite::{Sqlite, SqliteType};
 use crate::QueryResult;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct SqliteBindCollector<'a> {
     pub(in crate::sqlite) binds: Vec<(InternalSqliteBindValue<'a>, SqliteType)>,
 }
@@ -173,7 +173,7 @@ impl<'a> BindCollector<'a, Sqlite> for SqliteBindCollector<'a> {
     fn push_bound_value<T, U>(&mut self, bind: &'a U, metadata_lookup: &mut ()) -> QueryResult<()>
     where
         Sqlite: crate::sql_types::HasSqlType<T>,
-        U: crate::serialize::ToSql<T, Sqlite>,
+        U: crate::serialize::ToSql<T, Sqlite> + ?Sized,
     {
         let value = SqliteBindValue {
             inner: InternalSqliteBindValue::Null,
