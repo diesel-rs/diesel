@@ -640,106 +640,12 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
     .into_iter()
     .map(generate_from_sql_impls);
 
-    let bind_value_fields = connection_types.iter().map(|c| {
-        let ident = c.name;
-        let ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
-        let ty = c.ty;
-        quote::quote! {
-            #ident: Option<
-                Box<
-                    dyn Fn(
-                        InnerBindValue<'a>,
-                        &mut <<#ty as diesel::connection::Connection>::Backend as diesel::backend::HasBindCollector<'a>>::BindCollector,
-                        &mut <<#ty as diesel::connection::Connection>::Backend as diesel::sql_types::TypeMetadata>::MetadataLookup,
-                    ) -> diesel::QueryResult<()>+ Send + 'a,
-                >
-            >
-        }
-    });
-
     let into_bind_value_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
         quote::quote! {
             diesel::serialize::ToSql<ST, <#ty as diesel::connection::Connection>::Backend>
         }
     });
-
-    let sized_into_bind_value = connection_types.iter().map(|c| {
-        let ident = c.name;
-        let ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
-        let ty = c.ty;
-        quote::quote! {
-            let #ident =
-                Box::new(
-                    cast_closure_lifetime::<<#ty as diesel::connection::Connection>::Backend, _>(
-                        |v, collector, lookup| {
-                            use diesel::query_builder::BindCollector;
-                            if let InnerBindValue::Sized(v) = v {
-                                let v = v
-                                    .downcast_ref::<T>()
-                                    .expect("We know the type statically here");
-                                collector.push_bound_value::<ST, _>(v, lookup)
-                            } else {
-                                unreachable!("We set the value to `InnerBindValue::Sized`")
-                            }
-                        }
-                    )
-                );
-        }
-    });
-
-    let binary_into_bind_value = connection_types.iter().map(|c| {
-        let ident = c.name;
-        let ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
-        let ty = c.ty;
-        quote::quote! {
-            let #ident =
-                Box::new(
-                    cast_closure_lifetime::<<#ty as diesel::connection::Connection>::Backend, _>(
-                        |v, collector, lookup| {
-                            use diesel::query_builder::BindCollector;
-                            if let InnerBindValue::Bytes(v) = v {
-                                collector.push_bound_value::<diesel::sql_types::Binary, _>(v, lookup)
-                            } else {
-                                unreachable!("We set the value to `InnerBindValue::Bytes`")
-                            }
-                        }
-                    )
-                );
-        }
-    });
-
-    let text_into_bind_value = connection_types.iter().map(|c| {
-        let ident = c.name;
-        let ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
-        let ty = c.ty;
-        quote::quote! {
-            let #ident =
-                Box::new(
-                    cast_closure_lifetime::<<#ty as diesel::connection::Connection>::Backend, _>(
-                        |v, collector, lookup| {
-                            use diesel::query_builder::BindCollector;
-                            if let InnerBindValue::Str(v) = v {
-                                collector.push_bound_value::<diesel::sql_types::Text, _>(v, lookup)
-                            } else {
-                                unreachable!("We set the value to `InnerBindValue::Str`")
-                            }
-                        }
-                    )
-                );
-        }
-    });
-
-    let populate_into_bind_value_fields = connection_types
-        .iter()
-        .map(|c| {
-            let ident = syn::Ident::new(&c.name.to_string().to_lowercase(), c.name.span());
-            quote::quote! {
-                #ident: Some(#ident)
-            }
-        })
-        .collect::<Vec<_>>();
-    let populate_into_bind_value_fields = &populate_into_bind_value_fields as &[_];
 
     let has_sql_type_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
@@ -777,15 +683,30 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
     let push_to_inner_collector = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
-        let lower_ident = syn::Ident::new(&c.name.to_string().to_lowercase(), c.name.span());
         quote::quote! {
             Self::#ident(ref mut bc) => {
-                let callback = out.#lower_ident.unwrap();
-                let value = out.value.unwrap();
-                 callback(value, bc, <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(metadata_lookup).unwrap())?
+                let out = out.inner.unwrap();
+                let callback = out.push_bound_value_to_collector;
+                let value = out.value;
+                <_ as PushBoundValueToCollectorDB<<#ty as diesel::Connection>::Backend>>::push_bound_value(
+                     callback,
+                     value,
+                     bc,
+                     <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(metadata_lookup).unwrap()
+                 )?
             }
         }
     });
+
+    let push_bound_value_super_traits = connection_types
+        .iter()
+        .map(|c| {
+            let ty = c.ty;
+            quote::quote! {
+                PushBoundValueToCollectorDB<<#ty as diesel::Connection>::Backend>
+            }
+        })
+        .collect::<Vec<_>>();
 
     quote::quote! {
         pub enum MultiBindCollector<'a> {
@@ -796,14 +717,99 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             #(#multi_bind_collector_accessor)*
         }
 
-        #[derive(Default)]
-        pub struct BindValue<'a> {
-            #(pub(crate) #bind_value_fields,)*
-            pub(crate) value: Option<InnerBindValue<'a>>,
+        trait PushBoundValueToCollectorDB<DB: diesel::backend::Backend> {
+            fn push_bound_value<'a: 'b, 'b>(
+                &self,
+                v: InnerBindValueKind<'a>,
+                collector: &mut diesel::backend::BindCollector<'b, DB>,
+                lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
+            ) -> diesel::result::QueryResult<()>;
         }
 
-        #[derive(Copy, Clone)]
-        pub enum InnerBindValue<'a> {
+        struct PushBoundValueToCollectorImpl<ST, T: ?Sized> {
+            p: std::marker::PhantomData<(ST, T)>
+        }
+
+        // we need to have seperate impls for Sized values and str/[u8] as otherwise
+        // we need seperate impls for `Sized` and `str`/`[u8]` here as
+        // we cannot use `Any::downcast_ref` otherwise (which implies `Sized`)
+        impl<ST, T, DB> PushBoundValueToCollectorDB<DB> for PushBoundValueToCollectorImpl<ST, T>
+        where DB: diesel::backend::Backend
+                  + diesel::sql_types::HasSqlType<ST>,
+              T: diesel::serialize::ToSql<ST, DB> + 'static,
+        {
+            fn push_bound_value<'a: 'b, 'b>(
+                &self,
+                v: InnerBindValueKind<'a>,
+                collector: &mut diesel::backend::BindCollector<'b, DB>,
+                lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
+            ) -> diesel::result::QueryResult<()> {
+                use diesel::query_builder::BindCollector;
+                if let InnerBindValueKind::Sized(v) = v {
+                    let v = v.downcast_ref::<T>().expect("We know the type statically here");
+                    collector.push_bound_value::<ST, T>(v, lookup)
+                } else {
+                    unreachable!("We set the value to `InnerBindValueKind::Sized`")
+                }
+            }
+        }
+
+        impl<DB> PushBoundValueToCollectorDB<DB> for PushBoundValueToCollectorImpl<diesel::sql_types::Text, str>
+        where DB: diesel::backend::Backend + diesel::sql_types::HasSqlType<diesel::sql_types::Text>,
+              str: diesel::serialize::ToSql<diesel::sql_types::Text, DB> + 'static,
+        {
+            fn push_bound_value<'a: 'b, 'b>(
+                &self,
+                v: InnerBindValueKind<'a>,
+                collector: &mut diesel::backend::BindCollector<'b, DB>,
+                lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
+            ) -> diesel::result::QueryResult<()> {
+                use diesel::query_builder::BindCollector;
+                if let InnerBindValueKind::Str(v) = v {
+                    collector.push_bound_value::<diesel::sql_types::Text, str>(v, lookup)
+                } else {
+                    unreachable!("We set the value to `InnerBindValueKind::Str`")
+                }
+            }
+        }
+
+        impl<DB> PushBoundValueToCollectorDB<DB> for PushBoundValueToCollectorImpl<diesel::sql_types::Binary, [u8]>
+        where DB: diesel::backend::Backend + diesel::sql_types::HasSqlType<diesel::sql_types::Binary>,
+              [u8]: diesel::serialize::ToSql<diesel::sql_types::Binary, DB> + 'static,
+        {
+            fn push_bound_value<'a: 'b, 'b>(
+                &self,
+                v: InnerBindValueKind<'a>,
+                collector: &mut diesel::backend::BindCollector<'b, DB>,
+                lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
+            ) -> diesel::result::QueryResult<()> {
+                use diesel::query_builder::BindCollector;
+                if let InnerBindValueKind::Bytes(v) = v {
+                    collector.push_bound_value::<diesel::sql_types::Binary, [u8]>(v, lookup)
+                } else {
+                    unreachable!("We set the value to `InnerBindValueKind::Binary`")
+                }
+            }
+        }
+
+        trait PushBoundValueToCollector: #(#push_bound_value_super_traits +)* {}
+
+        impl<T> PushBoundValueToCollector for T
+        where T: #(#push_bound_value_super_traits + )* {}
+
+        #[derive(Default)]
+        pub struct BindValue<'a> {
+            // we use an option here to initialize an "empty"
+            // as part of the `BindCollector` impl below
+            inner: Option<InnerBindValue<'a>>
+        }
+
+        struct InnerBindValue<'a> {
+            value: InnerBindValueKind<'a>,
+            push_bound_value_to_collector: &'static dyn PushBoundValueToCollector
+        }
+
+        enum InnerBindValueKind<'a> {
             Sized(&'a (dyn std::any::Any + std::marker::Send + std::marker::Sync)),
             Str(&'a str),
             Bytes(&'a [u8]),
@@ -811,44 +817,26 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
 
         impl<'a> From<(diesel::sql_types::Text, &'a str)> for BindValue<'a> {
             fn from((_, v): (diesel::sql_types::Text, &'a str)) -> Self {
-                #[inline(always)]
-                fn cast_closure_lifetime<DB, F>(f: F) -> F
-                where
-                    DB: diesel::backend::Backend,
-                    for<'b> F: Fn(
-                        InnerBindValue<'b>,
-                        &mut <DB as diesel::backend::HasBindCollector<'b>>::BindCollector,
-                        &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
-                    ) -> diesel::QueryResult<()>,
-                {
-                    f
-                }
-                #(#text_into_bind_value;)*
                 Self {
-                    #(#populate_into_bind_value_fields,)*
-                    value: Some(InnerBindValue::Str(v)),
+                    inner: Some(InnerBindValue{
+                        value: InnerBindValueKind::Str(v),
+                        push_bound_value_to_collector: &PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::<(diesel::sql_types::Text, str)>
+                        }
+                    })
                 }
             }
         }
 
         impl<'a> From<(diesel::sql_types::Binary, &'a [u8])> for BindValue<'a> {
             fn from((_, v): (diesel::sql_types::Binary, &'a [u8])) -> Self {
-                #[inline(always)]
-                fn cast_closure_lifetime<DB, F>(f: F) -> F
-                where
-                    DB: diesel::backend::Backend,
-                    for<'b> F: Fn(
-                        InnerBindValue<'b>,
-                        &mut <DB as diesel::backend::HasBindCollector<'b>>::BindCollector,
-                        &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
-                    ) -> diesel::QueryResult<()>,
-                {
-                    f
-                }
-                #(#binary_into_bind_value;)*
                 Self {
-                    #(#populate_into_bind_value_fields,)*
-                    value: Some(InnerBindValue::Bytes(v)),
+                    inner: Some(InnerBindValue {
+                        value: InnerBindValueKind::Bytes(v),
+                        push_bound_value_to_collector: &PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::<(diesel::sql_types::Binary, [u8])>
+                        }
+                    })
                 }
             }
         }
@@ -860,23 +848,13 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             #(#has_sql_type_bounds,)*
         {
             fn from((_, v): (ST, &'a T)) -> Self {
-                #[inline(always)]
-                fn cast_closure_lifetime<DB, F>(f: F) -> F
-                where
-                    DB: diesel::backend::Backend,
-                    for<'b> F: Fn(
-                        InnerBindValue<'b>,
-                        &mut <DB as diesel::backend::HasBindCollector<'b>>::BindCollector,
-                        &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
-                    ) -> diesel::QueryResult<()>,
-                {
-                    f
-                }
-
-                #(#sized_into_bind_value;)*
                 Self {
-                    #(#populate_into_bind_value_fields,)*
-                    value: Some(InnerBindValue::Sized(v)),
+                    inner: Some(InnerBindValue{
+                        value: InnerBindValueKind::Sized(v),
+                        push_bound_value_to_collector: &PushBoundValueToCollectorImpl {
+                            p: std::marker::PhantomData::<(ST, T)>
+                        }
+                    })
                 }
             }
         }
