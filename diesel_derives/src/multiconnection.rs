@@ -244,14 +244,14 @@ fn generate_connection_impl(
             type Row = super::MultiRow<'conn, 'query>;
         }
 
-        pub struct SerializedQuery<T, C> {
-            pub(crate) inner: T,
-            pub(crate) backend: MultiBackend,
-            pub(crate) query_builder: super::query_builder::MultiQueryBuilder,
+        struct SerializedQuery<T, C> {
+            inner: T,
+            backend: MultiBackend,
+            query_builder: super::query_builder::MultiQueryBuilder,
             p: std::marker::PhantomData<C>,
         }
 
-        pub trait BindParamHelper: Connection {
+        trait BindParamHelper: Connection {
             fn handle_inner_pass<'a, 'b: 'a>(
                 collector: &mut diesel::backend::BindCollector<'a, Self::Backend>,
                 lookup: &mut <Self::Backend as diesel::sql_types::TypeMetadata>::MetadataLookup,
@@ -331,6 +331,7 @@ fn generate_connection_impl(
             }
         }
 
+        #[doc(hidden)]
         pub trait Helper {
             fn load<'conn, 'query, T>(
                 conn: &'conn mut MultiConnection,
@@ -667,7 +668,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         let lower_ident = syn::Ident::new(&c.name.to_string().to_lowercase(), c.name.span());
         let ty = c.ty;
         quote::quote! {
-            pub(crate) fn #lower_ident(
+            pub(super) fn #lower_ident(
                 &mut self,
             ) -> &mut <<#ty as diesel::connection::Connection>::Backend as diesel::backend::HasBindCollector<'a>>::BindCollector {
                 match self {
@@ -995,7 +996,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         let ident = c.name;
         let lower_ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
         quote::quote! {
-            pub(crate) fn #lower_ident(&mut self) -> &mut <<#ty as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
+            pub(super) fn #lower_ident(&mut self) -> &mut <<#ty as diesel::Connection>::Backend as diesel::backend::Backend>::QueryBuilder {
                 match self {
                     Self::#ident(qb) => qb,
                     _ => unreachable!(),
@@ -1086,7 +1087,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         }
 
         impl MultiQueryBuilder {
-            pub(crate) fn duplicate(&self) -> Self {
+            pub(super) fn duplicate(&self) -> Self {
                 match self {
                     #(#duplicate_query_builder,)*
                 }
@@ -1172,7 +1173,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let lower_ident = syn::Ident::new(&ident.to_string().to_lowercase(), ident.span());
         quote::quote! {
-            pub(crate) fn #lower_ident(&self) -> &<#ty as diesel::Connection>::Backend {
+            fn #lower_ident(&self) -> &<#ty as diesel::Connection>::Backend {
                 match self {
                     Self::#ident(b) => b,
                     _ => unreachable!(),
