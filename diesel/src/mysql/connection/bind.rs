@@ -1004,7 +1004,7 @@ mod tests {
         assert!(!time_col.flags.contains(Flags::NUM_FLAG));
         assert_eq!(
             to_value::<Time, chrono::NaiveTime>(time_col).unwrap(),
-            chrono::NaiveTime::from_hms(23, 01, 01)
+            chrono::NaiveTime::from_hms_opt(23, 01, 01).unwrap()
         );
 
         let year_col = &results[16].0;

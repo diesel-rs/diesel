@@ -333,7 +333,10 @@ mod pg_types {
 
     pub fn mk_pg_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
         // https://www.postgresql.org/docs/current/datatype-datetime.html
-        let earliest_pg_date = NaiveDate::from_ymd(-4713, 1, 1).and_hms(0, 0, 1);
+        let earliest_pg_date = NaiveDate::from_ymd_opt(-4713, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 1)
+            .unwrap();
         // chrono cannot even represent that, so don't worry for now
         //let latest_pg_date = NaiveDate::from_ymd(294276, 31,12).and_hms(23,59,59);
         let mut r = mk_naive_datetime(data);
@@ -493,8 +496,14 @@ mod mysql_types {
 
     pub fn mk_naive_timestamp((mut seconds, nanos): (i64, u32)) -> NaiveDateTime {
         // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
-        let earliest_mysql_date = NaiveDate::from_ymd(1970, 1, 1).and_hms(0, 0, 1);
-        let latest_mysql_date = NaiveDate::from_ymd(2038, 1, 19).and_hms(3, 14, 7);
+        let earliest_mysql_date = NaiveDate::from_ymd_opt(1970, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 1)
+            .unwrap();
+        let latest_mysql_date = NaiveDate::from_ymd_opt(2038, 1, 19)
+            .unwrap()
+            .and_hms_opt(3, 14, 7)
+            .unwrap();
 
         if seconds != 0 {
             seconds = earliest_mysql_date.timestamp()
@@ -513,8 +522,14 @@ mod mysql_types {
 
     pub fn mk_mysql_naive_datetime(data: (i64, u32)) -> NaiveDateTime {
         // https://dev.mysql.com/doc/refman/8.0/en/datetime.html
-        let earliest_mysql_date = NaiveDate::from_ymd(1000, 1, 1).and_hms(0, 0, 1);
-        let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31).and_hms(23, 59, 59);
+        let earliest_mysql_date = NaiveDate::from_ymd_opt(1000, 1, 1)
+            .unwrap()
+            .and_hms_opt(0, 0, 1)
+            .unwrap();
+        let latest_mysql_date = NaiveDate::from_ymd_opt(9999, 12, 31)
+            .unwrap()
+            .and_hms_opt(23, 59, 59)
+            .unwrap();
         let mut r = mk_naive_datetime(data);
 
         loop {
@@ -590,7 +605,7 @@ pub fn mk_naive_datetime((mut secs, mut nano): (i64, u32)) -> NaiveDateTime {
         break;
     }
 
-    NaiveDateTime::from_timestamp(secs, nano)
+    NaiveDateTime::from_timestamp_opt(secs, nano).unwrap()
 }
 
 pub fn mk_naive_time((mut seconds, mut nano): (u32, u32)) -> NaiveTime {
@@ -613,7 +628,7 @@ pub fn mk_naive_time((mut seconds, mut nano): (u32, u32)) -> NaiveTime {
         }
     }
 
-    NaiveTime::from_num_seconds_from_midnight(seconds, nano)
+    NaiveTime::from_num_seconds_from_midnight_opt(seconds, nano).unwrap()
 }
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
@@ -625,7 +640,7 @@ fn mk_bigdecimal(data: (i64, u64)) -> bigdecimal::BigDecimal {
 
 #[cfg(feature = "postgres")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    let earliest_pg_date = NaiveDate::from_ymd(-4713, 11, 24);
+    let earliest_pg_date = NaiveDate::from_ymd_opt(-4713, 11, 24).unwrap();
     let latest_chrono_date = NaiveDate::MAX;
     let num_days_representable = latest_chrono_date
         .signed_duration_since(earliest_pg_date)
@@ -635,8 +650,8 @@ pub fn mk_naive_date(days: u32) -> NaiveDate {
 
 #[cfg(feature = "mysql")]
 pub fn mk_naive_date(days: u32) -> NaiveDate {
-    let earliest_mysql_date = NaiveDate::from_ymd(1000, 1, 1);
-    let latest_mysql_date = NaiveDate::from_ymd(9999, 12, 31);
+    let earliest_mysql_date = NaiveDate::from_ymd_opt(1000, 1, 1).unwrap();
+    let latest_mysql_date = NaiveDate::from_ymd_opt(9999, 12, 31).unwrap();
     let num_days_representable = latest_mysql_date
         .signed_duration_since(earliest_mysql_date)
         .num_days();
