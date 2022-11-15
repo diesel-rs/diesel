@@ -631,11 +631,11 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         (quote::quote!(diesel::sql_types::Float), quote::quote!(f32)),
         (
             quote::quote!(diesel::sql_types::Text),
-            quote::quote!(*const str),
+            quote::quote!(String),
         ),
         (
             quote::quote!(diesel::sql_types::Binary),
-            quote::quote!(*const [u8]),
+            quote::quote!(Vec<u8>),
         ),
     ]
     .into_iter()
