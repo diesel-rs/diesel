@@ -169,7 +169,10 @@ mod sqlite {
     fn datetime_types_are_correctly_inferred() {
         let conn = &mut connection();
 
-        let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
+        let dt = NaiveDate::from_ymd_opt(2016, 7, 8)
+            .unwrap()
+            .and_hms_opt(9, 10, 11)
+            .unwrap();
         let inferred_datetime_types = InferredDatetimeTypes {
             dt,
             date: dt.date(),
@@ -216,7 +219,10 @@ mod postgres {
             scale: 1,
             digits: vec![1],
         };
-        let dt = NaiveDate::from_ymd(2016, 7, 8).and_hms(9, 10, 11);
+        let dt = NaiveDate::from_ymd_opt(2016, 7, 8)
+            .unwrap()
+            .and_hms_opt(9, 10, 11)
+            .unwrap();
 
         let inferred_ranges = InferredRanges {
             int4: (Bound::Included(5), Bound::Excluded(12)),
