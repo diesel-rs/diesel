@@ -261,15 +261,18 @@ where
     }
 }
 
+// no impls for `NoFromClause` here because order is not really supported there yet
 impl<ST, F, S, D, W, O, LOf, G, H, LC, Expr> OrderDsl<Expr>
-    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H, LC>
 where
+    F: QuerySource,
     Expr: AppearsOnTable<F>,
     Self: SelectQuery<SqlType = ST>,
-    SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, H, LC>: SelectQuery<SqlType = ST>,
+    SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, G, H, LC>:
+        SelectQuery<SqlType = ST>,
     OrderClause<Expr>: ValidOrderingForDistinct<D>,
 {
-    type Output = SelectStatement<F, S, D, W, OrderClause<Expr>, LOf, G, H, LC>;
+    type Output = SelectStatement<FromClause<F>, S, D, W, OrderClause<Expr>, LOf, G, H, LC>;
 
     fn order(self, expr: Expr) -> Self::Output {
         let order = OrderClause(expr);
@@ -288,11 +291,12 @@ where
 }
 
 impl<F, S, D, W, O, LOf, G, H, LC, Expr> ThenOrderDsl<Expr>
-    for SelectStatement<F, S, D, W, OrderClause<O>, LOf, G, H, LC>
+    for SelectStatement<FromClause<F>, S, D, W, OrderClause<O>, LOf, G, H, LC>
 where
+    F: QuerySource,
     Expr: AppearsOnTable<F>,
 {
-    type Output = SelectStatement<F, S, D, W, OrderClause<(O, Expr)>, LOf, G, H, LC>;
+    type Output = SelectStatement<FromClause<F>, S, D, W, OrderClause<(O, Expr)>, LOf, G, H, LC>;
 
     fn then_order_by(self, expr: Expr) -> Self::Output {
         SelectStatement::new(

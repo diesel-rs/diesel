@@ -389,9 +389,12 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, Order, GB> OrderDsl<Order> for BoxedSelectStatement<'a, ST, QS, DB, GB>
+// no impls for `NoFromClause` here because order is not really supported there yet
+impl<'a, ST, QS, DB, Order, GB> OrderDsl<Order>
+    for BoxedSelectStatement<'a, ST, FromClause<QS>, DB, GB>
 where
     DB: Backend,
+    QS: QuerySource,
     Order: QueryFragment<DB> + AppearsOnTable<QS> + Send + 'a,
 {
     type Output = Self;
@@ -402,9 +405,11 @@ where
     }
 }
 
-impl<'a, ST, QS, DB, Order, GB> ThenOrderDsl<Order> for BoxedSelectStatement<'a, ST, QS, DB, GB>
+impl<'a, ST, QS, DB, Order, GB> ThenOrderDsl<Order>
+    for BoxedSelectStatement<'a, ST, FromClause<QS>, DB, GB>
 where
     DB: Backend + 'a,
+    QS: QuerySource,
     Order: QueryFragment<DB> + AppearsOnTable<QS> + Send + 'a,
 {
     type Output = Self;

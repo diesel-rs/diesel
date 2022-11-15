@@ -78,3 +78,54 @@ fn order_by_descending_column() {
     let data: Vec<_> = users.order(name.desc()).load(conn).unwrap();
     assert_eq!(expected_data, data);
 }
+
+// regression test for #3412
+#[test]
+fn dynamic_order() {
+    use crate::schema::users;
+    use diesel::expression::expression_types::NotSelectable;
+
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+    let expected = &["Tess", "Sean"] as &[_];
+
+    let order_field: Box<dyn BoxableExpression<users::table, _, SqlType = NotSelectable>> =
+        Box::new(users::id.desc());
+
+    let result = users::table
+        .select(users::name)
+        .order(order_field)
+        .load::<String>(conn)
+        .unwrap();
+    assert_eq!(expected, &result);
+
+    let order_field: Box<dyn BoxableExpression<users::table, _, SqlType = NotSelectable>> =
+        Box::new(users::id.desc());
+
+    let result = users::table
+        .select(users::name)
+        .then_order_by(order_field)
+        .load::<String>(conn)
+        .unwrap();
+    assert_eq!(expected, &result);
+
+    let order_field: Box<dyn BoxableExpression<users::table, _, SqlType = NotSelectable>> =
+        Box::new(users::id.desc());
+    let result = users::table
+        .select(users::name)
+        .into_boxed()
+        .order(order_field)
+        .load::<String>(conn)
+        .unwrap();
+    assert_eq!(expected, &result);
+
+    let order_field: Box<dyn BoxableExpression<users::table, _, SqlType = NotSelectable>> =
+        Box::new(users::id.desc());
+
+    let result = users::table
+        .select(users::name)
+        .into_boxed()
+        .then_order_by(order_field)
+        .load::<String>(conn)
+        .unwrap();
+    assert_eq!(expected, &result);
+}
