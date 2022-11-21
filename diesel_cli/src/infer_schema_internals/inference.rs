@@ -13,7 +13,7 @@ static RESERVED_NAMES: &[&str] = &[
     "macro", "match", "mod", "move", "mut", "offsetof", "override", "priv", "proc", "pub", "pure",
     "ref", "return", "Self", "self", "sizeof", "static", "struct", "super", "trait", "true",
     "type", "typeof", "unsafe", "unsized", "use", "virtual", "where", "while", "yield", "bool",
-    "columns",
+    "columns", "is_nullable",
 ];
 
 fn is_reserved_name(name: &str) -> bool {
