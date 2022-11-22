@@ -265,6 +265,11 @@ fn print_schema_comments() {
     test_print_schema("print_schema_comments", vec!["--with-docs"])
 }
 
+#[test]
+fn print_schema_reserved_names() {
+    test_print_schema("print_schema_reserved_name_mitigation_issue_3404", vec![])
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
