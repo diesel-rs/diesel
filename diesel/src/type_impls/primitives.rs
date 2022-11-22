@@ -20,12 +20,6 @@ mod foreign_impls {
     struct BoolProxy(bool);
 
     #[derive(FromSqlRow)]
-    #[cfg_attr(feature = "postgres_backend", derive(AsExpression))]
-    #[diesel(foreign_derive)]
-    #[cfg_attr(feature = "postgres_backend", diesel(sql_type = crate::sql_types::CChar))]
-    struct CCharProxy(char);
-
-    #[derive(FromSqlRow)]
     #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
     #[diesel(foreign_derive)]
     #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::TinyInt))]
@@ -47,12 +41,16 @@ mod foreign_impls {
     struct I64Proxy(i64);
 
     #[derive(FromSqlRow)]
-    #[cfg_attr(feature = "mysql_backend", derive(AsExpression))]
+    #[cfg_attr(
+        any(feature = "mysql_backend", feature = "postgres_backend"),
+        derive(AsExpression)
+    )]
     #[diesel(foreign_derive)]
     #[cfg_attr(
         feature = "mysql_backend",
         diesel(sql_type = crate::sql_types::Unsigned<crate::sql_types::TinyInt>)
     )]
+    #[cfg_attr(feature = "postgres_backend", diesel(foreign_derive, sql_type = crate::sql_types::CChar))]
     struct U8Proxy(u8);
 
     #[derive(FromSqlRow)]

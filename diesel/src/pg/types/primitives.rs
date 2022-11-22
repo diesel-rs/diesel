@@ -22,18 +22,16 @@ impl ToSql<sql_types::Bool, Pg> for bool {
 }
 
 #[cfg(feature = "postgres_backend")]
-impl FromSql<sql_types::CChar, Pg> for char {
+impl FromSql<sql_types::CChar, Pg> for u8 {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
-        Ok(bytes.as_bytes()[0] as char)
+        Ok(bytes.as_bytes()[0])
     }
 }
 
 #[cfg(feature = "postgres_backend")]
-impl ToSql<sql_types::CChar, Pg> for char {
+impl ToSql<sql_types::CChar, Pg> for u8 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
-        use std::convert::TryInto;
-        let byte: u8 = (*self).try_into()?;
-        out.write_all(&[byte])
+        out.write_all(&[*self])
             .map(|_| IsNull::No)
             .map_err(Into::into)
     }
@@ -45,15 +43,14 @@ fn cchar_to_sql() {
 
     let mut buffer = Vec::new();
     let mut bytes = Output::test(ByteWrapper(&mut buffer));
-    ToSql::<sql_types::CChar, Pg>::to_sql(&'\u{18e}', &mut bytes).unwrap_err();
-    ToSql::<sql_types::CChar, Pg>::to_sql(&'A', &mut bytes).unwrap();
-    ToSql::<sql_types::CChar, Pg>::to_sql(&'\u{c4}', &mut bytes).unwrap();
+    ToSql::<sql_types::CChar, Pg>::to_sql(&b'A', &mut bytes).unwrap();
+    ToSql::<sql_types::CChar, Pg>::to_sql(&b'\xc4', &mut bytes).unwrap();
     assert_eq!(buffer, vec![65u8, 196u8]);
 }
 
 #[test]
 fn cchar_from_sql() {
-    let result = <char as FromSql<sql_types::CChar, Pg>>::from_nullable_sql(None);
+    let result = <u8 as FromSql<sql_types::CChar, Pg>>::from_nullable_sql(None);
     assert_eq!(
         result.unwrap_err().to_string(),
         "Unexpected null for non-null column"

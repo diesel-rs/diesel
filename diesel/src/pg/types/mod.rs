@@ -547,15 +547,15 @@ pub mod sql_types {
     ///
     /// ### [`ToSql`] impls
     ///
-    /// - [`char`]
+    /// - [`u8`]
     ///
     /// ### [`FromSql`] impls
     ///
-    /// - [`char`]
+    /// - [`u8`]
     ///
     /// [`ToSql`]: crate::serialize::ToSql
     /// [`FromSql`]: crate::deserialize::FromSql
-    /// [`char`]: https://doc.rust-lang.org/nightly/std/primitive.char.html
+    /// [`u8`]: https://doc.rust-lang.org/nightly/std/primitive.u8.html
     /// [`"char"`]: https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
     /// [setweight]: https://www.postgresql.org/docs/current/functions-textsearch.html
     /// [Do not use in user tables]: https://www.postgresql.org/docs/current/datatype-character.html#DATATYPE-CHARACTER-SPECIAL-TABLE
