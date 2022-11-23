@@ -685,12 +685,12 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
                Array<ST>
                BigInt
                Bool
+               CChar
                Cidr
                Datetime
                Inet
                Interval
-               Json
-             and 22 others
+             and 23 others
      = note: required because of the requirements on the impl of `load_dsl::private::CompatibleType<(i32, std::string::String), _>` for `diesel::expression::select_by::SelectBy<Post, _>`
      = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String)>` for `SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<diesel::expression::select_by::SelectBy<Post, _>>>`
 note: required by a bound in `diesel::RunQueryDsl::load`
@@ -734,12 +734,12 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
                Array<ST>
                BigInt
                Bool
+               CChar
                Cidr
                Datetime
                Inet
                Interval
-               Json
-             and 22 others
+             and 23 others
      = note: required because of the requirements on the impl of `load_dsl::private::CompatibleType<(i32, std::string::String), _>` for `diesel::expression::select_by::SelectBy<Post, _>`
      = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String)>` for `BoxedSelectStatement<'_, diesel::expression::select_by::SelectBy<Post, _>, FromClause<posts::table>, _>`
 note: required by a bound in `diesel::RunQueryDsl::load`
@@ -806,12 +806,12 @@ error[E0277]: the trait bound `diesel::expression::select_by::SelectBy<Post, _>:
                Array<ST>
                BigInt
                Bool
+               CChar
                Cidr
                Datetime
                Inet
                Interval
-               Json
-             and 22 others
+             and 23 others
      = note: required because of the requirements on the impl of `load_dsl::private::CompatibleType<(i32, std::string::String, i32), _>` for `diesel::expression::select_by::SelectBy<Post, _>`
      = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32, std::string::String, i32)>` for `InsertStatement<posts::table, diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>, posts::table>, diesel::query_builder::insert_statement::private::Insert, diesel::query_builder::returning_clause::ReturningClause<diesel::expression::select_by::SelectBy<Post, _>>>`
 note: required by a bound in `diesel::RunQueryDsl::load`

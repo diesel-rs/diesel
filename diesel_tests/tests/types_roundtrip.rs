@@ -255,6 +255,8 @@ mod pg_types {
     test_round_trip!(json_roundtrips, Json, SerdeWrapper, mk_serde_json);
     test_round_trip!(jsonb_roundtrips, Jsonb, SerdeWrapper, mk_serde_json);
 
+    test_round_trip!(char_roundtrips, CChar, u8);
+
     #[allow(clippy::type_complexity)]
     fn mk_uuid(data: (u32, u16, u16, (u8, u8, u8, u8, u8, u8, u8, u8))) -> self::uuid::Uuid {
         let a = data.3;

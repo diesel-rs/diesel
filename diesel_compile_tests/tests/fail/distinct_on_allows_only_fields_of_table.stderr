@@ -24,12 +24,12 @@ error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text
              Array<ST>
              BigInt
              Bool
+             CChar
              Cidr
              Datetime
              Inet
              Interval
-             Json
-           and 22 others
+           and 23 others
    = note: required because of the requirements on the impl of `DistinctOnDsl<(posts::columns::name, users::columns::name)>` for `posts::table`
 
 error[E0277]: Cannot select `users::columns::name` from `posts::table`

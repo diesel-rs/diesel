@@ -13,7 +13,7 @@ error[E0277]: the trait bound `i32: FromSql<diesel::sql_types::Text, _>` is not 
                <f64 as FromSql<diesel::sql_types::Double, Sqlite>>
                <i16 as FromSql<diesel::sql_types::SmallInt, Mysql>>
                <i16 as FromSql<diesel::sql_types::SmallInt, Pg>>
-             and 13 others
+             and 14 others
      = note: required because of the requirements on the impl of `Queryable<diesel::sql_types::Text, _>` for `i32`
      = note: required because of the requirements on the impl of `FromSqlRow<diesel::sql_types::Text, _>` for `i32`
      = note: required because of the requirements on the impl of `load_dsl::private::CompatibleType<i32, _>` for `diesel::sql_types::Text`

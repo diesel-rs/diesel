@@ -125,7 +125,7 @@ error[E0277]: the trait bound `f64: QueryId` is not satisfied
                (T0, T1, T2, T3, T4)
                (T0, T1, T2, T3, T4, T5)
                (T0, T1, T2, T3, T4, T5, T6)
-             and 229 others
+             and 230 others
      = note: required because of the requirements on the impl of `QueryId` for `(f64, f64)`
      = note: 3 redundant requirements hidden
      = note: required because of the requirements on the impl of `QueryId` for `SelectStatement<NoFromClause, diesel::query_builder::select_clause::SelectClause<diesel::pg::expression::array::ArrayLiteral<(f64, f64), diesel::sql_types::Integer>>>`

@@ -1464,3 +1464,42 @@ fn test_inserting_ranges() {
     assert_eq!(v1, Some(value));
     assert_eq!(v2, value);
 }
+
+#[test]
+#[cfg(feature = "postgres")]
+fn cchar_from_sql() {
+    assert_eq!(b'\xc6', query_single_value::<CChar, u8>(r#"'Ǝ'::"char""#)); // postgres always uses the utf8 lower byte, Ǝ utf8 is 0xC6 0x8E
+    assert_eq!(b'a', query_single_value::<CChar, u8>(r#"'a'::"char""#));
+    assert_eq!(b' ', query_single_value::<CChar, u8>(r#"' '::"char""#));
+    assert_eq!(b'~', query_single_value::<CChar, u8>(r#"'~'::"char""#));
+    assert_eq!(b'5', query_single_value::<CChar, u8>(r#"'5'::"char""#));
+    assert_eq!(b'\\', query_single_value::<CChar, u8>(r#"'\'::"char""#));
+    assert_eq!(b'\"', query_single_value::<CChar, u8>(r#"'"'::"char""#));
+    assert_eq!(b'\'', query_single_value::<CChar, u8>(r#"''''::"char""#));
+    assert_eq!(b'`', query_single_value::<CChar, u8>(r#"'`'::"char""#));
+    assert_eq!(195u8, query_single_value::<CChar, u8>(r#"'ö'::"char""#));
+    assert_eq!(195u8, query_single_value::<CChar, u8>(r#"'ä'::"char""#));
+    assert_eq!(b'\0', query_single_value::<CChar, u8>(r#"0::"char""#));
+    assert_eq!(b'0', query_single_value::<CChar, u8>(r#"'0'::"char""#));
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn cchar_to_sql() {
+    assert!(query_to_sql_equality::<CChar, u8>(
+        r#"'Ǝ'::"char""#,
+        b'\xc6'
+    )); // postgres always uses the utf8 lower byte, Ǝ utf8 is 0xC6 0x8E
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'a'::"char""#, b'a'));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"' '::"char""#, b' '));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'~'::"char""#, b'~'));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'5'::"char""#, b'5'));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'\'::"char""#, b'\\'));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'"'::"char""#, b'\"'));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"''''::"char""#, b'\''));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'`'::"char""#, b'`'));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'ö'::"char""#, 195u8));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'ä'::"char""#, 195u8));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"0::"char""#, b'\0'));
+    assert!(query_to_sql_equality::<CChar, u8>(r#"'0'::"char""#, b'0'));
+}
