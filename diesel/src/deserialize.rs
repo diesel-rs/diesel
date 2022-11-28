@@ -474,9 +474,9 @@ where
 
 /// A helper trait to deserialize a statically sized row into an tuple
 ///
-/// **If you see an error message mentioning this trait you likely
-///   trying to map the result of an query to an struct with mismatching
-///   field types. Recheck your field order and the concrete field types**
+/// **If you see an error message mentioning this trait you are likely trying to
+/// map the result of a query to a struct with mismatching field types. Recheck
+/// your field order and the concrete field types.**
 ///
 /// You should not need to implement this trait directly.
 /// Diesel provides wild card implementations for any supported tuple size
