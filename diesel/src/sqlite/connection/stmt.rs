@@ -78,14 +78,8 @@ impl Statement {
                 // We need a separate pointer here to pass it to sqlite
                 // as the returned pointer is a pointer to a dyn sized **slice**
                 // and not the pointer to the first element of the slice
-                let ptr;
-                ret_ptr = if len > 0 {
-                    ptr = bytes.as_mut_ptr();
-                    NonNull::new(Box::into_raw(bytes))
-                } else {
-                    ptr = std::ptr::null_mut();
-                    None
-                };
+                let ptr = bytes.as_mut_ptr();
+                ret_ptr = NonNull::new(Box::into_raw(bytes));
                 ffi::sqlite3_bind_blob(
                     self.inner_statement.as_ptr(),
                     bind_index,
@@ -109,14 +103,8 @@ impl Statement {
                 // We need a separate pointer here to pass it to sqlite
                 // as the returned pointer is a pointer to a dyn sized **slice**
                 // and not the pointer to the first element of the slice
-                let ptr;
-                ret_ptr = if len > 0 {
-                    ptr = bytes.as_mut_ptr();
-                    NonNull::new(Box::into_raw(bytes))
-                } else {
-                    ptr = std::ptr::null_mut();
-                    None
-                };
+                let ptr = bytes.as_mut_ptr();
+                ret_ptr = NonNull::new(Box::into_raw(bytes));
                 ffi::sqlite3_bind_text(
                     self.inner_statement.as_ptr(),
                     bind_index,
