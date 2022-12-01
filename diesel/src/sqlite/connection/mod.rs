@@ -759,4 +759,65 @@ mod tests {
             .load::<String>(connection);
         assert_eq!(Ok(&[][..]), result.as_ref().map(|vec| vec.as_ref()));
     }
+
+    // regression test for https://github.com/diesel-rs/diesel/issues/3425
+    #[test]
+    fn test_correct_seralization_of_owned_strings() {
+        use crate::prelude::*;
+
+        #[derive(Debug, crate::expression::AsExpression)]
+        #[diesel(sql_type = diesel::sql_types::Text)]
+        struct CustomWrapper(String);
+
+        impl crate::serialize::ToSql<Text, Sqlite> for CustomWrapper {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut crate::serialize::Output<'b, '_, Sqlite>,
+            ) -> crate::serialize::Result {
+                out.set_value(self.0.to_string());
+                Ok(crate::serialize::IsNull::No)
+            }
+        }
+
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+
+        let res = crate::select(
+            CustomWrapper("".into())
+                .into_sql::<crate::sql_types::Text>()
+                .nullable(),
+        )
+        .get_result::<Option<String>>(connection)
+        .unwrap();
+        assert_eq!(res, Some(String::new()));
+    }
+
+    #[test]
+    fn test_correct_seralization_of_owned_bytes() {
+        use crate::prelude::*;
+
+        #[derive(Debug, crate::expression::AsExpression)]
+        #[diesel(sql_type = diesel::sql_types::Binary)]
+        struct CustomWrapper(Vec<u8>);
+
+        impl crate::serialize::ToSql<crate::sql_types::Binary, Sqlite> for CustomWrapper {
+            fn to_sql<'b>(
+                &'b self,
+                out: &mut crate::serialize::Output<'b, '_, Sqlite>,
+            ) -> crate::serialize::Result {
+                out.set_value(self.0.clone());
+                Ok(crate::serialize::IsNull::No)
+            }
+        }
+
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+
+        let res = crate::select(
+            CustomWrapper(Vec::new())
+                .into_sql::<crate::sql_types::Binary>()
+                .nullable(),
+        )
+        .get_result::<Option<Vec<u8>>>(connection)
+        .unwrap();
+        assert_eq!(res, Some(Vec::new()));
+    }
 }
