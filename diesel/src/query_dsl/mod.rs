@@ -1316,7 +1316,7 @@ pub trait QueryDsl: Sized {
 
     /// Coerce the SQL type of the select clause to it's nullable equivalent.
     ///
-    /// This is use full for writing queries that contain subselects on non null
+    /// This is useful for writing queries that contain subselects on non null
     /// fields comparing them to nullable fields.
     /// ```rust
     /// # include!("../doctest_setup.rs");
