@@ -1,4 +1,5 @@
 use crate::expression::Expression;
+use crate::query_builder::upsert::conditionally_insert_statement::ConditionallyInsertStatement;
 use crate::query_builder::upsert::into_conflict_clause::IntoConflictValueClause;
 use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
@@ -383,14 +384,17 @@ impl<T: QuerySource, U, Op, Ret, Target>
     pub fn set<Changes>(
         self,
         changes: Changes,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset>>, Op, Ret>
+    ) -> ConditionallyInsertStatement<
+        InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset>>, Op, Ret>,
+    >
     where
         T: QuerySource,
         Changes: AsChangeset<Target = T>,
     {
         let target = self.target;
-        self.stmt.replace_values(|values| {
+        let insert = self.stmt.replace_values(|values| {
             OnConflictValues::new(values, target, DoUpdate::new(changes.as_changeset()))
-        })
+        });
+        ConditionallyInsertStatement::new(insert)
     }
 }

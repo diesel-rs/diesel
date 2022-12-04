@@ -310,6 +310,44 @@ fn upsert_with_sql_literal_for_target() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn upsert_with_sql_literal_for_target_with_condition() {
+    use crate::schema::users::dsl::*;
+    use diesel::dsl::sql;
+    use diesel::sql_types::Text;
+    use diesel::upsert::*;
+
+    let connection = &mut connection();
+    // This index needs to happen before the insert or we'll get a deadlock
+    // with any transactions that are trying to get the row lock from insert
+    diesel::sql_query("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
+        .execute(connection)
+        .unwrap();
+    insert_sean_and_tess_into_users_table(connection);
+
+    let new_users = vec![
+        NewUser::new("Sean", Some("Green")),
+        NewUser::new("Tess", Some("Blue")),
+    ];
+    insert_into(users)
+        .values(&new_users)
+        .on_conflict(sql::<Text>("(name) WHERE name != 'Tess'"))
+        .do_update()
+        .set(hair_color.eq(excluded(hair_color)))
+        .filter(id.le(5))
+        .execute(connection)
+        .unwrap();
+
+    let data = users.select((name, hair_color)).order(id).load(connection);
+    let expected_data = vec![
+        ("Sean".to_string(), Some("Green".to_string())),
+        ("Tess".to_string(), None),
+        ("Tess".to_string(), Some("Blue".to_string())),
+    ];
+    assert_eq!(Ok(expected_data), data);
+}
+
+#[test]
+#[cfg(feature = "postgres")]
 fn update_array_index_expression() {
     use crate::schema::posts::dsl::*;
 
