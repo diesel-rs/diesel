@@ -313,6 +313,7 @@ fn upsert_with_sql_literal_for_target() {
 fn upsert_with_sql_literal_for_target_with_condition() {
     use crate::schema::users::dsl::*;
     use diesel::dsl::sql;
+    use diesel::query_dsl::methods::FilterDsl;
     use diesel::sql_types::Text;
     use diesel::upsert::*;
 
