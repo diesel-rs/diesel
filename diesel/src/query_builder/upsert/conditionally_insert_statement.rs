@@ -6,13 +6,13 @@ use crate::query_builder::{AsQuery, AstPass, QueryFragment, QueryId};
 use crate::query_dsl::filter_dsl::FilterDsl;
 use crate::{QueryResult, RunQueryDsl};
 
-#[derive(Debug, Clone, Copy)]
-pub struct ConditionallyInsertStatement<Stmt: Copy, WhereClause: Copy = NoWhereClause> {
+#[derive(Debug, Clone)]
+pub struct ConditionallyInsertStatement<Stmt, WhereClause = NoWhereClause> {
     insert: Stmt,
     where_clause: WhereClause,
 }
 
-impl<Stmt: Copy> ConditionallyInsertStatement<Stmt> {
+impl<Stmt> ConditionallyInsertStatement<Stmt> {
     pub fn new(insert: Stmt) -> ConditionallyInsertStatement<Stmt> {
         ConditionallyInsertStatement::<Stmt> {
             insert,
@@ -23,8 +23,7 @@ impl<Stmt: Copy> ConditionallyInsertStatement<Stmt> {
 
 impl<Stmt, WhereClause> QueryId for ConditionallyInsertStatement<Stmt, WhereClause>
 where
-    Stmt: Copy + QueryId,
-    WhereClause: Copy,
+    Stmt: QueryId,
 {
     type QueryId = Stmt::QueryId;
     const HAS_STATIC_QUERY_ID: bool = Stmt::HAS_STATIC_QUERY_ID;
@@ -33,8 +32,8 @@ where
 impl<Stmt, WhereClause, DB> QueryFragment<DB> for ConditionallyInsertStatement<Stmt, WhereClause>
 where
     DB: Backend + DieselReserveSpecialization,
-    Stmt: Copy + QueryFragment<DB>,
-    WhereClause: Copy + QueryFragment<DB>,
+    Stmt: QueryFragment<DB>,
+    WhereClause: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.insert.walk_ast(out.reborrow())?;
@@ -46,8 +45,7 @@ where
 
 impl<Stmt, WhereClause> AsQuery for ConditionallyInsertStatement<Stmt, WhereClause>
 where
-    Stmt: Copy + AsQuery,
-    WhereClause: Copy,
+    Stmt: AsQuery,
 {
     type SqlType = Stmt::SqlType;
     type Query = Stmt::Query;
@@ -60,9 +58,8 @@ where
 impl<Stmt, WhereClause, Predicate> FilterDsl<Predicate>
     for ConditionallyInsertStatement<Stmt, WhereClause>
 where
-    Stmt: Copy + AsQuery,
-    WhereClause: Copy + WhereAnd<Predicate>,
-    WhereClause::Output: Copy,
+    Stmt: AsQuery,
+    WhereClause: WhereAnd<Predicate>,
 {
     type Output = ConditionallyInsertStatement<Stmt, WhereClause::Output>;
 
@@ -74,9 +71,9 @@ where
     }
 }
 
-impl<Stmt, WhereClause, Conn> RunQueryDsl<Conn> for ConditionallyInsertStatement<Stmt, WhereClause>
-where
-    Stmt: Copy + QueryId + AsQuery,
-    WhereClause: Copy,
+impl<Stmt, WhereClause, Conn> RunQueryDsl<Conn> for ConditionallyInsertStatement<Stmt, WhereClause> where
+    Stmt: QueryId + AsQuery
 {
 }
+
+impl<Stmt: Copy, WhereClause: Copy> Copy for ConditionallyInsertStatement<Stmt, WhereClause> {}
