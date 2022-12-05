@@ -390,6 +390,8 @@ impl<T: QuerySource, U, Op, Ret, Target>
     where
         T: QuerySource,
         Changes: AsChangeset<Target = T>,
+        InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset>>, Op, Ret>:
+            Copy,
     {
         let target = self.target;
         let insert = self.stmt.replace_values(|values| {
