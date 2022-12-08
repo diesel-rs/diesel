@@ -1,10 +1,14 @@
 use std::fmt::Debug;
 
 use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::where_clause::{NoWhereClause, WhereAnd};
-use crate::query_builder::{AsQuery, AstPass, QueryFragment, QueryId};
+use crate::query_builder::{
+    where_clause, AsQuery, AstPass, InsertStatement, QueryFragment, QueryId,
+};
 use crate::query_dsl::filter_dsl::FilterDsl;
-use crate::{QueryResult, RunQueryDsl};
+use crate::sql_types::BoolOrNullableBool;
+use crate::{Expression, QueryResult, QuerySource, RunQueryDsl};
 
 #[derive(Debug, Clone)]
 pub struct ConditionallyInsertStatement<Stmt, WhereClause = NoWhereClause> {
@@ -12,11 +16,14 @@ pub struct ConditionallyInsertStatement<Stmt, WhereClause = NoWhereClause> {
     where_clause: WhereClause,
 }
 
-impl<Stmt> ConditionallyInsertStatement<Stmt> {
-    pub fn new(insert: Stmt) -> ConditionallyInsertStatement<Stmt> {
-        ConditionallyInsertStatement::<Stmt> {
+impl<Stmt, WhereClause> ConditionallyInsertStatement<Stmt, WhereClause> {
+    pub fn new(
+        insert: Stmt,
+        where_clause: WhereClause,
+    ) -> ConditionallyInsertStatement<Stmt, WhereClause> {
+        ConditionallyInsertStatement {
             insert,
-            where_clause: NoWhereClause {},
+            where_clause,
         }
     }
 }
@@ -77,3 +84,25 @@ impl<Stmt, WhereClause, Conn> RunQueryDsl<Conn> for ConditionallyInsertStatement
 }
 
 impl<Stmt: Copy, WhereClause: Copy> Copy for ConditionallyInsertStatement<Stmt, WhereClause> {}
+
+trait ConditionallyInsertable<T: QuerySource> {}
+
+impl<T, U, Target, Action> ConditionallyInsertable<T> for OnConflictValues<U, Target, Action> where
+    T: QuerySource
+{
+}
+
+impl<T: QuerySource, U: ConditionallyInsertable<T>, Op, Ret, Predicate> FilterDsl<Predicate>
+    for InsertStatement<T, U, Op, Ret>
+where
+    T: QuerySource,
+    Predicate: Expression,
+    Predicate::SqlType: BoolOrNullableBool,
+{
+    type Output = ConditionallyInsertStatement<Self, where_clause::WhereClause<Predicate>>;
+
+    fn filter(self, predicate: Predicate) -> Self::Output {
+        let where_clause = NoWhereClause {};
+        ConditionallyInsertStatement::new(self, where_clause.and(predicate))
+    }
+}
