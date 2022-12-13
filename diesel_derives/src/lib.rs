@@ -1523,6 +1523,17 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// with the "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 /// feature enabled. As of this we do not give any stability guarantees yet.
 ///
+/// The implementation of [`diesel::Connection::establish`] tries to establish
+/// a new connection with the given connection string in the order the connections
+/// are specified in the enum. If one connection fails it tries the next one and so on.
+/// That means that as soon as more than one connection type accepts a certain connection
+/// string the first matching type in your enum will always establish the connection. This
+/// is especially important if one of the connection types is [`diesel::SqliteConnection`]
+/// as this connection type accepts arbitary paths. It should normally placed as last entry
+/// in your enum. If you want control about which connection type is created, just construct the
+/// corresponding enum manually by first establishing the connection via the inner type and then
+/// wrap the result into the enum.
+///
 /// # Example
 /// ```
 /// # extern crate diesel;
@@ -1533,10 +1544,10 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// pub enum AnyConnection {
 /// #   #[cfg(feature = "postgres")]
 ///     Postgresql(diesel::PgConnection),
-/// #   #[cfg(feature = "sqlite")]
-///     Sqlite(diesel::SqliteConnection),
 /// #   #[cfg(feature = "mysql")]
 ///     Mysql(diesel::MysqlConnection),
+/// #   #[cfg(feature = "sqlite")]
+///     Sqlite(diesel::SqliteConnection),
 /// }
 ///
 /// diesel::table! {
