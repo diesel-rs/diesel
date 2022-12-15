@@ -1,0 +1,36 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_several_keys_with_compound_key"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    payment_card (id) {
+        id -> Int4,
+        code -> Text,
+    }
+}
+
+diesel::table! {
+    transaction_one (id) {
+        id -> Int4,
+        card_code -> Text,
+        payment_card_id -> Int4,
+        by_card_id -> Int4,
+    }
+}
+
+diesel::table! {
+    transaction_two (id) {
+        id -> Int4,
+        payment_card_id -> Int4,
+        card_code -> Text,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+    payment_card,
+    transaction_one,
+    transaction_two,
+);
+

@@ -30,12 +30,13 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
         .filter(|fk| fk.parent_table != fk.child_table)
         .filter(|fk| safe_tables.contains(&fk.parent_table))
         .filter(|fk| safe_tables.contains(&fk.child_table))
+        .filter(|fk| fk.foreign_key_columns.len() == 1)
         .filter(|fk| {
             let pk_columns = get_primary_keys(&mut conn, &fk.parent_table).expect(&format!(
                 "Error loading primary keys for `{}`",
                 fk.parent_table
             ));
-            pk_columns.len() == 1 && pk_columns[0] == fk.primary_key
+            pk_columns.len() == 1 && Some(&pk_columns[0]) == fk.primary_key_columns.get(0)
         })
         .filter(|fk| !duplicates.contains(&fk.ordered_tables()))
         .cloned()

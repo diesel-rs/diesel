@@ -222,8 +222,7 @@ pub fn load_foreign_key_constraints(
         }
         #[cfg(feature = "postgres")]
         InferConnection::Pg(ref mut c) => {
-            super::information_schema::load_foreign_key_constraints(c, schema_name)
-                .map_err(Into::into)
+            super::pg::load_foreign_key_constraints(c, schema_name).map_err(Into::into)
         }
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(ref mut c) => {
@@ -234,9 +233,10 @@ pub fn load_foreign_key_constraints(
     constraints.map(|mut ct| {
         ct.sort();
         ct.iter_mut().for_each(|foreign_key_constraint| {
-            if is_reserved_name(&foreign_key_constraint.foreign_key_rust_name) {
-                foreign_key_constraint.foreign_key_rust_name =
-                    format!("{}_", foreign_key_constraint.foreign_key_rust_name);
+            for name in &mut foreign_key_constraint.foreign_key_columns_rust {
+                if is_reserved_name(name) {
+                    *name = format!("{name}_");
+                }
             }
         });
         ct
