@@ -169,7 +169,7 @@ fn selection_using_subselect() {
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
         ids[0], ids[1]
     );
-    diesel::sql_query(&query).execute(connection).unwrap();
+    diesel::sql_query(query).execute(connection).unwrap();
 
     let users = users::table
         .filter(users::name.eq("Sean"))

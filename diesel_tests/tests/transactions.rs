@@ -18,7 +18,7 @@ fn transaction_executes_fn_in_a_sql_transaction() {
         .transaction::<_, Error, _>(|conn1| {
             assert_eq!(0, get_count(conn1));
             assert_eq!(0, get_count(conn2));
-            diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+            diesel::sql_query(format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
                 .execute(conn1)?;
             assert_eq!(1, get_count(conn1));
             assert_eq!(0, get_count(conn2));
@@ -46,7 +46,7 @@ fn transaction_is_rolled_back_when_returned_an_error() {
     setup_test_table(connection, test_name);
 
     let _ = connection.transaction::<(), _, _>(|connection| {
-        diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+        diesel::sql_query(format!("INSERT INTO {} DEFAULT VALUES", test_name))
             .execute(connection)
             .unwrap();
         Err(Error::RollbackTransaction)
@@ -76,7 +76,7 @@ fn transaction_rollback_returns_error() {
 
     // Create a transaction that will fail to rollback.
     let r = connection.transaction::<usize, _, _>(|connection| {
-        diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+        diesel::sql_query(format!("INSERT INTO {} DEFAULT VALUES", test_name))
             .execute(connection)
             .unwrap();
 
@@ -105,12 +105,12 @@ fn transactions_can_be_nested() {
     }
 
     let _ = connection.transaction::<(), _, _>(|connection| {
-        diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+        diesel::sql_query(format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
             .execute(connection)
             .unwrap();
         assert_eq!(1, get_count(connection));
         let _ = connection.transaction::<(), _, _>(|connection| {
-            diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+            diesel::sql_query(format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
                 .execute(connection)
                 .unwrap();
             assert_eq!(2, get_count(connection));
@@ -118,7 +118,7 @@ fn transactions_can_be_nested() {
         });
         assert_eq!(1, get_count(connection));
         let _ = connection.transaction::<(), Error, _>(|connection| {
-            diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
+            diesel::sql_query(format!("INSERT INTO {} DEFAULT VALUES", TEST_NAME))
                 .execute(connection)
                 .unwrap();
             assert_eq!(2, get_count(connection));
@@ -139,7 +139,7 @@ fn test_transaction_always_rolls_back() {
     setup_test_table(connection, test_name);
 
     let result = connection.test_transaction::<_, Error, _>(|connection| {
-        diesel::sql_query(&format!("INSERT INTO {} DEFAULT VALUES", test_name))
+        diesel::sql_query(format!("INSERT INTO {} DEFAULT VALUES", test_name))
             .execute(connection)?;
         assert_eq!(1, count_test_table(connection, test_name));
         Ok("success")
@@ -165,7 +165,7 @@ fn setup_test_table(connection: &mut TestConnection, table_name: &str) {
 }
 
 fn drop_test_table(connection: &mut TestConnection, table_name: &str) {
-    diesel::sql_query(&format!("DROP TABLE {}", table_name))
+    diesel::sql_query(format!("DROP TABLE {}", table_name))
         .execute(connection)
         .unwrap();
 }
