@@ -59,7 +59,7 @@ pub struct ColumnDefinition {
     pub sql_name: String,
     pub rust_name: String,
     pub ty: ColumnType,
-    pub docs: String,
+    pub comment: Option<String>,
 }
 
 impl ColumnInformation {

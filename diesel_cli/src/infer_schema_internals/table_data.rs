@@ -95,7 +95,7 @@ pub struct TableData {
     pub name: TableName,
     pub primary_key: Vec<String>,
     pub column_data: Vec<ColumnDefinition>,
-    pub docs: String,
+    pub comment: Option<String>,
 }
 
 mod serde_impls {

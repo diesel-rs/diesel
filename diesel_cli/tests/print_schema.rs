@@ -261,8 +261,20 @@ fn print_schema_respects_type_name_case() {
 
 #[test]
 #[cfg(any(feature = "postgres", feature = "mysql"))]
-fn print_schema_comments() {
-    test_print_schema("print_schema_comments", vec!["--with-docs"])
+fn print_schema_comments_fallback_on_generated() {
+    test_print_schema(
+        "print_schema_comments_fallback_on_generated",
+        vec!["--with-docs"],
+    )
+}
+
+#[test]
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+fn print_schema_comments_dont_fallback_on_generated() {
+    test_print_schema(
+        "print_schema_comments_dont_fallback_on_generated",
+        vec!["--with-docs-config", "only-database-comments"],
+    )
 }
 
 #[test]
