@@ -284,6 +284,22 @@ impl crate::r2d2::R2D2Connection for PgConnection {
     }
 }
 
+impl MultiConnectionHelper for PgConnection {
+    fn to_any<'a>(
+        lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
+    ) -> &mut (dyn std::any::Any + 'a) {
+        lookup.as_any()
+    }
+
+    fn from_any(
+        lookup: &mut dyn std::any::Any,
+    ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup> {
+        lookup
+            .downcast_mut::<Self>()
+            .map(|conn| conn as &mut dyn super::PgMetadataLookup)
+    }
+}
+
 impl PgConnection {
     /// Build a transaction, specifying additional details such as isolation level
     ///
