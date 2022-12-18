@@ -611,7 +611,7 @@ mod tests {
         let temp_path = dir.path().canonicalize().unwrap();
         let toml_path = temp_path.join("Cargo.toml");
 
-        fs::File::create(&toml_path).unwrap();
+        fs::File::create(toml_path.as_path()).unwrap();
 
         assert_eq!(
             Ok(temp_path.clone()),

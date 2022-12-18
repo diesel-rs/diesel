@@ -52,8 +52,8 @@ fn migration_generate_creates_a_migration_with_initial_contents() {
     let migrations = p.migrations();
     let migration = &migrations[0];
 
-    let up = file_content(&migration.path().join("up.sql"));
-    let down = file_content(&migration.path().join("down.sql"));
+    let up = file_content(migration.path().join("up.sql"));
+    let down = file_content(migration.path().join("down.sql"));
 
     assert_eq!(up.trim(), "-- Your SQL goes here");
     assert_eq!(down.trim(), "-- This file should undo anything in `up.sql`");
