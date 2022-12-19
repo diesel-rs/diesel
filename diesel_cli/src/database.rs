@@ -94,8 +94,20 @@ impl Backend {
             ),
         }
     }
+
+    pub(crate) fn for_connection(connection: &InferConnection) -> Backend {
+        match connection {
+            #[cfg(feature = "postgres")]
+            InferConnection::Pg(_) => Self::Pg,
+            #[cfg(feature = "sqlite")]
+            InferConnection::Sqlite(_) => Self::Sqlite,
+            #[cfg(feature = "mysql")]
+            InferConnection::Mysql(_) => Self::Mysql,
+        }
+    }
 }
 
+#[derive(diesel::MultiConnection)]
 pub enum InferConnection {
     #[cfg(feature = "postgres")]
     Pg(PgConnection),
@@ -106,37 +118,11 @@ pub enum InferConnection {
 }
 
 impl InferConnection {
-    pub fn establish(database_url: &str) -> DatabaseResult<Self> {
-        match Backend::for_url(database_url) {
-            #[cfg(feature = "postgres")]
-            Backend::Pg => PgConnection::establish(database_url).map(InferConnection::Pg),
-            #[cfg(feature = "sqlite")]
-            Backend::Sqlite => {
-                SqliteConnection::establish(database_url).map(InferConnection::Sqlite)
-            }
-            #[cfg(feature = "mysql")]
-            Backend::Mysql => MysqlConnection::establish(database_url).map(InferConnection::Mysql),
-        }
-        .map_err(Into::into)
+    pub fn from_matches(matches: &ArgMatches) -> Self {
+        let database_url = database_url(matches);
+        Self::establish(&database_url)
+            .unwrap_or_else(|err| handle_error_with_database_url(&database_url, err))
     }
-}
-
-macro_rules! call_with_conn {
-    (
-        $database_url:expr,
-        $($func:ident)::+ ($($args:expr),*)
-    ) => {
-        match crate::database::InferConnection::establish(&$database_url)
-            .unwrap_or_else(|err| {crate::database::handle_error_with_database_url(&$database_url, err)})
-        {
-            #[cfg(feature="postgres")]
-            crate::database::InferConnection::Pg(ref mut conn) => $($func)::+ (conn, $($args),*),
-            #[cfg(feature="sqlite")]
-            crate::database::InferConnection::Sqlite(ref mut conn) => $($func)::+ (conn, $($args),*),
-            #[cfg(feature="mysql")]
-            crate::database::InferConnection::Mysql(ref mut conn) => $($func)::+ (conn, $($args),*),
-        }
-    };
 }
 
 pub fn reset_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResult<()> {
@@ -229,7 +215,8 @@ fn create_schema_table_and_run_migrations_if_needed(
     if !schema_table_exists(database_url).unwrap_or_else(handle_error) {
         let migrations =
             FileBasedMigrations::from_path(migrations_dir).unwrap_or_else(handle_error);
-        call_with_conn!(database_url, super::run_migrations_with_output(migrations))?;
+        let mut conn = InferConnection::establish(database_url)?;
+        super::run_migrations_with_output(&mut conn, migrations)?;
     };
     Ok(())
 }
