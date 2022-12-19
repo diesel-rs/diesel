@@ -56,7 +56,7 @@ pub struct PrintSchema {
     #[serde(default)]
     pub file: Option<PathBuf>,
     #[serde(default)]
-    pub with_docs: bool,
+    pub with_docs: print_schema::DocConfig,
     #[serde(default)]
     pub filter: print_schema::Filtering,
     #[serde(default)]
