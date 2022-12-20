@@ -464,7 +464,10 @@ fn redo_migrations<Conn, DB>(
 
 #[cfg(feature = "mysql")]
 fn should_redo_migration_in_transaction(t: &dyn Any) -> bool {
-    !t.is::<::diesel::mysql::MysqlConnection>()
+    !matches!(
+        t.downcast_ref::<InferConnection>(),
+        Some(InferConnection::Mysql(_))
+    )
 }
 
 #[cfg(not(feature = "mysql"))]
