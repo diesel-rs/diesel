@@ -582,7 +582,7 @@ impl<'a> Display for Joinable<'a> {
         write!(
             f,
             "diesel::joinable!({} -> {} ({}));",
-            child_table_name, parent_table_name, self.0.foreign_key_rust_name,
+            child_table_name, parent_table_name, self.0.foreign_key_columns_rust[0],
         )
     }
 }

@@ -1,8 +1,6 @@
 use std::borrow::Cow;
 use std::error::Error;
 
-#[cfg(feature = "postgres")]
-use super::ForeignKeyConstraint;
 use diesel::backend::Backend;
 use diesel::connection::LoadConnection;
 use diesel::deserialize::FromSql;
@@ -186,66 +184,6 @@ where
         .collect())
 }
 
-#[allow(clippy::similar_names)]
-#[cfg(feature = "postgres")]
-pub fn load_foreign_key_constraints(
-    connection: &mut PgConnection,
-    schema_name: Option<&str>,
-) -> QueryResult<Vec<ForeignKeyConstraint>> {
-    use self::information_schema::key_column_usage as kcu;
-    use self::information_schema::referential_constraints as rc;
-    use self::information_schema::table_constraints as tc;
-
-    let default_schema = Pg::default_schema(connection)?;
-    let schema_name = schema_name.unwrap_or(&default_schema);
-
-    let constraint_names = tc::table
-        .filter(tc::constraint_type.eq("FOREIGN KEY"))
-        .filter(tc::table_schema.eq(schema_name))
-        .inner_join(
-            rc::table.on(tc::constraint_schema
-                .eq(rc::constraint_schema)
-                .and(tc::constraint_name.eq(rc::constraint_name))),
-        )
-        .select((
-            rc::constraint_schema,
-            rc::constraint_name,
-            rc::unique_constraint_schema,
-            rc::unique_constraint_name,
-        ))
-        .load::<(String, String, Option<String>, Option<String>)>(connection)?;
-
-    constraint_names
-        .into_iter()
-        .map(
-            |(foreign_key_schema, foreign_key_name, primary_key_schema, primary_key_name)| {
-                let (mut foreign_key_table, foreign_key_column) = kcu::table
-                    .filter(kcu::constraint_schema.eq(&foreign_key_schema))
-                    .filter(kcu::constraint_name.eq(&foreign_key_name))
-                    .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                    .first::<(TableName, String)>(connection)?;
-                let (mut primary_key_table, primary_key_column) = kcu::table
-                    .filter(kcu::constraint_schema.nullable().eq(primary_key_schema))
-                    .filter(kcu::constraint_name.nullable().eq(primary_key_name))
-                    .select(((kcu::table_name, kcu::table_schema), kcu::column_name))
-                    .first::<(TableName, _)>(connection)?;
-
-                foreign_key_table.strip_schema_if_matches(&default_schema);
-                primary_key_table.strip_schema_if_matches(&default_schema);
-
-                Ok(ForeignKeyConstraint {
-                    child_table: foreign_key_table,
-                    parent_table: primary_key_table,
-                    foreign_key: foreign_key_column.clone(),
-                    foreign_key_rust_name: foreign_key_column,
-                    primary_key: primary_key_column,
-                })
-            },
-        )
-        .filter(|e| !matches!(e, Err(NotFound)))
-        .collect()
-}
-
 #[cfg(all(test, feature = "postgres"))]
 mod tests {
     extern crate dotenvy;
@@ -398,48 +336,6 @@ mod tests {
         assert_eq!(
             vec!["id".to_string(), "id2".to_string()],
             get_primary_keys(&mut connection, &table_2).unwrap()
-        );
-    }
-
-    #[test]
-    fn get_foreign_keys_loads_foreign_keys() {
-        let mut connection = connection();
-
-        diesel::sql_query("CREATE SCHEMA test_schema")
-            .execute(&mut connection)
-            .unwrap();
-        diesel::sql_query("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)")
-            .execute(&mut connection)
-            .unwrap();
-        diesel::sql_query(
-                "CREATE TABLE test_schema.table_2 (id SERIAL PRIMARY KEY, fk_one INTEGER NOT NULL REFERENCES test_schema.table_1)",
-            ).execute(&mut connection)
-            .unwrap();
-        diesel::sql_query(
-                "CREATE TABLE test_schema.table_3 (id SERIAL PRIMARY KEY, fk_two INTEGER NOT NULL REFERENCES test_schema.table_2)",
-            ).execute(&mut connection)
-            .unwrap();
-
-        let table_1 = TableName::new("table_1", "test_schema");
-        let table_2 = TableName::new("table_2", "test_schema");
-        let table_3 = TableName::new("table_3", "test_schema");
-        let fk_one = ForeignKeyConstraint {
-            child_table: table_2.clone(),
-            parent_table: table_1,
-            foreign_key: "fk_one".into(),
-            foreign_key_rust_name: "fk_one".into(),
-            primary_key: "id".into(),
-        };
-        let fk_two = ForeignKeyConstraint {
-            child_table: table_3,
-            parent_table: table_2,
-            foreign_key: "fk_two".into(),
-            foreign_key_rust_name: "fk_two".into(),
-            primary_key: "id".into(),
-        };
-        assert_eq!(
-            Ok(vec![fk_one, fk_two]),
-            load_foreign_key_constraints(&mut connection, Some("test_schema"))
         );
     }
 }

@@ -77,28 +77,16 @@ pub fn load_foreign_key_constraints(
                 .map(|row| {
                     let parent_table = TableName::from_name(row.parent_table);
                     let primary_key = if let Some(primary_key) = row.primary_key {
-                        primary_key
+                        vec![primary_key]
                     } else {
-                        let mut primary_keys = get_primary_keys(connection, &parent_table)?;
-                        if primary_keys.len() == 1 {
-                            primary_keys
-                                .pop()
-                                .expect("There is exactly one primary key in this list")
-                        } else {
-                            return Err(diesel::result::Error::DatabaseError(
-                                diesel::result::DatabaseErrorKind::Unknown,
-                                Box::new(String::from(
-                                    "Found more than one primary key for an implicit reference",
-                                )),
-                            ));
-                        }
+                        get_primary_keys(connection, &parent_table)?
                     };
                     Ok(ForeignKeyConstraint {
                         child_table: child_table.clone(),
                         parent_table,
-                        foreign_key: row.foreign_key.clone(),
-                        foreign_key_rust_name: row.foreign_key,
-                        primary_key,
+                        foreign_key_columns: vec![row.foreign_key.clone()],
+                        foreign_key_columns_rust: vec![row.foreign_key.clone()],
+                        primary_key_columns: primary_key,
                     })
                 })
                 .collect::<Result<_, _>>()
@@ -386,17 +374,18 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
     let fk_one = ForeignKeyConstraint {
         child_table: table_2.clone(),
         parent_table: table_1,
-        foreign_key: "fk_one".into(),
-        foreign_key_rust_name: "fk_one".into(),
-        primary_key: "id".into(),
+        foreign_key_columns: vec!["fk_one".into()],
+        foreign_key_columns_rust: vec!["fk_one".into()],
+        primary_key_columns: vec!["id".into()],
     };
     let fk_two = ForeignKeyConstraint {
         child_table: table_3,
         parent_table: table_2,
-        foreign_key: "fk_two".into(),
-        foreign_key_rust_name: "fk_two".into(),
-        primary_key: "id".into(),
+        foreign_key_columns: vec!["fk_two".into()],
+        foreign_key_columns_rust: vec!["fk_two".into()],
+        primary_key_columns: vec!["id".into()],
     };
+
     let fks = load_foreign_key_constraints(&mut connection, None).unwrap();
     assert_eq!(vec![fk_one, fk_two], fks);
 }

@@ -282,6 +282,17 @@ fn print_schema_reserved_names() {
     test_print_schema("print_schema_reserved_name_mitigation_issue_3404", vec![])
 }
 
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_regression_3446_ignore_compound_foreign_keys() {
+    test_print_schema("print_schema_regression_3446_compound_keys", vec![])
+}
+
+#[test]
+fn print_schema_several_keys_with_compound_key() {
+    test_print_schema("print_schema_several_keys_with_compound_key", vec![])
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
@@ -344,7 +355,6 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
 
     p.command("setup").run();
     p.create_migration("12345_create_schema", &schema, None);
-
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 

@@ -1,6 +1,7 @@
 use diesel::mysql::{Mysql, MysqlConnection};
 use diesel::*;
 use heck::ToUpperCamelCase;
+use std::collections::HashMap;
 use std::{borrow::Cow, error::Error};
 
 use super::data_structures::*;
@@ -123,20 +124,33 @@ pub fn load_foreign_key_constraints(
             (kcu::referenced_table_name, kcu::referenced_table_schema),
             kcu::column_name,
             kcu::referenced_column_name,
+            kcu::constraint_name,
         ))
-        .load::<(TableName, TableName, String, _)>(connection)?
+        .load::<(TableName, TableName, String, String, String)>(connection)?
         .into_iter()
+        .fold(
+            HashMap::new(),
+            |mut acc, (child_table, parent_table, foreign_key, primary_key, fk_constraint_name)| {
+                let entry = acc
+                    .entry(fk_constraint_name)
+                    .or_insert_with(|| (child_table, parent_table, Vec::new(), Vec::new()));
+                entry.2.push(foreign_key);
+                entry.3.push(primary_key);
+                acc
+            },
+        )
+        .into_values()
         .map(
-            |(mut child_table, mut parent_table, foreign_key, primary_key)| {
+            |(mut child_table, mut parent_table, foreign_key_columns, primary_key_columns)| {
                 child_table.strip_schema_if_matches(&default_schema);
                 parent_table.strip_schema_if_matches(&default_schema);
 
                 ForeignKeyConstraint {
                     child_table,
                     parent_table,
-                    foreign_key: foreign_key.clone(),
-                    foreign_key_rust_name: foreign_key,
-                    primary_key,
+                    primary_key_columns,
+                    foreign_key_columns_rust: foreign_key_columns.clone(),
+                    foreign_key_columns,
                 }
             },
         )

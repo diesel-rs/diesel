@@ -46,6 +46,8 @@ impl TestCommand {
             .build_command()
             .output()
             .expect("failed to execute process");
+        println!("STDOUT: {}", String::from_utf8_lossy(&output.stdout));
+        println!("STDERR: {}", String::from_utf8_lossy(&output.stderr));
         CommandResult { output }
     }
 
