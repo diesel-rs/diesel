@@ -45,11 +45,11 @@ pub trait SimpleConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()>;
 }
 
-/// Return type of [`LoadConnection::load`].
-///
-/// Users should threat this type as `impl Iterator<Item = QueryResult<impl Row<DB>>>`
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(note = "Directly use `LoadConnection::Cursor` instead")]
 pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =
-    <C as ConnectionSealed<DB, B>>::Cursor<'conn, 'query>;
+    <C as self::private::ConnectionHelperType<DB, B>>::Cursor<'conn, 'query>;
 
 /// A connection to a database
 ///
@@ -391,11 +391,17 @@ pub trait LoadConnection<B = DefaultLoadingMode>: Connection {
     /// The cursor type returned by [`LoadConnection::load`]
     ///
     /// Users should handle this as opaque type that implements [`Iterator`]
-    type Cursor<'conn, 'query>: Iterator<Item = QueryResult<Self::Row<'conn, 'query>>>;
+    type Cursor<'conn, 'query>: Iterator<
+        Item = QueryResult<<Self as LoadConnection<B>>::Row<'conn, 'query>>,
+    >
+    where
+        Self: 'conn;
 
     /// The row type used as [`Iterator::Item`] for the iterator implementation
     /// of [`LoadConnection::Cursor`]
-    type Row<'conn, 'query>: crate::row::Row<'conn, Self::Backend>;
+    type Row<'conn, 'query>: crate::row::Row<'conn, Self::Backend>
+    where
+        Self: 'conn;
 
     /// Executes a given query and returns any requested values
     ///
@@ -414,7 +420,7 @@ pub trait LoadConnection<B = DefaultLoadingMode>: Connection {
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    ) -> QueryResult<Self::Cursor<'conn, 'query>>
     where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>;
@@ -508,17 +514,8 @@ impl<DB: Backend + 'static> dyn BoxableConnection<DB> {
 // `MultiConnection` derive. We might stabilize this trait with
 // the corresponding derive
 pub(crate) mod private {
-    use crate::backend::Backend;
-    use crate::QueryResult;
 
-    use super::DefaultLoadingMode;
-
-    /// This trait describes which cursor type is used by a given connection
-    /// implementation. This trait is only useful in combination with [`Connection`].
-    ///
-    /// Implementation wise this is a workaround for GAT's
-    ///
-    /// [`Connection`]: super::Connection
+    /// This trait restricts who can implement `Connection`
     #[cfg_attr(
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
@@ -542,5 +539,21 @@ pub(crate) mod private {
         fn from_any(
             lookup: &mut dyn std::any::Any,
         ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup>;
+    }
+
+    // These impls are only there for backward compatibility reasons
+    // Remove them on the next breaking release
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    pub trait ConnectionHelperType<DB, B>: super::LoadConnection<B, Backend = DB> {
+        type Cursor<'conn, 'query>
+        where
+            Self: 'conn;
+    }
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    impl<T, B> ConnectionHelperType<T::Backend, B> for T
+    where
+        T: super::LoadConnection<B>,
+    {
+        type Cursor<'conn, 'query> = <T as super::LoadConnection<B>>::Cursor<'conn, 'query> where T: 'conn;
     }
 }

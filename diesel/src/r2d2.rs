@@ -106,7 +106,7 @@ use std::marker::PhantomData;
 
 use crate::backend::Backend;
 use crate::connection::{
-    ConnectionSealed, LoadConnection, LoadRowIter, SimpleConnection, TransactionManager,
+    ConnectionSealed, LoadConnection, SimpleConnection, TransactionManager,
     TransactionManagerStatus,
 };
 use crate::expression::QueryMetadata;
@@ -260,7 +260,7 @@ where
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    ) -> QueryResult<Self::Cursor<'conn, 'query>>
     where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
