@@ -462,12 +462,6 @@ pub mod helper_types {
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
 
-    /// [`Iterator`](std::iter::Iterator) of [`QueryResult<U>`](crate::result::QueryResult)
-    ///
-    /// See [`RunQueryDsl::load_iter`] for more information
-    pub type LoadIter<'conn, 'query, Q, Conn, U, B = DefaultLoadingMode> =
-        <Q as load_dsl::LoadQuery<'query, Conn, U, B>>::Ret<'conn>;
-
     /// Maps `F` to `Alias<S>`
     ///
     /// Any column `F` that belongs to `S::Table` will be transformed into
@@ -477,6 +471,12 @@ pub mod helper_types {
     ///
     /// This also works with tuples and some expressions.
     pub type AliasedFields<S, F> = <F as aliasing::FieldAliasMapper<S>>::Out;
+
+    #[doc(hidden)]
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[deprecated(note = "Use `LoadQuery::RowIter` directly")]
+    pub type LoadIter<'conn, 'query, Q, Conn, U, B = DefaultLoadingMode> =
+        <Q as load_dsl::LoadQuery<'query, Conn, U, B>>::RowIter<'conn>;
 }
 
 pub mod prelude {

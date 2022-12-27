@@ -21,21 +21,22 @@ pub(crate) use self::private::CompatibleType;
 ///
 /// [`RunQueryDsl`]: crate::RunQueryDsl
 pub trait LoadQuery<'query, Conn, U, B = DefaultLoadingMode>: RunQueryDsl<Conn> {
-    type Ret<'conn>: Iterator<Item = QueryResult<U>>
+    type RowIter<'conn>: Iterator<Item = QueryResult<U>>
     where
         Conn: 'conn;
+
     /// Load this query
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    fn internal_load<'conn>(self, conn: &'conn mut Conn) -> QueryResult<Self::Ret<'conn>>;
+    fn internal_load<'conn>(self, conn: &'conn mut Conn) -> QueryResult<Self::RowIter<'conn>>;
 }
 
-/// The return type of [`LoadQuery<C, U>::internal_load()`]
-///
-/// Users should thread this type as `impl Iterator<Item = QueryResult<U>>`
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(note = "Use `LoadQuery::Iter` directly")]
 pub type LoadRet<'conn, 'query, Q, C, U, B = DefaultLoadingMode> =
-    <Q as LoadQuery<'query, C, U, B>>::Ret<'conn>;
+    <Q as LoadQuery<'query, C, U, B>>::RowIter<'conn>;
 
 impl<'query, Conn, T, U, DB, B> LoadQuery<'query, Conn, U, B> for T
 where
@@ -47,14 +48,14 @@ where
     U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
-    type Ret<'conn> = LoadIter<
+    type RowIter<'conn> = LoadIter<
         U,
         <Conn as LoadConnection<B>>::Cursor<'conn, 'query>,
         <T::SqlType as CompatibleType<U, DB>>::SqlType,
         DB,
     > where Conn: 'conn;
 
-    fn internal_load<'conn>(self, conn: &'conn mut Conn) -> QueryResult<Self::Ret<'conn>> {
+    fn internal_load<'conn>(self, conn: &'conn mut Conn) -> QueryResult<Self::RowIter<'conn>> {
         Ok(LoadIter {
             cursor: conn.load(self.as_query())?,
             _marker: Default::default(),
