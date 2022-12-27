@@ -14,19 +14,17 @@ error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::tabl
              <(T0, T1, T2, T3, T4, T5, T6) as UndecoratedInsertRecord<Tab>>
              <(T0, T1, T2, T3, T4, T5, T6, T7) as UndecoratedInsertRecord<Tab>>
            and 20 others
-   = note: required because of the requirements on the impl of `diesel::Insertable<posts::table>` for `Vec<users::table>`
+   = note: required for `Vec<users::table>` to implement `diesel::Insertable<posts::table>`
 
 error[E0271]: type mismatch resolving `<users::table as diesel::Insertable<posts::table>>::Values == diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
-  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:17
+  --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:10
    |
 37 |         .values((users, users));
-   |          ------ ^^^^^^^^^^^^^^ expected struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect`, found struct `diesel::query_builder::insert_statement::ValuesClause`
-   |          |
-   |          required by a bound introduced by this call
+   |          ^^^^^^ expected struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect`, found struct `diesel::query_builder::insert_statement::ValuesClause`
    |
    = note: expected struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
               found struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
-   = note: required because of the requirements on the impl of `diesel::Insertable<posts::table>` for `(users::table, users::table)`
+   = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
 
 error[E0271]: type mismatch resolving `<users::table as diesel::Insertable<posts::table>>::Values == diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
    --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:17
@@ -38,7 +36,7 @@ error[E0271]: type mismatch resolving `<users::table as diesel::Insertable<posts
     |
     = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
                found struct `diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<SelectStatement<FromClause<users::table>>, (posts::columns::user_id, posts::columns::title, posts::columns::body)>`
-    = note: required because of the requirements on the impl of `diesel::Insertable<posts::table>` for `(users::table, users::table)`
+    = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> $DIESEL/src/query_builder/insert_statement/mod.rs
     |

@@ -1,31 +1,44 @@
 error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:22:10
-   |
-22 |         .values(&posts::id.eq(1));
-   |          ^^^^^^ type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
-   |
-note: expected this to be `posts::table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:14:9
-   |
-14 |         id -> Integer,
-   |         ^^
-
-error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:22:17
-   |
-22 |         .values(&posts::id.eq(1));
-   |          ------ ^^^^^^^^^^^^^^^^ type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
-   |          |
-   |          required by a bound introduced by this call
-   |
-note: expected this to be `posts::table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:14:9
-   |
-14 |         id -> Integer,
-   |         ^^
-   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `&diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`
-   = note: 1 redundant requirement hidden
-   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:22:17
+    |
+22  |         .values(&posts::id.eq(1));
+    |          ------ ^^^^^^^^^^^^^^^^ type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
+    |          |
+    |          required by a bound introduced by this call
+    |
+note: expected this to be `users::table`
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:14:9
+    |
+14  |         id -> Integer,
+    |         ^^
+    = note: struct `posts::table` and struct `users::table` have similar names, but are actually distinct types
+note: struct `posts::table` is defined in module `crate::posts` of the current crate
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |     }
+16  | | }
+    | |_^
+note: struct `users::table` is defined in module `crate::users` of the current crate
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+    |
+6   | / table! {
+7   | |     users {
+8   | |         id -> Integer,
+9   | |     }
+10  | | }
+    | |_^
+    = note: required for `&diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `diesel::Insertable<users::table>`
+    = note: 1 redundant requirement hidden
+    = note: required for `&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>` to implement `diesel::Insertable<users::table>`
+note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
+   --> $DIESEL/src/query_builder/insert_statement/mod.rs
+    |
+    |         U: Insertable<T>,
+    |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>> as diesel::Insertable<users::table>>::Values == diesel::query_builder::insert_statement::ValuesClause<_, users::table>`
   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:10
@@ -33,23 +46,57 @@ error[E0271]: type mismatch resolving `<&diesel::expression::grouped::Grouped<di
 25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
    |          ^^^^^^ expected struct `posts::table`, found struct `users::table`
    |
-   = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<posts::columns::id, &diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, posts::table>`
-              found struct `diesel::query_builder::insert_statement::ValuesClause<_, users::table>`
-   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`
+   = note: struct `users::table` and struct `posts::table` have similar names, but are actually distinct types
+note: struct `users::table` is defined in module `crate::users` of the current crate
+  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+   |
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |     }
+10 | | }
+   | |_^
+note: struct `posts::table` is defined in module `crate::posts` of the current crate
+  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+   |
+12 | / table! {
+13 | |     posts {
+14 | |         id -> Integer,
+15 | |     }
+16 | | }
+   | |_^
+   = note: required for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>> as diesel::Insertable<users::table>>::Values == diesel::query_builder::insert_statement::ValuesClause<_, users::table>`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:17
+  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:10
    |
 25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
-   |          ------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `posts::table`, found struct `users::table`
-   |          |
-   |          required by a bound introduced by this call
+   |          ^^^^^^ expected struct `posts::table`, found struct `users::table`
    |
-   = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<posts::columns::id, &diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, posts::table>`
-              found struct `diesel::query_builder::insert_statement::ValuesClause<_, users::table>`
-   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`
+   = note: struct `users::table` and struct `posts::table` have similar names, but are actually distinct types
+note: struct `users::table` is defined in module `crate::users` of the current crate
+  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+   |
+6  | / table! {
+7  | |     users {
+8  | |         id -> Integer,
+9  | |     }
+10 | | }
+   | |_^
+note: struct `posts::table` is defined in module `crate::posts` of the current crate
+  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+   |
+12 | / table! {
+13 | |     posts {
+14 | |         id -> Integer,
+15 | |     }
+16 | | }
+   | |_^
+   = note: required for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
    = note: 1 redundant requirement hidden
-   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `&(diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`
+   = note: required for `&(diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>> as diesel::Insertable<users::table>>::Values == diesel::query_builder::insert_statement::ValuesClause<_, users::table>`
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:17
@@ -59,31 +106,34 @@ error[E0271]: type mismatch resolving `<&diesel::expression::grouped::Grouped<di
     |          |
     |          required by a bound introduced by this call
     |
-    = note: expected struct `diesel::query_builder::insert_statement::ValuesClause<_, users::table>`
-               found struct `diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<posts::columns::id, &diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, posts::table>`
-    = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`
+    = note: struct `posts::table` and struct `users::table` have similar names, but are actually distinct types
+note: struct `posts::table` is defined in module `crate::posts` of the current crate
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |     }
+16  | | }
+    | |_^
+note: struct `users::table` is defined in module `crate::users` of the current crate
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+    |
+6   | / table! {
+7   | |     users {
+8   | |         id -> Integer,
+9   | |     }
+10  | | }
+    | |_^
+    = note: required for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
     = note: 1 redundant requirement hidden
-    = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `&(diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`
+    = note: required for `&(diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> $DIESEL/src/query_builder/insert_statement/mod.rs
     |
     |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
-
-error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:10
-   |
-25 |         .values(&(posts::id.eq(1), users::id.eq(2)));
-   |          ^^^^^^ type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
-   |
-note: expected this to be `posts::table`
-  --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:14:9
-   |
-14 |         id -> Integer,
-   |         ^^
-   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `&diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`
-   = note: 2 redundant requirements hidden
-   = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `(&diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, &diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<posts::columns::id as Column>::Table == users::table`
    --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:25:17
@@ -98,11 +148,31 @@ note: expected this to be `users::table`
     |
 14  |         id -> Integer,
     |         ^^
-    = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `&diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`
+    = note: struct `posts::table` and struct `users::table` have similar names, but are actually distinct types
+note: struct `posts::table` is defined in module `crate::posts` of the current crate
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:12:1
+    |
+12  | / table! {
+13  | |     posts {
+14  | |         id -> Integer,
+15  | |     }
+16  | | }
+    | |_^
+note: struct `users::table` is defined in module `crate::users` of the current crate
+   --> tests/fail/insert_cannot_reference_columns_from_other_table.rs:6:1
+    |
+6   | / table! {
+7   | |     users {
+8   | |         id -> Integer,
+9   | |     }
+10  | | }
+    | |_^
+    = note: required for `&diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `diesel::Insertable<users::table>`
     = note: 3 redundant requirements hidden
-    = note: required because of the requirements on the impl of `diesel::Insertable<users::table>` for `&(diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)`
+    = note: required for `&(diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>)` to implement `diesel::Insertable<users::table>`
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
    --> $DIESEL/src/query_builder/insert_statement/mod.rs
     |
     |         U: Insertable<T>,
     |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`
+    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)

@@ -1,13 +1,23 @@
 error[E0277]: the trait bound `diesel::sql_types::Text: BoolOrNullableBool` is not satisfied
-  --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:15:26
-   |
-15 |     let _ = users::table.filter(users::name);
-   |                          ^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Text`
-   |
-   = help: the following other types implement trait `BoolOrNullableBool`:
-             Bool
-             Nullable<Bool>
-   = note: required because of the requirements on the impl of `FilterDsl<columns::name>` for `SelectStatement<FromClause<users::table>>`
+   --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:15:33
+    |
+15  |     let _ = users::table.filter(users::name);
+    |                          ------ ^^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Text`
+    |                          |
+    |                          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `BoolOrNullableBool`:
+              Bool
+              Nullable<Bool>
+    = note: required for `diesel::query_builder::where_clause::NoWhereClause` to implement `diesel::query_builder::where_clause::WhereAnd<columns::name>`
+    = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<columns::name>`
+    = note: 1 redundant requirement hidden
+    = note: required for `users::table` to implement `FilterDsl<columns::name>`
+note: required by a bound in `diesel::QueryDsl::filter`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |         Self: methods::FilterDsl<Predicate>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::QueryDsl::filter`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
   --> tests/fail/filter_requires_bool_nonaggregate_expression.rs:16:26
@@ -18,5 +28,5 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
    = help: the following other types implement trait `MixedAggregates<Other>`:
              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
-   = note: required because of the requirements on the impl of `NonAggregate` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<BigInt>, i64>>>`
-   = note: required because of the requirements on the impl of `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<BigInt>, i64>>>>` for `SelectStatement<FromClause<users::table>>`
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<BigInt>, i64>>>` to implement `NonAggregate`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<BigInt>, i64>>>>`

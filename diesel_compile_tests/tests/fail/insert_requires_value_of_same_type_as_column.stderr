@@ -1,10 +1,8 @@
 error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
-  --> tests/fail/insert_requires_value_of_same_type_as_column.rs:19:26
+  --> tests/fail/insert_requires_value_of_same_type_as_column.rs:19:23
    |
 19 |         .values(&name.eq(1));
-   |                       -- ^ the trait `diesel::Expression` is not implemented for `{integer}`
-   |                       |
-   |                       required by a bound introduced by this call
+   |                       ^^ the trait `diesel::Expression` is not implemented for `{integer}`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &'a T
@@ -16,4 +14,4 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
            and 124 others
-   = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Text>` for `{integer}`
+   = note: required for `{integer}` to implement `AsExpression<diesel::sql_types::Text>`

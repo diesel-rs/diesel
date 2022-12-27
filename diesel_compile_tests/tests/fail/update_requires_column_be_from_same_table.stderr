@@ -1,37 +1,57 @@
 error[E0271]: type mismatch resolving `<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as AsChangeset>::Target == users::table`
-  --> tests/fail/update_requires_column_be_from_same_table.rs:22:33
+  --> tests/fail/update_requires_column_be_from_same_table.rs:22:37
    |
 22 |     let command = update(users).set(posts::title.eq("Hello"));
-   |                                 ^^^ expected struct `users::table`, found struct `posts::table`
+   |                                 --- ^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `users::table`, found struct `posts::table`
+   |                                 |
+   |                                 required by a bound introduced by this call
    |
+   = note: struct `posts::table` and struct `users::table` have similar names, but are actually distinct types
+note: struct `posts::table` is defined in module `crate::posts` of the current crate
+  --> tests/fail/update_requires_column_be_from_same_table.rs:12:1
+   |
+12 | / table! {
+13 | |     posts {
+14 | |         id -> Integer,
+15 | |         title -> VarChar,
+16 | |     }
+17 | | }
+   | |_^
+note: struct `users::table` is defined in module `crate::users` of the current crate
+  --> tests/fail/update_requires_column_be_from_same_table.rs:5:1
+   |
+5  | / table! {
+6  | |     users {
+7  | |         id -> Integer,
+8  | |         name -> VarChar,
+9  | |     }
+10 | | }
+   | |_^
 note: required by a bound in `UpdateStatement::<T, U>::set`
   --> $DIESEL/src/query_builder/update_statement/mod.rs
    |
    |         V: changeset::AsChangeset<Target = T>,
    |                                   ^^^^^^^^^^ required by this bound in `UpdateStatement::<T, U>::set`
+   = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
-  --> tests/fail/update_requires_column_be_from_same_table.rs:23:37
+  --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
    |
 23 |     let command = update(users).set(name.eq(posts::title));
-   |                                 --- ^^^^^^^^^^^^^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
-   |                                 |
-   |                                 required by a bound introduced by this call
+   |                                 ^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
    |
-note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/update_requires_column_be_from_same_table.rs:15:9
    |
 15 |         title -> VarChar,
    |         ^^^^^
-   = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
+   = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-  --> tests/fail/update_requires_column_be_from_same_table.rs:23:37
+  --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
    |
 23 |     let command = update(users).set(name.eq(posts::title));
-   |                                 --- ^^^^^^^^^^^^^^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
-   |                                 |
-   |                                 required by a bound introduced by this call
+   |                                 ^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
    |
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
@@ -40,10 +60,10 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
              <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-   = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
-note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
+   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/update_requires_column_be_from_same_table.rs:15:9
    |
 15 |         title -> VarChar,
    |         ^^^^^
-   = note: required because of the requirements on the impl of `AsChangeset` for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>`
+   = note: required for `diesel::expression::operators::Eq<users::columns::name, posts::columns::title>` to implement `AsChangeset`

@@ -14,7 +14,7 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
              Unsigned<diesel::sql_types::Integer>
              Unsigned<diesel::sql_types::SmallInt>
            and 9 others
-   = note: required because of the requirements on the impl of `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` for `diesel::sql_types::Bool`
+   = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::max`
   --> $DIESEL/src/expression/functions/aggregate_ordering.rs
    |
@@ -37,9 +37,9 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
              Unsigned<diesel::sql_types::Integer>
              Unsigned<diesel::sql_types::SmallInt>
            and 9 others
-   = note: required because of the requirements on the impl of `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` for `diesel::sql_types::Bool`
-   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, columns::b>`
-   = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, columns::b>>` for `stuff::table`
+   = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
+   = note: required for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, columns::b>` to implement `diesel::Expression`
+   = note: required for `stuff::table` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, columns::b>>`
 
 error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
   --> tests/fail/ordering_functions_require_ord.rs:14:38
@@ -57,7 +57,7 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
              Unsigned<diesel::sql_types::Integer>
              Unsigned<diesel::sql_types::SmallInt>
            and 9 others
-   = note: required because of the requirements on the impl of `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` for `diesel::sql_types::Bool`
+   = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::min`
   --> $DIESEL/src/expression/functions/aggregate_ordering.rs
    |
@@ -80,6 +80,6 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
              Unsigned<diesel::sql_types::Integer>
              Unsigned<diesel::sql_types::SmallInt>
            and 9 others
-   = note: required because of the requirements on the impl of `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate` for `diesel::sql_types::Bool`
-   = note: required because of the requirements on the impl of `diesel::Expression` for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, columns::b>`
-   = note: required because of the requirements on the impl of `SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, columns::b>>` for `stuff::table`
+   = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
+   = note: required for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, columns::b>` to implement `diesel::Expression`
+   = note: required for `stuff::table` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, columns::b>>`

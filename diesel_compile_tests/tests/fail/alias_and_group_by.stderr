@@ -9,11 +9,11 @@ note: expected this to be `diesel::expression::is_contained_in_group_by::No`
    |
 9  |         name -> VarChar,
    |         ^^^^
-note: required because of the requirements on the impl of `ValidGrouping<columns::name>` for `columns::id`
+note: required for `columns::id` to implement `ValidGrouping<columns::name>`
   --> tests/fail/alias_and_group_by.rs:8:9
    |
 8  |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required because of the requirements on the impl of `ValidGrouping<AliasedField<user1, columns::name>>` for `AliasedField<user1, columns::id>`
-   = note: required because of the requirements on the impl of `SelectDsl<AliasedField<user1, columns::id>>` for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<user1, columns::name>>>`
+   = note: required for `AliasedField<user1, columns::id>` to implement `ValidGrouping<AliasedField<user1, columns::name>>`
+   = note: required for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<user1, columns::name>>>` to implement `SelectDsl<AliasedField<user1, columns::id>>`

@@ -13,19 +13,21 @@ error[E0277]: the trait bound `dyn diesel::BoxableExpression<users::table, Pg, S
    |          ^^^^^^ the trait `ValidGrouping<columns::id>` is not implemented for `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>`
    |
    = help: the trait `ValidGrouping<GB>` is implemented for `(dyn diesel::BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a)`
-   = note: required because of the requirements on the impl of `ValidGrouping<columns::id>` for `Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>`
-   = note: required because of the requirements on the impl of `SelectDsl<Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>`
+   = note: required for `Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>` to implement `ValidGrouping<columns::id>`
+   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>` to implement `SelectDsl<Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>>`
 
 error[E0277]: the trait bound `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>: ValidGrouping<columns::id>` is not satisfied
-    --> tests/fail/valid_grouping_and_boxed_expressions.rs:72:10
+    --> tests/fail/valid_grouping_and_boxed_expressions.rs:72:22
      |
 72   |         .load::<i32>(&mut conn);
-     |          ^^^^ the trait `ValidGrouping<columns::id>` is not implemented for `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>`
+     |          ----        ^^^^^^^^^ the trait `ValidGrouping<columns::id>` is not implemented for `dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>`
+     |          |
+     |          required by a bound introduced by this call
      |
      = help: the trait `ValidGrouping<GB>` is implemented for `(dyn diesel::BoxableExpression<QS, DB, GB, IsAggregate, SqlType = ST> + 'a)`
-     = note: required because of the requirements on the impl of `ValidGrouping<columns::id>` for `Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>`
-     = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, _, i32>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>`
+     = note: required for `Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>` to implement `ValidGrouping<columns::id>`
+     = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<columns::id>>` to implement `LoadQuery<'_, _, i32>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> $DIESEL/src/query_dsl/mod.rs
      |
@@ -43,7 +45,7 @@ note: expected this to be `diesel::expression::is_contained_in_group_by::No`
    |
 11 |         name -> Text,
    |         ^^^^
-note: required because of the requirements on the impl of `ValidGrouping<columns::name>` for `columns::id`
+note: required for `columns::id` to implement `ValidGrouping<columns::name>`
   --> tests/fail/valid_grouping_and_boxed_expressions.rs:10:9
    |
 10 |         id -> Integer,
@@ -58,21 +60,23 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
     = help: the following other types implement trait `MixedAggregates<Other>`:
               <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
               <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
-    = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)`
-    = note: required because of the requirements on the impl of `SelectDsl<(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)>` for `SelectStatement<FromClause<users::table>>`
+    = note: required for `(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)` to implement `ValidGrouping<()>`
+    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)>`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggregates<diesel::expression::is_aggregate::No>` is not satisfied
-    --> tests/fail/valid_grouping_and_boxed_expressions.rs:108:10
+    --> tests/fail/valid_grouping_and_boxed_expressions.rs:108:37
      |
 108  |         .load::<(Option<i32>, i32)>(&mut conn);
-     |          ^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
+     |          ----                       ^^^^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::No>` is not implemented for `diesel::expression::is_aggregate::Yes`
+     |          |
+     |          required by a bound introduced by this call
      |
      = help: the following other types implement trait `MixedAggregates<Other>`:
                <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
                <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
-     = note: required because of the requirements on the impl of `ValidGrouping<()>` for `(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)`
-     = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (Option<i32>, i32)>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)>>`
+     = note: required for `(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)` to implement `ValidGrouping<()>`
+     = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)>>` to implement `Query`
+     = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<(Box<dyn diesel::BoxableExpression<users::table, Pg, (), diesel::expression::is_aggregate::Yes, SqlType = Nullable<diesel::sql_types::Integer>>>, Box<dyn diesel::BoxableExpression<users::table, Pg, SqlType = diesel::sql_types::Integer>>)>>` to implement `LoadQuery<'_, _, (Option<i32>, i32)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
     --> $DIESEL/src/query_dsl/mod.rs
      |

@@ -1,32 +1,46 @@
 error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisfied
-  --> tests/fail/cannot_join_to_non_joinable_table.rs:30:26
-   |
-30 |     let _ = users::table.inner_join(posts::table);
-   |                          ^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
-   |
-   = help: the following other types implement trait `JoinTo<T>`:
-             <users::table as JoinTo<Alias<S>>>
-             <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
-             <users::table as JoinTo<JoinOn<Join, On>>>
-             <users::table as JoinTo<Only<S>>>
-             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
-             <users::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
-   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<posts::table, Inner>` for `users::table`
+   --> tests/fail/cannot_join_to_non_joinable_table.rs:30:37
+    |
+30  |     let _ = users::table.inner_join(posts::table);
+    |                          ---------- ^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
+    |                          |
+    |                          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `JoinTo<T>`:
+              <users::table as JoinTo<Alias<S>>>
+              <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
+              <users::table as JoinTo<JoinOn<Join, On>>>
+              <users::table as JoinTo<Only<S>>>
+              <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
+              <users::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
+    = note: required for `users::table` to implement `JoinWithImplicitOnClause<posts::table, Inner>`
+note: required by a bound in `inner_join`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `inner_join`
 
 error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisfied
-  --> tests/fail/cannot_join_to_non_joinable_table.rs:31:26
-   |
-31 |     let _ = users::table.left_outer_join(posts::table);
-   |                          ^^^^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
-   |
-   = help: the following other types implement trait `JoinTo<T>`:
-             <users::table as JoinTo<Alias<S>>>
-             <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
-             <users::table as JoinTo<JoinOn<Join, On>>>
-             <users::table as JoinTo<Only<S>>>
-             <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
-             <users::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
-   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<posts::table, LeftOuter>` for `users::table`
+   --> tests/fail/cannot_join_to_non_joinable_table.rs:31:42
+    |
+31  |     let _ = users::table.left_outer_join(posts::table);
+    |                          --------------- ^^^^^^^^^^^^ the trait `JoinTo<posts::table>` is not implemented for `users::table`
+    |                          |
+    |                          required by a bound introduced by this call
+    |
+    = help: the following other types implement trait `JoinTo<T>`:
+              <users::table as JoinTo<Alias<S>>>
+              <users::table as JoinTo<BoxedSelectStatement<'a, FromClause<QS>, ST, DB>>>
+              <users::table as JoinTo<JoinOn<Join, On>>>
+              <users::table as JoinTo<Only<S>>>
+              <users::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
+              <users::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
+    = note: required for `users::table` to implement `JoinWithImplicitOnClause<posts::table, LeftOuter>`
+note: required by a bound in `left_outer_join`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `left_outer_join`
 
 error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisfied
   --> tests/fail/cannot_join_to_non_joinable_table.rs:36:26
@@ -42,5 +56,5 @@ error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisf
              <posts::table as JoinTo<SelectStatement<FromClause<F>, S, D, W, O, L, Of, G>>>
              <posts::table as JoinTo<comments::table>>
              <posts::table as JoinTo<query_source::joins::Join<Left, Right, Kind>>>
-   = note: required because of the requirements on the impl of `JoinTo<users::table>` for `query_source::joins::Join<posts::table, comments::table, Inner>`
-   = note: required because of the requirements on the impl of `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>` for `users::table`
+   = note: required for `query_source::joins::Join<posts::table, comments::table, Inner>` to implement `JoinTo<users::table>`
+   = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>`
