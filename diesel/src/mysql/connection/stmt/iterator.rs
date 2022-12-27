@@ -149,18 +149,17 @@ impl PrivateMysqlRow {
     }
 }
 
-impl RowFieldLifetimeHelper<Mysql> for MysqlRow {
-    type Field<'f> = MysqlField<'f>;
-}
+impl RowSealed for MysqlRow {}
 
 impl<'a> Row<'a, Mysql> for MysqlRow {
+    type Field<'f> = MysqlField<'f> where 'a: 'f, Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.metadata.fields().len()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldLifetimeHelper<Mysql>>::Field<'b>>
+    fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
     where
         'a: 'b,
         Self: RowIndex<I>,

@@ -5,7 +5,7 @@ use super::row::PrivateSqliteRow;
 use super::{Sqlite, SqliteAggregateFunction, SqliteBindValue};
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
-use crate::row::{Field, PartialRow, Row, RowFieldLifetimeHelper, RowIndex};
+use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
@@ -184,18 +184,17 @@ impl<'a> FunctionRow<'a> {
     }
 }
 
-impl<'a> RowFieldLifetimeHelper<Sqlite> for FunctionRow<'a> {
-    type Field<'f> = FunctionArgument<'f>;
-}
+impl RowSealed for FunctionRow<'_> {}
 
 impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
+    type Field<'f> = FunctionArgument<'f> where 'a: 'f, Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.field_count
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldLifetimeHelper<Sqlite>>::Field<'b>>
+    fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
     where
         'a: 'b,
         Self: crate::row::RowIndex<I>,

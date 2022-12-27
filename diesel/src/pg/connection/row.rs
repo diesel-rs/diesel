@@ -17,18 +17,17 @@ impl PgRow {
     }
 }
 
-impl RowFieldLifetimeHelper<Pg> for PgRow {
-    type Field<'a> = PgField<'a>;
-}
+impl RowSealed for PgRow {}
 
 impl<'a> Row<'a, Pg> for PgRow {
+    type Field<'f> = PgField<'f> where 'a: 'f, Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.db_result.column_count()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowFieldLifetimeHelper<Pg>>::Field<'b>>
+    fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
     where
         'a: 'b,
         Self: RowIndex<I>,
