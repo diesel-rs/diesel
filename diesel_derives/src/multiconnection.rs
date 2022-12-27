@@ -239,10 +239,7 @@ fn generate_connection_impl(
             }
         }
 
-        impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, super::MultiBackend> for MultiConnection {
-            type Cursor = super::row::MultiCursor<'conn, 'query>;
-            type Row = super::MultiRow<'conn, 'query>;
-        }
+        impl diesel::internal::derives::multiconnection::ConnectionSealed for MultiConnection {}
 
         struct SerializedQuery<T, C> {
             inner: T,
@@ -336,7 +333,7 @@ fn generate_connection_impl(
             fn load<'conn, 'query, T>(
                 conn: &'conn mut MultiConnection,
                 source: T,
-            ) -> diesel::result::QueryResult<LoadRowIter<'conn, 'query, MultiConnection, super::MultiBackend, DefaultLoadingMode>>
+            ) -> diesel::result::QueryResult<super::row::MultiCursor<'conn, 'query>>
             where
                 T: diesel::query_builder::Query + diesel::query_builder::QueryFragment<super::MultiBackend> + diesel::query_builder::QueryId + 'query,
                 super::MultiBackend: diesel::expression::QueryMetadata<T::SqlType>;
@@ -349,7 +346,7 @@ fn generate_connection_impl(
             fn load<'conn, 'query, T>(
                 conn: &'conn mut MultiConnection,
                 source: T,
-            ) -> diesel::result::QueryResult<LoadRowIter<'conn, 'query, MultiConnection, super::MultiBackend, DefaultLoadingMode>>
+            ) -> diesel::result::QueryResult<super::row::MultiCursor<'conn, 'query>>
             where
                 T: diesel::query_builder::Query + diesel::query_builder::QueryFragment<super::MultiBackend> + diesel::query_builder::QueryId + 'query,
                 super::MultiBackend: diesel::expression::QueryMetadata<T::SqlType>,
@@ -365,10 +362,13 @@ fn generate_connection_impl(
         where
             (): Helper,
         {
+            type Cursor<'conn, 'query> = super::row::MultiCursor<'conn, 'query>;
+            type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
+
             fn load<'conn, 'query, T>(
                 &'conn mut self,
                 source: T,
-            ) -> diesel::result::QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, DefaultLoadingMode>>
+            ) -> diesel::result::QueryResult<Self::Cursor<'conn, 'query>>
             where
                 T: diesel::query_builder::Query + diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId + 'query,
                 Self::Backend: diesel::expression::QueryMetadata<T::SqlType>,
@@ -428,7 +428,7 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<#ty as diesel::connection::ConnectionGatWorkaround<'conn, 'query, <#ty as diesel::Connection>::Backend>>::Row)
+            #ident(<#ty as diesel::connection::LoadConnection>::Row<'conn, 'query>)
         }
     });
 
@@ -436,7 +436,7 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<<#ty as diesel::connection::ConnectionGatWorkaround<'conn, 'query, <#ty as diesel::Connection>::Backend>>::Row as diesel::row::RowGatWorkaround<'conn, <#ty as diesel::Connection>::Backend>>::Field)
+            #ident(<<#ty as diesel::connection::LoadConnection>::Row<'conn, 'query> as diesel::row::Row<'conn, <#ty as diesel::connection::Connection>::Backend>>::Field<'query>)
         }
     });
 
@@ -465,11 +465,11 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
         .collect::<Vec<_>>();
     let row_index_impl = &row_index_impl;
 
-    let cursor_variants  = connection_types.iter().map(|c| {
+    let cursor_variants = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<#ty as diesel::connection::ConnectionGatWorkaround<'conn, 'query, <#ty as diesel::Connection>::Backend>>::Cursor)
+            #ident(<#ty as diesel::connection::LoadConnection>::Cursor<'conn, 'query>)
         }
     });
 
@@ -501,7 +501,9 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
 
         }
 
-        pub enum MultiField<'conn, 'query> {
+        impl<'conn, 'query> diesel::internal::derives::multiconnection::RowSealed for MultiRow<'conn, 'query> {}
+
+        pub enum MultiField<'conn: 'query, 'query> {
             #(#field_variants,)*
         }
 
@@ -521,10 +523,6 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
                     #(#field_value_impl,)*
                 }
             }
-        }
-
-        impl<'a, 'conn, 'query> diesel::row::RowGatWorkaround<'a, super::MultiBackend> for MultiRow<'conn, 'query> {
-            type Field = MultiField<'a, 'a>;
         }
 
         impl<'conn, 'query, 'c> diesel::row::RowIndex<&'c str> for MultiRow<'conn, 'query> {
@@ -548,6 +546,7 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
         }
 
         impl<'conn, 'query> diesel::row::Row<'conn, super::MultiBackend> for MultiRow<'conn, 'query> {
+            type Field<'a> = MultiField<'a, 'a> where 'conn: 'a, Self: 'a;
             type InnerPartialRow = Self;
 
             fn field_count(&self) -> usize {
@@ -557,7 +556,7 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
                 }
             }
 
-            fn get<'b, I>(&'b self, idx: I) -> Option<diesel::row::FieldRet<'b, Self, super::MultiBackend>>
+            fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
             where
                 'conn: 'b,
                 Self: diesel::row::RowIndex<I>,
