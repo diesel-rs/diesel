@@ -1,4 +1,5 @@
 use super::result::PgResult;
+use crate::backend::Backend;
 use crate::pg::value::TypeOidLookup;
 use crate::pg::{Pg, PgValue};
 use crate::row::*;
@@ -73,7 +74,7 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
         self.db_result.column_name(self.col_idx)
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'_, Pg>> {
+    fn value(&self) -> Option<<Pg as Backend>::RawValue<'_>> {
         let raw = self.db_result.get(self.row_idx, self.col_idx)?;
 
         Some(PgValue::new_internal(raw, self))

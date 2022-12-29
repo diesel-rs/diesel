@@ -9,7 +9,6 @@ error[E0277]: the trait bound `diesel::sql_types::Text: BoolOrNullableBool` is n
     = help: the following other types implement trait `BoolOrNullableBool`:
               Bool
               Nullable<Bool>
-    = note: required for `diesel::query_builder::where_clause::NoWhereClause` to implement `diesel::query_builder::where_clause::WhereAnd<columns::name>`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<columns::name>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `FilterDsl<columns::name>`

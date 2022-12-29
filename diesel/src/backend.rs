@@ -16,9 +16,7 @@ use crate::sql_types::{self, HasSqlType, TypeMetadata};
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
-pub(crate) use self::private::{
-    DieselReserveSpecialization, HasBindCollector, HasRawValue, TrustedBackend,
-};
+pub(crate) use self::private::{DieselReserveSpecialization, HasBindCollector, TrustedBackend};
 
 /// A database backend
 ///
@@ -111,18 +109,23 @@ where
     Self: HasSqlType<sql_types::Date>,
     Self: HasSqlType<sql_types::Time>,
     Self: HasSqlType<sql_types::Timestamp>,
-    Self: for<'a> HasRawValue<'a>,
     Self: for<'a> HasBindCollector<'a>,
 {
     /// The concrete [`QueryBuilder`] implementation for this backend.
     type QueryBuilder: QueryBuilder<Self>;
+
+    /// The actual type given to [`FromSql`], with lifetimes applied. This type
+    /// should not be used directly. Use the [`RawValue`](super::RawValue)
+    /// helper type instead.
+    ///
+    /// [`FromSql`]: crate::deserialize::FromSql
+    type RawValue<'a>;
 }
 
-/// A helper type to get the raw representation of a database type given to
-/// [`FromSql`]. Equivalent to `<DB as Backend>::RawValue<'a>`.
-///
-/// [`FromSql`]: crate::deserialize::FromSql
-pub type RawValue<'a, DB> = <DB as HasRawValue<'a>>::RawValue;
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(note = "Use `Backend::RawValue` directly")]
+pub type RawValue<'a, DB> = <DB as Backend>::RawValue<'a>;
 
 /// A helper type to get the bind collector for a database backend.
 /// Equivalent to `<DB as HasBindCollector<'a>>::BindCollector<'a>`j
@@ -522,24 +525,6 @@ pub(crate) mod sql_dialect {
 // in the child trait later if GAT's are finally stable
 mod private {
     use super::TypeMetadata;
-
-    /// The raw representation of a database value given to `FromSql`.
-    ///
-    /// This trait is separate from [`Backend`](super::Backend) to imitate `type RawValue<'a>`. It
-    /// should only be referenced directly by implementors. Users of this type
-    /// should instead use the [`RawValue`](super::RawValue) helper type instead.
-    #[cfg_attr(
-        doc_cfg,
-        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
-    )]
-    pub trait HasRawValue<'a> {
-        /// The actual type given to [`FromSql`], with lifetimes applied. This type
-        /// should not be used directly. Use the [`RawValue`](super::RawValue)
-        /// helper type instead.
-        ///
-        /// [`FromSql`]: crate::deserialize::FromSql
-        type RawValue;
-    }
 
     /// This is a marker trait which indicates that
     /// diesel may specialize a certain [`QueryFragment`]

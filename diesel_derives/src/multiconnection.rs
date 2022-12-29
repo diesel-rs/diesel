@@ -1139,8 +1139,8 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
     let value_variants = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
-        quote::quote!{
-            #ident(<<#ty as diesel::Connection>::Backend as diesel::backend::HasRawValue<'a>>::RawValue)
+        quote::quote! {
+            #ident(<<#ty as diesel::Connection>::Backend as diesel::backend::Backend>::RawValue<'a>)
         }
     });
 
@@ -1288,13 +1288,9 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
             }
         }
 
-        impl<'a> diesel::backend::HasRawValue<'a> for MultiBackend {
-            type RawValue = MultiRawValue<'a>;
-        }
-
-
         impl diesel::backend::Backend for MultiBackend {
             type QueryBuilder = super::query_builder::MultiQueryBuilder;
+            type RawValue<'a> = MultiRawValue<'a>;
         }
 
         impl<'a> diesel::backend::HasBindCollector<'a> for MultiBackend {

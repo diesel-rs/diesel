@@ -1,6 +1,6 @@
 //! Contains the `Row` trait
 
-use crate::backend::{self, Backend};
+use crate::backend::Backend;
 use crate::deserialize;
 use deserialize::FromSql;
 use std::ops::Range;
@@ -103,7 +103,7 @@ pub trait Field<'a, DB: Backend> {
 
     /// Get the value representing the current field in the raw representation
     /// as it is transmitted by the database
-    fn value(&self) -> Option<backend::RawValue<'_, DB>>;
+    fn value(&self) -> Option<DB::RawValue<'_>>;
 
     /// Checks whether this field is null or not.
     fn is_null(&self) -> bool {

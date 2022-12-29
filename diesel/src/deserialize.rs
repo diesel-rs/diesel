@@ -3,7 +3,7 @@
 use std::error::Error;
 use std::result;
 
-use crate::backend::{self, Backend};
+use crate::backend::Backend;
 use crate::expression::select_by::SelectBy;
 use crate::row::{NamedRow, Row};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
@@ -411,7 +411,7 @@ pub use diesel_derives::QueryableByName;
 /// ```
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
-    fn from_sql(bytes: backend::RawValue<'_, DB>) -> Result<Self>;
+    fn from_sql(bytes: DB::RawValue<'_>) -> Result<Self>;
 
     /// A specialized variant of `from_sql` for handling null values.
     ///
@@ -421,7 +421,7 @@ pub trait FromSql<A, DB: Backend>: Sized {
     /// If your custom type supports null values you need to provide a
     /// custom implementation.
     #[inline(always)]
-    fn from_nullable_sql(bytes: Option<backend::RawValue<'_, DB>>) -> Result<Self> {
+    fn from_nullable_sql(bytes: Option<DB::RawValue<'_>>) -> Result<Self> {
         match bytes {
             Some(bytes) => Self::from_sql(bytes),
             None => Err(Box::new(crate::result::UnexpectedNullError)),

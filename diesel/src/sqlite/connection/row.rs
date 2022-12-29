@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
+use crate::backend::Backend;
 use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::sqlite::Sqlite;
 
@@ -128,7 +129,7 @@ impl<'stmt, 'query> Field<'stmt, Sqlite> for SqliteField<'stmt, 'query> {
         self.value().is_none()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'_, Sqlite>> {
+    fn value(&self) -> Option<<Sqlite as Backend>::RawValue<'_>> {
         SqliteValue::new(Ref::clone(&self.row), self.col_idx)
     }
 }

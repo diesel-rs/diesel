@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::io::Write;
 
-use crate::backend::{self, Backend};
+use crate::backend::Backend;
 use crate::deserialize::{self, FromSql, Queryable};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::serialize::{self, IsNull, Output, ToSql};
@@ -121,7 +121,7 @@ where
     DB: Backend,
     *const str: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
         let str_ptr = <*const str as FromSql<ST, DB>>::from_sql(bytes)?;
         // We know that the pointer impl will never return null
         let string = unsafe { &*str_ptr };
@@ -155,7 +155,7 @@ where
     DB: Backend,
     *const [u8]: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
         let slice_ptr = <*const [u8] as FromSql<ST, DB>>::from_sql(bytes)?;
         // We know that the pointer impl will never return null
         let bytes = unsafe { &*slice_ptr };
@@ -203,7 +203,7 @@ where
     DB: Backend,
     T::Owned: FromSql<ST, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
         T::Owned::from_sql(bytes).map(Cow::Owned)
     }
 }
