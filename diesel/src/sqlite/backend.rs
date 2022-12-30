@@ -39,10 +39,7 @@ pub enum SqliteType {
 impl Backend for Sqlite {
     type QueryBuilder = SqliteQueryBuilder;
     type RawValue<'a> = SqliteValue<'a, 'a, 'a>;
-}
-
-impl<'a> HasBindCollector<'a> for Sqlite {
-    type BindCollector = SqliteBindCollector<'a>;
+    type BindCollector<'a> = SqliteBindCollector<'a>;
 }
 
 impl TypeMetadata for Sqlite {

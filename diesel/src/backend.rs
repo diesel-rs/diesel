@@ -16,7 +16,7 @@ use crate::sql_types::{self, HasSqlType, TypeMetadata};
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
-pub(crate) use self::private::{DieselReserveSpecialization, HasBindCollector, TrustedBackend};
+pub(crate) use self::private::{DieselReserveSpecialization, TrustedBackend};
 
 /// A database backend
 ///
@@ -98,7 +98,7 @@ pub(crate) use self::private::{DieselReserveSpecialization, HasBindCollector, Tr
 /// [`QueryFragment`]: crate::query_builder::QueryFragment
 pub trait Backend
 where
-    Self: Sized + SqlDialect,
+    Self: Sized + SqlDialect + TypeMetadata,
     Self: HasSqlType<sql_types::SmallInt>,
     Self: HasSqlType<sql_types::Integer>,
     Self: HasSqlType<sql_types::BigInt>,
@@ -109,7 +109,6 @@ where
     Self: HasSqlType<sql_types::Date>,
     Self: HasSqlType<sql_types::Time>,
     Self: HasSqlType<sql_types::Timestamp>,
-    Self: for<'a> HasBindCollector<'a>,
 {
     /// The concrete [`QueryBuilder`] implementation for this backend.
     type QueryBuilder: QueryBuilder<Self>;
@@ -120,6 +119,14 @@ where
     ///
     /// [`FromSql`]: crate::deserialize::FromSql
     type RawValue<'a>;
+
+    /// The concrete [`BindCollector`](crate::query_builder::bind_collector::BindCollector)
+    /// implementation for this backend.
+    ///
+    /// Most backends should use [`RawBytesBindCollector`].
+    ///
+    /// [`RawBytesBindCollector`]: crate::query_builder::bind_collector::RawBytesBindCollector
+    type BindCollector<'a>: crate::query_builder::bind_collector::BindCollector<'a, Self> + 'a;
 }
 
 #[doc(hidden)]
@@ -127,9 +134,10 @@ where
 #[deprecated(note = "Use `Backend::RawValue` directly")]
 pub type RawValue<'a, DB> = <DB as Backend>::RawValue<'a>;
 
-/// A helper type to get the bind collector for a database backend.
-/// Equivalent to `<DB as HasBindCollector<'a>>::BindCollector<'a>`j
-pub type BindCollector<'a, DB> = <DB as HasBindCollector<'a>>::BindCollector;
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(note = "Use `Backend::BindCollector` directly")]
+pub type BindCollector<'a, DB> = <DB as Backend>::BindCollector<'a>;
 
 /// This trait provides various options to configure the
 /// generated SQL for a specific backend.
@@ -524,7 +532,6 @@ pub(crate) mod sql_dialect {
 // because we want to replace them by with an associated type
 // in the child trait later if GAT's are finally stable
 mod private {
-    use super::TypeMetadata;
 
     /// This is a marker trait which indicates that
     /// diesel may specialize a certain [`QueryFragment`]
@@ -546,27 +553,6 @@ mod private {
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
     pub trait DieselReserveSpecialization {}
-
-    /// The bind collector type used to collect query binds for this backend
-    ///
-    /// This trait is separate from [`Backend`](super::Backend) to imitate `type BindCollector<'a>`. It
-    /// should only be referenced directly by implementors. Users of this type
-    /// should instead use the [`BindCollector`] helper type instead.
-    ///
-    /// [`BindCollector`]: super::BindCollector
-    #[cfg_attr(
-        doc_cfg,
-        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
-    )]
-    pub trait HasBindCollector<'a>: TypeMetadata + Sized {
-        /// The concrete [`BindCollector`](crate::query_builder::bind_collector::BindCollector)
-        /// implementation for this backend.
-        ///
-        /// Most backends should use [`RawBytesBindCollector`].
-        ///
-        /// [`RawBytesBindCollector`]: crate::query_builder::bind_collector::RawBytesBindCollector
-        type BindCollector: crate::query_builder::bind_collector::BindCollector<'a, Self> + 'a;
-    }
 
     /// This trait just indicates that noone implements
     /// [`SqlDialect`](super::SqlDialect) without enabling the

@@ -63,10 +63,7 @@ pub enum MysqlType {
 impl Backend for Mysql {
     type QueryBuilder = MysqlQueryBuilder;
     type RawValue<'a> = MysqlValue<'a>;
-}
-
-impl<'a> HasBindCollector<'a> for Mysql {
-    type BindCollector = RawBytesBindCollector<Self>;
+    type BindCollector<'a> = RawBytesBindCollector<Self>;
 }
 
 impl TypeMetadata for Mysql {

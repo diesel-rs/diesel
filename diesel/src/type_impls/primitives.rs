@@ -131,7 +131,7 @@ where
 
 impl<DB> ToSql<sql_types::Text, DB> for str
 where
-    DB: Backend<BindCollector = RawBytesBindCollector<DB>>,
+    for<'a> DB: Backend<BindCollector<'a> = RawBytesBindCollector<DB>>,
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         out.write_all(self.as_bytes())
@@ -175,7 +175,7 @@ where
 
 impl<DB> ToSql<sql_types::Binary, DB> for [u8]
 where
-    DB: Backend<BindCollector = RawBytesBindCollector<DB>>,
+    for<'a> DB: Backend<BindCollector<'a> = RawBytesBindCollector<DB>>,
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         out.write_all(self)

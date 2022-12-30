@@ -165,7 +165,7 @@ fn generate_connection_impl(
         quote::quote! {
             impl BindParamHelper for #ty {
                 fn handle_inner_pass<'a, 'b: 'a>(
-                    outer_collector: &mut diesel::backend::BindCollector<'a, Self::Backend>,
+                    outer_collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<'a>,
                     lookup: &mut <Self::Backend as diesel::sql_types::TypeMetadata>::MetadataLookup,
                     backend: &'b MultiBackend,
                     q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
@@ -250,7 +250,7 @@ fn generate_connection_impl(
 
         trait BindParamHelper: Connection {
             fn handle_inner_pass<'a, 'b: 'a>(
-                collector: &mut diesel::backend::BindCollector<'a, Self::Backend>,
+                collector: &mut <Self::Backend as diesel::backend::Backend>::BindCollector<'a>,
                 lookup: &mut <Self::Backend as diesel::sql_types::TypeMetadata>::MetadataLookup,
                 backend: &'b MultiBackend,
                 q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
@@ -281,8 +281,6 @@ fn generate_connection_impl(
                 Ok(())
             }
         }
-
-
 
         impl<T, C> diesel::query_builder::QueryId for SerializedQuery<T, C>
         where
@@ -328,39 +326,7 @@ fn generate_connection_impl(
             }
         }
 
-        #[doc(hidden)]
-        pub trait Helper {
-            fn load<'conn, 'query, T>(
-                conn: &'conn mut MultiConnection,
-                source: T,
-            ) -> diesel::result::QueryResult<super::row::MultiCursor<'conn, 'query>>
-            where
-                T: diesel::query_builder::Query + diesel::query_builder::QueryFragment<super::MultiBackend> + diesel::query_builder::QueryId + 'query,
-                super::MultiBackend: diesel::expression::QueryMetadata<T::SqlType>;
-        }
-
-        impl Helper for ()
-        where
-            for<'b> super::MultiBackend: diesel::backend::HasBindCollector<'b, BindCollector = super::bind_collector::MultiBindCollector<'b>>,
-        {
-            fn load<'conn, 'query, T>(
-                conn: &'conn mut MultiConnection,
-                source: T,
-            ) -> diesel::result::QueryResult<super::row::MultiCursor<'conn, 'query>>
-            where
-                T: diesel::query_builder::Query + diesel::query_builder::QueryFragment<super::MultiBackend> + diesel::query_builder::QueryId + 'query,
-                super::MultiBackend: diesel::expression::QueryMetadata<T::SqlType>,
-            {
-
-                match conn {
-                    #(#load_impl,)*
-                }
-            }
-        }
-
         impl LoadConnection for MultiConnection
-        where
-            (): Helper,
         {
             type Cursor<'conn, 'query> = super::row::MultiCursor<'conn, 'query>;
             type Row<'conn, 'query> = super::MultiRow<'conn, 'query>;
@@ -373,7 +339,9 @@ fn generate_connection_impl(
                 T: diesel::query_builder::Query + diesel::query_builder::QueryFragment<Self::Backend> + diesel::query_builder::QueryId + 'query,
                 Self::Backend: diesel::expression::QueryMetadata<T::SqlType>,
             {
-                <() as Helper>::load(self, source)
+                match self {
+                    #(#load_impl,)*
+                }
             }
         }
 
@@ -658,7 +626,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         let ident = c.name;
         let ty = c.ty;
         quote::quote! {
-            #ident(<<#ty as diesel::connection::Connection>::Backend as diesel::backend::HasBindCollector<'a>>::BindCollector)
+            #ident(<<#ty as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<'a>)
         }
     });
 
@@ -669,7 +637,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         quote::quote! {
             pub(super) fn #lower_ident(
                 &mut self,
-            ) -> &mut <<#ty as diesel::connection::Connection>::Backend as diesel::backend::HasBindCollector<'a>>::BindCollector {
+            ) -> &mut <<#ty as diesel::connection::Connection>::Backend as diesel::backend::Backend>::BindCollector<'a> {
                 match self {
                     Self::#ident(bc) => bc,
                     _ => unreachable!(),
@@ -721,7 +689,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             fn push_bound_value<'a: 'b, 'b>(
                 &self,
                 v: InnerBindValueKind<'a>,
-                collector: &mut diesel::backend::BindCollector<'b, DB>,
+                collector: &mut <DB as diesel::backend::Backend>::BindCollector<'b>,
                 lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
             ) -> diesel::result::QueryResult<()>;
         }
@@ -741,7 +709,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             fn push_bound_value<'a: 'b, 'b>(
                 &self,
                 v: InnerBindValueKind<'a>,
-                collector: &mut diesel::backend::BindCollector<'b, DB>,
+                collector: &mut <DB as diesel::backend::Backend>::BindCollector<'b>,
                 lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
             ) -> diesel::result::QueryResult<()> {
                 use diesel::query_builder::BindCollector;
@@ -761,7 +729,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             fn push_bound_value<'a: 'b, 'b>(
                 &self,
                 v: InnerBindValueKind<'a>,
-                collector: &mut diesel::backend::BindCollector<'b, DB>,
+                collector: &mut <DB as diesel::backend::Backend>::BindCollector<'b>,
                 lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
             ) -> diesel::result::QueryResult<()> {
                 use diesel::query_builder::BindCollector;
@@ -780,7 +748,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             fn push_bound_value<'a: 'b, 'b>(
                 &self,
                 v: InnerBindValueKind<'a>,
-                collector: &mut diesel::backend::BindCollector<'b, DB>,
+                collector: &mut <DB as diesel::backend::Backend>::BindCollector<'b>,
                 lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
             ) -> diesel::result::QueryResult<()> {
                 use diesel::query_builder::BindCollector;
@@ -1291,10 +1259,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         impl diesel::backend::Backend for MultiBackend {
             type QueryBuilder = super::query_builder::MultiQueryBuilder;
             type RawValue<'a> = MultiRawValue<'a>;
-        }
-
-        impl<'a> diesel::backend::HasBindCollector<'a> for MultiBackend {
-            type BindCollector = super::bind_collector::MultiBindCollector<'a>;
+            type BindCollector<'a> = super::bind_collector::MultiBindCollector<'a>;
         }
 
         pub enum MultiTypeMetadata {

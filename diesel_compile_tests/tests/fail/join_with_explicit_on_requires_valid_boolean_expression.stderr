@@ -26,9 +26,6 @@ error[E0277]: the trait bound `diesel::sql_types::Integer: BoolOrNullableBool` i
               Bool
               Nullable<Bool>
     = note: required for `JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>` to implement `QuerySource`
-    = note: required because it appears within the type `FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>>`
-    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>>>` to implement `Query`
-    = note: required for `SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>>>` to implement `AsQuery`
     = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<posts::table, Inner, users::columns::id>`
     = note: 1 redundant requirement hidden
     = note: required for `users::table` to implement `InternalJoinDsl<posts::table, Inner, users::columns::id>`

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::backend::{Backend, HasBindCollector};
+use crate::backend::Backend;
 use crate::query_builder::{BindCollector, QueryBuilder};
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
@@ -25,7 +25,6 @@ pub struct AstPass<'a, 'b, DB>
 where
     DB: Backend,
     DB::QueryBuilder: 'a,
-    <DB as HasBindCollector<'a>>::BindCollector: 'a,
     DB::MetadataLookup: 'a,
     'b: 'a,
 {
@@ -50,7 +49,7 @@ where
     }
 
     pub(crate) fn collect_binds(
-        collector: &'a mut <DB as HasBindCollector<'b>>::BindCollector,
+        collector: &'a mut DB::BindCollector<'b>,
         metadata_lookup: &'a mut DB::MetadataLookup,
         backend: &'b DB,
     ) -> Self {
@@ -282,13 +281,12 @@ enum AstPassInternals<'a, 'b, DB>
 where
     DB: Backend,
     DB::QueryBuilder: 'a,
-    <DB as HasBindCollector<'a>>::BindCollector: 'a,
     DB::MetadataLookup: 'a,
     'b: 'a,
 {
     ToSql(&'a mut DB::QueryBuilder, &'a mut AstPassToSqlOptions),
     CollectBinds {
-        collector: &'a mut <DB as HasBindCollector<'b>>::BindCollector,
+        collector: &'a mut DB::BindCollector<'b>,
         metadata_lookup: &'a mut DB::MetadataLookup,
     },
     IsSafeToCachePrepared(&'a mut bool),
@@ -314,7 +312,6 @@ pub trait AstPassHelper<'a, 'b, DB>
 where
     DB: Backend,
     DB::QueryBuilder: 'a,
-    <DB as HasBindCollector<'a>>::BindCollector: 'a,
     DB::MetadataLookup: 'a,
     'b: 'a,
 {
@@ -326,9 +323,7 @@ where
     /// due to [compiler bugs](https://github.com/rust-lang/rust/issues/100712)
     fn cast_database<DB2>(
         self,
-        convert_bind_collector: impl Fn(
-            &'a mut <DB as HasBindCollector<'b>>::BindCollector,
-        ) -> &'a mut <DB2 as HasBindCollector<'b>>::BindCollector,
+        convert_bind_collector: impl Fn(&'a mut DB::BindCollector<'b>) -> &'a mut DB2::BindCollector<'b>,
         convert_query_builder: impl Fn(&mut DB::QueryBuilder) -> &mut DB2::QueryBuilder,
         convert_backend: impl Fn(&DB) -> &DB2,
         convert_lookup: impl Fn(&'a mut DB::MetadataLookup) -> &'a mut DB2::MetadataLookup,
@@ -336,33 +331,24 @@ where
     where
         DB2: Backend,
         DB2::QueryBuilder: 'a,
-        <DB2 as HasBindCollector<'a>>::BindCollector: 'a,
         DB2::MetadataLookup: 'a,
         'b: 'a;
 
     /// This function allows to access the inner bind collector if
     /// this `AstPass` represents a collect binds pass.
-    fn bind_collector(
-        &mut self,
-    ) -> Option<(
-        &mut <DB as HasBindCollector<'b>>::BindCollector,
-        &mut DB::MetadataLookup,
-    )>;
+    fn bind_collector(&mut self) -> Option<(&mut DB::BindCollector<'b>, &mut DB::MetadataLookup)>;
 }
 
 impl<'a, 'b, DB> AstPassHelper<'a, 'b, DB> for AstPass<'a, 'b, DB>
 where
     DB: Backend,
     DB::QueryBuilder: 'a,
-    <DB as HasBindCollector<'a>>::BindCollector: 'a,
     DB::MetadataLookup: 'a,
     'b: 'a,
 {
     fn cast_database<DB2>(
         self,
-        convert_bind_collector: impl Fn(
-            &'a mut <DB as HasBindCollector<'b>>::BindCollector,
-        ) -> &'a mut <DB2 as HasBindCollector<'b>>::BindCollector,
+        convert_bind_collector: impl Fn(&'a mut DB::BindCollector<'b>) -> &'a mut DB2::BindCollector<'b>,
         convert_query_builder: impl Fn(&mut DB::QueryBuilder) -> &mut DB2::QueryBuilder,
         convert_backend: impl Fn(&DB) -> &DB2,
         convert_lookup: impl Fn(&'a mut DB::MetadataLookup) -> &'a mut DB2::MetadataLookup,
@@ -370,7 +356,6 @@ where
     where
         DB2: Backend,
         DB2::QueryBuilder: 'a,
-        <DB2 as HasBindCollector<'a>>::BindCollector: 'a,
         DB2::MetadataLookup: 'a,
         'b: 'a,
     {
@@ -398,12 +383,7 @@ where
         }
     }
 
-    fn bind_collector(
-        &mut self,
-    ) -> Option<(
-        &mut <DB as HasBindCollector<'b>>::BindCollector,
-        &mut DB::MetadataLookup,
-    )> {
+    fn bind_collector(&mut self) -> Option<(&mut DB::BindCollector<'b>, &mut DB::MetadataLookup)> {
         if let AstPassInternals::CollectBinds {
             collector,
             metadata_lookup,

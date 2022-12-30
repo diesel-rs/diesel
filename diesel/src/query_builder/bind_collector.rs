@@ -78,7 +78,7 @@ impl<DB: Backend + TypeMetadata> RawBytesBindCollector<DB> {
 
 impl<'a, DB> BindCollector<'a, DB> for RawBytesBindCollector<DB>
 where
-    DB: Backend<BindCollector = Self> + TypeMetadata,
+    for<'b> DB: Backend<BindCollector<'b> = Self> + TypeMetadata,
 {
     type Buffer = ByteWrapper<'a>;
 
