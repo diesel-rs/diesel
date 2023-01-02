@@ -114,8 +114,7 @@ where
     type QueryBuilder: QueryBuilder<Self>;
 
     /// The actual type given to [`FromSql`], with lifetimes applied. This type
-    /// should not be used directly. Use the [`RawValue`](super::RawValue)
-    /// helper type instead.
+    /// should not be used directly.
     ///
     /// [`FromSql`]: crate::deserialize::FromSql
     type RawValue<'a>;

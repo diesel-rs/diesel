@@ -29,7 +29,7 @@ pub trait LoadQuery<'query, Conn, U, B = DefaultLoadingMode>: RunQueryDsl<Conn> 
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    fn internal_load<'conn>(self, conn: &'conn mut Conn) -> QueryResult<Self::RowIter<'conn>>;
+    fn internal_load(self, conn: &mut Conn) -> QueryResult<Self::RowIter<'_>>;
 }
 
 #[doc(hidden)]
@@ -55,7 +55,7 @@ where
         DB,
     > where Conn: 'conn;
 
-    fn internal_load<'conn>(self, conn: &'conn mut Conn) -> QueryResult<Self::RowIter<'conn>> {
+    fn internal_load(self, conn: &mut Conn) -> QueryResult<Self::RowIter<'_>> {
         Ok(LoadIter {
             cursor: conn.load(self.as_query())?,
             _marker: Default::default(),

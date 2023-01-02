@@ -130,14 +130,12 @@ jobs:
       - name: Install sqlite (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'sqlite'
         run: |
-          brew update
           brew install sqlite
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mysql'
         run: |
-          brew update
           brew install mariadb@10.5
           /usr/local/opt/mariadb@10.5/bin/mysql_install_db
           /usr/local/opt/mariadb@10.5/bin/mysql.server start
