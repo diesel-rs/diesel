@@ -290,7 +290,6 @@ pub mod helper_types {
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
-    use crate::connection::DefaultLoadingMode;
     use crate::query_builder::select_clause::SelectClause;
 
     #[doc(inline)]
@@ -475,7 +474,7 @@ pub mod helper_types {
     #[doc(hidden)]
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     #[deprecated(note = "Use `LoadQuery::RowIter` directly")]
-    pub type LoadIter<'conn, 'query, Q, Conn, U, B = DefaultLoadingMode> =
+    pub type LoadIter<'conn, 'query, Q, Conn, U, B = crate::connection::DefaultLoadingMode> =
         <Q as load_dsl::LoadQuery<'query, Conn, U, B>>::RowIter<'conn>;
 }
 

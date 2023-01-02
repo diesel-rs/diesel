@@ -82,9 +82,7 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
 impl<'a, DB: Backend> Output<'a, 'static, DB> {
     /// Returns a `Output` suitable for testing `ToSql` implementations.
     /// Unsafe to use for testing types which perform dynamic metadata lookup.
-    pub fn test(
-        buffer: <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer,
-    ) -> Self {
+    pub fn test(buffer: <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer) -> Self {
         Self {
             out: buffer,
             metadata_lookup: None,
