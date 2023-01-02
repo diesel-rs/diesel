@@ -60,6 +60,8 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
               (T0, T1, T2, T3, T4, T5, T6, T7)
             and 124 others
     = note: required for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>` to implement `diesel::Expression`
+    = note: 1 redundant requirement hidden
+    = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>` to implement `diesel::Expression`
 note: required for `string_primary_key::columns::id` to implement `EqAll<{integer}>`
    --> tests/fail/find_requires_correct_type.rs:13:9
     |
@@ -91,6 +93,8 @@ error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
               <(T0, T1, T2, T3, T4, T5, T6, T7) as ValidGrouping<__GroupByClause>>
             and 146 others
     = note: required for `diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>` to implement `ValidGrouping<()>`
+    = note: 1 redundant requirement hidden
+    = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>` to implement `ValidGrouping<()>`
     = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>` to implement `NonAggregate`
     = note: required for `SelectStatement<FromClause<string_primary_key::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<string_primary_key::columns::id, {integer}>>>`
     = note: 1 redundant requirement hidden

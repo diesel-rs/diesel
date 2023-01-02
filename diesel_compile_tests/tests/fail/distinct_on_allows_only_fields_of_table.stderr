@@ -39,6 +39,8 @@ error[E0277]: the trait bound `(diesel::sql_types::Text, diesel::sql_types::Text
               Inet
               Interval
             and 23 others
+    = note: required for `SelectStatement<FromClause<posts::table>>` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
+    = note: 1 redundant requirement hidden
     = note: required for `posts::table` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> $DIESEL/src/query_dsl/mod.rs
