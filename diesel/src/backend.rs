@@ -50,25 +50,9 @@ pub(crate) use self::private::{DieselReserveSpecialization, TrustedBackend};
 /// * Specify how a query should be build from string parts by providing a [`QueryBuilder`]
 /// matching your backend
 /// * Specify the bind value format used by your database connection library by providing
-/// a [`BindCollector`] matching your backend via
-#[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    doc = "[`HasBindCollector`]"
-)]
-#[cfg_attr(
-    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-    doc = "`HasBindCollector`"
-)]
+/// a [`BindCollector`] matching your backend
 /// * Specify  how values are receive from the database by providing a corresponding raw value
-/// definition via
-#[cfg_attr(
-    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-    doc = "[`HasRawValue`]"
-)]
-#[cfg_attr(
-    not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
-    doc = "`HasRawValue`"
-)]
+/// definition
 /// * Control sql dialect specific parts of diesels query dsl implementation by providing a
 /// matching [`SqlDialect`] implementation
 /// * Implement [`TypeMetadata`] to specify how your backend identifies types
