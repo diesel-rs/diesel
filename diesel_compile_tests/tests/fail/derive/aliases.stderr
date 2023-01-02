@@ -104,8 +104,6 @@ error[E0277]: Cannot select `users::columns::id` from `Alias<users2>`
               <users::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
               <users::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
               <users::columns::id as SelectableExpression<users::table>>
-    = note: required for `diesel::query_builder::select_clause::SelectClause<users::columns::id>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<Alias<users2>>>`
-    = note: required for `SelectStatement<FromClause<Alias<users2>>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>` to implement `SelectQuery`
     = note: required for `SelectStatement<FromClause<Alias<users2>>>` to implement `SelectDsl<users::columns::id>`
     = note: 1 redundant requirement hidden
     = note: required for `Alias<users2>` to implement `SelectDsl<users::columns::id>`

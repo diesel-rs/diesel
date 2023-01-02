@@ -1,6 +1,3 @@
-warning: #[sql_type] attribute form is deprecated
-  = help: use `#[diesel(sql_type = foo)]` instead
-
 error: unexpected end of input, expected `=`
   --> tests/fail/derive_deprecated/deprecated_sql_type.rs:10:3
    |
@@ -21,17 +18,11 @@ error: expected string literal
 18 | #[sql_type = 1]
    |              ^
 
-warning: #[sql_type] attribute form is deprecated
-  = help: use `#[diesel(sql_type = 1)]` instead
-
 error: expected identifier
   --> tests/fail/derive_deprecated/deprecated_sql_type.rs:22:14
    |
 22 | #[sql_type = "1"]
    |              ^^^
-
-warning: #[sql_type] attribute form is deprecated
-  = help: use `#[diesel(sql_type = foo)]` instead
 
 error: unexpected end of input, expected `=`
   --> tests/fail/derive_deprecated/deprecated_sql_type.rs:33:7
@@ -52,9 +43,6 @@ error: expected string literal
    |
 45 |     #[sql_type = 1]
    |                  ^
-
-warning: #[sql_type] attribute form is deprecated
-  = help: use `#[diesel(sql_type = 1)]` instead
 
 error: expected identifier
   --> tests/fail/derive_deprecated/deprecated_sql_type.rs:51:18

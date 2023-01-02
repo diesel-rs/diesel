@@ -50,7 +50,7 @@ pub(crate) use self::private::{DieselReserveSpecialization, TrustedBackend};
 /// * Specify how a query should be build from string parts by providing a [`QueryBuilder`]
 /// matching your backend
 /// * Specify the bind value format used by your database connection library by providing
-/// a [`BindCollector`] matching your backend
+/// a [`BindCollector`](crate::query_builder::bind_collector::BindCollector) matching your backend
 /// * Specify  how values are receive from the database by providing a corresponding raw value
 /// definition
 /// * Control sql dialect specific parts of diesels query dsl implementation by providing a

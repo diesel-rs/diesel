@@ -18,9 +18,6 @@ error: expected string literal
 14 | #[mysql_type = 1]
    |                ^
 
-warning: #[mysql_type] attribute form is deprecated
-  = help: use `#[diesel(mysql_type(name = "foo"))]` instead
-
 error[E0599]: no variant or associated item named `foo` found for enum `MysqlType` in the current scope
   --> tests/fail/derive_deprecated/deprecated_mysql_type.rs:17:10
    |

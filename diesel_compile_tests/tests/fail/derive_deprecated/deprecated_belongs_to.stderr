@@ -50,9 +50,6 @@ error: expected identifier
 78 | #[belongs_to(parent = "1")]
    |                       ^^^
 
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(Bar))]` instead
-
 error: expected `foreign_key`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:92:19
    |
@@ -78,9 +75,6 @@ error: expected identifier
     |
 113 | #[belongs_to(Bar, foreign_key = "1")]
     |                                 ^^^
-
-warning: #[belongs_to] attribute form is deprecated
-  = help: use `#[diesel(belongs_to(Baz, foreign_key = bar_id))]` instead
 
 error: unexpected expression: `Bar`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:36:16
