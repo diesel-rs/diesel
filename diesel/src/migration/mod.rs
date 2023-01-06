@@ -130,6 +130,14 @@ pub trait MigrationMetadata {
     fn run_in_transaction(&self) -> bool {
         true
     }
+
+    /// Any additional fields found in the migration metadata, that are not
+    /// explicitly used by diesel.
+    ///
+    /// The values are JSON-serialized strings
+    fn additional_fields(&self) -> std::collections::HashMap<String, String> {
+        std::collections::HashMap::new()
+    }
 }
 
 /// A migration source is an entity that can be used
