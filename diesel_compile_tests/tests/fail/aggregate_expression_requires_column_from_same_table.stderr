@@ -19,7 +19,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:19:31
    |
 19 |     let source = users::table.select(sum(posts::id));
-   |                               ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                               ^^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -76,7 +76,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
    |
 20 |     let source = users::table.select(avg(posts::id));
-   |                               ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                               ^^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -133,7 +133,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
 21 |     let source = users::table.select(max(posts::id));
-   |                               ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                               ^^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9
@@ -190,7 +190,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
 22 |     let source = users::table.select(min(posts::id));
-   |                               ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                               ^^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:13:9

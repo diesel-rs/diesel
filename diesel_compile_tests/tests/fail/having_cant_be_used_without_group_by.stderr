@@ -21,14 +21,14 @@ error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
              (T0, T1, T2, T3, T4, T5, T6, T7, T8)
-           and 8 others
+           and $N others
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>` to implement `HavingDsl<_>`
 
 error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:30:58
    |
 30 |     users::table.select(users::name).group_by(users::id).having(posts::id.eq(42)).load(&mut conn);
-   |                                                          ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                                                          ^^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<users::table>>`
   --> tests/fail/having_cant_be_used_without_group_by.rs:14:9
@@ -36,14 +36,14 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<
 14 |         id -> Integer,
    |         ^^
    = note: 2 redundant requirements hidden
-   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>` to implement `AppearsOnTable<FromClause<users::table>>`
-   = note: required for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<users::columns::id>>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
+   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<FromClause<users::table>>`
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<name>, NoDistinctClause, NoWhereClause, ..., ..., ...>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
 error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:32:71
    |
 32 |     users::table.select(users::name).group_by(users::id).into_boxed().having(posts::id.eq(42)).load(&mut conn);
-   |                                                                       ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                                                                       ^^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<users::table>>`
   --> tests/fail/having_cant_be_used_without_group_by.rs:14:9
@@ -51,5 +51,5 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<
 14 |         id -> Integer,
    |         ^^
    = note: 2 redundant requirements hidden
-   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>` to implement `AppearsOnTable<FromClause<users::table>>`
+   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<FromClause<users::table>>`
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::id>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`

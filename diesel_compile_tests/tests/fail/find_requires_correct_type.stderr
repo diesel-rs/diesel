@@ -70,7 +70,7 @@ note: required by a bound in `diesel::QueryDsl::find`
   --> $DIESEL/src/query_dsl/mod.rs
    |
    |         Self: methods::FindDsl<PK>,
-   |               ^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::QueryDsl::find`
+   |               ^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::find`
 
 error[E0277]: the trait bound `{integer}: ValidGrouping<()>` is not satisfied
   --> tests/fail/find_requires_correct_type.rs:22:36
@@ -100,4 +100,4 @@ note: required by a bound in `diesel::QueryDsl::find`
   --> $DIESEL/src/query_dsl/mod.rs
    |
    |         Self: methods::FindDsl<PK>,
-   |               ^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::QueryDsl::find`
+   |               ^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::find`

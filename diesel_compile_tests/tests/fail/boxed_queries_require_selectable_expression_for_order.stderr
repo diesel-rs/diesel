@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:21:37
    |
 21 |     users::table.into_boxed::<Pg>().order(posts::title.desc());
-   |                                     ^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                                     ^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/boxed_queries_require_selectable_expression_for_order.rs:16:9

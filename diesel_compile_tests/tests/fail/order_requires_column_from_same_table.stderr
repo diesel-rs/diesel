@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/order_requires_column_from_same_table.rs:18:31
    |
 18 |     let source = users::table.order(posts::id);
-   |                               ^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                               ^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/order_requires_column_from_same_table.rs:13:9

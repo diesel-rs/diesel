@@ -36,7 +36,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:21:30
    |
 21 |     let stuff = users::table.select((posts::id, posts::user_id));
-   |                              ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                              ^^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9
@@ -93,7 +93,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:22:30
    |
 22 |     let stuff = users::table.select((posts::id, users::name));
-   |                              ^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                              ^^^^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/selecting_multiple_columns_requires_all_must_be_from_selectable_table.rs:14:9

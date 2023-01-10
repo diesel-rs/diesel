@@ -27,6 +27,13 @@ note: struct `users::table` is defined in module `crate::users` of the current c
 9  | |     }
 10 | | }
    | |_^
+note: the method call chain might not have had the expected associated types
+  --> tests/fail/update_requires_column_be_from_same_table.rs:22:50
+   |
+22 |     let command = update(users).set(posts::title.eq("Hello"));
+   |                                     ------------ ^^^^^^^^^^^ `AsChangeset::Target` is `table` here
+   |                                     |
+   |                                     this expression has type `title`
 note: required by a bound in `UpdateStatement::<T, U>::set`
   --> $DIESEL/src/query_builder/update_statement/mod.rs
    |
@@ -38,7 +45,7 @@ error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<post
   --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
    |
 23 |     let command = update(users).set(name.eq(posts::title));
-   |                                 ^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                                 ^^^ expected struct `Never`, found struct `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/update_requires_column_be_from_same_table.rs:15:9

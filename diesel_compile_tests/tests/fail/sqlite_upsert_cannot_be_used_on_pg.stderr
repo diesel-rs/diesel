@@ -1,18 +1,18 @@
 error[E0277]: the trait bound `diesel::query_builder::insert_statement::private::Replace: QueryFragment<Pg>` is not satisfied
-    --> tests/fail/sqlite_upsert_cannot_be_used_on_pg.rs:21:18
-     |
-21   |         .execute(&mut connection);
-     |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::insert_statement::private::Replace`
-     |          |
-     |          required by a bound introduced by this call
-     |
-     = help: the following other types implement trait `QueryFragment<DB, SP>`:
-               <diesel::query_builder::insert_statement::private::Replace as QueryFragment<Mysql>>
-               <diesel::query_builder::insert_statement::private::Replace as QueryFragment<Sqlite>>
-     = note: required for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, &i32>>>,), users::table>, diesel::query_builder::insert_statement::private::Replace>` to implement `QueryFragment<Pg>`
-     = note: required for `InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, &i32>>>,), users::table>, diesel::query_builder::insert_statement::private::Replace>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
+  --> tests/fail/sqlite_upsert_cannot_be_used_on_pg.rs:21:18
+   |
+21 |         .execute(&mut connection);
+   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Pg>` is not implemented for `diesel::query_builder::insert_statement::private::Replace`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the following other types implement trait `QueryFragment<DB, SP>`:
+             <diesel::query_builder::insert_statement::private::Replace as QueryFragment<Mysql>>
+             <diesel::query_builder::insert_statement::private::Replace as QueryFragment<Sqlite>>
+   = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<id, ...>>,), ...>, ...>` to implement `QueryFragment<Pg>`
+   = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<id, ...>>,), ...>, ...>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: methods::ExecuteDsl<Conn>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::execute`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: methods::ExecuteDsl<Conn>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`

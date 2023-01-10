@@ -16,4 +16,4 @@ note: required for `columns::id` to implement `ValidGrouping<columns::name>`
    |         ^^
    = note: 1 redundant requirement hidden
    = note: required for `AliasedField<user1, columns::id>` to implement `ValidGrouping<AliasedField<user1, columns::name>>`
-   = note: required for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<Alias<user1>>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::NoWhereClause, diesel::query_builder::order_clause::NoOrderClause, diesel::query_builder::limit_offset_clause::LimitOffsetClause<diesel::query_builder::limit_clause::NoLimitClause, diesel::query_builder::offset_clause::NoOffsetClause>, diesel::query_builder::group_by_clause::GroupByClause<AliasedField<user1, columns::name>>>` to implement `SelectDsl<AliasedField<user1, columns::id>>`
+   = note: required for `SelectStatement<FromClause<Alias<user1>>, DefaultSelectClause<FromClause<...>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<AliasedField<user1, columns::id>>`
