@@ -27,6 +27,7 @@ mod query_helper;
 use chrono::*;
 use clap::ArgMatches;
 use clap_complete::{generate, Shell};
+use database::InferConnection;
 use diesel::backend::Backend;
 use diesel::migration::MigrationSource;
 use diesel::Connection;
@@ -65,22 +66,22 @@ fn run_migration_command(
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     match matches.subcommand().unwrap() {
         ("run", _) => {
-            let database_url = database::database_url(matches);
+            let mut conn = InferConnection::from_matches(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
-            call_with_conn!(database_url, run_migrations_with_output(dir))?;
+            run_migrations_with_output(&mut conn, dir)?;
             regenerate_schema_if_file_specified(matches)?;
         }
         ("revert", args) => {
-            let database_url = database::database_url(matches);
+            let mut conn = InferConnection::from_matches(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
             if args.get_flag("REVERT_ALL") {
-                call_with_conn!(database_url, revert_all_migrations_with_output(dir))?;
+                revert_all_migrations_with_output(&mut conn, dir)?;
             } else {
                 let number = args.get_one::<u64>("REVERT_NUMBER").unwrap();
                 for _ in 0..*number {
-                    match call_with_conn!(database_url, revert_migration_with_output(dir.clone())) {
+                    match revert_migration_with_output(&mut conn, dir.clone()) {
                         Ok(_) => {}
                         Err(e) if e.is::<MigrationError>() => {
                             match e.downcast_ref::<MigrationError>() {
@@ -98,24 +99,23 @@ fn run_migration_command(
             regenerate_schema_if_file_specified(matches)?;
         }
         ("redo", args) => {
-            let database_url = database::database_url(matches);
+            let mut conn = InferConnection::from_matches(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
-            call_with_conn!(database_url, redo_migrations(dir, args));
+            redo_migrations(&mut conn, dir, args);
             regenerate_schema_if_file_specified(matches)?;
         }
         ("list", _) => {
-            let database_url = database::database_url(matches);
+            let mut conn = InferConnection::from_matches(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
-            call_with_conn!(database_url, list_migrations(dir))?;
+            list_migrations(&mut conn, dir)?;
         }
         ("pending", _) => {
-            let database_url = database::database_url(matches);
+            let mut conn = InferConnection::from_matches(matches);
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
-            let result =
-                call_with_conn!(database_url, MigrationHarness::has_pending_migration(dir))?;
+            let result = MigrationHarness::has_pending_migration(&mut conn, dir)?;
             println!("{:?}", result);
         }
         ("generate", args) => {
@@ -464,7 +464,10 @@ fn redo_migrations<Conn, DB>(
 
 #[cfg(feature = "mysql")]
 fn should_redo_migration_in_transaction(t: &dyn Any) -> bool {
-    !t.is::<::diesel::mysql::MysqlConnection>()
+    !matches!(
+        t.downcast_ref::<InferConnection>(),
+        Some(InferConnection::Mysql(_))
+    )
 }
 
 #[cfg(not(feature = "mysql"))]
@@ -497,7 +500,7 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     use crate::print_schema::*;
 
-    let database_url = database::database_url(matches);
+    let mut conn = InferConnection::from_matches(matches);
     let mut config = Config::read(matches)?.print_schema;
 
     if let Some(schema_name) = matches.get_one::<String>("schema") {
@@ -551,7 +554,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
         config.custom_type_derives = Some(derives);
     }
 
-    run_print_schema(&database_url, &config, &mut stdout())?;
+    run_print_schema(&mut conn, &config, &mut stdout())?;
     Ok(())
 }
 
@@ -562,15 +565,14 @@ fn regenerate_schema_if_file_specified(
 
     let config = Config::read(matches)?;
     if let Some(ref path) = config.print_schema.file {
+        let mut connection = InferConnection::from_matches(matches);
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
 
-        let database_url = database::database_url(matches);
-
         if matches.get_flag("LOCKED_SCHEMA") {
             let mut buf = Vec::new();
-            print_schema::run_print_schema(&database_url, &config.print_schema, &mut buf)?;
+            print_schema::run_print_schema(&mut connection, &config.print_schema, &mut buf)?;
 
             let mut old_buf = Vec::new();
             let mut file = fs::File::open(path)?;
@@ -588,7 +590,7 @@ fn regenerate_schema_if_file_specified(
             use std::io::Write;
 
             let mut file = fs::File::create(path)?;
-            let schema = print_schema::output_schema(&database_url, &config.print_schema)?;
+            let schema = print_schema::output_schema(&mut connection, &config.print_schema)?;
             file.write_all(schema.as_bytes())?;
         }
     }
