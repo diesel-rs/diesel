@@ -21,6 +21,7 @@ pub(crate) use self::private::CompatibleType;
 ///
 /// [`RunQueryDsl`]: crate::RunQueryDsl
 pub trait LoadQuery<'query, Conn, U, B = DefaultLoadingMode>: RunQueryDsl<Conn> {
+    /// Return type of `LoadQuery::internal_load`
     type RowIter<'conn>: Iterator<Item = QueryResult<U>>
     where
         Conn: 'conn;

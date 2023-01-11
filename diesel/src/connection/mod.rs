@@ -506,13 +506,18 @@ impl<DB: Backend + 'static> dyn BoxableConnection<DB> {
     }
 }
 
-// These traits are not part of the public API
-// because we want to replace them by with an associated type
-// in the child trait later if GAT's are finally stable
+// These traits are considered private for different reasons:
+//
+// `ConnectionSealed` to control who can implement `Connection`,
+// so that we can later change the `Connection` trait
 //
 // `MultiConnectionHelper` is a workaround needed for the
 // `MultiConnection` derive. We might stabilize this trait with
 // the corresponding derive
+//
+// `ConnectionHelperType` as a workaround for the `LoadRowIter`
+// type def. That trait should not be used by any user outside of diesel,
+// it purely exists for backward compatibility reasons.
 pub(crate) mod private {
 
     /// This trait restricts who can implement `Connection`

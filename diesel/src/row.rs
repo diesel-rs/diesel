@@ -41,7 +41,7 @@ pub trait Row<'a, DB: Backend>:
 {
     /// Field type returned by a `Row` implementation
     ///
-    /// * Crates using existing backend should not concern themself with the
+    /// * Crates using existing backends should not concern themself with the
     ///   concrete type of this associated type.
     ///
     /// * Crates implementing custom backends should provide their own type
@@ -148,8 +148,10 @@ where
 }
 
 // These traits are not part of the public API
-// because we want to replace them by with an associated type
-// in the child trait later if GAT's are finally stable
+// because:
+// * we want to control who can implment `Row` (for `RowSealed`)
+// * `PartialRow` is an implementation detail
+// * `RowLifetimeHelper` is an internal backward compatibility helper
 pub(crate) mod private {
     use super::*;
 
