@@ -1,4 +1,4 @@
-use crate::backend::{self, Backend};
+use crate::backend::Backend;
 use crate::deserialize::{self, FromSql, Queryable, QueryableByName};
 use crate::expression::bound::Bound;
 use crate::expression::*;
@@ -32,11 +32,11 @@ where
     DB: Backend,
     ST: SqlType<IsNull = is_nullable::NotNull>,
 {
-    fn from_sql(bytes: backend::RawValue<'_, DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
         T::from_sql(bytes).map(Some)
     }
 
-    fn from_nullable_sql(bytes: Option<backend::RawValue<'_, DB>>) -> deserialize::Result<Self> {
+    fn from_nullable_sql(bytes: Option<DB::RawValue<'_>>) -> deserialize::Result<Self> {
         match bytes {
             Some(bytes) => T::from_sql(bytes).map(Some),
             None => Ok(None),

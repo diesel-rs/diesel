@@ -3,9 +3,10 @@ extern crate libsqlite3_sys as ffi;
 use super::raw::RawConnection;
 use super::row::PrivateSqliteRow;
 use super::{Sqlite, SqliteAggregateFunction, SqliteBindValue};
+use crate::backend::Backend;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
-use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
+use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::serialize::{IsNull, Output, ToSql};
 use crate::sql_types::HasSqlType;
 use crate::sqlite::connection::bind_collector::InternalSqliteBindValue;
@@ -184,18 +185,17 @@ impl<'a> FunctionRow<'a> {
     }
 }
 
-impl<'a, 'b> RowGatWorkaround<'a, Sqlite> for FunctionRow<'b> {
-    type Field = FunctionArgument<'a>;
-}
+impl RowSealed for FunctionRow<'_> {}
 
 impl<'a> Row<'a, Sqlite> for FunctionRow<'a> {
+    type Field<'f> = FunctionArgument<'f> where 'a: 'f, Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.field_count
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Sqlite>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
     where
         'a: 'b,
         Self: crate::row::RowIndex<I>,
@@ -242,7 +242,7 @@ impl<'a> Field<'a, Sqlite> for FunctionArgument<'a> {
         self.value().is_none()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'_, Sqlite>> {
+    fn value(&self) -> Option<<Sqlite as Backend>::RawValue<'_>> {
         SqliteValue::new(
             Ref::map(Ref::clone(&self.args), |drop| std::ops::Deref::deref(drop)),
             self.col_idx,

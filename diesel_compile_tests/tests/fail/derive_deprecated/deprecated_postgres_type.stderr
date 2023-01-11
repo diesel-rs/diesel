@@ -76,9 +76,6 @@ error: expected string literal
 46 | #[postgres(oid = "1", array_oid = 1)]
    |                                   ^
 
-warning: #[postgres] attribute form is deprecated
-  = help: use `#[diesel(postgres_type(oid = 1, array_oid = 1))]` instead
-
 error: unknown attribute, expected one of `oid`, `array_oid`, `type_name`
   --> tests/fail/derive_deprecated/deprecated_postgres_type.rs:54:12
    |

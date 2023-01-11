@@ -2,26 +2,36 @@ error[E0271]: type mismatch resolving `<query_source::joins::Join<users::table, 
   --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:31:26
    |
 31 |     let _ = users::table.inner_join(posts::table.on(users::id.eq(comments::id)));
-   |                          ^^^^^^^^^^ expected struct `diesel::query_source::Never`, found struct `diesel::query_source::Once`
+   |                          ^^^^^^^^^^ expected struct `Never`, found struct `Once`
    |
-note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<users::table, posts::table, Inner>>` for `comments::columns::id`
+note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, posts::table, Inner>>`
   --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:19:9
    |
 19 |         id -> Integer,
    |         ^^
    = note: 2 redundant requirements hidden
-   = note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<users::table, posts::table, Inner>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>`
-   = note: required because of the requirements on the impl of `QuerySource` for `JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>`
-   = note: required because of the requirements on the impl of `InternalJoinDsl<posts::table, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>` for `SelectStatement<FromClause<users::table>>`
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>` to implement `AppearsOnTable<query_source::joins::Join<users::table, posts::table, Inner>>`
+   = note: required for `JoinOn<Join<table, table, Inner>, Grouped<Eq<id, id>>>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<posts::table, Inner, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, comments::columns::id>>>`
 
 error[E0277]: the trait bound `diesel::sql_types::Integer: BoolOrNullableBool` is not satisfied
-  --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:33:26
+  --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:33:37
    |
 33 |     let _ = users::table.inner_join(posts::table.on(users::id));
-   |                          ^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
+   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `BoolOrNullableBool` is not implemented for `diesel::sql_types::Integer`
+   |                          |
+   |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `BoolOrNullableBool`:
              Bool
              Nullable<Bool>
-   = note: required because of the requirements on the impl of `QuerySource` for `JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>`
-   = note: required because of the requirements on the impl of `InternalJoinDsl<posts::table, Inner, users::columns::id>` for `SelectStatement<FromClause<users::table>>`
+   = note: required for `JoinOn<query_source::joins::Join<users::table, posts::table, Inner>, users::columns::id>` to implement `QuerySource`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `InternalJoinDsl<posts::table, Inner, users::columns::id>`
+   = note: 1 redundant requirement hidden
+   = note: required for `users::table` to implement `InternalJoinDsl<posts::table, Inner, users::columns::id>`
+   = note: required for `users::table` to implement `JoinWithImplicitOnClause<query_source::joins::OnClauseWrapper<posts::table, users::columns::id>, Inner>`
+note: required by a bound in `inner_join`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`

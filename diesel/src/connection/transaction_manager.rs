@@ -468,7 +468,7 @@ mod test {
     mod mock {
         use crate::connection::transaction_manager::AnsiTransactionManager;
         use crate::connection::{
-            Connection, ConnectionGatWorkaround, SimpleConnection, TransactionManager,
+            Connection, ConnectionSealed, SimpleConnection, TransactionManager,
         };
         use crate::result::QueryResult;
         use crate::test_helpers::TestConnection;
@@ -496,22 +496,7 @@ mod test {
             }
         }
 
-        impl<'conn, 'query>
-            ConnectionGatWorkaround<'conn, 'query, <TestConnection as Connection>::Backend>
-            for MockConnection
-        {
-            type Cursor = <TestConnection as ConnectionGatWorkaround<
-                'conn,
-                'query,
-                <TestConnection as Connection>::Backend,
-            >>::Cursor;
-
-            type Row = <TestConnection as ConnectionGatWorkaround<
-                'conn,
-                'query,
-                <TestConnection as Connection>::Backend,
-            >>::Row;
-        }
+        impl ConnectionSealed for MockConnection {}
 
         impl Connection for MockConnection {
             type Backend = <TestConnection as Connection>::Backend;

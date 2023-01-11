@@ -4,7 +4,8 @@ use std::rc::Rc;
 
 use super::sqlite_value::{OwnedSqliteValue, SqliteValue};
 use super::stmt::StatementUse;
-use crate::row::{Field, PartialRow, Row, RowGatWorkaround, RowIndex};
+use crate::backend::Backend;
+use crate::row::{Field, PartialRow, Row, RowIndex, RowSealed};
 use crate::sqlite::Sqlite;
 
 #[allow(missing_debug_implementations)]
@@ -60,21 +61,17 @@ impl<'stmt, 'query> PrivateSqliteRow<'stmt, 'query> {
     }
 }
 
-impl<'field, 'stmt, 'query> RowGatWorkaround<'field, Sqlite> for SqliteRow<'stmt, 'query> {
-    type Field = SqliteField<'field, 'field>;
-}
+impl<'stmt, 'query> RowSealed for SqliteRow<'stmt, 'query> {}
 
 impl<'stmt, 'query> Row<'stmt, Sqlite> for SqliteRow<'stmt, 'query> {
+    type Field<'field> = SqliteField<'field, 'field> where 'stmt: 'field, Self: 'field;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.field_count
     }
 
-    fn get<'field, I>(
-        &'field self,
-        idx: I,
-    ) -> Option<<Self as RowGatWorkaround<'field, Sqlite>>::Field>
+    fn get<'field, I>(&'field self, idx: I) -> Option<Self::Field<'field>>
     where
         'stmt: 'field,
         Self: RowIndex<I>,
@@ -132,7 +129,7 @@ impl<'stmt, 'query> Field<'stmt, Sqlite> for SqliteField<'stmt, 'query> {
         self.value().is_none()
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'_, Sqlite>> {
+    fn value(&self) -> Option<<Sqlite as Backend>::RawValue<'_>> {
         SqliteValue::new(Ref::clone(&self.row), self.col_idx)
     }
 }

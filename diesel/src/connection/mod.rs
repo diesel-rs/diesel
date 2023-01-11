@@ -23,7 +23,7 @@ pub use self::transaction_manager::{
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
-pub(crate) use self::private::ConnectionGatWorkaround;
+pub(crate) use self::private::ConnectionSealed;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::private::MultiConnectionHelper;
@@ -45,11 +45,11 @@ pub trait SimpleConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()>;
 }
 
-/// Return type of [`LoadConnection::load`].
-///
-/// Users should threat this type as `impl Iterator<Item = QueryResult<impl Row<DB>>>`
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(note = "Directly use `LoadConnection::Cursor` instead")]
 pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =
-    <C as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor;
+    <C as self::private::ConnectionHelperType<DB, B>>::Cursor<'conn, 'query>;
 
 /// A connection to a database
 ///
@@ -203,8 +203,7 @@ where
     // This trait bound is there so that implementing a new connection is
     // gated behind the `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
     // feature flag
-    for<'conn, 'query> Self:
-        ConnectionGatWorkaround<'conn, 'query, Self::Backend, DefaultLoadingMode>,
+    Self: ConnectionSealed,
 {
     /// The backend this type connects to
     type Backend: Backend;
@@ -388,10 +387,22 @@ where
 ///
 /// This is a separate trait to allow connection implementations to specify
 /// different loading modes via the generic paramater.
-pub trait LoadConnection<B = DefaultLoadingMode>: Connection
-where
-    for<'conn, 'query> Self: ConnectionGatWorkaround<'conn, 'query, Self::Backend, B>,
-{
+pub trait LoadConnection<B = DefaultLoadingMode>: Connection {
+    /// The cursor type returned by [`LoadConnection::load`]
+    ///
+    /// Users should handle this as opaque type that implements [`Iterator`]
+    type Cursor<'conn, 'query>: Iterator<
+        Item = QueryResult<<Self as LoadConnection<B>>::Row<'conn, 'query>>,
+    >
+    where
+        Self: 'conn;
+
+    /// The row type used as [`Iterator::Item`] for the iterator implementation
+    /// of [`LoadConnection::Cursor`]
+    type Row<'conn, 'query>: crate::row::Row<'conn, Self::Backend>
+    where
+        Self: 'conn;
+
     /// Executes a given query and returns any requested values
     ///
     /// This function executes a given query and returns the
@@ -409,7 +420,7 @@ where
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    ) -> QueryResult<Self::Cursor<'conn, 'query>>
     where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>;
@@ -495,40 +506,26 @@ impl<DB: Backend + 'static> dyn BoxableConnection<DB> {
     }
 }
 
-// `ConnectionGatWorkaround` is not part of the public API
-// because we want to replace them by with an associated type
-// in the child trait later if GAT's are finally stable
+// These traits are considered private for different reasons:
+//
+// `ConnectionSealed` to control who can implement `Connection`,
+// so that we can later change the `Connection` trait
 //
 // `MultiConnectionHelper` is a workaround needed for the
 // `MultiConnection` derive. We might stabilize this trait with
 // the corresponding derive
+//
+// `ConnectionHelperType` as a workaround for the `LoadRowIter`
+// type def. That trait should not be used by any user outside of diesel,
+// it purely exists for backward compatibility reasons.
 pub(crate) mod private {
-    use crate::backend::Backend;
-    use crate::QueryResult;
 
-    use super::DefaultLoadingMode;
-
-    /// This trait describes which cursor type is used by a given connection
-    /// implementation. This trait is only useful in combination with [`Connection`].
-    ///
-    /// Implementation wise this is a workaround for GAT's
-    ///
-    /// [`Connection`]: super::Connection
+    /// This trait restricts who can implement `Connection`
     #[cfg_attr(
         doc_cfg,
         doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-    pub trait ConnectionGatWorkaround<'conn, 'query, DB: Backend, B = DefaultLoadingMode> {
-        /// The cursor type returned by [`LoadConnection::load`]
-        ///
-        /// Users should handle this as opaque type that implements [`Iterator`]
-        ///
-        /// [`LoadConnection::load`]: super::LoadConnection::load
-        type Cursor: Iterator<Item = QueryResult<Self::Row>>;
-        /// The row type used as [`Iterator::Item`] for the iterator implementation
-        /// of [`ConnectionGatWorkaround::Cursor`]
-        type Row: crate::row::Row<'conn, DB>;
-    }
+    pub trait ConnectionSealed {}
 
     /// This trait provides helper methods to convert a database lookup type
     /// to/from an `std::any::Any` reference. This is used internally by the `#[derive(MultiConnection)]`
@@ -547,5 +544,21 @@ pub(crate) mod private {
         fn from_any(
             lookup: &mut dyn std::any::Any,
         ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup>;
+    }
+
+    // These impls are only there for backward compatibility reasons
+    // Remove them on the next breaking release
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    pub trait ConnectionHelperType<DB, B>: super::LoadConnection<B, Backend = DB> {
+        type Cursor<'conn, 'query>
+        where
+            Self: 'conn;
+    }
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    impl<T, B> ConnectionHelperType<T::Backend, B> for T
+    where
+        T: super::LoadConnection<B>,
+    {
+        type Cursor<'conn, 'query> = <T as super::LoadConnection<B>>::Cursor<'conn, 'query> where T: 'conn;
     }
 }

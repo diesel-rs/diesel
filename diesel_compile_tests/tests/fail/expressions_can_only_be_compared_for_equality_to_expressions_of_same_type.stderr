@@ -1,10 +1,8 @@
 error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
-  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:15:22
+  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:15:19
    |
 15 |     let pred = id.eq("string");
-   |                   -- ^^^^^^^^ the trait `diesel::Expression` is not implemented for `str`
-   |                   |
-   |                   required by a bound introduced by this call
+   |                   ^^ the trait `diesel::Expression` is not implemented for `str`
    |
    = help: the following other types implement trait `diesel::Expression`:
              &'a T
@@ -16,20 +14,18 @@ error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
            and 123 others
-   = note: required because of the requirements on the impl of `diesel::Expression` for `&str`
-   = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Integer>` for `&str`
+   = note: required for `&str` to implement `diesel::Expression`
+   = note: required for `&str` to implement `AsExpression<diesel::sql_types::Integer>`
 
 error[E0271]: type mismatch resolving `<columns::name as diesel::Expression>::SqlType == diesel::sql_types::Integer`
-  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:16:22
+  --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:16:19
    |
 16 |     let pred = id.eq(name);
-   |                   -- ^^^^ type mismatch resolving `<columns::name as diesel::Expression>::SqlType == diesel::sql_types::Integer`
-   |                   |
-   |                   required by a bound introduced by this call
+   |                   ^^ type mismatch resolving `<columns::name as diesel::Expression>::SqlType == diesel::sql_types::Integer`
    |
 note: expected this to be `diesel::sql_types::Text`
   --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:8:17
    |
 8  |         name -> VarChar,
    |                 ^^^^^^^
-   = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Integer>` for `columns::name`
+   = note: required for `columns::name` to implement `AsExpression<diesel::sql_types::Integer>`

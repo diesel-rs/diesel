@@ -11,7 +11,7 @@ keywords = ["diesel", "migrations", "cli"]
 autotests = false
 edition = "2018"
 include = ["src/**/*", "LICENSE-*", "README.md"]
-rust-version = "1.60.0"
+rust-version = "1.65.0"
 
 [[bin]]
 name = "diesel"

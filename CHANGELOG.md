@@ -12,7 +12,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Changed 
 
-* The minimal officially supported rustc version is now 1.60.0
+* The minimal officially supported rustc version is now 1.65.0
 
 ### Added
 

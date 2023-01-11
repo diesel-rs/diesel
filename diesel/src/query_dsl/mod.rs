@@ -51,7 +51,7 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
-pub use self::load_dsl::{LoadQuery, LoadRet};
+pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
@@ -68,13 +68,19 @@ pub mod methods {
     pub use super::group_by_dsl::GroupByDsl;
     pub use super::having_dsl::HavingDsl;
     pub use super::limit_dsl::LimitDsl;
-    pub use super::load_dsl::{ExecuteDsl, LoadQuery, LoadRet};
+    pub use super::load_dsl::{ExecuteDsl, LoadQuery};
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
     pub use super::nullable_select_dsl::SelectNullableDsl;
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
     pub use super::single_value_dsl::SingleValueDsl;
+
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[doc(hidden)]
+    #[allow(deprecated)]
+    #[deprecated(note = "Use `LoadQuery::RowIter` directly")]
+    pub use super::load_dsl::LoadRet;
 }
 
 /// Methods used to construct select statements.
@@ -1621,7 +1627,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     fn load_iter<'conn, 'query: 'conn, U, B>(
         self,
         conn: &'conn mut Conn,
-    ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U, B>>
+    ) -> QueryResult<Self::RowIter<'conn>>
     where
         U: 'conn,
         Self: LoadQuery<'query, Conn, U, B> + 'conn,
