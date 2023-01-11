@@ -484,7 +484,7 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
                 }
             }
 
-            fn value(&self) -> Option<diesel::backend::RawValue<'_, super::MultiBackend>> {
+            fn value(&self) -> Option<<super::MultiBackend as diesel::backend::Backend>::RawValue<'_>> {
                 use diesel::row::Field;
 
                 match self {
@@ -876,7 +876,7 @@ fn generate_from_sql_impls((sql_type, tpe): (TokenStream, TokenStream)) -> Token
     quote::quote! {
         impl diesel::deserialize::FromSql<#sql_type, super::MultiBackend> for #tpe {
             fn from_sql(
-                bytes: diesel::backend::RawValue<'_, super::MultiBackend>,
+                bytes: <super::MultiBackend as diesel::backend::Backend>::RawValue<'_>,
             ) -> diesel::deserialize::Result<Self> {
                 bytes.from_sql::<Self, #sql_type>()
             }
