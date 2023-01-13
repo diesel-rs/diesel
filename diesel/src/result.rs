@@ -73,8 +73,7 @@ pub enum Error {
     RollbackErrorOnCommit {
         /// The error that was encountered when attempting the rollback
         rollback_error: Box<Error>,
-        /// If the rollback attempt resulted from a failed attempt to commit the transaction,
-        /// you will find the related error here.
+        /// The error that was encountered during the failed commit attempt
         commit_error: Box<Error>,
     },
 
