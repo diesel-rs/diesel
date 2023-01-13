@@ -164,16 +164,17 @@ impl TransactionManagerStatus {
     )]
     /// If in transaction and transaction manager is not broken, registers that the
     /// connection can not be used anymore until top-level transaction is rolled back
-    pub(crate) fn set_top_level_transaction_requires_rollback(&mut self) {
+    /// or an intermediate rollbach to savepoint succceeds
+    pub(crate) fn set_top_level_transaction_may_require_rollback(&mut self) {
         if let TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
             in_transaction:
                 Some(InTransactionStatus {
-                    top_level_transaction_requires_rollback,
+                    top_level_transaction_may_require_rollback,
                     ..
                 }),
         }) = self
         {
-            *top_level_transaction_requires_rollback = true;
+            *top_level_transaction_may_require_rollback = true;
         }
     }
 
@@ -213,7 +214,7 @@ pub struct ValidTransactionManagerStatus {
 #[derive(Debug)]
 struct InTransactionStatus {
     transaction_depth: NonZeroU32,
-    top_level_transaction_requires_rollback: bool,
+    top_level_transaction_may_require_rollback: bool,
     test_transaction: bool,
 }
 
@@ -252,7 +253,7 @@ impl ValidTransactionManagerStatus {
             (None, TransactionDepthChange::IncreaseDepth) => {
                 self.in_transaction = Some(InTransactionStatus {
                     transaction_depth: NonZeroU32::new(1).expect("1 is non-zero"),
-                    top_level_transaction_requires_rollback: false,
+                    top_level_transaction_may_require_rollback: false,
                     test_transaction: false,
                 });
                 Ok(())
@@ -349,7 +350,8 @@ where
                 if let ValidTransactionManagerStatus {
                     in_transaction:
                         Some(InTransactionStatus {
-                            ref mut top_level_transaction_requires_rollback,
+                            top_level_transaction_may_require_rollback:
+                                ref mut top_level_transaction_requires_rollback,
                             ..
                         }),
                 } = tm_status
@@ -373,7 +375,8 @@ where
                         in_transaction:
                             Some(InTransactionStatus {
                                 transaction_depth,
-                                top_level_transaction_requires_rollback,
+                                top_level_transaction_may_require_rollback:
+                                    top_level_transaction_requires_rollback,
                                 ..
                             }),
                     }) if transaction_depth.get() > 1 => {
@@ -430,7 +433,7 @@ where
                     in_transaction:
                         Some(InTransactionStatus {
                             ref mut transaction_depth,
-                            top_level_transaction_requires_rollback: true,
+                            top_level_transaction_may_require_rollback: true,
                             ..
                         }),
                 }) = conn.transaction_state().status
@@ -499,7 +502,7 @@ mod test {
                 if self.top_level_requires_rollback_after_next_batch_execute {
                     self.transaction_state
                         .status
-                        .set_top_level_transaction_requires_rollback();
+                        .set_top_level_transaction_may_require_rollback();
                 }
                 res
             }

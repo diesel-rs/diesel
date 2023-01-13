@@ -171,7 +171,7 @@ fn update_transaction_manager_status<T>(
     if let Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) = query_result {
         transaction_manager
             .status
-            .set_top_level_transaction_requires_rollback()
+            .set_top_level_transaction_may_require_rollback()
     }
     query_result
 }
