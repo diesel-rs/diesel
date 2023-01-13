@@ -239,36 +239,54 @@ fn update_transaction_manager_status<T>(
     query_result: QueryResult<T>,
     conn: &mut ConnectionAndTransactionManager,
 ) -> QueryResult<T> {
-    if let Err(Error::DatabaseError { .. }) = query_result {
-        /// avoid monomorphizing for every result type - this part will not be inlined
-        fn non_generic_inner(conn: &mut ConnectionAndTransactionManager) {
-            let raw_conn: &mut RawConnection = &mut conn.raw_connection;
-            let tm: &mut AnsiTransactionManager = &mut conn.transaction_state;
-            if tm.status.is_not_broken_and_in_transaction() {
-                // libpq keeps track of the transaction status internally, and that is accessible
-                // via `transaction_status`. We can use that to update the AnsiTransactionManager
-                // status
-                match raw_conn.transaction_status() {
-                    PgTransactionStatus::InError => {
-                        tm.status.set_requires_rollback_maybe_up_to_top_level()
+    /// avoid monomorphizing for every result type - this part will not be inlined
+    fn non_generic_inner(conn: &mut ConnectionAndTransactionManager, is_err: bool) {
+        let raw_conn: &mut RawConnection = &mut conn.raw_connection;
+        let tm: &mut AnsiTransactionManager = &mut conn.transaction_state;
+        // libpq keeps track of the transaction status internally, and that is accessible
+        // via `transaction_status`. We can use that to update the AnsiTransactionManager
+        // status
+        match raw_conn.transaction_status() {
+            PgTransactionStatus::InError => {
+                tm.status.set_requires_rollback_maybe_up_to_top_level(true)
+            }
+            PgTransactionStatus::Unknown => tm.status.set_in_error(),
+            PgTransactionStatus::Idle => {
+                // This is useful in particular for commit attempts (even
+                // if `COMMIT` errors it still exits transaction)
+
+                // This may repair the transaction manager
+                tm.status = TransactionManagerStatus::Valid(Default::default())
+            }
+            PgTransactionStatus::InTransaction => {
+                let transaction_status = &mut tm.status;
+                // If we weren't an error, it is possible that we were a transaction start
+                // -> we should tolerate any state
+                if is_err {
+                    // An error may not have us enter a transaction, so if we weren't in one
+                    // we may not be in one now
+                    if !matches!(transaction_status, TransactionManagerStatus::Valid(valid_tm) if valid_tm.transaction_depth().is_some())
+                    {
+                        // -> transaction manager is broken
+                        transaction_status.set_in_error()
                     }
-                    PgTransactionStatus::Unknown => tm.status.set_in_error(),
-                    PgTransactionStatus::Idle => {
-                        tm.status = TransactionManagerStatus::Valid(Default::default())
-                    }
-                    PgTransactionStatus::InTransaction => {
-                        let transaction_status = &mut tm.status;
-                        if !matches!(transaction_status, TransactionManagerStatus::Valid(valid_tm) if valid_tm.transaction_depth().is_some())
-                        {
-                            transaction_status.set_in_error()
-                        }
-                    }
-                    PgTransactionStatus::Active => {}
+                } else {
+                    // If transaction was InError before, but now it's not (because we attempted
+                    // a rollback), we may pretend it's fixed because
+                    // if it isn't Postgres *will* tell us again.
+
+                    // Fun fact: if we have not received an `InTransaction` status however,
+                    // postgres will *not* warn us that transaction is broken when attempting to
+                    // commit, so we may think that commit has succeeded but in fact it hasn't.
+                    tm.status.set_requires_rollback_maybe_up_to_top_level(false)
                 }
             }
+            PgTransactionStatus::Active => {
+                // This is a transient state for libpq - nothing we can deduce here.
+            }
         }
-        non_generic_inner(conn)
     }
+    non_generic_inner(conn, query_result.is_err());
     query_result
 }
 
