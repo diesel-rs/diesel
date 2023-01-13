@@ -333,39 +333,37 @@ where
         let transaction_state = Self::get_transaction_state(conn)?;
 
         let rollback_sql = match transaction_state.in_transaction {
-            Some(ref mut in_transaction) => {
-                match in_transaction.transaction_depth.get() {
-                    1 => Cow::Borrowed("ROLLBACK"),
-                    depth_gt1 => {
-                        if in_transaction.top_level_transaction_requires_rollback {
-                            // There's no point in *actually* rolling back this one
-                            // because we won't be able to do anything until top-level
-                            // is rolled back.
-
-                            // To make it easier on the user (that they don't have to really look
-                            // at actual transaction depth and can just rely on the number of
-                            // times they have called begin/commit/rollback) we don't mark the
-                            // transaction manager as out of the savepoints as soon as we
-                            // realize there is that issue, but instead we still decrement here:
-                            in_transaction.transaction_depth = NonZeroU32::new(depth_gt1 - 1)
-                                .expect("Depth was checked to be > 1");
-                            return Ok(());
-                        } else {
-                            Cow::Owned(format!(
-                                "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                                depth_gt1 - 1
-                            ))
-                        }
-                    }
-                }
-            }
+            Some(ref mut in_transaction) => match in_transaction.transaction_depth.get() {
+                1 => Cow::Borrowed("ROLLBACK"),
+                depth_gt1 => Cow::Owned(format!(
+                    "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                    depth_gt1 - 1
+                )),
+            },
             None => return Err(Error::NotInTransaction),
         };
 
         match conn.batch_execute(&rollback_sql) {
             Ok(()) => {
-                Self::get_transaction_state(conn)?
-                    .change_transaction_depth(TransactionDepthChange::DecreaseDepth)?;
+                let tm_status = &mut Self::get_transaction_state(conn)?;
+                if let ValidTransactionManagerStatus {
+                    in_transaction:
+                        Some(InTransactionStatus {
+                            ref mut top_level_transaction_requires_rollback,
+                            ..
+                        }),
+                } = tm_status
+                {
+                    // rolling back the save point did work, even if the connection
+                    // was marked to require a top level rollback. This likely means that
+                    // we recovered the transaction state and we are able to perform
+                    // normal operations from now on. Therefore we remove the
+                    // `top_level_transaction_requires_rollback` flag.
+                    if *top_level_transaction_requires_rollback {
+                        *top_level_transaction_requires_rollback = false;
+                    }
+                }
+                tm_status.change_transaction_depth(TransactionDepthChange::DecreaseDepth)?;
                 Ok(())
             }
             Err(rollback_error) => {
@@ -378,14 +376,25 @@ where
                                 top_level_transaction_requires_rollback,
                                 ..
                             }),
-                    }) if transaction_depth.get() > 1
-                        && !*top_level_transaction_requires_rollback =>
-                    {
+                    }) if transaction_depth.get() > 1 => {
                         // A savepoint failed to rollback - we may still attempt to repair
                         // the connection by rolling back top-level transaction.
                         *transaction_depth = NonZeroU32::new(transaction_depth.get() - 1)
                             .expect("Depth was checked to be > 1");
-                        *top_level_transaction_requires_rollback = true;
+                        if *top_level_transaction_requires_rollback {
+                            // Rolling back the save point did not work. This likely means
+                            // we won't be able to do anything until top-level
+                            // is rolled back.
+
+                            // To make it easier on the user (that they don't have to really look
+                            // at actual transaction depth and can just rely on the number of
+                            // times they have called begin/commit/rollback) we don't mark the
+                            // transaction manager as out of the savepoints as soon as we
+                            // realize there is that issue, but instead we still decrement here:
+                            return Ok(());
+                        } else {
+                            *top_level_transaction_requires_rollback = true;
+                        }
                     }
                     _ => tm_status.set_in_error(),
                 }
@@ -991,6 +1000,57 @@ mod test {
         assert_eq!(
             None,
             <AnsiTransactionManager as TransactionManager<SqliteConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+    }
+
+    // regression test for #3470
+    // crates.io depends on this behaviour
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn some_libpq_failures_are_recoverable_by_rolling_back_the_savepoint_only() {
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
+        use crate::prelude::*;
+        use crate::sql_query;
+
+        crate::table! {
+            rollback_test (id) {
+                id -> Int4,
+                value -> Int4,
+            }
+        }
+
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                conn
+            ).transaction_depth().expect("Transaction depth")
+        );
+
+        let res = conn.transaction(|conn| {
+            sql_query(
+                "CREATE TABLE IF NOT EXISTS rollback_test (id INT PRIMARY KEY, value INT NOT NULL)",
+            )
+            .execute(conn)?;
+            conn.transaction(|conn| {
+                sql_query("SET TRANSACTION READ ONLY").execute(conn)?;
+                dbg!(crate::update(rollback_test::table)
+                    .set(rollback_test::value.eq(0))
+                    .execute(conn))
+            })
+            .map(|_| {
+                panic!("Should use the `or_else` branch");
+            })
+            .or_else(|_| sql_query("SELECT 1").execute(conn))
+            .map(|_| ())
+        });
+        assert!(res.is_ok());
+
+        assert_eq!(
+            None,
+            <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
                 conn
             ).transaction_depth().expect("Transaction depth")
         );
