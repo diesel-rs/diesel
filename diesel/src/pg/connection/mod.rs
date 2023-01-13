@@ -254,7 +254,6 @@ fn update_transaction_manager_status<T>(
                     }
                     PgTransactionStatus::Unknown => tm.status.set_in_error(),
                     PgTransactionStatus::Idle => {
-                        // This may repair the transaction manager
                         tm.status = TransactionManagerStatus::Valid(Default::default())
                     }
                     PgTransactionStatus::InTransaction => {
