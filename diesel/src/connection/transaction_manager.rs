@@ -385,6 +385,14 @@ where
                             return Ok(());
                         }
                     }
+                    TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
+                        in_transaction: None,
+                    }) => {
+                        // we would have returned `NotInTransaction` if that was already the state
+                        // before we made our call
+                        // => Transaction manager status has been fixed by the underlying connection
+                        // so we don't need to set_in_error
+                    }
                     _ => tm_status.set_in_error(),
                 }
                 Err(rollback_error)
