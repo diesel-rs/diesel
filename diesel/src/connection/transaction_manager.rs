@@ -143,7 +143,7 @@ impl TransactionManagerStatus {
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
     /// Whether we may be interested in calling
-    /// `set_top_level_transaction_requires_rollback_if_not_broken`
+    /// `set_requires_rollback_maybe_up_to_top_level_if_not_broken`
     ///
     /// You should typically not need this outside of a custom backend implementation
     pub(crate) fn is_not_broken_and_in_transaction(&self) -> bool {
@@ -162,19 +162,21 @@ impl TransactionManagerStatus {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    /// If in transaction and transaction manager is not broken, registers that the
-    /// connection can not be used anymore until top-level transaction is rolled back
-    /// or an intermediate rollbach to savepoint succceeds
-    pub(crate) fn set_top_level_transaction_may_require_rollback(&mut self) {
+    /// If in transaction and transaction manager is not broken, registers that it's possible that
+    /// the connection can not be used anymore until top-level transaction is rolled back.
+    ///
+    /// If that is registered, savepoints rollbacks will still be attempted, but failure to do so
+    /// will not result in an error. (Some may succeed, some may not.)
+    pub(crate) fn set_requires_rollback_maybe_up_to_top_level(&mut self) {
         if let TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
             in_transaction:
                 Some(InTransactionStatus {
-                    top_level_transaction_may_require_rollback,
+                    requires_rollback_maybe_up_to_top_level,
                     ..
                 }),
         }) = self
         {
-            *top_level_transaction_may_require_rollback = true;
+            *requires_rollback_maybe_up_to_top_level = true;
         }
     }
 
@@ -214,7 +216,9 @@ pub struct ValidTransactionManagerStatus {
 #[derive(Debug)]
 struct InTransactionStatus {
     transaction_depth: NonZeroU32,
-    top_level_transaction_may_require_rollback: bool,
+    /// If that is registered, savepoints rollbacks will still be attempted, but failure to do so
+    /// will not result in an error. (Some may succeed, some may not.)
+    requires_rollback_maybe_up_to_top_level: bool,
     test_transaction: bool,
 }
 
@@ -253,7 +257,7 @@ impl ValidTransactionManagerStatus {
             (None, TransactionDepthChange::IncreaseDepth) => {
                 self.in_transaction = Some(InTransactionStatus {
                     transaction_depth: NonZeroU32::new(1).expect("1 is non-zero"),
-                    top_level_transaction_may_require_rollback: false,
+                    requires_rollback_maybe_up_to_top_level: false,
                     test_transaction: false,
                 });
                 Ok(())
@@ -333,39 +337,25 @@ where
     fn rollback_transaction(conn: &mut Conn) -> QueryResult<()> {
         let transaction_state = Self::get_transaction_state(conn)?;
 
-        let rollback_sql = match transaction_state.in_transaction {
-            Some(ref mut in_transaction) => match in_transaction.transaction_depth.get() {
-                1 => Cow::Borrowed("ROLLBACK"),
-                depth_gt1 => Cow::Owned(format!(
-                    "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
-                    depth_gt1 - 1
-                )),
-            },
-            None => return Err(Error::NotInTransaction),
-        };
+        let (rollback_sql, requires_rollback_maybe_up_to_top_level_before_run) =
+            match transaction_state.in_transaction {
+                Some(ref in_transaction) => (
+                    match in_transaction.transaction_depth.get() {
+                        1 => Cow::Borrowed("ROLLBACK"),
+                        depth_gt1 => Cow::Owned(format!(
+                            "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
+                            depth_gt1 - 1
+                        )),
+                    },
+                    in_transaction.requires_rollback_maybe_up_to_top_level,
+                ),
+                None => return Err(Error::NotInTransaction),
+            };
 
         match conn.batch_execute(&*rollback_sql) {
             Ok(()) => {
-                let tm_status = &mut Self::get_transaction_state(conn)?;
-                if let ValidTransactionManagerStatus {
-                    in_transaction:
-                        Some(InTransactionStatus {
-                            top_level_transaction_may_require_rollback:
-                                ref mut top_level_transaction_requires_rollback,
-                            ..
-                        }),
-                } = tm_status
-                {
-                    // rolling back the save point did work, even if the connection
-                    // was marked to require a top level rollback. This likely means that
-                    // we recovered the transaction state and we are able to perform
-                    // normal operations from now on. Therefore we remove the
-                    // `top_level_transaction_requires_rollback` flag.
-                    if *top_level_transaction_requires_rollback {
-                        *top_level_transaction_requires_rollback = false;
-                    }
-                }
-                tm_status.change_transaction_depth(TransactionDepthChange::DecreaseDepth)?;
+                Self::get_transaction_state(conn)?
+                    .change_transaction_depth(TransactionDepthChange::DecreaseDepth)?;
                 Ok(())
             }
             Err(rollback_error) => {
@@ -375,28 +365,24 @@ where
                         in_transaction:
                             Some(InTransactionStatus {
                                 transaction_depth,
-                                top_level_transaction_may_require_rollback:
-                                    top_level_transaction_requires_rollback,
+                                requires_rollback_maybe_up_to_top_level,
                                 ..
                             }),
                     }) if transaction_depth.get() > 1 => {
                         // A savepoint failed to rollback - we may still attempt to repair
-                        // the connection by rolling back top-level transaction.
+                        // the connection by rolling back higher levels.
+
+                        // To make it easier on the user (that they don't have to really
+                        // look at actual transaction depth and can just rely on the number
+                        // of times they have called begin/commit/rollback) we still
+                        // decrement here:
                         *transaction_depth = NonZeroU32::new(transaction_depth.get() - 1)
                             .expect("Depth was checked to be > 1");
-                        if *top_level_transaction_requires_rollback {
-                            // Rolling back the save point did not work. This likely means
-                            // we won't be able to do anything until top-level
-                            // is rolled back.
-
-                            // To make it easier on the user (that they don't have to really look
-                            // at actual transaction depth and can just rely on the number of
-                            // times they have called begin/commit/rollback) we don't mark the
-                            // transaction manager as out of the savepoints as soon as we
-                            // realize there is that issue, but instead we still decrement here:
+                        *requires_rollback_maybe_up_to_top_level = true;
+                        if requires_rollback_maybe_up_to_top_level_before_run {
+                            // In that case, some rollbacks may succeed, some may not
+                            // -> we should ignore errors
                             return Ok(());
-                        } else {
-                            *top_level_transaction_requires_rollback = true;
                         }
                     }
                     _ => tm_status.set_in_error(),
@@ -432,35 +418,19 @@ where
                 if let TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
                     in_transaction:
                         Some(InTransactionStatus {
-                            ref mut transaction_depth,
-                            top_level_transaction_may_require_rollback: true,
+                            requires_rollback_maybe_up_to_top_level: true,
                             ..
                         }),
                 }) = conn.transaction_state().status
                 {
-                    match transaction_depth.get() {
-                        1 => match Self::rollback_transaction(conn) {
-                            Ok(()) => {}
-                            Err(rollback_error) => {
-                                conn.transaction_state().status.set_in_error();
-                                return Err(Error::RollbackErrorOnCommit {
-                                    rollback_error: Box::new(rollback_error),
-                                    commit_error: Box::new(commit_error),
-                                });
-                            }
-                        },
-                        depth_gt1 => {
-                            // There's no point in *actually* rolling back this one
-                            // because we won't be able to do anything until top-level
-                            // is rolled back.
-
-                            // To make it easier on the user (that they don't have to really look
-                            // at actual transaction depth and can just rely on the number of
-                            // times they have called begin/commit/rollback) we don't mark the
-                            // transaction manager as out of the savepoints as soon as we
-                            // realize there is that issue, but instead we still decrement here:
-                            *transaction_depth = NonZeroU32::new(depth_gt1 - 1)
-                                .expect("Depth was checked to be > 1");
+                    match Self::rollback_transaction(conn) {
+                        Ok(()) => {}
+                        Err(rollback_error) => {
+                            conn.transaction_state().status.set_in_error();
+                            return Err(Error::RollbackErrorOnCommit {
+                                rollback_error: Box::new(rollback_error),
+                                commit_error: Box::new(commit_error),
+                            });
                         }
                     }
                 }
@@ -502,7 +472,7 @@ mod test {
                 if self.top_level_requires_rollback_after_next_batch_execute {
                     self.transaction_state
                         .status
-                        .set_top_level_transaction_may_require_rollback();
+                        .set_requires_rollback_maybe_up_to_top_level();
                 }
                 res
             }

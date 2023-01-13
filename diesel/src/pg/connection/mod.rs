@@ -123,7 +123,6 @@ unsafe impl Send for PgConnection {}
 
 impl SimpleConnection for PgConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
-        dbg!(query);
         let query = CString::new(query)?;
         let inner_result = unsafe {
             self.connection_and_transaction_manager
@@ -251,7 +250,7 @@ fn update_transaction_manager_status<T>(
                 // status
                 match raw_conn.transaction_status() {
                     PgTransactionStatus::InError => {
-                        tm.status.set_top_level_transaction_may_require_rollback()
+                        tm.status.set_requires_rollback_maybe_up_to_top_level()
                     }
                     PgTransactionStatus::Unknown => tm.status.set_in_error(),
                     PgTransactionStatus::Idle => {
@@ -322,7 +321,6 @@ impl PgConnection {
             &'conn mut ConnectionAndTransactionManager,
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
-        dbg!(crate::debug_query(source));
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         source.collect_binds(&mut bind_collector, self, &Pg)?;
         let binds = bind_collector.binds;
