@@ -1058,4 +1058,120 @@ mod test {
             ).transaction_depth().expect("Transaction depth")
         );
     }
+
+    #[test]
+    #[cfg(feature = "postgres")]
+    fn other_libpq_failures_are_not_recoverable_by_rolling_back_the_savepoint_only() {
+        use crate::connection::{AnsiTransactionManager, TransactionManager};
+        use crate::prelude::*;
+        use crate::sql_query;
+        use std::num::NonZeroU32;
+        use std::sync::{Arc, Barrier};
+
+        crate::table! {
+            rollback_test2 (id) {
+                id -> Int4,
+                value -> Int4,
+            }
+        }
+        let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+
+        sql_query(
+            "CREATE TABLE IF NOT EXISTS rollback_test2 (id INT PRIMARY KEY, value INT NOT NULL)",
+        )
+        .execute(conn)
+        .unwrap();
+
+        let commit_barrier = Arc::new(Barrier::new(2));
+
+        let other_start_barrier = start_barrier.clone();
+        let other_commit_barrier = commit_barrier.clone();
+
+        let t1 = std::thread::spawn(move || {
+            let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+            assert_eq!(
+                None,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+                ).transaction_depth().expect("Transaction depth")
+            );
+            let r = conn.build_transaction().serializable().run::<_, crate::result::Error, _>(|conn| {
+                assert_eq!(
+                    NonZeroU32::new(1),
+                    <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                        conn
+                    ).transaction_depth().expect("Transaction depth")
+                );
+                let _ = rollback_test2::table.load::<(i32, i32)>(conn)?;
+                crate::insert_into(rollback_test2::table)
+                    .values((rollback_test2::id.eq(1), rollback_test2::value.eq(42)))
+                    .execute(conn)?;
+                let r = conn.transaction(|conn| {
+                    assert_eq!(
+                        NonZeroU32::new(2),
+                        <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                            conn
+                        ).transaction_depth().expect("Transaction depth")
+                    );
+                    commit_barrier.wait();
+                    let r = rollback_test2::table.load::<(i32, i32)>(conn);
+                    assert!(r.is_err());
+                    Err::<(), _>(crate::result::Error::RollbackTransaction)
+                });
+                assert_eq!(
+                    NonZeroU32::new(1),
+                    <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                        conn
+                    ).transaction_depth().expect("Transaction depth")
+                );
+                assert!(r.is_ok());
+                let r = rollback_test2::table.load::<(i32, i32)>(conn);
+                assert!(r.is_err());
+                Ok(())
+            });
+            assert!(r.is_err());
+            assert_eq!(
+                None,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+                ).transaction_depth().expect("Transaction depth")
+            );
+        });
+
+        let t2 = std::thread::spawn(move || {
+            let conn = &mut crate::test_helpers::pg_connection_no_transaction();
+            assert_eq!(
+                None,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+                ).transaction_depth().expect("Transaction depth")
+            );
+            let r = conn.build_transaction().serializable().run::<_, crate::result::Error, _>(|conn| {
+                assert_eq!(
+                    NonZeroU32::new(1),
+                    <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                        conn
+                    ).transaction_depth().expect("Transaction depth")
+                );
+                let _ = rollback_test2::table.load::<(i32, i32)>(conn)?;
+                crate::insert_into(rollback_test2::table)
+                    .values((rollback_test2::id.eq(23), rollback_test2::value.eq(42)))
+                    .execute(conn)?;
+                Ok(())
+            });
+            other_commit_barrier.wait();
+            assert!(r.is_ok(), "{:?}", r.unwrap_err());
+            assert_eq!(
+                None,
+                <AnsiTransactionManager as TransactionManager<PgConnection>>::transaction_manager_status_mut(
+                    conn
+                ).transaction_depth().expect("Transaction depth")
+            );
+        });
+        crate::sql_query("DELETE FROM rollback_test2")
+            .execute(conn)
+            .unwrap();
+        t1.join().unwrap();
+        t2.join().unwrap();
+    }
 }
