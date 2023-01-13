@@ -321,7 +321,7 @@ where
 
         let (
             (rollback_sql, rolling_back_top_level),
-            requires_rollback_maybe_up_to_top_level_before_run,
+            requires_rollback_maybe_up_to_top_level_before_execute,
         ) = match transaction_state.in_transaction {
             Some(ref in_transaction) => (
                 match in_transaction.transaction_depth.get() {
@@ -346,8 +346,8 @@ where
                 {
                     Ok(()) => {}
                     Err(Error::NotInTransaction) if rolling_back_top_level => {
-                        // Transaction exit may have already been detected by connection.
-                        // It's fine
+                        // Transaction exit may have already been detected by connection
+                        // implementation. It's fine.
                     }
                     Err(e) => return Err(e),
                 }
@@ -374,7 +374,7 @@ where
                         *transaction_depth = NonZeroU32::new(transaction_depth.get() - 1)
                             .expect("Depth was checked to be > 1");
                         *requires_rollback_maybe_up_to_top_level = true;
-                        if requires_rollback_maybe_up_to_top_level_before_run {
+                        if requires_rollback_maybe_up_to_top_level_before_execute {
                             // In that case, we tolerate that savepoint releases fail
                             // -> we should ignore errors
                             return Ok(());
