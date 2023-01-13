@@ -138,24 +138,6 @@ impl TransactionManagerStatus {
     #[cfg(any(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "postgres",
-    ))]
-    #[diesel_derives::__diesel_public_if(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-    )]
-    /// Whether we may be interested in calling
-    /// `set_requires_rollback_maybe_up_to_top_level_if_not_broken`
-    ///
-    /// You should typically not need this outside of a custom backend implementation
-    pub(crate) fn is_not_broken_and_in_transaction(&self) -> bool {
-        match self {
-            TransactionManagerStatus::Valid(valid_status) => valid_status.in_transaction.is_some(),
-            TransactionManagerStatus::InError => false,
-        }
-    }
-
-    #[cfg(any(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        feature = "postgres",
         feature = "mysql",
         test
     ))]
@@ -167,7 +149,7 @@ impl TransactionManagerStatus {
     ///
     /// If that is registered, savepoints rollbacks will still be attempted, but failure to do so
     /// will not result in an error. (Some may succeed, some may not.)
-    pub(crate) fn set_requires_rollback_maybe_up_to_top_level(&mut self) {
+    pub(crate) fn set_requires_rollback_maybe_up_to_top_level(&mut self, to: bool) {
         if let TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
             in_transaction:
                 Some(InTransactionStatus {
@@ -176,7 +158,7 @@ impl TransactionManagerStatus {
                 }),
         }) = self
         {
-            *requires_rollback_maybe_up_to_top_level = true;
+            *requires_rollback_maybe_up_to_top_level = to;
         }
     }
 
@@ -337,25 +319,38 @@ where
     fn rollback_transaction(conn: &mut Conn) -> QueryResult<()> {
         let transaction_state = Self::get_transaction_state(conn)?;
 
-        let (rollback_sql, requires_rollback_maybe_up_to_top_level_before_run) =
-            match transaction_state.in_transaction {
-                Some(ref in_transaction) => (
-                    match in_transaction.transaction_depth.get() {
-                        1 => Cow::Borrowed("ROLLBACK"),
-                        depth_gt1 => Cow::Owned(format!(
+        let (
+            (rollback_sql, rolling_back_top_level),
+            requires_rollback_maybe_up_to_top_level_before_run,
+        ) = match transaction_state.in_transaction {
+            Some(ref in_transaction) => (
+                match in_transaction.transaction_depth.get() {
+                    1 => (Cow::Borrowed("ROLLBACK"), true),
+                    depth_gt1 => (
+                        Cow::Owned(format!(
                             "ROLLBACK TO SAVEPOINT diesel_savepoint_{}",
                             depth_gt1 - 1
                         )),
-                    },
-                    in_transaction.requires_rollback_maybe_up_to_top_level,
-                ),
-                None => return Err(Error::NotInTransaction),
-            };
+                        false,
+                    ),
+                },
+                in_transaction.requires_rollback_maybe_up_to_top_level,
+            ),
+            None => return Err(Error::NotInTransaction),
+        };
 
         match conn.batch_execute(&rollback_sql) {
             Ok(()) => {
-                Self::get_transaction_state(conn)?
-                    .change_transaction_depth(TransactionDepthChange::DecreaseDepth)?;
+                match Self::get_transaction_state(conn)?
+                    .change_transaction_depth(TransactionDepthChange::DecreaseDepth)
+                {
+                    Ok(()) => {}
+                    Err(Error::NotInTransaction) if rolling_back_top_level => {
+                        // Transaction exit may have already been detected by connection.
+                        // It's fine
+                    }
+                    Err(e) => return Err(e),
+                }
                 Ok(())
             }
             Err(rollback_error) => {
@@ -380,7 +375,7 @@ where
                             .expect("Depth was checked to be > 1");
                         *requires_rollback_maybe_up_to_top_level = true;
                         if requires_rollback_maybe_up_to_top_level_before_run {
-                            // In that case, some rollbacks may succeed, some may not
+                            // In that case, we tolerate that savepoint releases fail
                             // -> we should ignore errors
                             return Ok(());
                         }
@@ -408,18 +403,31 @@ where
     fn commit_transaction(conn: &mut Conn) -> QueryResult<()> {
         let transaction_state = Self::get_transaction_state(conn)?;
         let transaction_depth = transaction_state.transaction_depth();
-        let commit_sql = match transaction_depth {
+        let (commit_sql, committing_top_level) = match transaction_depth {
             None => return Err(Error::NotInTransaction),
-            Some(transaction_depth) if transaction_depth.get() == 1 => Cow::Borrowed("COMMIT"),
-            Some(transaction_depth) => Cow::Owned(format!(
-                "RELEASE SAVEPOINT diesel_savepoint_{}",
-                transaction_depth.get() - 1
-            )),
+            Some(transaction_depth) if transaction_depth.get() == 1 => {
+                (Cow::Borrowed("COMMIT"), true)
+            }
+            Some(transaction_depth) => (
+                Cow::Owned(format!(
+                    "RELEASE SAVEPOINT diesel_savepoint_{}",
+                    transaction_depth.get() - 1
+                )),
+                false,
+            ),
         };
         match conn.batch_execute(&commit_sql) {
             Ok(()) => {
-                Self::get_transaction_state(conn)?
-                    .change_transaction_depth(TransactionDepthChange::DecreaseDepth)?;
+                match Self::get_transaction_state(conn)?
+                    .change_transaction_depth(TransactionDepthChange::DecreaseDepth)
+                {
+                    Ok(()) => {}
+                    Err(Error::NotInTransaction) if committing_top_level => {
+                        // Transaction exit may have already been detected by connection.
+                        // It's fine
+                    }
+                    Err(e) => return Err(e),
+                }
                 Ok(())
             }
             Err(commit_error) => {
@@ -480,7 +488,7 @@ mod test {
                 if self.top_level_requires_rollback_after_next_batch_execute {
                     self.transaction_state
                         .status
-                        .set_requires_rollback_maybe_up_to_top_level();
+                        .set_requires_rollback_maybe_up_to_top_level(true);
                 }
                 res
             }
