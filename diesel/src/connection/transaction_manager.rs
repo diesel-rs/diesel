@@ -1126,8 +1126,10 @@ mod test {
                 );
                 let r = rollback_test2::table.load::<(i32, i32)>(conn);
                 assert!(r.is_err());
-                // This should fail because of ser failure
-                Ok(())
+                // fun fact: if hitting "commit" after receiving a serialization failure, PG
+                // returns that the commit has succeeded, but in fact it was actually rolled back.
+                // soo.. one should avoid doing that
+                r
             });
             assert!(r.is_err());
             assert_eq!(
