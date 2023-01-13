@@ -1032,9 +1032,9 @@ mod test {
             .execute(conn)?;
             conn.transaction(|conn| {
                 sql_query("SET TRANSACTION READ ONLY").execute(conn)?;
-                dbg!(crate::update(rollback_test::table)
+                crate::update(rollback_test::table)
                     .set(rollback_test::value.eq(0))
-                    .execute(conn))
+                    .execute(conn)
             })
             .map(|_| {
                 panic!("Should use the `or_else` branch");
@@ -1075,6 +1075,7 @@ mod test {
         .execute(conn)
         .unwrap();
 
+        let start_barrier = Arc::new(Barrier::new(2));
         let commit_barrier = Arc::new(Barrier::new(2));
 
         let other_start_barrier = start_barrier.clone();
@@ -1095,7 +1096,7 @@ mod test {
                         conn
                     ).transaction_depth().expect("Transaction depth")
                 );
-                let _ = rollback_test2::table.load::<(i32, i32)>(conn)?;
+                rollback_test2::table.load::<(i32, i32)>(conn)?;
                 crate::insert_into(rollback_test2::table)
                     .values((rollback_test2::id.eq(1), rollback_test2::value.eq(42)))
                     .execute(conn)?;
@@ -1106,6 +1107,7 @@ mod test {
                             conn
                         ).transaction_depth().expect("Transaction depth")
                     );
+                    start_barrier.wait();
                     commit_barrier.wait();
                     let r = rollback_test2::table.load::<(i32, i32)>(conn);
                     assert!(r.is_err());
@@ -1117,9 +1119,14 @@ mod test {
                         conn
                     ).transaction_depth().expect("Transaction depth")
                 );
-                assert!(r.is_ok());
+                assert!(
+                    matches!(r, Err(crate::result::Error::RollbackTransaction)),
+                    "rollback failed (such errors should be ignored by transaction manager): {}",
+                    r.unwrap_err()
+                );
                 let r = rollback_test2::table.load::<(i32, i32)>(conn);
                 assert!(r.is_err());
+                // This should fail because of ser failure
                 Ok(())
             });
             assert!(r.is_err());
@@ -1132,6 +1139,7 @@ mod test {
         });
 
         let t2 = std::thread::spawn(move || {
+            other_start_barrier.wait();
             let conn = &mut crate::test_helpers::pg_connection_no_transaction();
             assert_eq!(
                 None,
