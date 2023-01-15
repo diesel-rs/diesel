@@ -101,8 +101,13 @@
 //! be part of the public API and can disappear at any point in time:
 
 //!
-//! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires a compatible copy
-//! of `libsqlite3` for your target architecture.
+//! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
+//! a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
+//! with the `bundled` feature as a dependecy to your crate so SQLite will be bundled:
+//! ```
+//! [dependencies]
+//! libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
+//! ```
 //! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
 //! copy of `libpq` for your target architecture. This features implies `postgres_backend`
 //! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
