@@ -104,7 +104,7 @@
 //! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
 //! a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
 //! with the `bundled` feature as a dependecy to your crate so SQLite will be bundled:
-//! ```
+//! ```toml
 //! [dependencies]
 //! libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
 //! ```
