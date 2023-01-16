@@ -108,6 +108,8 @@ impl RawConnection {
         RawResult::new(ptr, self)
     }
 
+    /// This is reasonably inexpensive as it just accesses variables internal to the connection
+    /// that are kept up to date by the `ReadyForQuery` messages from the PG server
     pub(super) fn transaction_status(&self) -> PgTransactionStatus {
         unsafe { PQtransactionStatus(self.internal_connection.as_ptr()) }.into()
     }
