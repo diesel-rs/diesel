@@ -10,6 +10,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased 
 
+## [2.0.3] 2023-01-18
+
+## Fixed
+
+* Fixed a bug with our transaction manager implementation that caused by marking transactions as broken which could be recovered.
+* Fixed an issue with the combination of `BoxableExpression` and order clauses
+
 ## [2.0.2] 2022-10-11
 
 ### Fixed
