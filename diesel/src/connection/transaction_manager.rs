@@ -135,6 +135,33 @@ impl TransactionManagerStatus {
         }
     }
 
+    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    #[deprecated(note = "Removed without replacement")]
+    /// Whether we may be interested in calling
+    /// `set_top_level_transaction_requires_rollback_if_not_broken`
+    ///
+    /// You should typically not need this outside of a custom backend implementation
+    pub(crate) fn is_not_broken_and_in_transaction(&self) -> bool {
+        match self {
+            TransactionManagerStatus::Valid(valid_status) => valid_status.in_transaction.is_some(),
+            TransactionManagerStatus::InError => false,
+        }
+    }
+
+    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    #[deprecated(note = "Use `set_requires_rollback_maybe_up_to_top_level` instead")]
+    /// If in transaction and transaction manager is not broken, registers that the
+    /// connection can not be used anymore until top-level transaction is rolled back
+    pub(crate) fn set_top_level_transaction_requires_rollback(&mut self) {
+        self.set_requires_rollback_maybe_up_to_top_level(true);
+    }
+
     #[cfg(any(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
         feature = "postgres",
