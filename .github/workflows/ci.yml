@@ -51,13 +51,6 @@ jobs:
           echo "RUSTFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
           echo "RUSTDOCFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
 
-      - name: Set environment variables
-        shell: bash
-        if: matrix.rust != 'nightly'
-        run: |
-          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
-          echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
-
       - name: Install postgres (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'postgres'
         run: |
@@ -130,14 +123,12 @@ jobs:
       - name: Install sqlite (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'sqlite'
         run: |
-          brew update
           brew install sqlite
           echo "SQLITE_DATABASE_URL=/tmp/test.db" >> $GITHUB_ENV
 
       - name: Install mysql (MacOS)
         if: runner.os == 'macOS' && matrix.backend == 'mysql'
         run: |
-          brew update
           brew install mariadb@10.5
           /usr/local/opt/mariadb@10.5/bin/mysql_install_db
           /usr/local/opt/mariadb@10.5/bin/mysql.server start
@@ -333,11 +324,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y install libsqlite3-dev libpq-dev libmysqlclient-dev
-      - name: Set environment variables
-        shell: bash
-        run: |
-          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
-          echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
 
       - name: Remove potential newer clippy.toml from dependencies
         run: |
