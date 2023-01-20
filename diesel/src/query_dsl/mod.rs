@@ -936,7 +936,7 @@ pub trait QueryDsl: Sized {
     /// Diesel follows postgresql's group by semantic, this means any column
     /// appearing in a group by clause is considered to be aggregated. If a
     /// primary key is part of the group by clause every column from the
-    /// corresponding table is considerd to be aggregated. Select clauses
+    /// corresponding table is considered to be aggregated. Select clauses
     /// cannot mix aggregated and non aggregated expressions.
     ///
     /// For group by clauses containing columns from more than one table it

@@ -158,7 +158,7 @@ impl<'a, T: Expression + ?Sized> Expression for &'a T {
 /// If you do not implement a custom backend implementation
 /// this trait is likely not relevant for you.
 pub trait QueryMetadata<T>: Backend {
-    /// The exact return value of this function is considerded to be a
+    /// The exact return value of this function is considered to be a
     /// backend specific implementation detail. You should not rely on those
     /// values if you not own the corresponding backend
     fn row_metadata(lookup: &mut Self::MetadataLookup, out: &mut Vec<Option<Self::TypeMetadata>>);
