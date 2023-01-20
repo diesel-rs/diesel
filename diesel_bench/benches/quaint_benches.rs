@@ -126,7 +126,7 @@ fn insert_users(
 
     if cfg!(feature = "sqlite") {
         rt.block_on(async {
-            let transaction = conn.start_transaction(None).await.unwrap();
+            let transaction = conn.start_transaction().await.unwrap();
 
             for i in 0..size {
                 let insert = Insert::single_into("users")
@@ -269,7 +269,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         rt.block_on(async { conn.insert(insert_posts.build()).await.unwrap() });
     } else {
         rt.block_on(async {
-            let transaction = conn.start_transaction(None).await.unwrap();
+            let transaction = conn.start_transaction().await.unwrap();
 
             for user in all_users {
                 for i in 0..10 {
@@ -306,7 +306,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         rt.block_on(async { conn.insert(insert_comments.build()).await.unwrap() });
     } else {
         rt.block_on(async {
-            let transaction = conn.start_transaction(None).await.unwrap();
+            let transaction = conn.start_transaction().await.unwrap();
 
             for post in all_posts {
                 for i in 0..10 {
