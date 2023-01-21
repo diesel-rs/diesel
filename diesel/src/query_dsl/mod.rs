@@ -199,6 +199,16 @@ pub trait QueryDsl: Sized {
     /// column. `title.nullable()`, `lower(title).nullable()`, and `(id,
     /// title).nullable()` would all be valid.
     ///
+    /// In order to use this method with columns from different tables
+    /// a method like [`.inner_join`] or [`.left_join`] needs to be called before
+    /// calling [`.select`] (See examples below).
+    /// This is because you can only access columns from tables
+    /// that appear in your query before that function call.
+    ///
+    /// [`.inner_join`]: QueryDsl::inner_join()
+    /// [`.left_join`]: QueryDsl::left_join()
+    /// [`.select`]: QueryDsl::select()
+    ///
     /// # Examples
     ///
     /// ```rust
@@ -381,6 +391,12 @@ pub trait QueryDsl: Sized {
     ///
     /// [associations]: crate::associations
     /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
+    ///
+    /// Note that in order to use this method with [`.select`], you will need to use it before calling
+    /// [`.select`] (See examples below). This is because you can only access columns from tables
+    /// that appear in your query before the call to [`.select`].
+    ///
+    /// [`.select`]: QueryDsl::select()
     ///
     /// # Examples
     ///
@@ -602,6 +618,15 @@ pub trait QueryDsl: Sized {
     /// Adds to the `WHERE` clause of a query.
     ///
     /// If there is already a `WHERE` clause, the result will be `old AND new`.
+    ///
+    /// Note that in order to use this method with columns from different tables, you need to call
+    //  [`.inner_join`] or [`.left_join`] beforehand.
+    /// This is because you can only access columns from tables
+    /// that appear in your query before the call to [`.filter`].
+    ///
+    /// [`.inner_join`]: QueryDsl::inner_join()
+    /// [`.left_join`]: QueryDsl::left_join()
+    /// [`.filter`]: QueryDsl::filter()
     ///
     /// # Example:
     ///
