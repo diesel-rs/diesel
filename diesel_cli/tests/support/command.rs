@@ -54,7 +54,7 @@ impl TestCommand {
     fn build_command(&self) -> Command {
         let mut command = Command::new(path_to_diesel_cli());
         command.args(&self.args).current_dir(&self.cwd);
-        for &(ref k, ref v) in self.env_vars.iter() {
+        for (k, v) in self.env_vars.iter() {
             command.env(k, v);
         }
         command

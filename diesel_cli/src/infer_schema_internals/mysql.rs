@@ -14,9 +14,9 @@ diesel::sql_function! {
     fn null_if_text(lhs: sql_types::Text, rhs: sql_types::Text) -> sql_types::Nullable<sql_types::Text>
 }
 
-pub fn get_table_data<'a>(
+pub fn get_table_data(
     conn: &mut MysqlConnection,
-    table: &'a TableName,
+    table: &TableName,
     column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
     use self::information_schema::columns::dsl::*;
@@ -218,7 +218,7 @@ fn determine_type_name(
             .trim()
             .to_owned())
     } else if result.contains(' ') {
-        Err(format!("unrecognized type {:?}", result).into())
+        Err(format!("unrecognized type {result:?}").into())
     } else {
         Ok(result.to_owned())
     }

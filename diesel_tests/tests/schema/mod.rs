@@ -306,14 +306,14 @@ pub fn disable_foreign_keys(connection: &mut TestConnection) {
 
 #[cfg(feature = "sqlite")]
 pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    diesel::sql_query(format!("DROP TABLE {}", table))
+    diesel::sql_query(format!("DROP TABLE {table}"))
         .execute(connection)
         .unwrap();
 }
 
 #[cfg(feature = "postgres")]
 pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    diesel::sql_query(format!("DROP TABLE {} CASCADE", table))
+    diesel::sql_query(format!("DROP TABLE {table} CASCADE"))
         .execute(connection)
         .unwrap();
 }

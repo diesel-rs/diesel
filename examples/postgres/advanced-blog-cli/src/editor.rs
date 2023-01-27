@@ -12,8 +12,6 @@ pub fn edit_string(s: &str) -> Result<String, Box<dyn Error>> {
 }
 
 fn editor_output(file: &mut NamedTempFile) -> Result<String, Box<dyn Error>> {
-    use std::io::SeekFrom::Start;
-
     let status = Command::new(editor_command()?)
         .arg(file.path().as_os_str())
         .spawn()?
@@ -24,7 +22,7 @@ fn editor_output(file: &mut NamedTempFile) -> Result<String, Box<dyn Error>> {
     }
 
     let mut buffer = String::new();
-    file.seek(Start(0))?;
+    file.rewind()?;
     file.read_to_string(&mut buffer)?;
     Ok(buffer)
 }

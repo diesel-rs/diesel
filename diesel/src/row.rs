@@ -141,7 +141,7 @@ where
         T: FromSql<ST, DB>,
     {
         let field = Row::get(self, column_name)
-            .ok_or_else(|| format!("Column `{}` was not present in query", column_name))?;
+            .ok_or_else(|| format!("Column `{column_name}` was not present in query"))?;
 
         T::from_nullable_sql(field.value())
     }

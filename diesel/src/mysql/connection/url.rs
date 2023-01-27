@@ -253,10 +253,7 @@ fn userinfo_should_be_percent_decode() {
     let password = "x/gfuL?4Zuj{n73m}eeJt1";
     let encoded_password = utf8_percent_encode(password, USERINFO_ENCODE_SET);
 
-    let db_url = format!(
-        "mysql://{}:{}@localhost/bar",
-        encoded_username, encoded_password
-    );
+    let db_url = format!("mysql://{encoded_username}:{encoded_password}@localhost/bar",);
     let db_url = Url::parse(&db_url).unwrap();
 
     let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
@@ -288,10 +285,7 @@ fn unix_socket_tests() {
     let unix_socket = "/var/run/mysqld.sock";
     let username = "foo";
     let password = "bar";
-    let db_url = format!(
-        "mysql://{}:{}@localhost?unix_socket={}",
-        username, password, unix_socket
-    );
+    let db_url = format!("mysql://{username}:{password}@localhost?unix_socket={unix_socket}",);
     let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
     let cstring = |s| CString::new(s).unwrap();
     assert_eq!(None, conn_opts.host);
@@ -309,10 +303,7 @@ fn ssl_ca_tests() {
     let ssl_ca = "/etc/ssl/certs/ca-certificates.crt";
     let username = "foo";
     let password = "bar";
-    let db_url = format!(
-        "mysql://{}:{}@localhost?ssl_ca={}",
-        username, password, ssl_ca
-    );
+    let db_url = format!("mysql://{username}:{password}@localhost?ssl_ca={ssl_ca}",);
     let conn_opts = ConnectionOptions::parse(db_url.as_str()).unwrap();
     let cstring = |s| CString::new(s).unwrap();
     assert_eq!(Some(cstring("localhost")), conn_opts.host);
@@ -322,8 +313,7 @@ fn ssl_ca_tests() {
     assert_eq!(CString::new(ssl_ca).unwrap(), conn_opts.ssl_ca.unwrap());
 
     let url_with_unix_str_and_ssl_ca = format!(
-        "mysql://{}:{}@localhost?unix_socket=/var/run/mysqld.sock&ssl_ca={}",
-        username, password, ssl_ca
+        "mysql://{username}:{password}@localhost?unix_socket=/var/run/mysqld.sock&ssl_ca={ssl_ca}"
     );
 
     let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_ca.as_str()).unwrap();

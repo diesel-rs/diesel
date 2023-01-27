@@ -151,7 +151,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
         Backend::Pg => {
             if PgConnection::establish(database_url).is_err() {
                 let (database, postgres_url) = change_database_of_url(database_url, "postgres");
-                println!("Creating database: {}", database);
+                println!("Creating database: {database}");
                 let mut conn = PgConnection::establish(&postgres_url)?;
                 query_helper::create_database(&database).execute(&mut conn)?;
             }
@@ -160,7 +160,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
         Backend::Sqlite => {
             let path = path_from_sqlite_url(database_url)?;
             if !path.exists() {
-                println!("Creating database: {}", database_url);
+                println!("Creating database: {database_url}");
                 SqliteConnection::establish(database_url)?;
             }
         }
@@ -169,7 +169,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
             if MysqlConnection::establish(database_url).is_err() {
                 let (database, mysql_url) =
                     change_database_of_url(database_url, "information_schema");
-                println!("Creating database: {}", database);
+                println!("Creating database: {database}");
                 let mut conn = MysqlConnection::establish(&mysql_url)?;
                 query_helper::create_database(&database).execute(&mut conn)?;
             }
@@ -230,7 +230,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
             let (database, postgres_url) = change_database_of_url(database_url, "postgres");
             let mut conn = PgConnection::establish(&postgres_url)?;
             if pg_database_exists(&mut conn, &database)? {
-                println!("Dropping database: {}", database);
+                println!("Dropping database: {database}");
                 query_helper::drop_database(&database)
                     .if_exists()
                     .execute(&mut conn)?;
@@ -248,7 +248,7 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
             let (database, mysql_url) = change_database_of_url(database_url, "information_schema");
             let mut conn = MysqlConnection::establish(&mysql_url)?;
             if mysql_database_exists(&mut conn, &database)? {
-                println!("Dropping database: {}", database);
+                println!("Dropping database: {database}");
                 query_helper::drop_database(&database)
                     .if_exists()
                     .execute(&mut conn)?;
@@ -374,15 +374,12 @@ fn path_from_sqlite_url(database_url: &str) -> DatabaseResult<::std::path::PathB
 }
 
 fn handle_error<E: Error, T>(error: E) -> T {
-    println!("{}", error);
+    println!("{error}");
     ::std::process::exit(1);
 }
 
 pub fn handle_error_with_database_url<E: Error, T>(database_url: &str, error: E) -> T {
-    eprintln!(
-        "Could not connect to database via `{}`: {}",
-        database_url, error
-    );
+    eprintln!("Could not connect to database via `{database_url}`: {error}");
     ::std::process::exit(1);
 }
 
@@ -394,7 +391,7 @@ mod tests {
     fn split_pg_connection_string_returns_postgres_url_and_database() {
         let database = "database".to_owned();
         let base_url = "postgresql://localhost:5432".to_owned();
-        let database_url = format!("{}/{}", base_url, database);
+        let database_url = format!("{base_url}/{database}");
         let postgres_url = format!("{}/{}", base_url, "postgres");
         assert_eq!(
             (database, postgres_url),
@@ -406,7 +403,7 @@ mod tests {
     fn split_pg_connection_string_handles_user_and_password() {
         let database = "database".to_owned();
         let base_url = "postgresql://user:password@localhost:5432".to_owned();
-        let database_url = format!("{}/{}", base_url, database);
+        let database_url = format!("{base_url}/{database}");
         let postgres_url = format!("{}/{}", base_url, "postgres");
         assert_eq!(
             (database, postgres_url),
@@ -419,7 +416,7 @@ mod tests {
         let database = "database".to_owned();
         let query = "?sslmode=true".to_owned();
         let base_url = "postgresql://user:password@localhost:5432".to_owned();
-        let database_url = format!("{}/{}{}", base_url, database, query);
+        let database_url = format!("{base_url}/{database}{query}");
         let postgres_url = format!("{}/{}{}", base_url, "postgres", query);
         assert_eq!(
             (database, postgres_url),

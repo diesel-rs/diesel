@@ -28,7 +28,7 @@ impl FromSql<Any, diesel::pg::Pg> for MyDynamicValue {
             }
             INTEGER_OID => <i32 as FromSql<diesel::sql_types::Integer, Pg>>::from_sql(value)
                 .map(MyDynamicValue::Integer),
-            e => Err(format!("Unknown type: {}", e).into()),
+            e => Err(format!("Unknown type: {e}").into()),
         }
     }
 }
@@ -62,7 +62,7 @@ impl FromSql<Any, diesel::mysql::Mysql> for MyDynamicValue {
             }
             MysqlType::Long => <i32 as FromSql<diesel::sql_types::Integer, Mysql>>::from_sql(value)
                 .map(MyDynamicValue::Integer),
-            e => Err(format!("Unknown data type: {:?}", e).into()),
+            e => Err(format!("Unknown data type: {e:?}").into()),
         }
     }
 }

@@ -33,5 +33,5 @@ fn main() {
         ))
         .get_results::<Translation>(conn)
         .expect("select");
-    println!("{:?}", t);
+    println!("{t:?}");
 }

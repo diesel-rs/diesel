@@ -355,7 +355,7 @@ impl PgConnection {
         let conn = &mut self.connection_and_transaction_manager.raw_connection;
         let query = cache.cached_statement(source, &Pg, &metadata, |sql, _| {
             let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
-                Some(format!("__diesel_stmt_{}", cache_len))
+                Some(format!("__diesel_stmt_{cache_len}"))
             } else {
                 None
             };
@@ -391,10 +391,10 @@ mod private {
         type Cursor<'conn, 'query>: Iterator<Item = QueryResult<Self::Row<'conn, 'query>>>;
         type Row<'conn, 'query>: crate::row::Row<'conn, Pg>;
 
-        fn get_cursor<'conn, 'query>(
-            raw_connection: &'conn mut ConnectionAndTransactionManager,
+        fn get_cursor<'query>(
+            raw_connection: &mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<Self::Cursor<'conn, 'query>>;
+        ) -> QueryResult<Self::Cursor<'_, 'query>>;
     }
 
     impl PgLoadingMode<DefaultLoadingMode> for PgConnection {
@@ -402,10 +402,10 @@ mod private {
         type Cursor<'conn, 'query> = Cursor;
         type Row<'conn, 'query> = self::row::PgRow;
 
-        fn get_cursor<'conn, 'query>(
-            conn: &'conn mut ConnectionAndTransactionManager,
+        fn get_cursor<'query>(
+            conn: &mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<Self::Cursor<'conn, 'query>> {
+        ) -> QueryResult<Self::Cursor<'_, 'query>> {
             update_transaction_manager_status(Cursor::new(result, &mut conn.raw_connection), conn)
         }
     }
@@ -415,16 +415,18 @@ mod private {
         type Cursor<'conn, 'query> = RowByRowCursor<'conn>;
         type Row<'conn, 'query> = self::row::PgRow;
 
-        fn get_cursor<'conn, 'query>(
-            raw_connection: &'conn mut ConnectionAndTransactionManager,
+        fn get_cursor<'query>(
+            raw_connection: &mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<Self::Cursor<'conn, 'query>> {
+        ) -> QueryResult<Self::Cursor<'_, 'query>> {
             Ok(RowByRowCursor::new(result, raw_connection))
         }
     }
 }
 
 #[cfg(test)]
+// that's a false positive for `panic!`/`assert!` on rust 2018
+#[allow(clippy::uninlined_format_args)]
 mod tests {
     extern crate dotenvy;
 

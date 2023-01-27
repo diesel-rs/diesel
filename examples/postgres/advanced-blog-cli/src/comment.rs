@@ -18,8 +18,8 @@ pub struct Comment {
 }
 
 pub fn render(comments_and_post_title: &[(Comment, String)]) {
-    for &(ref comment, ref post_title) in comments_and_post_title {
-        println!("On post {}", post_title);
+    for (comment, post_title) in comments_and_post_title {
+        println!("On post {post_title}");
         println!(
             "At {} (id: {})",
             comment.updated_at.format("%F %T"),

@@ -82,8 +82,7 @@ fn parse_julian(julian_days: f64) -> Result<PrimitiveDateTime, ComponentRange> {
     const EPOCH_IN_JULIAN_DAYS: f64 = 2_440_587.5;
     const SECONDS_IN_DAY: f64 = 86400.0;
     let timestamp = (julian_days - EPOCH_IN_JULIAN_DAYS) * SECONDS_IN_DAY;
-    OffsetDateTime::from_unix_timestamp_nanos((timestamp * 1E9) as i128)
-        .map(|timestamp| naive_utc(timestamp))
+    OffsetDateTime::from_unix_timestamp_nanos((timestamp * 1E9) as i128).map(naive_utc)
 }
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
@@ -113,7 +112,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
                 }
             }
 
-            Err(format!("Invalid time {}", text).into())
+            Err(format!("Invalid time {text}").into())
         })
     }
 }
@@ -147,7 +146,7 @@ impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
                 }
             }
 
-            Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {text}").into())
         })
     }
 }
@@ -181,7 +180,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
                 }
             }
 
-            Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {text}").into())
         })
     }
 }

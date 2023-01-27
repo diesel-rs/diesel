@@ -37,8 +37,7 @@ impl fmt::Display for MigrationError {
         match *self {
             MigrationError::MigrationDirectoryNotFound(ref p) => write!(
                 f,
-                "Unable to find migrations directory in {:?} or any parent directories.",
-                p
+                "Unable to find migrations directory in {p:?} or any parent directories."
             ),
             MigrationError::UnknownMigrationFormat(_) => write!(
                 f,
@@ -46,11 +45,10 @@ impl fmt::Display for MigrationError {
                  <timestamp>_<name_of_migration>, and it should contain up.sql and \
                  optionally down.sql."
             ),
-            MigrationError::IoError(ref error) => write!(f, "{}", error),
+            MigrationError::IoError(ref error) => write!(f, "{error}"),
             MigrationError::UnknownMigrationVersion(ref version) => write!(
                 f,
-                "Unable to find migration version {} to revert in the migrations directory.",
-                version
+                "Unable to find migration version {version} to revert in the migrations directory."
             ),
             MigrationError::NoMigrationRun => write!(
                 f,
@@ -71,8 +69,8 @@ impl PartialEq for MigrationError {
                 &MigrationError::MigrationDirectoryNotFound(_),
             ) => true,
             (
-                &MigrationError::UnknownMigrationFormat(ref p1),
-                &MigrationError::UnknownMigrationFormat(ref p2),
+                MigrationError::UnknownMigrationFormat(p1),
+                MigrationError::UnknownMigrationFormat(p2),
             ) => p1 == p2,
             _ => false,
         }
@@ -104,15 +102,14 @@ impl fmt::Display for RunMigrationsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
             RunMigrationsError::MigrationError(v, err) => {
-                write!(f, "Failed to run {} with: {}", v, err)
+                write!(f, "Failed to run {v} with: {err}")
             }
             RunMigrationsError::QueryError(v, err) => {
-                write!(f, "Failed to run {} with: {}", v, err)
+                write!(f, "Failed to run {v} with: {err}")
             }
             RunMigrationsError::EmptyMigration(v) => write!(
                 f,
-                "Failed to run {} with: Attempted to run an empty migration.",
-                v
+                "Failed to run {v} with: Attempted to run an empty migration."
             ),
         }
     }

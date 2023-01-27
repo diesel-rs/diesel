@@ -21,7 +21,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     });
     let sql_type = &(0..model.fields().len())
         .map(|i| {
-            let i = Ident::new(&format!("__ST{}", i), Span::call_site());
+            let i = Ident::new(&format!("__ST{i}"), Span::call_site());
             quote!(#i)
         })
         .collect::<Vec<_>>();
@@ -32,7 +32,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         .params
         .push(parse_quote!(__DB: diesel::backend::Backend));
     for id in 0..model.fields().len() {
-        let ident = Ident::new(&format!("__ST{}", id), Span::call_site());
+        let ident = Ident::new(&format!("__ST{id}"), Span::call_site());
         generics.params.push(parse_quote!(#ident));
     }
     {

@@ -230,7 +230,7 @@ mod tests {
             .unwrap();
 
         let table_names = load_table_names(&mut connection, None).unwrap();
-        for &TableName { ref schema, .. } in &table_names {
+        for TableName { schema, .. } in &table_names {
             assert_eq!(None, *schema);
         }
         assert!(table_names.contains(&TableName::from_name(

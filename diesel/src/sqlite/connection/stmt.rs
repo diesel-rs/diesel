@@ -130,7 +130,7 @@ impl Statement {
             }
             (t, b) => {
                 return Err(Error::SerializationError(
-                    format!("Type mismatch: Expected {:?}, got {}", t, b).into(),
+                    format!("Type mismatch: Expected {t:?}, got {b}").into(),
                 ))
             }
         };
@@ -202,8 +202,7 @@ impl Drop for Statement {
             if panicking() {
                 write!(
                     stderr(),
-                    "Error finalizing SQLite prepared statement: {:?}",
-                    e
+                    "Error finalizing SQLite prepared statement: {e:?}"
                 )
                 .expect("Error writing to `stderr`");
             } else {

@@ -50,7 +50,7 @@ fn setup_tables(connection: &mut PgConnection) {
     // The reason is that a real FK cannot reference an entry in an inherited table (e.g.
     // posts_archived), while we want to do so in these tests.
     for table in &["users", "users_archived", "posts", "posts_archived"] {
-        diesel::sql_query(format!("DROP TABLE IF EXISTS {} CASCADE", table))
+        diesel::sql_query(format!("DROP TABLE IF EXISTS {table} CASCADE"))
             .execute(connection)
             .unwrap();
     }

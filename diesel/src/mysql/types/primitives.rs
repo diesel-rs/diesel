@@ -16,7 +16,7 @@ where
     let integer_portion = splited.next().unwrap_or_default();
     let _decimal_portion = splited.next().unwrap_or_default();
     if splited.next().is_some() {
-        Err(format!("Invalid decimal format: {:?}", string).into())
+        Err(format!("Invalid decimal format: {string:?}").into())
     } else {
         Ok(integer_portion.parse()?)
     }
