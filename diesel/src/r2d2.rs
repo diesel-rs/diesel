@@ -205,7 +205,7 @@ where
     M::Connection: R2D2Connection + Send + 'static,
 {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
-        (&mut **self).batch_execute(query)
+        (**self).batch_execute(query)
     }
 }
 
@@ -235,17 +235,17 @@ where
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        (&mut **self).execute_returning_count(source)
+        (**self).execute_returning_count(source)
     }
 
     fn transaction_state(
         &mut self,
     ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
-        (&mut **self).transaction_state()
+        (**self).transaction_state()
     }
 
     fn begin_test_transaction(&mut self) -> QueryResult<()> {
-        (&mut **self).begin_test_transaction()
+        (**self).begin_test_transaction()
     }
 }
 
@@ -265,7 +265,7 @@ where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        (&mut **self).load(source)
+        (**self).load(source)
     }
 }
 
@@ -307,7 +307,7 @@ where
     Self: Connection,
 {
     fn setup(&mut self) -> QueryResult<usize> {
-        (&mut **self).setup()
+        (**self).setup()
     }
 }
 
@@ -319,7 +319,7 @@ where
     Self: Connection,
 {
     fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
-        (&mut **self).update_and_fetch(changeset)
+        (**self).update_and_fetch(changeset)
     }
 }
 

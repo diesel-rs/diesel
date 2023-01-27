@@ -116,12 +116,12 @@ fn run_migration_command(
             let dir = migrations_dir(matches).unwrap_or_else(handle_error);
             let dir = FileBasedMigrations::from_path(dir).unwrap_or_else(handle_error);
             let result = MigrationHarness::has_pending_migration(&mut conn, dir)?;
-            println!("{:?}", result);
+            println!("{result:?}");
         }
         ("generate", args) => {
             let migration_name = args.get_one::<String>("MIGRATION_NAME").unwrap();
             let version = migration_version(args);
-            let versioned_name = format!("{}_{}", version, migration_name);
+            let versioned_name = format!("{version}_{migration_name}");
             let migration_dir = migrations_dir(matches)
                 .unwrap_or_else(handle_error)
                 .join(versioned_name);
@@ -134,7 +134,7 @@ fn run_migration_command(
                 Some("sql") => {
                     generate_sql_migration(&migration_dir, !args.get_flag("MIGRATION_NO_DOWN_FILE"))
                 }
-                Some(x) => return Err(format!("Unrecognized migration format `{}`", x).into()),
+                Some(x) => return Err(format!("Unrecognized migration format `{x}`").into()),
                 None => unreachable!("MIGRATION_FORMAT has a default value"),
             }
         }
@@ -244,7 +244,7 @@ where
         let applied = applied_migrations.contains(&migration.name().version());
         let name = migration.name();
         let x = if applied { 'X' } else { ' ' };
-        println!("  [{}] {}", x, name);
+        println!("  [{x}] {name}");
     }
 
     Ok(())
@@ -309,10 +309,7 @@ fn create_migrations_dir(matches: &ArgMatches) -> DatabaseResult<PathBuf> {
                     })
             {
                 fs::remove_file(dir_entry.path()).unwrap_or_else(|err| {
-                    eprintln!(
-                        "WARNING: Unable to delete existing `migrations/.gitkeep`:\n{}",
-                        err
-                    )
+                    eprintln!("WARNING: Unable to delete existing `migrations/.gitkeep`:\n{err}")
                 });
             }
         }
@@ -477,7 +474,7 @@ fn should_redo_migration_in_transaction(_t: &dyn Any) -> bool {
 
 #[allow(clippy::needless_pass_by_value)]
 fn handle_error<E: Display, T>(error: E) -> T {
-    eprintln!("{}", error);
+    eprintln!("{error}");
     ::std::process::exit(1);
 }
 
@@ -512,7 +509,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
         .unwrap_or_default()
         .map(|table_name_regex| Regex::new(table_name_regex).map(Into::into))
         .collect::<Result<_, _>>()
-        .map_err(|e| format!("invalid argument for table filtering regex: {}", e));
+        .map_err(|e| format!("invalid argument for table filtering regex: {e}"));
 
     if matches.get_flag("only-tables") {
         config.filter = Filtering::OnlyTables(filter?)
@@ -532,7 +529,7 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
         match sorting as &str {
             "ordinal_position" => config.column_sorting = ColumnSorting::OrdinalPosition,
             "name" => config.column_sorting = ColumnSorting::Name,
-            _ => return Err(format!("Invalid column sorting mode: {}", sorting).into()),
+            _ => return Err(format!("Invalid column sorting mode: {sorting}").into()),
         }
     }
 

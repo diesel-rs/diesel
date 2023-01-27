@@ -217,12 +217,8 @@ impl Drop for RawConnection {
         if close_result != ffi::SQLITE_OK {
             let error_message = super::error_message(close_result);
             if panicking() {
-                write!(
-                    stderr(),
-                    "Error closing SQLite connection: {}",
-                    error_message
-                )
-                .expect("Error writing to `stderr`");
+                write!(stderr(), "Error closing SQLite connection: {error_message}")
+                    .expect("Error writing to `stderr`");
             } else {
                 panic!("Error closing SQLite connection: {}", error_message);
             }

@@ -222,7 +222,7 @@ pub fn determine_column_type(
     } else if type_name == "time" {
         String::from("Time")
     } else {
-        return Err(format!("Unsupported type: {}", type_name).into());
+        return Err(format!("Unsupported type: {type_name}").into());
     };
 
     Ok(ColumnType {

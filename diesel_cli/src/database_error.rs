@@ -49,7 +49,7 @@ impl fmt::Display for DatabaseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match *self {
             ProjectRootNotFound(ref p) => {
-                write!(f, "Unable to find diesel.toml or Cargo.toml in {:?} or any parent directories.", p)
+                write!(f, "Unable to find diesel.toml or Cargo.toml in {p:?} or any parent directories.")
             }
             DatabaseUrlMissing => {
                 f.write_str("The --database-url argument must be passed, or the DATABASE_URL environment variable must be set.")
@@ -67,7 +67,7 @@ impl fmt::Display for DatabaseError {
                 .map(ToString::to_string)
                 .unwrap_or_else(|| error.to_string())),
             MigrationError(ref error) => {
-                write!(f, "Failed to run migrations: {}", error)
+                write!(f, "Failed to run migrations: {error}")
             }
         }
     }

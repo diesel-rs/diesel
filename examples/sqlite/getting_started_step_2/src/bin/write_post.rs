@@ -8,15 +8,12 @@ fn main() {
     let mut title = String::new();
     stdin().read_line(&mut title).unwrap();
     let title = &title[..(title.len() - 1)]; // Drop the newline character
-    println!(
-        "\nOk! Let's write {} (Press {} when finished)\n",
-        title, EOF
-    );
+    println!("\nOk! Let's write {title} (Press {EOF} when finished)\n");
     let mut body = String::new();
     stdin().read_to_string(&mut body).unwrap();
 
     let _ = create_post(connection, title, &body);
-    println!("\nSaved draft {}", title);
+    println!("\nSaved draft {title}");
 }
 
 #[cfg(not(windows))]

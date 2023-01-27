@@ -306,7 +306,7 @@ where
         let start_transaction_sql = match transaction_state.transaction_depth() {
             None => Cow::from("BEGIN"),
             Some(transaction_depth) => {
-                Cow::from(format!("SAVEPOINT diesel_savepoint_{}", transaction_depth))
+                Cow::from(format!("SAVEPOINT diesel_savepoint_{transaction_depth}"))
             }
         };
         conn.batch_execute(&start_transaction_sql)?;
@@ -461,6 +461,8 @@ where
 }
 
 #[cfg(test)]
+// that's a false positive for `panic!`/`assert!` on rust 2018
+#[allow(clippy::uninlined_format_args)]
 mod test {
     // Mock connection.
     mod mock {

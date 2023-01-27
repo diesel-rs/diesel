@@ -39,13 +39,10 @@ pub fn render(post: &Post, user: &User, comments: &[(Comment, User)]) {
     println!("By {}", user.username);
     let edited_at = post.updated_at.format("%F %T");
     match post.status {
-        Draft => println!("DRAFT (last edited at {})", edited_at),
+        Draft => println!("DRAFT (last edited at {edited_at})"),
         Published { at } if at != post.updated_at => {
             let published_at = at.format("%F %T");
-            println!(
-                "Published at {} (last edited at {})",
-                published_at, edited_at
-            );
+            println!("Published at {published_at} (last edited at {edited_at})");
         }
         Published { at } => println!("Published at {}", at.format("%F %T")),
     }
@@ -54,12 +51,12 @@ pub fn render(post: &Post, user: &User, comments: &[(Comment, User)]) {
     if !comments.is_empty() {
         println!("---------------\n");
         println!("{} Comments\n", comments.len());
-        for &(ref comment, ref user) in comments {
+        for (comment, user) in comments {
             let at = comment.created_at.format("%F %T");
             print!("{} at {}", user.username, at);
             if comment.updated_at != comment.created_at {
                 let edited = comment.updated_at.format("%F %T");
-                print!(" (last edited {})", edited);
+                print!(" (last edited {edited})");
             }
             println!("\n{}", comment.body);
         }

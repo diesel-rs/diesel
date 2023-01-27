@@ -42,7 +42,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
                 }
             }
 
-            Err(format!("Invalid time {}", text).into())
+            Err(format!("Invalid time {text}").into())
         })
     }
 }
@@ -93,7 +93,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
                 }
             }
 
-            Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {text}").into())
         })
     }
 }
@@ -142,7 +142,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
                 }
             }
 
-            Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {text}").into())
         })
     }
 }

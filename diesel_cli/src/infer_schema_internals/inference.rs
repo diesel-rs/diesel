@@ -81,7 +81,7 @@ fn contains_unmappable_chars(name: &str) -> bool {
 
 pub fn rust_name_for_sql_name(sql_name: &str) -> String {
     if is_reserved_name(sql_name) {
-        format!("{}_", sql_name)
+        format!("{sql_name}_")
     } else if contains_unmappable_chars(sql_name) {
         // Map each non-alphanumeric character ([^a-zA-Z0-9]) to an underscore.
         let mut rust_name: String = sql_name
@@ -137,7 +137,7 @@ fn get_table_comment(
         InferConnection::Mysql(ref mut c) => super::mysql::get_table_comment(c, table),
     };
     if let Err(NotFound) = table_comment {
-        Err(format!("no table exists named {}", table).into())
+        Err(format!("no table exists named {table}").into())
     } else {
         table_comment.map_err(Into::into)
     }
@@ -159,7 +159,7 @@ fn get_column_information(
         InferConnection::Mysql(ref mut c) => super::mysql::get_table_data(c, table, column_sorting),
     };
     if let Err(NotFound) = column_info {
-        Err(format!("no table exists named {}", table).into())
+        Err(format!("no table exists named {table}").into())
     } else {
         column_info.map_err(Into::into)
     }
@@ -198,8 +198,7 @@ pub(crate) fn get_primary_keys(
     if primary_keys.is_empty() {
         Err(format!(
             "Diesel only supports tables with primary keys. \
-             Table {} has no primary key",
-            table,
+             Table {table} has no primary key",
         )
         .into())
     } else {

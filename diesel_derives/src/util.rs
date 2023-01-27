@@ -94,7 +94,7 @@ fn option_ty_arg(ty: &Type) -> Option<&Type> {
             match last_segment.arguments {
                 AngleBracketed(ref args) if last_segment.ident == "Option" => {
                     match args.args.iter().last() {
-                        Some(&GenericArgument::Type(ref ty)) => Some(ty),
+                        Some(GenericArgument::Type(ty)) => Some(ty),
                         _ => None,
                     }
                 }

@@ -39,7 +39,7 @@ fn derive_belongs_to(item: &DeriveInput, model: &Model, assoc: &BelongsTo) -> To
 
     let parent_struct = ReplacePathLifetimes::new(|i, span| {
         let letter = char::from(b'b' + i as u8);
-        let lifetime = Lifetime::new(&format!("'__{}", letter), span);
+        let lifetime = Lifetime::new(&format!("'__{letter}"), span);
         generics.params.push(parse_quote!(#lifetime));
         lifetime
     })
@@ -116,7 +116,7 @@ fn foreign_key(assoc: &BelongsTo) -> Ident {
 
 fn infer_foreign_key(name: &Ident) -> Ident {
     let snake_case = camel_to_snake(&name.to_string());
-    Ident::new(&format!("{}_id", snake_case), name.span())
+    Ident::new(&format!("{snake_case}_id"), name.span())
 }
 
 struct ReplacePathLifetimes<F> {

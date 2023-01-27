@@ -1,3 +1,5 @@
+// that's a false positive for `panic!`/`assert!` on rust 2018
+#![allow(clippy::uninlined_format_args)]
 mod completion_generation;
 mod database_drop;
 mod database_reset;

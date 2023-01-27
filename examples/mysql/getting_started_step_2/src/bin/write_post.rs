@@ -11,14 +11,11 @@ fn main() {
     stdin().read_line(&mut title).unwrap();
     let title = title.trim_end(); // Remove the trailing newline
 
-    println!(
-        "\nOk! Let's write {} (Press {} when finished)\n",
-        title, EOF
-    );
+    println!("\nOk! Let's write {title} (Press {EOF} when finished)\n",);
     stdin().read_to_string(&mut body).unwrap();
 
     let post = create_post(connection, title, &body);
-    println!("\nSaved draft {} with id {}", title, post.id);
+    println!("\nSaved draft {title} with id {}", post.id);
 }
 
 #[cfg(not(windows))]
