@@ -24,7 +24,7 @@ where
     DB: Backend,
     String: FromSql<Text, DB>,
 {
-    fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+    fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
         let string = <String as FromSql<Text, DB>>::from_sql(bytes)?;
         let bytes_array: [u8; N] = string.into_bytes().try_into().unwrap();
         Ok(StringArray(bytes_array))

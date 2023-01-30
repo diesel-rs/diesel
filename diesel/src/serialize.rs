@@ -5,7 +5,7 @@ use std::fmt;
 use std::io::{self, Write};
 use std::result;
 
-use crate::backend::{Backend, HasBindCollector};
+use crate::backend::Backend;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::BindCollector;
 
@@ -37,14 +37,14 @@ where
     DB: Backend,
     DB::MetadataLookup: 'a,
 {
-    out: <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer,
+    out: <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer,
     metadata_lookup: Option<&'b mut DB::MetadataLookup>,
 }
 
 impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
     /// Construct a new `Output`
     pub fn new(
-        out: <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer,
+        out: <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer,
         metadata_lookup: &'b mut DB::MetadataLookup,
     ) -> Self {
         Output {
@@ -56,9 +56,7 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
     /// Consume the current `Output` structure to access the inner buffer type
     ///
     /// This function is only useful for people implementing their own Backend.
-    pub fn into_inner(
-        self,
-    ) -> <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer {
+    pub fn into_inner(self) -> <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer {
         self.out
     }
 
@@ -74,7 +72,7 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
     /// for your specific backend for supported types.
     pub fn set_value<V>(&mut self, value: V)
     where
-        V: Into<<crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer>,
+        V: Into<<DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer>,
     {
         self.out = value.into();
     }
@@ -84,9 +82,7 @@ impl<'a, 'b, DB: Backend> Output<'a, 'b, DB> {
 impl<'a, DB: Backend> Output<'a, 'static, DB> {
     /// Returns a `Output` suitable for testing `ToSql` implementations.
     /// Unsafe to use for testing types which perform dynamic metadata lookup.
-    pub fn test(
-        buffer: <crate::backend::BindCollector<'a, DB> as BindCollector<'a, DB>>::Buffer,
-    ) -> Self {
+    pub fn test(buffer: <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer) -> Self {
         Self {
             out: buffer,
             metadata_lookup: None,
@@ -94,7 +90,10 @@ impl<'a, DB: Backend> Output<'a, 'static, DB> {
     }
 }
 
-impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Write for Output<'a, 'b, DB> {
+impl<'a, 'b, DB> Write for Output<'a, 'b, DB>
+where
+    for<'c> DB: Backend<BindCollector<'c> = RawBytesBindCollector<DB>>,
+{
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.out.0.write(buf)
     }
@@ -112,7 +111,10 @@ impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Write for O
     }
 }
 
-impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Output<'a, 'b, DB> {
+impl<'a, 'b, DB> Output<'a, 'b, DB>
+where
+    for<'c> DB: Backend<BindCollector<'c> = RawBytesBindCollector<DB>>,
+{
     /// Call this method whenever you pass an instance of `Output<DB>` by value.
     ///
     /// Effectively copies `self`, with a narrower lifetime. When passing a
@@ -138,7 +140,7 @@ impl<'a, 'b, DB: Backend<BindCollector = RawBytesBindCollector<DB>>> Output<'a, 
 
 impl<'a, 'b, DB> fmt::Debug for Output<'a, 'b, DB>
 where
-    <<DB as HasBindCollector<'a>>::BindCollector as BindCollector<'a, DB>>::Buffer: fmt::Debug,
+    <DB::BindCollector<'a> as BindCollector<'a, DB>>::Buffer: fmt::Debug,
     DB: Backend,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

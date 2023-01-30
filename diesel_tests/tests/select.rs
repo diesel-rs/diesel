@@ -169,7 +169,7 @@ fn selection_using_subselect() {
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
         ids[0], ids[1]
     );
-    diesel::sql_query(&query).execute(connection).unwrap();
+    diesel::sql_query(query).execute(connection).unwrap();
 
     let users = users::table
         .filter(users::name.eq("Sean"))
@@ -347,7 +347,7 @@ fn select_for_update_modifiers() {
 
     // Make sure we errored in the correct way (without timing out)
     assert!(result.is_err());
-    if !format!("{:?}", result).contains("could not obtain lock on row") {
+    if !format!("{result:?}").contains("could not obtain lock on row") {
         panic!("{:?}", result);
     }
 
@@ -474,7 +474,7 @@ fn select_for_no_key_update_modifiers() {
 
     // Times out instead of inserting row
     assert!(result.is_err());
-    if !format!("{:?}", result).contains("canceling statement due to statement timeout") {
+    if !format!("{result:?}").contains("canceling statement due to statement timeout") {
         panic!("{:?}", result);
     }
 }

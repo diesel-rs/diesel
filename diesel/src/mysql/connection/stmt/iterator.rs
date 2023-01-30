@@ -2,6 +2,7 @@ use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
 use super::{OutputBinds, Statement, StatementMetadata, StatementUse};
+use crate::backend::Backend;
 use crate::connection::statement_cache::MaybeCached;
 use crate::mysql::{Mysql, MysqlType};
 use crate::result::QueryResult;
@@ -149,18 +150,17 @@ impl PrivateMysqlRow {
     }
 }
 
-impl<'a> RowGatWorkaround<'a, Mysql> for MysqlRow {
-    type Field = MysqlField<'a>;
-}
+impl RowSealed for MysqlRow {}
 
 impl<'a> Row<'a, Mysql> for MysqlRow {
+    type Field<'f> = MysqlField<'f> where 'a: 'f, Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.metadata.fields().len()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Mysql>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
     where
         'a: 'b,
         Self: RowIndex<I>,
@@ -217,7 +217,7 @@ impl<'a> Field<'a, Mysql> for MysqlField<'a> {
         }
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'_, Mysql>> {
+    fn value(&self) -> Option<<Mysql as Backend>::RawValue<'_>> {
         match &*self.binds {
             PrivateMysqlRow::Copied(b) | PrivateMysqlRow::Direct(b) => b[self.idx].value(),
         }

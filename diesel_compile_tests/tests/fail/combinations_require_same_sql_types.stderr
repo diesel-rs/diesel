@@ -1,8 +1,10 @@
 error[E0271]: type mismatch resolving `<comments::table as AsQuery>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text)`
-  --> tests/fail/combinations_require_same_sql_types.rs:30:26
+  --> tests/fail/combinations_require_same_sql_types.rs:30:32
    |
 30 |     let _ = users::table.union(comments::table);
-   |                          ^^^^^ expected struct `diesel::sql_types::Text`, found struct `diesel::sql_types::Integer`
+   |                          ----- ^^^^^^^^^^^^^^^ expected struct `Text`, found struct `Integer`
+   |                          |
+   |                          required by a bound introduced by this call
    |
    = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
               found tuple `(diesel::sql_types::Integer, diesel::sql_types::Integer)`
@@ -10,13 +12,15 @@ note: required by a bound in `union`
   --> $DIESEL/src/query_dsl/combine_dsl.rs
    |
    |         Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>;
-   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `union`
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CombineDsl::union`
 
 error[E0271]: type mismatch resolving `<comments::table as AsQuery>::SqlType == (diesel::sql_types::Integer, diesel::sql_types::Text)`
-  --> tests/fail/combinations_require_same_sql_types.rs:35:19
+  --> tests/fail/combinations_require_same_sql_types.rs:35:25
    |
 35 |     let _ = union.union(comments::table);
-   |                   ^^^^^ expected struct `diesel::sql_types::Text`, found struct `diesel::sql_types::Integer`
+   |                   ----- ^^^^^^^^^^^^^^^ expected struct `Text`, found struct `Integer`
+   |                   |
+   |                   required by a bound introduced by this call
    |
    = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
               found tuple `(diesel::sql_types::Integer, diesel::sql_types::Integer)`
@@ -24,4 +28,4 @@ note: required by a bound in `union`
   --> $DIESEL/src/query_dsl/combine_dsl.rs
    |
    |         Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>;
-   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `union`
+   |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CombineDsl::union`

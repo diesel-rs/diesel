@@ -36,7 +36,7 @@ impl ToSql<Timestamp, Pg> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
         let micros = (*self - PG_EPOCH).whole_microseconds();
         if micros > (i64::MAX as i128) {
-            let error_message = format!("{:?} as microseconds is too large to fit in an i64", self);
+            let error_message = format!("{self:?} as microseconds is too large to fit in an i64");
             return Err(error_message.into());
         }
         let micros = micros as i64;

@@ -4,6 +4,8 @@ use clap::{
 };
 use clap_complete::Shell;
 
+use crate::print_schema;
+
 pub fn build_cli() -> Command {
     let database_arg = Arg::new("DATABASE_URL")
         .long("database-url")
@@ -202,6 +204,13 @@ pub fn build_cli() -> Command {
                 .long("with-docs")
                 .action(ArgAction::SetTrue)
                 .help("Render documentation comments for tables and columns."),
+        )
+        .arg(
+            Arg::new("with-docs-config")
+                .long("with-docs-config")
+                .help("Render documentation comments for tables and columns.")
+                .num_args(1)
+                .value_parser(PossibleValuesParser::new(print_schema::DocConfig::VARIANTS_STR)),
         )
         .arg(
             Arg::new("column-sorting")

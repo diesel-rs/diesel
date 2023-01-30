@@ -62,7 +62,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 post::render(&post, &user, &comments);
             }
 
-            println!("Page {} of {}", page, total_pages);
+            println!("Page {page} of {total_pages}");
         }
         Cli::CreatePost { title } => {
             let user = current_user(conn)?;
@@ -75,7 +75,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 ))
                 .returning(posts::id)
                 .get_result::<i32>(conn)?;
-            println!("Successfully created post with id {}", id);
+            println!("Successfully created post with id {id}");
         }
         Cli::EditPost { post_id, publish } => {
             use diesel::dsl::now;
@@ -110,7 +110,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 ))
                 .returning(id)
                 .get_result::<i32>(conn)?;
-            println!("Created comment with ID {}", inserted);
+            println!("Created comment with ID {inserted}");
         }
         Cli::EditComment { comment_id } => {
             use comment::Comment;
@@ -145,7 +145,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
             let (comments_and_post_title, total_pages) =
                 query.load_and_count_pages::<(Comment, String)>(conn)?;
             comment::render(&comments_and_post_title);
-            println!("Page {} of {}", page, total_pages);
+            println!("Page {page} of {total_pages}");
         }
         Cli::Register => {
             register_user(conn)?;
@@ -202,6 +202,6 @@ fn handle_error<T>(res: Result<T, Box<dyn Error>>) -> T {
 
 fn print_error_and_exit(err: &dyn Error) -> ! {
     use std::process::exit;
-    eprintln!("An unexpected error occurred: {}", err);
+    eprintln!("An unexpected error occurred: {err}");
     exit(1);
 }

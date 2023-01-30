@@ -1,17 +1,17 @@
 use self::private::LoadIter;
 use super::RunQueryDsl;
 use crate::backend::Backend;
-use crate::connection::{Connection, ConnectionGatWorkaround, DefaultLoadingMode, LoadConnection};
+use crate::connection::{Connection, DefaultLoadingMode, LoadConnection};
 use crate::deserialize::FromSqlRow;
 use crate::expression::QueryMetadata;
 use crate::query_builder::{AsQuery, QueryFragment, QueryId};
 use crate::result::QueryResult;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-pub use self::private::{CompatibleType, LoadQueryGatWorkaround};
+pub use self::private::CompatibleType;
 
 #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-pub(crate) use self::private::{CompatibleType, LoadQueryGatWorkaround};
+pub(crate) use self::private::CompatibleType;
 
 /// The `load` method
 ///
@@ -20,43 +20,24 @@ pub(crate) use self::private::{CompatibleType, LoadQueryGatWorkaround};
 /// to call `load` from generic code.
 ///
 /// [`RunQueryDsl`]: crate::RunQueryDsl
-pub trait LoadQuery<'query, Conn, U, B = DefaultLoadingMode>: RunQueryDsl<Conn>
-where
-    for<'a> Self: LoadQueryGatWorkaround<'a, 'query, Conn, U, B>,
-{
+pub trait LoadQuery<'query, Conn, U, B = DefaultLoadingMode>: RunQueryDsl<Conn> {
+    /// Return type of `LoadQuery::internal_load`
+    type RowIter<'conn>: Iterator<Item = QueryResult<U>>
+    where
+        Conn: 'conn;
+
     /// Load this query
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    fn internal_load<'conn>(
-        self,
-        conn: &'conn mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U, B>>::Ret>;
+    fn internal_load(self, conn: &mut Conn) -> QueryResult<Self::RowIter<'_>>;
 }
 
-/// The return type of [`LoadQuery<C, U>::internal_load()`]
-///
-/// Users should thread this type as `impl Iterator<Item = QueryResult<U>>`
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(note = "Use `LoadQuery::Iter` directly")]
 pub type LoadRet<'conn, 'query, Q, C, U, B = DefaultLoadingMode> =
-    <Q as LoadQueryGatWorkaround<'conn, 'query, C, U, B>>::Ret;
-
-impl<'conn, 'query, Conn, T, U, DB, B> LoadQueryGatWorkaround<'conn, 'query, Conn, U, B> for T
-where
-    Conn: Connection<Backend = DB> + ConnectionGatWorkaround<'conn, 'query, DB, B>,
-    T: AsQuery + RunQueryDsl<Conn>,
-    T::Query: QueryFragment<DB> + QueryId,
-    T::SqlType: CompatibleType<U, DB>,
-    DB: Backend + QueryMetadata<T::SqlType> + 'static,
-    U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
-    <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
-{
-    type Ret = LoadIter<
-        U,
-        <Conn as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor,
-        <T::SqlType as CompatibleType<U, DB>>::SqlType,
-        DB,
-    >;
-}
+    <Q as LoadQuery<'query, C, U, B>>::RowIter<'conn>;
 
 impl<'query, Conn, T, U, DB, B> LoadQuery<'query, Conn, U, B> for T
 where
@@ -68,10 +49,14 @@ where
     U: FromSqlRow<<T::SqlType as CompatibleType<U, DB>>::SqlType, DB> + 'static,
     <T::SqlType as CompatibleType<U, DB>>::SqlType: 'static,
 {
-    fn internal_load<'conn>(
-        self,
-        conn: &'conn mut Conn,
-    ) -> QueryResult<<Self as LoadQueryGatWorkaround<'conn, 'query, Conn, U, B>>::Ret> {
+    type RowIter<'conn> = LoadIter<
+        U,
+        <Conn as LoadConnection<B>>::Cursor<'conn, 'query>,
+        <T::SqlType as CompatibleType<U, DB>>::SqlType,
+        DB,
+    > where Conn: 'conn;
+
+    fn internal_load(self, conn: &mut Conn) -> QueryResult<Self::RowIter<'_>> {
         Ok(LoadIter {
             cursor: conn.load(self.as_query())?,
             _marker: Default::default(),
@@ -108,26 +93,16 @@ where
 
 // These types and traits are not part of the public API.
 //
-// * LoadQueryGatWorkaround to allow us replacing it with real GAT later on
 // * CompatibleType as we consider this as "sealed" trait. It shouldn't
 // be implemented by a third party
 // * LoadIter as it's an implementation detail
 mod private {
     use crate::backend::Backend;
-    use crate::connection::DefaultLoadingMode;
     use crate::deserialize::FromSqlRow;
     use crate::expression::select_by::SelectBy;
     use crate::expression::{Expression, TypedExpressionType};
     use crate::sql_types::{SqlType, Untyped};
     use crate::{QueryResult, Selectable};
-
-    #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
-    )]
-    pub trait LoadQueryGatWorkaround<'conn, 'query, Conn, U, B = DefaultLoadingMode> {
-        type Ret: Iterator<Item = QueryResult<U>>;
-    }
 
     #[allow(missing_debug_implementations)]
     pub struct LoadIter<U, C, ST, DB> {

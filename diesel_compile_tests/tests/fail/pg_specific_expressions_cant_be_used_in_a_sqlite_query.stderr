@@ -7,74 +7,80 @@ warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::
    = note: `#[warn(deprecated)]` on by default
 
 error[E0277]: the trait bound `diesel::pg::expression::array_comparison::Any<diesel::expression::bound::Bound<Array<diesel::sql_types::Text>, Vec<std::string::String>>>: QueryFragment<Sqlite>` is not satisfied
-    --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:27:10
-     |
-27   |         .load::<i32>(&mut connection);
-     |          ^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::array_comparison::Any<diesel::expression::bound::Bound<Array<diesel::sql_types::Text>, Vec<std::string::String>>>`
-     |
-     = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::array_comparison::Any<Expr>`
-     = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::expression::operators::Eq<columns::name, diesel::pg::expression::array_comparison::Any<diesel::expression::bound::Bound<Array<diesel::sql_types::Text>, Vec<std::string::String>>>>`
-     = note: 4 redundant requirements hidden
-     = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::name, diesel::pg::expression::array_comparison::Any<diesel::expression::bound::Bound<Array<diesel::sql_types::Text>, Vec<std::string::String>>>>>>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, diesel::SqliteConnection, i32>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<columns::name, diesel::pg::expression::array_comparison::Any<diesel::expression::bound::Bound<Array<diesel::sql_types::Text>, Vec<std::string::String>>>>>>>`
+  --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:27:22
+   |
+27 |         .load::<i32>(&mut connection);
+   |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::array_comparison::Any<diesel::expression::bound::Bound<Array<diesel::sql_types::Text>, Vec<std::string::String>>>`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::array_comparison::Any<Expr>`
+   = note: required for `Eq<name, Any<Bound<Array<Text>, Vec<String>>>>` to implement `QueryFragment<Sqlite>`
+   = note: 4 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<Eq<name, ...>>>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<Eq<name, ...>>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, i32>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `diesel::pg::expression::operators::IsNotDistinctFrom<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>: QueryFragment<Sqlite>` is not satisfied
-    --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:29:10
-     |
-29   |         .load::<i32>(&mut connection);
-     |          ^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::operators::IsNotDistinctFrom<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
-     |
-     = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::IsNotDistinctFrom<T, U>`
-     = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::expression::grouped::Grouped<diesel::pg::expression::operators::IsNotDistinctFrom<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
-     = note: 3 redundant requirements hidden
-     = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::IsNotDistinctFrom<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, diesel::SqliteConnection, i32>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::pg::expression::operators::IsNotDistinctFrom<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>`
+  --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:29:22
+   |
+29 |         .load::<i32>(&mut connection);
+   |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::operators::IsNotDistinctFrom<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::IsNotDistinctFrom<T, U>`
+   = note: required for `Grouped<IsNotDistinctFrom<name, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
+   = note: 3 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<...>>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<...>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, i32>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `diesel::pg::expression::date_and_time::AtTimeZone<diesel::dsl::now, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>: QueryFragment<Sqlite>` is not satisfied
-    --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:31:10
-     |
-31   |         .load::<i32>(&mut connection);
-     |          ^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::date_and_time::AtTimeZone<diesel::dsl::now, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
-     |
-     = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::date_and_time::AtTimeZone<Ts, Tz>`
-     = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `diesel::expression::grouped::Grouped<diesel::pg::expression::date_and_time::AtTimeZone<diesel::dsl::now, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>`
-     = note: 5 redundant requirements hidden
-     = note: required because of the requirements on the impl of `QueryFragment<Sqlite>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::dsl::now, diesel::expression::grouped::Grouped<diesel::pg::expression::date_and_time::AtTimeZone<diesel::dsl::now, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, diesel::SqliteConnection, i32>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::dsl::now, diesel::expression::grouped::Grouped<diesel::pg::expression::date_and_time::AtTimeZone<diesel::dsl::now, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>>>>>>`
+  --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:31:22
+   |
+31 |         .load::<i32>(&mut connection);
+   |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::date_and_time::AtTimeZone<diesel::dsl::now, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::date_and_time::AtTimeZone<Ts, Tz>`
+   = note: required for `Grouped<AtTimeZone<now, Bound<Text, &str>>>` to implement `QueryFragment<Sqlite>`
+   = note: 5 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<Eq<now, ...>>>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<Eq<now, ...>>>>` to implement `LoadQuery<'_, diesel::SqliteConnection, i32>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0599]: the method `execute` exists for struct `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>`, but its trait bounds were not satisfied
-   --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:34:10
-    |
-34  |         .execute(&mut connection);
-    |          ^^^^^^^ method cannot be called on `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>` due to unsatisfied trait bounds
-    |
-   ::: $DIESEL/src/upsert/on_conflict_extension.rs
-    |
-    | pub struct IncompleteOnConflict<Stmt, Target> {
-    | ---------------------------------------------
-    | |
-    | doesn't satisfy `_: Table`
-    | doesn't satisfy `_: diesel::RunQueryDsl<_>`
-    |
-    = note: the following trait bounds were not satisfied:
-            `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: Table`
-            which is required by `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
-            `&IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: Table`
-            which is required by `&IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
-            `&mut IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: Table`
-            which is required by `&mut IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
+error[E0599]: the method `execute` exists for struct `IncompleteOnConflict<InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<name, Bound<Text, &&str>>>,), table>>, ConflictTarget<OnConstraint<'_>>>`, but its trait bounds were not satisfied
+  --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:34:10
+   |
+34 |         .execute(&mut connection);
+   |          ^^^^^^^ method cannot be called due to unsatisfied trait bounds
+   |
+  ::: $DIESEL/src/upsert/on_conflict_extension.rs
+   |
+   | pub struct IncompleteOnConflict<Stmt, Target> {
+   | ---------------------------------------------
+   | |
+   | doesn't satisfy `_: RunQueryDsl<_>`
+   | doesn't satisfy `_: Table`
+   |
+   = note: the following trait bounds were not satisfied:
+           `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: Table`
+           which is required by `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
+           `&IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: Table`
+           which is required by `&IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`
+           `&mut IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: Table`
+           which is required by `&mut IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: diesel::RunQueryDsl<_>`

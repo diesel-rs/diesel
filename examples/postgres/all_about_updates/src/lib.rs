@@ -164,10 +164,9 @@ fn examine_sql_from_update_post_fields() {
          \"\", \
          \"\", \
          false, \
-         {:?}, \
+         {now:?}, \
          0\
-         ]",
-        now
+         ]"
     );
     assert_eq!(
         sql,

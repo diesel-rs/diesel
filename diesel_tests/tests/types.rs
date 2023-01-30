@@ -47,7 +47,7 @@ fn errors_during_deserialization_do_not_panic() {
     .execute(connection)
     .unwrap();
     let valid_pg_date_too_large_for_chrono = "'294276/01/01'";
-    diesel::sql_query(&format!(
+    diesel::sql_query(format!(
         "INSERT INTO has_timestamps (ts) VALUES ({})",
         valid_pg_date_too_large_for_chrono
     ))
@@ -79,7 +79,7 @@ fn errors_during_deserialization_do_not_panic() {
     .unwrap();
 
     let valid_sqlite_date_too_large_for_chrono = "'294276-01-01 00:00:00'";
-    diesel::sql_query(&format!(
+    diesel::sql_query(format!(
         "INSERT INTO has_timestamps (ts) VALUES ({})",
         valid_sqlite_date_too_large_for_chrono
     ))

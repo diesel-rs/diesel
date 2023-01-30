@@ -1,6 +1,7 @@
 use diesel::mysql::{Mysql, MysqlConnection};
 use diesel::*;
 use heck::ToUpperCamelCase;
+use std::collections::HashMap;
 use std::{borrow::Cow, error::Error};
 
 use super::data_structures::*;
@@ -13,9 +14,9 @@ diesel::sql_function! {
     fn null_if_text(lhs: sql_types::Text, rhs: sql_types::Text) -> sql_types::Nullable<sql_types::Text>
 }
 
-pub fn get_table_data<'a>(
+pub fn get_table_data(
     conn: &mut MysqlConnection,
-    table: &'a TableName,
+    table: &TableName,
     column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
     use self::information_schema::columns::dsl::*;
@@ -123,20 +124,33 @@ pub fn load_foreign_key_constraints(
             (kcu::referenced_table_name, kcu::referenced_table_schema),
             kcu::column_name,
             kcu::referenced_column_name,
+            kcu::constraint_name,
         ))
-        .load::<(TableName, TableName, String, _)>(connection)?
+        .load::<(TableName, TableName, String, String, String)>(connection)?
         .into_iter()
+        .fold(
+            HashMap::new(),
+            |mut acc, (child_table, parent_table, foreign_key, primary_key, fk_constraint_name)| {
+                let entry = acc
+                    .entry(fk_constraint_name)
+                    .or_insert_with(|| (child_table, parent_table, Vec::new(), Vec::new()));
+                entry.2.push(foreign_key);
+                entry.3.push(primary_key);
+                acc
+            },
+        )
+        .into_values()
         .map(
-            |(mut child_table, mut parent_table, foreign_key, primary_key)| {
+            |(mut child_table, mut parent_table, foreign_key_columns, primary_key_columns)| {
                 child_table.strip_schema_if_matches(&default_schema);
                 parent_table.strip_schema_if_matches(&default_schema);
 
                 ForeignKeyConstraint {
                     child_table,
                     parent_table,
-                    foreign_key: foreign_key.clone(),
-                    foreign_key_rust_name: foreign_key,
-                    primary_key,
+                    primary_key_columns,
+                    foreign_key_columns_rust: foreign_key_columns.clone(),
+                    foreign_key_columns,
                 }
             },
         )
@@ -204,7 +218,7 @@ fn determine_type_name(
             .trim()
             .to_owned())
     } else if result.contains(' ') {
-        Err(format!("unrecognized type {:?}", result).into())
+        Err(format!("unrecognized type {result:?}").into())
     } else {
         Ok(result.to_owned())
     }
@@ -280,26 +294,30 @@ mod test {
     fn get_table_data_loads_column_information() {
         let mut connection = connection();
 
-        diesel::sql_query("DROP TABLE IF EXISTS diesel_test.table_1")
+        diesel::sql_query("DROP TABLE IF EXISTS table_1")
             .execute(&mut connection)
             .unwrap();
         // uses VARCHAR(255) as the type because SERIAL returned bigint on most platforms and bigint(20) on MacOS
         diesel::sql_query(
-            "CREATE TABLE diesel_test.table_1 \
+            "CREATE TABLE table_1 \
             (id VARCHAR(255) PRIMARY KEY COMMENT 'column comment') \
             COMMENT 'table comment'",
         )
         .execute(&mut connection)
         .unwrap();
-        diesel::sql_query("DROP TABLE IF EXISTS diesel_test.table_2")
+        diesel::sql_query("DROP TABLE IF EXISTS table_2")
             .execute(&mut connection)
             .unwrap();
-        diesel::sql_query("CREATE TABLE diesel_test.table_2 (id VARCHAR(255) PRIMARY KEY)")
+        diesel::sql_query("CREATE TABLE table_2 (id VARCHAR(255) PRIMARY KEY)")
             .execute(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "diesel_test");
-        let table_2 = TableName::new("table_2", "diesel_test");
+        let db = diesel::select(diesel::dsl::sql::<diesel::sql_types::Text>("DATABASE()"))
+            .get_result::<String>(&mut connection)
+            .unwrap();
+
+        let table_1 = TableName::new("table_1", &db);
+        let table_2 = TableName::new("table_2", &db);
 
         let id_with_comment = ColumnInformation::new(
             "id",
@@ -323,23 +341,24 @@ mod test {
     fn gets_table_comment() {
         let mut connection = connection();
 
-        diesel::sql_query("DROP TABLE IF EXISTS diesel_test.table_1")
+        diesel::sql_query("DROP TABLE IF EXISTS table_1")
             .execute(&mut connection)
             .unwrap();
-        diesel::sql_query(
-            "CREATE TABLE diesel_test.table_1 (id SERIAL PRIMARY KEY) COMMENT 'table comment'",
-        )
-        .execute(&mut connection)
-        .unwrap();
-        diesel::sql_query("DROP TABLE IF EXISTS diesel_test.table_2")
+        diesel::sql_query("CREATE TABLE table_1 (id SERIAL PRIMARY KEY) COMMENT 'table comment'")
             .execute(&mut connection)
             .unwrap();
-        diesel::sql_query("CREATE TABLE diesel_test.table_2 (id SERIAL PRIMARY KEY)")
+        diesel::sql_query("DROP TABLE IF EXISTS table_2")
             .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE table_2 (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+        let db = diesel::select(diesel::dsl::sql::<diesel::sql_types::Text>("DATABASE()"))
+            .get_result::<String>(&mut connection)
             .unwrap();
 
-        let table_1 = TableName::new("table_1", "diesel_test");
-        let table_2 = TableName::new("table_2", "diesel_test");
+        let table_1 = TableName::new("table_1", &db);
+        let table_2 = TableName::new("table_2", &db);
         assert_eq!(
             Ok(Some("table comment".to_string())),
             get_table_comment(&mut connection, &table_1)

@@ -35,7 +35,7 @@ where
     match result {
         Ok(res) => {
             if cmp(&value, &res) {
-                println!("{:?}, {:?}", value, res);
+                println!("{value:?}, {res:?}");
                 false
             } else {
                 true

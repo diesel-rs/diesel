@@ -207,7 +207,7 @@ pub struct DropTable<'a> {
 impl<'a> Drop for DropTable<'a> {
     fn drop(&mut self) {
         if self.can_drop {
-            diesel::sql_query(&format!("DROP TABLE {}", self.table_name))
+            diesel::sql_query(format!("DROP TABLE {}", self.table_name))
                 .execute(self.connection)
                 .unwrap();
         }
@@ -306,14 +306,14 @@ pub fn disable_foreign_keys(connection: &mut TestConnection) {
 
 #[cfg(feature = "sqlite")]
 pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    diesel::sql_query(&format!("DROP TABLE {}", table))
+    diesel::sql_query(format!("DROP TABLE {table}"))
         .execute(connection)
         .unwrap();
 }
 
 #[cfg(feature = "postgres")]
 pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
-    diesel::sql_query(&format!("DROP TABLE {} CASCADE", table))
+    diesel::sql_query(format!("DROP TABLE {table} CASCADE"))
         .execute(connection)
         .unwrap();
 }

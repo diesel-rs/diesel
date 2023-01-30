@@ -1,7 +1,7 @@
 extern crate chrono;
 use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
-use crate::backend;
+use crate::backend::Backend;
 use crate::deserialize::{self, FromSql};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
@@ -11,7 +11,7 @@ const SQLITE_DATE_FORMAT: &str = "%F";
 
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<Date, Sqlite> for NaiveDate {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value
             .parse_string(|s| Self::parse_from_str(s, SQLITE_DATE_FORMAT))
             .map_err(Into::into)
@@ -28,7 +28,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<Time, Sqlite> for NaiveTime {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             let valid_time_formats = &[
                 // Most likely
@@ -42,7 +42,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
                 }
             }
 
-            Err(format!("Invalid time {}", text).into())
+            Err(format!("Invalid time {text}").into())
         })
     }
 }
@@ -57,7 +57,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             let sqlite_datetime_formats = &[
                 // Most likely format
@@ -93,7 +93,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
                 }
             }
 
-            Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {text}").into())
         })
     }
 }
@@ -108,7 +108,7 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
 
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             let sqlite_datetime_formats = &[
                 "%F %RZ",
@@ -142,7 +142,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
                 }
             }
 
-            Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {text}").into())
         })
     }
 }
@@ -157,7 +157,7 @@ impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
 
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         let naive_date_time =
             <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
@@ -166,7 +166,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
 
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         let naive_date_time =
             <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(Local::from_utc_datetime(&Local, &naive_date_time))

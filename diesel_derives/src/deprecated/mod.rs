@@ -106,7 +106,7 @@ mod impl_deprecated {
                         .join(", ");
                     warn!(
                         name,
-                        &format!("use `#[diesel(primary_key({}))]` instead", hint)
+                        &format!("use `#[diesel(primary_key({hint}))]` instead")
                     );
                     Ok(Some(StructAttr::PrimaryKey(name, keys)))
                 }
@@ -124,14 +124,13 @@ mod impl_deprecated {
                         warn!(
                             name,
                             &format!(
-                                "use `#[diesel(belongs_to({}, foreign_key = {}))]` instead",
-                                parent, key
+                                "use `#[diesel(belongs_to({parent}, foreign_key = {key}))]` instead"
                             )
                         );
                     } else {
                         warn!(
                             name,
-                            &format!("use `#[diesel(belongs_to({}))]` instead", parent)
+                            &format!("use `#[diesel(belongs_to({parent}))]` instead")
                         );
                     }
                     Ok(Some(StructAttr::BelongsTo(name, belongs_to)))
@@ -231,6 +230,6 @@ mod impl_deprecated {
 
     #[cfg(not(feature = "nightly"))]
     fn warn(_span: Span, message: &str, help: &str) {
-        eprintln!("warning: {}\n  = help: {}\n", message, help);
+        eprintln!("warning: {message}\n  = help: {help}\n");
     }
 }

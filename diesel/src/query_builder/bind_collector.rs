@@ -31,7 +31,7 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
     ) -> QueryResult<()>
     where
         DB: Backend + HasSqlType<T>,
-        U: ToSql<T, DB> + 'a;
+        U: ToSql<T, DB> + ?Sized + 'a;
 }
 
 #[derive(Debug)]
@@ -40,22 +40,25 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
 ///
 /// For most backends, this is the concrete implementation of `BindCollector`
 /// that should be used.
-#[non_exhaustive]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(metadata, binds)
+)]
 pub struct RawBytesBindCollector<DB: Backend + TypeMetadata> {
     /// The metadata associated with each bind parameter.
     ///
     /// This vec is guaranteed to be the same length as `binds`.
-    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-    pub metadata: Vec<DB::TypeMetadata>,
-    #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
     pub(crate) metadata: Vec<DB::TypeMetadata>,
     /// The serialized bytes for each bind parameter.
     ///
     /// This vec is guaranteed to be the same length as `metadata`.
-    #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
-    pub binds: Vec<Option<Vec<u8>>>,
-    #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
     pub(crate) binds: Vec<Option<Vec<u8>>>,
+}
+
+impl<DB: Backend + TypeMetadata> Default for RawBytesBindCollector<DB> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[allow(clippy::new_without_default)]
@@ -75,7 +78,7 @@ impl<DB: Backend + TypeMetadata> RawBytesBindCollector<DB> {
 
 impl<'a, DB> BindCollector<'a, DB> for RawBytesBindCollector<DB>
 where
-    DB: Backend<BindCollector = Self> + TypeMetadata,
+    for<'b> DB: Backend<BindCollector<'b> = Self> + TypeMetadata,
 {
     type Buffer = ByteWrapper<'a>;
 
@@ -86,7 +89,7 @@ where
     ) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
-        U: ToSql<T, DB>,
+        U: ToSql<T, DB> + ?Sized,
     {
         let mut bytes = Vec::new();
         let is_null = {

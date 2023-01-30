@@ -126,7 +126,7 @@ pub trait MigrationHarness<DB: Backend> {
             migrations.remove(&applied_version);
         }
 
-        let mut migrations = migrations.into_iter().map(|(_, m)| m).collect::<Vec<_>>();
+        let mut migrations = migrations.into_values().collect::<Vec<_>>();
 
         migrations.sort_unstable_by(|a, b| a.name().version().cmp(&b.name().version()));
 

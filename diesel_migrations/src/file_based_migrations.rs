@@ -104,7 +104,7 @@ impl FileBasedMigrations {
     ///
     /// This method fails if no valid migration directory is found
     pub fn find_migrations_directory() -> Result<Self, MigrationError> {
-        Self::find_migrations_directory_in_path(&std::env::current_dir()?)
+        Self::find_migrations_directory_in_path(std::env::current_dir()?.as_path())
     }
 
     /// Create a new file based migration source by searching a give path for the migration
@@ -118,7 +118,7 @@ impl FileBasedMigrations {
         path: impl AsRef<Path>,
     ) -> Result<Self, MigrationError> {
         let migrations_directory = search_for_migrations_directory(path.as_ref())?;
-        Self::from_path(&migrations_directory)
+        Self::from_path(migrations_directory.as_path())
     }
 
     #[doc(hidden)]
@@ -352,8 +352,8 @@ mod tests {
         let migrations_path = temp_path.join("migrations");
         let file_path = migrations_path.join("README.md");
 
-        fs::create_dir(&migrations_path).unwrap();
-        fs::File::create(&file_path).unwrap();
+        fs::create_dir(migrations_path.as_path()).unwrap();
+        fs::File::create(file_path.as_path()).unwrap();
 
         let migrations = migrations_in_directory::<Backend>(&migrations_path)
             .unwrap()
@@ -370,8 +370,8 @@ mod tests {
         let migrations_path = temp_path.join("migrations");
         let dot_path = migrations_path.join(".hidden_dir");
 
-        fs::create_dir(&migrations_path).unwrap();
-        fs::create_dir(&dot_path).unwrap();
+        fs::create_dir(migrations_path.as_path()).unwrap();
+        fs::create_dir(dot_path.as_path()).unwrap();
 
         let migrations = migrations_in_directory::<Backend>(&migrations_path)
             .unwrap()

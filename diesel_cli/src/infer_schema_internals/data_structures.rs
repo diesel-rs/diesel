@@ -59,7 +59,7 @@ pub struct ColumnDefinition {
     pub sql_name: String,
     pub rust_name: String,
     pub ty: ColumnType,
-    pub docs: String,
+    pub comment: Option<String>,
 }
 
 impl ColumnInformation {
@@ -119,9 +119,9 @@ where
 pub struct ForeignKeyConstraint {
     pub child_table: TableName,
     pub parent_table: TableName,
-    pub foreign_key: String,
-    pub foreign_key_rust_name: String,
-    pub primary_key: String,
+    pub foreign_key_columns: Vec<String>,
+    pub foreign_key_columns_rust: Vec<String>,
+    pub primary_key_columns: Vec<String>,
 }
 
 impl ForeignKeyConstraint {

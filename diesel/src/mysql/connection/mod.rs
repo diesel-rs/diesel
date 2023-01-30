@@ -110,10 +110,7 @@ impl SimpleConnection for MysqlConnection {
     }
 }
 
-impl<'conn, 'query> ConnectionGatWorkaround<'conn, 'query, Mysql> for MysqlConnection {
-    type Cursor = self::stmt::iterator::StatementIterator<'conn>;
-    type Row = self::stmt::iterator::MysqlRow;
-}
+impl ConnectionSealed for MysqlConnection {}
 
 impl Connection for MysqlConnection {
     type Backend = Mysql;
@@ -174,16 +171,19 @@ fn update_transaction_manager_status<T>(
     if let Err(Error::DatabaseError(DatabaseErrorKind::SerializationFailure, _)) = query_result {
         transaction_manager
             .status
-            .set_top_level_transaction_requires_rollback()
+            .set_requires_rollback_maybe_up_to_top_level(true)
     }
     query_result
 }
 
 impl LoadConnection<DefaultLoadingMode> for MysqlConnection {
+    type Cursor<'conn, 'query> = self::stmt::iterator::StatementIterator<'conn>;
+    type Row<'conn, 'query> = self::stmt::iterator::MysqlRow;
+
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend>>
+    ) -> QueryResult<Self::Cursor<'conn, 'query>>
     where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
@@ -209,6 +209,20 @@ impl crate::r2d2::R2D2Connection for MysqlConnection {
 
     fn is_broken(&mut self) -> bool {
         AnsiTransactionManager::is_broken_transaction_manager(self)
+    }
+}
+
+impl MultiConnectionHelper for MysqlConnection {
+    fn to_any<'a>(
+        lookup: &mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup,
+    ) -> &mut (dyn std::any::Any + 'a) {
+        lookup
+    }
+
+    fn from_any(
+        lookup: &mut dyn std::any::Any,
+    ) -> Option<&mut <Self::Backend as crate::sql_types::TypeMetadata>::MetadataLookup> {
+        lookup.downcast_mut()
     }
 }
 

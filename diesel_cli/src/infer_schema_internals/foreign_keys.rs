@@ -6,13 +6,10 @@ use super::table_data::TableName;
 use crate::database::InferConnection;
 
 pub fn remove_unsafe_foreign_keys_for_codegen(
-    database_url: &str,
+    conn: &mut InferConnection,
     foreign_keys: &[ForeignKeyConstraint],
     safe_tables: &[TableName],
 ) -> Vec<ForeignKeyConstraint> {
-    let mut conn = InferConnection::establish(database_url)
-        .expect(&format!("Could not connect to `{}`", database_url));
-
     let duplicates = foreign_keys
         .iter()
         .map(ForeignKeyConstraint::ordered_tables)
@@ -30,12 +27,13 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
         .filter(|fk| fk.parent_table != fk.child_table)
         .filter(|fk| safe_tables.contains(&fk.parent_table))
         .filter(|fk| safe_tables.contains(&fk.child_table))
+        .filter(|fk| fk.foreign_key_columns.len() == 1)
         .filter(|fk| {
-            let pk_columns = get_primary_keys(&mut conn, &fk.parent_table).expect(&format!(
+            let pk_columns = get_primary_keys(conn, &fk.parent_table).expect(&format!(
                 "Error loading primary keys for `{}`",
                 fk.parent_table
             ));
-            pk_columns.len() == 1 && pk_columns[0] == fk.primary_key
+            pk_columns.len() == 1 && Some(&pk_columns[0]) == fk.primary_key_columns.get(0)
         })
         .filter(|fk| !duplicates.contains(&fk.ordered_tables()))
         .cloned()

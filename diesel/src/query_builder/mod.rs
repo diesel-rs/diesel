@@ -9,7 +9,7 @@ mod query_id;
 #[macro_use]
 mod clause_macro;
 
-mod ast_pass;
+pub(crate) mod ast_pass;
 pub mod bind_collector;
 pub(crate) mod combination_clause;
 mod debug_query;
@@ -120,7 +120,7 @@ pub(crate) use self::insert_statement::ColumnList;
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::query_builder::only::Only;
 
-use crate::backend::{Backend, HasBindCollector};
+use crate::backend::Backend;
 use crate::result::QueryResult;
 use std::error::Error;
 
@@ -233,7 +233,7 @@ pub trait QueryFragment<DB: Backend, SP = self::private::NotSpecialized> {
     )]
     fn collect_binds<'b>(
         &'b self,
-        out: &mut <DB as HasBindCollector<'b>>::BindCollector,
+        out: &mut DB::BindCollector<'b>,
         metadata_lookup: &mut DB::MetadataLookup,
         backend: &'b DB,
     ) -> QueryResult<()> {

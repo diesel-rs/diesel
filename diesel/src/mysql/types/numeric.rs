@@ -26,11 +26,11 @@ mod bigdecimal {
                 NumericRepresentation::Medium(x) => Ok(x.into()),
                 NumericRepresentation::Big(x) => Ok(x.into()),
                 NumericRepresentation::Float(x) => BigDecimal::from_f32(x)
-                    .ok_or_else(|| format!("{} is not valid decimal number ", x).into()),
+                    .ok_or_else(|| format!("{x} is not valid decimal number ").into()),
                 NumericRepresentation::Double(x) => BigDecimal::from_f64(x)
-                    .ok_or_else(|| format!("{} is not valid decimal number ", x).into()),
+                    .ok_or_else(|| format!("{x} is not valid decimal number ").into()),
                 NumericRepresentation::Decimal(bytes) => BigDecimal::parse_bytes(bytes, 10)
-                    .ok_or_else(|| format!("{:?} is not valid decimal number ", bytes).into()),
+                    .ok_or_else(|| format!("{bytes:?} is not valid decimal number ").into()),
             }
         }
     }

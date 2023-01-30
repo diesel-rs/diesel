@@ -13,76 +13,82 @@ warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::
    |                       ^^^
 
 error[E0271]: type mismatch resolving `<query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
-    --> tests/fail/subselect_cannot_reference_random_tables.rs:32:10
-     |
-32   |         .load::<(i32,)>(&mut conn);
-     |          ^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
-     |
-note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>` for `comments::columns::id`
-    --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
-     |
-19   |         id -> Integer,
-     |         ^^
-     = note: 2 redundant requirements hidden
-     = note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-     = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
-     = note: required because of the requirements on the impl of `diesel::expression::subselect::ValidSubselect<users::table>` for `SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<posts::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
-     = note: 4 redundant requirements hidden
-     = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::array_comparison::In<users::columns::id, diesel::expression::subselect::Subselect<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<posts::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>, diesel::sql_types::Integer>>>>`
-     = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::array_comparison::In<users::columns::id, diesel::expression::subselect::Subselect<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<posts::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>, diesel::sql_types::Integer>>>>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32,)>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::array_comparison::In<users::columns::id, diesel::expression::subselect::Subselect<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<posts::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>, diesel::sql_types::Integer>>>>>`
+  --> tests/fail/subselect_cannot_reference_random_tables.rs:32:25
+   |
+32 |         .load::<(i32,)>(&mut conn);
+   |          ----           ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          |
+   |          required by a bound introduced by this call
+   |
+note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+  --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
+   |
+19 |         id -> Integer,
+   |         ^^
+   = note: 2 redundant requirements hidden
+   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+   = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>`
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<Eq<id, ...>>>>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
+   = note: 4 redundant requirements hidden
+   = note: required for `WhereClause<Grouped<In<id, Subselect<SelectStatement<FromClause<table>, SelectClause<id>, ..., ...>, ...>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `Query`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `LoadQuery<'_, _, (i32,)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0271]: type mismatch resolving `<query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
-    --> tests/fail/subselect_cannot_reference_random_tables.rs:38:10
-     |
-38   |         .load::<(i32,)>(&mut conn);
-     |          ^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
-     |
-note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>` for `comments::columns::id`
-    --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
-     |
-19   |         id -> Integer,
-     |         ^^
-     = note: 2 redundant requirements hidden
-     = note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-     = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
-     = note: required because of the requirements on the impl of `diesel::expression::subselect::ValidSubselect<users::table>` for `SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<posts::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
-     = note: 5 redundant requirements hidden
-     = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::pg::expression::array_comparison::Any<diesel::expression::subselect::Subselect<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<posts::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>, Array<diesel::sql_types::Integer>>>>>>`
-     = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::pg::expression::array_comparison::Any<diesel::expression::subselect::Subselect<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<posts::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>, Array<diesel::sql_types::Integer>>>>>>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32,)>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::id, diesel::pg::expression::array_comparison::Any<diesel::expression::subselect::Subselect<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::SelectClause<posts::columns::id>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>, Array<diesel::sql_types::Integer>>>>>>>`
+  --> tests/fail/subselect_cannot_reference_random_tables.rs:38:25
+   |
+38 |         .load::<(i32,)>(&mut conn);
+   |          ----           ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          |
+   |          required by a bound introduced by this call
+   |
+note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+  --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
+   |
+19 |         id -> Integer,
+   |         ^^
+   = note: 2 redundant requirements hidden
+   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+   = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>`
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<id>, NoDistinctClause, WhereClause<Grouped<Eq<id, ...>>>>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
+   = note: 5 redundant requirements hidden
+   = note: required for `WhereClause<Grouped<Eq<id, Any<Subselect<SelectStatement<FromClause<table>, ..., ..., ...>, ...>>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `Query`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `LoadQuery<'_, _, (i32,)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0271]: type mismatch resolving `<query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
-    --> tests/fail/subselect_cannot_reference_random_tables.rs:42:10
-     |
-42   |         .load::<(i32,)>(&mut conn);
-     |          ^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
-     |
-note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>` for `comments::columns::id`
-    --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
-     |
-19   |         id -> Integer,
-     |         ^^
-     = note: 2 redundant requirements hidden
-     = note: required because of the requirements on the impl of `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>`
-     = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
-     = note: required because of the requirements on the impl of `diesel::expression::subselect::ValidSubselect<users::table>` for `SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<posts::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>`
-     = note: 3 redundant requirements hidden
-     = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::exists::Exists<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<posts::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>>>`
-     = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::exists::Exists<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<posts::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>>>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, _, (i32,)>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::exists::Exists<SelectStatement<FromClause<posts::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<posts::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<comments::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>>>>>`
+  --> tests/fail/subselect_cannot_reference_random_tables.rs:42:25
+   |
+42 |         .load::<(i32,)>(&mut conn);
+   |          ----           ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          |
+   |          required by a bound introduced by this call
+   |
+note: required for `comments::columns::id` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+  --> tests/fail/subselect_cannot_reference_random_tables.rs:19:9
+   |
+19 |         id -> Integer,
+   |         ^^
+   = note: 2 redundant requirements hidden
+   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<query_source::joins::Join<posts::table, users::table, Inner>>`
+   = note: required for `WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<query_source::joins::Join<posts::table, users::table, Inner>>>`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `diesel::expression::subselect::ValidSubselect<users::table>`
+   = note: 3 redundant requirements hidden
+   = note: required for `WhereClause<Exists<SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ...>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `Query`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `LoadQuery<'_, _, (i32,)>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

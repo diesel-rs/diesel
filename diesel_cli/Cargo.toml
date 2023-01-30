@@ -11,7 +11,7 @@ keywords = ["diesel", "migrations", "cli"]
 autotests = false
 edition = "2018"
 include = ["src/**/*", "LICENSE-*", "README.md"]
-rust-version = "1.60.0"
+rust-version = "1.65.0"
 
 [[bin]]
 name = "diesel"
@@ -36,6 +36,7 @@ serde_regex = "1.1"
 version = "~2.0.0"
 path = "../diesel"
 default-features = false
+features = ["i-implement-a-third-party-backend-and-opt-into-breaking-changes"]
 
 [dependencies.diesel_migrations]
 version = "~2.0.0"

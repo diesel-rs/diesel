@@ -1,6 +1,3 @@
-warning: #[changeset_options] attribute form is deprecated
-  = help: use `#[diesel(treat_none_as_null = true)]` instead
-
 error: unexpected end of input, expected parentheses
   --> tests/fail/derive_deprecated/deprecated_changeset_options.rs:21:3
    |

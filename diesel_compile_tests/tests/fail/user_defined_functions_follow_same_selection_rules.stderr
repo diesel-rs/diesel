@@ -1,61 +1,63 @@
 error[E0271]: type mismatch resolving `<foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>> as diesel::Expression>::SqlType == diesel::sql_types::Text`
-  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:35:41
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:35:38
    |
 35 |     let _ = users::table.filter(name.eq(foo(1)));
-   |                                      -- ^^^^^^ expected struct `diesel::sql_types::Integer`, found struct `diesel::sql_types::Text`
-   |                                      |
-   |                                      required by a bound introduced by this call
+   |                                      ^^ expected struct `Integer`, found struct `Text`
    |
-   = note: required because of the requirements on the impl of `AsExpression<diesel::sql_types::Text>` for `foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`
+   = note: required for `foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `AsExpression<diesel::sql_types::Text>`
 
 error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
-    --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:38:10
-     |
-38   |         .load::<User>(&mut conn);
-     |          ^^^^ expected struct `diesel::query_source::Once`, found struct `diesel::query_source::Never`
-     |
-note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
-    --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:16:9
-     |
-16   |         title -> VarChar,
-     |         ^^^^^
-     = note: 3 redundant requirements hidden
-     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>`
-     = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>`
-     = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, _, User>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:38:23
+   |
+38 |         .load::<User>(&mut conn);
+   |          ----         ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          |
+   |          required by a bound introduced by this call
+   |
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:16:9
+   |
+16 |         title -> VarChar,
+   |         ^^^^^
+   = note: 3 redundant requirements hidden
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>` to implement `AppearsOnTable<users::table>`
+   = note: required for `WhereClause<Grouped<Eq<name, bar<title>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `Query`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
-    --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:38:10
-     |
-38   |         .load::<User>(&mut conn);
-     |          ^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
-     |
-     = help: the following other types implement trait `TableNotEqual<T>`:
-               <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-               <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-               <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
-               <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
-               <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-               <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
-     = note: required because of the requirements on the impl of `AppearsInFromClause<posts::table>` for `users::table`
-note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `posts::columns::title`
-    --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:16:9
-     |
-16   |         title -> VarChar,
-     |         ^^^^^
-     = note: 3 redundant requirements hidden
-     = note: required because of the requirements on the impl of `AppearsOnTable<users::table>` for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>`
-     = note: required because of the requirements on the impl of `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>` for `diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>`
-     = note: required because of the requirements on the impl of `Query` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
-     = note: required because of the requirements on the impl of `LoadQuery<'_, _, User>` for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<users::table>>, diesel::query_builder::distinct_clause::NoDistinctClause, diesel::query_builder::where_clause::WhereClause<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>>>`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:38:23
+   |
+38 |         .load::<User>(&mut conn);
+   |          ----         ^^^^^^^^^ the trait `TableNotEqual<posts::table>` is not implemented for `users::table`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the following other types implement trait `TableNotEqual<T>`:
+             <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+             <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
+             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+             <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
+             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+   = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
+note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
+  --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:16:9
+   |
+16 |         title -> VarChar,
+   |         ^^^^^
+   = note: 3 redundant requirements hidden
+   = note: required for `diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<users::columns::name, bar::bar<posts::columns::title>>>` to implement `AppearsOnTable<users::table>`
+   = note: required for `WhereClause<Grouped<Eq<name, bar<title>>>>` to implement `diesel::query_builder::where_clause::ValidWhereClause<FromClause<users::table>>`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `Query`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, WhereClause<...>>` to implement `LoadQuery<'_, _, User>`
 note: required by a bound in `diesel::RunQueryDsl::load`
-    --> $DIESEL/src/query_dsl/mod.rs
-     |
-     |         Self: LoadQuery<'query, Conn, U>,
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

@@ -1,4 +1,5 @@
 use super::result::PgResult;
+use crate::backend::Backend;
 use crate::pg::value::TypeOidLookup;
 use crate::pg::{Pg, PgValue};
 use crate::row::*;
@@ -17,18 +18,17 @@ impl PgRow {
     }
 }
 
-impl<'a> RowGatWorkaround<'a, Pg> for PgRow {
-    type Field = PgField<'a>;
-}
+impl RowSealed for PgRow {}
 
 impl<'a> Row<'a, Pg> for PgRow {
+    type Field<'f> = PgField<'f> where 'a: 'f, Self: 'f;
     type InnerPartialRow = Self;
 
     fn field_count(&self) -> usize {
         self.db_result.column_count()
     }
 
-    fn get<'b, I>(&'b self, idx: I) -> Option<<Self as RowGatWorkaround<'b, Pg>>::Field>
+    fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
     where
         'a: 'b,
         Self: RowIndex<I>,
@@ -74,7 +74,7 @@ impl<'a> Field<'a, Pg> for PgField<'a> {
         self.db_result.column_name(self.col_idx)
     }
 
-    fn value(&self) -> Option<crate::backend::RawValue<'_, Pg>> {
+    fn value(&self) -> Option<<Pg as Backend>::RawValue<'_>> {
         let raw = self.db_result.get(self.row_idx, self.col_idx)?;
 
         Some(PgValue::new_internal(raw, self))

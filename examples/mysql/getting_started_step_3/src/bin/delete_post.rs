@@ -6,7 +6,7 @@ fn main() {
     use self::schema::posts::dsl::*;
 
     let target = args().nth(1).expect("Expected a target to match against");
-    let pattern = format!("%{}%", target);
+    let pattern = format!("%{target}%");
 
     let connection = &mut establish_connection();
 
@@ -14,5 +14,5 @@ fn main() {
         .execute(connection)
         .expect("Error deleting posts");
 
-    println!("Deleted {} posts", num_deleted);
+    println!("Deleted {num_deleted} posts");
 }

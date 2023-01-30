@@ -14,10 +14,10 @@ pub(crate) fn expand(input: Ident) -> TokenStream {
 
     let pairs = (0..MAX_TUPLE_SIZE as usize)
         .map(|i| {
-            let t = Ident::new(&format!("T{}", i), call_side);
-            let st = Ident::new(&format!("ST{}", i), call_side);
-            let tt = Ident::new(&format!("TT{}", i), call_side);
-            let i = syn::Index::from(i as usize);
+            let t = Ident::new(&format!("T{i}"), call_side);
+            let st = Ident::new(&format!("ST{i}"), call_side);
+            let tt = Ident::new(&format!("TT{i}"), call_side);
+            let i = syn::Index::from(i);
             quote!((#i) -> #t, #st, #tt,)
         })
         .collect::<Vec<_>>();

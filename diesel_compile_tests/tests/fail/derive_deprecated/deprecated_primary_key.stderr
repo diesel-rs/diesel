@@ -22,9 +22,6 @@ error: expected parentheses
 33 | #[primary_key = id]
    |               ^
 
-warning: #[primary_key] attribute form is deprecated
-  = help: use `#[diesel(primary_key(id, name))]` instead
-
 error: Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.
   --> tests/fail/derive_deprecated/deprecated_primary_key.rs:39:10
    |

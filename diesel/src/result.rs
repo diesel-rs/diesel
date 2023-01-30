@@ -73,8 +73,7 @@ pub enum Error {
     RollbackErrorOnCommit {
         /// The error that was encountered when attempting the rollback
         rollback_error: Box<Error>,
-        /// If the rollback attempt resulted from a failed attempt to commit the transaction,
-        /// you will find the related error here.
+        /// The error that was encountered during the failed commit attempt
         commit_error: Box<Error>,
     },
 
@@ -306,7 +305,7 @@ impl From<NulError> for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Error::InvalidCString(ref nul_err) => write!(f, "{}", nul_err),
+            Error::InvalidCString(ref nul_err) => write!(f, "{nul_err}"),
             Error::DatabaseError(_, ref e) => write!(f, "{}", e.message()),
             Error::NotFound => f.write_str("Record not found"),
             Error::QueryBuilderError(ref e) => e.fmt(f),
@@ -355,8 +354,8 @@ impl Display for ConnectionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             ConnectionError::InvalidCString(ref nul_err) => nul_err.fmt(f),
-            ConnectionError::BadConnection(ref s) => write!(f, "{}", s),
-            ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{}", s),
+            ConnectionError::BadConnection(ref s) => write!(f, "{s}"),
+            ConnectionError::InvalidConnectionUrl(ref s) => write!(f, "{s}"),
             ConnectionError::CouldntSetupConfiguration(ref e) => e.fmt(f),
         }
     }
@@ -375,10 +374,8 @@ impl StdError for ConnectionError {
 impl PartialEq for Error {
     fn eq(&self, other: &Error) -> bool {
         match (self, other) {
-            (&Error::InvalidCString(ref a), &Error::InvalidCString(ref b)) => a == b,
-            (&Error::DatabaseError(_, ref a), &Error::DatabaseError(_, ref b)) => {
-                a.message() == b.message()
-            }
+            (Error::InvalidCString(a), Error::InvalidCString(b)) => a == b,
+            (Error::DatabaseError(_, a), Error::DatabaseError(_, b)) => a.message() == b.message(),
             (&Error::NotFound, &Error::NotFound) => true,
             (&Error::RollbackTransaction, &Error::RollbackTransaction) => true,
             (&Error::AlreadyInTransaction, &Error::AlreadyInTransaction) => true,

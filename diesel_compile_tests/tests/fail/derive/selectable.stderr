@@ -38,7 +38,7 @@ error[E0308]: mismatched types
   --> tests/fail/derive/selectable.rs:38:29
    |
 38 |         select_expression = (users::id + 45),
-   |                             ^^^^^^^^^^^^^^^^ expected struct `columns::id`, found struct `diesel::expression::ops::numeric::Add`
+   |                             ^^^^^^^^^^^^^^^^ expected struct `id`, found struct `Add`
    |
    = note: expected struct `columns::id`
               found struct `diesel::expression::ops::numeric::Add<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>`

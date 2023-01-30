@@ -261,13 +261,36 @@ fn print_schema_respects_type_name_case() {
 
 #[test]
 #[cfg(any(feature = "postgres", feature = "mysql"))]
-fn print_schema_comments() {
-    test_print_schema("print_schema_comments", vec!["--with-docs"])
+fn print_schema_comments_fallback_on_generated() {
+    test_print_schema(
+        "print_schema_comments_fallback_on_generated",
+        vec!["--with-docs"],
+    )
+}
+
+#[test]
+#[cfg(any(feature = "postgres", feature = "mysql"))]
+fn print_schema_comments_dont_fallback_on_generated() {
+    test_print_schema(
+        "print_schema_comments_dont_fallback_on_generated",
+        vec!["--with-docs-config", "only-database-comments"],
+    )
 }
 
 #[test]
 fn print_schema_reserved_names() {
     test_print_schema("print_schema_reserved_name_mitigation_issue_3404", vec![])
+}
+
+#[test]
+#[cfg(feature = "postgres")]
+fn print_schema_regression_3446_ignore_compound_foreign_keys() {
+    test_print_schema("print_schema_regression_3446_compound_keys", vec![])
+}
+
+#[test]
+fn print_schema_several_keys_with_compound_key() {
+    test_print_schema("print_schema_several_keys_with_compound_key", vec![])
 }
 
 #[cfg(feature = "sqlite")]
@@ -332,7 +355,6 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
 
     p.command("setup").run();
     p.create_migration("12345_create_schema", &schema, None);
-
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 

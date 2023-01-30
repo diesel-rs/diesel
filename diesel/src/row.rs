@@ -1,16 +1,16 @@
 //! Contains the `Row` trait
 
-use crate::backend::{self, Backend};
+use crate::backend::Backend;
 use crate::deserialize;
 use deserialize::FromSql;
 use std::ops::Range;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[doc(inline)]
-pub use self::private::{PartialRow, RowGatWorkaround};
+pub use self::private::{PartialRow, RowSealed};
 
 #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-pub(crate) use self::private::{PartialRow, RowGatWorkaround};
+pub(crate) use self::private::{PartialRow, RowSealed};
 
 /// Representing a way to index into database rows
 ///
@@ -26,10 +26,10 @@ pub trait RowIndex<I> {
     fn idx(&self, idx: I) -> Option<usize>;
 }
 
-/// Return type of [`Row::get`]
-///
-/// Users should threat this as opaque [`impl Field<DB>`](Field) type.
-pub type FieldRet<'a, R, DB> = <R as RowGatWorkaround<'a, DB>>::Field;
+#[doc(hidden)]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+#[deprecated(note = "Use `Row::Field` directly instead")]
+pub type FieldRet<'a, R, DB> = <R as self::private::RowLifetimeHelper<DB>>::Field<'a>;
 
 /// Represents a single database row.
 ///
@@ -37,8 +37,20 @@ pub type FieldRet<'a, R, DB> = <R as RowGatWorkaround<'a, DB>>::Field;
 ///
 /// [`FromSqlRow`]: crate::deserialize::FromSqlRow
 pub trait Row<'a, DB: Backend>:
-    RowIndex<usize> + for<'b> RowIndex<&'b str> + for<'b> RowGatWorkaround<'b, DB> + Sized
+    RowIndex<usize> + for<'b> RowIndex<&'b str> + self::private::RowSealed + Sized
 {
+    /// Field type returned by a `Row` implementation
+    ///
+    /// * Crates using existing backends should not concern themself with the
+    ///   concrete type of this associated type.
+    ///
+    /// * Crates implementing custom backends should provide their own type
+    ///   meeting the required trait bounds
+    type Field<'f>: Field<'f, DB>
+    where
+        'a: 'f,
+        Self: 'f;
+
     /// Return type of `PartialRow`
     ///
     /// For all implementations, beside of the `Row` implementation on `PartialRow` itself
@@ -55,7 +67,7 @@ pub trait Row<'a, DB: Backend>:
     /// Get the field with the provided index from the row.
     ///
     /// Returns `None` if there is no matching field for the given index
-    fn get<'b, I>(&'b self, idx: I) -> Option<FieldRet<'b, Self, DB>>
+    fn get<'b, I>(&'b self, idx: I) -> Option<Self::Field<'b>>
     where
         'a: 'b,
         Self: RowIndex<I>;
@@ -91,7 +103,7 @@ pub trait Field<'a, DB: Backend> {
 
     /// Get the value representing the current field in the raw representation
     /// as it is transmitted by the database
-    fn value(&self) -> Option<backend::RawValue<'_, DB>>;
+    fn value(&self) -> Option<DB::RawValue<'_>>;
 
     /// Checks whether this field is null or not.
     fn is_null(&self) -> bool {
@@ -99,13 +111,6 @@ pub trait Field<'a, DB: Backend> {
     }
 }
 
-impl<'a, 'b, DB, R> RowGatWorkaround<'a, DB> for PartialRow<'b, R>
-where
-    DB: Backend,
-    R: RowGatWorkaround<'a, DB>,
-{
-    type Field = R::Field;
-}
 /// Represents a row of a SQL query, where the values are accessed by name
 /// rather than by index.
 ///
@@ -136,34 +141,26 @@ where
         T: FromSql<ST, DB>,
     {
         let field = Row::get(self, column_name)
-            .ok_or_else(|| format!("Column `{}` was not present in query", column_name))?;
+            .ok_or_else(|| format!("Column `{column_name}` was not present in query"))?;
 
         T::from_nullable_sql(field.value())
     }
 }
 
 // These traits are not part of the public API
-// because we want to replace them by with an associated type
-// in the child trait later if GAT's are finally stable
-mod private {
+// because:
+// * we want to control who can implment `Row` (for `RowSealed`)
+// * `PartialRow` is an implementation detail
+// * `RowLifetimeHelper` is an internal backward compatibility helper
+pub(crate) mod private {
     use super::*;
 
-    /// A helper trait to indicate the life time bound for a field returned
-    /// by [`Row::get`]
+    /// This trait restricts who can implement `Row`
     #[cfg_attr(
-        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
-        cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")
+        doc_cfg,
+        doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
     )]
-    pub trait RowGatWorkaround<'a, DB: Backend> {
-        /// Field type returned by a `Row` implementation
-        ///
-        /// * Crates using existing backend should not concern themself with the
-        ///   concrete type of this associated type.
-        ///
-        /// * Crates implementing custom backends should provide their own type
-        ///   meeting the required trait bounds
-        type Field: Field<'a, DB>;
-    }
+    pub trait RowSealed {}
 
     /// A row type that wraps an inner row
     ///
@@ -203,18 +200,21 @@ mod private {
         }
     }
 
+    impl<'a, R> RowSealed for PartialRow<'a, R> {}
+
     impl<'a, 'b, DB, R> Row<'a, DB> for PartialRow<'b, R>
     where
         DB: Backend,
         R: Row<'a, DB>,
     {
+        type Field<'f> = R::Field<'f> where 'a: 'f, R: 'f, Self: 'f;
         type InnerPartialRow = R;
 
         fn field_count(&self) -> usize {
             self.range.len()
         }
 
-        fn get<'c, I>(&'c self, idx: I) -> Option<<Self as RowGatWorkaround<'c, DB>>::Field>
+        fn get<'c, I>(&'c self, idx: I) -> Option<Self::Field<'c>>
         where
             'a: 'c,
             Self: RowIndex<I>,
@@ -259,5 +259,26 @@ mod private {
                 None
             }
         }
+    }
+
+    // These impls are only there for backward compatibility reasons
+    // Remove them on the next breaking release
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    pub trait RowLifetimeHelper<DB>: for<'a> super::Row<'a, DB>
+    where
+        DB: Backend,
+    {
+        type Field<'f>
+        where
+            Self: 'f;
+    }
+
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    impl<R, DB> RowLifetimeHelper<DB> for R
+    where
+        DB: Backend,
+        for<'a> R: super::Row<'a, DB>,
+    {
+        type Field<'f> = <R as super::Row<'f, DB>>::Field<'f> where R: 'f;
     }
 }

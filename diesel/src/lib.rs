@@ -101,8 +101,13 @@
 //! be part of the public API and can disappear at any point in time:
 
 //!
-//! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires a compatible copy
-//! of `libsqlite3` for your target architecture.
+//! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
+//! a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
+//! with the `bundled` feature as a dependecy to your crate so SQLite will be bundled:
+//! ```toml
+//! [dependencies]
+//! libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
+//! ```
 //! - `postgres`: This feature enables the diesel postgres backend. Enabling this feature requires a compatible
 //! copy of `libpq` for your target architecture. This features implies `postgres_backend`
 //! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
@@ -255,6 +260,9 @@ pub use diesel_derives::{
     Insertable, QueryId, Queryable, QueryableByName, SqlType,
 };
 
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use diesel_derives::MultiConnection;
+
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
     //! generically to be included in prelude, but are often used when using Diesel.
@@ -287,7 +295,6 @@ pub mod helper_types {
     use super::query_dsl::methods::*;
     use super::query_dsl::*;
     use super::query_source::{aliasing, joins};
-    use crate::connection::DefaultLoadingMode;
     use crate::query_builder::select_clause::SelectClause;
 
     #[doc(inline)]
@@ -459,12 +466,6 @@ pub mod helper_types {
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
 
-    /// [`Iterator`](std::iter::Iterator) of [`QueryResult<U>`](crate::result::QueryResult)
-    ///
-    /// See [`RunQueryDsl::load_iter`] for more information
-    pub type LoadIter<'conn, 'query, Q, Conn, U, B = DefaultLoadingMode> =
-        <Q as load_dsl::LoadQueryGatWorkaround<'conn, 'query, Conn, U, B>>::Ret;
-
     /// Maps `F` to `Alias<S>`
     ///
     /// Any column `F` that belongs to `S::Table` will be transformed into
@@ -474,6 +475,12 @@ pub mod helper_types {
     ///
     /// This also works with tuples and some expressions.
     pub type AliasedFields<S, F> = <F as aliasing::FieldAliasMapper<S>>::Out;
+
+    #[doc(hidden)]
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[deprecated(note = "Use `LoadQuery::RowIter` directly")]
+    pub type LoadIter<'conn, 'query, Q, Conn, U, B = crate::connection::DefaultLoadingMode> =
+        <Q as load_dsl::LoadQuery<'query, Conn, U, B>>::RowIter<'conn>;
 }
 
 pub mod prelude {

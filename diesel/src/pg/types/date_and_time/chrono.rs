@@ -39,7 +39,7 @@ impl ToSql<Timestamp, Pg> for NaiveDateTime {
             Some(time) => time,
             None => {
                 let error_message =
-                    format!("{:?} as microseconds is too large to fit in an i64", self);
+                    format!("{self:?} as microseconds is too large to fit in an i64");
                 return Err(error_message.into());
             }
         };

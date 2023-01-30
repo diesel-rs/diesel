@@ -51,7 +51,7 @@ pub use self::join_dsl::{InternalJoinDsl, JoinOnDsl, JoinWithImplicitOnClause};
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::load_dsl::CompatibleType;
 #[doc(hidden)]
-pub use self::load_dsl::{LoadQuery, LoadRet};
+pub use self::load_dsl::LoadQuery;
 pub use self::save_changes_dsl::{SaveChangesDsl, UpdateAndFetchResults};
 
 /// The traits used by `QueryDsl`.
@@ -68,13 +68,19 @@ pub mod methods {
     pub use super::group_by_dsl::GroupByDsl;
     pub use super::having_dsl::HavingDsl;
     pub use super::limit_dsl::LimitDsl;
-    pub use super::load_dsl::{ExecuteDsl, LoadQuery, LoadRet};
+    pub use super::load_dsl::{ExecuteDsl, LoadQuery};
     pub use super::locking_dsl::{LockingDsl, ModifyLockDsl};
     pub use super::nullable_select_dsl::SelectNullableDsl;
     pub use super::offset_dsl::OffsetDsl;
     pub use super::order_dsl::{OrderDsl, ThenOrderDsl};
     pub use super::select_dsl::SelectDsl;
     pub use super::single_value_dsl::SingleValueDsl;
+
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[doc(hidden)]
+    #[allow(deprecated)]
+    #[deprecated(note = "Use `LoadQuery::RowIter` directly")]
+    pub use super::load_dsl::LoadRet;
 }
 
 /// Methods used to construct select statements.
@@ -192,6 +198,16 @@ pub trait QueryDsl: Sized {
     /// can be called on the column itself, or on an expression containing that
     /// column. `title.nullable()`, `lower(title).nullable()`, and `(id,
     /// title).nullable()` would all be valid.
+    ///
+    /// In order to use this method with columns from different tables
+    /// a method like [`.inner_join`] or [`.left_join`] needs to be called before
+    /// calling [`.select`] (See examples below).
+    /// This is because you can only access columns from tables
+    /// that appear in your query before that function call.
+    ///
+    /// [`.inner_join`]: QueryDsl::inner_join()
+    /// [`.left_join`]: QueryDsl::left_join()
+    /// [`.select`]: QueryDsl::select()
     ///
     /// # Examples
     ///
@@ -375,6 +391,12 @@ pub trait QueryDsl: Sized {
     ///
     /// [associations]: crate::associations
     /// [`allow_tables_to_appear_in_same_query!`]: crate::allow_tables_to_appear_in_same_query!
+    ///
+    /// Note that in order to use this method with [`.select`], you will need to use it before calling
+    /// [`.select`] (See examples below). This is because you can only access columns from tables
+    /// that appear in your query before the call to [`.select`].
+    ///
+    /// [`.select`]: QueryDsl::select()
     ///
     /// # Examples
     ///
@@ -596,6 +618,15 @@ pub trait QueryDsl: Sized {
     /// Adds to the `WHERE` clause of a query.
     ///
     /// If there is already a `WHERE` clause, the result will be `old AND new`.
+    ///
+    /// Note that in order to use this method with columns from different tables, you need to call
+    //  [`.inner_join`] or [`.left_join`] beforehand.
+    /// This is because you can only access columns from tables
+    /// that appear in your query before the call to [`.filter`].
+    ///
+    /// [`.inner_join`]: QueryDsl::inner_join()
+    /// [`.left_join`]: QueryDsl::left_join()
+    /// [`.filter`]: QueryDsl::filter()
     ///
     /// # Example:
     ///
@@ -930,7 +961,7 @@ pub trait QueryDsl: Sized {
     /// Diesel follows postgresql's group by semantic, this means any column
     /// appearing in a group by clause is considered to be aggregated. If a
     /// primary key is part of the group by clause every column from the
-    /// corresponding table is considerd to be aggregated. Select clauses
+    /// corresponding table is considered to be aggregated. Select clauses
     /// cannot mix aggregated and non aggregated expressions.
     ///
     /// For group by clauses containing columns from more than one table it
@@ -1621,7 +1652,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     fn load_iter<'conn, 'query: 'conn, U, B>(
         self,
         conn: &'conn mut Conn,
-    ) -> QueryResult<LoadIter<'conn, 'query, Self, Conn, U, B>>
+    ) -> QueryResult<Self::RowIter<'conn>>
     where
         U: 'conn,
         Self: LoadQuery<'query, Conn, U, B> + 'conn,

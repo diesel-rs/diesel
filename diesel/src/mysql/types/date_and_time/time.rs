@@ -19,7 +19,7 @@ fn to_time(dt: MysqlTime) -> Result<NaiveTime, Box<dyn std::error::Error>> {
         ("offset", dt.time_zone_displacement as u32),
     ] {
         if field != 0 {
-            return Err(format!("Unable to convert {:?} to time: {} must be 0", dt, name).into());
+            return Err(format!("Unable to convert {dt:?} to time: {name} must be 0").into());
         }
     }
 
@@ -87,7 +87,7 @@ impl FromSql<Datetime, Mysql> for PrimitiveDateTime {
 
         to_datetime(mysql_time)
             .map(to_primitive_datetime)
-            .map_err(|err| format!("Cannot parse this date: {:?}: {}", mysql_time, err).into())
+            .map_err(|err| format!("Cannot parse this date: {mysql_time:?}: {err}").into())
     }
 }
 
@@ -164,7 +164,7 @@ impl FromSql<Time, Mysql> for NaiveTime {
         let mysql_time = <MysqlTime as FromSql<Time, Mysql>>::from_sql(bytes)?;
 
         to_time(mysql_time)
-            .map_err(|err| format!("Unable to convert {:?} to time: {}", mysql_time, err).into())
+            .map_err(|err| format!("Unable to convert {mysql_time:?} to time: {err}").into())
     }
 }
 
@@ -194,13 +194,13 @@ impl FromSql<Date, Mysql> for NaiveDate {
         let mysql_time = <MysqlTime as FromSql<Date, Mysql>>::from_sql(bytes)?;
 
         to_datetime(mysql_time)
-            .map_err(|err| format!("Unable to convert {:?} to time: {}", mysql_time, err).into())
+            .map_err(|err| format!("Unable to convert {mysql_time:?} to time: {err}").into())
             .and_then(|dt| {
                 let prim = to_primitive_datetime(dt);
                 if prim.time() == NaiveTime::MIDNIGHT {
                     Ok(prim.date())
                 } else {
-                    Err(format!("Unable to convert {:?} to date: non-0 time part", prim).into())
+                    Err(format!("Unable to convert {prim:?} to date: non-0 time part").into())
                 }
             })
     }

@@ -114,14 +114,8 @@ impl PgTypeMetadata {
 
 impl Backend for Pg {
     type QueryBuilder = PgQueryBuilder;
-}
-
-impl<'a> HasBindCollector<'a> for Pg {
-    type BindCollector = RawBytesBindCollector<Pg>;
-}
-
-impl<'a> HasRawValue<'a> for Pg {
-    type RawValue = PgValue<'a>;
+    type RawValue<'a> = PgValue<'a>;
+    type BindCollector<'a> = RawBytesBindCollector<Pg>;
 }
 
 impl TypeMetadata for Pg {

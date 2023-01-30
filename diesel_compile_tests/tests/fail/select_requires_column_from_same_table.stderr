@@ -1,8 +1,10 @@
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
-  --> tests/fail/select_requires_column_from_same_table.rs:20:34
+  --> tests/fail/select_requires_column_from_same_table.rs:20:41
    |
 20 |     let select_id = users::table.select(posts::id);
-   |                                  ^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |                                  ------ ^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `posts::columns::id`
+   |                                  |
+   |                                  required by a bound introduced by this call
    |
    = note: `posts::columns::id` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
@@ -12,4 +14,11 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              <posts::columns::id as SelectableExpression<posts::table>>
              <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <posts::columns::id as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
-   = note: required because of the requirements on the impl of `SelectDsl<posts::columns::id>` for `SelectStatement<FromClause<users::table>>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<posts::columns::id>`
+   = note: 1 redundant requirement hidden
+   = note: required for `users::table` to implement `SelectDsl<posts::columns::id>`
+note: required by a bound in `diesel::QueryDsl::select`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: methods::SelectDsl<Selection>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`

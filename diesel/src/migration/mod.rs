@@ -37,7 +37,7 @@ where
     String: FromSql<Text, DB>,
     DB: Backend,
 {
-    fn from_sql(bytes: crate::backend::RawValue<'_, DB>) -> crate::deserialize::Result<Self> {
+    fn from_sql(bytes: DB::RawValue<'_>) -> crate::deserialize::Result<Self> {
         let s = String::from_sql(bytes)?;
         Ok(Self(Cow::Owned(s)))
     }

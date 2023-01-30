@@ -8,7 +8,7 @@ homepage = "https://diesel.rs"
 repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
 include = ["src/**/*", "LICENSE-*"]
-rust-version = "1.60.0"
+rust-version = "1.65.0"
 
 [dependencies]
 syn = { version = "1.0.73", features = ["derive", "fold", "full"] }
@@ -41,3 +41,5 @@ mysql = []
 128-column-tables = ["64-column-tables"]
 without-deprecated = []
 with-deprecated = []
+r2d2 = []
+i-implement-a-third-party-backend-and-opt-into-breaking-changes = []

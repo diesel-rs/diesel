@@ -47,20 +47,16 @@ impl FromSql<Timestamp, Mysql> for NaiveDateTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Timestamp, Mysql>>::from_sql(bytes)?;
 
-        NaiveDate::from_ymd_opt(
-            mysql_time.year as i32,
-            mysql_time.month as u32,
-            mysql_time.day as u32,
-        )
-        .and_then(|v| {
-            v.and_hms_micro_opt(
-                mysql_time.hour as u32,
-                mysql_time.minute as u32,
-                mysql_time.second as u32,
-                mysql_time.second_part as u32,
-            )
-        })
-        .ok_or_else(|| format!("Cannot parse this date: {:?}", mysql_time).into())
+        NaiveDate::from_ymd_opt(mysql_time.year as i32, mysql_time.month, mysql_time.day)
+            .and_then(|v| {
+                v.and_hms_micro_opt(
+                    mysql_time.hour,
+                    mysql_time.minute,
+                    mysql_time.second,
+                    mysql_time.second_part as u32,
+                )
+            })
+            .ok_or_else(|| format!("Cannot parse this date: {mysql_time:?}").into())
     }
 }
 
@@ -88,12 +84,8 @@ impl ToSql<Time, Mysql> for NaiveTime {
 impl FromSql<Time, Mysql> for NaiveTime {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Time, Mysql>>::from_sql(bytes)?;
-        NaiveTime::from_hms_opt(
-            mysql_time.hour as u32,
-            mysql_time.minute as u32,
-            mysql_time.second as u32,
-        )
-        .ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
+        NaiveTime::from_hms_opt(mysql_time.hour, mysql_time.minute, mysql_time.second)
+            .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())
     }
 }
 
@@ -121,12 +113,8 @@ impl ToSql<Date, Mysql> for NaiveDate {
 impl FromSql<Date, Mysql> for NaiveDate {
     fn from_sql(bytes: MysqlValue<'_>) -> deserialize::Result<Self> {
         let mysql_time = <MysqlTime as FromSql<Date, Mysql>>::from_sql(bytes)?;
-        NaiveDate::from_ymd_opt(
-            mysql_time.year as i32,
-            mysql_time.month as u32,
-            mysql_time.day as u32,
-        )
-        .ok_or_else(|| format!("Unable to convert {:?} to chrono", mysql_time).into())
+        NaiveDate::from_ymd_opt(mysql_time.year as i32, mysql_time.month, mysql_time.day)
+            .ok_or_else(|| format!("Unable to convert {mysql_time:?} to chrono").into())
     }
 }
 

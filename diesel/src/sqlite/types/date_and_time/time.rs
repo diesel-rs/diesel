@@ -8,7 +8,7 @@ use self::time::{
     Date as NaiveDate, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,
 };
 
-use crate::backend;
+use crate::backend::Backend;
 use crate::deserialize::{self, FromSql};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
@@ -82,13 +82,12 @@ fn parse_julian(julian_days: f64) -> Result<PrimitiveDateTime, ComponentRange> {
     const EPOCH_IN_JULIAN_DAYS: f64 = 2_440_587.5;
     const SECONDS_IN_DAY: f64 = 86400.0;
     let timestamp = (julian_days - EPOCH_IN_JULIAN_DAYS) * SECONDS_IN_DAY;
-    OffsetDateTime::from_unix_timestamp_nanos((timestamp * 1E9) as i128)
-        .map(|timestamp| naive_utc(timestamp))
+    OffsetDateTime::from_unix_timestamp_nanos((timestamp * 1E9) as i128).map(naive_utc)
 }
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Date, Sqlite> for NaiveDate {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value
             .parse_string(|s| Self::parse(s, DATE_FORMAT))
             .map_err(Into::into)
@@ -105,7 +104,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Time, Sqlite> for NaiveTime {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in TIME_FORMATS {
                 if let Ok(time) = Self::parse(text, format) {
@@ -113,7 +112,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
                 }
             }
 
-            Err(format!("Invalid time {}", text).into())
+            Err(format!("Invalid time {text}").into())
         })
     }
 }
@@ -133,7 +132,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
@@ -147,7 +146,7 @@ impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
                 }
             }
 
-            Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {text}").into())
         })
     }
 }
@@ -167,7 +166,7 @@ impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
             for format in DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
@@ -181,7 +180,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
                 }
             }
 
-            Err(format!("Invalid datetime {}", text).into())
+            Err(format!("Invalid datetime {text}").into())
         })
     }
 }
@@ -201,7 +200,7 @@ impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
 
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
-    fn from_sql(value: backend::RawValue<'_, Sqlite>) -> deserialize::Result<Self> {
+    fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         let primitive_date_time =
             <PrimitiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(primitive_date_time.assume_utc())

@@ -106,7 +106,7 @@ use std::marker::PhantomData;
 
 use crate::backend::Backend;
 use crate::connection::{
-    ConnectionGatWorkaround, LoadConnection, LoadRowIter, SimpleConnection, TransactionManager,
+    ConnectionSealed, LoadConnection, SimpleConnection, TransactionManager,
     TransactionManagerStatus,
 };
 use crate::expression::QueryMetadata;
@@ -205,18 +205,15 @@ where
     M::Connection: R2D2Connection + Send + 'static,
 {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
-        (&mut **self).batch_execute(query)
+        (**self).batch_execute(query)
     }
 }
 
-impl<'conn, 'query, DB, M, B> ConnectionGatWorkaround<'conn, 'query, DB, B> for PooledConnection<M>
+impl<M> ConnectionSealed for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: Connection<Backend = DB> + ConnectionGatWorkaround<'conn, 'query, DB, B>,
-    DB: Backend,
+    M::Connection: ConnectionSealed,
 {
-    type Cursor = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Cursor;
-    type Row = <M::Connection as ConnectionGatWorkaround<'conn, 'query, DB, B>>::Row;
 }
 
 impl<M> Connection for PooledConnection<M>
@@ -238,17 +235,17 @@ where
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
-        (&mut **self).execute_returning_count(source)
+        (**self).execute_returning_count(source)
     }
 
     fn transaction_state(
         &mut self,
     ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
-        (&mut **self).transaction_state()
+        (**self).transaction_state()
     }
 
     fn begin_test_transaction(&mut self) -> QueryResult<()> {
-        (&mut **self).begin_test_transaction()
+        (**self).begin_test_transaction()
     }
 }
 
@@ -257,15 +254,18 @@ where
     M: ManageConnection,
     M::Connection: LoadConnection<B> + R2D2Connection,
 {
+    type Cursor<'conn, 'query> = <M::Connection as LoadConnection<B>>::Cursor<'conn, 'query>;
+    type Row<'conn, 'query> = <M::Connection as LoadConnection<B>>::Row<'conn, 'query>;
+
     fn load<'conn, 'query, T>(
         &'conn mut self,
         source: T,
-    ) -> QueryResult<LoadRowIter<'conn, 'query, Self, Self::Backend, B>>
+    ) -> QueryResult<Self::Cursor<'conn, 'query>>
     where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        (&mut **self).load(source)
+        (**self).load(source)
     }
 }
 
@@ -307,7 +307,7 @@ where
     Self: Connection,
 {
     fn setup(&mut self) -> QueryResult<usize> {
-        (&mut **self).setup()
+        (**self).setup()
     }
 }
 
@@ -319,7 +319,7 @@ where
     Self: Connection,
 {
     fn update_and_fetch(&mut self, changeset: Changes) -> QueryResult<Output> {
-        (&mut **self).update_and_fetch(changeset)
+        (**self).update_and_fetch(changeset)
     }
 }
 
