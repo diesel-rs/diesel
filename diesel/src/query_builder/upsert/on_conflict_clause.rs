@@ -27,7 +27,7 @@ impl<Values, Target, Action, WhereClause> QueryId
 
 impl<Values> OnConflictValues<Values, NoConflictTarget, DoNothing, NoWhereClause> {
     pub(crate) fn do_nothing(values: Values) -> Self {
-        Self::new(values, NoConflictTarget, DoNothing, NoWhereClause {})
+        Self::new(values, NoConflictTarget, DoNothing, NoWhereClause)
     }
 }
 
