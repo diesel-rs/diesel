@@ -248,7 +248,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     ) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing, NoWhereClause>, Op, Ret> {
         let target = self.target;
         self.stmt.replace_values(|values| {
-            OnConflictValues::new(values, target, DoNothing, NoWhereClause {})
+            OnConflictValues::new(values, target, DoNothing, NoWhereClause)
         })
     }
 }
