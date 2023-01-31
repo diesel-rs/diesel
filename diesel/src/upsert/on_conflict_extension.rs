@@ -446,7 +446,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
                 values,
                 target,
                 DoUpdate::new(changes.as_changeset()),
-                NoWhereClause {},
+                NoWhereClause,
             )
         })
     }
