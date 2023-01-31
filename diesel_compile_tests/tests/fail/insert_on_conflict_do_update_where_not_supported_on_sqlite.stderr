@@ -1,0 +1,18 @@
+error[E0277]: the trait bound `sqlite::backend::SqliteOnConflictClause: backend::sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere` is not satisfied
+  --> tests/fail/insert_on_conflict_do_update_where_not_supported_on_sqlite.rs:21:18
+   |
+21 |         .execute(&mut connection)
+   |          ------- ^^^^^^^^^^^^^^^ the trait `backend::sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere` is not implemented for `sqlite::backend::SqliteOnConflictClause`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the trait `backend::sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere` is implemented for `pg::backend::PgOnConflictClaues`
+   = note: required for `OnConflictValues<ValuesClause<ColumnInsertValue<id, Bound<Integer, i32>>, table>, ..., ..., ...>` to implement `QueryFragment<Sqlite>`
+   = note: 1 redundant requirement hidden
+   = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<ColumnInsertValue<id, ...>, ...>, ..., ..., ...>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<ColumnInsertValue<id, ...>, ...>, ..., ..., ...>>` to implement `ExecuteDsl<diesel::SqliteConnection, Sqlite>`
+note: required by a bound in `diesel::RunQueryDsl::execute`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |         Self: methods::ExecuteDsl<Conn>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
