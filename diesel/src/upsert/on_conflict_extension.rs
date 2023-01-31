@@ -380,6 +380,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # #[cfg(feature = "postgres")]
     /// # fn main() {
     /// #     use diesel::QueryDsl;
+    /// #     use diesel::query_dsl::methods::FilterDsl;
     /// use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
     /// #     #[cfg(feature = "postgres")]
