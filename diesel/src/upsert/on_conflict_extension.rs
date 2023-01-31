@@ -186,8 +186,8 @@ where
     ///     .execute(conn);
     /// assert_eq!(Ok(0), inserted_row_count);
     /// # }
-    /// # #[cfg(feature = "mysql")]
-    /// # fn main() {}
+    /// # #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    /// # fn main() {}    
     /// ```
     ///
     /// See the documentation for [`on_constraint`] and [`do_update`] for
