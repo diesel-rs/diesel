@@ -186,8 +186,8 @@ where
     ///     .execute(conn);
     /// assert_eq!(Ok(0), inserted_row_count);
     /// # }
-    /// # #[cfg(any(feature = "sqlite", feature = "mysql"))]
-    /// # fn main() {}    
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     ///
     /// See the documentation for [`on_constraint`] and [`do_update`] for
@@ -401,7 +401,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// let users_in_db = users.load(conn);
     /// assert_eq!(Ok(vec![(1, "Pascal".to_string())]), users_in_db);
     /// # }
-    /// # #[cfg(feature = "mysql")]
+    /// # #[cfg(any(feature = "sqlite", feature = "mysql"))]
     /// # fn main() {}
     /// ```
     pub fn do_update(self) -> IncompleteDoUpdate<Stmt, Target> {
