@@ -4,9 +4,10 @@ use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
 use crate::query_builder::upsert::on_conflict_target::*;
 pub use crate::query_builder::upsert::on_conflict_target_decorations::DecoratableTarget;
-use crate::query_builder::where_clause::{NoWhereClause, WhereAnd};
+use crate::query_builder::where_clause::{NoWhereClause, WhereAnd, WhereOr};
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
 use crate::query_dsl::filter_dsl::FilterDsl;
+use crate::query_dsl::methods::OrFilterDsl;
 use crate::query_source::QuerySource;
 use crate::sql_types::BoolOrNullableBool;
 
@@ -463,6 +464,22 @@ where
     fn filter(self, predicate: Predicate) -> Self::Output {
         self.replace_values(|values| {
             values.replace_where(|where_clause| where_clause.and(predicate))
+        })
+    }
+}
+
+impl<T, U, Op, Ret, Target, Action, WhereClause, Predicate> OrFilterDsl<Predicate>
+    for InsertStatement<T, OnConflictValues<U, Target, Action, WhereClause>, Op, Ret>
+where
+    T: QuerySource,
+    WhereClause: WhereOr<Predicate>,
+{
+    type Output =
+        InsertStatement<T, OnConflictValues<U, Target, Action, WhereClause::Output>, Op, Ret>;
+
+    fn or_filter(self, predicate: Predicate) -> Self::Output {
+        self.replace_values(|values| {
+            values.replace_where(|where_clause| where_clause.or(predicate))
         })
     }
 }
