@@ -397,7 +397,7 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///     .set(&user2)
     ///     .filter(id.ge(5))
     ///     .execute(conn);
-    /// assert_eq!(Ok(1), insert_count);
+    /// assert_eq!(Ok(0), insert_count);
     ///
     /// let users_in_db = users.load(conn);
     /// assert_eq!(Ok(vec![(1, "Pascal".to_string())]), users_in_db);
