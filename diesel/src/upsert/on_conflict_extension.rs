@@ -4,7 +4,9 @@ use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
 use crate::query_builder::upsert::on_conflict_target::*;
 pub use crate::query_builder::upsert::on_conflict_target_decorations::DecoratableTarget;
+use crate::query_builder::where_clause::{NoWhereClause, WhereAnd};
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
+use crate::query_dsl::filter_dsl::FilterDsl;
 use crate::query_source::QuerySource;
 use crate::sql_types::BoolOrNullableBool;
 
@@ -76,8 +78,12 @@ where
     /// ```
     pub fn on_conflict_do_nothing(
         self,
-    ) -> InsertStatement<T, OnConflictValues<U::ValueClause, NoConflictTarget, DoNothing>, Op, Ret>
-    {
+    ) -> InsertStatement<
+        T,
+        OnConflictValues<U::ValueClause, NoConflictTarget, DoNothing, NoWhereClause>,
+        Op,
+        Ret,
+    > {
         self.replace_values(|values| OnConflictValues::do_nothing(values.into_value_clause()))
     }
 
@@ -236,10 +242,13 @@ impl<T: QuerySource, U, Op, Ret, Target>
     ///
     /// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
     /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
-    pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
+    pub fn do_nothing(
+        self,
+    ) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing, NoWhereClause>, Op, Ret> {
         let target = self.target;
-        self.stmt
-            .replace_values(|values| OnConflictValues::new(values, target, DoNothing))
+        self.stmt.replace_values(|values| {
+            OnConflictValues::new(values, target, DoNothing, NoWhereClause {})
+        })
     }
 }
 
@@ -383,14 +392,40 @@ impl<T: QuerySource, U, Op, Ret, Target>
     pub fn set<Changes>(
         self,
         changes: Changes,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset>>, Op, Ret>
+    ) -> InsertStatement<
+        T,
+        OnConflictValues<U, Target, DoUpdate<Changes::Changeset>, NoWhereClause>,
+        Op,
+        Ret,
+    >
     where
         T: QuerySource,
         Changes: AsChangeset<Target = T>,
     {
         let target = self.target;
         self.stmt.replace_values(|values| {
-            OnConflictValues::new(values, target, DoUpdate::new(changes.as_changeset()))
+            OnConflictValues::new(
+                values,
+                target,
+                DoUpdate::new(changes.as_changeset()),
+                NoWhereClause {},
+            )
+        })
+    }
+}
+
+impl<T, U, Op, Ret, Target, Action, WhereClause, Predicate> FilterDsl<Predicate>
+    for InsertStatement<T, OnConflictValues<U, Target, Action, WhereClause>, Op, Ret>
+where
+    T: QuerySource,
+    WhereClause: WhereAnd<Predicate>,
+{
+    type Output =
+        InsertStatement<T, OnConflictValues<U, Target, Action, WhereClause::Output>, Op, Ret>;
+
+    fn filter(self, predicate: Predicate) -> Self::Output {
+        self.replace_values(|values| {
+            values.replace_where(|where_clause| where_clause.and(predicate))
         })
     }
 }
