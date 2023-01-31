@@ -79,12 +79,8 @@ where
     /// ```
     pub fn on_conflict_do_nothing(
         self,
-    ) -> InsertStatement<
-        T,
-        OnConflictValues<U::ValueClause, NoConflictTarget, DoNothing, NoWhereClause>,
-        Op,
-        Ret,
-    > {
+    ) -> InsertStatement<T, OnConflictValues<U::ValueClause, NoConflictTarget, DoNothing>, Op, Ret>
+    {
         self.replace_values(|values| OnConflictValues::do_nothing(values.into_value_clause()))
     }
 
@@ -243,9 +239,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     ///
     /// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
     /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
-    pub fn do_nothing(
-        self,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing, NoWhereClause>, Op, Ret> {
+    pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
         let target = self.target;
         self.stmt.replace_values(|values| {
             OnConflictValues::new(values, target, DoNothing, NoWhereClause)
@@ -430,12 +424,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     pub fn set<Changes>(
         self,
         changes: Changes,
-    ) -> InsertStatement<
-        T,
-        OnConflictValues<U, Target, DoUpdate<Changes::Changeset>, NoWhereClause>,
-        Op,
-        Ret,
-    >
+    ) -> InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset>>, Op, Ret>
     where
         T: QuerySource,
         Changes: AsChangeset<Target = T>,

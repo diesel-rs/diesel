@@ -3,7 +3,7 @@ use super::on_conflict_target::*;
 use crate::backend::sql_dialect;
 use crate::backend::Backend;
 use crate::insertable::*;
-use crate::query_builder::where_clause::NoWhereClause;
+use crate::query_builder::where_clause::{NoWhereClause, WhereClause};
 use crate::query_builder::*;
 use crate::result::QueryResult;
 
@@ -69,15 +69,34 @@ where
     }
 }
 
-impl<DB, Values, Target, Action, WhereClause> QueryFragment<DB>
-    for OnConflictValues<Values, Target, Action, WhereClause>
+impl<DB, Values, Target, Action> QueryFragment<DB>
+    for OnConflictValues<Values, Target, Action, NoWhereClause>
 where
     DB: Backend,
     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
     Values: QueryFragment<DB>,
     Target: QueryFragment<DB>,
     Action: QueryFragment<DB>,
-    WhereClause: QueryFragment<DB>,
+{
+    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        self.values.walk_ast(out.reborrow())?;
+        out.push_sql(" ON CONFLICT");
+        self.target.walk_ast(out.reborrow())?;
+        self.action.walk_ast(out.reborrow())?;
+        Ok(())
+    }
+}
+
+impl<DB, Values, Target, Action, Expr> QueryFragment<DB>
+    for OnConflictValues<Values, Target, Action, WhereClause<Expr>>
+where
+    DB: Backend,
+    DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+    DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere,
+    Values: QueryFragment<DB>,
+    Target: QueryFragment<DB>,
+    Action: QueryFragment<DB>,
+    WhereClause<Expr>: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         self.values.walk_ast(out.reborrow())?;
