@@ -9,7 +9,7 @@ use crate::result::QueryResult;
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
-pub struct OnConflictValues<Values, Target, Action, WhereClause> {
+pub struct OnConflictValues<Values, Target, Action, WhereClause = NoWhereClause> {
     values: Values,
     target: Target,
     action: Action,
