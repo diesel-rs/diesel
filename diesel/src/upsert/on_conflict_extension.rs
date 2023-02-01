@@ -4,7 +4,10 @@ use crate::query_builder::upsert::on_conflict_actions::*;
 use crate::query_builder::upsert::on_conflict_clause::*;
 use crate::query_builder::upsert::on_conflict_target::*;
 pub use crate::query_builder::upsert::on_conflict_target_decorations::DecoratableTarget;
+use crate::query_builder::where_clause::{NoWhereClause, WhereAnd, WhereOr};
 use crate::query_builder::{AsChangeset, InsertStatement, UndecoratedInsertRecord};
+use crate::query_dsl::filter_dsl::FilterDsl;
+use crate::query_dsl::methods::OrFilterDsl;
 use crate::query_source::QuerySource;
 use crate::sql_types::BoolOrNullableBool;
 
@@ -238,13 +241,14 @@ impl<T: QuerySource, U, Op, Ret, Target>
     /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
     pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
         let target = self.target;
-        self.stmt
-            .replace_values(|values| OnConflictValues::new(values, target, DoNothing))
+        self.stmt.replace_values(|values| {
+            OnConflictValues::new(values, target, DoNothing, NoWhereClause)
+        })
     }
 }
 
 impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
-    /// Used to create a query in the form `ON CONFLICT (...) DO UPDATE ...`
+    /// Used to create a query in the form `ON CONFLICT (...) DO UPDATE ... [WHERE ...]`
     ///
     /// Call `.set` on the result of this function with the changes you want to
     /// apply. The argument to `set` can be anything that implements `AsChangeset`
@@ -252,6 +256,9 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///
     /// Note: When inserting more than one row at a time, this query can still fail
     /// if the rows being inserted conflict with each other.
+    ///
+    /// Some backends (PostgreSQL) support `WHERE` clause is used to limit the rows actually updated.
+    /// For PostgreSQL you can use the `.filter()` method to add conditions like this.
     ///
     /// # Examples
     ///
@@ -359,6 +366,40 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// # #[cfg(feature = "mysql")]
     /// # fn main() {}
     /// ```
+    ///
+    /// ## Use `.filter()`method to limit the rows actually updated
+    ///
+    /// ```rust
+    /// # include!("on_conflict_docs_setup.rs");
+    /// #
+    /// # #[cfg(feature = "postgres")]
+    /// # fn main() {
+    /// #     use diesel::QueryDsl;
+    /// #     use diesel::query_dsl::methods::FilterDsl;
+    /// use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     #[cfg(feature = "postgres")]
+    /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
+    /// let user = User { id: 1, name: "Pascal" };
+    /// let user2 = User { id: 1, name: "Sean" };
+    ///
+    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    ///
+    /// let insert_count = diesel::insert_into(users)
+    ///     .values(&user2)
+    ///     .on_conflict(id)
+    ///     .do_update()
+    ///     .set(&user2)
+    ///     .filter(id.ge(5))
+    ///     .execute(conn);
+    /// assert_eq!(Ok(0), insert_count);
+    ///
+    /// let users_in_db = users.load(conn);
+    /// assert_eq!(Ok(vec![(1, "Pascal".to_string())]), users_in_db);
+    /// # }
+    /// # #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    /// # fn main() {}
+    /// ```
     pub fn do_update(self) -> IncompleteDoUpdate<Stmt, Target> {
         IncompleteDoUpdate {
             stmt: self.stmt,
@@ -390,7 +431,44 @@ impl<T: QuerySource, U, Op, Ret, Target>
     {
         let target = self.target;
         self.stmt.replace_values(|values| {
-            OnConflictValues::new(values, target, DoUpdate::new(changes.as_changeset()))
+            OnConflictValues::new(
+                values,
+                target,
+                DoUpdate::new(changes.as_changeset()),
+                NoWhereClause,
+            )
+        })
+    }
+}
+
+impl<T, U, Op, Ret, Target, Action, WhereClause, Predicate> FilterDsl<Predicate>
+    for InsertStatement<T, OnConflictValues<U, Target, Action, WhereClause>, Op, Ret>
+where
+    T: QuerySource,
+    WhereClause: WhereAnd<Predicate>,
+{
+    type Output =
+        InsertStatement<T, OnConflictValues<U, Target, Action, WhereClause::Output>, Op, Ret>;
+
+    fn filter(self, predicate: Predicate) -> Self::Output {
+        self.replace_values(|values| {
+            values.replace_where(|where_clause| where_clause.and(predicate))
+        })
+    }
+}
+
+impl<T, U, Op, Ret, Target, Action, WhereClause, Predicate> OrFilterDsl<Predicate>
+    for InsertStatement<T, OnConflictValues<U, Target, Action, WhereClause>, Op, Ret>
+where
+    T: QuerySource,
+    WhereClause: WhereOr<Predicate>,
+{
+    type Output =
+        InsertStatement<T, OnConflictValues<U, Target, Action, WhereClause::Output>, Op, Ret>;
+
+    fn or_filter(self, predicate: Predicate) -> Self::Output {
+        self.replace_values(|values| {
+            values.replace_where(|where_clause| where_clause.or(predicate))
         })
     }
 }
