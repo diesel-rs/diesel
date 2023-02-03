@@ -76,11 +76,24 @@ pub(super) fn run_migration_command(
         }
         ("generate", args) => {
             let migration_name = args.get_one::<String>("MIGRATION_NAME").unwrap();
-            let (up_sql, down_sql) = if let Some(diff_schema) =
-                args.get_one::<String>("DIFF_SCHEMA")
+
+            let (up_sql, down_sql) = if let Some(diff_schema) = args.get_one::<String>("SCHEMA_RS")
             {
                 let config = Config::read(matches)?;
-                self::diff_schema::generate_sql_based_on_diff_schema(config, matches, diff_schema)?
+                let diff_schema = if diff_schema == "NOT_SET" {
+                    config.print_schema.file.clone()
+                } else {
+                    Some(PathBuf::from(diff_schema))
+                };
+                if let Some(diff_schema) = diff_schema {
+                    self::diff_schema::generate_sql_based_on_diff_schema(
+                        config,
+                        matches,
+                        &diff_schema,
+                    )?
+                } else {
+                    (String::new(), String::new())
+                }
             } else {
                 (String::new(), String::new())
             };

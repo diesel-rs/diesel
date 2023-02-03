@@ -7,6 +7,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 use syn::visit::Visit;
 
 use crate::config::Config;
@@ -28,7 +29,7 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
 pub fn generate_sql_based_on_diff_schema(
     _config: Config,
     matches: &ArgMatches,
-    schema_file_path: &str,
+    schema_file_path: &Path,
 ) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
     let project_root = crate::find_project_root()?;
 
@@ -484,7 +485,6 @@ fn generate_create_table<DB>(
 where
     DB: Backend,
 {
-    println!("{foreign_keys:?}");
     query_builder.push_sql("CREATE TABLE ");
     query_builder.push_identifier(table)?;
     query_builder.push_sql("(\n");
@@ -517,6 +517,14 @@ where
         }
         query_builder.push_sql(")");
     }
+    // MySQL parses but ignores “inline REFERENCES specifications”
+    // (as defined in the SQL standard)
+    // where the references are defined as part of the column specification.
+    // MySQL accepts REFERENCES clauses only when specified as
+    // part of a separate FOREIGN KEY specification.
+    //
+    // https://dev.mysql.com/doc/refman/8.0/en/ansi-diff-foreign-keys.html
+
     for (column, table, pk) in foreign_key_list {
         query_builder.push_sql(",\n\t");
         query_builder.push_sql("FOREIGN KEY (");
