@@ -29,6 +29,10 @@ impl<'a, C> TransactionBuilder<'a, C>
 where
     C: Connection<Backend = Pg, TransactionManager = AnsiTransactionManager>,
 {
+    /// Creates a new TransactionBuilder.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     pub(crate) fn new(connection: &'a mut C) -> Self {
         Self {
             connection,

@@ -148,6 +148,7 @@ impl TrustedBackend for Pg {}
 pub struct PgOnConflictClaues;
 
 impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for PgOnConflictClaues {}
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere for PgOnConflictClaues {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct PgStyleArrayComparision;

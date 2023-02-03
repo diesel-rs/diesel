@@ -22,6 +22,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   for an enum of connections to different database backends.
 * Added a `--diff-schema` flag to the `diesel migration generate` command that generates a migration based
   on the difference between your database and the provided `schema.rs` file
+* Add a `ON CONFLICT (...) DO UPDATE ... [WHERE ...]` conditional clause support for PostgreSQL.
 
 ## [2.0.2] 2022-10-11
 
