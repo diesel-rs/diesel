@@ -3,7 +3,6 @@ use std::{fs::File, io::Read};
 
 use chrono::prelude::*;
 use regex::Regex;
-use std::time::Duration;
 
 use crate::support::project;
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
@@ -288,7 +287,6 @@ fn test_generate_migration(test_name: &str, args: Vec<&str>) {
     if !schema.is_empty() {
         db.execute(schema);
     }
-    let db = crate::support::database(&p.database_url());
 
     let mut schema_rs = backend_file_path(test_name, "schema.rs");
     if !schema_rs.exists() {
@@ -357,9 +355,6 @@ fn test_generate_migration(test_name: &str, args: Vec<&str>) {
     // revert the migration and compare the schema to the inital one
     let result = p.command("migration").arg("revert").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
-    // wait some time because mysql information schema
-    // can take same time to catch up?
-    std::thread::sleep(Duration::from_millis(1000));
 
     let result = p.command("print-schema").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);

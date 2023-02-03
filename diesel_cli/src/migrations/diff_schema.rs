@@ -489,6 +489,7 @@ where
     query_builder.push_identifier(table)?;
     query_builder.push_sql("(\n");
     let mut first = true;
+    let mut foreign_key_list = Vec::with_capacity(foreign_keys.len());
     for column in column_data {
         if first {
             first = false;
@@ -502,11 +503,7 @@ where
             query_builder.push_sql(" PRIMARY KEY");
         }
         if let Some((table, _, pk)) = foreign_keys.iter().find(|(_, k, _)| k == &column.rust_name) {
-            query_builder.push_sql(" REFERENCES ");
-            query_builder.push_identifier(table)?;
-            query_builder.push_sql("(");
-            query_builder.push_identifier(pk)?;
-            query_builder.push_sql(")");
+            foreign_key_list.push((column, table, pk));
         }
     }
     if primary_keys.len() > 1 {
@@ -518,6 +515,16 @@ where
                 query_builder.push_sql(", ");
             }
         }
+        query_builder.push_sql(")");
+    }
+    for (column, table, pk) in foreign_key_list {
+        query_builder.push_sql(",\n\t");
+        query_builder.push_sql("FOREIGN KEY (");
+        query_builder.push_identifier(&column.sql_name)?;
+        query_builder.push_sql(") REFERENCES ");
+        query_builder.push_identifier(table)?;
+        query_builder.push_sql("(");
+        query_builder.push_identifier(pk)?;
         query_builder.push_sql(")");
     }
     query_builder.push_sql("\n);");
