@@ -33,6 +33,7 @@ use crate::errors::{MigrationError, RunMigrationsError};
 /// - 20160107082941_create_posts
 ///     - up.sql
 ///     - down.sql
+///     - metadata.toml
 /// ```
 ///
 /// ```sql
