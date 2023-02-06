@@ -33,6 +33,7 @@ use crate::errors::{MigrationError, RunMigrationsError};
 /// - 20160107082941_create_posts
 ///     - up.sql
 ///     - down.sql
+///     - metadata.toml
 /// ```
 ///
 /// ```sql
@@ -65,15 +66,15 @@ use crate::errors::{MigrationError, RunMigrationsError};
 /// ```
 ///
 /// ```toml
-/// # 20160107082941_create_posts/metadata.toml
+/// ## 20160107082941_create_posts/metadata.toml
 ///
-/// # specifices if a migration is executed inside a
-/// # transaction or not. This configuration is optional
-/// # by default all migrations are run in transactions.
-/// #
-/// # For certain types of migrations, like creating an
-/// # index onto a existing column, it is required
-/// # to set this to false
+/// ## specifices if a migration is executed inside a
+/// ## transaction or not. This configuration is optional
+/// ## by default all migrations are run in transactions.
+/// ##
+/// ## For certain types of migrations, like creating an
+/// ## index onto a existing column, it is required
+/// ## to set this to false
 /// run_in_transaction = true
 /// ```
 #[derive(Clone)]
