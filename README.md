@@ -16,9 +16,9 @@ Rust's type system to create a low overhead query builder that "feels like
 Rust."
 
 Supported databases:
-1. [PostgreSQL](https://docs.diesel.rs/diesel/pg/index.html)
-2. [MySQL](https://docs.diesel.rs/diesel/mysql/index.html)
-3. [SQLite](https://docs.diesel.rs/diesel/sqlite/index.html)
+1. [PostgreSQL](https://docs.diesel.rs/master/diesel/pg/index.html)
+2. [MySQL](https://docs.diesel.rs/master/diesel/mysql/index.html)
+3. [SQLite](https://docs.diesel.rs/master/diesel/sqlite/index.html)
 
 You can configure the database backend in `Cargo.toml`:
 ```toml
