@@ -27,6 +27,48 @@ pub struct ColumnType {
     pub is_unsigned: bool,
 }
 
+impl From<&syn::TypePath> for ColumnType {
+    fn from(t: &syn::TypePath) -> Self {
+        let last = t
+            .path
+            .segments
+            .last()
+            .expect("At least one segment in this type-path");
+
+        let mut ret = Self {
+            schema: None,
+            rust_name: last.ident.to_string(),
+            sql_name: String::new(),
+            is_array: last.ident == "Array",
+            is_nullable: last.ident == "Nullable",
+            is_unsigned: last.ident == "Unsigned",
+        };
+
+        let sql_name = if !ret.is_nullable && !ret.is_array && !ret.is_unsigned {
+            last.ident
+                .to_string()
+                .split('_')
+                .collect::<Vec<_>>()
+                .join(" ")
+        } else if let syn::PathArguments::AngleBracketed(ref args) = last.arguments {
+            let arg = args.args.first().expect("There is at least one argument");
+            if let syn::GenericArgument::Type(syn::Type::Path(p)) = arg {
+                let s = Self::from(p);
+                ret.is_nullable |= s.is_nullable;
+                ret.is_array |= s.is_array;
+                ret.is_unsigned |= s.is_unsigned;
+                s.sql_name
+            } else {
+                unreachable!("That shouldn't happen")
+            }
+        } else {
+            unreachable!("That shouldn't happen")
+        };
+        ret.sql_name = sql_name;
+        ret
+    }
+}
+
 use std::fmt;
 
 impl fmt::Display for ColumnType {

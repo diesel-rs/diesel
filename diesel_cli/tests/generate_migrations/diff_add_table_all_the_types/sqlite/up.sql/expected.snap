@@ -1,0 +1,41 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 326
+description: "Test: diff_add_table_all_the_types"
+---
+-- Your SQL goes here
+CREATE TABLE `all_the_types`(
+	`id` INTEGER NOT NULL PRIMARY KEY,
+	`bool_column` BOOLEAN NOT NULL,
+	`integer_column` INTEGER NOT NULL,
+	`small_int_col` SMALLINT NOT NULL,
+	`big_int_col` BIGINT NOT NULL,
+	`binary_col` BINARY NOT NULL,
+	`text_col` TEXT NOT NULL,
+	`double_col` DOUBLE NOT NULL,
+	`float_col` FLOAT NOT NULL,
+	`numeric_col` NUMERIC NOT NULL,
+	`date_col` DATE NOT NULL,
+	`timestamp_col` TIMESTAMP NOT NULL,
+	`time_col` TIME NOT NULL,
+	`float4_col` FLOAT4 NOT NULL,
+	`small_int2_col` SMALLINT NOT NULL,
+	`int2_col` INT2 NOT NULL,
+	`int4_col` INT4 NOT NULL,
+	`int8_col` INT8 NOT NULL,
+	`big_int2_col` BIGINT NOT NULL,
+	`float8_col` FLOAT8 NOT NULL,
+	`decimal_col` DECIMAL NOT NULL,
+	`varchar_col` VARCHAR NOT NULL,
+	`varchar2_col` VARCHAR NOT NULL,
+	`char_col` CHAR NOT NULL,
+	`tinytext_col` TINYTEXT NOT NULL,
+	`mediumtext_col` MEDIUMTEXT NOT NULL,
+	`tinyblob_col` TINYBLOB NOT NULL,
+	`blob_col` BLOB NOT NULL,
+	`longblob_col` LONGBLOB NOT NULL,
+	`mediumblob_col` MEDIUMBLOB NOT NULL,
+	`varbinary_col` VARBINARY NOT NULL
+);
+
+

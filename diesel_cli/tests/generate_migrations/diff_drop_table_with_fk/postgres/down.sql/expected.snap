@@ -1,0 +1,15 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 331
+description: "Test: diff_drop_table_with_fk"
+---
+-- This file should undo anything in `up.sql`
+CREATE TABLE "posts"(
+	"id" INT4 NOT NULL PRIMARY KEY,
+	"title" TEXT NOT NULL,
+	"user_id" INT4 NOT NULL,
+	FOREIGN KEY ("user_id") REFERENCES "users"("id")
+);
+
+
+

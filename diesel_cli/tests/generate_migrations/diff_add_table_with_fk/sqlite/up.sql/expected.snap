@@ -1,0 +1,16 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 326
+description: "Test: diff_add_table_with_fk"
+---
+-- Your SQL goes here
+
+CREATE TABLE `posts`(
+	`id` INTEGER NOT NULL PRIMARY KEY,
+	`title` TEXT NOT NULL,
+	`body` TEXT,
+	`user_id` INTEGER NOT NULL,
+	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
+);
+
+

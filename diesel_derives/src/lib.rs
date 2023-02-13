@@ -23,6 +23,7 @@ extern crate quote;
 extern crate syn;
 #[macro_use]
 extern crate proc_macro_error;
+extern crate diesel_table_macro_syntax;
 
 use proc_macro::TokenStream;
 

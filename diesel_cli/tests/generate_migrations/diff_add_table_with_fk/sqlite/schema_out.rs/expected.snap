@@ -1,0 +1,30 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 332
+description: "Test: diff_add_table_with_fk"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    posts (id) {
+        id -> Integer,
+        title -> Text,
+        body -> Nullable<Text>,
+        user_id -> Integer,
+    }
+}
+
+diesel::table! {
+    users (id) {
+        id -> Integer,
+        name -> Text,
+    }
+}
+
+diesel::joinable!(posts -> users (user_id));
+
+diesel::allow_tables_to_appear_in_same_query!(
+    posts,
+    users,
+);
+

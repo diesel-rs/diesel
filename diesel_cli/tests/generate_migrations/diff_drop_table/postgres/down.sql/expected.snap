@@ -1,0 +1,11 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 297
+description: "Test: diff_drop_table"
+---
+-- This file should undo anything in `up.sql`
+CREATE TABLE "users"(
+	"id" INT4 NOT NULL PRIMARY KEY,
+	"name" TEXT NOT NULL
+);
+

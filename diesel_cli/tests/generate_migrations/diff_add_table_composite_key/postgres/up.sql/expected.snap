@@ -1,0 +1,14 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 331
+description: "Test: diff_add_table_composite_key"
+---
+-- Your SQL goes here
+CREATE TABLE "users"(
+	"id" INTEGER NOT NULL,
+	"other_key" INTEGER NOT NULL,
+	"name" TEXT NOT NULL,
+	PRIMARY KEY("id", "other_key")
+);
+
+

@@ -1,0 +1,15 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 327
+description: "Test: diff_alter_table_add_column"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    users (id) {
+        id -> Integer,
+        name -> Text,
+        hair_color -> Nullable<Text>,
+    }
+}
+
