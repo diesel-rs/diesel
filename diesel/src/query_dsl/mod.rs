@@ -955,7 +955,7 @@ pub trait QueryDsl: Sized {
     /// Use [`QueryDsl::select()`] to specify one.
     ///
     /// If there was already a group by clause, it will be overridden.
-    /// Ordering by multiple columns can be achieved by passing a tuple of those
+    /// Grouping by multiple columns can be achieved by passing a tuple of those
     /// columns.
     ///
     /// Diesel follows postgresql's group by semantic, this means any column
