@@ -8,4 +8,4 @@ rust-version = "1.65.0"
 
 [dependencies]
 serde = {version = "1", features = ["derive"]}
-toml = "0.5"
+toml = "0.7"

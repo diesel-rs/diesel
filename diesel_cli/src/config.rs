@@ -3,7 +3,6 @@ use serde::Deserialize;
 use std::env;
 use std::error::Error;
 use std::fs;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use super::find_project_root;
@@ -32,9 +31,8 @@ impl Config {
         let path = Self::file_path(matches);
 
         if path.exists() {
-            let mut bytes = Vec::new();
-            fs::File::open(&path)?.read_to_end(&mut bytes)?;
-            let mut result = toml::from_slice::<Self>(&bytes)?;
+            let content = fs::read_to_string(&path)?;
+            let mut result = toml::from_str::<Self>(&content)?;
             result.set_relative_path_base(path.parent().unwrap());
             Ok(result)
         } else {
