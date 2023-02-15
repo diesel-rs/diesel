@@ -411,7 +411,7 @@ pub trait LoadConnection<B = DefaultLoadingMode>: Connection {
     /// [`QueryDsl::load`](crate::QueryDsl) instead.
     ///
     /// This function is useful for people trying to build an alternative
-    /// dsl on top of diesel. It returns an [ `LoadRowIter`], which
+    /// dsl on top of diesel. It returns an [`LoadRowIter`], which
     /// is essentially an [`Iterator<Item = QueryResult<&impl Row<Self::Backend>>`](Iterator).
     /// This type can be used to iterate over all rows returned by the database.
     #[diesel_derives::__diesel_public_if(
