@@ -650,8 +650,8 @@ impl<'de> Deserialize<'de> for Filtering {
             {
                 let mut only_tables = None::<Vec<Regex>>;
                 let mut except_tables = None::<Vec<Regex>>;
-                while let Some(key) = map.next_key()? {
-                    match key {
+                while let Some(key) = map.next_key::<String>()? {
+                    match &key as &str {
                         "only_tables" => {
                             if only_tables.is_some() {
                                 return Err(de::Error::duplicate_field("only_tables"));
@@ -666,7 +666,7 @@ impl<'de> Deserialize<'de> for Filtering {
                         }
                         _ => {
                             return Err(de::Error::unknown_field(
-                                key,
+                                &key,
                                 &["only_tables", "except_tables"],
                             ))
                         }
