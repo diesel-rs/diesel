@@ -12,7 +12,7 @@ warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::
 26 |     use diesel::dsl::{any, exists};
    |                       ^^^
 
-error[E0271]: type mismatch resolving `<query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/subselect_cannot_reference_random_tables.rs:32:25
    |
 32 |         .load::<(i32,)>(&mut conn);
@@ -39,7 +39,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/subselect_cannot_reference_random_tables.rs:38:25
    |
 38 |         .load::<(i32,)>(&mut conn);
@@ -66,7 +66,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<query_source::joins::Join<posts::table, users::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/subselect_cannot_reference_random_tables.rs:42:25
    |
 42 |         .load::<(i32,)>(&mut conn);

@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<NoFromClause as AppearsInFromClause<users::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<NoFromClause as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/columns_cannot_be_rhs_of_insert.rs:20:18
    |
 20 |         .execute(&mut conn)

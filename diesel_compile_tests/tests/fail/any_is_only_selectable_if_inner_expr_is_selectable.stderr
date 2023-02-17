@@ -6,7 +6,7 @@ warning: use of deprecated function `diesel::dsl::any`: Use `ExpressionMethods::
    |
    = note: `#[warn(deprecated)]` on by default
 
-error[E0271]: type mismatch resolving `<stuff::table as AppearsInFromClause<more_stuff::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/any_is_only_selectable_if_inner_expr_is_selectable.rs:31:15
    |
 31 |         .load(&mut conn);

@@ -13,15 +13,15 @@ error[E0277]: the trait bound `str: diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-           and 123 others
+           and $N others
    = note: required for `&str` to implement `diesel::Expression`
    = note: required for `&str` to implement `AsExpression<diesel::sql_types::Integer>`
 
-error[E0271]: type mismatch resolving `<columns::name as diesel::Expression>::SqlType == diesel::sql_types::Integer`
+error[E0271]: type mismatch resolving `<name as Expression>::SqlType == Integer`
   --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:16:19
    |
 16 |     let pred = id.eq(name);
-   |                   ^^ type mismatch resolving `<columns::name as diesel::Expression>::SqlType == diesel::sql_types::Integer`
+   |                   ^^ type mismatch resolving `<name as Expression>::SqlType == Integer`
    |
 note: expected this to be `diesel::sql_types::Text`
   --> tests/fail/expressions_can_only_be_compared_for_equality_to_expressions_of_same_type.rs:8:17

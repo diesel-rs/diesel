@@ -12,11 +12,11 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<
    |         ^^
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `GroupByDsl<posts::columns::id>`
 
-error[E0271]: type mismatch resolving `<posts::columns::id as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+error[E0271]: type mismatch resolving `<id as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/invalid_group_by.rs:27:10
    |
 27 |         .select(users::id)
-   |          ^^^^^^ type mismatch resolving `<posts::columns::id as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+   |          ^^^^^^ type mismatch resolving `<id as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::No`
   --> tests/fail/invalid_group_by.rs:15:9
@@ -76,7 +76,7 @@ note: required by a bound in `diesel::QueryDsl::select`
    |         Self: methods::SelectDsl<Selection>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::select`
 
-error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<Alias<post1>>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:48:10
    |
 48 |         .group_by(post_alias.field(posts::id))
@@ -150,7 +150,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<
    |         ^^
    = note: required for `SelectStatement<FromClause<Alias<user1>>, diesel::query_builder::select_clause::SelectClause<AliasedField<user1, users::columns::id>>>` to implement `GroupByDsl<posts::columns::id>`
 
-error[E0271]: type mismatch resolving `<FromClause<users::table> as AppearsInFromClause<Alias<post1>>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<Alias<post1>>>::Count == Once`
   --> tests/fail/invalid_group_by.rs:67:10
    |
 67 |         .group_by(post_alias.field(posts::id))

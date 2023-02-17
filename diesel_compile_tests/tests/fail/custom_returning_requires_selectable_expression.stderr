@@ -45,7 +45,7 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<bad::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:63
    |
 33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));

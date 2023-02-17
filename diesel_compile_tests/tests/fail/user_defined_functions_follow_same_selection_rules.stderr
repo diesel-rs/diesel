@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>::SqlType == Text`
   --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:35:38
    |
 35 |     let _ = users::table.filter(name.eq(foo(1)));
@@ -6,7 +6,7 @@ error[E0271]: type mismatch resolving `<foo::foo<diesel::expression::bound::Boun
    |
    = note: required for `foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `AsExpression<diesel::sql_types::Text>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:38:23
    |
 38 |         .load::<User>(&mut conn);

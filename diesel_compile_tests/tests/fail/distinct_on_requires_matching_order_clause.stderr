@@ -6,11 +6,18 @@ error[E0308]: mismatched types
    |                                              |
    |                                              arguments to this method are incorrect
    |
+help: the return type of this call is `columns::name` due to the type of the argument passed
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:55:13
+    |
+55  |     let _ = users::table.order_by(users::id).distinct_on(users::name);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-----------^
+    |                                                          |
+    |                                                          this argument influences the return type of `distinct_on`
 note: associated function defined here
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-   |        ^^^^^^^^^^^
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ^^^^^^^^^^^
 
 error[E0308]: mismatched types
   --> tests/fail/distinct_on_requires_matching_order_clause.rs:59:73
@@ -20,11 +27,18 @@ error[E0308]: mismatched types
    |                                                             |
    |                                                             arguments to this method are incorrect
    |
+help: the return type of this call is `columns::name` due to the type of the argument passed
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:59:13
+    |
+59  |     let _ = users::table.order_by((users::id, users::name)).distinct_on(users::name);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-----------^
+    |                                                                         |
+    |                                                                         this argument influences the return type of `distinct_on`
 note: associated function defined here
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-   |        ^^^^^^^^^^^
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ^^^^^^^^^^^
 
 error[E0308]: mismatched types
   --> tests/fail/distinct_on_requires_matching_order_clause.rs:65:22
@@ -34,11 +48,22 @@ error[E0308]: mismatched types
    |          |
    |          arguments to this method are incorrect
    |
+help: the return type of this call is `columns::name` due to the type of the argument passed
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:62:13
+    |
+62  |       let _ = users::table
+    |  _____________^
+63  | |         .order_by(users::id)
+64  | |         .then_order_by(users::name)
+65  | |         .distinct_on(users::name);
+    | |______________________-----------^
+    |                        |
+    |                        this argument influences the return type of `distinct_on`
 note: associated function defined here
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-   |        ^^^^^^^^^^^
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ^^^^^^^^^^^
 
 error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<columns::id>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not satisfied
   --> tests/fail/distinct_on_requires_matching_order_clause.rs:69:60
@@ -73,11 +98,18 @@ error[E0308]: mismatched types
    |                                              |
    |                                              arguments to this method are incorrect
    |
+help: the return type of this call is `columns::name` due to the type of the argument passed
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:72:13
+    |
+72  |     let _ = users::table.order_by(users::id).distinct_on(users::name).into_boxed();
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-----------^
+    |                                                          |
+    |                                                          this argument influences the return type of `distinct_on`
 note: associated function defined here
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-   |        ^^^^^^^^^^^
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ^^^^^^^^^^^
 
 error[E0308]: mismatched types
   --> tests/fail/distinct_on_requires_matching_order_clause.rs:76:22
@@ -87,11 +119,21 @@ error[E0308]: mismatched types
    |          |
    |          arguments to this method are incorrect
    |
+help: the return type of this call is `columns::name` due to the type of the argument passed
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:74:13
+    |
+74  |       let _ = users::table
+    |  _____________^
+75  | |         .order_by((users::id, users::name))
+76  | |         .distinct_on(users::name)
+    | |______________________-----------^
+    |                        |
+    |                        this argument influences the return type of `distinct_on`
 note: associated function defined here
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-   |        ^^^^^^^^^^^
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ^^^^^^^^^^^
 
 error[E0308]: mismatched types
   --> tests/fail/distinct_on_requires_matching_order_clause.rs:83:22
@@ -101,11 +143,22 @@ error[E0308]: mismatched types
    |          |
    |          arguments to this method are incorrect
    |
+help: the return type of this call is `columns::name` due to the type of the argument passed
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:80:13
+    |
+80  |       let _ = users::table
+    |  _____________^
+81  | |         .order_by(users::id)
+82  | |         .then_order_by(users::name)
+83  | |         .distinct_on(users::name)
+    | |______________________-----------^
+    |                        |
+    |                        this argument influences the return type of `distinct_on`
 note: associated function defined here
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
-   |        ^^^^^^^^^^^
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ^^^^^^^^^^^
 
 error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<columns::id>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not satisfied
   --> tests/fail/distinct_on_requires_matching_order_clause.rs:90:19

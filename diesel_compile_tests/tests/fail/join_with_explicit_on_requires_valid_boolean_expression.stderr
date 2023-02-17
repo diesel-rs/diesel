@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<query_source::joins::Join<users::table, posts::table, Inner> as AppearsInFromClause<comments::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/join_with_explicit_on_requires_valid_boolean_expression.rs:31:26
    |
 31 |     let _ = users::table.inner_join(posts::table.on(users::id.eq(comments::id)));

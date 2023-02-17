@@ -34,11 +34,11 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<columns::name as IsContainedInGroupBy<columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/valid_grouping_and_boxed_expressions.rs:88:17
    |
 88 |         .select(maybe_grouped(true))
-   |                 ^^^^^^^^^^^^^ type mismatch resolving `<columns::name as IsContainedInGroupBy<columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+   |                 ^^^^^^^^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::No`
   --> tests/fail/valid_grouping_and_boxed_expressions.rs:11:9

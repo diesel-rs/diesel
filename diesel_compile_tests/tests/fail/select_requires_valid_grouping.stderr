@@ -1,8 +1,8 @@
-error[E0271]: type mismatch resolving `<users::columns::name as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:85:53
    |
 85 |     let source = users::table.group_by(users::name).select(users::id);
-   |                                                     ^^^^^^ type mismatch resolving `<users::columns::name as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+   |                                                     ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::No`
   --> tests/fail/select_requires_valid_grouping.rs:8:9
@@ -16,7 +16,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    |         ^^
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-error[E0271]: type mismatch resolving `<(users::columns::name, users::columns::hair_color) as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:88:10
    |
 88 |         .select(users::id);
@@ -29,11 +29,11 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
    |         ^^
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-error[E0271]: type mismatch resolving `<users::columns::name as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+error[E0271]: type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:91:10
    |
 91 |         .select((users::name, users::id));
-   |          ^^^^^^ type mismatch resolving `<users::columns::name as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+   |          ^^^^^^ type mismatch resolving `<name as IsContainedInGroupBy<id>>::Output == Yes`
    |
 note: expected this to be `diesel::expression::is_contained_in_group_by::No`
   --> tests/fail/select_requires_valid_grouping.rs:8:9
@@ -49,7 +49,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<users::colum
    = note: required for `(users::columns::name, users::columns::id)` to implement `ValidGrouping<users::columns::name>`
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<(users::columns::name, users::columns::id)>`
 
-error[E0271]: type mismatch resolving `<(users::columns::name, users::columns::hair_color) as IsContainedInGroupBy<users::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:94:10
    |
 94 |         .select(users::id);
@@ -62,7 +62,7 @@ note: required for `users::columns::id` to implement `ValidGrouping<(users::colu
    |         ^^
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>` to implement `SelectDsl<users::columns::id>`
 
-error[E0271]: type mismatch resolving `<(users::columns::id, posts::columns::title) as IsContainedInGroupBy<posts::columns::id>>::Output == diesel::expression::is_contained_in_group_by::Yes`
+error[E0271]: type mismatch resolving `<(id, title) as IsContainedInGroupBy<id>>::Output == Yes`
   --> tests/fail/select_requires_valid_grouping.rs:98:10
    |
 98 |         .select((users::all_columns, posts::id));
