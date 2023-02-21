@@ -247,6 +247,7 @@ fn select_for_update_locks_selected_rows() {
         ",
         )
         .unwrap();
+
     conn_1.begin_test_transaction().unwrap();
 
     let _sean = users_select_for_update

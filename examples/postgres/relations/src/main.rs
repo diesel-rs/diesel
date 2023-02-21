@@ -143,10 +143,7 @@ fn m_to_n_relations(conn: &mut PgConnection) -> Result<(), Box<dyn Error + Send 
     println!("Authors for \"Pipi and Momo\": {authors:?}");
 
     // get a list of authors with all their books
-    let all_authors = authors::table
-        .select(Author::as_select())
-        .load(conn)
-        .unwrap();
+    let all_authors = authors::table.select(Author::as_select()).load(conn)?;
 
     let books = BookAuthor::belonging_to(&authors)
         .inner_join(books::table)
