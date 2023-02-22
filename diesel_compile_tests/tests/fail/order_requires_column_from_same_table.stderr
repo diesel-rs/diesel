@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/order_requires_column_from_same_table.rs:18:31
    |
 18 |     let source = users::table.order(posts::id);

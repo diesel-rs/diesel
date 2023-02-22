@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/boxed_queries_require_selectable_expression_for_filter.rs:21:37
    |
 21 |     users::table.into_boxed::<Pg>().filter(posts::title.eq("Hello"));

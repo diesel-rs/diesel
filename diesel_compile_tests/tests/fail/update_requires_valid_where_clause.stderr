@@ -21,7 +21,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    |
    = help: the trait `IntoUpdateTarget` is implemented for `SelectStatement<FromClause<F>, diesel::query_builder::select_clause::DefaultSelectClause<FromClause<F>>, diesel::query_builder::distinct_clause::NoDistinctClause, W>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/update_requires_valid_where_clause.rs:23:26
    |
 23 |     update(users::table).filter(posts::id.eq(1));
@@ -59,7 +59,7 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
    = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `UpdateStatement<users::table, diesel::query_builder::where_clause::NoWhereClause>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/update_requires_valid_where_clause.rs:26:10
    |
 26 |         .filter(posts::id.eq(1));

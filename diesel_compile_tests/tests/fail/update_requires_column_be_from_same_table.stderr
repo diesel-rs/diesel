@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::title, diesel::expression::bound::Bound<diesel::sql_types::Text, &str>>> as AsChangeset>::Target == users::table`
+error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as AsChangeset>::Target == table`
   --> tests/fail/update_requires_column_be_from_same_table.rs:22:37
    |
 22 |     let command = update(users).set(posts::title.eq("Hello"));
@@ -41,7 +41,7 @@ note: required by a bound in `UpdateStatement::<T, U>::set`
    |                                   ^^^^^^^^^^ required by this bound in `UpdateStatement::<T, U>::set`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
    |
 23 |     let command = update(users).set(name.eq(posts::title));

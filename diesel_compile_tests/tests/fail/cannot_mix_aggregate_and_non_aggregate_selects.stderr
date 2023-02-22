@@ -35,7 +35,7 @@ note: required for `__Derived<nullable_int_col, max<Nullable<Integer>, nullable_
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:14:1
    |
 14 | sql_function!(fn f(x: Nullable<Integer>, y: Nullable<Integer>) -> Nullable<Integer>);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unsatisfied trait bound introduced in this `derive` macro
    = note: 1 redundant requirement hidden
    = note: required for `f<nullable_int_col, max<Nullable<Integer>, nullable_int_col>>` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<f::f<columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>`

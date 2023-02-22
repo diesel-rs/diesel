@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:32:23
    |
 32 |         .load::<User>(&mut conn);
@@ -22,7 +22,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:36:10
    |
 36 |         .filter(posts::id.eq(1));
@@ -47,7 +47,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
              SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
              SelectStatement<NoFromClause, S, D, W, O, LOf, G, H>
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:43:23
    |
 43 |         .load::<User>(&mut conn);
@@ -71,7 +71,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:47:10
    |
 47 |         .filter(users::name.eq(posts::title));

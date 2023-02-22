@@ -19,7 +19,7 @@ note: required by a bound in `diesel::RunQueryDsl::execute`
    |         Self: methods::ExecuteDsl<Conn>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
 
-error[E0271]: type mismatch resolving `<Sqlite as SqlDialect>::InsertWithDefaultKeyword == backend::sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword`
+error[E0271]: type mismatch resolving `<Sqlite as SqlDialect>::InsertWithDefaultKeyword == IsoSqlDefaultKeyword`
   --> tests/fail/upsert_with_multiple_values_not_supported_on_sqlite.rs:17:18
    |
 17 |         .execute(&mut connection);

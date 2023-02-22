@@ -15,7 +15,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:19:31
    |
 19 |     let source = users::table.select(sum(posts::id));
@@ -72,7 +72,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
    |
 20 |     let source = users::table.select(avg(posts::id));
@@ -129,7 +129,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
    |
 21 |     let source = users::table.select(max(posts::id));
@@ -186,7 +186,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
    = note: required for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>>`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
    |
 22 |     let source = users::table.select(min(posts::id));

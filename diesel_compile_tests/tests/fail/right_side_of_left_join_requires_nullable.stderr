@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:40:18
    |
 40 |     let _ = join.select(posts::title);
@@ -36,7 +36,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<posts::columns::title>`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:46:18
    |
 46 |     let _ = join.select(lower(posts::title));
@@ -74,7 +74,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:48:31
    |
 48 |     let _ = join.select(lower(posts::title.nullable()));
@@ -92,7 +92,7 @@ note: required by a bound in `lower`
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
    = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:48:25
    |
 48 |     let _ = join.select(lower(posts::title.nullable()));
@@ -102,7 +102,7 @@ error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title
               found struct `diesel::sql_types::Text`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:57:18
    |
 57 |     let _ = join.select(posts::title);
@@ -140,7 +140,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:63:18
    |
 63 |     let _ = join.select(lower(posts::title));
@@ -178,7 +178,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:65:31
    |
 65 |     let _ = join.select(lower(posts::title.nullable()));
@@ -196,7 +196,7 @@ note: required by a bound in `lower`
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
    = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:65:25
    |
 65 |     let _ = join.select(lower(posts::title.nullable()));
@@ -206,7 +206,7 @@ error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title
               found struct `diesel::sql_types::Text`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:74:18
    |
 74 |     let _ = join.select(posts::title);
@@ -244,7 +244,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:80:18
    |
 80 |     let _ = join.select(lower(posts::title));
@@ -282,7 +282,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>, pets::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<JoinOn<Join<table, table, LeftOuter>, Grouped<...>>, ..., ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:82:31
    |
 82 |     let _ = join.select(lower(posts::title.nullable()));
@@ -300,7 +300,7 @@ note: required by a bound in `lower`
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
    = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:82:25
    |
 82 |     let _ = join.select(lower(posts::title.nullable()));
@@ -310,7 +310,7 @@ error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title
               found struct `diesel::sql_types::Text`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
-error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>> as AppearsInFromClause<...>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:89:18
    |
 89 |     let _ = join.select(posts::title);
@@ -348,7 +348,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>> as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>> as AppearsInFromClause<...>>::Count == Never`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:95:18
    |
 95 |     let _ = join.select(lower(posts::title));
@@ -386,7 +386,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
    = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
    = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:97:31
    |
 97 |     let _ = join.select(lower(posts::title.nullable()));
@@ -404,7 +404,7 @@ note: required by a bound in `lower`
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
    = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:97:25
    |
 97 |     let _ = join.select(lower(posts::title.nullable()));
@@ -414,7 +414,7 @@ error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title
               found struct `diesel::sql_types::Text`
    = note: required for `NullableExpression<posts::columns::title>` to implement `AsExpression<diesel::sql_types::Text>`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:104:18
     |
 104 |     let _ = join.select(posts::title);
@@ -452,7 +452,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `posts::columns::title` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<posts::columns::title>`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:110:18
     |
 110 |     let _ = join.select(lower(posts::title));
@@ -490,7 +490,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `lower::lower<posts::columns::title>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<pets::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, SelectStatement<FromClause<JoinOn<..., ...>>>, ...>, ...>>>` to implement `SelectDsl<lower::lower<posts::columns::title>>`
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:112:31
     |
 112 |     let _ = join.select(lower(posts::title.nullable()));
@@ -508,7 +508,7 @@ note: required by a bound in `lower`
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
     = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
 
-error[E0271]: type mismatch resolving `<NullableExpression<posts::columns::title> as diesel::Expression>::SqlType == diesel::sql_types::Text`
+error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:112:25
     |
 112 |     let _ = join.select(lower(posts::title.nullable()));

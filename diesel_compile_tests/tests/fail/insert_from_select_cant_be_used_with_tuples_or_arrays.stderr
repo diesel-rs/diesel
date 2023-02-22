@@ -16,7 +16,7 @@ error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::tabl
            and $N others
    = note: required for `Vec<users::table>` to implement `diesel::Insertable<posts::table>`
 
-error[E0271]: type mismatch resolving `<users::table as diesel::Insertable<posts::table>>::Values == diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
+error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:10
    |
 37 |         .values((users, users));
@@ -26,7 +26,7 @@ error[E0271]: type mismatch resolving `<users::table as diesel::Insertable<posts
               found struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
    = note: required for `(users::table, users::table)` to implement `diesel::Insertable<posts::table>`
 
-error[E0271]: type mismatch resolving `<users::table as diesel::Insertable<posts::table>>::Values == diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
+error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == ValuesClause<_, table>`
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:17
    |
 37 |         .values((users, users));

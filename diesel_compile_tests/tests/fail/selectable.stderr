@@ -16,7 +16,7 @@ error[E0425]: cannot find value `titel` in module `posts`
 53 |     titel: String
    |     ^^^^^ not found in `posts`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    --> tests/fail/selectable.rs:149:10
     |
 149 |         .select(UserWithEmbeddedPost::as_select())
@@ -77,7 +77,7 @@ note: required for `posts::columns::title` to implement `SelectableExpression<qu
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, LeftOuter>, Grouped<Eq<Nullable<user_id>, ...>>>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>>`
 
-error[E0271]: type mismatch resolving `<posts::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Never`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Never`
    --> tests/fail/selectable.rs:150:15
     |
 150 |         .load(&mut conn)
@@ -269,7 +269,7 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
     |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
     |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:172:20
     |
 172 |         .returning(UserWithEmbeddedPost::as_select())
@@ -348,7 +348,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |         Self: LoadQuery<'query, Conn, U>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:173:15
     |
 173 |         .load(&mut conn)
@@ -426,7 +426,7 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
     |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
     |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:180:20
     |
 180 |         .returning(UserWithEmbeddedPost::as_select())
@@ -505,7 +505,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |         Self: LoadQuery<'query, Conn, U>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:181:15
     |
 181 |         .load(&mut conn)
@@ -581,7 +581,7 @@ note: required by a bound in `DeleteStatement::<T, U>::returning`
     |         E: SelectableExpression<T>,
     |            ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `DeleteStatement::<T, U>::returning`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:187:20
     |
 187 |         .returning(UserWithEmbeddedPost::as_select())
@@ -659,7 +659,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |         Self: LoadQuery<'query, Conn, U>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<users::table as AppearsInFromClause<posts::table>>::Count == diesel::query_source::Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
    --> tests/fail/selectable.rs:188:15
     |
 188 |         .load(&mut conn)
@@ -895,7 +895,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
     |         Self: LoadQuery<'query, Conn, U>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == Pg`
+error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
    --> tests/fail/selectable.rs:210:15
     |
 210 |         .load(&mut conn)

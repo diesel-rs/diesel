@@ -1,4 +1,4 @@
-error[E0271]: type mismatch resolving `<diesel::SqliteConnection as diesel::Connection>::Backend == Pg`
+error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
   --> tests/fail/boxed_queries_must_be_used_with_proper_connection.rs:14:52
    |
 14 |     users::table.into_boxed::<Pg>().load::<(i32,)>(&mut connection);
