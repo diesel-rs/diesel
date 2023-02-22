@@ -307,6 +307,9 @@ impl CustomColumnType {
             };
         }
 
+        #[cfg(not(feature = "mysql"))]
+        let _ = backend;
+
         Self {
             table_name,
             column_name,
