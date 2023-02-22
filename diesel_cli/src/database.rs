@@ -16,6 +16,7 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::Path;
 
+#[derive(Copy, Clone, Eq, PartialEq)]
 pub enum Backend {
     #[cfg(feature = "postgres")]
     Pg,
