@@ -1,4 +1,5 @@
 use super::schema::*;
+#[cfg(not(feature = "mysql"))]
 use crate::schema_dsl::*;
 use diesel::*;
 
@@ -214,7 +215,8 @@ table! {
     }
 }
 
-#[cfg(not(feature = "sqlite"))]
+// the test is somehow broken on some mariadb versions
+#[cfg(not(any(feature = "sqlite", feature = "mysql")))]
 #[test]
 fn select_for_update_locks_selected_rows() {
     use self::users_select_for_update::dsl::*;
