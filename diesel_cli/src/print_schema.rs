@@ -203,19 +203,29 @@ pub fn output_schema(
         let mut all_types = table_data
             .iter()
             .flat_map(|t| {
-                t.column_data.iter().map(move |c| CustomColumnType {
-                    table_name: t.name.clone(),
-                    column_name: c.rust_name.clone(),
-                    column_type: c.ty.clone(),
+                t.column_data.iter().map(move |c| {
+                    (
+                        &c.ty,
+                        CustomColumnType::new(
+                            backend,
+                            t.name.clone(),
+                            c.rust_name.clone(),
+                            c.ty.clone(),
+                        ),
+                    )
                 })
             })
-            .filter(|t| !diesel_provided_types.contains(&t.column_type.rust_name as &str))
+            .filter(|t| !diesel_provided_types.contains(&t.0.rust_name as &str))
+            .map(|t| t.1)
             .collect::<Vec<_>>();
 
         all_types.sort_unstable_by(|a, b| a.column_type.rust_name.cmp(&b.column_type.rust_name));
 
         #[cfg(feature = "postgres")]
-        all_types.dedup_by(|a, b| a.column_type.rust_name.eq(&b.column_type.rust_name));
+        if backend == Backend::Pg {
+            // We only de-duplicate postgres custom types, since they can have one definition and multiple usages.
+            all_types.dedup_by(|a, b| a.column_type.rust_name.eq(&b.column_type.rust_name));
+        }
 
         all_types
     } else {
@@ -264,24 +274,44 @@ struct CustomColumnType {
 }
 
 impl CustomColumnType {
-    #[cfg(feature = "mysql")]
-    fn generate_rust_name(&self) -> String {
-        let name_snake = format!(
-            "{}_{}_{}",
-            &self.table_name.rust_name, &self.column_name, &self.column_type.rust_name
-        );
+    fn new(
+        backend: Backend,
+        table_name: TableName,
+        column_name: String,
+        column_type: ColumnType,
+    ) -> Self {
+        #[cfg(feature = "mysql")]
+        if backend == Backend::Mysql {
+            let name_snake = format!(
+                "{}_{}_{}",
+                &table_name.rust_name, &column_name, &column_type.rust_name
+            );
 
-        name_snake
-            .split('_')
-            .map(|word| {
-                let mut c = word.chars();
+            let mut column_type = column_type;
+            column_type.rust_name = name_snake
+                .split('_')
+                .map(|word| {
+                    let mut c = word.chars();
 
-                match c.next() {
-                    None => String::new(),
-                    Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-                }
-            })
-            .collect()
+                    match c.next() {
+                        None => String::new(),
+                        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+                    }
+                })
+                .collect();
+
+            return Self {
+                table_name,
+                column_name,
+                column_type,
+            };
+        }
+
+        Self {
+            table_name,
+            column_name,
+            column_type,
+        }
     }
 }
 
@@ -405,16 +435,8 @@ impl Display for CustomTypeList {
                         }
                     };
 
-                    if let Some(ref schema) = t.schema {
-                        writeln!(
-                            out,
-                            "#[diesel(mysql_type(name = \"{mysql_name}\", schema = \"{schema}\"))]"
-                        )?;
-                    } else {
-                        writeln!(out, "#[diesel(mysql_type(name = \"{mysql_name}\"))]")?;
-                    }
-
-                    writeln!(out, "pub struct {};", ct.generate_rust_name())?;
+                    writeln!(out, "#[diesel(mysql_type(name = \"{mysql_name}\"))]")?;
+                    writeln!(out, "pub struct {};", t.rust_name)?;
                 }
 
                 writeln!(f, "}}\n")?;
@@ -559,7 +581,7 @@ impl<'a> Display for TableDefinition<'a> {
                             if !has_written_import {
                                 writeln!(out, "use diesel::sql_types::*;")?;
                             }
-                            writeln!(out, "use super::sql_types::{};", t.generate_rust_name())?;
+                            writeln!(out, "use super::sql_types::{};", t.column_type.rust_name)?;
                             has_written_import = true;
                         }
                     }
@@ -667,10 +689,10 @@ impl<'a> Display for ColumnDefinitions<'a> {
                 }
 
                 #[cfg(feature = "mysql")]
-                let mut column_type = column.ty.rust_name.clone();
+                let mut column_type = column.ty.clone();
 
                 #[cfg(not(feature = "mysql"))]
-                let column_type = column.ty.rust_name.clone();
+                let column_type = column.ty.clone();
 
                 #[cfg(feature = "mysql")]
                 {
@@ -680,7 +702,7 @@ impl<'a> Display for ColumnDefinitions<'a> {
                         .iter()
                         .find(|t| t.column_name == column.rust_name)
                     {
-                        column_type = custom_type.generate_rust_name();
+                        column_type = custom_type.column_type.clone();
                     }
                 }
 
