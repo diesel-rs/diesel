@@ -98,7 +98,7 @@ impl PrintSchema {
         }
     }
 
-    #[cfg(any(feature = "postgres", feature = "mysql"))]
+    #[cfg(feature = "postgres")]
     pub fn custom_type_derives(&self) -> Vec<String> {
         let mut derives = self
             .custom_type_derives
