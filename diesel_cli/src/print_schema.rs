@@ -326,15 +326,6 @@ struct CustomTypeList {
     derives: Vec<String>,
 }
 
-impl CustomTypeList {
-    #[cfg(feature = "postgres")]
-    fn position(&self, tpe: &str) -> Option<usize> {
-        self.types_sorted
-            .binary_search_by_key(&tpe, |c| &c.column_type.rust_name)
-            .ok()
-    }
-}
-
 #[allow(clippy::print_in_format_impl)]
 impl Display for CustomTypeList {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
