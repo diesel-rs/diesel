@@ -270,6 +270,12 @@ fn print_schema_comments_fallback_on_generated() {
 
 #[test]
 #[cfg(any(feature = "postgres", feature = "mysql"))]
+fn print_schema_with_enum_set_types() {
+    test_print_schema("print_schema_with_enum_set_types", vec![])
+}
+
+#[test]
+#[cfg(any(feature = "postgres", feature = "mysql"))]
 fn print_schema_comments_dont_fallback_on_generated() {
     test_print_schema(
         "print_schema_comments_dont_fallback_on_generated",
