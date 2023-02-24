@@ -36,26 +36,32 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         .collect::<Vec<_>>();
     let field_columns_inst = model.fields().iter().map(|f| field_column_inst(f, &model));
 
-    let field_check_bound = model
-        .fields()
-        .iter()
-        .zip(&field_columns_ty)
-        .filter(|(f, _)| !f.embed())
-        .flat_map(|(f, ty)| {
-            model
-                .check_for_backend
-                .as_ref()
-                .into_iter()
-                .flat_map(move |d| {
+    let check_function = if let Some(ref backends) = model.check_for_backend {
+        let field_check_bound = model
+            .fields()
+            .iter()
+            .zip(&field_columns_ty)
+            .filter(|(f, _)| !f.embed())
+            .flat_map(|(f, ty)| {
+                backends.iter().map(move |b| {
                     let field_ty = to_field_ty_bound(&f.ty);
                     let span = field_ty.span();
-                    d.iter().map(move |b| {
-                        quote::quote_spanned! {span =>
-                            #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
-                        }
-                    })
+                    quote::quote_spanned! {span =>
+                        #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
+                    }
                 })
-        });
+            });
+        Some(quote::quote! {
+            fn _check_field_compatibility()
+            where
+                #(#field_check_bound,)*
+            {
+
+            }
+        })
+    } else {
+        None
+    };
 
     wrap_in_dummy_mod(quote! {
         use diesel::expression::Selectable;
@@ -71,12 +77,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
             }
         }
 
-        fn _check_field_compatibility()
-        where
-            #(#field_check_bound,)*
-        {
-
-        }
+        #check_function
     })
 }
 
