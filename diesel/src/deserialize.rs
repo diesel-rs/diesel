@@ -24,6 +24,17 @@ pub type Result<T> = result::Result<T, Box<dyn Error + Send + Sync>>;
 ///
 /// This trait can be [derived](derive@Queryable)
 ///
+/// ## How to resolve compiler errors while loading data from the database
+///
+/// In case you getting uncomprehensable compiler errors while loading data
+/// from the database you might want to consider using
+/// [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
+/// `#[diesel(check_for_backend(YourBackendType))]` to check for mismatching fields at compile
+/// time. This drastically improves the quality of the generated error messages by pointing
+/// to concrete mismatches at field level. You need to specify the concrete database backend
+/// this specific struct is indented to be used with, as otherwise rustc cannot correctly
+/// identify the required deserialization implementation.
+///
 /// ## Interaction with `NULL`/`Option`
 /// [`Nullable`][crate::sql_types::Nullable] types can be queried into `Option`.
 /// This is valid for single fields, tuples, and structures with `Queryable`.

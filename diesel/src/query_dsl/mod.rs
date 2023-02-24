@@ -1450,6 +1450,19 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// [`execute`]: crate::query_dsl::RunQueryDsl::execute()
     /// [`sql_query`]: crate::sql_query()
     ///
+    /// ## How to resolve compiler errors while loading data from the database
+    ///
+    /// In case you getting uncomprehensable compiler errors while loading data
+    /// from the database into a type using [`#[derive(Queryable)]`](derive@crate::prelude::Queryable)
+    /// you might want to consider
+    /// using  [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
+    /// `#[diesel(check_for_backend(YourBackendType))]`
+    /// to check for mismatching fields at compile time. This drastically improves
+    /// the quality of the generated error messages by pointing to concrete type mismatches at
+    /// field level.You need to specify the concrete database backend
+    /// this specific struct is indented to be used with, as otherwise rustc cannot correctly
+    /// identify the required deserialization implementation.
+    ///
     /// # Examples
     ///
     /// ## Returning a single field

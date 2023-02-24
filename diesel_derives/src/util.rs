@@ -21,6 +21,7 @@ pub const SELECT_EXPRESSION_NOTE: &str =
     "select_expression = schema::table_name::column_name.is_not_null()";
 pub const SELECT_EXPRESSION_TYPE_NOTE: &str =
     "select_expression_type = dsl::IsNotNull<schema::table_name::column_name>";
+pub const CHECK_FOR_BACKEND_NOTE: &str = "diesel::pg::Pg";
 
 pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> ! {
     let prefix = if valid.len() == 1 { "" } else { " one of" };
@@ -58,6 +59,23 @@ pub fn parse_paren<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
     let content;
     parenthesized!(content in input);
     content.parse()
+}
+
+pub fn parse_paren_list<T: Parse, D: Parse>(
+    input: ParseStream,
+    help: &str,
+) -> Result<syn::punctuated::Punctuated<T, D>> {
+    if input.is_empty() {
+        abort!(
+            input.span(),
+            "unexpected end of input, expected parentheses";
+            help = "The correct format looks like `#[diesel({})]`", help
+        );
+    }
+
+    let content;
+    parenthesized!(content in input);
+    content.parse_terminated(T::parse)
 }
 
 pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {

@@ -25,6 +25,7 @@ pub struct Model {
     pub mysql_type: Option<MysqlType>,
     pub sqlite_type: Option<SqliteType>,
     pub postgres_type: Option<PostgresType>,
+    pub check_for_backend: Option<syn::punctuated::Punctuated<syn::TypePath, syn::Token![,]>>,
     fields: Vec<Field>,
 }
 
@@ -61,6 +62,7 @@ impl Model {
         let mut mysql_type = None;
         let mut sqlite_type = None;
         let mut postgres_type = None;
+        let mut check_for_backend = None;
 
         for attr in parse_attributes(attrs) {
             match attr.item {
@@ -80,6 +82,9 @@ impl Model {
                 StructAttr::MysqlType(_, val) => mysql_type = Some(val),
                 StructAttr::SqliteType(_, val) => sqlite_type = Some(val),
                 StructAttr::PostgresType(_, val) => postgres_type = Some(val),
+                StructAttr::CheckForBackend(_, b) => {
+                    check_for_backend = Some(b);
+                }
             }
         }
 
@@ -100,6 +105,7 @@ impl Model {
             sqlite_type,
             postgres_type,
             fields: fields_from_item_data(fields),
+            check_for_backend,
         }
     }
 

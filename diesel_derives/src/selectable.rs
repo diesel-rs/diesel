@@ -42,28 +42,19 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         .zip(&field_columns_ty)
         .filter(|(f, _)| !f.embed())
         .flat_map(|(f, ty)| {
-            let field_ty = to_field_ty_bound(&f.ty);
-            let span = field_ty.span();
-            let mut out = Vec::new();
-            if let Some(field_ty) = field_ty {
-
-                if cfg!(feature = "postgres") {
-                    out.push(quote::quote_spanned! {span=>
-                                                     #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::pg::Pg>
-                    });
-                }
-                if cfg!(feature = "sqlite") {
-                    out.push(quote::quote_spanned! {span=>
-                                                     #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::sqlite::Sqlite>
-                    });
-                }
-                if cfg!(feature = "mysql") {
-                    out.push(quote::quote_spanned! {span=>
-                                                     #field_ty: diesel::prelude::Queryable<diesel::dsl::SqlTypeOf<#ty>, diesel::mysql::Mysql>
-                    });
-                }
-            }
-            out
+            model
+                .check_for_backend
+                .as_ref()
+                .into_iter()
+                .flat_map(move |d| {
+                    let field_ty = to_field_ty_bound(&f.ty);
+                    let span = field_ty.span();
+                    d.iter().map(move |b| {
+                        quote::quote_spanned! {span =>
+                            #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
+                        }
+                    })
+                })
         });
 
     wrap_in_dummy_mod(quote! {
