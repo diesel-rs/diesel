@@ -1,4 +1,4 @@
-error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Text` as `i32`
+error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
   --> tests/fail/select_carries_correct_result_type_info.rs:19:39
    |
 19 |     let ids = select_name.load::<i32>(&mut connection);
@@ -21,7 +21,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Integer` as `*const str`
+error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
   --> tests/fail/select_carries_correct_result_type_info.rs:20:42
    |
 20 |     let names = select_id.load::<String>(&mut connection);

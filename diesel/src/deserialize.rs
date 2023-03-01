@@ -423,7 +423,7 @@ pub use diesel_derives::QueryableByName;
 #[cfg_attr(
     feature = "nightly-error-messages",
     rustc_on_unimplemented(
-        message = "Cannot deserialize a value of the type `{A}` as `{Self}`",
+        message = "Cannot deserialize a value of the database type `{A}` as `{Self}`",
         note = "Double check your type mappings via the documentation of `{A}`"
     )
 )]

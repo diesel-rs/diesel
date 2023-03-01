@@ -1,4 +1,4 @@
-error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Text` as `i32`
+error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
   --> tests/fail/selectable_with_typemisamatch.rs:17:11
    |
 17 |     name: i32,
@@ -14,7 +14,7 @@ error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Text` a
    = help: see issue #48214
    = help: add `#![feature(trivial_bounds)]` to the crate attributes to enable
 
-error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Integer` as `*const str`
+error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
   --> tests/fail/selectable_with_typemisamatch.rs:16:9
    |
 16 |     id: String,
