@@ -1,9 +1,10 @@
-error[E0277]: the trait bound `i32: FromSql<diesel::sql_types::Text, Pg>` is not satisfied
+error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Text` as `i32`
   --> tests/fail/selectable_with_typemisamatch.rs:17:11
    |
 17 |     name: i32,
    |           ^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
    |
+   = note: Double check your type mappings via the documentation of `diesel::sql_types::Text`
    = help: the following other types implement trait `FromSql<A, DB>`:
              <i32 as FromSql<diesel::sql_types::Integer, Mysql>>
              <i32 as FromSql<diesel::sql_types::Integer, Pg>>
@@ -13,12 +14,13 @@ error[E0277]: the trait bound `i32: FromSql<diesel::sql_types::Text, Pg>` is not
    = help: see issue #48214
    = help: add `#![feature(trivial_bounds)]` to the crate attributes to enable
 
-error[E0277]: the trait bound `*const str: FromSql<diesel::sql_types::Integer, Pg>` is not satisfied
+error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Integer` as `*const str`
   --> tests/fail/selectable_with_typemisamatch.rs:16:9
    |
 16 |     id: String,
    |         ^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`
    |
+   = note: Double check your type mappings via the documentation of `diesel::sql_types::Integer`
    = help: the following other types implement trait `FromSql<A, DB>`:
              <*const str as FromSql<diesel::sql_types::Text, Mysql>>
              <*const str as FromSql<diesel::sql_types::Text, Pg>>

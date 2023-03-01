@@ -420,6 +420,13 @@ pub use diesel_derives::QueryableByName;
 ///     }
 /// }
 /// ```
+#[cfg_attr(
+    feature = "nightly-error-messages",
+    rustc_on_unimplemented(
+        message = "Cannot deserialize a value of the type `{A}` as `{Self}`",
+        note = "Double check your type mappings via the documentation of `{A}`"
+    )
+)]
 pub trait FromSql<A, DB: Backend>: Sized {
     /// See the trait documentation.
     fn from_sql(bytes: DB::RawValue<'_>) -> Result<Self>;
