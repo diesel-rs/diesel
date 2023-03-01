@@ -1,0 +1,32 @@
+error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Text` as `i32`
+  --> tests/fail/selectable_with_typemisamatch.rs:17:11
+   |
+17 |     name: i32,
+   |           ^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
+   |
+   = note: Double check your type mappings via the documentation of `diesel::sql_types::Text`
+   = help: the following other types implement trait `FromSql<A, DB>`:
+             <i32 as FromSql<diesel::sql_types::Integer, Mysql>>
+             <i32 as FromSql<diesel::sql_types::Integer, Pg>>
+             <i32 as FromSql<diesel::sql_types::Integer, Sqlite>>
+   = note: required for `i32` to implement `diesel::Queryable<diesel::sql_types::Text, Pg>`
+   = note: required for `i32` to implement `FromSqlRow<diesel::sql_types::Text, Pg>`
+   = help: see issue #48214
+   = help: add `#![feature(trivial_bounds)]` to the crate attributes to enable
+
+error[E0277]: Cannot deserialize a value of the type `diesel::sql_types::Integer` as `*const str`
+  --> tests/fail/selectable_with_typemisamatch.rs:16:9
+   |
+16 |     id: String,
+   |         ^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`
+   |
+   = note: Double check your type mappings via the documentation of `diesel::sql_types::Integer`
+   = help: the following other types implement trait `FromSql<A, DB>`:
+             <*const str as FromSql<diesel::sql_types::Text, Mysql>>
+             <*const str as FromSql<diesel::sql_types::Text, Pg>>
+             <*const str as FromSql<diesel::sql_types::Text, Sqlite>>
+   = note: required for `std::string::String` to implement `FromSql<diesel::sql_types::Integer, Pg>`
+   = note: required for `std::string::String` to implement `diesel::Queryable<diesel::sql_types::Integer, Pg>`
+   = note: required for `std::string::String` to implement `FromSqlRow<diesel::sql_types::Integer, Pg>`
+   = help: see issue #48214
+   = help: add `#![feature(trivial_bounds)]` to the crate attributes to enable

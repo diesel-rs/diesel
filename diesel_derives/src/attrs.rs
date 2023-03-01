@@ -8,7 +8,7 @@ use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream, Parser, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, Type, TypePath};
+use syn::{Attribute, Ident, LitBool, LitStr, Path, Type, TypePath};
 
 use deprecated::ParseDeprecated;
 use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
@@ -20,6 +20,7 @@ use util::{
 };
 
 use crate::field::SelectExpr;
+use crate::util::{parse_paren_list, CHECK_FOR_BACKEND_NOTE};
 
 pub struct AttributeSpanWrapper<T> {
     pub item: T,
@@ -135,7 +136,6 @@ impl Parse for FieldAttr {
                 name,
                 parse_eq(input, SELECT_EXPRESSION_TYPE_NOTE)?,
             )),
-
             _ => unknown_attribute(
                 &name,
                 &[
@@ -182,6 +182,7 @@ pub enum StructAttr {
     SqliteType(Ident, SqliteType),
     PostgresType(Ident, PostgresType),
     PrimaryKey(Ident, Punctuated<Ident, Comma>),
+    CheckForBackend(Ident, syn::punctuated::Punctuated<TypePath, syn::Token![,]>),
 }
 
 impl Parse for StructAttr {
@@ -224,11 +225,14 @@ impl Parse for StructAttr {
                 name,
                 parse_paren(input, POSTGRES_TYPE_NOTE)?,
             )),
-            "primary_key" => Ok(StructAttr::PrimaryKey(name, {
-                let content;
-                parenthesized!(content in input);
-                content.parse_terminated(Ident::parse)?
-            })),
+            "primary_key" => Ok(StructAttr::PrimaryKey(
+                name,
+                parse_paren_list(input, "key1, key2")?,
+            )),
+            "check_for_backend" => Ok(StructAttr::CheckForBackend(
+                name,
+                parse_paren_list(input, CHECK_FOR_BACKEND_NOTE)?,
+            )),
 
             _ => unknown_attribute(
                 &name,
@@ -245,6 +249,7 @@ impl Parse for StructAttr {
                     "sqlite_type",
                     "postgres_type",
                     "primary_key",
+                    "check_for_backend",
                 ],
             ),
         }
@@ -265,6 +270,7 @@ impl Spanned for StructAttr {
             | StructAttr::MysqlType(ident, _)
             | StructAttr::SqliteType(ident, _)
             | StructAttr::PostgresType(ident, _)
+            | StructAttr::CheckForBackend(ident, _)
             | StructAttr::PrimaryKey(ident, _) => ident.span(),
         }
     }

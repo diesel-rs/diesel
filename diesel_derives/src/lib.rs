@@ -1,4 +1,3 @@
-#![recursion_limit = "1024"]
 // Clippy lints
 #![allow(
     clippy::needless_doctest_main,
@@ -455,7 +454,10 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// **Note**: When this trait is derived, it will assume that __all fields on
 /// your struct__ matches __all fields in the query__, including the order and
 /// count. This means that field order is significant if you are using
-/// `#[derive(Queryable)]`. __Field name has no effect__.
+/// `#[derive(Queryable)]`. __Field name has no effect__. If you see errors while
+/// loading data into a struct that derives `Queryable`: Consider using [`#[derive(Selectable)]`]
+/// + `#[diesel(check_for_backend(YourBackendType))]` to check for mismatching fields at compile
+/// time.
 ///
 /// To provide custom deserialization behavior for a field, you can use
 /// `#[diesel(deserialize_as = SomeType)]`. If this attribute is present, Diesel
@@ -843,6 +845,16 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///    current type is selectable. The path is relative to the current module.
 ///    If this attribute is not used, the type name converted to
 ///    `snake_case` with an added `s` is used as table name.
+///
+/// ## Optional Type attributes
+///
+/// * `#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]`, instructs
+///    the derive to generate additional code to identify potential type mismatches.
+///    It accepts a list of backend types to check the types against. Using this option
+///    will result in much better error messages in cases where some types in your `Queryable`
+///    struct do not match. You need to specify the concrete database backend
+///    this specific struct is indented to be used with, as otherwise rustc cannot correctly
+///    identify the required deserialization implementation.
 ///
 /// ## Field attributes
 ///
