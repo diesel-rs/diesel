@@ -73,7 +73,7 @@ error[E0412]: cannot find type `foo` in this scope
 27 |     #[sql_type = "foo"]
    |                  ^^^^^ not found in this scope
 
-error[E0277]: Cannot deserialize a value of the type `_` as `i32`
+error[E0277]: Cannot deserialize a value of the database type `_` as `i32`
   --> tests/fail/derive_deprecated/deprecated_sql_type.rs:25:10
    |
 25 | #[derive(QueryableByName)]

@@ -1,4 +1,4 @@
-error[E0277]: Cannot deserialize a value of the type `BigInt` as `*const str`
+error[E0277]: Cannot deserialize a value of the database type `BigInt` as `*const str`
   --> tests/fail/select_sql_still_ensures_result_type.rs:16:51
    |
 16 |     let count = select_count.get_result::<String>(&mut connection).unwrap();
