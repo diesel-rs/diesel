@@ -151,6 +151,7 @@ fn field_ty_serialize_as(
     treat_none_as_default_value: bool,
 ) -> TokenStream {
     let column_name = field.column_name();
+    column_name.valid_ident();
     let span = field.span;
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(ty);
@@ -179,6 +180,7 @@ fn field_expr_serialize_as(
 ) -> TokenStream {
     let field_name = &field.name;
     let column_name = field.column_name();
+    column_name.valid_ident();
     let column = quote!(#table_name::#column_name);
     if treat_none_as_default_value {
         if is_option_ty(ty) {
@@ -198,6 +200,7 @@ fn field_ty(
     treat_none_as_default_value: bool,
 ) -> TokenStream {
     let column_name = field.column_name();
+    column_name.valid_ident();
     let span = field.span;
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(&field.ty);
@@ -228,6 +231,7 @@ fn field_expr(
 ) -> TokenStream {
     let field_name = &field.name;
     let column_name = field.column_name();
+    column_name.valid_ident();
 
     let column: Expr = parse_quote!(#table_name::#column_name);
     if treat_none_as_default_value {

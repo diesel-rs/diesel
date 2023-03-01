@@ -140,6 +140,7 @@ fn field_changeset_ty(
     treat_none_as_null: bool,
 ) -> TokenStream {
     let column_name = field.column_name();
+    column_name.valid_ident();
     if !treat_none_as_null && is_option_ty(&field.ty) {
         let field_ty = inner_of_option_ty(&field.ty);
         quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>>)
@@ -157,6 +158,7 @@ fn field_changeset_expr(
 ) -> TokenStream {
     let field_name = &field.name;
     let column_name = field.column_name();
+    column_name.valid_ident();
     if !treat_none_as_null && is_option_ty(&field.ty) {
         if lifetime.is_some() {
             quote!(self.#field_name.as_ref().map(|x| #table_name::#column_name.eq(x)))
@@ -175,6 +177,7 @@ fn field_changeset_ty_serialize_as(
     treat_none_as_null: bool,
 ) -> TokenStream {
     let column_name = field.column_name();
+    column_name.valid_ident();
     if !treat_none_as_null && is_option_ty(&field.ty) {
         let inner_ty = inner_of_option_ty(ty);
         quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #inner_ty>>)
@@ -191,6 +194,7 @@ fn field_changeset_expr_serialize_as(
 ) -> TokenStream {
     let field_name = &field.name;
     let column_name = field.column_name();
+    column_name.valid_ident();
     let column: Expr = parse_quote!(#table_name::#column_name);
     if !treat_none_as_null && is_option_ty(&field.ty) {
         quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x))))

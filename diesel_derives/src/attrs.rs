@@ -48,6 +48,18 @@ impl SqlIdentifier {
     pub fn span(&self) -> Span {
         self.span
     }
+
+    pub fn valid_ident(&self) {
+        if syn::parse_str::<Ident>(&self.field_name).is_err() {
+            abort!(
+                self.span(),
+                "Expected valid identifier, found `{0}`. \
+                 Diesel automatically renames invalid identifiers, \
+                 perhaps you meant to write `{0}_`?",
+                self.field_name
+            )
+        }
+    }
 }
 
 impl ToTokens for SqlIdentifier {
