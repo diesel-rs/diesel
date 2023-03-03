@@ -27,7 +27,7 @@ pub(crate) mod bound;
 mod coerce;
 pub(crate) mod count;
 #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
-mod exists;
+pub(crate) mod exists;
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub mod exists;
 pub(crate) mod grouped;

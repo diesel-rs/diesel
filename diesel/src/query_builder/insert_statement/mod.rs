@@ -1,4 +1,4 @@
-pub(super) mod batch_insert;
+pub(crate) mod batch_insert;
 mod column_list;
 mod insert_from_select;
 

@@ -170,6 +170,8 @@ fn generate_connection_impl(
                     backend: &'b MultiBackend,
                     q: &'b impl diesel::query_builder::QueryFragment<MultiBackend>,
                 ) -> diesel::QueryResult<()> {
+                    use diesel::internal::derives::multiconnection::MultiConnectionHelper;
+
                     let mut collector = super::bind_collector::MultiBindCollector::#ident(Default::default());
                     let lookup = Self::to_any(lookup);
                     q.collect_binds(&mut collector, lookup, backend)?;
@@ -540,8 +542,8 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
             fn partial_row(
                 &self,
                 range: std::ops::Range<usize>,
-            ) -> diesel::row::PartialRow<'_, Self::InnerPartialRow> {
-                diesel::row::PartialRow::new(self, range)
+            ) -> diesel::internal::derives::multiconnection::PartialRow<'_, Self::InnerPartialRow> {
+                diesel::internal::derives::multiconnection::PartialRow::new(self, range)
             }
         }
 
@@ -992,50 +994,50 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
 
     let query_fragment_impls = IntoIterator::into_iter([
         quote::quote!{
-            #query_fragment for diesel::query_builder::BoxedLimitOffsetClause<'_, super::backend::MultiBackend>
+            #query_fragment for diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<'_, super::backend::MultiBackend>
         },
         quote::quote!{
-            <L, O> #query_fragment for diesel::query_builder::LimitOffsetClause<L, O>
+            <L, O> #query_fragment for diesel::internal::derives::multiconnection::LimitOffsetClause<L, O>
         },
         quote::quote! {
             <F, S, D, W, O, LOf, G, H, LC> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiSelectStatementSyntax>
-                for diesel::query_builder::SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+                for diesel::internal::derives::multiconnection::SelectStatement<F, S, D, W, O, LOf, G, H, LC>
         },
         quote::quote! {
             <'a, ST, QS, GB> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiSelectStatementSyntax>
-                for diesel::query_builder::BoxedSelectStatement<'a, ST, QS, super::backend::MultiBackend, GB>
+                for diesel::internal::derives::multiconnection::BoxedSelectStatement<'a, ST, QS, super::backend::MultiBackend, GB>
         },
         quote::quote! {
             <L, R> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiConcatClauseSyntax>
-                for diesel::expression::Concat<L, R>
+                for diesel::internal::derives::multiconnection::Concat<L, R>
         },
         quote::quote! {
             <T, U> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiArrayComparisonSyntax>
-                for diesel::expression::array_comparison::In<T, U>
+                for diesel::internal::derives::multiconnection::array_comparison::In<T, U>
         },
         quote::quote! {
             <T, U> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiArrayComparisonSyntax>
-                for diesel::expression::array_comparison::NotIn<T, U>
+                for diesel::internal::derives::multiconnection::array_comparison::NotIn<T, U>
         },
         quote::quote! {
             <ST, I> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiArrayComparisonSyntax>
-                for diesel::expression::array_comparison::Many<ST, I>
+                for diesel::internal::derives::multiconnection::array_comparison::Many<ST, I>
         },
         quote::quote! {
             <T> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiExistsSyntax>
-                for diesel::expression::exists::Exists<T>
+                for diesel::internal::derives::multiconnection::Exists<T>
         },
         quote::quote! {
             diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiEmptyFromClauseSyntax>
-                for diesel::query_builder::NoFromClause
+                for diesel::internal::derives::multiconnection::NoFromClause
         },
         quote::quote! {
             diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiDefaultValueClauseForInsert>
-                for diesel::query_builder::DefaultValues
+                for diesel::internal::derives::multiconnection::DefaultValues
         },
         quote::quote! {
             <Expr> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiReturningClause>
-                for diesel::query_builder::ReturningClause<Expr>
+                for diesel::internal::derives::multiconnection::ReturningClause<Expr>
         },
         quote::quote! {
             <Expr> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiInsertWithDefaultKeyword>
@@ -1043,7 +1045,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         },
         quote::quote! {
             <Tab, V, QId, const HAS_STATIC_QUERY_ID: bool> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiBatchInsertSupport>
-                for diesel::query_builder::BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
+                for diesel::internal::derives::multiconnection::BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
         }
     ])
     .map(|t| generate_queryfragment_impls(t, &query_fragment_bounds));
@@ -1285,7 +1287,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         impl diesel::backend::SqlDialect for MultiBackend {
             type ReturningClause = MultiReturningClause;
             // no on conflict support is also the default
-            type OnConflictClause = diesel::backend::sql_dialect::on_conflict_clause::DoesNotSupportOnConflictClause;
+            type OnConflictClause = diesel::internal::derives::multiconnection::sql_dialect::on_conflict_clause::DoesNotSupportOnConflictClause;
             type InsertWithDefaultKeyword = MultiInsertWithDefaultKeyword;
             type BatchInsertSupport = MultiBatchInsertSupport;
             type DefaultValueClauseForInsert = MultiDefaultValueClauseForInsert;
@@ -1296,8 +1298,8 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
             type SelectStatementSyntax = MultiSelectStatementSyntax;
         }
 
-        impl diesel::backend::TrustedBackend for MultiBackend {}
-        impl diesel::backend::DieselReserveSpecialization for MultiBackend {}
+        impl diesel::internal::derives::multiconnection::TrustedBackend for MultiBackend {}
+        impl diesel::internal::derives::multiconnection::DieselReserveSpecialization for MultiBackend {}
 
         #(#has_sql_type_impls)*
     }

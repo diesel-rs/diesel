@@ -337,7 +337,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod on_conflict_clause {
+    pub mod on_conflict_clause {
         /// A marker trait indicating if a `ON CONFLICT` clause is supported or not
         ///
         /// If you use a custom type to specify specialized support for `ON CONFLICT` clauses
@@ -358,7 +358,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod returning_clause {
+    pub mod returning_clause {
         /// A marker trait indicating if a `RETURNING` clause is supported or not
         ///
         /// If you use custom type to specify specialized support for `RETURNING` clauses
@@ -382,7 +382,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod default_keyword_for_insert {
+    pub mod default_keyword_for_insert {
         /// A marker trait indicating if a `DEFAULT` like expression
         /// is supported as part of `INSERT INTO` clauses to indicate
         /// that a default value should be inserted at a specific position
@@ -411,7 +411,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod batch_insert_support {
+    pub mod batch_insert_support {
         /// A marker trait indicating if batch insert statements
         /// are supported for this backend or not
         pub trait SupportsBatchInsert {}
@@ -436,7 +436,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod concat_clause {
+    pub mod concat_clause {
 
         /// Indicates that this backend uses the
         /// `||` operator to select a concatenation
@@ -450,7 +450,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod default_value_clause {
+    pub mod default_value_clause {
 
         /// Indicates that this backend uses the
         /// `DEFAULT VALUES` syntax to specify
@@ -479,7 +479,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod exists_syntax {
+    pub mod exists_syntax {
 
         /// Indicates that this backend
         /// treats `EXIST()` as function
@@ -493,7 +493,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod array_comparison {
+    pub mod array_comparison {
 
         /// Indicates that this backend requires a single bind
         /// per array element in `IN()` and `NOT IN()` expression
@@ -506,7 +506,7 @@ pub(crate) mod sql_dialect {
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) mod select_statement_syntax {
+    pub mod select_statement_syntax {
         /// Indicates that this backend uses the default
         /// ANSI select statement structure
         #[derive(Debug, Copy, Clone)]
@@ -517,7 +517,7 @@ pub(crate) mod sql_dialect {
 // These traits are not part of the public API
 // because we want to replace them by with an associated type
 // in the child trait later if GAT's are finally stable
-mod private {
+pub(crate) mod private {
 
     /// This is a marker trait which indicates that
     /// diesel may specialize a certain [`QueryFragment`]
