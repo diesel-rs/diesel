@@ -10,8 +10,8 @@ error[E0277]: the trait bound `bool: SelectQuery` is not satisfied
              diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs>
    = note: required for `diesel::expression::subselect::Subselect<bool, Bool>` to implement `diesel::Expression`
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::exists::Exists<bool>` to implement `diesel::Expression`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::exists::Exists<bool>>`
+   = note: required for `Exists<bool>` to implement `diesel::Expression`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Exists<bool>>`
 
 error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
   --> tests/fail/exists_can_only_take_subselects.rs:24:18
@@ -25,5 +25,5 @@ error[E0277]: the trait bound `users::columns::id: SelectQuery` is not satisfied
              diesel::query_builder::combination_clause::CombinationClause<Combinator, Rule, Source, Rhs>
    = note: required for `diesel::expression::subselect::Subselect<users::columns::id, Bool>` to implement `diesel::Expression`
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::exists::Exists<users::columns::id>` to implement `diesel::Expression`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::exists::Exists<users::columns::id>>`
+   = note: required for `Exists<users::columns::id>` to implement `diesel::Expression`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<Exists<users::columns::id>>`

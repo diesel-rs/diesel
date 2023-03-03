@@ -1,14 +1,14 @@
-error[E0277]: the trait bound `diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>: QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not satisfied
+error[E0277]: the trait bound `BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>: QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not satisfied
   --> tests/fail/upsert_with_multiple_values_not_supported_on_sqlite.rs:17:18
    |
 17 |         .execute(&mut connection);
-   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not implemented for `diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>`
+   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite, sqlite::backend::SqliteBatchInsert>` is not implemented for `BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<ColumnInsertValue<columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>, users::table>>, users::table, (), false>`
    |          |
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <diesel::query_builder::insert_statement::batch_insert::BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB>>
-             <diesel::query_builder::insert_statement::batch_insert::BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB, backend::sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport>>
+             <BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB>>
+             <BatchInsert<Vec<diesel::query_builder::insert_statement::ValuesClause<V, Tab>>, Tab, QId, HAS_STATIC_QUERY_ID> as QueryFragment<DB, PostgresLikeBatchInsertSupport>>
    = note: required for `BatchInsert<Vec<ValuesClause<ColumnInsertValue<id, Bound<Integer, i32>>, table>>, table, (), false>` to implement `QueryFragment<Sqlite>`
    = note: 2 redundant requirements hidden
    = note: required for `InsertStatement<table, OnConflictValues<BatchInsert<Vec<ValuesClause<..., ...>>, ..., ..., false>, ..., ...>>` to implement `QueryFragment<Sqlite>`
