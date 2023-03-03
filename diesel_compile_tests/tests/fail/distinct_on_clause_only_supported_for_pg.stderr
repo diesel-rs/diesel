@@ -7,7 +7,7 @@ error[E0277]: the trait bound `DistinctOnClause<columns::name>: QueryFragment<Sq
    |                             required by a bound introduced by this call
    |
    = help: the trait `QueryFragment<Pg>` is implemented for `DistinctOnClause<T>`
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Sqlite, backend::sql_dialect::select_statement_syntax::AnsiSqlSelectStatement>`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Sqlite, AnsiSqlSelectStatement>`
    = note: 1 redundant requirement hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Sqlite>`
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `LoadQuery<'_, diesel::SqliteConnection, _>`
@@ -26,7 +26,7 @@ error[E0277]: the trait bound `DistinctOnClause<columns::name>: QueryFragment<My
    |                             required by a bound introduced by this call
    |
    = help: the trait `QueryFragment<Pg>` is implemented for `DistinctOnClause<T>`
-   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Mysql, backend::sql_dialect::select_statement_syntax::AnsiSqlSelectStatement>`
+   = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
    = note: 1 redundant requirement hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `QueryFragment<Mysql>`
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `LoadQuery<'_, diesel::MysqlConnection, _>`

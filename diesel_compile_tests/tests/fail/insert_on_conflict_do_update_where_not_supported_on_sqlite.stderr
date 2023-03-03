@@ -1,12 +1,12 @@
-error[E0277]: the trait bound `sqlite::backend::SqliteOnConflictClause: backend::sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere` is not satisfied
+error[E0277]: the trait bound `sqlite::backend::SqliteOnConflictClause: SupportsOnConflictClauseWhere` is not satisfied
   --> tests/fail/insert_on_conflict_do_update_where_not_supported_on_sqlite.rs:21:18
    |
 21 |         .execute(&mut connection)
-   |          ------- ^^^^^^^^^^^^^^^ the trait `backend::sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere` is not implemented for `sqlite::backend::SqliteOnConflictClause`
+   |          ------- ^^^^^^^^^^^^^^^ the trait `SupportsOnConflictClauseWhere` is not implemented for `sqlite::backend::SqliteOnConflictClause`
    |          |
    |          required by a bound introduced by this call
    |
-   = help: the trait `backend::sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere` is implemented for `pg::backend::PgOnConflictClaues`
+   = help: the trait `SupportsOnConflictClauseWhere` is implemented for `pg::backend::PgOnConflictClaues`
    = note: required for `OnConflictValues<ValuesClause<ColumnInsertValue<id, Bound<Integer, i32>>, table>, ..., ..., ...>` to implement `QueryFragment<Sqlite>`
    = note: 1 redundant requirement hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<ColumnInsertValue<id, ...>, ...>, ..., ..., ...>>` to implement `QueryFragment<Sqlite>`

@@ -42,7 +42,6 @@ mod diesel_public_if;
 mod from_sql_row;
 mod identifiable;
 mod insertable;
-#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 mod multiconnection;
 mod query_id;
 mod queryable;
@@ -1532,10 +1531,6 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// `diesel::Connection` and a number of related traits. Connection types form diesel itself
 /// as well as third party connection types are supported by this derive.
 ///
-/// For technical reasons this derive is currently only supported
-/// with the "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
-/// feature enabled. As of this we do not give any stability guarantees yet.
-///
 /// The implementation of [`diesel::Connection::establish`] tries to establish
 /// a new connection with the given connection string in the order the connections
 /// are specified in the enum. If one connection fails it tries the next one and so on.
@@ -1614,7 +1609,6 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// Support for additional types can be added by providing manual implementations of
 /// `HasSqlType`, `FromSql` and `ToSql` for the corresponding type + the generated
 /// database backend.
-#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 #[proc_macro_derive(MultiConnection)]
 pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
     multiconnection::derive(syn::parse_macro_input!(input)).into()
