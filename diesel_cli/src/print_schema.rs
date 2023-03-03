@@ -282,23 +282,14 @@ impl CustomColumnType {
     ) -> Self {
         #[cfg(feature = "mysql")]
         if backend == Backend::Mysql {
-            let name_snake = format!(
-                "{}_{}_{}",
-                &table_name.rust_name, &column_name, &column_type.rust_name
-            );
+            use heck::ToUpperCamelCase;
 
             let mut column_type = column_type;
-            column_type.rust_name = name_snake
-                .split('_')
-                .map(|word| {
-                    let mut c = word.chars();
-
-                    match c.next() {
-                        None => String::new(),
-                        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-                    }
-                })
-                .collect();
+            column_type.rust_name = format!(
+                "{} {} {}",
+                &table_name.rust_name, &column_name, &column_type.rust_name
+            )
+            .to_upper_camel_case();
 
             return Self {
                 table_name,
