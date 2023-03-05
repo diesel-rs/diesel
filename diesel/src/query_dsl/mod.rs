@@ -620,7 +620,7 @@ pub trait QueryDsl: Sized {
     /// If there is already a `WHERE` clause, the result will be `old AND new`.
     ///
     /// Note that in order to use this method with columns from different tables, you need to call
-    //  [`.inner_join`] or [`.left_join`] beforehand.
+    ///  [`.inner_join`] or [`.left_join`] beforehand.
     /// This is because you can only access columns from tables
     /// that appear in your query before the call to [`.filter`].
     ///
