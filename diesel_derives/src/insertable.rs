@@ -9,8 +9,22 @@ use util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
 pub fn derive(item: DeriveInput) -> TokenStream {
     let model = Model::from_item(&item, false);
 
+    let tokens = model
+        .table_names()
+        .iter()
+        .map(|table_name| derive_into_single_table(&item, &model, table_name));
+
+    wrap_in_dummy_mod(quote! {
+        use diesel::insertable::Insertable;
+        use diesel::internal::derives::insertable::UndecoratedInsertRecord;
+        use diesel::prelude::*;
+
+        #(#tokens)*
+    })
+}
+
+fn derive_into_single_table(item: &DeriveInput, model: &Model, table_name: &Path) -> TokenStream {
     let treat_none_as_default_value = model.treat_none_as_default_value();
-    let table_name = &model.table_name();
     let struct_name = &item.ident;
 
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
@@ -114,11 +128,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         quote! {}
     };
 
-    wrap_in_dummy_mod(quote! {
-        use diesel::insertable::Insertable;
-        use diesel::internal::derives::insertable::UndecoratedInsertRecord;
-        use diesel::prelude::*;
-
+    quote! {
         #[allow(unused_qualifications)]
         #insert_owned
 
@@ -130,7 +140,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
             #where_clause
         {
         }
-    })
+    }
 }
 
 fn field_ty_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {
