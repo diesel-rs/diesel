@@ -1,4 +1,5 @@
 use proc_macro2::Span;
+use std::slice::from_ref;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{
@@ -13,7 +14,7 @@ use util::camel_to_snake;
 
 pub struct Model {
     name: Path,
-    table_name: Option<Path>,
+    table_names: Vec<Path>,
     pub primary_key_names: Vec<Ident>,
     treat_none_as_default_value: Option<LitBool>,
     treat_none_as_null: Option<LitBool>,
@@ -50,7 +51,7 @@ impl Model {
             _ => None,
         };
 
-        let mut table_name = None;
+        let mut table_names = vec![];
         let mut primary_key_names = vec![Ident::new("id", Span::call_site())];
         let mut treat_none_as_default_value = None;
         let mut treat_none_as_null = None;
@@ -67,7 +68,7 @@ impl Model {
         for attr in parse_attributes(attrs) {
             match attr.item {
                 StructAttr::SqlType(_, value) => sql_types.push(Type::Path(value)),
-                StructAttr::TableName(_, value) => table_name = Some(value),
+                StructAttr::TableName(_, value) => table_names.push(value),
                 StructAttr::PrimaryKey(_, keys) => {
                     primary_key_names = keys.into_iter().collect();
                 }
@@ -92,7 +93,7 @@ impl Model {
 
         Self {
             name,
-            table_name,
+            table_names,
             primary_key_names,
             treat_none_as_default_value,
             treat_none_as_null,
@@ -110,7 +111,21 @@ impl Model {
     }
 
     pub fn table_name(&self) -> &Path {
-        self.table_name.as_ref().unwrap_or(&self.name)
+        match self.table_names.len() {
+            0 => &self.name,
+            1 => &self.table_names[0],
+            _ => abort!(
+                self.table_names[1],
+                "expected a single table name attribute"
+            ),
+        }
+    }
+
+    pub fn table_names(&self) -> &[Path] {
+        match self.table_names.len() {
+            0 => from_ref(&self.name),
+            _ => &self.table_names,
+        }
     }
 
     pub fn fields(&self) -> &[Field] {
@@ -125,7 +140,7 @@ impl Model {
     }
 
     pub fn has_table_name_attribute(&self) -> bool {
-        self.table_name.is_some()
+        !self.table_names.is_empty()
     }
 
     pub fn treat_none_as_default_value(&self) -> bool {
