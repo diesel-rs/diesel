@@ -13,6 +13,12 @@ cfg_if! {
                 hair_color VARCHAR DEFAULT 'Green')")
                 .execute(&mut conn)
                 .unwrap();
+            sql_query("CREATE TABLE users_ (\
+                id INTEGER PRIMARY KEY AUTOINCREMENT, \
+                name VARCHAR NOT NULL, \
+                hair_color VARCHAR DEFAULT 'Green')")
+                .execute(&mut conn)
+                .unwrap();
             conn
         }
     } else if #[cfg(feature = "postgres")] {
@@ -27,7 +33,14 @@ cfg_if! {
             let mut conn = PgConnection::establish(&database_url).unwrap();
             conn.begin_test_transaction().unwrap();
             sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&mut conn).unwrap();
+            sql_query("DROP TABLE IF EXISTS users_ CASCADE").execute(&mut conn).unwrap();
             sql_query("CREATE TABLE users (\
+                id SERIAL PRIMARY KEY, \
+                name VARCHAR NOT NULL, \
+                hair_color VARCHAR DEFAULT 'Green')")
+                .execute(&mut conn)
+                .unwrap();
+            sql_query("CREATE TABLE users_ (\
                 id SERIAL PRIMARY KEY, \
                 name VARCHAR NOT NULL, \
                 hair_color VARCHAR DEFAULT 'Green')")
@@ -46,7 +59,14 @@ cfg_if! {
                 .expect("DATABASE_URL must be set in order to run tests");
             let mut conn = MysqlConnection::establish(&database_url).unwrap();
             sql_query("DROP TABLE IF EXISTS users CASCADE").execute(&mut conn).unwrap();
+            sql_query("DROP TABLE IF EXISTS users_ CASCADE").execute(&mut conn).unwrap();
             sql_query("CREATE TABLE users (\
+                id INTEGER PRIMARY KEY AUTO_INCREMENT, \
+                name TEXT NOT NULL, \
+                hair_color VARCHAR(255) DEFAULT 'Green')")
+                .execute(&mut conn)
+                .unwrap();
+            sql_query("CREATE TABLE users_ (\
                 id INTEGER PRIMARY KEY AUTO_INCREMENT, \
                 name TEXT NOT NULL, \
                 hair_color VARCHAR(255) DEFAULT 'Green')")

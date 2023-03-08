@@ -105,6 +105,43 @@ fn simple_reference_definition() {
     assert_eq!(Ok(expected), saved);
 }
 
+#[test]
+fn multiple_tables() {
+    #[derive(Clone, Insertable)]
+    #[diesel(table_name = users)]
+    #[diesel(table_name = users_)]
+    struct NewUser {
+        name: String,
+        hair_color: String,
+    }
+
+    let conn = &mut connection();
+    let new_user = NewUser {
+        name: "Sean".into(),
+        hair_color: "Black".into(),
+    };
+    insert_into(users::table)
+        .values(new_user.clone())
+        .execute(conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color))
+        .load::<(String, Option<String>)>(conn);
+    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+    assert_eq!(Ok(expected.clone()), saved);
+
+    insert_into(users_::table)
+        .values(new_user)
+        .execute(conn)
+        .unwrap();
+
+    let saved = users_::table
+        .select((users_::name, users_::hair_color))
+        .load::<(String, Option<String>)>(conn);
+    assert_eq!(Ok(expected), saved);
+}
+
 macro_rules! test_struct_definition {
     ($test_name:ident, $struct_def:item) => {
         #[test]
