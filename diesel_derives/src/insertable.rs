@@ -7,7 +7,7 @@ use syn::{DeriveInput, Expr, Path, Type};
 use util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false);
+    let model = Model::from_item(&item, false, true);
 
     let tokens = model
         .table_names()

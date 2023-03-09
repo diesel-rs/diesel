@@ -5,7 +5,7 @@ use model::Model;
 use util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
 pub fn derive(mut item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, true);
+    let model = Model::from_item(&item, true, false);
     let struct_ty = ty_for_foreign_derive(&item, &model);
 
     let type_params = item

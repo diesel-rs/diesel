@@ -7,7 +7,7 @@ use model::Model;
 use util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false);
+    let model = Model::from_item(&item, false, false);
 
     let (_, ty_generics, _) = item.generics.split_for_impl();
 
@@ -137,7 +137,7 @@ fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
         let embed_ty = &field.ty;
         quote!(<#embed_ty as Selectable<__DB>>::SelectExpression)
     } else {
-        let table_name = model.table_name();
+        let table_name = &model.table_names()[0];
         let column_name = field.column_name();
         quote!(#table_name::#column_name)
     }
@@ -152,7 +152,7 @@ fn field_column_inst(field: &Field, model: &Model) -> TokenStream {
         let embed_ty = &field.ty;
         quote!(<#embed_ty as Selectable<__DB>>::construct_selection())
     } else {
-        let table_name = model.table_name();
+        let table_name = &model.table_names()[0];
         let column_name = field.column_name();
         quote!(#table_name::#column_name)
     }

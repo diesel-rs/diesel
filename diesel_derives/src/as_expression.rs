@@ -5,7 +5,7 @@ use model::Model;
 use util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, true);
+    let model = Model::from_item(&item, true, false);
 
     if model.sql_types.is_empty() {
         abort_call_site!(

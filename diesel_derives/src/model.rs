@@ -31,7 +31,11 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn from_item(item: &DeriveInput, allow_unit_structs: bool) -> Self {
+    pub fn from_item(
+        item: &DeriveInput,
+        allow_unit_structs: bool,
+        allow_multiple_table: bool,
+    ) -> Self {
         let DeriveInput {
             data, ident, attrs, ..
         } = item;
@@ -68,7 +72,15 @@ impl Model {
         for attr in parse_attributes(attrs) {
             match attr.item {
                 StructAttr::SqlType(_, value) => sql_types.push(Type::Path(value)),
-                StructAttr::TableName(_, value) => table_names.push(value),
+                StructAttr::TableName(ident, value) => {
+                    if !allow_multiple_table && !table_names.is_empty() {
+                        abort!(
+                            ident, "expected a single table name attribute";
+                            note = "remove this attribute";
+                        )
+                    }
+                    table_names.push(value)
+                }
                 StructAttr::PrimaryKey(_, keys) => {
                     primary_key_names = keys.into_iter().collect();
                 }
@@ -107,17 +119,6 @@ impl Model {
             postgres_type,
             fields: fields_from_item_data(fields),
             check_for_backend,
-        }
-    }
-
-    pub fn table_name(&self) -> &Path {
-        match self.table_names.len() {
-            0 => &self.name,
-            1 => &self.table_names[0],
-            _ => abort!(
-                self.table_names[1],
-                "expected a single table name attribute"
-            ),
         }
     }
 
