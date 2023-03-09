@@ -7,7 +7,7 @@ use parsers::BelongsTo;
 use util::{camel_to_snake, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false);
+    let model = Model::from_item(&item, false, false);
 
     if model.belongs_to.is_empty() {
         abort_call_site!(
@@ -27,7 +27,7 @@ fn derive_belongs_to(item: &DeriveInput, model: &Model, assoc: &BelongsTo) -> To
     let (_, ty_generics, _) = item.generics.split_for_impl();
 
     let struct_name = &item.ident;
-    let table_name = model.table_name();
+    let table_name = &model.table_names()[0];
 
     let foreign_key = &foreign_key(assoc);
 

@@ -7,7 +7,7 @@ use model::Model;
 use util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false);
+    let model = Model::from_item(&item, false, false);
 
     let struct_name = &item.ident;
     let fields = &model.fields().iter().map(get_ident).collect::<Vec<_>>();
@@ -86,7 +86,7 @@ fn get_ident(field: &Field) -> Ident {
 }
 
 fn sql_type(field: &Field, model: &Model) -> Type {
-    let table_name = model.table_name();
+    let table_name = &model.table_names()[0];
 
     match field.sql_type {
         Some(AttributeSpanWrapper { item: ref st, .. }) => st.clone(),

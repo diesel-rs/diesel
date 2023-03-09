@@ -5,10 +5,10 @@ use model::Model;
 use util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false);
+    let model = Model::from_item(&item, false, false);
 
     let struct_name = &item.ident;
-    let table_name = model.table_name();
+    let table_name = &model.table_names()[0];
 
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
     let mut ref_generics = item.generics.clone();

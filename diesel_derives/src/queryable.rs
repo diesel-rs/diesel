@@ -6,7 +6,7 @@ use model::Model;
 use util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false);
+    let model = Model::from_item(&item, false, false);
 
     let struct_name = &item.ident;
     let field_ty = &model

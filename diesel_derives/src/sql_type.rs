@@ -6,7 +6,7 @@ use parsers::PostgresType;
 use util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, true);
+    let model = Model::from_item(&item, true, false);
 
     let struct_name = &item.ident;
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
