@@ -279,6 +279,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// type. By default it uses the `snake_case` type name with an added `s`
 /// from the current scope.
 /// It is possible to change this default by using `#[diesel(table_name = something)]`.
+/// If `table_name` attribute is given multiple times, impls for each table are generated.
 ///
 /// If a field name of your
 /// struct differs from the name of the corresponding column,
