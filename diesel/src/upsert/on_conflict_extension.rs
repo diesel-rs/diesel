@@ -26,27 +26,35 @@ where
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     /// # fn main() {
+    /// #     run_test().unwrap()
+    /// # }
+    /// # fn run_test() -> QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
-    /// #     #[cfg(feature = "sqlite")]
+    /// #     #[cfg(any(feature = "sqlite", feature = "mysql"))]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean" };
     ///
-    /// let inserted_row_count = diesel::insert_into(users)
-    ///     .values(&user)
-    ///     .on_conflict_do_nothing()
-    ///     .execute(conn);
-    /// assert_eq!(Ok(1), inserted_row_count);
+    /// let user_count = users.count().get_result::<i64>(conn)?;
+    /// assert_eq!(user_count, 0);
     ///
-    /// let inserted_row_count = diesel::insert_into(users)
+    /// diesel::insert_into(users)
     ///     .values(&user)
     ///     .on_conflict_do_nothing()
-    ///     .execute(conn);
-    /// assert_eq!(Ok(0), inserted_row_count);
+    ///     .execute(conn)?;
+    /// let user_count = users.count().get_result::<i64>(conn)?;
+    /// assert_eq!(user_count, 1);
+    ///
+    /// diesel::insert_into(users)
+    ///     .values(&user)
+    ///     .on_conflict_do_nothing()
+    ///     .execute(conn)?;
+    /// let user_count = users.count().get_result::<i64>(conn)?;
+    /// assert_eq!(user_count, 1);
+    /// # Ok(())
     /// # }
     /// ```
     ///
@@ -55,12 +63,17 @@ where
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     /// # fn main() {
+    /// #     run_test().unwrap()
+    /// # }
+    /// #
+    /// # fn run_test() -> diesel::QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
+    /// #     #[cfg(any(feature = "mysql", feature = "sqlite"))]
+    /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
     /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
     /// let user = User { id: 1, name: "Sean" };
     ///
@@ -68,22 +81,19 @@ where
     /// let inserted_row_count = diesel::insert_into(users)
     ///     .values(&vec![user, user])
     ///     .on_conflict_do_nothing()
-    ///     .execute(conn);
+    ///     .execute(conn)?;
     /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
-    /// assert_eq!(Ok(1), inserted_row_count);
+    /// let user_count = users.count().get_result::<i64>(conn)?;
+    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// assert_eq!(user_count, 1);
+    /// # Ok(())
     /// # }
     /// ```
     pub fn on_conflict_do_nothing(
         self,
-    ) -> InsertStatement<T, OnConflictValues<U::ValueClause, NoConflictTarget, DoNothing>, Op, Ret>
-    where
-        U: std::fmt::Debug,
+    ) -> InsertStatement<T, OnConflictValues<U::ValueClause, NoConflictTarget, DoNothing<T>>, Op, Ret>
     {
-        println!("Hey I'm inside of on_conflict_do_nothing!");
-        self.replace_values(|values| {
-            println!("values is {:?}", values);
-            OnConflictValues::do_nothing(values.into_value_clause())
-        })
+        self.replace_values(|values| OnConflictValues::do_nothing(values.into_value_clause()))
     }
 
     /// Adds an `ON CONFLICT` to the insert statement, if a conflict occurs
@@ -98,6 +108,8 @@ where
     /// # Examples
     ///
     /// ### Specifying a column as the target
+    ///
+    /// This is supported by sqlite and postgres only
     ///
     /// ```rust
     /// # include!("../doctest_setup.rs");
@@ -117,41 +129,50 @@ where
     /// #     name: &'a str,
     /// # }
     /// #
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
     /// # fn main() {
+    /// #    run_test().unwrap()
+    /// # }
+    /// # #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    /// # fn run_test() -> diesel::QueryResult<()> {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::*;
     ///
     /// #     let conn = &mut establish_connection();
+    /// #     #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// #     diesel::sql_query("DROP TABLE users").execute(conn).unwrap();
-    /// #[cfg(any(feature = "sqlite", feature = "postgres"))]
+    /// #     #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT)").execute(conn).unwrap();
-    /// #[cfg(feature = "mysql")]
-    /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255))").execute(conn).unwrap();
     /// diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean" };
     /// let same_name_different_id = User { id: 2, name: "Sean" };
     /// let same_id_different_name = User { id: 1, name: "Pascal" };
-    ///
+
     /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
     ///
-    /// let inserted_row_count = diesel::insert_into(users)
-    ///     .values(&same_name_different_id)
-    ///     .on_conflict(name)
-    ///     .do_nothing()
-    ///     .execute(conn);
-    /// assert_eq!(Ok(0), inserted_row_count);
-    ///
-    /// let pk_conflict_result = diesel::insert_into(users)
+    /// let query = diesel::insert_into(users)
     ///     .values(&same_id_different_name)
-    ///     .on_conflict(name)
+    ///     .on_conflict(id)
+    ///     .do_nothing()
+    ///     .execute(conn)?;
+    ///
+    /// let user_names = users.select(name).load::<String>(conn)?;
+    /// assert_eq!(user_names, vec![String::from("Sean")]);
+    ///
+    /// let idx_conflict_result = diesel::insert_into(users)
+    ///     .values(&same_name_different_id)
+    ///     .on_conflict(id)
     ///     .do_nothing()
     ///     .execute(conn);
-    /// assert!(pk_conflict_result.is_err());
+    /// assert!(idx_conflict_result.is_err());
+    /// # Ok(())
     /// # }
+    /// #[cfg(feature = "mysql")]
+    /// fn run_test() -> diesel::QueryResult<()> { Ok(()) }
     /// ```
     ///
     /// ### Specifying multiple columns as the target
+    ///
+    /// This is supported by sqlite and postgres only
     ///
     /// ```rust
     /// # include!("../doctest_setup.rs");
@@ -172,7 +193,7 @@ where
     /// #     hair_color: &'a str,
     /// # }
     /// #
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::*;
@@ -204,6 +225,71 @@ where
     ///     .execute(conn);
     /// assert_eq!(Ok(0), inserted_row_count);
     /// # }
+    ///
+    /// #[cfg(feature = "mysql")]
+    /// fn main() {}
+    /// ```
+    ///
+    /// ### ON DUPLICATE KEY
+    ///
+    /// Mysql supports only catching all duplicated keys at once:
+    ///
+    /// ```
+    /// # include!("../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     users {
+    /// #         id -> Integer,
+    /// #         name -> VarChar,
+    /// #         hair_color -> VarChar,
+    /// #     }
+    /// # }
+    /// #
+    /// # #[derive(Clone, Copy, Insertable)]
+    /// # #[diesel(table_name = users)]
+    /// # struct User<'a> {
+    /// #     id: i32,
+    /// #     name: &'a str,
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #    run_test().unwrap()
+    /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn run_test() -> diesel::QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// use diesel::upsert::*;
+    ///
+    /// #     let conn = &mut establish_connection();
+    /// diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)").execute(conn).unwrap();
+    /// let same_name_different_id = User { id: 2, name: "Sean" };
+    /// let same_id_different_name = User { id: 1, name: "Pascal" };
+    ///
+    /// # diesel::delete(users.filter(name.ne("Sean"))).execute(conn)?;
+    /// let user_names = users.select(name).load::<String>(conn)?;
+    /// assert_eq!(user_names, vec![String::from("Sean")]);
+    ///
+    /// let query = diesel::insert_into(users)
+    ///     .values(&same_id_different_name)
+    ///     .on_conflict(diesel::dsl::DuplicatedKeys)
+    ///     .do_nothing()
+    ///     .execute(conn)?;
+    ///
+    /// let user_names = users.select(name).load::<String>(conn)?;
+    /// assert_eq!(user_names, vec![String::from("Sean")]);
+    ///
+    /// let idx_conflict_result = diesel::insert_into(users)
+    ///     .values(&same_name_different_id)
+    ///     .on_conflict(diesel::dsl::DuplicatedKeys)
+    ///     .do_nothing()
+    ///     .execute(conn)?;
+    ///
+    /// let user_names = users.select(name).load::<String>(conn)?;
+    /// assert_eq!(user_names, vec![String::from("Sean")]);
+    /// # Ok(())
+    /// # }
+    /// #[cfg(not(feature = "mysql"))]
+    /// fn run_test() -> diesel::QueryResult<()> {Ok(())}
     /// ```
     ///
     /// See the documentation for [`on_constraint`] and [`do_update`] for
@@ -249,9 +335,6 @@ pub struct IncompleteOnConflict<Stmt, Target> {
 
 impl<T: QuerySource, U, Op, Ret, Target>
     IncompleteOnConflict<InsertStatement<T, U, Op, Ret>, Target>
-where
-    U: std::fmt::Debug,
-    Target: std::fmt::Debug,
 {
     /// Creates a query with `ON CONFLICT (target) DO NOTHING`
     ///
@@ -261,13 +344,12 @@ where
     ///
     /// [`on_conflict_do_nothing`]: crate::query_builder::InsertStatement::on_conflict_do_nothing()
     /// [`on_conflict`]: crate::query_builder::InsertStatement::on_conflict()
-    pub fn do_nothing(self) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing>, Op, Ret> {
-        println!("Hey I'm inside of do_nothing!");
+    pub fn do_nothing(
+        self,
+    ) -> InsertStatement<T, OnConflictValues<U, Target, DoNothing<T>>, Op, Ret> {
         let target = self.target;
         self.stmt.replace_values(|values| {
-            println!("values is {:?}", values);
-            println!("target is {:?}", target);
-            OnConflictValues::new(values, target, DoNothing)
+            OnConflictValues::new(values, target, DoNothing::new(), NoWhereClause)
         })
     }
 }
@@ -289,13 +371,16 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///
     /// ## Set specific value on conflict
     ///
+    /// PostgreSQL/SQLite:
+    ///
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(not(feature = "mysql"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
@@ -318,17 +403,52 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// let users_in_db = users.load(conn);
     /// assert_eq!(Ok(vec![(1, "I DONT KNOW ANYMORE".to_string())]), users_in_db);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     ///
-    /// ## Set `AsChangeset` struct on conflict
+    /// MySQL:
     ///
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() -> diesel::QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
+    /// let user = User { id: 1, name: "Pascal" };
+    /// let user2 = User { id: 1, name: "Sean" };
+    ///
+    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    ///
+    /// diesel::insert_into(users)
+    ///     .values(&user2)
+    ///     .on_conflict(diesel::dsl::DuplicatedKeys)
+    ///     .do_update()
+    ///     .set(name.eq("I DONT KNOW ANYMORE"))
+    ///     .execute(conn)?;
+    ///
+    /// let users_in_db = users.load(conn);
+    /// assert_eq!(Ok(vec![(1, "I DONT KNOW ANYMORE".to_string())]), users_in_db);
+    /// # Ok(())
+    /// # }
+    /// # #[cfg(not(feature = "mysql"))]
+    /// # fn main() {}
+    /// ```
+    ///
+    /// ## Set `AsChangeset` struct on conflict
+    ///
+    /// PostgreSQL & SQLite:
+    ///
+    /// ```rust
+    /// # include!("on_conflict_docs_setup.rs");
+    /// #
+    /// # #[cfg(not(feature = "mysql"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// #     #[cfg(feature = "sqlite")]
     /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
@@ -343,14 +463,44 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     ///     .do_update()
     ///     .set(&user2)
     ///     .execute(conn);
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// assert_eq!(Ok(1), insert_count);
-    /// # #[cfg(feature = "mysql")]
-    /// assert_eq!(Ok(2), insert_count);
     ///
     /// let users_in_db = users.load(conn);
     /// assert_eq!(Ok(vec![(1, "Sean".to_string())]), users_in_db);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
+    /// ```
+    ///
+    /// MySQL:
+    ///
+    /// ```rust
+    /// # include!("on_conflict_docs_setup.rs");
+    ///
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() -> diesel::QueryResult<()> {
+    /// #     use self::users::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DELETE FROM users").execute(conn).unwrap();
+    /// let user = User { id: 1, name: "Pascal" };
+    /// let user2 = User { id: 1, name: "Sean" };
+    ///
+    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
+    ///
+    /// diesel::insert_into(users)
+    ///     .values(&user2)
+    ///     .on_conflict(diesel::dsl::DuplicatedKeys)
+    ///     .do_update()
+    ///     .set(&user2)
+    ///     .execute(conn)?;
+    ///
+    /// let users_in_db = users.load(conn);
+    /// assert_eq!(Ok(vec![(1, "Sean".to_string())]), users_in_db);
+    /// # Ok(())
+    /// # }
+    ///
+    /// # #[cfg(not(feature = "mysql"))]
+    /// # fn main() {}
     /// ```
     ///
     /// ## Use `excluded` to get the rejected value
@@ -358,37 +508,38 @@ impl<Stmt, Target> IncompleteOnConflict<Stmt, Target> {
     /// ```rust
     /// # include!("on_conflict_docs_setup.rs");
     /// #
+    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// # fn main() {
     /// #     use self::users::dsl::*;
     /// use diesel::upsert::excluded;
     ///
     /// #     let conn = &mut establish_connection();
-    /// #     #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// #     #[cfg(feature = "postgres")]
     /// #     diesel::sql_query("TRUNCATE TABLE users").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Pascal" };
     /// let user2 = User { id: 1, name: "Sean" };
     /// let user3 = User { id: 2, name: "Tess" };
     ///
-    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
     ///
-    /// #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// #[cfg(feature = "postgres")]
     /// let insert_count = diesel::insert_into(users)
     ///     .values(&vec![user2, user3])
     ///     .on_conflict(id)
     ///     .do_update()
     ///     .set(name.eq(excluded(name)))
     ///     .execute(conn);
-    /// # #[cfg(any(feature = "sqlite", feature = "postgres"))]
+    /// # #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(2), insert_count);
-    /// # #[cfg(feature = "mysql")]
-    /// assert_eq!(Ok(3), insert_count);
     ///
-    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(feature = "postgres")]
     /// let users_in_db = users.load(conn);
-    /// # #[cfg(any(feature = "postgres", feature = "mysql"))]
+    /// # #[cfg(feature = "postgres")]
     /// assert_eq!(Ok(vec![(1, "Sean".to_string()), (2, "Tess".to_string())]), users_in_db);
     /// # }
+    /// # #[cfg(feature = "mysql")]
+    /// # fn main() {}
     /// ```
     ///
     /// ## Use `.filter()`method to limit the rows actually updated
@@ -448,7 +599,7 @@ impl<T: QuerySource, U, Op, Ret, Target>
     pub fn set<Changes>(
         self,
         changes: Changes,
-    ) -> InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset>>, Op, Ret>
+    ) -> InsertStatement<T, OnConflictValues<U, Target, DoUpdate<Changes::Changeset, T>>, Op, Ret>
     where
         T: QuerySource,
         Changes: AsChangeset<Target = T>,

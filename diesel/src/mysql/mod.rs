@@ -9,7 +9,7 @@ pub(crate) mod backend;
 mod connection;
 mod value;
 
-mod query_builder;
+pub(crate) mod query_builder;
 mod types;
 
 pub use self::backend::{Mysql, MysqlType};

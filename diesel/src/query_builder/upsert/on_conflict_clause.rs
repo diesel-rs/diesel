@@ -10,11 +10,11 @@ use crate::result::QueryResult;
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct OnConflictValues<Values, Target, Action, WhereClause = NoWhereClause> {
-    values: Values,
-    target: Target,
-    action: Action,
+    pub(crate) values: Values,
+    pub(crate) target: Target,
+    pub(crate) action: Action,
     /// Allow to apply filters on ON CONFLICT ... DO UPDATE ... WHERE ...
-    where_clause: WhereClause,
+    pub(crate) where_clause: WhereClause,
 }
 
 impl<Values, Target, Action, WhereClause> QueryId
@@ -25,9 +25,9 @@ impl<Values, Target, Action, WhereClause> QueryId
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<Values> OnConflictValues<Values, NoConflictTarget, DoNothing, NoWhereClause> {
+impl<Values, T> OnConflictValues<Values, NoConflictTarget, DoNothing<T>, NoWhereClause> {
     pub(crate) fn do_nothing(values: Values) -> Self {
-        Self::new(values, NoConflictTarget, DoNothing, NoWhereClause)
+        Self::new(values, NoConflictTarget, DoNothing::new(), NoWhereClause)
     }
 }
 
@@ -74,6 +74,18 @@ impl<DB, Values, Target, Action> QueryFragment<DB>
 where
     DB: Backend,
     DB::OnConflictClause: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+    Self: QueryFragment<DB, DB::OnConflictClause>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::OnConflictClause>>::walk_ast(self, pass)
+    }
+}
+
+impl<DB, Values, Target, Action, SD> QueryFragment<DB, SD>
+    for OnConflictValues<Values, Target, Action, NoWhereClause>
+where
+    DB: Backend<OnConflictClause = SD>,
+    SD: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
     Values: QueryFragment<DB>,
     Target: QueryFragment<DB>,
     Action: QueryFragment<DB>,

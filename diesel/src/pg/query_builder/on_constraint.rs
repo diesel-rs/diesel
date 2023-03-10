@@ -59,7 +59,7 @@ impl<'a> QueryId for OnConstraint<'a> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a> QueryFragment<Pg, crate::backend::sql_dialect::on_conflict_clause::PgLikeOnConflictClause>
+impl<'a> QueryFragment<Pg, crate::pg::backend::PgOnConflictClaues>
     for ConflictTarget<OnConstraint<'a>>
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {

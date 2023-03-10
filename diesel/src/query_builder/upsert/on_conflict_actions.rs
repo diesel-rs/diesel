@@ -1,4 +1,7 @@
-use crate::backend::{sql_dialect, Backend};
+use std::marker::PhantomData;
+
+use crate::backend::sql_dialect::on_conflict_clause;
+use crate::backend::Backend;
 use crate::expression::{AppearsOnTable, Expression};
 use crate::query_builder::*;
 use crate::query_source::*;
@@ -6,9 +9,15 @@ use crate::result::QueryResult;
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct DoNothing;
+pub struct DoNothing<T>(PhantomData<T>);
 
-impl<DB> QueryFragment<DB> for DoNothing
+impl<T> DoNothing<T> {
+    pub(crate) fn new() -> Self {
+        Self(PhantomData)
+    }
+}
+
+impl<T, DB> QueryFragment<DB> for DoNothing<T>
 where
     DB: Backend,
     Self: QueryFragment<DB, DB::OnConflictClause>,
@@ -18,11 +27,10 @@ where
     }
 }
 
-impl<DB> QueryFragment<DB, sql_dialect::on_conflict_clause::PgLikeOnConflictClause> for DoNothing
+impl<DB, T, SD> QueryFragment<DB, SD> for DoNothing<T>
 where
-    DB: Backend<
-        OnConflictClause = crate::backend::sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
-    >,
+    DB: Backend<OnConflictClause = SD>,
+    SD: on_conflict_clause::PgLikeOnConflictClause,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql(" DO NOTHING");
@@ -32,17 +40,21 @@ where
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy, QueryId)]
-pub struct DoUpdate<T> {
-    changeset: T,
+pub struct DoUpdate<T, Tab> {
+    pub(crate) changeset: T,
+    tab: PhantomData<Tab>,
 }
 
-impl<T> DoUpdate<T> {
+impl<T, Tab> DoUpdate<T, Tab> {
     pub(crate) fn new(changeset: T) -> Self {
-        DoUpdate { changeset }
+        DoUpdate {
+            changeset,
+            tab: PhantomData,
+        }
     }
 }
 
-impl<DB, T> QueryFragment<DB> for DoUpdate<T>
+impl<DB, T, Tab> QueryFragment<DB> for DoUpdate<T, Tab>
 where
     DB: Backend,
     Self: QueryFragment<DB, DB::OnConflictClause>,
@@ -52,12 +64,11 @@ where
     }
 }
 
-impl<DB, T>
-    QueryFragment<DB, crate::backend::sql_dialect::on_conflict_clause::PgLikeOnConflictClause>
-    for DoUpdate<T>
+impl<DB, T, Tab, SD> QueryFragment<DB, SD> for DoUpdate<T, Tab>
 where
-    DB: Backend,
+    DB: Backend<OnConflictClause = SD>,
     T: QueryFragment<DB>,
+    SD: on_conflict_clause::PgLikeOnConflictClause,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
@@ -67,24 +78,6 @@ where
             out.push_sql(" DO UPDATE SET ");
             self.changeset.walk_ast(out.reborrow())?;
         }
-        Ok(())
-    }
-}
-
-impl<DB, T>
-    QueryFragment<DB, crate::backend::sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause>
-    for DoUpdate<T>
-where
-    DB: Backend,
-    T: QueryFragment<DB>,
-{
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.unsafe_to_cache_prepared();
-        // FIXME: We really should be checking for whether or not `self.changeset.is_noop()`
-        //  but until we get DO NOTHING working with MySQL we'll unfortunately keep this
-        //  unnecessary update
-        out.push_sql(" UPDATE ");
-        self.changeset.walk_ast(out.reborrow())?;
         Ok(())
     }
 }
@@ -109,31 +102,15 @@ where
     }
 }
 
-impl<DB, T>
-    QueryFragment<DB, crate::backend::sql_dialect::on_conflict_clause::PgLikeOnConflictClause>
-    for Excluded<T>
+impl<DB, T, SD> QueryFragment<DB, SD> for Excluded<T>
 where
-    DB: Backend,
+    DB: Backend<OnConflictClause = SD>,
     T: Column,
+    SD: on_conflict_clause::PgLikeOnConflictClause,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         out.push_sql("excluded.");
         out.push_identifier(T::NAME)?;
-        Ok(())
-    }
-}
-
-impl<DB, T>
-    QueryFragment<DB, crate::backend::sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause>
-    for Excluded<T>
-where
-    DB: Backend,
-    T: Column,
-{
-    fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
-        out.push_sql("VALUES(");
-        out.push_identifier(T::NAME)?;
-        out.push_sql(")");
         Ok(())
     }
 }

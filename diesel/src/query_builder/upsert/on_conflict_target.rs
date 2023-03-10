@@ -40,7 +40,7 @@ where
 impl<DB, T, SP> QueryFragment<DB, SP> for ConflictTarget<T>
 where
     DB: Backend<OnConflictClause = SP>,
-    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+    SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
     T: Column,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {

@@ -2,6 +2,7 @@
 
 use super::query_builder::MysqlQueryBuilder;
 use super::MysqlValue;
+use crate::backend::sql_dialect::on_conflict_clause::SupportsOnConflictClause;
 use crate::backend::*;
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::sql_types::TypeMetadata;
@@ -74,7 +75,7 @@ impl TypeMetadata for Mysql {
 impl SqlDialect for Mysql {
     type ReturningClause = sql_dialect::returning_clause::DoesNotSupportReturningClause;
 
-    type OnConflictClause = sql_dialect::on_conflict_clause::MysqlLikeOnConflictClause;
+    type OnConflictClause = MysqlOnConflictClause;
 
     type InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword;
     type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
@@ -97,3 +98,8 @@ pub struct MysqlStyleDefaultValueClause;
 
 #[derive(Debug, Clone, Copy)]
 pub struct MysqlConcatClause;
+
+#[derive(Debug, Clone, Copy)]
+pub struct MysqlOnConflictClause;
+
+impl SupportsOnConflictClause for MysqlOnConflictClause {}
