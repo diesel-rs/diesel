@@ -4,7 +4,7 @@
 //!
 //! * PostgreSQL version 9.5 or newer
 //! * Sqlite3 version 3.24.0 or newer
-//! * MySQL version 8.0 or newer
+//! * MySQL version 5.7 or newer
 //!
 //! See [the methods on `InsertStatement`](crate::query_builder::InsertStatement#impl-2)
 //! for usage examples.

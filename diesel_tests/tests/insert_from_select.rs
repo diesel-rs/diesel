@@ -1,4 +1,6 @@
 use crate::schema::*;
+use diesel::connection::AnsiTransactionManager;
+use diesel::connection::TransactionManager;
 use diesel::*;
 
 #[test]
@@ -207,16 +209,25 @@ fn insert_or_replace_with_select() {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
     let conn = &mut connection_with_sean_and_tess_in_users_table();
 
-    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
-        .execute(conn)
-        .unwrap();
+    let e = sql_query("CREATE UNIQUE INDEX  index_on_title ON posts (title)").execute(conn);
+    if cfg!(not(feature = "mysql")) {
+        // that might fail for mysql
+        // as the index already exists
+        e.unwrap();
+    } else if AnsiTransactionManager::transaction_manager_status_mut(conn)
+        .transaction_depth()
+        .unwrap()
+        .is_none()
+    {
+        conn.begin_test_transaction().unwrap();
+    }
+
     let query = users
         .select((id, name.concat(" says hi")))
         .filter(id.ge(0)) // Sqlite needs a where claues
@@ -227,7 +238,11 @@ fn on_conflict_do_nothing_with_select() {
     let inserted_rows = query.execute(conn).unwrap();
     assert_eq!(2, inserted_rows);
     let inserted_rows = query.execute(conn).unwrap();
-    assert_eq!(0, inserted_rows);
+    if cfg!(feature = "mysql") {
+        assert_eq!(2, inserted_rows);
+    } else {
+        assert_eq!(0, inserted_rows);
+    }
 
     let data = posts.select(title).load::<String>(conn).unwrap();
     let expected = vec!["Sean says hi", "Tess says hi"];
@@ -235,22 +250,37 @@ fn on_conflict_do_nothing_with_select() {
 }
 
 #[test]
-#[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_update_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
     let conn = &mut connection_with_sean_and_tess_in_users_table();
 
-    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
-        .execute(conn)
-        .unwrap();
+    let e = sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)").execute(conn);
+
+    if cfg!(not(feature = "mysql")) {
+        // that might fail for mysql
+        // as the index already exists
+        e.unwrap();
+    } else if AnsiTransactionManager::transaction_manager_status_mut(conn)
+        .transaction_depth()
+        .unwrap()
+        .is_none()
+    {
+        conn.begin_test_transaction().unwrap();
+    }
+
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    let target = title;
+    #[cfg(feature = "mysql")]
+    let target = diesel::dsl::DuplicatedKeys;
+
     let query = users
         .select((id, name.concat(" says hi")))
         .filter(id.ge(0)) // exists because sqlite needs a where clause
         .insert_into(posts)
         .into_columns((user_id, title))
-        .on_conflict(title)
+        .on_conflict(target)
         .do_update()
         .set(body.eq("updated"));
 
@@ -273,23 +303,37 @@ fn on_conflict_do_update_with_select() {
 }
 
 #[test]
-#[cfg(all(feature = "postgres", feature = "sqlite"))]
 fn on_conflict_do_update_with_boxed_select() {
-    use schema::posts::dsl::*;
-    use schema::users::dsl::{id, name, users};
+    use crate::schema::posts::dsl::*;
+    use crate::schema::users::dsl::{id, name, users};
 
     let conn = &mut connection_with_sean_and_tess_in_users_table();
 
-    sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)")
-        .execute(conn)
-        .unwrap();
+    let e = sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)").execute(conn);
+
+    if cfg!(not(feature = "mysql")) {
+        // that might fail for mysql
+        // as the index already exists
+        e.unwrap();
+    } else if AnsiTransactionManager::transaction_manager_status_mut(conn)
+        .transaction_depth()
+        .unwrap()
+        .is_none()
+    {
+        conn.begin_test_transaction().unwrap();
+    }
+
+    #[cfg(any(feature = "postgres", feature = "sqlite"))]
+    let target = title;
+    #[cfg(feature = "mysql")]
+    let target = diesel::dsl::DuplicatedKeys;
 
     users
         .select((id, name.concat(" says hi")))
         .into_boxed()
         .insert_into(posts)
         .into_columns((user_id, title))
-        .on_conflict(title)
+        .on_conflict(target)
         .do_update()
         .set(body.eq("updated"))
         .execute(conn)
@@ -305,7 +349,7 @@ fn on_conflict_do_update_with_boxed_select() {
         .into_boxed()
         .insert_into(posts)
         .into_columns((user_id, title))
-        .on_conflict(title)
+        .on_conflict(target)
         .do_update()
         .set(body.eq("updated"))
         .execute(conn)

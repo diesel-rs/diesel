@@ -511,7 +511,7 @@ fn insert_empty_slice_with_returning() {
 }
 
 #[test]
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "mysql"))]
 fn upsert_empty_slice() {
     let connection = &mut connection();
 

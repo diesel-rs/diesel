@@ -252,6 +252,26 @@ fn upsert_with_no_changes_executes_do_nothing() {
 }
 
 #[test]
+#[cfg(feature = "mysql")]
+fn upsert_with_no_changes_executes_do_nothing() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct Changes {
+        hair_color: Option<String>,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let result = insert_into(users::table)
+        .values(&User::new(1, "Sean"))
+        .on_conflict(diesel::dsl::DuplicatedKeys)
+        .do_update()
+        .set(&Changes { hair_color: None })
+        .execute(connection);
+
+    assert_eq!(Ok(0), result);
+}
+
+#[test]
 #[cfg(any(feature = "postgres", feature = "sqlite"))]
 fn upsert_with_no_changes_executes_do_nothing_owned() {
     #[derive(AsChangeset)]
@@ -264,6 +284,26 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
     let result = insert_into(users::table)
         .values(User::new(1, "Sean"))
         .on_conflict(users::id)
+        .do_update()
+        .set(&Changes { hair_color: None })
+        .execute(connection);
+
+    assert_eq!(Ok(0), result);
+}
+
+#[test]
+#[cfg(feature = "mysql")]
+fn upsert_with_no_changes_executes_do_nothing_owned() {
+    #[derive(AsChangeset)]
+    #[diesel(table_name = users)]
+    struct Changes {
+        hair_color: Option<String>,
+    }
+
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+    let result = insert_into(users::table)
+        .values(User::new(1, "Sean"))
+        .on_conflict(diesel::dsl::DuplicatedKeys)
         .do_update()
         .set(&Changes { hair_color: None })
         .execute(connection);

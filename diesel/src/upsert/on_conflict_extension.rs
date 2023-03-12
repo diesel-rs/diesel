@@ -200,10 +200,7 @@ where
     ///
     /// #     let conn = &mut establish_connection();
     /// #     diesel::sql_query("DROP TABLE users").execute(conn).unwrap();
-    /// #[cfg(any(feature = "sqlite", feature = "postgres"))]
     /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT, hair_color TEXT)").execute(conn).unwrap();
-    /// #[cfg(feature = "mysql")]
-    /// #     diesel::sql_query("CREATE TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), hair_color VARCHAR(255))").execute(conn).unwrap();
     /// diesel::sql_query("CREATE UNIQUE INDEX users_name_hair_color ON users (name, hair_color)").execute(conn).unwrap();
     /// let user = User { id: 1, name: "Sean", hair_color: "black" };
     /// let same_name_different_hair_color = User { id: 2, name: "Sean", hair_color: "brown" };
@@ -261,9 +258,13 @@ where
     /// use diesel::upsert::*;
     ///
     /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("CREATE TEMPORARY TABLE users (id SERIAL PRIMARY KEY, name VARCHAR(255), hair_color VARCHAR(255))").execute(conn).unwrap();
     /// diesel::sql_query("CREATE UNIQUE INDEX users_name ON users (name)").execute(conn).unwrap();
+    /// let user = User { id: 1, name: "Sean" };
     /// let same_name_different_id = User { id: 2, name: "Sean" };
     /// let same_id_different_name = User { id: 1, name: "Pascal" };
+    ///
+    /// assert_eq!(Ok(1), diesel::insert_into(users).values(&user).execute(conn));
     ///
     /// # diesel::delete(users.filter(name.ne("Sean"))).execute(conn)?;
     /// let user_names = users.select(name).load::<String>(conn)?;

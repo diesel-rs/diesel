@@ -3,6 +3,8 @@ use crate::mysql::backend::MysqlOnConflictClause;
 use crate::mysql::Mysql;
 use crate::query_builder::insert_statement::DefaultValues;
 use crate::query_builder::locking_clause::{ForShare, ForUpdate, NoModifier, NoWait, SkipLocked};
+use crate::query_builder::nodes::StaticQueryFragment;
+use crate::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper;
 use crate::query_builder::upsert::on_conflict_actions::{DoNothing, DoUpdate};
 use crate::query_builder::upsert::on_conflict_clause::OnConflictValues;
 use crate::query_builder::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
@@ -72,13 +74,18 @@ where
 
 impl<T> QueryFragment<Mysql, crate::mysql::backend::MysqlOnConflictClause> for DoNothing<T>
 where
-    T: Table,
+    T: Table + StaticQueryFragment,
+    T::Component: QueryFragment<Mysql>,
     T::PrimaryKey: Column,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.push_sql(" UPDATE ");
+        T::STATIC_COMPONENT.walk_ast(out.reborrow())?;
+        out.push_sql(".");
         out.push_identifier(<T::PrimaryKey as Column>::NAME)?;
         out.push_sql(" = ");
+        T::STATIC_COMPONENT.walk_ast(out.reborrow())?;
+        out.push_sql(".");
         out.push_identifier(<T::PrimaryKey as Column>::NAME)?;
         Ok(())
     }
@@ -87,15 +94,20 @@ where
 impl<T, Tab> QueryFragment<Mysql, crate::mysql::backend::MysqlOnConflictClause> for DoUpdate<T, Tab>
 where
     T: QueryFragment<Mysql>,
-    Tab: Table,
+    Tab: Table + StaticQueryFragment,
+    Tab::Component: QueryFragment<Mysql>,
     Tab::PrimaryKey: Column,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql(" UPDATE ");
         if self.changeset.is_noop(out.backend())? {
+            Tab::STATIC_COMPONENT.walk_ast(out.reborrow())?;
+            out.push_sql(".");
             out.push_identifier(<Tab::PrimaryKey as Column>::NAME)?;
             out.push_sql(" = ");
+            Tab::STATIC_COMPONENT.walk_ast(out.reborrow())?;
+            out.push_sql(".");
             out.push_identifier(<Tab::PrimaryKey as Column>::NAME)?;
         } else {
             self.changeset.walk_ast(out.reborrow())?;
@@ -135,5 +147,14 @@ impl<Tab> OnConflictTarget<Tab> for ConflictTarget<DuplicatedKeys> {}
 impl QueryFragment<Mysql, MysqlOnConflictClause> for ConflictTarget<DuplicatedKeys> {
     fn walk_ast<'b>(&'b self, _out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         Ok(())
+    }
+}
+
+impl<S> QueryFragment<crate::mysql::Mysql> for OnConflictSelectWrapper<S>
+where
+    S: QueryFragment<crate::mysql::Mysql>,
+{
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, crate::mysql::Mysql>) -> QueryResult<()> {
+        self.0.walk_ast(out)
     }
 }
