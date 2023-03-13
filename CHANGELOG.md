@@ -23,6 +23,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added a `--diff-schema` flag to the `diesel migration generate` command that generates a migration based
   on the difference between your database and the provided `schema.rs` file
 * Add a `ON CONFLICT (...) DO UPDATE ... [WHERE ...]` conditional clause support for PostgreSQL.
+* Add support for MySQL's `ON DUPLICATE KEY DO UPDATE` syntax through the existing upsert functions.
 
 ## [diesel_derives 2.0.2] 2023-03-13 
 
