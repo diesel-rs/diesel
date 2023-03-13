@@ -20,6 +20,7 @@ pub enum Filtering {
     None,
 }
 
+#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
 impl Default for Filtering {
     fn default() -> Self {
         Filtering::None
@@ -49,6 +50,7 @@ pub enum ColumnSorting {
     Name,
 }
 
+#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
 impl Default for ColumnSorting {
     fn default() -> Self {
         ColumnSorting::OrdinalPosition
@@ -62,6 +64,7 @@ pub enum DocConfig {
     NoDocComments,
 }
 
+#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
 impl Default for DocConfig {
     fn default() -> Self {
         DocConfig::NoDocComments

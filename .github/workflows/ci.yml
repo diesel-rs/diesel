@@ -341,8 +341,8 @@ jobs:
 
       - name: Remove potential newer clippy.toml from dependencies
         run: |
-          cargo update
-          cargo fetch
+          cargo +stable update
+          cargo +stable fetch
           find ~/.cargo/registry -iname "*clippy.toml" -delete
 
       - name: Run clippy
