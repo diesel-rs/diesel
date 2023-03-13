@@ -161,7 +161,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 
 /// Implement required traits for the associations API
 ///
-/// This derive implements support for Diesel associations api. Check the
+/// This derive implements support for Diesel's associations api. Check the
 /// module level documentation of the `diesel::associations` module for details.
 ///
 /// This derive generates the following impls:
@@ -178,7 +178,7 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 ///    are generated. `#[diesel(belongs_to(User, foreign_key = mykey))]` variant
 ///    allows us to specify the name of the foreign key. If the foreign key
 ///    is not specified explicitly, the remote lower case type name with
-///    appended `_id` is used as a foreign key name. (`User_id` in this example
+///    appended `_id` is used as a foreign key name. (`user_id` in this example
 ///    case)
 ///
 /// # Optional container attributes
@@ -215,7 +215,7 @@ pub fn derive_diesel_numeric_ops(input: TokenStream) -> TokenStream {
 /// Implements `Queryable` for primitive types
 ///
 /// This derive is mostly useful to implement support deserializing
-/// into rust types not supported by diesel itself.
+/// into rust types not supported by Diesel itself.
 ///
 /// There are no options or special considerations needed for this derive.
 #[proc_macro_error]
@@ -259,7 +259,7 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 ///
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column the current
 ///    field maps to `some_column_name`. By default, the field name is used
-///     as a column name.
+///    as a column name.
 #[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
@@ -321,7 +321,7 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///    field maps to `some_column_name`. By default, the field name is used
 ///    as column name
 /// * `#[diesel(embed)]`, specifies that the current field maps not only
-///     to a single database field, but is a struct that implements `Insertable`
+///    to a single database field, but is a struct that implements `Insertable`
 /// * `#[diesel(serialize_as = SomeType)]`, instead of serializing the actual
 ///    field type, Diesel will convert the field into `SomeType` using `.into` and
 ///    serialize that instead. By default, this derive will serialize directly using
@@ -905,7 +905,7 @@ pub fn derive_selectable(input: TokenStream) -> TokenStream {
 /// * `#[diesel(postgres_type(name = "TypeName", schema = "public"))]` specifies support for
 ///    a postgresql type with the name `TypeName` in the schema `public`. Prefer this variant
 ///    for types with no stable OID (== everything but the builtin types). It is possible to leaf
-///    of the `schema` part. In that case, diesel defaults to the default postgres search path.
+///    of the `schema` part. In that case, Diesel defaults to the default postgres search path.
 /// * `#[diesel(postgres_type(oid = 42, array_oid = 142))]`, specifies support for a
 ///    postgresql type with the given `oid` and `array_oid`. This variant
 ///    should only be used with types that have a stable OID.
@@ -1526,7 +1526,7 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// By applying this derive to such an enum, you can use the enum as a connection type in
 /// any location all the inner connections are valid. This derive supports enum
 /// variants containing a single tuple field. Each tuple field type must implement
-/// `diesel::Connection` and a number of related traits. Connection types form diesel itself
+/// `diesel::Connection` and a number of related traits. Connection types form Diesel itself
 /// as well as third party connection types are supported by this derive.
 ///
 /// The implementation of [`diesel::Connection::establish`] tries to establish
