@@ -147,6 +147,7 @@ impl<T> QueryId for DefaultableColumnInsertValue<T> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
+#[allow(clippy::derivable_impls)] // that's not supported on rust 1.65
 impl<T> Default for DefaultableColumnInsertValue<T> {
     fn default() -> Self {
         DefaultableColumnInsertValue::Default

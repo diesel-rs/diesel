@@ -16,6 +16,7 @@ fn complex_queries_with_no_data_have_no_size() {
 }
 
 #[test]
+#[allow(clippy::size_of_ref)] // clippy is wrong here these tests fail otherwise
 fn queries_with_data_are_no_bigger_than_their_variable_data() {
     assert_eq!(
         mem::size_of_val(&"Sean"),
