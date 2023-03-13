@@ -10,6 +10,12 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased 
 
+## [diesel_derives 2.0.2] 2023-03-13 
+
+## Fixed 
+
+* Fixing the fallout of a breaking change from `quote` by not using their internal API
+
 ## [2.0.3] 2023-01-24
 
 ## Fixed
@@ -1982,3 +1988,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.0.0]: https://github.com/diesel-rs/diesel/compare/v.1.4.0...v2.0.0
 [2.0.1]: https://github.com/diesel-rs/diesel/compare/v.2.0.0...v2.0.1
 [2.0.2]: https://github.com/diesel-rs/diesel/compare/v.2.0.1...v2.0.2
+[diesel_derives 2.0.2]: https://github.com/diesel-rs/diesel/compare/v.2.0.2...diesel_derives_v2.0.2

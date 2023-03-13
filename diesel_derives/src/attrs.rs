@@ -2,11 +2,11 @@ use std::fmt::{Display, Formatter};
 
 use proc_macro2::{Span, TokenStream};
 use proc_macro_error::ResultExt;
-use quote::spanned::Spanned;
 use quote::ToTokens;
 use syn::parse::discouraged::Speculative;
 use syn::parse::{Parse, ParseStream, Parser, Result};
 use syn::punctuated::Punctuated;
+use syn::spanned::Spanned;
 use syn::token::Comma;
 use syn::{parenthesized, Attribute, Ident, LitBool, LitStr, Path, Type, TypePath};
 
@@ -141,7 +141,7 @@ impl Parse for FieldAttr {
 }
 
 impl Spanned for FieldAttr {
-    fn __span(&self) -> Span {
+    fn span(&self) -> Span {
         match self {
             FieldAttr::Embed(ident)
             | FieldAttr::ColumnName(ident, _)
@@ -240,7 +240,7 @@ impl Parse for StructAttr {
 }
 
 impl Spanned for StructAttr {
-    fn __span(&self) -> Span {
+    fn span(&self) -> Span {
         match self {
             StructAttr::Aggregate(ident)
             | StructAttr::NotSized(ident)
@@ -262,8 +262,6 @@ pub fn parse_attributes<T>(attrs: &[Attribute]) -> Vec<AttributeSpanWrapper<T>>
 where
     T: Parse + ParseDeprecated + Spanned,
 {
-    use syn::spanned::Spanned;
-
     attrs
         .iter()
         .flat_map(|attr| {
