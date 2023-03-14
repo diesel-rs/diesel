@@ -84,14 +84,14 @@ where
     T: QueryFragment<DB>,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut buffer = Vec::new();
         let backend = DB::default();
+        let mut buffer = Vec::new();
         let ast_pass = AstPass::debug_binds(&mut buffer, &backend);
         self.query.walk_ast(ast_pass).map_err(|_| fmt::Error)?;
 
         let mut list = f.debug_list();
         for entry in buffer {
-            list.entry(entry);
+            list.entry(&entry);
         }
         list.finish()?;
         Ok(())
