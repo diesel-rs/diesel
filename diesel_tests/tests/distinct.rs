@@ -104,4 +104,36 @@ fn distinct_on_select_order_by_two_columns() {
     let data: Vec<_> = source.load(connection).unwrap();
 
     assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order((name.asc(), hair_color.desc()))
+        .distinct_on(name);
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order((name.desc(), hair_color.desc()))
+        .distinct_on(name);
+    let expected_data = vec![
+        NewUser::new("Tess", Some("champagne")),
+        NewUser::new("Sean", Some("black")),
+    ];
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order((name.desc(), hair_color))
+        .distinct_on(name);
+    let expected_data = vec![
+        NewUser::new("Tess", Some("bronze")),
+        NewUser::new("Sean", Some("aqua")),
+    ];
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
 }
