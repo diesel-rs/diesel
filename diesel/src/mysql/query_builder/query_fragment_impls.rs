@@ -138,7 +138,8 @@ where
 /// uses mysql's `ON DUPLICATE KEY` syntaxt that triggers on
 /// all unique constraints
 ///
-/// See [`InsertStatement::on_conflict`] for examples
+/// See [`InsertStatement::on_conflict`](crate::query_builder::InsertStatement::on_conflict)
+/// for examples
 #[derive(Debug, Copy, Clone)]
 pub struct DuplicatedKeys;
 

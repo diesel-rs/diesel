@@ -268,7 +268,10 @@ fn upsert_with_no_changes_executes_do_nothing() {
         .set(&Changes { hair_color: None })
         .execute(connection);
 
+    #[cfg(not(feature = "mysql"))]
     assert_eq!(Ok(0), result);
+    #[cfg(feature = "mysql")]
+    assert_eq!(Ok(1), result);
 }
 
 #[test]
@@ -288,7 +291,10 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
         .set(&Changes { hair_color: None })
         .execute(connection);
 
+    #[cfg(not(feature = "mysql"))]
     assert_eq!(Ok(0), result);
+    #[cfg(feature = "mysql")]
+    assert_eq!(Ok(1), result);
 }
 
 #[test]
@@ -308,7 +314,10 @@ fn upsert_with_no_changes_executes_do_nothing_owned() {
         .set(&Changes { hair_color: None })
         .execute(connection);
 
+    #[cfg(not(feature = "mysql"))]
     assert_eq!(Ok(0), result);
+    #[cfg(feature = "mysql")]
+    assert_eq!(Ok(1), result);
 }
 
 #[test]

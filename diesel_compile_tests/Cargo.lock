@@ -92,7 +92,7 @@ dependencies = [
 
 [[package]]
 name = "diesel_derives"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
  "diesel_table_macro_syntax",
  "proc-macro-error",

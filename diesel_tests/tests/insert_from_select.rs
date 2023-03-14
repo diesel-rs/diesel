@@ -1,6 +1,4 @@
 use crate::schema::*;
-use diesel::connection::AnsiTransactionManager;
-use diesel::connection::TransactionManager;
 use diesel::*;
 
 #[test]
@@ -213,20 +211,33 @@ fn on_conflict_do_nothing_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
-    let conn = &mut connection_with_sean_and_tess_in_users_table();
-
-    let e = sql_query("CREATE UNIQUE INDEX  index_on_title ON posts (title)").execute(conn);
-    if cfg!(not(feature = "mysql")) {
-        // that might fail for mysql
-        // as the index already exists
-        e.unwrap();
-    } else if AnsiTransactionManager::transaction_manager_status_mut(conn)
-        .transaction_depth()
-        .unwrap()
-        .is_none()
-    {
+    let mut conn = if cfg!(feature = "mysql") {
+        let mut conn = connection_without_transaction();
+        sql_query(
+            "CREATE TEMPORARY TABLE posts (\
+                 id INTEGER PRIMARY KEY AUTO_INCREMENT,\
+                 user_id INTEGER NOT NULL,\
+                 title VARCHAR(200) NOT NULL,\
+                 body TEXT\
+             )",
+        )
+        .execute(&mut conn)
+        .unwrap();
+        sql_query("CREATE UNIQUE INDEX  index_on_title ON posts (title)")
+            .execute(&mut conn)
+            .unwrap();
         conn.begin_test_transaction().unwrap();
-    }
+        insert_sean_and_tess_into_users_table(&mut conn);
+        conn
+    } else {
+        let mut conn = connection_with_sean_and_tess_in_users_table();
+        sql_query("CREATE UNIQUE INDEX  index_on_title ON posts (title)")
+            .execute(&mut conn)
+            .unwrap();
+        conn
+    };
+
+    let conn = &mut conn;
 
     let query = users
         .select((id, name.concat(" says hi")))
@@ -254,21 +265,33 @@ fn on_conflict_do_update_with_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
-    let conn = &mut connection_with_sean_and_tess_in_users_table();
-
-    let e = sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)").execute(conn);
-
-    if cfg!(not(feature = "mysql")) {
-        // that might fail for mysql
-        // as the index already exists
-        e.unwrap();
-    } else if AnsiTransactionManager::transaction_manager_status_mut(conn)
-        .transaction_depth()
-        .unwrap()
-        .is_none()
-    {
+    let mut conn = if cfg!(feature = "mysql") {
+        let mut conn = connection_without_transaction();
+        sql_query(
+            "CREATE TEMPORARY TABLE posts (\
+                 id INTEGER PRIMARY KEY AUTO_INCREMENT,\
+                 user_id INTEGER NOT NULL,\
+                 title VARCHAR(200) NOT NULL,\
+                 body TEXT\
+             )",
+        )
+        .execute(&mut conn)
+        .unwrap();
+        sql_query("CREATE UNIQUE INDEX  index_on_title ON posts (title)")
+            .execute(&mut conn)
+            .unwrap();
         conn.begin_test_transaction().unwrap();
-    }
+        insert_sean_and_tess_into_users_table(&mut conn);
+        conn
+    } else {
+        let mut conn = connection_with_sean_and_tess_in_users_table();
+        sql_query("CREATE UNIQUE INDEX  index_on_title ON posts (title)")
+            .execute(&mut conn)
+            .unwrap();
+        conn
+    };
+
+    let conn = &mut conn;
 
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
     let target = title;
@@ -307,21 +330,33 @@ fn on_conflict_do_update_with_boxed_select() {
     use crate::schema::posts::dsl::*;
     use crate::schema::users::dsl::{id, name, users};
 
-    let conn = &mut connection_with_sean_and_tess_in_users_table();
-
-    let e = sql_query("CREATE UNIQUE INDEX index_on_title ON posts (title)").execute(conn);
-
-    if cfg!(not(feature = "mysql")) {
-        // that might fail for mysql
-        // as the index already exists
-        e.unwrap();
-    } else if AnsiTransactionManager::transaction_manager_status_mut(conn)
-        .transaction_depth()
-        .unwrap()
-        .is_none()
-    {
+    let mut conn = if cfg!(feature = "mysql") {
+        let mut conn = connection_without_transaction();
+        sql_query(
+            "CREATE TEMPORARY TABLE posts (\
+                 id INTEGER PRIMARY KEY AUTO_INCREMENT,\
+                 user_id INTEGER NOT NULL,\
+                 title VARCHAR(200) NOT NULL,\
+                 body TEXT\
+             )",
+        )
+        .execute(&mut conn)
+        .unwrap();
+        sql_query("CREATE UNIQUE INDEX  index_on_title ON posts (title)")
+            .execute(&mut conn)
+            .unwrap();
         conn.begin_test_transaction().unwrap();
-    }
+        insert_sean_and_tess_into_users_table(&mut conn);
+        conn
+    } else {
+        let mut conn = connection_with_sean_and_tess_in_users_table();
+        sql_query("CREATE UNIQUE INDEX  index_on_title ON posts (title)")
+            .execute(&mut conn)
+            .unwrap();
+        conn
+    };
+
+    let conn = &mut conn;
 
     #[cfg(any(feature = "postgres", feature = "sqlite"))]
     let target = title;
