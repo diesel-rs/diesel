@@ -1,4 +1,4 @@
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use syn::{DeriveInput, Ident, LitStr, Type};
 
 use attrs::AttributeSpanWrapper;
@@ -91,19 +91,8 @@ fn sql_type(field: &Field, model: &Model) -> Type {
     match field.sql_type {
         Some(AttributeSpanWrapper { item: ref st, .. }) => st.clone(),
         None => {
-            if model.has_table_name_attribute() {
-                let column_name = field.column_name();
-                parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
-            } else {
-                let field_name = match field.name {
-                    FieldName::Named(ref x) => x.clone(),
-                    _ => Ident::new("field", Span::call_site()),
-                };
-                abort!(
-                    field.span, "Cannot determine the SQL type of {}", field_name;
-                    help = "Your struct must either be annotated with `#[diesel(table_name = foo)]` or have this field annotated with `#[diesel(sql_type = ...)]`";
-                );
-            }
+            let column_name = field.column_name();
+            parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
         }
     }
 }

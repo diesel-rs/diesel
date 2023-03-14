@@ -140,10 +140,6 @@ impl Model {
             .unwrap_or_else(|| abort!(column_name, "No field with column name {}", column_name))
     }
 
-    pub fn has_table_name_attribute(&self) -> bool {
-        !self.table_names.is_empty()
-    }
-
     pub fn treat_none_as_default_value(&self) -> bool {
         self.treat_none_as_default_value
             .as_ref()
