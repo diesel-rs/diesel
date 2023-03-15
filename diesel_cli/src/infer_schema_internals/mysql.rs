@@ -33,6 +33,7 @@ pub fn get_table_data(
             column_type,
             type_schema,
             __is_nullable,
+            character_maximum_length,
             // MySQL comments are not nullable and are empty strings if not set
             null_if_text(column_comment, ""),
         ))
@@ -84,6 +85,7 @@ mod information_schema {
             column_name -> VarChar,
             #[sql_name = "is_nullable"]
             __is_nullable -> VarChar,
+            character_maximum_length -> Nullable<BigInt>,
             ordinal_position -> BigInt,
             udt_name -> VarChar,
             udt_schema -> VarChar,

@@ -1,5 +1,18 @@
 use syn::Ident;
 
+#[allow(dead_code)] // punct and brace_token is currently unused
+pub struct TableDecl {
+    pub use_statements: Vec<syn::ItemUse>,
+    pub meta: Vec<syn::Attribute>,
+    pub schema: Option<Ident>,
+    punct: Option<syn::Token![.]>,
+    pub sql_name: String,
+    pub table_name: Ident,
+    pub primary_keys: Option<PrimaryKey>,
+    brace_token: syn::token::Brace,
+    pub column_defs: syn::punctuated::Punctuated<ColumnDef, syn::Token![,]>,
+}
+
 #[allow(dead_code)] // paren_token is currently unused
 pub struct PrimaryKey {
     paren_token: syn::token::Paren,
@@ -13,19 +26,13 @@ pub struct ColumnDef {
     pub sql_name: String,
     arrow: syn::Token![->],
     pub tpe: syn::TypePath,
+    pub max_length: Option<ColumnMaxLength>,
 }
 
-#[allow(dead_code)] // punct and brace_token is currently unused
-pub struct TableDecl {
-    pub use_statements: Vec<syn::ItemUse>,
-    pub meta: Vec<syn::Attribute>,
-    pub schema: Option<Ident>,
-    punct: Option<syn::Token![.]>,
-    pub sql_name: String,
-    pub table_name: Ident,
-    pub primary_keys: Option<PrimaryKey>,
-    brace_token: syn::token::Brace,
-    pub column_defs: syn::punctuated::Punctuated<ColumnDef, syn::Token![,]>,
+#[allow(dead_code)] // paren_token is currently unused
+pub struct ColumnMaxLength {
+    paren_token: syn::token::Paren,
+    pub len: syn::LitInt,
 }
 
 #[allow(dead_code)] // eq is currently unused
@@ -93,14 +100,29 @@ impl syn::parse::Parse for ColumnDef {
         let column_name = input.parse()?;
         let arrow = input.parse()?;
         let tpe = input.parse()?;
+        let max_length = if input.fork().parse::<ColumnMaxLength>().is_ok() {
+            Some(input.parse()?)
+        } else {
+            None
+        };
         let (sql_name, meta) = get_sql_name(meta, &column_name)?;
         Ok(Self {
             meta,
             column_name,
             arrow,
             tpe,
+            max_length,
             sql_name,
         })
+    }
+}
+
+impl syn::parse::Parse for ColumnMaxLength {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let content;
+        let paren_token = syn::parenthesized!(content in input);
+        let len = content.parse()?;
+        Ok(Self { paren_token, len })
     }
 }
 

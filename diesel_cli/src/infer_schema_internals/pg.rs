@@ -79,6 +79,7 @@ pub fn get_table_data(
             udt_name,
             udt_schema.nullable(),
             __is_nullable,
+            character_maximum_length,
             col_description(regclass(table), ordinal_position),
         ))
         .filter(table_name.eq(&table.sql_name))
@@ -108,6 +109,7 @@ mod information_schema {
             column_name -> VarChar,
             #[sql_name = "is_nullable"]
             __is_nullable -> VarChar,
+            character_maximum_length -> Nullable<BigInt>,
             ordinal_position -> BigInt,
             udt_name -> VarChar,
             udt_schema -> VarChar,
@@ -221,7 +223,7 @@ mod test {
             .execute(&mut connection)
             .unwrap();
         diesel::sql_query(
-                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)",
+                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR(128), not_null TEXT NOT NULL)",
             ).execute(&mut connection)
             .unwrap();
         diesel::sql_query("COMMENT ON COLUMN test_schema.table_1.id IS 'column comment'")
@@ -239,12 +241,21 @@ mod test {
             "int4",
             pg_catalog.clone(),
             false,
+            None,
             Some("column comment".to_string()),
         );
-        let text_col =
-            ColumnInformation::new("text_col", "varchar", pg_catalog.clone(), true, None);
-        let not_null = ColumnInformation::new("not_null", "text", pg_catalog.clone(), false, None);
-        let array_col = ColumnInformation::new("array_col", "_varchar", pg_catalog, false, None);
+        let text_col = ColumnInformation::new(
+            "text_col",
+            "varchar",
+            pg_catalog.clone(),
+            true,
+            Some(128),
+            None,
+        );
+        let not_null =
+            ColumnInformation::new("not_null", "text", pg_catalog.clone(), false, None, None);
+        let array_col =
+            ColumnInformation::new("array_col", "_varchar", pg_catalog, false, None, None);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
             get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)

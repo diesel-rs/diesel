@@ -14,6 +14,7 @@ pub struct ColumnInformation {
     pub type_name: String,
     pub type_schema: Option<String>,
     pub nullable: bool,
+    pub max_length: Option<u64>,
     pub comment: Option<String>,
 }
 
@@ -110,6 +111,7 @@ impl ColumnInformation {
         type_name: U,
         type_schema: Option<String>,
         nullable: bool,
+        max_length: Option<u64>,
         comment: Option<String>,
     ) -> Self
     where
@@ -121,6 +123,7 @@ impl ColumnInformation {
             type_name: type_name.into(),
             type_schema,
             nullable,
+            max_length,
             comment,
         }
     }
@@ -130,9 +133,23 @@ impl ColumnInformation {
 impl<ST, DB> Queryable<ST, DB> for ColumnInformation
 where
     DB: Backend + DefaultSchema,
-    (String, String, Option<String>, String, Option<String>): FromStaticSqlRow<ST, DB>,
+    (
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<i64>,
+        Option<String>,
+    ): FromStaticSqlRow<ST, DB>,
 {
-    type Row = (String, String, Option<String>, String, Option<String>);
+    type Row = (
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<i64>,
+        Option<String>,
+    );
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {
         Ok(ColumnInformation::new(
@@ -140,7 +157,8 @@ where
             row.1,
             row.2,
             row.3 == "YES",
-            row.4,
+            row.4.map(std::convert::TryInto::try_into).transpose()?,
+            row.5,
         ))
     }
 }
@@ -153,7 +171,9 @@ where
     type Row = (i32, String, String, bool, Option<String>, bool, i32);
 
     fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(row.1, row.2, None, !row.3, None))
+        Ok(ColumnInformation::new(
+            row.1, row.2, None, !row.3, None, None,
+        ))
     }
 }
 
