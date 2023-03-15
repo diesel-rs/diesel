@@ -138,7 +138,7 @@ where
         String,
         Option<String>,
         String,
-        Option<i64>,
+        Option<i32>,
         Option<String>,
     ): FromStaticSqlRow<ST, DB>,
 {
@@ -147,7 +147,7 @@ where
         String,
         Option<String>,
         String,
-        Option<i64>,
+        Option<i32>,
         Option<String>,
     );
 

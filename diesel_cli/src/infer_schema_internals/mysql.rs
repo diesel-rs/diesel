@@ -85,7 +85,7 @@ mod information_schema {
             column_name -> VarChar,
             #[sql_name = "is_nullable"]
             __is_nullable -> VarChar,
-            character_maximum_length -> Nullable<BigInt>,
+            character_maximum_length -> Nullable<Integer>,
             ordinal_position -> BigInt,
             udt_name -> VarChar,
             udt_schema -> VarChar,
