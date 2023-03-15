@@ -4,6 +4,10 @@ use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
 #[cfg(feature = "sqlite")]
 use diesel::sqlite::Sqlite;
 
+use diesel_table_macro_syntax::ColumnDef;
+
+use std::error::Error;
+
 #[cfg(feature = "uses_information_schema")]
 use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
@@ -29,8 +33,24 @@ pub struct ColumnType {
     pub max_length: Option<u64>,
 }
 
-impl From<&syn::TypePath> for ColumnType {
-    fn from(t: &syn::TypePath) -> Self {
+impl ColumnType {
+    pub(crate) fn for_column_def(c: &ColumnDef) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        Ok(Self::for_type_path(
+            &c.tpe,
+            c.max_length
+                .as_ref()
+                .map(|l| {
+                    l.len
+                        .base10_parse::<u64>()
+                        .map_err(|e| -> Box<dyn Error + Send + Sync> {
+                            format!("Column length litteral can't be parsed as u64: {e}").into()
+                        })
+                })
+                .transpose()?,
+        ))
+    }
+
+    fn for_type_path(t: &syn::TypePath, max_length: Option<u64>) -> Self {
         let last = t
             .path
             .segments
@@ -44,7 +64,7 @@ impl From<&syn::TypePath> for ColumnType {
             is_array: last.ident == "Array",
             is_nullable: last.ident == "Nullable",
             is_unsigned: last.ident == "Unsigned",
-            max_length: todo!(),
+            max_length,
         };
 
         let sql_name = if !ret.is_nullable && !ret.is_array && !ret.is_unsigned {
@@ -56,7 +76,7 @@ impl From<&syn::TypePath> for ColumnType {
         } else if let syn::PathArguments::AngleBracketed(ref args) = last.arguments {
             let arg = args.args.first().expect("There is at least one argument");
             if let syn::GenericArgument::Type(syn::Type::Path(p)) = arg {
-                let s = Self::from(p);
+                let s = Self::for_type_path(p, max_length);
                 ret.is_nullable |= s.is_nullable;
                 ret.is_array |= s.is_array;
                 ret.is_unsigned |= s.is_unsigned;
