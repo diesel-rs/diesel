@@ -26,6 +26,7 @@ pub struct ColumnType {
     pub is_array: bool,
     pub is_nullable: bool,
     pub is_unsigned: bool,
+    pub max_length: Option<u64>,
 }
 
 impl From<&syn::TypePath> for ColumnType {
@@ -43,6 +44,7 @@ impl From<&syn::TypePath> for ColumnType {
             is_array: last.ident == "Array",
             is_nullable: last.ident == "Nullable",
             is_unsigned: last.ident == "Unsigned",
+            max_length: todo!(),
         };
 
         let sql_name = if !ret.is_nullable && !ret.is_array && !ret.is_unsigned {
@@ -92,6 +94,9 @@ impl fmt::Display for ColumnType {
         }
         if self.is_nullable {
             write!(out, ">")?;
+        }
+        if let Some(max_length) = self.max_length {
+            write!(out, "({})", max_length)?;
         }
         Ok(())
     }
