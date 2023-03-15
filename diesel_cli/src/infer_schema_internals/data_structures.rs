@@ -96,7 +96,7 @@ impl fmt::Display for ColumnType {
             write!(out, ">")?;
         }
         if let Some(max_length) = self.max_length {
-            write!(out, "({})", max_length)?;
+            write!(out, "{{{}}}", max_length)?;
         }
         Ok(())
     }

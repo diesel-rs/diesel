@@ -31,7 +31,7 @@ pub struct ColumnDef {
 
 #[allow(dead_code)] // paren_token is currently unused
 pub struct ColumnMaxLength {
-    paren_token: syn::token::Paren,
+    brace_token: syn::token::Brace,
     pub len: syn::LitInt,
 }
 
@@ -120,9 +120,9 @@ impl syn::parse::Parse for ColumnDef {
 impl syn::parse::Parse for ColumnMaxLength {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let content;
-        let paren_token = syn::parenthesized!(content in input);
+        let brace_token = syn::braced!(content in input);
         let len = content.parse()?;
-        Ok(Self { paren_token, len })
+        Ok(Self { brace_token, len })
     }
 }
 

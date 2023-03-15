@@ -1,0 +1,5 @@
+t1 (id) {
+    f0 -> Varchar,
+    f1 -> Varchar{120},
+    f2 -> Nullable<Varchar>{120},
+}
