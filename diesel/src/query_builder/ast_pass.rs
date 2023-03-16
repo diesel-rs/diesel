@@ -69,7 +69,10 @@ where
         }
     }
 
-    pub(crate) fn debug_binds(formatter: &'a mut Vec<&'b dyn fmt::Debug>, backend: &'b DB) -> Self {
+    pub(crate) fn debug_binds(
+        formatter: &'a mut Vec<Box<dyn fmt::Debug + 'b>>,
+        backend: &'b DB,
+    ) -> Self {
         AstPass {
             internals: AstPassInternals::DebugBinds(formatter),
             backend,
@@ -207,7 +210,7 @@ where
     pub fn push_bind_param<T, U>(&mut self, bind: &'b U) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
-        U: ToSql<T, DB>,
+        U: ToSql<T, DB> + ?Sized,
     {
         match self.internals {
             AstPassInternals::ToSql(ref mut out, _) => out.push_bind_param(),
@@ -216,7 +219,7 @@ where
                 ref mut metadata_lookup,
             } => collector.push_bound_value(bind, metadata_lookup)?,
             AstPassInternals::DebugBinds(ref mut f) => {
-                f.push(bind);
+                f.push(Box::new(bind));
             }
             AstPassInternals::IsNoop(ref mut result) => **result = false,
             _ => {}
@@ -227,7 +230,7 @@ where
     pub(crate) fn push_bind_param_value_only<T, U>(&mut self, bind: &'b U) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
-        U: ToSql<T, DB>,
+        U: ToSql<T, DB> + ?Sized,
     {
         match self.internals {
             AstPassInternals::CollectBinds { .. } | AstPassInternals::DebugBinds(..) => {
@@ -290,7 +293,7 @@ where
         metadata_lookup: &'a mut DB::MetadataLookup,
     },
     IsSafeToCachePrepared(&'a mut bool),
-    DebugBinds(&'a mut Vec<&'b dyn fmt::Debug>),
+    DebugBinds(&'a mut Vec<Box<dyn fmt::Debug + 'b>>),
     IsNoop(&'a mut bool),
 }
 

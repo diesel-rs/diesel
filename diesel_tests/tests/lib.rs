@@ -40,6 +40,8 @@ mod macros;
 mod only;
 mod order;
 mod perf_details;
+#[cfg(feature = "postgres")]
+mod query_fragment;
 mod raw_sql;
 mod schema;
 mod schema_dsl;
