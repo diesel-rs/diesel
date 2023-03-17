@@ -56,7 +56,7 @@ fn main() {
         ("database", matches) => run_database_command(matches).unwrap_or_else(handle_error),
         ("completions", matches) => generate_completions_command(matches),
         ("print-schema", matches) => run_infer_schema(matches).unwrap_or_else(handle_error),
-        ("features", Some(_)) => show_which_engines_supported().unwrap(),
+        ("features", _) => show_which_engines_supported(),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -309,28 +309,27 @@ fn regenerate_schema_if_file_specified(
     Ok(())
 }
 
-// List which features have been compiled into this version of diesel_cli
-fn show_which_engines_supported() -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-    let mut features: Vec<&str> = Vec::new();
-    #[cfg(feature = "postgres")]
-    features.push("postgres");
-    #[cfg(feature = "mysql")]
-    features.push("mysql");
-    #[cfg(feature = "sqlite")]
-    features.push("sqlite");
+fn supported_backends() -> String {
+    let features = &[
+        #[cfg(feature = "postgres")]
+        "postgres",
+        #[cfg(feature = "mysql")]
+        "mysql",
+        #[cfg(feature = "sqlite")]
+        "sqlite",
+    ];
 
-    for f in &features {
-        match f as &str {
-            "postgres" | "sqlite" | "mysql" => print!("{} ", f),
-            _ => {}
-        };
-    }
-    if features.is_empty() {
+    features.join(" ")
+}
+
+// List which features have been compiled into this version of diesel_cli
+fn show_which_engines_supported() {
+    let supported_backends = supported_backends();
+    if supported_backends.is_empty() {
         println!("[warning] No features detected");
     } else {
-        println!();
+        println!("Supported backends: {supported_backends}");
     }
-    Ok(())
 }
 
 #[cfg(test)]
