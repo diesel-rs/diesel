@@ -1,3 +1,4 @@
+#![allow(unsafe_code)] // module uses ffi
 use mysqlclient_sys as ffi;
 use std::mem;
 use std::mem::MaybeUninit;

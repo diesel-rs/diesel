@@ -202,6 +202,7 @@
     clippy::items_after_statements,
     clippy::used_underscore_binding
 )]
+#![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
 
 extern crate diesel_derives;

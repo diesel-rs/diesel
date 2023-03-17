@@ -55,6 +55,7 @@ impl TypeOidLookup for NonZeroU32 {
 impl<'a> PgValue<'a> {
     #[cfg(test)]
     pub(crate) fn for_test(raw_value: &'a [u8]) -> Self {
+        #[allow(unsafe_code)] // that's actual safe
         static FAKE_OID: NonZeroU32 = unsafe {
             // 42 != 0, so this is actually safe
             NonZeroU32::new_unchecked(42)

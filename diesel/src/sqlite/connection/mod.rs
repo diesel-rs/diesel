@@ -125,6 +125,7 @@ pub struct SqliteConnection {
 // This relies on the invariant that RawConnection or Statement are never
 // leaked. If a reference to one of those was held on a different thread, this
 // would not be thread safe.
+#[allow(unsafe_code)]
 unsafe impl Send for SqliteConnection {}
 
 impl SimpleConnection for SqliteConnection {

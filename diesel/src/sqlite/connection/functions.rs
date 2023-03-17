@@ -130,6 +130,7 @@ struct FunctionRow<'a> {
 }
 
 impl<'a> Drop for FunctionRow<'a> {
+    #[allow(unsafe_code)] // manual drop calls
     fn drop(&mut self) {
         if let Some(args) = Rc::get_mut(&mut self.args) {
             if let PrivateSqliteRow::Duplicated { column_names, .. } =
@@ -146,6 +147,7 @@ impl<'a> Drop for FunctionRow<'a> {
 }
 
 impl<'a> FunctionRow<'a> {
+    #[allow(unsafe_code)] // complicated ptr cast
     fn new(args: &mut [*mut ffi::sqlite3_value]) -> Self {
         let lengths = args.len();
         let args = unsafe {

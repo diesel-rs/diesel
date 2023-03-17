@@ -1,5 +1,4 @@
-extern crate libsqlite3_sys as ffi;
-
+#![allow(unsafe_code)] // fii code
 use super::bind_collector::{InternalSqliteBindValue, SqliteBindCollector};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
@@ -9,6 +8,7 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::{Sqlite, SqliteType};
 use crate::util::OnceCell;
+use libsqlite3_sys as ffi;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::os::raw as libc;

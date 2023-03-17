@@ -115,6 +115,7 @@ macro_rules! mysql_time_impls {
     ($ty:ty) => {
         #[cfg(feature = "mysql_backend")]
         impl ToSql<$ty, Mysql> for MysqlTime {
+            #[allow(unsafe_code)] // pointer cast
             fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {
                 let bytes = unsafe {
                     let bytes_ptr = self as *const MysqlTime as *const u8;
