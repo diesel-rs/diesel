@@ -12,8 +12,8 @@ fn main() {
     let mut body = String::new();
     stdin().read_to_string(&mut body).unwrap();
 
-    let _ = create_post(connection, title, &body);
-    println!("\nSaved draft {title}");
+    let post = create_post(connection, title, &body);
+    println!("\nSaved draft {title} with id {}", post.id);
 }
 
 #[cfg(not(windows))]

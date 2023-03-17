@@ -1,4 +1,5 @@
 use diesel::prelude::*;
+use diesel_demo_step_3_sqlite::models::Post;
 use diesel_demo_step_3_sqlite::*;
 use std::env::args;
 
@@ -12,15 +13,11 @@ fn main() {
         .expect("Invalid ID");
     let connection = &mut establish_connection();
 
-    let _ = diesel::update(posts.find(id))
+    let post = diesel::update(posts.find(id))
         .set(published.eq(true))
-        .execute(connection)
+        .returning(Post::as_returning())
+        .get_result(connection)
         .unwrap();
-
-    let post: models::Post = posts
-        .find(id)
-        .first(connection)
-        .unwrap_or_else(|_| panic!("Unable to find post {}", id));
 
     println!("Published post {}", post.title);
 }

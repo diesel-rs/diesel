@@ -16,14 +16,19 @@ pub fn establish_connection() -> MysqlConnection {
 }
 
 pub fn create_post(conn: &mut MysqlConnection, title: &str, body: &str) -> Post {
-    use schema::posts::dsl::{id, posts};
+    use crate::schema::posts;
 
     let new_post = NewPost { title, body };
 
-    diesel::insert_into(posts)
-        .values(&new_post)
-        .execute(conn)
-        .expect("Error saving new post");
+    conn.transaction(|conn| {
+        diesel::insert_into(posts::table)
+            .values(&new_post)
+            .execute(conn)?;
 
-    posts.order(id.desc()).first(conn).unwrap()
+        posts::table
+            .order(posts::id.desc())
+            .select(Post::as_select())
+            .first(conn)
+    })
+    .expect("Error while saving post")
 }

@@ -1,7 +1,9 @@
 use super::schema::posts;
 use diesel::prelude::*;
 
-#[derive(Queryable)]
+#[derive(Queryable, Selectable)]
+#[diesel(table_name = posts)]
+#[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct Post {
     pub id: i32,
     pub title: String,
