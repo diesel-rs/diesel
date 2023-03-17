@@ -1,5 +1,4 @@
 #![allow(unsafe_code)] // module uses ffi
-                       //
 use std::cell::{Ref, RefCell};
 use std::rc::Rc;
 
