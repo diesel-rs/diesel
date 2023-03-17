@@ -1,8 +1,5 @@
-extern crate mysqlclient_sys as ffi;
-
-pub(super) mod iterator;
-mod metadata;
-
+#![allow(unsafe_code)] // module uses ffi
+use mysqlclient_sys as ffi;
 use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::os::raw as libc;
@@ -12,6 +9,9 @@ use super::bind::{OutputBinds, PreparedStatementBinds};
 use crate::connection::statement_cache::MaybeCached;
 use crate::mysql::MysqlType;
 use crate::result::{DatabaseErrorKind, Error, QueryResult};
+
+pub(super) mod iterator;
+mod metadata;
 
 pub(super) use self::metadata::{MysqlFieldMetadata, StatementMetadata};
 

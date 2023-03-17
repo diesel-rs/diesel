@@ -1,3 +1,5 @@
+// copied from rust-stdlib
+#![allow(unsafe_code)]
 // This is a copy of the unstable `OnceCell` implementation in rusts std-library
 // https://github.com/rust-lang/rust/blob/1160cf864f2a0014e3442367e1b96496bfbeadf4/library/core/src/lazy.rs#L8-L276
 //

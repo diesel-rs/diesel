@@ -1,3 +1,4 @@
+#![allow(unsafe_code)] // ffi calls
 extern crate libsqlite3_sys as ffi;
 
 use std::ffi::{CString, NulError};

@@ -101,6 +101,8 @@ pub struct MysqlConnection {
     statement_cache: StatementCache<Mysql, Statement>,
 }
 
+// mysql connection can be shared between threads according to libmysqlclients documentation
+#[allow(unsafe_code)]
 unsafe impl Send for MysqlConnection {}
 
 impl SimpleConnection for MysqlConnection {
@@ -147,9 +149,12 @@ impl Connection for MysqlConnection {
     where
         T: QueryFragment<Self::Backend> + QueryId,
     {
+        #[allow(unsafe_code)] // call to unsafe function
         update_transaction_manager_status(
             prepared_query(&source, &mut self.statement_cache, &mut self.raw_connection).and_then(
                 |stmt| {
+                    // we have not called result yet, so calling `execute` is
+                    // fine
                     let stmt_use = unsafe { stmt.execute() }?;
                     Ok(stmt_use.affected_rows())
                 },
