@@ -56,7 +56,6 @@ fn main() {
         ("database", matches) => run_database_command(matches).unwrap_or_else(handle_error),
         ("completions", matches) => generate_completions_command(matches),
         ("print-schema", matches) => run_infer_schema(matches).unwrap_or_else(handle_error),
-        ("features", _) => show_which_engines_supported(),
         _ => unreachable!("The cli parser should prevent reaching here"),
     }
 }
@@ -320,16 +319,6 @@ fn supported_backends() -> String {
     ];
 
     features.join(" ")
-}
-
-// List which features have been compiled into this version of diesel_cli
-fn show_which_engines_supported() {
-    let supported_backends = supported_backends();
-    if supported_backends.is_empty() {
-        println!("[warning] No features detected");
-    } else {
-        println!("Supported backends: {supported_backends}");
-    }
 }
 
 #[cfg(test)]

@@ -184,9 +184,6 @@ pub fn build_cli() -> Command {
                 .value_parser(EnumValueParser::<Shell>::new()),
         );
 
-    let features_subcommand = Command::new("features")
-        .about("Lists all the database engines available with this version of diesel");
-
     let infer_schema_subcommand = Command::new("print-schema")
         .about("Print table definitions for database schema.")
         .arg(
@@ -315,7 +312,6 @@ pub fn build_cli() -> Command {
         .subcommand(database_subcommand)
         .subcommand(generate_completions_subcommand)
         .subcommand(infer_schema_subcommand)
-        .subcommand(features_subcommand)
         .subcommand_required(true)
         .arg_required_else_help(true)
 }
