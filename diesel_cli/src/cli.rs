@@ -291,7 +291,16 @@ pub fn build_cli() -> Command {
         .global(true);
 
     Command::new("diesel")
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(clap::crate_version!())
+        .long_version(
+            clap::builder::Str::from(
+                format!(
+                    "\n Version: {}\n Supported Backends: {}",
+                    clap::crate_version!(),
+                    super::supported_backends()
+                )
+            )
+        )
         .after_help(
             "You can also run `diesel SUBCOMMAND -h` to get more information about that subcommand.",
         )
