@@ -15,7 +15,8 @@ fn main() {
 
     let post = diesel::update(posts.find(id))
         .set(published.eq(true))
-        .get_result::<Post>(connection)
+        .returning(Post::as_returning())
+        .get_result(connection)
         .unwrap();
     println!("Published post {}", post.title);
 }
