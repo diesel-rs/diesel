@@ -597,6 +597,4 @@ pub use crate::query_builder::functions::{
 };
 pub use crate::result::Error::NotFound;
 
-pub(crate) mod diesel {
-    pub(crate) use super::*;
-}
+extern crate self as diesel;
