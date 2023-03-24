@@ -9,6 +9,11 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
 include = ["src/**/*", "LICENSE-*"]
 rust-version = "1.65.0"
+# we cannot update to newer editions
+# because we relay on a name resolution
+# hack to get a `diesel` item inside of diesel
+# as well as for using diesel-derives in external crates
+edition = "2015"
 
 [dependencies]
 syn = { version = "2.0", features = ["derive", "fold", "full"] }
