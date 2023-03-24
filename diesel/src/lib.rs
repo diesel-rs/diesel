@@ -88,11 +88,11 @@
 //! ## How to read diesels compile time error messages
 //!
 //! Diesel is known for generating large complicated looking errors. Usually
-//! most of these error messages can be break down easily. The following
+//! most of these error messages can be broken down easily. The following
 //! section tries to give an overview of common error messages and how to read them.
-//! As a general note it's always usefull to read the complete error message as emitted
+//! As a general note it's always useful to read the complete error message as emitted
 //! by rustc, including the `required because of …` part of the message.
-//! You IDE might hide important parts!
+//! Your IDE might hide important parts!
 //!
 //! If you use a nightly compiler you might want to enable the `nightly-error-messages`
 //! feature flag to automatically improve some error messages.
@@ -103,7 +103,7 @@
 //!    while trying to execute a query:
 //!    This error indicates a mismatch between what your query returns and what your model struct
 //!    expects the query to return. The fields need to match in terms of field order, field type
-//!    and field count. If your are sure that everything must match double check the enabled diesel
+//!    and field count. If you are sure that everything matches, double check the enabled diesel
 //!    features (for support for types from other crates) and double check (via `cargo tree`)
 //!    that there is only one version of such a shared crate in your dependency tree.
 //!    Consider using [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
@@ -126,10 +126,11 @@
 //!    means that you are trying to use SQL features from one SQL dialect on a different database
 //!    system. Double check your query that everything required is supported by the selected
 //!    backend. If that's the case double check that the relevant feature flags are enabled
-//!    (`returning_clauses_for_sqlite_3_35` for enabling support for returning clauses in newer
+//!    (for example, `returning_clauses_for_sqlite_3_35` for enabling support for returning clauses in newer
 //!    sqlite versions)
 //! * `the trait bound posts::title: SelectableExpression<users::table> is not satisfied` while
-//!    executing a query: This error message indicates that you try to select a field from a table
+//!    executing a query:
+//!    This error message indicates that you're trying to select a field from a table
 //!    that does not appear in your from clause. If your query joins the relevant table via
 //!    [`left_join`](crate::query_dsl::QueryDsl::left_join) you need to call
 //!    [`.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable)
