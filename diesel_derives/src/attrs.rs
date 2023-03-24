@@ -1,10 +1,9 @@
 use std::fmt::{Display, Formatter};
 
 use proc_macro2::{Span, TokenStream};
-use proc_macro_error::ResultExt;
 use quote::ToTokens;
 use syn::parse::discouraged::Speculative;
-use syn::parse::{Parse, ParseStream, Parser, Result};
+use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::token::Comma;
@@ -21,6 +20,10 @@ use util::{
 
 use crate::field::SelectExpr;
 use crate::util::{parse_paren_list, CHECK_FOR_BACKEND_NOTE};
+
+pub trait MySpanned {
+    fn span(&self) -> Span;
+}
 
 pub struct AttributeSpanWrapper<T> {
     pub item: T,
@@ -50,15 +53,19 @@ impl SqlIdentifier {
         self.span
     }
 
-    pub fn valid_ident(&self) {
+    pub fn valid_ident(&self) -> Result<()> {
         if syn::parse_str::<Ident>(&self.field_name).is_err() {
-            abort!(
+            Err(syn::Error::new(
                 self.span(),
-                "Expected valid identifier, found `{0}`. \
+                format!(
+                    "Expected valid identifier, found `{0}`. \
                  Diesel automatically renames invalid identifiers, \
                  perhaps you meant to write `{0}_`?",
-                self.field_name
-            )
+                    self.field_name
+                ),
+            ))
+        } else {
+            Ok(())
         }
     }
 }
@@ -136,7 +143,7 @@ impl Parse for FieldAttr {
                 name,
                 parse_eq(input, SELECT_EXPRESSION_TYPE_NOTE)?,
             )),
-            _ => unknown_attribute(
+            _ => Err(unknown_attribute(
                 &name,
                 &[
                     "embed",
@@ -147,12 +154,12 @@ impl Parse for FieldAttr {
                     "select_expression",
                     "select_expression_type",
                 ],
-            ),
+            )),
         }
     }
 }
 
-impl Spanned for FieldAttr {
+impl MySpanned for FieldAttr {
     fn span(&self) -> Span {
         match self {
             FieldAttr::Embed(ident)
@@ -227,14 +234,14 @@ impl Parse for StructAttr {
             )),
             "primary_key" => Ok(StructAttr::PrimaryKey(
                 name,
-                parse_paren_list(input, "key1, key2")?,
+                parse_paren_list(input, "key1, key2", syn::Token![,])?,
             )),
             "check_for_backend" => Ok(StructAttr::CheckForBackend(
                 name,
-                parse_paren_list(input, CHECK_FOR_BACKEND_NOTE)?,
+                parse_paren_list(input, CHECK_FOR_BACKEND_NOTE, syn::Token![,])?,
             )),
 
-            _ => unknown_attribute(
+            _ => Err(unknown_attribute(
                 &name,
                 &[
                     "aggregate",
@@ -251,12 +258,12 @@ impl Parse for StructAttr {
                     "primary_key",
                     "check_for_backend",
                 ],
-            ),
+            )),
         }
     }
 }
 
-impl Spanned for StructAttr {
+impl MySpanned for StructAttr {
     fn span(&self) -> Span {
         match self {
             StructAttr::Aggregate(ident)
@@ -276,50 +283,46 @@ impl Spanned for StructAttr {
     }
 }
 
-pub fn parse_attributes<T>(attrs: &[Attribute]) -> Vec<AttributeSpanWrapper<T>>
+pub fn parse_attributes<T>(attrs: &[Attribute]) -> Result<Vec<AttributeSpanWrapper<T>>>
 where
-    T: Parse + ParseDeprecated + Spanned,
+    T: Parse + ParseDeprecated + MySpanned,
 {
-    attrs
-        .iter()
-        .flat_map(|attr| {
-            if attr.path.is_ident("diesel") {
-                attr.parse_args_with(Punctuated::<T, Comma>::parse_terminated)
-                    .unwrap_or_abort()
-                    .into_iter()
-                    .map(|a| AttributeSpanWrapper {
-                        ident_span: a.span(),
-                        item: a,
-                        attribute_span: attr.tokens.span(),
-                    })
-                    .collect::<Vec<_>>()
-            } else if cfg!(all(
-                not(feature = "without-deprecated"),
-                feature = "with-deprecated"
-            )) {
-                let mut p = Vec::new();
-                let Attribute { path, tokens, .. } = attr;
-                let ident = path.get_ident().map(|f| f.to_string());
+    let mut out = Vec::new();
+    for attr in attrs {
+        if attr.meta.path().is_ident("diesel") {
+            let map = attr
+                .parse_args_with(Punctuated::<T, Comma>::parse_terminated)?
+                .into_iter()
+                .map(|a| AttributeSpanWrapper {
+                    ident_span: a.span(),
+                    item: a,
+                    attribute_span: attr.meta.span(),
+                });
+            out.extend(map);
+        } else if cfg!(all(
+            not(feature = "without-deprecated"),
+            feature = "with-deprecated"
+        )) {
+            let path = attr.meta.path();
+            let ident = path.get_ident().map(|f| f.to_string());
 
-                if let "sql_type" | "column_name" | "table_name" | "changeset_options"
-                | "primary_key" | "belongs_to" | "sqlite_type" | "mysql_type" | "postgres" =
-                    ident.as_deref().unwrap_or_default()
-                {
-                    let ts = quote!(#path #tokens).into();
-                    let value = Parser::parse(T::parse_deprecated, ts).unwrap_or_abort();
+            if let "sql_type" | "column_name" | "table_name" | "changeset_options" | "primary_key"
+            | "belongs_to" | "sqlite_type" | "mysql_type" | "postgres" =
+                ident.as_deref().unwrap_or_default()
+            {
+                let m = &attr.meta;
+                let ts = quote::quote!(#m).into();
+                let value = syn::parse::Parser::parse(T::parse_deprecated, ts)?;
 
-                    if let Some(value) = value {
-                        p.push(AttributeSpanWrapper {
-                            ident_span: value.span(),
-                            item: value,
-                            attribute_span: attr.tokens.span(),
-                        });
-                    }
+                if let Some(value) = value {
+                    out.push(AttributeSpanWrapper {
+                        ident_span: value.span(),
+                        item: value,
+                        attribute_span: attr.meta.span(),
+                    });
                 }
-                p
-            } else {
-                Vec::new()
             }
-        })
-        .collect()
+        }
+    }
+    Ok(out)
 }

@@ -1,19 +1,22 @@
 use proc_macro2::TokenStream;
+use quote::quote;
 use syn::DeriveInput;
+use syn::Result;
 
 use model::Model;
 use util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, true, false);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, true, false)?;
 
     if model.sql_types.is_empty() {
-        abort_call_site!(
-            "At least one `sql_type` is needed for deriving `AsExpression` on a structure."
-        );
+        return Err(syn::Error::new(
+            proc_macro2::Span::call_site(),
+            "At least one `sql_type` is needed for deriving `AsExpression` on a structure.",
+        ));
     }
 
-    let struct_ty = ty_for_foreign_derive(&item, &model);
+    let struct_ty = ty_for_foreign_derive(&item, &model)?;
 
     let (impl_generics, ..) = item.generics.split_for_impl();
     let lifetimes = item.generics.lifetimes().collect::<Vec<_>>();
@@ -104,12 +107,12 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         }
     });
 
-    wrap_in_dummy_mod(quote! {
+    Ok(wrap_in_dummy_mod(quote! {
         use diesel::expression::AsExpression;
         use diesel::internal::derives::as_expression::Bound;
         use diesel::sql_types::Nullable;
         use diesel::serialize::{self, ToSql, Output};
 
         #(#tokens)*
-    })
+    }))
 }

@@ -1,13 +1,15 @@
 use proc_macro2::TokenStream;
+use quote::quote;
 use syn::spanned::Spanned;
 use syn::DeriveInput;
+use syn::{parse_quote, Result};
 
 use field::Field;
 use model::Model;
 use util::wrap_in_dummy_mod;
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false, false);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, false, false)?;
 
     let (_, ty_generics, _) = item.generics.split_for_impl();
 
@@ -33,8 +35,12 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         .fields()
         .iter()
         .map(|f| field_column_ty(f, &model))
-        .collect::<Vec<_>>();
-    let field_columns_inst = model.fields().iter().map(|f| field_column_inst(f, &model));
+        .collect::<Result<Vec<_>>>()?;
+    let field_columns_inst = model
+        .fields()
+        .iter()
+        .map(|f| field_column_inst(f, &model))
+        .collect::<Result<Vec<_>>>()?;
 
     let check_function = if let Some(ref backends) = model.check_for_backend {
         let field_check_bound = model
@@ -63,7 +69,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         None
     };
 
-    wrap_in_dummy_mod(quote! {
+    Ok(wrap_in_dummy_mod(quote! {
         use diesel::expression::Selectable;
 
         impl #impl_generics Selectable<__DB>
@@ -78,7 +84,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         }
 
         #check_function
-    })
+    }))
 }
 
 fn to_field_ty_bound(field_ty: &syn::Type) -> Option<TokenStream> {
@@ -129,31 +135,31 @@ fn to_field_ty_bound(field_ty: &syn::Type) -> Option<TokenStream> {
     }
 }
 
-fn field_column_ty(field: &Field, model: &Model) -> TokenStream {
+fn field_column_ty(field: &Field, model: &Model) -> Result<TokenStream> {
     if let Some(ref select_expression_type) = field.select_expression_type {
         let ty = &select_expression_type.item;
-        quote!(#ty)
+        Ok(quote!(#ty))
     } else if field.embed() {
         let embed_ty = &field.ty;
-        quote!(<#embed_ty as Selectable<__DB>>::SelectExpression)
+        Ok(quote!(<#embed_ty as Selectable<__DB>>::SelectExpression))
     } else {
         let table_name = &model.table_names()[0];
-        let column_name = field.column_name();
-        quote!(#table_name::#column_name)
+        let column_name = field.column_name()?;
+        Ok(quote!(#table_name::#column_name))
     }
 }
 
-fn field_column_inst(field: &Field, model: &Model) -> TokenStream {
+fn field_column_inst(field: &Field, model: &Model) -> Result<TokenStream> {
     if let Some(ref select_expression) = field.select_expression {
         let expr = &select_expression.item;
         let span = expr.span();
-        quote::quote_spanned!(span => #expr)
+        Ok(quote::quote_spanned!(span => #expr))
     } else if field.embed() {
         let embed_ty = &field.ty;
-        quote!(<#embed_ty as Selectable<__DB>>::construct_selection())
+        Ok(quote!(<#embed_ty as Selectable<__DB>>::construct_selection()))
     } else {
         let table_name = &model.table_names()[0];
-        let column_name = field.column_name();
-        quote!(#table_name::#column_name)
+        let column_name = field.column_name()?;
+        Ok(quote!(#table_name::#column_name))
     }
 }

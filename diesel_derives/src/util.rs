@@ -1,7 +1,8 @@
 use proc_macro2::TokenStream;
-use syn::parse::{Parse, ParseStream, Result};
+use quote::quote;
+use syn::parse::{Parse, ParseStream, Peek, Result};
 use syn::token::Eq;
-use syn::{parenthesized, Data, DeriveInput, GenericArgument, Ident, Type};
+use syn::{parenthesized, parse_quote, Data, DeriveInput, GenericArgument, Ident, Type};
 
 use model::Model;
 
@@ -23,24 +24,27 @@ pub const SELECT_EXPRESSION_TYPE_NOTE: &str =
     "select_expression_type = dsl::IsNotNull<schema::table_name::column_name>";
 pub const CHECK_FOR_BACKEND_NOTE: &str = "diesel::pg::Pg";
 
-pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> ! {
+pub fn unknown_attribute(name: &Ident, valid: &[&str]) -> syn::Error {
     let prefix = if valid.len() == 1 { "" } else { " one of" };
 
-    abort!(
-        name,
-        "unknown attribute, expected{} `{}`",
-        prefix,
-        valid.join("`, `")
+    syn::Error::new(
+        name.span(),
+        format!(
+            "unknown attribute, expected{prefix} `{}`",
+            valid.join("`, `")
+        ),
     )
 }
 
 pub fn parse_eq<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
     if input.is_empty() {
-        abort!(
+        return Err(syn::Error::new(
             input.span(),
-            "unexpected end of input, expected `=`";
-            help = "The correct format looks like `#[diesel({})]`", help
-        );
+            format!(
+                "unexpected end of input, expected `=`\n\
+                 help: The correct format looks like `#[diesel({help})]`",
+            ),
+        ));
     }
 
     input.parse::<Eq>()?;
@@ -49,11 +53,13 @@ pub fn parse_eq<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
 
 pub fn parse_paren<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
     if input.is_empty() {
-        abort!(
+        return Err(syn::Error::new(
             input.span(),
-            "unexpected end of input, expected parentheses";
-            help = "The correct format looks like `#[diesel({})]`", help
-        );
+            format!(
+                "unexpected end of input, expected parentheses\n\
+                 help: The correct format looks like `#[diesel({help})]`",
+            ),
+        ));
     }
 
     let content;
@@ -61,21 +67,29 @@ pub fn parse_paren<T: Parse>(input: ParseStream, help: &str) -> Result<T> {
     content.parse()
 }
 
-pub fn parse_paren_list<T: Parse, D: Parse>(
+pub fn parse_paren_list<T, D>(
     input: ParseStream,
     help: &str,
-) -> Result<syn::punctuated::Punctuated<T, D>> {
+    sep: D,
+) -> Result<syn::punctuated::Punctuated<T, <D as Peek>::Token>>
+where
+    T: Parse,
+    D: Peek,
+    D::Token: Parse,
+{
     if input.is_empty() {
-        abort!(
+        return Err(syn::Error::new(
             input.span(),
-            "unexpected end of input, expected parentheses";
-            help = "The correct format looks like `#[diesel({})]`", help
-        );
+            format!(
+                "unexpected end of input, expected parentheses\n\
+                 help: The correct format looks like `#[diesel({help})]`",
+            ),
+        ));
     }
 
     let content;
     parenthesized!(content in input);
-    content.parse_terminated(T::parse)
+    content.parse_terminated(T::parse, sep)
 }
 
 pub fn wrap_in_dummy_mod(item: TokenStream) -> TokenStream {
@@ -123,19 +137,25 @@ fn option_ty_arg(ty: &Type) -> Option<&Type> {
     }
 }
 
-pub fn ty_for_foreign_derive(item: &DeriveInput, model: &Model) -> Type {
+pub fn ty_for_foreign_derive(item: &DeriveInput, model: &Model) -> Result<Type> {
     if model.foreign_derive {
         match item.data {
             Data::Struct(ref body) => match body.fields.iter().next() {
-                Some(field) => field.ty.clone(),
-                None => abort_call_site!("foreign_derive requires at least one field"),
+                Some(field) => Ok(field.ty.clone()),
+                None => Err(syn::Error::new(
+                    proc_macro2::Span::call_site(),
+                    "foreign_derive requires at least one field",
+                )),
             },
-            _ => abort_call_site!("foreign_derive can only be used with structs"),
+            _ => Err(syn::Error::new(
+                proc_macro2::Span::call_site(),
+                "foreign_derive can only be used with structs",
+            )),
         }
     } else {
         let ident = &item.ident;
         let (_, ty_generics, ..) = item.generics.split_for_impl();
-        parse_quote!(#ident #ty_generics)
+        Ok(parse_quote!(#ident #ty_generics))
     }
 }
 

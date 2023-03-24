@@ -1,5 +1,6 @@
 use diesel_table_macro_syntax::{ColumnDef, TableDecl};
 use proc_macro2::TokenStream;
+use syn::parse_quote;
 use syn::Ident;
 
 const DEFAULT_PRIMARY_KEY_NAME: &str = "id";

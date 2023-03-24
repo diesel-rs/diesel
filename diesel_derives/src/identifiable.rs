@@ -1,11 +1,14 @@
 use proc_macro2::TokenStream;
+use quote::quote;
+use syn::parse_quote;
 use syn::DeriveInput;
+use syn::Result;
 
 use model::Model;
 use util::wrap_in_dummy_mod;
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false, false);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, false, false)?;
 
     let struct_name = &item.ident;
     let table_name = &model.table_names()[0];
@@ -15,14 +18,15 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     ref_generics.params.push(parse_quote!('ident));
     let (ref_generics, ..) = ref_generics.split_for_impl();
 
-    let (field_ty, field_name): (Vec<_>, Vec<_>) = model
-        .primary_key_names
-        .iter()
-        .map(|pk| model.find_column(pk))
-        .map(|f| (&f.ty, &f.name))
-        .unzip();
+    let mut field_ty = Vec::new();
+    let mut field_name = Vec::new();
+    for pk in model.primary_key_names.iter() {
+        let f = model.find_column(pk)?;
+        field_ty.push(&f.ty);
+        field_name.push(&f.name);
+    }
 
-    wrap_in_dummy_mod(quote! {
+    Ok(wrap_in_dummy_mod(quote! {
         use diesel::associations::{HasTable, Identifiable};
 
         impl #impl_generics HasTable for #struct_name #ty_generics
@@ -54,5 +58,5 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                 (#(&self.#field_name),*)
             }
         }
-    })
+    }))
 }

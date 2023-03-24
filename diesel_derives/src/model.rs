@@ -2,6 +2,7 @@ use proc_macro2::Span;
 use std::slice::from_ref;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
+use syn::Result;
 use syn::{
     Data, DataStruct, DeriveInput, Field as SynField, Fields, FieldsNamed, FieldsUnnamed, Ident,
     LitBool, Path, Type,
@@ -35,7 +36,7 @@ impl Model {
         item: &DeriveInput,
         allow_unit_structs: bool,
         allow_multiple_table: bool,
-    ) -> Self {
+    ) -> Result<Self> {
         let DeriveInput {
             data, ident, attrs, ..
         } = item;
@@ -50,7 +51,10 @@ impl Model {
                 ..
             }) => Some(unnamed),
             _ if !allow_unit_structs => {
-                abort_call_site!("This derive can only be used on non-unit structs")
+                return Err(syn::Error::new(
+                    proc_macro2::Span::call_site(),
+                    "This derive can only be used on non-unit structs",
+                ));
             }
             _ => None,
         };
@@ -69,15 +73,16 @@ impl Model {
         let mut postgres_type = None;
         let mut check_for_backend = None;
 
-        for attr in parse_attributes(attrs) {
+        for attr in parse_attributes(attrs)? {
             match attr.item {
                 StructAttr::SqlType(_, value) => sql_types.push(Type::Path(value)),
                 StructAttr::TableName(ident, value) => {
                     if !allow_multiple_table && !table_names.is_empty() {
-                        abort!(
-                            ident, "expected a single table name attribute";
-                            note = "remove this attribute";
-                        )
+                        return Err(syn::Error::new(
+                            ident.span(),
+                            "expected a single table name attribute\n\
+                             note: remove this attribute",
+                        ));
                     }
                     table_names.push(value)
                 }
@@ -103,7 +108,7 @@ impl Model {
 
         let name = Ident::new(&infer_table_name(&ident.to_string()), ident.span()).into();
 
-        Self {
+        Ok(Self {
             name,
             table_names,
             primary_key_names,
@@ -117,9 +122,9 @@ impl Model {
             mysql_type,
             sqlite_type,
             postgres_type,
-            fields: fields_from_item_data(fields),
+            fields: fields_from_item_data(fields)?,
             check_for_backend,
-        }
+        })
     }
 
     pub fn table_names(&self) -> &[Path] {
@@ -133,11 +138,20 @@ impl Model {
         &self.fields
     }
 
-    pub fn find_column(&self, column_name: &Ident) -> &Field {
+    pub fn find_column(&self, column_name: &Ident) -> Result<&Field> {
         self.fields()
             .iter()
-            .find(|f| f.column_name() == *column_name)
-            .unwrap_or_else(|| abort!(column_name, "No field with column name {}", column_name))
+            .find(|f| {
+                f.column_name()
+                    .map(|c| c == *column_name)
+                    .unwrap_or_default()
+            })
+            .ok_or_else(|| {
+                syn::Error::new(
+                    column_name.span(),
+                    format!("No field with column name {column_name}"),
+                )
+            })
     }
 
     pub fn treat_none_as_default_value(&self) -> bool {
@@ -155,16 +169,16 @@ impl Model {
     }
 }
 
-fn fields_from_item_data(fields: Option<&Punctuated<SynField, Comma>>) -> Vec<Field> {
+fn fields_from_item_data(fields: Option<&Punctuated<SynField, Comma>>) -> Result<Vec<Field>> {
     fields
         .map(|fields| {
             fields
                 .iter()
                 .enumerate()
                 .map(|(i, f)| Field::from_struct_field(f, i))
-                .collect::<Vec<_>>()
+                .collect::<Result<Vec<_>>>()
         })
-        .unwrap_or_default()
+        .unwrap_or_else(|| Ok(Vec::new()))
 }
 
 pub fn infer_table_name(name: &str) -> String {

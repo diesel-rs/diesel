@@ -4,11 +4,13 @@ use syn::{Ident, LitStr};
 
 pub fn parse_eq_and_lit_str(name: Ident, input: ParseStream, help: &str) -> Result<LitStr> {
     if input.is_empty() {
-        abort!(
+        return Err(syn::Error::new(
             name.span(),
-            "unexpected end of input, expected `=`";
-            help = "The correct format looks like `#[diesel({})]`", help
-        );
+            format!(
+                "unexpected end of input, expected `=`\n\
+                     help: The correct format looks like `#[diesel({help})]`"
+            ),
+        ));
     }
 
     input.parse::<Eq>()?;

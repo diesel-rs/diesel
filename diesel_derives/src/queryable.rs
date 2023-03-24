@@ -1,12 +1,13 @@
 use proc_macro2::{Span, TokenStream};
-use syn::{DeriveInput, Ident, Index};
+use quote::quote;
+use syn::{parse_quote, DeriveInput, Ident, Index, Result};
 
 use field::Field;
 use model::Model;
 use util::wrap_in_dummy_mod;
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false, false);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, false, false)?;
 
     let struct_name = &item.ident;
     let field_ty = &model
@@ -43,7 +44,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     }
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    wrap_in_dummy_mod(quote! {
+    Ok(wrap_in_dummy_mod(quote! {
         use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
         use diesel::row::{Row, Field};
         use std::convert::TryInto;
@@ -59,5 +60,5 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                 })
             }
         }
-    })
+    }))
 }
