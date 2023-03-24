@@ -44,7 +44,6 @@ mod impl_deprecated {
     use deprecated::utils::parse_eq_and_lit_str;
     use parsers::{MysqlType, PostgresType, SqliteType};
     use proc_macro2::Span;
-    use proc_macro_error::ResultExt;
     use syn::Ident;
     use util::{
         COLUMN_NAME_NOTE, MYSQL_TYPE_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE, TABLE_NAME_NOTE,
@@ -72,9 +71,7 @@ mod impl_deprecated {
                         name,
                         &format!("use `#[diesel(table_name = {})]` instead", lit_str.value())
                     );
-                    Ok(Some(StructAttr::TableName(name, {
-                        lit_str.parse().unwrap_or_abort()
-                    })))
+                    Ok(Some(StructAttr::TableName(name, lit_str.parse()?)))
                 }
                 "changeset_options" => {
                     let (ident, value) = parse_changeset_options(name.clone(), input)?;
@@ -93,9 +90,7 @@ mod impl_deprecated {
                         name,
                         &format!("use `#[diesel(sql_type = {})]` instead", lit_str.value())
                     );
-                    Ok(Some(StructAttr::SqlType(name, {
-                        lit_str.parse().unwrap_or_abort()
-                    })))
+                    Ok(Some(StructAttr::SqlType(name, lit_str.parse()?)))
                 }
                 "primary_key" => {
                     let keys = parse_primary_key(name.clone(), input)?;
@@ -203,9 +198,7 @@ mod impl_deprecated {
                         name,
                         &format!("use `#[diesel(column_name = {})]` instead", lit_str.value())
                     );
-                    Ok(Some(FieldAttr::ColumnName(name, {
-                        lit_str.parse().unwrap_or_abort()
-                    })))
+                    Ok(Some(FieldAttr::ColumnName(name, lit_str.parse()?)))
                 }
                 "sql_type" => {
                     let lit_str = parse_eq_and_lit_str(name.clone(), input, SQL_TYPE_NOTE)?;
@@ -213,9 +206,7 @@ mod impl_deprecated {
                         name,
                         &format!("use `#[diesel(sql_type = {})]` instead", lit_str.value())
                     );
-                    Ok(Some(FieldAttr::SqlType(name, {
-                        lit_str.parse().unwrap_or_abort()
-                    })))
+                    Ok(Some(FieldAttr::SqlType(name, lit_str.parse()?)))
                 }
 
                 _ => Ok(None),

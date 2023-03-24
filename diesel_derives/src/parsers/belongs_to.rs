@@ -17,7 +17,7 @@ impl Parse for Attr {
         match &*name_str {
             "foreign_key" => Ok(Attr::ForeignKey(name, parse_eq(input, BELONGS_TO_NOTE)?)),
 
-            _ => unknown_attribute(&name, &["foreign_key"]),
+            _ => Err(unknown_attribute(&name, &["foreign_key"])),
         }
     }
 }

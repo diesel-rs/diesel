@@ -1,35 +1,40 @@
 use proc_macro2::TokenStream;
-use syn::{DeriveInput, Ident, LitStr, Type};
+use quote::quote;
+use syn::{parse_quote, DeriveInput, Ident, LitStr, Result, Type};
 
 use attrs::AttributeSpanWrapper;
 use field::{Field, FieldName};
 use model::Model;
 use util::wrap_in_dummy_mod;
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false, false);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, false, false)?;
 
     let struct_name = &item.ident;
     let fields = &model.fields().iter().map(get_ident).collect::<Vec<_>>();
     let field_names = model.fields().iter().map(|f| &f.name);
 
-    let initial_field_expr = model.fields().iter().map(|f| {
-        let field_ty = &f.ty;
+    let initial_field_expr = model
+        .fields()
+        .iter()
+        .map(|f| {
+            let field_ty = &f.ty;
 
-        if f.embed() {
-            quote!(<#field_ty as QueryableByName<__DB>>::build(row)?)
-        } else {
-            let deserialize_ty = f.ty_for_deserialize();
-            let name = f.column_name();
-            let name = LitStr::new(&name.to_string(), name.span());
-            quote!(
-               {
-                   let field = diesel::row::NamedRow::get(row, #name)?;
-                   <#deserialize_ty as Into<#field_ty>>::into(field)
-               }
-            )
-        }
-    });
+            if f.embed() {
+                Ok(quote!(<#field_ty as QueryableByName<__DB>>::build(row)?))
+            } else {
+                let deserialize_ty = f.ty_for_deserialize();
+                let name = f.column_name()?;
+                let name = LitStr::new(&name.to_string(), name.span());
+                Ok(quote!(
+                   {
+                       let field = diesel::row::NamedRow::get(row, #name)?;
+                       <#deserialize_ty as Into<#field_ty>>::into(field)
+                   }
+                ))
+            }
+        })
+        .collect::<Result<Vec<_>>>()?;
 
     let (_, ty_generics, ..) = item.generics.split_for_impl();
     let mut generics = item.generics.clone();
@@ -45,7 +50,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                 .predicates
                 .push(parse_quote!(#field_ty: QueryableByName<__DB>));
         } else {
-            let st = sql_type(field, &model);
+            let st = sql_type(field, &model)?;
             where_clause
                 .predicates
                 .push(parse_quote!(#field_ty: diesel::deserialize::FromSql<#st, __DB>));
@@ -54,7 +59,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    wrap_in_dummy_mod(quote! {
+    Ok(wrap_in_dummy_mod(quote! {
         use diesel::deserialize::{self, QueryableByName};
         use diesel::row::{NamedRow};
         use diesel::sql_types::Untyped;
@@ -75,7 +80,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                 })
             }
         }
-    })
+    }))
 }
 
 fn get_ident(field: &Field) -> Ident {
@@ -85,14 +90,14 @@ fn get_ident(field: &Field) -> Ident {
     }
 }
 
-fn sql_type(field: &Field, model: &Model) -> Type {
+fn sql_type(field: &Field, model: &Model) -> Result<Type> {
     let table_name = &model.table_names()[0];
 
     match field.sql_type {
-        Some(AttributeSpanWrapper { item: ref st, .. }) => st.clone(),
+        Some(AttributeSpanWrapper { item: ref st, .. }) => Ok(st.clone()),
         None => {
-            let column_name = field.column_name();
-            parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>)
+            let column_name = field.column_name()?;
+            Ok(parse_quote!(diesel::dsl::SqlTypeOf<#table_name::#column_name>))
         }
     }
 }

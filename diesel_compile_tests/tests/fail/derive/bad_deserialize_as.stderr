@@ -1,10 +1,9 @@
 error: unexpected end of input, expected `=`
+       help: The correct format looks like `#[diesel(deserialize_as = Foo)]`
  --> tests/fail/derive/bad_deserialize_as.rs:7:28
   |
 7 |     #[diesel(deserialize_as)]
   |                            ^
-  |
-  = help: The correct format looks like `#[diesel(deserialize_as = Foo)]`
 
 error: expected `=`
   --> tests/fail/derive/bad_deserialize_as.rs:14:28

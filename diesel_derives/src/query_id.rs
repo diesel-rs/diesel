@@ -1,4 +1,6 @@
 use proc_macro2::TokenStream;
+use quote::quote;
+use syn::parse_quote;
 use syn::DeriveInput;
 
 use util::wrap_in_dummy_mod;

@@ -8,11 +8,14 @@ use util::BELONGS_TO_NOTE;
 
 pub fn parse_belongs_to(name: Ident, input: ParseStream) -> Result<BelongsTo> {
     if input.is_empty() {
-        abort!(
+        return Err(syn::Error::new(
             name.span(),
-            "unexpected end of input, expected parentheses";
-            help = "The correct format looks like `#[diesel({})]`", BELONGS_TO_NOTE
-        );
+            format!(
+                "unexpected end of input, expected parentheses\n\
+                 help: The correct format looks like `#[diesel({})]`",
+                BELONGS_TO_NOTE
+            ),
+        ));
     }
 
     let content;
@@ -39,7 +42,7 @@ pub fn parse_belongs_to(name: Ident, input: ParseStream) -> Result<BelongsTo> {
         let name: Ident = content.parse()?;
 
         if name != "foreign_key" {
-            abort!(name, "expected `foreign_key`");
+            return Err(syn::Error::new(name.span(), "expected `foreign_key`"));
         }
 
         let lit_str = parse_eq_and_lit_str(name, &content, BELONGS_TO_NOTE)?;

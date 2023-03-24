@@ -1,12 +1,15 @@
 use proc_macro2::TokenStream;
+use quote::quote;
+use syn::parse_quote;
 use syn::DeriveInput;
+use syn::Result;
 
 use model::Model;
 use util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
-pub fn derive(mut item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, true, false);
-    let struct_ty = ty_for_foreign_derive(&item, &model);
+pub fn derive(mut item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, true, false)?;
+    let struct_ty = ty_for_foreign_derive(&item, &model)?;
 
     let type_params = item
         .generics
@@ -25,7 +28,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
         item.generics.params.push(parse_quote!(__GroupByClause));
         let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
-        wrap_in_dummy_mod(quote! {
+        Ok(wrap_in_dummy_mod(quote! {
             use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
 
             impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
@@ -33,7 +36,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
             {
                 type IsAggregate = is_aggregate::Yes;
             }
-        })
+        }))
     } else {
         let mut aggregates = item
             .generics
@@ -58,7 +61,7 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
         item.generics.params.push(parse_quote!(__GroupByClause));
         let (impl_generics, _, where_clause) = item.generics.split_for_impl();
 
-        wrap_in_dummy_mod(quote! {
+        Ok(wrap_in_dummy_mod(quote! {
             use diesel::expression::{ValidGrouping, MixedAggregates, is_aggregate};
 
             impl #impl_generics ValidGrouping<__GroupByClause> for #struct_ty
@@ -66,6 +69,6 @@ pub fn derive(mut item: DeriveInput) -> TokenStream {
             {
                 type IsAggregate = #is_aggregate;
             }
-        })
+        }))
     }
 }

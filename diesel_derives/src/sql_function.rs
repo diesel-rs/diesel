@@ -1,9 +1,11 @@
 use proc_macro2::TokenStream;
+use quote::quote;
 use quote::ToTokens;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::{
-    Attribute, GenericArgument, Generics, Ident, Lit, Meta, MetaNameValue, PathArguments, Type,
+    parenthesized, parse_quote, Attribute, GenericArgument, Generics, Ident, Meta, MetaNameValue,
+    PathArguments, Token, Type,
 };
 
 pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
@@ -18,15 +20,16 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
 
     let sql_name = attributes
         .iter()
-        .find(|attr| {
-            attr.parse_meta()
-                .map(|m| m.path().is_ident("sql_name"))
-                .unwrap_or(false)
-        })
+        .find(|attr| attr.meta.path().is_ident("sql_name"))
         .and_then(|attr| {
-            if let Ok(Meta::NameValue(MetaNameValue {
-                lit: Lit::Str(lit), ..
-            })) = attr.parse_meta()
+            if let Meta::NameValue(MetaNameValue {
+                value:
+                    syn::Expr::Lit(syn::ExprLit {
+                        lit: syn::Lit::Str(ref lit),
+                        ..
+                    }),
+                ..
+            }) = attr.meta
             {
                 Some(lit.value())
             } else {
@@ -35,16 +38,12 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
         })
         .unwrap_or_else(|| fn_name.to_string());
 
-    let is_aggregate = attributes.iter().any(|attr| {
-        attr.parse_meta()
-            .map(|m| m.path().is_ident("aggregate"))
-            .unwrap_or(false)
-    });
+    let is_aggregate = attributes
+        .iter()
+        .any(|attr| attr.meta.path().is_ident("aggregate"));
 
     attributes.retain(|attr| {
-        attr.parse_meta()
-            .map(|m| !m.path().is_ident("sql_name") && !m.path().is_ident("aggregate"))
-            .unwrap_or(true)
+        !attr.meta.path().is_ident("sql_name") && !attr.meta.path().is_ident("aggregate")
     });
 
     let args = &args;
@@ -431,7 +430,7 @@ impl Parse for SqlFunctionDecl {
         let generics = Generics::parse(input)?;
         let args;
         let _paren = parenthesized!(args in input);
-        let args = args.parse_terminated::<_, Token![,]>(StrictFnArg::parse)?;
+        let args = args.parse_terminated(StrictFnArg::parse, Token![,])?;
         let return_type = if Option::<Token![->]>::parse(input)?.is_some() {
             Type::parse(input)?
         } else {
