@@ -14,6 +14,7 @@
     clippy::used_underscore_binding,
     missing_copy_implementations
 )]
+#![cfg_attr(feature = "nightly", feature(proc_macro_diagnostic))]
 
 extern crate diesel_table_macro_syntax;
 extern crate proc_macro;

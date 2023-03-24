@@ -215,8 +215,10 @@ mod impl_deprecated {
     }
 
     #[cfg(feature = "nightly")]
-    fn warn(_span: Span, message: &str, help: &str) {
-        emit_warning!(_span, message; help = help);
+    fn warn(span: Span, message: &str, help: &str) {
+        proc_macro::Diagnostic::spanned(span.unwrap(), proc_macro::Level::Warning, message)
+            .help(help)
+            .emit()
     }
 
     #[cfg(not(feature = "nightly"))]
