@@ -1,9 +1,7 @@
-extern crate chrono;
-
 #[cfg(feature = "sqlite")]
 mod sqlite {
-    use super::chrono::*;
     use crate::schema::*;
+    use chrono::*;
     use diesel::*;
 
     #[derive(Queryable, PartialEq, Debug, Insertable)]
@@ -194,8 +192,8 @@ mod sqlite {
 
 #[cfg(feature = "postgres")]
 mod postgres {
-    use super::chrono::*;
     use crate::schema::*;
+    use chrono::*;
     use diesel::data_types::PgNumeric;
     use diesel::*;
     use std::collections::Bound;

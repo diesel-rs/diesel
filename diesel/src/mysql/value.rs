@@ -58,8 +58,6 @@ impl<'a> MysqlValue<'a> {
     /// Returns the numeric representation of this value, based on the type code.
     /// Returns an error if the type code is not numeric.
     pub(crate) fn numeric_value(&self) -> deserialize::Result<NumericRepresentation<'_>> {
-        use std::convert::TryInto;
-
         Ok(match self.tpe {
             MysqlType::UnsignedTiny | MysqlType::Tiny => {
                 NumericRepresentation::Tiny(self.raw[0] as i8)

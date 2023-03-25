@@ -2,7 +2,7 @@ use diesel::dsl::sql;
 use diesel::sql_types::Integer;
 use diesel::*;
 
-use helpers::connection;
+use crate::helpers::connection;
 
 #[test]
 fn named_struct_definition() {

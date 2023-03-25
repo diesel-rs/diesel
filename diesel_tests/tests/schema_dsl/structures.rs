@@ -33,7 +33,7 @@ impl<'a, T> Column<'a, T> {
         PrimaryKey(self)
     }
 
-    pub fn default(self, expr: &str) -> Default<Self> {
+    pub fn default(self, expr: &str) -> Default<'_, Self> {
         Default {
             column: self,
             value: expr,
@@ -58,7 +58,7 @@ pub struct AutoIncrement<Col>(Col);
 pub struct NotNull<Col>(Col);
 
 impl<'a, T> NotNull<Column<'a, T>> {
-    pub fn default(self, expr: &str) -> Default<Self> {
+    pub fn default(self, expr: &str) -> Default<'_, Self> {
         Default {
             column: self,
             value: expr,

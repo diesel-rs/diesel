@@ -9,9 +9,9 @@ use syn::spanned::Spanned;
 use syn::token::Comma;
 use syn::{Attribute, Ident, LitBool, LitStr, Path, Type, TypePath};
 
-use deprecated::ParseDeprecated;
-use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
-use util::{
+use crate::deprecated::ParseDeprecated;
+use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
+use crate::util::{
     parse_eq, parse_paren, unknown_attribute, BELONGS_TO_NOTE, COLUMN_NAME_NOTE,
     DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, SELECT_EXPRESSION_NOTE,
     SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE,

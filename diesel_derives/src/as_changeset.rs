@@ -2,10 +2,10 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{parse_quote, DeriveInput, Expr, Path, Result, Type};
 
-use attrs::AttributeSpanWrapper;
-use field::Field;
-use model::Model;
-use util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
+use crate::attrs::AttributeSpanWrapper;
+use crate::field::Field;
+use crate::model::Model;
+use crate::util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;

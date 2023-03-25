@@ -1,4 +1,4 @@
-extern crate bigdecimal;
+use bigdecimal;
 
 mod date_and_time;
 mod ops;

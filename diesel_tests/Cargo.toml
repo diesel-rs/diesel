@@ -5,7 +5,7 @@ authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 autotests = false
 autobenches = false
-edition = "2018"
+edition = "2021"
 publish = false
 
 [dependencies]

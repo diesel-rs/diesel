@@ -3,8 +3,8 @@ use quote::quote;
 use syn::DeriveInput;
 use syn::Result;
 
-use model::Model;
-use util::{ty_for_foreign_derive, wrap_in_dummy_mod};
+use crate::model::Model;
+use crate::util::{ty_for_foreign_derive, wrap_in_dummy_mod};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, true, false)?;
@@ -88,7 +88,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             quote!(
                 #tokens
 
-                impl#impl_generics AsExpression<#sql_type> for #struct_ty {
+                impl #impl_generics AsExpression<#sql_type> for #struct_ty {
                     type Expression = Bound<#sql_type, Self>;
 
                     fn as_expression(self) -> Self::Expression {
@@ -96,7 +96,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                     }
                 }
 
-                impl#impl_generics AsExpression<Nullable<#sql_type>> for #struct_ty {
+                impl #impl_generics AsExpression<Nullable<#sql_type>> for #struct_ty {
                     type Expression = Bound<Nullable<#sql_type>, Self>;
 
                     fn as_expression(self) -> Self::Expression {

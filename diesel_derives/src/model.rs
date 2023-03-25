@@ -8,10 +8,10 @@ use syn::{
     LitBool, Path, Type,
 };
 
-use attrs::{parse_attributes, StructAttr};
-use field::Field;
-use parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
-use util::camel_to_snake;
+use crate::attrs::{parse_attributes, StructAttr};
+use crate::field::Field;
+use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
+use crate::util::camel_to_snake;
 
 pub struct Model {
     name: Path,

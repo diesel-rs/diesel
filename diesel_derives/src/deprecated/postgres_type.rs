@@ -3,9 +3,9 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{parenthesized, Ident, LitInt, LitStr};
 
-use deprecated::utils::parse_eq_and_lit_str;
-use parsers::PostgresType;
-use util::{unknown_attribute, POSTGRES_TYPE_NOTE};
+use crate::deprecated::utils::parse_eq_and_lit_str;
+use crate::parsers::PostgresType;
+use crate::util::{unknown_attribute, POSTGRES_TYPE_NOTE};
 
 enum Attr {
     Oid(Ident, LitInt),

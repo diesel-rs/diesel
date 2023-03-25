@@ -1150,7 +1150,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// sql_function!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
 ///
 /// # #[cfg(feature = "sqlite")]
-/// # fn run_test() -> Result<(), Box<::std::error::Error>> {
+/// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
 /// let connection = &mut SqliteConnection::establish(":memory:")?;
 ///
 /// add_mul::register_impl(connection, |x: i32, y: i32, z: f64| {

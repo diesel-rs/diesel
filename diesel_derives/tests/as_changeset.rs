@@ -1,8 +1,8 @@
+use crate::helpers::*;
+use crate::schema::*;
 use diesel::deserialize::FromSqlRow;
 use diesel::expression::AsExpression;
 use diesel::*;
-use helpers::*;
-use schema::*;
 
 #[test]
 fn named_ref_struct() {

@@ -388,7 +388,7 @@ impl PartialEq for Error {
 #[allow(warnings)]
 fn error_impls_send() {
     let err: Error = unimplemented!();
-    let x: &Send = &err;
+    let x: &dyn Send = &err;
 }
 
 /// An unexpected `NULL` was encountered during deserialization

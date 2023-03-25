@@ -4,7 +4,7 @@ use syn::parse::{Parse, ParseStream, Peek, Result};
 use syn::token::Eq;
 use syn::{parenthesized, parse_quote, Data, DeriveInput, GenericArgument, Ident, Type};
 
-use model::Model;
+use crate::model::Model;
 
 pub const COLUMN_NAME_NOTE: &str = "column_name = foo";
 pub const SQL_TYPE_NOTE: &str = "sql_type = Foo";

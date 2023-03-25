@@ -3,7 +3,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitStr};
 
-use util::{parse_eq, unknown_attribute, MYSQL_TYPE_NOTE};
+use crate::util::{parse_eq, unknown_attribute, MYSQL_TYPE_NOTE};
 
 enum Attr {
     Name(Ident, LitStr),

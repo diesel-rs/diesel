@@ -2,7 +2,7 @@
 use diesel::sql_types::Integer;
 use diesel::*;
 
-use helpers::connection;
+use crate::helpers::connection;
 
 table! {
     my_structs (foo) {
