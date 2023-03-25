@@ -118,6 +118,7 @@ impl Index<usize> for OutputBinds {
 }
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug)]
     pub(crate) struct Flags: u32 {
         const NOT_NULL_FLAG = 1;
         const PRI_KEY_FLAG = 2;
