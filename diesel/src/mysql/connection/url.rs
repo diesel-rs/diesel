@@ -11,6 +11,7 @@ use crate::result::{ConnectionError, ConnectionResult};
 use mysqlclient_sys::mysql_ssl_mode;
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy)]
     pub struct CapabilityFlags: u32 {
         const CLIENT_LONG_PASSWORD = 0x00000001;
         const CLIENT_FOUND_ROWS = 0x00000002;
