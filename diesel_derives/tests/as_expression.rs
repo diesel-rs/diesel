@@ -6,7 +6,7 @@ use diesel::sql_types::Text;
 use diesel::*;
 use std::convert::TryInto;
 
-use helpers::connection;
+use crate::helpers::connection;
 
 table! {
     my_structs (foo) {

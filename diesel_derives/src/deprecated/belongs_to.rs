@@ -2,9 +2,9 @@ use syn::parse::{ParseStream, Result};
 use syn::token::Comma;
 use syn::{parenthesized, Ident, LitStr};
 
-use deprecated::utils::parse_eq_and_lit_str;
-use parsers::BelongsTo;
-use util::BELONGS_TO_NOTE;
+use crate::deprecated::utils::parse_eq_and_lit_str;
+use crate::parsers::BelongsTo;
+use crate::util::BELONGS_TO_NOTE;
 
 pub fn parse_belongs_to(name: Ident, input: ParseStream) -> Result<BelongsTo> {
     if input.is_empty() {

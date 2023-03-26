@@ -306,6 +306,7 @@ extern "C" fn run_custom_function<F, Ret, RetSqlType>(
     let callback = std::panic::AssertUnwindSafe(&mut data_ptr.callback);
 
     let result = std::panic::catch_unwind(move || {
+        let _ = &callback;
         let args = unsafe { slice::from_raw_parts_mut(value_ptr, num_args as _) };
         let res = (callback.0)(&*conn, args)?;
         let value = process_sql_function_result(&res)?;

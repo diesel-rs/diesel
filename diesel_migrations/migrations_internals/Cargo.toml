@@ -5,6 +5,7 @@ license = "MIT OR Apache-2.0"
 description = "Internal implementation of diesels migration mechanism"
 homepage = "https://diesel.rs"
 rust-version = "1.65.0"
+edition = "2021"
 
 [dependencies]
 serde = {version = "1", features = ["derive"]}

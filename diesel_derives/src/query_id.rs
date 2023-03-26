@@ -3,7 +3,7 @@ use quote::quote;
 use syn::parse_quote;
 use syn::DeriveInput;
 
-use util::wrap_in_dummy_mod;
+use crate::util::wrap_in_dummy_mod;
 
 pub fn derive(mut item: DeriveInput) -> TokenStream {
     for ty_param in item.generics.type_params_mut() {

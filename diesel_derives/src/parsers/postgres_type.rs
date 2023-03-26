@@ -3,7 +3,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitInt, LitStr};
 
-use util::{parse_eq, unknown_attribute, POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID};
+use crate::util::{parse_eq, unknown_attribute, POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID};
 
 enum Attr {
     Oid(Ident, LitInt),

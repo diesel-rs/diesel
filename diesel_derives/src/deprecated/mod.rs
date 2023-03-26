@@ -18,7 +18,7 @@ pub trait ParseDeprecated: Sized {
 #[cfg(any(feature = "without-deprecated", not(feature = "with-deprecated")))]
 mod not_deprecated {
     use super::{ParseDeprecated, ParseStream, Result};
-    use attrs::{FieldAttr, StructAttr};
+    use crate::attrs::{FieldAttr, StructAttr};
 
     impl ParseDeprecated for StructAttr {
         fn parse_deprecated(_input: ParseStream) -> Result<Option<Self>> {
@@ -36,18 +36,18 @@ mod not_deprecated {
 #[cfg(all(not(feature = "without-deprecated"), feature = "with-deprecated"))]
 mod impl_deprecated {
     use super::{ParseDeprecated, ParseStream, Result};
-    use attrs::{FieldAttr, StructAttr};
-    use deprecated::belongs_to::parse_belongs_to;
-    use deprecated::changeset_options::parse_changeset_options;
-    use deprecated::postgres_type::parse_postgres_type;
-    use deprecated::primary_key::parse_primary_key;
-    use deprecated::utils::parse_eq_and_lit_str;
-    use parsers::{MysqlType, PostgresType, SqliteType};
-    use proc_macro2::Span;
-    use syn::Ident;
-    use util::{
+    use crate::attrs::{FieldAttr, StructAttr};
+    use crate::deprecated::belongs_to::parse_belongs_to;
+    use crate::deprecated::changeset_options::parse_changeset_options;
+    use crate::deprecated::postgres_type::parse_postgres_type;
+    use crate::deprecated::primary_key::parse_primary_key;
+    use crate::deprecated::utils::parse_eq_and_lit_str;
+    use crate::parsers::{MysqlType, PostgresType, SqliteType};
+    use crate::util::{
         COLUMN_NAME_NOTE, MYSQL_TYPE_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE, TABLE_NAME_NOTE,
     };
+    use proc_macro2::Span;
+    use syn::Ident;
 
     macro_rules! warn {
         ($ident: expr, $help: expr) => {
