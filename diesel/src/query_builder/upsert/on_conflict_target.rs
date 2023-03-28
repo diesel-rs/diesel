@@ -40,7 +40,7 @@ where
 impl<DB, T, SP> QueryFragment<DB, SP> for ConflictTarget<T>
 where
     DB: Backend<OnConflictClause = SP>,
-    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+    SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
     T: Column,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -56,7 +56,7 @@ impl<T> OnConflictTarget<T::Table> for ConflictTarget<T> where T: Column {}
 impl<DB, ST, SP> QueryFragment<DB, SP> for ConflictTarget<SqlLiteral<ST>>
 where
     DB: Backend<OnConflictClause = SP>,
-    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+    SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
     SqlLiteral<ST>: QueryFragment<DB>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -71,7 +71,7 @@ impl<Tab, ST> OnConflictTarget<Tab> for ConflictTarget<SqlLiteral<ST>> {}
 impl<DB, T, SP> QueryFragment<DB, SP> for ConflictTarget<(T,)>
 where
     DB: Backend<OnConflictClause = SP>,
-    SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+    SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
     T: Column,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, DB>) -> QueryResult<()> {
@@ -93,7 +93,7 @@ macro_rules! on_conflict_tuples {
         $(
             impl<_DB, _T, _SP, $($T),*> QueryFragment<_DB, _SP> for ConflictTarget<(_T, $($T),*)> where
                 _DB: Backend<OnConflictClause = _SP>,
-                _SP: sql_dialect::on_conflict_clause::SupportsOnConflictClause,
+                _SP: sql_dialect::on_conflict_clause::PgLikeOnConflictClause,
                 _T: Column,
                 $($T: Column<Table=_T::Table>,)*
             {

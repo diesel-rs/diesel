@@ -80,6 +80,9 @@ pub(crate) mod dsl {
 
     /// The return type of [`date(expr)`](crate::dsl::date())
     pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
+
+    #[cfg(feature = "mysql_backend")]
+    pub use crate::mysql::query_builder::DuplicatedKeys;
 }
 
 #[doc(inline)]

@@ -5,6 +5,7 @@ use crate::pg::Pg;
 use crate::query_builder::locking_clause::{
     ForKeyShare, ForNoKeyUpdate, ForShare, ForUpdate, NoModifier, NoWait, SkipLocked,
 };
+use crate::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper;
 use crate::query_builder::upsert::on_conflict_target_decorations::DecoratedConflictTarget;
 use crate::query_builder::{AstPass, QueryFragment};
 use crate::result::QueryResult;
@@ -108,5 +109,14 @@ where
         self.target.walk_ast(out.reborrow())?;
         self.where_clause.walk_ast(out.reborrow())?;
         Ok(())
+    }
+}
+
+impl<S> QueryFragment<crate::pg::Pg> for OnConflictSelectWrapper<S>
+where
+    S: QueryFragment<crate::pg::Pg>,
+{
+    fn walk_ast<'b>(&'b self, out: AstPass<'_, 'b, crate::pg::Pg>) -> QueryResult<()> {
+        self.0.walk_ast(out)
     }
 }

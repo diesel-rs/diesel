@@ -348,6 +348,10 @@ pub(crate) mod sql_dialect {
         /// A marker trait indicating if a `ON CONFLICT (...) DO UPDATE ... [WHERE ...]` clause is supported or not
         pub trait SupportsOnConflictClauseWhere {}
 
+        /// A marker trait indicating whether the on conflict clause implementation
+        /// is mostly like postgresql
+        pub trait PgLikeOnConflictClause: SupportsOnConflictClause {}
+
         /// This marker type indicates that `ON CONFLICT` clauses are not supported for this backend
         #[derive(Debug, Copy, Clone)]
         pub struct DoesNotSupportOnConflictClause;
