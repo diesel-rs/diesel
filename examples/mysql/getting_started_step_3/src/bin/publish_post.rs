@@ -13,15 +13,16 @@ fn main() {
         .expect("Invalid ID");
     let connection = &mut establish_connection();
 
-    let post: Post = posts
-        .find(id)
-        .first(connection)
-        .unwrap_or_else(|_| panic!("Unable to find post {}", id));
+    let post = connection
+        .transaction(|connection| {
+            let post = posts.find(id).select(Post::as_select()).first(connection)?;
 
-    diesel::update(posts.find(id))
-        .set(published.eq(true))
-        .execute(connection)
-        .unwrap();
+            diesel::update(posts.find(id))
+                .set(published.eq(true))
+                .execute(connection)?;
+            Ok(post)
+        })
+        .unwrap_or_else(|_: diesel::result::Error| panic!("Unable to find post {}", id));
 
     println!("Published post {}", post.title);
 }

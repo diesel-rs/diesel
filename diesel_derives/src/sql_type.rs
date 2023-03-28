@@ -1,12 +1,14 @@
 use proc_macro2::{Span, TokenStream};
+use quote::quote;
+use syn::Result;
 use syn::{DeriveInput, Ident};
 
-use model::Model;
-use parsers::PostgresType;
-use util::wrap_in_dummy_mod;
+use crate::model::Model;
+use crate::parsers::PostgresType;
+use crate::util::wrap_in_dummy_mod;
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, true, false);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, true, false)?;
 
     let struct_name = &item.ident;
     let (impl_generics, ty_generics, where_clause) = item.generics.split_for_impl();
@@ -15,7 +17,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
     let mysql_tokens = mysql_tokens(&item, &model);
     let pg_tokens = pg_tokens(&item, &model);
 
-    wrap_in_dummy_mod(quote! {
+    Ok(wrap_in_dummy_mod(quote! {
         impl #impl_generics diesel::sql_types::SqlType
             for #struct_name #ty_generics
         #where_clause
@@ -32,7 +34,7 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         #sqlite_tokens
         #mysql_tokens
         #pg_tokens
-    })
+    }))
 }
 
 fn sqlite_tokens(item: &DeriveInput, model: &Model) -> Option<TokenStream> {

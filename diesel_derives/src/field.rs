@@ -1,8 +1,8 @@
 use proc_macro2::{Span, TokenStream};
 use syn::spanned::Spanned;
-use syn::{Field as SynField, Ident, Index, Type};
+use syn::{Field as SynField, Ident, Index, Result, Type};
 
-use attrs::{parse_attributes, AttributeSpanWrapper, FieldAttr, SqlIdentifier};
+use crate::attrs::{parse_attributes, AttributeSpanWrapper, FieldAttr, SqlIdentifier};
 
 pub struct Field {
     pub ty: Type,
@@ -18,7 +18,7 @@ pub struct Field {
 }
 
 impl Field {
-    pub fn from_struct_field(field: &SynField, index: usize) -> Self {
+    pub fn from_struct_field(field: &SynField, index: usize) -> Result<Self> {
         let SynField {
             ident, attrs, ty, ..
         } = field;
@@ -31,7 +31,7 @@ impl Field {
         let mut select_expression = None;
         let mut select_expression_type = None;
 
-        for attr in parse_attributes(attrs) {
+        for attr in parse_attributes(attrs)? {
             let attribute_span = attr.attribute_span;
             let ident_span = attr.ident_span;
             match attr.item {
@@ -97,7 +97,7 @@ impl Field {
             FieldName::Unnamed(_) => ty.span(),
         };
 
-        Self {
+        Ok(Self {
             ty: ty.clone(),
             span,
             name,
@@ -108,22 +108,22 @@ impl Field {
             select_expression,
             select_expression_type,
             embed,
-        }
+        })
     }
 
-    pub fn column_name(&self) -> SqlIdentifier {
-        self.column_name
-            .as_ref()
-            .map(|a| a.item.clone())
-            .unwrap_or_else(|| match self.name {
-                FieldName::Named(ref x) => x.into(),
-                FieldName::Unnamed(ref x) => {
-                    abort!(
-                    x,
-                    "All fields of tuple structs must be annotated with `#[diesel(column_name)]`"
-                );
-                }
-            })
+    pub fn column_name(&self) -> Result<SqlIdentifier> {
+        let identifier = self.column_name.as_ref().map(|a| a.item.clone());
+        if let Some(identifier) = identifier {
+            Ok(identifier)
+        } else {
+            match self.name {
+                FieldName::Named(ref x) => Ok(x.into()),
+                FieldName::Unnamed(ref x) => Err(syn::Error::new(
+                    x.span(),
+                    "All fields of tuple structs must be annotated with `#[diesel(column_name)]`",
+                )),
+            }
+        }
     }
 
     pub fn ty_for_deserialize(&self) -> &Type {

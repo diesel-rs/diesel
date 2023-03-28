@@ -24,6 +24,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   on the difference between your database and the provided `schema.rs` file
 * Add a `ON CONFLICT (...) DO UPDATE ... [WHERE ...]` conditional clause support for PostgreSQL.
 * Add support for MySQL's `ON DUPLICATE KEY DO UPDATE` syntax through the existing upsert functions.
+* Support for `libsqlite3-sys` 0.26
 
 ## [diesel_derives 2.0.2] 2023-03-13 
 

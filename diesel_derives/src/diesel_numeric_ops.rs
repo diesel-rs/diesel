@@ -1,7 +1,9 @@
 use proc_macro2::TokenStream;
+use quote::quote;
+use syn::parse_quote;
 use syn::DeriveInput;
 
-use util::wrap_in_dummy_mod;
+use crate::util::wrap_in_dummy_mod;
 
 pub fn derive(mut item: DeriveInput) -> TokenStream {
     let struct_name = &item.ident;

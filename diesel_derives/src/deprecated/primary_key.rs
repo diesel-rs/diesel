@@ -5,11 +5,14 @@ use syn::{parenthesized, Ident};
 
 pub fn parse_primary_key(name: Ident, input: ParseStream) -> Result<Punctuated<Ident, Comma>> {
     if input.is_empty() {
-        abort!(name.span(), "unexpected end of input, expected parentheses");
+        return Err(syn::Error::new(
+            name.span(),
+            "unexpected end of input, expected parentheses",
+        ));
     }
 
     let content;
     parenthesized!(content in input);
 
-    content.parse_terminated(Ident::parse)
+    content.parse_terminated(Ident::parse, syn::Token![,])
 }

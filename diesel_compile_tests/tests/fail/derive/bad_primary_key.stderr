@@ -11,12 +11,11 @@ error: expected `,`
    |                             ^
 
 error: unexpected end of input, expected parentheses
+       help: The correct format looks like `#[diesel(key1, key2)]`
   --> tests/fail/derive/bad_primary_key.rs:26:21
    |
 26 | #[diesel(primary_key)]
    |                     ^
-   |
-   = help: The correct format looks like `#[diesel(key1, key2)]`
 
 error: expected parentheses
   --> tests/fail/derive/bad_primary_key.rs:33:22

@@ -1,3 +1,4 @@
+#![allow(unsafe_code)] // module uses ffi
 use std::ffi::CStr;
 use std::ptr::NonNull;
 use std::slice;

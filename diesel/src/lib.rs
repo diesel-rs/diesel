@@ -85,6 +85,58 @@
 //! [`ToSql`]: serialize::ToSql
 //! [`FromSql`]: deserialize::FromSql
 //!
+//! ## How to read diesels compile time error messages
+//!
+//! Diesel is known for generating large complicated looking errors. Usually
+//! most of these error messages can be broken down easily. The following
+//! section tries to give an overview of common error messages and how to read them.
+//! As a general note it's always useful to read the complete error message as emitted
+//! by rustc, including the `required because of …` part of the message.
+//! Your IDE might hide important parts!
+//!
+//! If you use a nightly compiler you might want to enable the `nightly-error-messages`
+//! feature flag to automatically improve some error messages.
+//!
+//! The following error messages are common:
+//!
+//! * `the trait bound (diesel::sql_types::Integer, …, diesel::sql_types::Text): load_dsl::private::CompatibleType<YourModel, Pg> is not satisfied`
+//!    while trying to execute a query:
+//!    This error indicates a mismatch between what your query returns and what your model struct
+//!    expects the query to return. The fields need to match in terms of field order, field type
+//!    and field count. If you are sure that everything matches, double check the enabled diesel
+//!    features (for support for types from other crates) and double check (via `cargo tree`)
+//!    that there is only one version of such a shared crate in your dependency tree.
+//!    Consider using [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
+//!    `#[diesel(check_for_backend(diesel::pg::Pg))]`
+//!    to improve the generated error message.
+//! * `the trait bound i32: diesel::Expression is not satisfied` in the context of `Insertable`
+//!    model structs:
+//!    This error indicates a type mismatch between the field you are trying to insert into the database
+//!    and the actual database type. These error messages contain a line
+//!    like ` = note: required for i32 to implement AsExpression<diesel::sql_types::Text>`
+//!    that show both the provided rust side type (`i32` in that case) and the expected
+//!    database side type (`Text` in that case).
+//! * `the trait bound i32: AppearsOnTable<users::table> is not satisfied` in the context of `AsChangeset`
+//!    model structs:
+//!    This error indicates a type mismatch between the field you are trying to update and the actual
+//!    database type. Double check your type mapping.
+//! * `the trait bound SomeLargeType: QueryFragment<Sqlite, SomeMarkerType> is not satisfied` while
+//!    trying to execute a query.
+//!    This error message indicates that a given query is not supported by your backend. This usually
+//!    means that you are trying to use SQL features from one SQL dialect on a different database
+//!    system. Double check your query that everything required is supported by the selected
+//!    backend. If that's the case double check that the relevant feature flags are enabled
+//!    (for example, `returning_clauses_for_sqlite_3_35` for enabling support for returning clauses in newer
+//!    sqlite versions)
+//! * `the trait bound posts::title: SelectableExpression<users::table> is not satisfied` while
+//!    executing a query:
+//!    This error message indicates that you're trying to select a field from a table
+//!    that does not appear in your from clause. If your query joins the relevant table via
+//!    [`left_join`](crate::query_dsl::QueryDsl::left_join) you need to call
+//!    [`.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable)
+//!    on the relevant column in your select clause.
+//!
+//!
 //! ## Getting help
 //!
 //! If you run into problems, Diesel has an active community.
@@ -202,6 +254,7 @@
     clippy::items_after_statements,
     clippy::used_underscore_binding
 )]
+#![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
 
 extern crate diesel_derives;
@@ -544,6 +597,4 @@ pub use crate::query_builder::functions::{
 };
 pub use crate::result::Error::NotFound;
 
-pub(crate) mod diesel {
-    pub(crate) use super::*;
-}
+extern crate self as diesel;

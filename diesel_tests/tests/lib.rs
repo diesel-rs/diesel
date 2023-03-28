@@ -2,13 +2,9 @@
 
 #[macro_use]
 extern crate assert_matches;
-extern crate chrono;
+
 #[macro_use]
 extern crate diesel;
-#[cfg(feature = "sqlite")]
-extern crate diesel_migrations;
-extern crate dotenvy;
-extern crate quickcheck;
 
 mod alias;
 #[cfg(not(feature = "sqlite"))]
@@ -40,6 +36,8 @@ mod macros;
 mod only;
 mod order;
 mod perf_details;
+#[cfg(feature = "postgres")]
+mod query_fragment;
 mod raw_sql;
 mod schema;
 mod schema_dsl;

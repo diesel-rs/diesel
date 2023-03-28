@@ -1,6 +1,6 @@
+use crate::helpers::*;
+use crate::schema::*;
 use diesel::*;
-use helpers::*;
-use schema::*;
 
 #[test]
 fn simple_struct_definition() {

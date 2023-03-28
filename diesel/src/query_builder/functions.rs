@@ -549,7 +549,6 @@ pub fn replace_into<T: Table>(target: T) -> IncompleteReplaceStatement<T> {
 /// # use schema::users;
 /// #
 /// # #[derive(QueryableByName, Debug, PartialEq)]
-/// # #[diesel(table_name = users)]
 /// # struct User {
 /// #     id: i32,
 /// #     name: String,

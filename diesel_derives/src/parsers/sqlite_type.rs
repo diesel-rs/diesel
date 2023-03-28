@@ -3,7 +3,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitStr};
 
-use util::{parse_eq, unknown_attribute, SQLITE_TYPE_NOTE};
+use crate::util::{parse_eq, unknown_attribute, SQLITE_TYPE_NOTE};
 
 enum Attr {
     Name(Ident, LitStr),
@@ -17,7 +17,7 @@ impl Parse for Attr {
         match &*name_str {
             "name" => Ok(Attr::Name(name, parse_eq(input, SQLITE_TYPE_NOTE)?)),
 
-            _ => unknown_attribute(&name, &["name"]),
+            _ => Err(unknown_attribute(&name, &["name"])),
         }
     }
 }
@@ -39,10 +39,14 @@ impl Parse for SqliteType {
         if let Some(name) = name {
             Ok(SqliteType { name })
         } else {
-            abort!(
-                input.span(), "expected attribute `name`";
-                help = "The correct format looks like #[diesel({})]", SQLITE_TYPE_NOTE
-            );
+            Err(syn::Error::new(
+                input.span(),
+                format!(
+                    "expected attribute `name`\n\
+                     help: The correct format looks like #[diesel({})]",
+                    SQLITE_TYPE_NOTE
+                ),
+            ))
         }
     }
 }

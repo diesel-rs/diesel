@@ -1,13 +1,14 @@
 use proc_macro2::TokenStream;
-use syn::{DeriveInput, Expr, Path, Type};
+use quote::quote;
+use syn::{parse_quote, DeriveInput, Expr, Path, Result, Type};
 
-use attrs::AttributeSpanWrapper;
-use field::Field;
-use model::Model;
-use util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
+use crate::attrs::AttributeSpanWrapper;
+use crate::field::Field;
+use crate::model::Model;
+use crate::util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false, false);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, false, false)?;
 
     let struct_name = &item.ident;
     let table_name = &model.table_names()[0];
@@ -19,16 +20,17 @@ pub fn derive(item: DeriveInput) -> TokenStream {
             !model
                 .primary_key_names
                 .iter()
-                .any(|p| f.column_name() == *p)
+                .any(|p| f.column_name().map(|f| f == *p).unwrap_or_default())
         })
         .collect::<Vec<_>>();
 
     if fields_for_update.is_empty() {
-        abort_call_site!(
-            "Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.";
-            help = "If you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.";
-            note = "`#[derive(AsChangeset)]` never changes the primary key of a row.";
-        )
+        return Err(syn::Error::new(
+            proc_macro2::Span::call_site(),
+            "Deriving `AsChangeset` on a structure that only contains primary keys isn't supported.\n\
+             help: If you want to change the primary key of a row, you should do so with `.set(table::id.eq(new_id))`.\n\
+             note: `#[derive(AsChangeset)]` never changes the primary key of a row."
+        ));
     }
 
     let treat_none_as_null = model.treat_none_as_null();
@@ -50,13 +52,13 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                     table_name,
                     ty,
                     treat_none_as_null,
-                ));
+                )?);
                 direct_field_assign.push(field_changeset_expr_serialize_as(
                     field,
                     table_name,
                     ty,
                     treat_none_as_null,
-                ));
+                )?);
 
                 generate_borrowed_changeset = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of AsChangeset for borrowed structs
             }
@@ -66,25 +68,25 @@ pub fn derive(item: DeriveInput) -> TokenStream {
                     table_name,
                     None,
                     treat_none_as_null,
-                ));
+                )?);
                 direct_field_assign.push(field_changeset_expr(
                     field,
                     table_name,
                     None,
                     treat_none_as_null,
-                ));
+                )?);
                 ref_field_ty.push(field_changeset_ty(
                     field,
                     table_name,
                     Some(quote!(&'update)),
                     treat_none_as_null,
-                ));
+                )?);
                 ref_field_assign.push(field_changeset_expr(
                     field,
                     table_name,
                     Some(quote!(&)),
                     treat_none_as_null,
-                ));
+                )?);
             }
         }
     }
@@ -123,14 +125,14 @@ pub fn derive(item: DeriveInput) -> TokenStream {
         quote! {}
     };
 
-    wrap_in_dummy_mod(quote!(
+    Ok(wrap_in_dummy_mod(quote!(
         use diesel::query_builder::AsChangeset;
         use diesel::prelude::*;
 
         #changeset_owned
 
         #changeset_borrowed
-    ))
+    )))
 }
 
 fn field_changeset_ty(
@@ -138,15 +140,17 @@ fn field_changeset_ty(
     table_name: &Path,
     lifetime: Option<TokenStream>,
     treat_none_as_null: bool,
-) -> TokenStream {
-    let column_name = field.column_name();
-    column_name.valid_ident();
+) -> Result<TokenStream> {
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
     if !treat_none_as_null && is_option_ty(&field.ty) {
         let field_ty = inner_of_option_ty(&field.ty);
-        quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>>)
+        Ok(
+            quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>>),
+        )
     } else {
         let field_ty = &field.ty;
-        quote!(diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>)
+        Ok(quote!(diesel::dsl::Eq<#table_name::#column_name, #lifetime #field_ty>))
     }
 }
 
@@ -155,18 +159,18 @@ fn field_changeset_expr(
     table_name: &Path,
     lifetime: Option<TokenStream>,
     treat_none_as_null: bool,
-) -> TokenStream {
+) -> Result<TokenStream> {
     let field_name = &field.name;
-    let column_name = field.column_name();
-    column_name.valid_ident();
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
     if !treat_none_as_null && is_option_ty(&field.ty) {
         if lifetime.is_some() {
-            quote!(self.#field_name.as_ref().map(|x| #table_name::#column_name.eq(x)))
+            Ok(quote!(self.#field_name.as_ref().map(|x| #table_name::#column_name.eq(x))))
         } else {
-            quote!(self.#field_name.map(|x| #table_name::#column_name.eq(x)))
+            Ok(quote!(self.#field_name.map(|x| #table_name::#column_name.eq(x))))
         }
     } else {
-        quote!(#table_name::#column_name.eq(#lifetime self.#field_name))
+        Ok(quote!(#table_name::#column_name.eq(#lifetime self.#field_name)))
     }
 }
 
@@ -175,14 +179,14 @@ fn field_changeset_ty_serialize_as(
     table_name: &Path,
     ty: &Type,
     treat_none_as_null: bool,
-) -> TokenStream {
-    let column_name = field.column_name();
-    column_name.valid_ident();
+) -> Result<TokenStream> {
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
     if !treat_none_as_null && is_option_ty(&field.ty) {
         let inner_ty = inner_of_option_ty(ty);
-        quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #inner_ty>>)
+        Ok(quote!(std::option::Option<diesel::dsl::Eq<#table_name::#column_name, #inner_ty>>))
     } else {
-        quote!(diesel::dsl::Eq<#table_name::#column_name, #ty>)
+        Ok(quote!(diesel::dsl::Eq<#table_name::#column_name, #ty>))
     }
 }
 
@@ -191,14 +195,14 @@ fn field_changeset_expr_serialize_as(
     table_name: &Path,
     ty: &Type,
     treat_none_as_null: bool,
-) -> TokenStream {
+) -> Result<TokenStream> {
     let field_name = &field.name;
-    let column_name = field.column_name();
-    column_name.valid_ident();
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
     let column: Expr = parse_quote!(#table_name::#column_name);
     if !treat_none_as_null && is_option_ty(&field.ty) {
-        quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x))))
+        Ok(quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x)))))
     } else {
-        quote!(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name)))
+        Ok(quote!(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name))))
     }
 }

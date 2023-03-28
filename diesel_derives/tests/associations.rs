@@ -1,5 +1,5 @@
+use crate::helpers::*;
 use diesel::*;
-use helpers::*;
 
 type Backend = <TestConnection as Connection>::Backend;
 

@@ -1,10 +1,9 @@
 error: unexpected end of input, expected parentheses
+       help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:29:3
    |
 29 | #[belongs_to]
    |   ^^^^^^^^^^
-   |
-   = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
 
 error: expected parentheses
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:36:14
@@ -13,10 +12,10 @@ error: expected parentheses
    |              ^
 
 error: unexpected end of input, expected identifier
-  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:43:14
+  --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:43:13
    |
 43 | #[belongs_to()]
-   |              ^
+   |             ^^
 
 error: expected identifier
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:50:14
@@ -25,12 +24,11 @@ error: expected identifier
    |              ^^^^^^
 
 error: unexpected end of input, expected `=`
+       help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:57:14
    |
 57 | #[belongs_to(parent)]
    |              ^^^^^^
-   |
-   = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
 
 error: expected `=`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:64:20
@@ -57,12 +55,11 @@ error: expected `foreign_key`
    |                   ^^^^
 
 error: unexpected end of input, expected `=`
+       help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
   --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:99:19
    |
 99 | #[belongs_to(Bar, foreign_key)]
    |                   ^^^^^^^^^^^
-   |
-   = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
 
 error: expected string literal
    --> tests/fail/derive_deprecated/deprecated_belongs_to.rs:106:33

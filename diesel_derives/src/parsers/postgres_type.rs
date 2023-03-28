@@ -1,10 +1,9 @@
-use proc_macro_error::abort;
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, LitInt, LitStr};
 
-use util::{parse_eq, unknown_attribute, POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID};
+use crate::util::{parse_eq, unknown_attribute, POSTGRES_TYPE_NOTE, POSTGRES_TYPE_NOTE_ID};
 
 enum Attr {
     Oid(Ident, LitInt),
@@ -27,7 +26,10 @@ impl Parse for Attr {
             "name" => Ok(Attr::Name(name, parse_eq(input, POSTGRES_TYPE_NOTE)?)),
             "schema" => Ok(Attr::Schema(name, parse_eq(input, POSTGRES_TYPE_NOTE)?)),
 
-            _ => unknown_attribute(&name, &["oid", "array_oid", "name", "schema"]),
+            _ => Err(unknown_attribute(
+                &name,
+                &["oid", "array_oid", "name", "schema"],
+            )),
         }
     }
 }
@@ -71,31 +73,35 @@ impl PostgresType {
 
         if let Some((_, name)) = name {
             if let Some((oid, _)) = oid {
-                abort!(
-                    oid, "unexpected `oid` when `name` is present";
-                    help = "{}", help
-                );
+                Err(syn::Error::new(
+                    oid.span(),
+                    format!("unexpected `oid` when `name` is present\nhelp: {help}"),
+                ))
             } else if let Some((array_oid, _)) = array_oid {
-                abort!(
-                    array_oid, "unexpected `array_oid` when `name` is present";
-                    help = "{}", help
-                );
+                Err(syn::Error::new(
+                    array_oid.span(),
+                    format!("unexpected `array_oid` when `name` is present\nhelp: {help}"),
+                ))
+            } else {
+                Ok(PostgresType::Lookup(name, schema.map(|s| s.1)))
             }
-
-            Ok(PostgresType::Lookup(name, schema.map(|s| s.1)))
         } else if let Some((schema, lit)) = schema {
-            abort!(
-                schema, "expected `name` to be also present";
-                help = "make sure `name` is present, `#[diesel(postgres_type(name = \"...\", schema = \"{}\"))]`", lit.value()
-            );
+            Err(syn::Error::new(
+                schema.span(),
+                format!(
+                    "expected `name` to be also present\n\
+                     help: make sure `name` is present, `#[diesel(postgres_type(name = \"...\", schema = \"{}\"))]`", lit.value()
+                ),
+            ))
         } else if let (Some((_, oid)), Some((_, array_oid))) = (oid, array_oid) {
             Ok(PostgresType::Fixed(oid, array_oid))
         } else {
-            abort!(
+            Err(syn::Error::new(
                 input.span(),
-                "expected `oid` and `array_oid` attribute or `name` attribute";
-                help = "{}", help
-            );
+                format!(
+                    "expected `oid` and `array_oid` attribute or `name` attribute\nhelp: {help}"
+                ),
+            ))
         }
     }
 }

@@ -1,4 +1,5 @@
 use proc_macro2::{Ident, Span, TokenStream};
+use quote::quote;
 
 #[cfg(not(feature = "32-column-tables"))]
 pub const MAX_TUPLE_SIZE: i32 = 16;

@@ -128,6 +128,7 @@ impl<T> fmt::Debug for ConnectionManager<T> {
     }
 }
 
+#[allow(unsafe_code)] // we do not actually hold a reference to `T`
 unsafe impl<T: Send + 'static> Sync for ConnectionManager<T> {}
 
 impl<T> ConnectionManager<T> {
