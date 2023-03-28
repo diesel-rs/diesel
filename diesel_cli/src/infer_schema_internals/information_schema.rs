@@ -154,7 +154,7 @@ where
             >,
             NotLike<tables::table_name, &'static str>,
         >,
-        Like<tables::table_type, &'static str>,
+        Or<Eq<tables::table_type, &'static str>, Eq<tables::table_type, &'static str>>,
     >: QueryFragment<Conn::Backend>,
     Conn::Backend: QueryMetadata<sql_types::Text>,
 {
@@ -169,7 +169,11 @@ where
         .select(table_name)
         .filter(table_schema.eq(db_schema_name))
         .filter(table_name.not_like("\\_\\_%"))
-        .filter(table_type.like("BASE TABLE"))
+        .filter(
+            table_type
+                .eq("BASE TABLE")
+                .or(table_type.eq("SYSTEM VERSIONED")),
+        )
         .load::<String>(connection)?;
     table_names.sort_unstable();
     Ok(table_names
