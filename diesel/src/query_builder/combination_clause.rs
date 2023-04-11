@@ -258,7 +258,7 @@ mod postgres {
     impl SupportsCombinationClause<Except, All> for Pg {}
 }
 
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_backend")]
 mod mysql {
     use super::*;
     use crate::mysql::Mysql;
