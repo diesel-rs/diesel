@@ -499,7 +499,7 @@ mod private {
         }
     }
 
-    #[cfg(feature = "mysql")]
+    #[cfg(feature = "mysql_backend")]
     impl QueryFragment<crate::mysql::Mysql> for InsertOrIgnore {
         fn walk_ast<'b>(
             &'b self,
@@ -524,7 +524,7 @@ mod private {
         }
     }
 
-    #[cfg(feature = "mysql")]
+    #[cfg(feature = "mysql_backend")]
     impl QueryFragment<crate::mysql::Mysql> for Replace {
         fn walk_ast<'b>(
             &'b self,
