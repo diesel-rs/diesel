@@ -236,7 +236,6 @@ pub mod sql_types {
     pub struct Uuid;
 
     /// Alias for `Binary`, to ensure `infer_schema!` works
-    #[doc(hidden)]
     pub type Bytea = crate::sql_types::Binary;
 
     #[doc(hidden)]
@@ -422,7 +421,6 @@ pub mod sql_types {
     #[diesel(postgres_type(oid = 829, array_oid = 1040))]
     pub struct MacAddr;
 
-    #[doc(hidden)]
     /// Alias for `MacAddr` to be able to use it with `infer_schema`.
     pub type Macaddr = MacAddr;
 
