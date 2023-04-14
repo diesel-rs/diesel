@@ -235,8 +235,7 @@ pub mod sql_types {
     #[diesel(postgres_type(oid = 2950, array_oid = 2951))]
     pub struct Uuid;
 
-    /// Alias for `Binary`, to ensure `infer_schema!` works
-    #[doc(hidden)]
+    /// Alias for `Binary`, to ensure `diesel print-schema` works
     pub type Bytea = crate::sql_types::Binary;
 
     #[doc(hidden)]
@@ -422,8 +421,7 @@ pub mod sql_types {
     #[diesel(postgres_type(oid = 829, array_oid = 1040))]
     pub struct MacAddr;
 
-    #[doc(hidden)]
-    /// Alias for `MacAddr` to be able to use it with `infer_schema`.
+    /// Alias for `MacAddr` to be able to use it with `diesel print-schema`.
     pub type Macaddr = MacAddr;
 
     /// The [`INET`](https://www.postgresql.org/docs/current/static/datatype-net-types.html) SQL type. This type can only be used with `feature = "network-address"` or `feature = "ipnet-address"`.
