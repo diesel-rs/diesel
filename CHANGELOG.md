@@ -8,7 +8,9 @@ default features enabled using some set of dependencies. Those set of dependenci
 an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
-## Unreleased 
+## Unreleased
+
+## [2.0.4] 2023-04-14
 
 ## Added
 
