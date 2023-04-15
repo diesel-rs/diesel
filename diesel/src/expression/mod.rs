@@ -415,6 +415,188 @@ where
 /// #     Ok(())
 /// # }
 /// ```
+///
+/// When selecting from joined tables, you can select from a
+/// composition of types that implement `Selectable`. The simplest way
+/// is to use a tuple of all the types you wish to select.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use schema::{users, posts};
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct Post {
+///     id: i32,
+///     user_id: i32,
+///     title: String,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #     let connection = &mut establish_connection();
+/// #
+/// let (first_user, first_post) = users::table
+///     .inner_join(posts::table)
+///     .select(<(User, Post)>::as_select())
+///     .first(connection)?;
+///
+/// let expected_user = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected_user, first_user);
+///
+/// let expected_post = Post { id: 1, user_id: 1, title: "My first post".into() };
+/// assert_eq!(expected_post, first_post);
+/// #
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// If you want to load only a subset of fields, you can create types
+/// with those fields and use them in the composition.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use schema::{users, posts};
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// #[diesel(table_name = posts)]
+/// struct PostTitle {
+///     title: String,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #     let connection = &mut establish_connection();
+/// #
+/// let (first_user, first_post_title) = users::table
+///     .inner_join(posts::table)
+///     .select(<(User, PostTitle)>::as_select())
+///     .first(connection)?;
+///
+/// let expected_user = User { id: 1, name: "Sean".into() };
+/// assert_eq!(expected_user, first_user);
+///
+/// let expected_post_title = PostTitle { title: "My first post".into() };
+/// assert_eq!(expected_post_title, first_post_title);
+/// #
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// You are not limited to using only tuples to build the composed
+/// type. The [`Selectable`](derive@Selectable) derive macro allows
+/// you to *embed* other types. This is useful when you want to
+/// implement methods or traits on the composed type.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use schema::{users, posts};
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// #[diesel(table_name = posts)]
+/// struct PostTitle {
+///     title: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct UserPost {
+///     #[diesel(embed)]
+///     user: User,
+///     #[diesel(embed)]
+///     post_title: PostTitle,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #     let connection = &mut establish_connection();
+/// #
+/// let first_user_post = users::table
+///     .inner_join(posts::table)
+///     .select(UserPost::as_select())
+///     .first(connection)?;
+///
+/// let expected_user_post = UserPost {
+///     user: User {
+///         id: 1,
+///         name: "Sean".into(),
+///     },
+///     post_title: PostTitle {
+///         title: "My first post".into(),
+///     },
+/// };
+/// assert_eq!(expected_user_post, first_user_post);
+/// #
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// If you want to avoid nesting types, you can use the
+/// [`Selectable`](derive@Selectable) derive macro's
+/// `select_expression` and `select_expression_type` attributes to
+/// flatten the fields.
+///
+/// ```rust
+/// # include!("../doctest_setup.rs");
+/// use schema::{users, posts};
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct User {
+///     id: i32,
+///     name: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// #[diesel(table_name = posts)]
+/// struct PostTitle {
+///     title: String,
+/// }
+///
+/// #[derive(Debug, PartialEq, Queryable, Selectable)]
+/// struct UserPost {
+///     #[diesel(select_expression = users::columns::id)]
+///     #[diesel(select_expression_type = users::columns::id)]
+///     id: i32,
+///     #[diesel(select_expression = users::columns::name)]
+///     #[diesel(select_expression_type = users::columns::name)]
+///     name: String,
+///     #[diesel(select_expression = posts::columns::title)]
+///     #[diesel(select_expression_type = posts::columns::title)]
+///     title: String,
+/// }
+///
+/// # fn main() -> QueryResult<()> {
+/// #     let connection = &mut establish_connection();
+/// #
+/// let first_user_post = users::table
+///     .inner_join(posts::table)
+///     .select(UserPost::as_select())
+///     .first(connection)?;
+///
+/// let expected_user_post = UserPost {
+///     id: 1,
+///     name: "Sean".into(),
+///     title: "My first post".into(),
+/// };
+/// assert_eq!(expected_user_post, first_user_post);
+/// #
+/// #     Ok(())
+/// # }
+/// ```
+///
 pub trait Selectable<DB: Backend> {
     /// The expression you'd like to select.
     ///
