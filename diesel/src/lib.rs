@@ -505,16 +505,96 @@ pub mod helper_types {
     type JoinQuerySource<Left, Right, Kind, On> = joins::JoinOn<joins::Join<Left, Right, Kind>, On>;
 
     /// A query source representing the inner join between two tables.
-    /// For example, for the inner join between three tables that implement `JoinTo`:
-    /// `InnerJoinQuerySource<InnerJoinQuerySource<table1, table2>, table3>`
-    /// Which conveniently lets you omit the exact join condition.
+    ///
+    /// The third generic type (`On`) controls how the tables are
+    /// joined.
+    ///
+    /// By default, the implicit join established by [`joinable!`][]
+    /// will be used, allowing you to omit the exact join
+    /// condition. For example, for the inner join between three
+    /// tables that implement [`JoinTo`][], you only need to specify
+    /// the tables: `InnerJoinQuerySource<InnerJoinQuerySource<table1,
+    /// table2>, table3>`.
+    ///
+    /// [`JoinTo`]: crate::query_source::JoinTo
+    ///
+    /// If you use an explicit `ON` clause, you will need to specify
+    /// the `On` generic type.
+    ///
+    /// ```rust
+    /// # include!("doctest_setup.rs");
+    /// use diesel::{dsl, helper_types::InnerJoinQuerySource};
+    /// # use diesel::{backend::Backend, serialize::ToSql, sql_types};
+    /// use schema::*;
+    ///
+    /// # fn main() -> QueryResult<()> {
+    /// #     let conn = &mut establish_connection();
+    /// #
+    /// // If you have an explicit join like this...
+    /// let join_constraint = comments::columns::post_id.eq(posts::columns::id);
+    /// #     let query =
+    /// posts::table.inner_join(comments::table.on(join_constraint));
+    /// #
+    /// #     // Dummy usage just to ensure the example compiles.
+    /// #     let filter = posts::columns::id.eq(1);
+    /// #     let filter: &FilterExpression<_> = &filter;
+    /// #     query.filter(filter).select(posts::columns::id).get_result::<i32>(conn)?;
+    /// #
+    /// #     Ok(())
+    /// # }
+    ///
+    /// // ... you can use `InnerJoinQuerySource` like this.
+    /// type JoinConstraint = dsl::Eq<comments::columns::post_id, posts::columns::id>;
+    /// type MyInnerJoinQuerySource = InnerJoinQuerySource<posts::table, comments::table, JoinConstraint>;
+    /// # type FilterExpression<DB> = dyn BoxableExpression<MyInnerJoinQuerySource, DB, SqlType = sql_types::Bool>;
+    /// ```
     pub type InnerJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::Inner, On>;
 
     /// A query source representing the left outer join between two tables.
-    /// For example, for the left join between three tables that implement `JoinTo`:
-    /// `LeftJoinQuerySource<LeftJoinQuerySource<table1, table2>, table3>`
-    /// Which conveniently lets you omit the exact join condition.
+    ///
+    /// The third generic type (`On`) controls how the tables are
+    /// joined.
+    ///
+    /// By default, the implicit join established by [`joinable!`][]
+    /// will be used, allowing you to omit the exact join
+    /// condition. For example, for the left join between three
+    /// tables that implement [`JoinTo`][], you only need to specify
+    /// the tables: `LeftJoinQuerySource<LeftJoinQuerySource<table1,
+    /// table2>, table3>`.
+    ///
+    /// [`JoinTo`]: crate::query_source::JoinTo
+    ///
+    /// If you use an explicit `ON` clause, you will need to specify
+    /// the `On` generic type.
+    ///
+    /// ```rust
+    /// # include!("doctest_setup.rs");
+    /// use diesel::{dsl, helper_types::LeftJoinQuerySource};
+    /// # use diesel::{backend::Backend, serialize::ToSql, sql_types};
+    /// use schema::*;
+    ///
+    /// # fn main() -> QueryResult<()> {
+    /// #     let conn = &mut establish_connection();
+    /// #
+    /// // If you have an explicit join like this...
+    /// let join_constraint = comments::columns::post_id.eq(posts::columns::id);
+    /// #     let query =
+    /// posts::table.left_join(comments::table.on(join_constraint));
+    /// #
+    /// #     // Dummy usage just to ensure the example compiles.
+    /// #     let filter = posts::columns::id.eq(1);
+    /// #     let filter: &FilterExpression<_> = &filter;
+    /// #     query.filter(filter).select(posts::columns::id).get_result::<i32>(conn)?;
+    /// #
+    /// #     Ok(())
+    /// # }
+    ///
+    /// // ... you can use `LeftJoinQuerySource` like this.
+    /// type JoinConstraint = dsl::Eq<comments::columns::post_id, posts::columns::id>;
+    /// type MyLeftJoinQuerySource = LeftJoinQuerySource<posts::table, comments::table, JoinConstraint>;
+    /// # type FilterExpression<DB> = dyn BoxableExpression<MyLeftJoinQuerySource, DB, SqlType = sql_types::Bool>;
+    /// ```
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
 
