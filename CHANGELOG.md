@@ -10,7 +10,14 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.0.4] 2023-04-14
+## [2.0.4] 2023-04-18
+
+## Fixed 
+
+* Workaround the missing name resolution in rust-analyzer. This should fix type inference for some diesel queries. (It remains broken for queries containing `.filter()`/`.inner_join()`/`.left_join()`. These require fixes in rust-analyzer itself)
+* Fixed a bug that could lead to inserting null values instead of empty values for custom sqlite types
+* Fixed a bug that could lead to an unexpected panic while providing an out of bounds bind for `sql_query` in the sqlite backend
+* Fixed some mysql backend specific impl being behind the `mysql` instead of the `mysql_backend` feature flag
 
 ## Added
 
