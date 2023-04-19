@@ -3,7 +3,7 @@ mod numeric;
 
 use super::connection::SqliteValue;
 use super::Sqlite;
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, FromSql, Queryable};
 use crate::query_builder::QueryId;
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
@@ -22,6 +22,15 @@ impl FromSql<sql_types::VarChar, Sqlite> for *const str {
     }
 }
 
+#[cfg(feature = "sqlite")]
+impl Queryable<sql_types::VarChar, Sqlite> for *const str {
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new
 /// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
@@ -32,6 +41,15 @@ impl FromSql<sql_types::Binary, Sqlite> for *const [u8] {
     fn from_sql(bytes: SqliteValue<'_, '_, '_>) -> deserialize::Result<Self> {
         let bytes = bytes.read_blob();
         Ok(bytes as *const _)
+    }
+}
+
+#[cfg(feature = "sqlite")]
+impl Queryable<sql_types::Binary, Sqlite> for *const [u8] {
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
     }
 }
 
