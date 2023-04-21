@@ -266,7 +266,7 @@ fn fun_with_row_iters() {
     let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
 
     {
-        let row_iter = conn.load(&query).unwrap();
+        let row_iter = conn.load(query).unwrap();
         for (row, expected) in row_iter.zip(&expected) {
             let row = row.unwrap();
 
@@ -281,7 +281,7 @@ fn fun_with_row_iters() {
     }
 
     {
-        let collected_rows = conn.load(&query).unwrap().collect::<Vec<_>>();
+        let collected_rows = conn.load(query).unwrap().collect::<Vec<_>>();
         assert_eq!(collected_rows.len(), 2);
         for (row, expected) in collected_rows.iter().zip(&expected) {
             let deserialized = row
@@ -297,7 +297,7 @@ fn fun_with_row_iters() {
         }
     }
 
-    let mut row_iter = conn.load(&query).unwrap();
+    let mut row_iter = conn.load(query).unwrap();
 
     let first_row = row_iter.next().unwrap().unwrap();
     let first_fields = (

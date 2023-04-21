@@ -58,4 +58,15 @@ pub mod multiconnection {
     pub use crate::query_builder::insert_statement::batch_insert::BatchInsert;
     #[doc(hidden)]
     pub use crate::row::private::PartialRow;
+
+    #[doc(hidden)]
+    pub use crate::query_builder::limit_clause::{LimitClause, NoLimitClause};
+    #[doc(hidden)]
+    pub use crate::query_builder::offset_clause::{NoOffsetClause, OffsetClause};
+
+    #[doc(hidden)]
+    pub use crate::query_builder::select_statement::boxed::BoxedQueryHelper;
+
+    #[doc(hidden)]
+    pub use crate::query_builder::select_statement::SelectStatementAccessor;
 }

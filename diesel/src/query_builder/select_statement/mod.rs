@@ -92,6 +92,100 @@ pub struct SelectStatement<
     pub(crate) locking: Locking,
 }
 
+/// Semi-Private trait for containing get-functions for all `SelectStatement` fields
+//
+// This is used by `#[derive(MultiConnection)]`
+pub trait SelectStatementAccessor {
+    /// The type of the select clause
+    type Select;
+    /// The type of the from clause
+    type From;
+    /// The type of the distinct clause
+    type Distinct;
+    /// The type of the where clause
+    type Where;
+    /// The type of the order clause
+    type Order;
+    /// The type of the limit offset clause
+    type LimitOffset;
+    /// The type of the group by clause
+    type GroupBy;
+    /// The type of the having clause
+    type Having;
+    /// The type of the locking clause
+    type Locking;
+
+    /// Access the select clause
+    fn select_clause(&self) -> &Self::Select;
+    /// Access the from clause
+    #[allow(clippy::wrong_self_convention)] // obviously wrong, as `from` refers to the clause name
+    fn from_clause(&self) -> &Self::From;
+    /// Access the distinct clause
+    fn distinct_clause(&self) -> &Self::Distinct;
+    /// Access the where clause
+    fn where_clause(&self) -> &Self::Where;
+    /// Access the order clause
+    fn order_clause(&self) -> &Self::Order;
+    /// Access the limit_offset clause
+    fn limit_offset_clause(&self) -> &Self::LimitOffset;
+    /// Access the group by clause
+    fn group_by_clause(&self) -> &Self::GroupBy;
+    /// Access the having clause
+    fn having_clause(&self) -> &Self::Having;
+    /// Access the locking clause
+    fn locking_clause(&self) -> &Self::Locking;
+}
+
+impl<F, S, D, W, O, LOf, G, H, LC> SelectStatementAccessor
+    for SelectStatement<F, S, D, W, O, LOf, G, H, LC>
+{
+    type Select = S;
+    type From = F;
+    type Distinct = D;
+    type Where = W;
+    type Order = O;
+    type LimitOffset = LOf;
+    type GroupBy = G;
+    type Having = H;
+    type Locking = LC;
+
+    fn select_clause(&self) -> &Self::Select {
+        &self.select
+    }
+
+    fn from_clause(&self) -> &Self::From {
+        &self.from
+    }
+
+    fn distinct_clause(&self) -> &Self::Distinct {
+        &self.distinct
+    }
+
+    fn where_clause(&self) -> &Self::Where {
+        &self.where_clause
+    }
+
+    fn order_clause(&self) -> &Self::Order {
+        &self.order
+    }
+
+    fn limit_offset_clause(&self) -> &Self::LimitOffset {
+        &self.limit_offset
+    }
+
+    fn group_by_clause(&self) -> &Self::GroupBy {
+        &self.group_by
+    }
+
+    fn having_clause(&self) -> &Self::Having {
+        &self.having
+    }
+
+    fn locking_clause(&self) -> &Self::Locking {
+        &self.locking
+    }
+}
+
 impl<F, S, D, W, O, LOf, G, H, LC> SelectStatement<F, S, D, W, O, LOf, G, H, LC> {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn new(

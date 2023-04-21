@@ -315,6 +315,7 @@ pub use diesel_derives::{
 
 pub use diesel_derives::MultiConnection;
 
+#[allow(unknown_lints, ambiguous_glob_reexports)]
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
     //! generically to be included in prelude, but are often used when using Diesel.

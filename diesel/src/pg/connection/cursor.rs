@@ -170,7 +170,7 @@ mod tests {
 
         let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
 
-        let row_iter = LoadConnection::<DefaultLoadingMode>::load(conn, &query).unwrap();
+        let row_iter = LoadConnection::<DefaultLoadingMode>::load(conn, query).unwrap();
         for (row, expected) in row_iter.zip(&expected) {
             let row = row.unwrap();
 
@@ -184,7 +184,7 @@ mod tests {
         }
 
         {
-            let collected_rows = LoadConnection::<DefaultLoadingMode>::load(conn, &query)
+            let collected_rows = LoadConnection::<DefaultLoadingMode>::load(conn, query)
                 .unwrap()
                 .collect::<Vec<_>>();
 
@@ -203,7 +203,7 @@ mod tests {
             }
         }
 
-        let mut row_iter = LoadConnection::<DefaultLoadingMode>::load(conn, &query).unwrap();
+        let mut row_iter = LoadConnection::<DefaultLoadingMode>::load(conn, query).unwrap();
 
         let first_row = row_iter.next().unwrap().unwrap();
         let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
@@ -327,7 +327,7 @@ mod tests {
 
         let expected = vec![(1, String::from("Sean")), (2, String::from("Tess"))];
 
-        let row_iter = LoadConnection::<PgRowByRowLoadingMode>::load(conn, &query).unwrap();
+        let row_iter = LoadConnection::<PgRowByRowLoadingMode>::load(conn, query).unwrap();
         for (row, expected) in row_iter.zip(&expected) {
             let row = row.unwrap();
 
@@ -341,7 +341,7 @@ mod tests {
         }
 
         {
-            let collected_rows = LoadConnection::<PgRowByRowLoadingMode>::load(conn, &query)
+            let collected_rows = LoadConnection::<PgRowByRowLoadingMode>::load(conn, query)
                 .unwrap()
                 .collect::<Vec<_>>();
 
@@ -360,7 +360,7 @@ mod tests {
             }
         }
 
-        let mut row_iter = LoadConnection::<PgRowByRowLoadingMode>::load(conn, &query).unwrap();
+        let mut row_iter = LoadConnection::<PgRowByRowLoadingMode>::load(conn, query).unwrap();
 
         let first_row = row_iter.next().unwrap().unwrap();
         let first_fields = (first_row.get(0).unwrap(), first_row.get(1).unwrap());
