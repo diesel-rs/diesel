@@ -139,7 +139,7 @@ fn migrations_directories(
     Ok(migrations_internals::migrations_directories(path)?.map(move |e| e.map_err(Into::into)))
 }
 
-fn migrations_in_directory<DB: Backend>(
+fn migrations_in_directory(
     path: &'_ Path,
 ) -> Result<impl Iterator<Item = Result<SqlFileMigration, MigrationError>> + '_, MigrationError> {
     Ok(migrations_directories(path)?.map(|entry| SqlFileMigration::from_path(&entry?.path())))
@@ -147,7 +147,7 @@ fn migrations_in_directory<DB: Backend>(
 
 impl<DB: Backend> MigrationSource<DB> for FileBasedMigrations {
     fn migrations(&self) -> migration::Result<Vec<Box<dyn Migration<DB>>>> {
-        migrations_in_directory::<DB>(&self.base_path)?
+        migrations_in_directory(&self.base_path)?
             .map(|r| Ok(Box::new(r?) as Box<dyn Migration<DB>>))
             .collect()
     }
@@ -337,15 +337,6 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "sqlite")]
-    type Backend = diesel::sqlite::Sqlite;
-
-    #[cfg(feature = "postgres")]
-    type Backend = diesel::pg::Pg;
-
-    #[cfg(feature = "mysql")]
-    type Backend = diesel::mysql::Mysql;
-
     #[test]
     fn migration_paths_in_directory_ignores_files() {
         let dir = Builder::new().prefix("diesel").tempdir().unwrap();
@@ -356,7 +347,7 @@ mod tests {
         fs::create_dir(migrations_path.as_path()).unwrap();
         fs::File::create(file_path.as_path()).unwrap();
 
-        let migrations = migrations_in_directory::<Backend>(&migrations_path)
+        let migrations = migrations_in_directory(&migrations_path)
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();
@@ -374,7 +365,7 @@ mod tests {
         fs::create_dir(migrations_path.as_path()).unwrap();
         fs::create_dir(dot_path.as_path()).unwrap();
 
-        let migrations = migrations_in_directory::<Backend>(&migrations_path)
+        let migrations = migrations_in_directory(&migrations_path)
             .unwrap()
             .collect::<Result<Vec<_>, _>>()
             .unwrap();

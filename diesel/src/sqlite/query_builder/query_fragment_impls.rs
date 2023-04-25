@@ -1,3 +1,4 @@
+use crate::query_builder::select_statement::boxed::BoxedQueryHelper;
 use crate::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper;
 use crate::query_builder::where_clause::BoxedWhereClause;
 use crate::query_builder::where_clause::WhereClause;

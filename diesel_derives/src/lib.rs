@@ -735,7 +735,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///     DB: Backend,
 ///     String: FromSql<ST, DB>,
 /// {
-///     fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+///     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
 ///         String::from_sql(bytes)
 ///             .map(|s| LowercaseString(s.to_lowercase()))
 ///     }
