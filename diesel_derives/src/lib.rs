@@ -661,6 +661,13 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///    columns for the specified table. The path is relative to the current module.
 ///    If no field attributes are specified the derive will use the sql type of
 ///    the corresponding column.
+/// * `#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]`, instructs
+///    the derive to generate additional code to identify potential type mismatches.
+///    It accepts a list of backend types to check the types against. Using this option
+///    will result in much better error messages in cases where some types in your `QueryableByName`
+///    struct don't match. You need to specify the concrete database backend
+///    this specific struct is indented to be used with, as otherwise rustc can't correctly
+///    identify the required deserialization implementation.
 ///
 /// ## Optional field attributes
 ///
