@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{parse_quote, DeriveInput, Ident, LitStr, Result, Type};
+use syn::{parse_quote, parse_quote_spanned, DeriveInput, Ident, LitStr, Result, Type};
 
 use crate::attrs::AttributeSpanWrapper;
 use crate::field::{Field, FieldName};
@@ -44,18 +44,40 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     for field in model.fields() {
         let where_clause = generics.where_clause.get_or_insert(parse_quote!(where));
+        let span = field.span;
         let field_ty = field.ty_for_deserialize();
         if field.embed() {
             where_clause
                 .predicates
-                .push(parse_quote!(#field_ty: QueryableByName<__DB>));
+                .push(parse_quote_spanned!(span=> #field_ty: QueryableByName<__DB>));
         } else {
             let st = sql_type(field, &model)?;
-            where_clause
-                .predicates
-                .push(parse_quote!(#field_ty: diesel::deserialize::FromSql<#st, __DB>));
+            where_clause.predicates.push(
+                parse_quote_spanned!(span=> #field_ty: diesel::deserialize::FromSql<#st, __DB>),
+            );
         }
     }
+    let model = &model;
+    let check_function = if let Some(ref backends) = model.check_for_backend {
+        let field_check_bound = model.fields().iter().filter(|f| !f.embed()).flat_map(|f| {
+            backends.iter().map(move |b| {
+                let field_ty = f.ty_for_deserialize();
+                let span = f.span;
+                let ty = sql_type(f, model).unwrap();
+                quote::quote_spanned! {span =>
+                    #field_ty: diesel::deserialize::FromSqlRow<#ty, #b>
+                }
+            })
+        });
+        Some(quote::quote! {
+            fn _check_field_compatibility()
+            where
+                #(#field_check_bound,)*
+            {}
+        })
+    } else {
+        None
+    };
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
@@ -80,6 +102,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
                 })
             }
         }
+
+        #check_function
     }))
 }
 
