@@ -14,10 +14,10 @@ use crate::errors::{MigrationError, RunMigrationsError};
 
 /// A migration source based on a migration directory in the file system
 ///
-/// A valid migration directroy contains a sub folder per migration.
+/// A valid migration directory contains a sub folder per migration.
 /// Each migration folder contains a `up.sql` file containing the migration itself
-/// and a `down.sql` file containing the nessesary SQL to revert the migration.
-/// Additionaly each folder can contain a `metadata.toml` file controling how the
+/// and a `down.sql` file containing the necessary SQL to revert the migration.
+/// Additionally each folder can contain a `metadata.toml` file controlling how the
 /// individual migration should be handled by the migration harness.
 ///
 /// To embed an existing migration folder into the final binary see
@@ -68,7 +68,7 @@ use crate::errors::{MigrationError, RunMigrationsError};
 /// ```toml
 /// ## 20160107082941_create_posts/metadata.toml
 ///
-/// ## specifices if a migration is executed inside a
+/// ## specifies if a migration is executed inside a
 /// ## transaction or not. This configuration is optional
 /// ## by default all migrations are run in transactions.
 /// ##
