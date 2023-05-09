@@ -32,6 +32,7 @@ fn reset_runs_database_setup() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     assert!(db.table_exists("posts"));
@@ -102,6 +103,7 @@ fn reset_works_with_migration_dir_by_arg() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     assert!(db.table_exists("posts"));
@@ -133,6 +135,7 @@ fn reset_works_with_migration_dir_by_env() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     assert!(db.table_exists("posts"));
@@ -215,6 +218,7 @@ fn reset_respects_migrations_dir_from_diesel_toml() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     assert!(db.table_exists("users"));
