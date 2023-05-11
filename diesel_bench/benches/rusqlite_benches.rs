@@ -160,12 +160,12 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
 
     let mut query = conn.prepare(
         "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id , p.title, p.body \
-         FROM users as u LEFT JOIN posts as p on u.id = p.user_id"
+         FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?"
     ).unwrap();
 
     b.iter(|| {
         query
-            .query_map([], |row| {
+            .query_map([&"black"], |row| {
                 let user = User::from_row_by_id(row);
                 let post = if let Some(id) = row.get(4).unwrap() {
                     Some(Post {

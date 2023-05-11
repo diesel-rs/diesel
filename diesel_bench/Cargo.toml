@@ -20,7 +20,7 @@ rustorm = {version = "0.20", optional = true}
 rustorm_dao = {version = "0.20", optional = true}
 quaint = {version = "=0.2.0-alpha.13", optional = true, features = ["uuid"]}
 serde = {version = "1", optional = true, features = ["derive"]}
-sea-orm = {version = "0.10", optional = true, features = ["runtime-tokio-rustls"]}
+sea-orm = {version = "0.11", optional = true, features = ["runtime-tokio-rustls"]}
 futures = {version = "0.3", optional = true}
 diesel-async = {version = "0.2", optional = true, default-features = false}
 criterion-perf-events = { version = "0.2", optional = true}
@@ -54,7 +54,7 @@ fast_run = []
 
 
 [patch.crates-io]
-quaint = {git = "https://github.com/prisma/quaint", rev = "e077df3"}
+quaint = {git = "https://github.com/prisma/prisma-engines", rev = "8f088bb"}
 diesel-async = { git = "https://github.com/weiznich/diesel_async", rev = "d9e219578a7e034c2714550a5a156c8e004896bc"}
 diesel = { path = "../diesel"}
 

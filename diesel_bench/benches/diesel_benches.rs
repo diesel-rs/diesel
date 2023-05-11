@@ -307,14 +307,22 @@ pub fn bench_medium_complex_query_queryable_by_name(b: &mut Bencher, size: usize
         10_000 => insert_users::<_, 10_000>(&mut conn, hair_color_callback),
         _ => unimplemented!(),
     }
+    #[cfg(feature = "postgres")]
+    let bind = "$1";
+    #[cfg(any(feature = "mysql", feature = "sqlite"))]
+    let bind = "?";
+
+    let query = format!(
+        "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
+         FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = {bind}"
+    );
+    let query = &query;
 
     b.iter(|| {
-        diesel::sql_query(
-            "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
-        )
-        .load::<(User, Option<Post>)>(&mut conn)
-        .unwrap()
+        diesel::sql_query(query)
+            .bind::<diesel::sql_types::Text, _>("black")
+            .load::<(User, Option<Post>)>(&mut conn)
+            .unwrap()
     })
 }
 

@@ -121,13 +121,13 @@ pub fn bench_medium_complex_query_by_id(b: &mut Bencher, size: usize) {
     let query = client
         .prepare(
             "SELECT u.id, u.name, u.hair_color, p.id, p.user_id, p.title, p.body \
-             FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
+             FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1",
         )
         .unwrap();
 
     b.iter(|| {
         client
-            .query_raw(&query, NO_PARAMS)
+            .query_raw(&query, &[&"black"])
             .unwrap()
             .map(|row| {
                 let user = User {

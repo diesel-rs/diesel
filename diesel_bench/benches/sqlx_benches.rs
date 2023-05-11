@@ -242,13 +242,23 @@ pub fn bench_medium_complex_query_query_as_macro(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         rt.block_on(async {
+            #[cfg(feature = "postgres")]
             let res = sqlx::query_as!(UserWithPost,
                 "SELECT u.id as \"myuser_id!\", u.name as \"name!\", u.hair_color, p.id as \"post_id?\", p.user_id as \"user_id?\", p.title as \"title?\", p.body  as \"body?\"\
-                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id"
+                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = $1", "black"
             )
             .fetch_all(&mut conn)
             .await
-                .unwrap();
+            .unwrap();
+
+            #[cfg(any(feature = "sqlite", feature = "mysql"))]
+            let res = sqlx::query_as!(UserWithPost,
+                "SELECT u.id as \"myuser_id!\", u.name as \"name!\", u.hair_color, p.id as \"post_id?\", p.user_id as \"user_id?\", p.title as \"title?\", p.body  as \"body?\"\
+                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = ?", "black"
+            )
+            .fetch_all(&mut conn)
+            .await
+            .unwrap();
 
             res.into_iter().map(|r| {
                 let user = User {
@@ -278,35 +288,46 @@ pub fn bench_medium_complex_query_from_row(b: &mut Bencher, size: usize) {
     rt.block_on(insert_users(size, &mut conn, |i| {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     }));
+    #[cfg(feature = "postgres")]
+    let bind = "$1";
+    #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    let bind = "?";
 
-    b.iter(|| {
+    let query = format!(
+        "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id , p.title, p.body \
+         FROM users as u LEFT JOIN posts as p on u.id = p.user_id WHERE u.hair_color = {bind}"
+    );
+    let query = &query;
+
+    b.iter(move || {
         rt.block_on(async {
-            let res = sqlx::query_as::<_, UserWithPost>(
-                "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, p.user_id , p.title, p.body \
-                 FROM users as u LEFT JOIN posts as p on u.id = p.user_id",
-            )
-            .fetch_all(&mut conn)
-            .await
+            let res = sqlx::query_as::<_, UserWithPost>(query)
+                .bind("black")
+                .persistent(true)
+                .fetch_all(&mut conn)
+                .await
                 .unwrap();
 
-            res.into_iter().map(|r| {
-                let user = User {
-                    id: r.myuser_id,
-                    name: r.name,
-                    hair_color: r.hair_color,
-                };
-                let post = if let Some(id) = r.post_id {
-                    Some(Post {
-                        id,
-                        title: r.title.unwrap(),
-                        user_id: r.user_id.unwrap(),
-                        body: r.body,
-                    })
-                } else {
-                    None
-                };
-                (user, post)
-            }).collect::<Vec<_>>()
+            res.into_iter()
+                .map(|r| {
+                    let user = User {
+                        id: r.myuser_id,
+                        name: r.name,
+                        hair_color: r.hair_color,
+                    };
+                    let post = if let Some(id) = r.post_id {
+                        Some(Post {
+                            id,
+                            title: r.title.unwrap(),
+                            user_id: r.user_id.unwrap(),
+                            body: r.body,
+                        })
+                    } else {
+                        None
+                    };
+                    (user, post)
+                })
+                .collect::<Vec<_>>()
         })
     })
 }
