@@ -103,7 +103,7 @@ This benchmark tests how entities from a single table are loaded. Before startin
 
 ### `bench_medium_complex_query`
 
-This benchmark tests how entities from more than one table are loaded. Before starting the benchmark 1, 10, 1000, 10000 entries are inserted into the `users` table.  For this the `id` of the user is provided by the autoincrementing id, the `name` is set to `User {id}` and the `hair_color` is set to `"black"` for even id's, to `"brown"` otherwise. An implementation of this benchmark is expected to return a list of the type `(User, Option<Post>)` so that matching pairs of `User` and `Option<Post>` are returned. Though the `posts` table is empty the corresponding implementation needs to query both tables. 
+This benchmark tests how entities from more than one table are loaded. Before starting the benchmark 1, 10, 1000, 10000 entries are inserted into the `users` table.  For this the `id` of the user is provided by the autoincrementing id, the `name` is set to `User {id}` and the `hair_color` is set to `"black"` for even id's, to `"brown"` otherwise. An implementation of this benchmark is expected to return a list of the type `(User, Option<Post>)` filtered by `hair_color = "black"` so that matching pairs of `User` and `Option<Post>` are returned. Though the `posts` table is empty the corresponding implementation needs to query both tables. 
 
 ### `bench_insert`
 

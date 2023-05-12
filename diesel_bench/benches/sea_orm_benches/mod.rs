@@ -143,6 +143,7 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
     b.to_async(&rt).iter(|| async {
         let r: Vec<(self::users::Model, Option<self::posts::Model>)> = User::find()
             .find_also_related(Post)
+            .filter(self::users::Column::HairColor.eq("black"))
             .all(&conn)
             .await
             .unwrap();
