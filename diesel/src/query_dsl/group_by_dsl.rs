@@ -18,7 +18,7 @@ pub trait GroupByDsl<Expr: Expression> {
     type Output;
 
     /// See the trait documentation.
-    fn group_by(self, expr: Expr) -> dsl::GroupBy<Self, Expr>;
+    fn group_by(self, expr: Expr) -> Self::Output;
 }
 
 impl<T, Expr> GroupByDsl<Expr> for T

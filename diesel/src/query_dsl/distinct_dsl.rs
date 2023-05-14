@@ -31,7 +31,7 @@ where
 {
     type Output = dsl::Distinct<SelectStatement<FromClause<T>>>;
 
-    fn distinct(self) -> dsl::Distinct<SelectStatement<FromClause<T>>> {
+    fn distinct(self) -> Self::Output {
         self.as_query().distinct()
     }
 }
@@ -56,7 +56,6 @@ pub trait DistinctOnDsl<Selection> {
 impl<T, Selection> DistinctOnDsl<Selection> for T
 where
     Selection: SelectableExpression<T>,
-    Selection::SqlType: crate::sql_types::SingleValue,
     T: Table + AsQuery<Query = SelectStatement<FromClause<T>>>,
     SelectStatement<FromClause<T>>: DistinctOnDsl<Selection>,
     T::DefaultSelection: Expression<SqlType = T::SqlType> + ValidGrouping<()>,

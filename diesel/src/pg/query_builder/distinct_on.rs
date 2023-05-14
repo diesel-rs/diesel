@@ -7,7 +7,6 @@ use crate::query_builder::{
 use crate::query_dsl::methods::DistinctOnDsl;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::result::QueryResult;
-use crate::sql_types::SingleValue;
 use crate::{Expression, QuerySource};
 
 /// Represents `DISTINCT ON (...)`
@@ -20,19 +19,16 @@ impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T>
 where
     T: Expression,
-    T::SqlType: SingleValue,
 {
 }
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Desc<T>>
 where
     T: Expression,
-    T::SqlType: SingleValue,
 {
 }
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Asc<T>>
 where
     T: Expression,
-    T::SqlType: SingleValue,
 {
 }
 
@@ -40,14 +36,12 @@ impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
     for OrderClause<(crate::helper_types::Desc<T>,)>
 where
     T: Expression,
-    T::SqlType: SingleValue,
 {
 }
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
     for OrderClause<(crate::helper_types::Asc<T>,)>
 where
     T: Expression,
-    T::SqlType: SingleValue,
 {
 }
 
@@ -68,7 +62,6 @@ impl<ST, F, S, D, W, O, LOf, G, H, Selection> DistinctOnDsl<Selection>
 where
     F: QuerySource,
     Selection: SelectableExpression<F>,
-    Selection::SqlType: SingleValue,
     Self: SelectQuery<SqlType = ST>,
     O: ValidOrderingForDistinct<DistinctOnClause<Selection>>,
     SelectStatement<FromClause<F>, S, DistinctOnClause<Selection>, W, O, LOf, G, H>:

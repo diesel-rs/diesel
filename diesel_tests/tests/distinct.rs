@@ -137,3 +137,59 @@ fn distinct_on_select_order_by_two_columns() {
 
     assert_eq!(expected_data, data);
 }
+
+#[cfg(feature = "postgres")]
+#[test]
+fn distinct_on_two_columns() {
+    use crate::schema::users::dsl::*;
+
+    let connection = &mut connection();
+    diesel::sql_query(
+            "INSERT INTO users (name, hair_color) VALUES ('Sean', 'black'), ('Sean', 'aqua'), ('Tess', 'bronze'), ('Tess', 'champagne')",
+        ).execute(connection)
+        .unwrap();
+
+    let source = users
+        .select((name, hair_color))
+        .order((name, hair_color.desc()))
+        .distinct_on((id, name));
+    let expected_data = vec![
+        NewUser::new("Sean", Some("black")),
+        NewUser::new("Tess", Some("champagne")),
+    ];
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order((name.asc(), hair_color.desc()))
+        .distinct_on((id, name));
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order((name.desc(), hair_color.desc()))
+        .distinct_on((id, name));
+    let expected_data = vec![
+        NewUser::new("Tess", Some("champagne")),
+        NewUser::new("Sean", Some("black")),
+    ];
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order((name.desc(), hair_color))
+        .distinct_on((id, name));
+    let expected_data = vec![
+        NewUser::new("Tess", Some("bronze")),
+        NewUser::new("Sean", Some("aqua")),
+    ];
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+}
