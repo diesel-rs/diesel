@@ -19,7 +19,17 @@ use crate::RunQueryDsl;
 #[cfg(feature = "mysql")]
 #[allow(missing_debug_implementations, missing_copy_implementations)]
 /// A connection to a MySQL database. Connection URLs should be in the form
-/// `mysql://[user[:password]@]host/database_name`
+/// `mysql://[user[:password]@]host/database_name[?unix_socket=socket-path&ssl_mode=SSL_MODE*&ssl_ca=/etc/ssl/certs/ca-certificates.crt&ssl_cert=/etc/ssl/certs/client-cert.crt&ssl_key=/etc/ssl/certs/client-key.crt]`
+///
+///* `host` can be an IP address or a hostname. If it is set to `localhost`, a connection
+///   will be attempted through the socket at `/tmp/mysql.sock`. If you want to connect to
+///   a local server via TCP (e.g. docker containers), use `0.0.0.0` or `127.0.0.1` instead.
+/// * `unix_socket` expects the path to the unix socket
+/// * `ssl_ca` accepts a path to the system's certificate roots
+/// * `ssl_cert` accepts a path to the client's certificate file
+/// * `ssl_key` accepts a path to the client's private key file
+/// * `ssl_mode` expects a value defined for MySQL client command option `--ssl-mode`
+/// See <https://dev.mysql.com/doc/refman/5.7/en/connection-options.html#option_general_ssl-mode>
 ///
 /// # Supported loading model implementations
 ///
