@@ -241,7 +241,7 @@ fn on_conflict_do_nothing_with_select() {
 
     let query = users
         .select((id, name.concat(" says hi")))
-        .filter(id.ge(0)) // Sqlite needs a where claues
+        .filter(id.ge(0)) // Sqlite needs a where clause
         .insert_into(posts)
         .into_columns((user_id, title))
         .on_conflict_do_nothing();

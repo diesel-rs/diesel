@@ -488,7 +488,7 @@ where
     }
 }
 
-/// A helper trait to deserialize a statically sized row into an tuple
+/// A helper trait to deserialize a statically sized row into a tuple
 ///
 /// **If you see an error message mentioning this trait you are likely trying to
 /// map the result of a query to a struct with mismatching field types. Recheck
@@ -526,7 +526,7 @@ where
     T::Row: FromStaticSqlRow<ST, DB>,
 {
     // This inline(always) attribute is here as benchmarks have shown
-    // a up to 5% reduction in instruction count of having it here
+    // up to 5% reduction in instruction count of having it here
     //
     // A plain inline attribute does not show similar improvements
     #[inline(always)]

@@ -136,7 +136,7 @@ pub trait MigrationMetadata {
 /// to receive a number of migrations from.
 pub trait MigrationSource<DB: Backend> {
     /// Get a list of migrations associated with this
-    /// migration soucre.
+    /// migration source.
     fn migrations(&self) -> Result<Vec<Box<dyn Migration<DB>>>>;
 }
 

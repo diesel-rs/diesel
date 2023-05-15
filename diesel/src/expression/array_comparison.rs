@@ -1,5 +1,5 @@
 //! This module contains the query dsl node definitions
-//! for array comparision operations like `IN` and `NOT IN`
+//! for array comparison operations like `IN` and `NOT IN`
 
 use crate::backend::sql_dialect;
 use crate::backend::Backend;
@@ -25,7 +25,7 @@ use std::marker::PhantomData;
 /// Third party backend can customize the [`QueryFragment`]
 /// implementation of this query dsl node via
 /// [`SqlDialect::ArrayComparison`]. A customized implementation
-/// is expected to provide the same sematics as a ANSI SQL
+/// is expected to provide the same semantics as an ANSI SQL
 /// `IN` expression.
 ///
 /// The postgres backend provided a specialized implementation
@@ -45,7 +45,7 @@ pub struct In<T, U> {
 /// Third party backend can customize the [`QueryFragment`]
 /// implementation of this query dsl node via
 /// [`SqlDialect::ArrayComparison`]. A customized implementation
-/// is expected to provide the same sematics as a ANSI SQL
+/// is expected to provide the same semantics as an ANSI SQL
 /// `NOT IN` expression.0
 ///
 /// The postgres backend provided a specialized implementation
@@ -154,13 +154,13 @@ impl_selectable_expression!(NotIn<T, U>);
 /// This trait describes how a type is transformed to the
 /// `IN (values)` value expression
 ///
-/// Diesel provided several implemenations here:
+/// Diesel provided several implementations here:
 ///
 ///  - An implementation for any [`Iterator`] over values
 ///  that implement [`AsExpression<ST>`] for the corresponding
 ///  sql type ST. The corresponding values clause will contain
 ///  bind statements for each individual value.
-///  - An implementation for select statements, that return
+///  - An implementation for select statements, that returns
 ///  a single field. The corresponding values clause will contain
 ///  the sub query.
 ///
@@ -196,7 +196,7 @@ where
 }
 
 /// A helper trait to check if the values clause of
-/// a [`In`] or [`NotIn`] query dsl node is empty or not
+/// an [`In`] or [`NotIn`] query dsl node is empty or not
 pub trait MaybeEmpty {
     /// Returns `true` if self represents an empty collection
     /// Otherwise `false` is returned.
@@ -243,7 +243,7 @@ where
     }
 }
 
-/// Query dsl node for a `IN (values)` clause containing
+/// Query dsl node for an `IN (values)` clause containing
 /// a variable number of bind values.
 ///
 /// Third party backend can customize the [`QueryFragment`]

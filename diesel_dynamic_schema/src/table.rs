@@ -37,7 +37,7 @@ impl<T, U> Table<T, U> {
         Column::new(self.clone(), name)
     }
 
-    /// Gets the name of the table, as especified on creation.
+    /// Gets the name of the table, as specified on creation.
     pub fn name(&self) -> &T {
         &self.name
     }

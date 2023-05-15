@@ -63,7 +63,7 @@ impl<'a> Iterator for StatementIterator<'a> {
         } else {
             // The shared bind buffer is in use by someone else,
             // this means we copy out the values and replace the used reference
-            // by the copied values. After this we can advance the statment
+            // by the copied values. After this we can advance the statement
             // another step
             let mut last_row = {
                 let mut last_row = match self.last_row.try_borrow_mut() {

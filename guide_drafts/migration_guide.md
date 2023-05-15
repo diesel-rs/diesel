@@ -22,7 +22,7 @@ Users of `BoxableExpression` might be affected by the following change:
 
 Users of tables containing a column of the type `Array<T>` are affected by the following change:
 
-* [Changed nullability of array elemetns](#2-0-0-nullability-of-array-elements)
+* [Changed nullability of array elements](#2-0-0-nullability-of-array-elements)
 
 Users that implement support for their SQL types or type mappings are affected 
 by the following changes:

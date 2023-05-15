@@ -43,7 +43,7 @@ fn main() {
     use diesel::dsl;
     // cases thas should compile
 
-    // A column appering in the group by clause should be considered valid for the select clause
+    // A column appearing in the group by clause should be considered valid for the select clause
     let source = users::table.group_by(users::name).select(users::name);
     // If the column appearing in the group by clause is the primary key, any column of that table is a
     // valid group by clause

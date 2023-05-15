@@ -33,7 +33,7 @@ pub trait QuerySource {
     /// The actual `FROM` clause of this type. This is typically only called in
     /// `QueryFragment` implementations.
     // from here is something different than from in rust
-    // as this literally refercs to SQL from.
+    // as this literally refers to SQL from.
     #[allow(clippy::wrong_self_convention)]
     fn from_clause(&self) -> Self::FromClause;
     /// The default select clause of this type, which should be used if no
@@ -91,7 +91,7 @@ pub trait AppearsInFromClause<QS> {
 ///
 /// Troubleshooting
 /// ---------------
-/// If you encounter an error mentionning this trait, it could mean that either:
+/// If you encounter an error mentioning this trait, it could mean that either:
 /// - You are attempting to use tables that don't belong to the same database together
 ///   (no call to [`allow_tables_to_appear_in_same_query!`] was made)
 /// - You are attempting to use two aliases to the same table in the same query, but they
@@ -133,7 +133,7 @@ pub(crate) mod private {
     ///     >,
     /// ```
     ///
-    /// In order to aquire the counts in the first place, we must already know
+    /// In order to acquire the counts in the first place, we must already know
     /// the table we're searching for.
     #[doc(hidden)] // This is used as part of the `table!` implementation
     pub trait Pick<Left, Right> {
@@ -161,7 +161,7 @@ pub(crate) mod private {
 )]
 /// Everything in this module is here to give something more helpful than:
 ///
-/// > (Never, Never): Pick<table1, table2> is not satisifed
+/// > (Never, Never): Pick<table1, table2> is not satisfied
 ///
 /// Any of these impls can be deleted if they are getting in the way of
 /// other functionality. Any code which is using these impls is already

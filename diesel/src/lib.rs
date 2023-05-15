@@ -155,7 +155,7 @@
 //!
 //! - `sqlite`: This feature enables the diesel sqlite backend. Enabling this feature requires per default
 //! a compatible copy of `libsqlite3` for your target architecture. Alternatively, you can add `libsqlite3-sys`
-//! with the `bundled` feature as a dependecy to your crate so SQLite will be bundled:
+//! with the `bundled` feature as a dependency to your crate so SQLite will be bundled:
 //! ```toml
 //! [dependencies]
 //! libsqlite3-sys = { version = "0.25.2", features = ["bundled"] }
@@ -204,7 +204,7 @@
 //! - `numeric`: This feature flag enables support for (de)serializing numeric values from the database using types
 //! provided by `bigdecimal`
 //! - `r2d2`: This feature flag enables support for the `r2d2` connection pool implementation.
-//! - `extras`: This feature enables the feature flaged support for any third party crate. This implies the
+//! - `extras`: This feature enables the feature flagged support for any third party crate. This implies the
 //! following feature flags: `serde_json`, `chrono`, `uuid`, `network-address`, `numeric`, `r2d2`
 //! - `with-deprecated`: This feature enables items marked as `#[deprecated]`. It is enabled by default.
 //! disabling this feature explicitly opts out diesels stability guarantee.

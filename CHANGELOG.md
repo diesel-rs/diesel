@@ -336,7 +336,7 @@ queries or set `PIPES_AS_CONCAT` manually.
 
 ### Fixed
 
-* Fixed a incompatibly between `diesel` and `diesel_migrations` when building both crates with cargos new `resolver = "2"` enabled. This change ensures compatibility with the upcomming 2021 rust edition.
+* Fixed a incompatibly between `diesel` and `diesel_migrations` when building both crates with cargos new `resolver = "2"` enabled. This change ensures compatibility with the upcoming 2021 rust edition.
 
 ## [1.4.7] - 2021-06-08
 
@@ -370,7 +370,7 @@ queries or set `PIPES_AS_CONCAT` manually.
 ### Fixed
 
 * Update several dependencies
-* Fixed a bug with printing embeded migrations
+* Fixed a bug with printing embedded migrations
 
 ## [1.4.3] - 2019-10-11
 

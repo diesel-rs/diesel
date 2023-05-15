@@ -14,7 +14,7 @@ fn main() {
     let conn = &mut PgConnection::establish("…").unwrap();
     let user_alias = alias!(users as user1);
 
-    // allowed as this groups by the the same field
+    // allowed as this groups by the same field
     user_alias
         .group_by(user_alias.field(users::name))
         .select(user_alias.field(users::name))

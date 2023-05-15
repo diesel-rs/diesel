@@ -96,7 +96,7 @@ pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =
 ///
 /// Implementing a new connection based on an existing backend can enable the usage of
 /// other methods to connect to the database. One example here would be to replace
-/// the offical diesel provided connection implementations with an implementation
+/// the official diesel provided connection implementations with an implementation
 /// based on a pure rust connection crate.
 ///
 /// **It's important to use prepared statements to implement the following methods:**
@@ -131,7 +131,7 @@ pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =
 /// * A field type that describes a database field value.
 ///   This type needs to implement [`Field`](crate::row::Field)
 /// * A connection type that wraps the connection +
-///   the nessesary state managment.
+///   the necessary state management.
 /// * Maybe a [`TransactionManager`] implementation matching
 ///  the interface provided by the database connection crate.
 ///  Otherwise the implementation used by the corresponding
@@ -163,7 +163,7 @@ pub type LoadRowIter<'conn, 'query, C, DB, B = DefaultLoadingMode> =
 /// As implementations differ significantly between the supported backends
 /// we cannot give a one for all description here. Generally it's likely a
 /// good idea to follow the implementation of the corresponding connection
-/// in diesel at a heigh level to gain some idea how to implement your
+/// in diesel at a high level to gain some idea how to implement your
 /// custom implementation.
 ///
 /// ## Implement support for an unsupported database system
@@ -309,7 +309,7 @@ where
         };
         Self::TransactionManager::begin_transaction(self)?;
         // set the test transaction flag
-        // to pervent that this connection gets droped in connection pools
+        // to prevent that this connection gets dropped in connection pools
         // Tests commonly set the poolsize to 1 and use `begin_test_transaction`
         // to prevent modifications to the schema
         Self::TransactionManager::transaction_manager_status_mut(self).set_test_transaction_flag();
@@ -386,7 +386,7 @@ where
 /// The specific part of a [`Connection`] which actually loads data from the database
 ///
 /// This is a separate trait to allow connection implementations to specify
-/// different loading modes via the generic paramater.
+/// different loading modes via the generic parameter.
 pub trait LoadConnection<B = DefaultLoadingMode>: Connection {
     /// The cursor type returned by [`LoadConnection::load`]
     ///

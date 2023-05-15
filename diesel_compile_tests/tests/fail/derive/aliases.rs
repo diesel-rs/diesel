@@ -49,7 +49,7 @@ pub fn check(conn: &mut PgConnection) {
 
     let user2_alias = alias!(users as user3);
 
-    // dont't allow joins to not joinable tables
+    // don't allow joins to not joinable tables
     pets::table
         .inner_join(user_alias)
         .select(pets::id)

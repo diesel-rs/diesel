@@ -96,18 +96,18 @@ impl<'a> MysqlValue<'a> {
 #[derive(Debug, Clone, Copy)]
 #[non_exhaustive]
 pub enum NumericRepresentation<'a> {
-    /// Correponds to `MYSQL_TYPE_TINY`
+    /// Corresponds to `MYSQL_TYPE_TINY`
     Tiny(i8),
-    /// Correponds to `MYSQL_TYPE_SHORT`
+    /// Corresponds to `MYSQL_TYPE_SHORT`
     Small(i16),
-    /// Correponds to `MYSQL_TYPE_INT24` and `MYSQL_TYPE_LONG`
+    /// Corresponds to `MYSQL_TYPE_INT24` and `MYSQL_TYPE_LONG`
     Medium(i32),
-    /// Correponds to `MYSQL_TYPE_LONGLONG`
+    /// Corresponds to `MYSQL_TYPE_LONGLONG`
     Big(i64),
-    /// Correponds to `MYSQL_TYPE_FLOAT`
+    /// Corresponds to `MYSQL_TYPE_FLOAT`
     Float(f32),
-    /// Correponds to `MYSQL_TYPE_DOUBLE`
+    /// Corresponds to `MYSQL_TYPE_DOUBLE`
     Double(f64),
-    /// Correponds to `MYSQL_TYPE_DECIMAL` and `MYSQL_TYPE_NEWDECIMAL`
+    /// Corresponds to `MYSQL_TYPE_DECIMAL` and `MYSQL_TYPE_NEWDECIMAL`
     Decimal(&'a [u8]),
 }

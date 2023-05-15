@@ -118,5 +118,5 @@ pub fn embed_migrations(input: TokenStream) -> TokenStream {
     embed_migrations::expand(input.to_string())
         .to_string()
         .parse()
-        .expect("Failed create embedded migrations instance")
+        .expect("Failed to create embedded migrations instance")
 }

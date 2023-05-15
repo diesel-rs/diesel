@@ -18,11 +18,11 @@ pub fn expand(path: String) -> proc_macro2::TokenStream {
                 migrations_path_opt
             )
         });
-    let embeded_migrations =
+    let embedded_migrations =
         migration_literals_from_path(&migrations_expr).expect("Failed to read migration literals");
 
     quote! {
-        diesel_migrations::EmbeddedMigrations::new(&[#(#embeded_migrations,)*])
+        diesel_migrations::EmbeddedMigrations::new(&[#(#embedded_migrations,)*])
     }
 }
 

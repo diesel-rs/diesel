@@ -88,7 +88,7 @@ impl From<io::Error> for MigrationError {
 #[allow(clippy::enum_variant_names)]
 #[non_exhaustive]
 pub enum RunMigrationsError {
-    /// A general migration error occured
+    /// A general migration error occurred
     MigrationError(DieselMigrationName, MigrationError),
     /// The provided migration included an invalid query
     QueryError(DieselMigrationName, diesel::result::Error),

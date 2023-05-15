@@ -85,7 +85,7 @@ impl PgTypeMetadata {
         }))
     }
 
-    /// Create a new instance of this type based on dynamically lookup informations
+    /// Create a new instance of this type based on dynamically lookup information
     ///
     /// This function is useful for third party crates that may implement a custom
     /// postgres connection type and want to bring their own lookup mechanism.
@@ -126,7 +126,7 @@ impl TypeMetadata for Pg {
 impl SqlDialect for Pg {
     type ReturningClause = sql_dialect::returning_clause::PgLikeReturningClause;
 
-    type OnConflictClause = PgOnConflictClaues;
+    type OnConflictClause = PgOnConflictClause;
 
     type InsertWithDefaultKeyword = sql_dialect::default_keyword_for_insert::IsoSqlDefaultKeyword;
     type BatchInsertSupport = sql_dialect::batch_insert_support::PostgresLikeBatchInsertSupport;
@@ -138,18 +138,18 @@ impl SqlDialect for Pg {
     type SelectStatementSyntax = sql_dialect::select_statement_syntax::AnsiSqlSelectStatement;
 
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
-    type ArrayComparison = PgStyleArrayComparision;
+    type ArrayComparison = PgStyleArrayComparison;
 }
 
 impl DieselReserveSpecialization for Pg {}
 impl TrustedBackend for Pg {}
 
 #[derive(Debug, Copy, Clone)]
-pub struct PgOnConflictClaues;
+pub struct PgOnConflictClause;
 
-impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for PgOnConflictClaues {}
-impl sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere for PgOnConflictClaues {}
-impl sql_dialect::on_conflict_clause::PgLikeOnConflictClause for PgOnConflictClaues {}
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for PgOnConflictClause {}
+impl sql_dialect::on_conflict_clause::SupportsOnConflictClauseWhere for PgOnConflictClause {}
+impl sql_dialect::on_conflict_clause::PgLikeOnConflictClause for PgOnConflictClause {}
 
 #[derive(Debug, Copy, Clone)]
-pub struct PgStyleArrayComparision;
+pub struct PgStyleArrayComparison;

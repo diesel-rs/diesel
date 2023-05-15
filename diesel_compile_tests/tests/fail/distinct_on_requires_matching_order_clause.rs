@@ -64,7 +64,7 @@ fn main() {
         .then_order_by(users::name)
         .distinct_on(users::name);
 
-    // it's not possible to set a invalid order clause after we set
+    // it's not possible to set an invalid order clause after we set
     // the distinct on clause
     let _ = users::table.distinct_on(users::name).order_by(users::id);
 
@@ -83,7 +83,7 @@ fn main() {
         .distinct_on(users::name)
         .into_boxed();
 
-    // it's not possible to set a invalid order clause after we set
+    // it's not possible to set an invalid order clause after we set
     // the distinct on clause
     let _ = users::table
         .distinct_on(users::name)

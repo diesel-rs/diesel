@@ -1,5 +1,5 @@
 use crate::expression::array_comparison::{In, Many, MaybeEmpty, NotIn};
-use crate::pg::backend::PgStyleArrayComparision;
+use crate::pg::backend::PgStyleArrayComparison;
 use crate::pg::types::sql_types::Array;
 use crate::pg::Pg;
 use crate::query_builder::locking_clause::{
@@ -60,7 +60,7 @@ impl QueryFragment<Pg> for NoWait {
     }
 }
 
-impl<T, U> QueryFragment<Pg, PgStyleArrayComparision> for In<T, U>
+impl<T, U> QueryFragment<Pg, PgStyleArrayComparison> for In<T, U>
 where
     T: QueryFragment<Pg>,
     U: QueryFragment<Pg> + MaybeEmpty,
@@ -74,7 +74,7 @@ where
     }
 }
 
-impl<T, U> QueryFragment<Pg, PgStyleArrayComparision> for NotIn<T, U>
+impl<T, U> QueryFragment<Pg, PgStyleArrayComparison> for NotIn<T, U>
 where
     T: QueryFragment<Pg>,
     U: QueryFragment<Pg> + MaybeEmpty,
@@ -88,7 +88,7 @@ where
     }
 }
 
-impl<ST, I> QueryFragment<Pg, PgStyleArrayComparision> for Many<ST, I>
+impl<ST, I> QueryFragment<Pg, PgStyleArrayComparison> for Many<ST, I>
 where
     ST: SingleValue,
     Vec<I>: ToSql<Array<ST>, Pg>,
@@ -99,7 +99,7 @@ where
     }
 }
 
-impl<T, U> QueryFragment<Pg, crate::pg::backend::PgOnConflictClaues>
+impl<T, U> QueryFragment<Pg, crate::pg::backend::PgOnConflictClause>
     for DecoratedConflictTarget<T, U>
 where
     T: QueryFragment<Pg>,

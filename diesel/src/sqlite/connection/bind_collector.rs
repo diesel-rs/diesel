@@ -16,7 +16,7 @@ impl SqliteBindCollector<'_> {
 }
 
 /// This type represents a value bound to
-/// an sqlite prepared statement
+/// a sqlite prepared statement
 ///
 /// It can be constructed via the various `From<T>` implementations
 #[derive(Debug)]

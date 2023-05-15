@@ -213,7 +213,7 @@ impl Drop for Statement {
 }
 
 // A warning for future editors:
-// Changing this code to something "simplier" may
+// Changing this code to something "simpler" may
 // introduce undefined behaviour. Make sure you read
 // the following discussions for details about
 // the current version:
@@ -223,7 +223,7 @@ impl Drop for Statement {
 // * https://github.com/rust-lang/unsafe-code-guidelines/issues/194
 struct BoundStatement<'stmt, 'query> {
     statement: MaybeCached<'stmt, Statement>,
-    // we need to store the query here to ensure noone does
+    // we need to store the query here to ensure none does
     // drop it till the end ot the statement
     // We use a boxed queryfragment here just to erase the
     // generic type, we use NonNull to communicate
@@ -306,7 +306,7 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
             let res = unsafe { self.statement.bind(tpe, bind, bind_idx) }?;
 
             // it's important to push these only after
-            // the call to bind succeded, otherwise we might attempt to
+            // the call to bind succeeded, otherwise we might attempt to
             // call bind to an non-existing bind position in
             // the destructor
             if let Some(ptr) = res {

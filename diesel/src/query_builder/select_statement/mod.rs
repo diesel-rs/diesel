@@ -88,7 +88,7 @@ pub struct SelectStatement<
     pub(crate) group_by: GroupBy,
     /// The having clause of the query
     pub(crate) having: Having,
-    /// The locking clauise of the query
+    /// The locking clause of the query
     pub(crate) locking: Locking,
 }
 

@@ -146,7 +146,7 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
    |          required by a bound introduced by this call
    |
    = help: the trait `QueryFragment<Mysql, mysql::backend::MysqlOnConflictClause>` is implemented for `diesel::query_builder::upsert::on_conflict_target::ConflictTarget<DuplicatedKeys>`
-   = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClaues>`
+   = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
    = note: 2 redundant requirements hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `QueryFragment<Pg>`
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
@@ -198,7 +198,7 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)> as QueryFragment<_DB, _SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)> as QueryFragment<_DB, _SP>>
            and $N others
-   = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClaues>`
+   = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
    = note: 2 redundant requirements hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `QueryFragment<Pg>`
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`
@@ -250,7 +250,7 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::on_conflict_target
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5)> as QueryFragment<_DB, _SP>>
              <diesel::query_builder::upsert::on_conflict_target::ConflictTarget<(_T, T0, T1, T2, T3, T4, T5, T6)> as QueryFragment<_DB, _SP>>
            and $N others
-   = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClaues>`
+   = note: required for `OnConflictValues<ValuesClause<(ColumnInsertValue<id, Bound<Integer, i32>>, ...), ...>, ..., ...>` to implement `QueryFragment<Pg, pg::backend::PgOnConflictClause>`
    = note: 2 redundant requirements hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `QueryFragment<Pg>`
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<(ColumnInsertValue<id, ...>, ...), ...>, ..., ...>>` to implement `ExecuteDsl<diesel::PgConnection, Pg>`

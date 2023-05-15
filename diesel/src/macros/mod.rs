@@ -68,7 +68,7 @@ pub use diesel_derives::table_proc as table;
 ///
 /// * `child_table` is the Table with the Foreign key.
 ///
-/// So given the Table decaration from [Associations docs](crate::associations)
+/// So given the Table declaration from [Associations docs](crate::associations)
 ///
 /// * The parent table would be `User`
 /// * The child table would be `Post`
@@ -249,7 +249,7 @@ macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_q
 #[macro_export]
 #[cfg(not(feature = "postgres_backend"))]
 macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_query {
-    ($left:ident, $rigth:ident) => {};
+    ($left:ident, $right:ident) => {};
 }
 
 #[doc(hidden)]
@@ -633,7 +633,7 @@ mod tests {
             }
         }
 
-        // allow using table::collumn
+        // allow using table::column
         allow_columns_to_appear_in_same_group_by_clause!(a::b, b::a, a::d,);
 
         // allow using full paths
