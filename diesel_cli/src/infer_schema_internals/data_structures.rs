@@ -40,8 +40,7 @@ impl ColumnType {
             c.max_length
                 .as_ref()
                 .map(|l| {
-                    l.len
-                        .base10_parse::<u64>()
+                    l.base10_parse::<u64>()
                         .map_err(|e| -> Box<dyn Error + Send + Sync> {
                             format!("Column length litteral can't be parsed as u64: {e}").into()
                         })
@@ -114,9 +113,6 @@ impl fmt::Display for ColumnType {
         }
         if self.is_nullable {
             write!(out, ">")?;
-        }
-        if let Some(max_length) = self.max_length {
-            write!(out, " {{{}}}", max_length)?;
         }
         Ok(())
     }

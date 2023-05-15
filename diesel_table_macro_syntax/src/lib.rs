@@ -2,16 +2,15 @@ use syn::spanned::Spanned;
 use syn::Ident;
 use syn::MetaNameValue;
 
-#[allow(dead_code)] // punct and brace_token is currently unused
 pub struct TableDecl {
     pub use_statements: Vec<syn::ItemUse>,
     pub meta: Vec<syn::Attribute>,
     pub schema: Option<Ident>,
-    punct: Option<syn::Token![.]>,
+    _punct: Option<syn::Token![.]>,
     pub sql_name: String,
     pub table_name: Ident,
     pub primary_keys: Option<PrimaryKey>,
-    brace_token: syn::token::Brace,
+    _brace_token: syn::token::Brace,
     pub column_defs: syn::punctuated::Punctuated<ColumnDef, syn::Token![,]>,
 }
 
@@ -21,47 +20,13 @@ pub struct PrimaryKey {
     pub keys: syn::punctuated::Punctuated<Ident, syn::Token![,]>,
 }
 
-#[allow(dead_code)] // arrow is currently unused
 pub struct ColumnDef {
     pub meta: Vec<syn::Attribute>,
     pub column_name: Ident,
     pub sql_name: String,
-    arrow: syn::Token![->],
+    _arrow: syn::Token![->],
     pub tpe: syn::TypePath,
-    pub max_length: Option<ColumnMaxLength>,
-}
-
-#[allow(dead_code)] // paren_token is currently unused
-pub struct ColumnMaxLength {
-    brace_token: syn::token::Brace,
-    pub len: syn::LitInt,
-}
-
-#[allow(dead_code)] // eq is currently unused
-struct SqlNameAttribute {
-    eq: syn::Token![=],
-    lit: syn::LitStr,
-}
-impl SqlNameAttribute {
-    fn from_attribute(element: syn::Attribute) -> Result<Self, syn::Error> {
-        if let syn::Meta::NameValue(MetaNameValue {
-            eq_token,
-            value:
-                syn::Expr::Lit(syn::ExprLit {
-                    lit: syn::Lit::Str(lit),
-                    ..
-                }),
-            ..
-        }) = element.meta
-        {
-            Ok(SqlNameAttribute { eq: eq_token, lit })
-        } else {
-            Err(syn::Error::new(
-                element.span(),
-                "Invalid `#[sql_name = \"column_name\"]` attribute",
-            ))
-        }
-    }
+    pub max_length: Option<syn::LitInt>,
 }
 
 impl syn::parse::Parse for TableDecl {
@@ -75,7 +40,7 @@ impl syn::parse::Parse for TableDecl {
                 break;
             };
         }
-        let meta = syn::Attribute::parse_outer(buf)?;
+        let mut meta = syn::Attribute::parse_outer(buf)?;
         let fork = buf.fork();
         let (schema, punct, table_name) = if parse_table_with_schema(&fork).is_ok() {
             let (schema, punct, table_name) = parse_table_with_schema(buf)?;
@@ -93,16 +58,16 @@ impl syn::parse::Parse for TableDecl {
         let content;
         let brace_token = syn::braced!(content in buf);
         let column_defs = syn::punctuated::Punctuated::parse_terminated(&content)?;
-        let (sql_name, meta) = get_sql_name(meta, &table_name)?;
+        let sql_name = get_sql_name(&mut meta, &table_name)?;
         Ok(Self {
             use_statements,
             meta,
             table_name,
             primary_keys,
-            brace_token,
+            _brace_token: brace_token,
             column_defs,
             sql_name,
-            punct,
+            _punct: punct,
             schema,
         })
     }
@@ -119,41 +84,25 @@ impl syn::parse::Parse for PrimaryKey {
 
 impl syn::parse::Parse for ColumnDef {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let meta = syn::Attribute::parse_outer(input)?;
-        let column_name = input.parse()?;
-        let arrow = input.parse()?;
-        let tpe = input.parse()?;
-        let max_length = if input.fork().parse::<ColumnMaxLength>().is_ok() {
-            Some(input.parse()?)
-        } else {
-            None
-        };
-        let (sql_name, meta) = get_sql_name(meta, &column_name)?;
+        let mut meta = syn::Attribute::parse_outer(input)?;
+        let column_name: syn::Ident = input.parse()?;
+        let _arrow: syn::Token![->] = input.parse()?;
+        let tpe: syn::TypePath = input.parse()?;
+
+        let sql_name = get_sql_name(&mut meta, &column_name)?;
+        let max_length = take_lit(&mut meta, "max_length", |lit| match lit {
+            syn::Lit::Int(lit_int) => Some(lit_int),
+            _ => None,
+        })?;
+
         Ok(Self {
             meta,
             column_name,
-            arrow,
+            _arrow,
             tpe,
             max_length,
             sql_name,
         })
-    }
-}
-
-impl syn::parse::Parse for ColumnMaxLength {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let content;
-        let brace_token = syn::braced!(content in input);
-        let len = content.parse()?;
-        Ok(Self { brace_token, len })
-    }
-}
-
-impl syn::parse::Parse for SqlNameAttribute {
-    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let eq = input.parse()?;
-        let lit = input.parse()?;
-        Ok(Self { eq, lit })
     }
 }
 
@@ -164,19 +113,51 @@ pub fn parse_table_with_schema(
 }
 
 fn get_sql_name(
-    mut meta: Vec<syn::Attribute>,
-    ident: &syn::Ident,
-) -> Result<(String, Vec<syn::Attribute>), syn::Error> {
-    if let Some(pos) = meta.iter().position(|m| {
+    meta: &mut Vec<syn::Attribute>,
+    fallback_ident: &syn::Ident,
+) -> Result<String, syn::Error> {
+    Ok(
+        match take_lit(meta, "sql_name", |lit| match lit {
+            syn::Lit::Str(lit_str) => Some(lit_str),
+            _ => None,
+        })? {
+            None => fallback_ident.to_string(),
+            Some(str_lit) => str_lit.value(),
+        },
+    )
+}
+
+fn take_lit<O, F>(
+    meta: &mut Vec<syn::Attribute>,
+    attribute_name: &'static str,
+    extraction_fn: F,
+) -> Result<Option<O>, syn::Error>
+where
+    F: FnOnce(syn::Lit) -> Option<O>,
+{
+    if let Some(index) = meta.iter().position(|m| {
         m.path()
             .get_ident()
-            .map(|i| i == "sql_name")
+            .map(|i| i == attribute_name)
             .unwrap_or(false)
     }) {
-        let element = meta.remove(pos);
-        let inner = SqlNameAttribute::from_attribute(element)?;
-        Ok((inner.lit.value(), meta))
-    } else {
-        Ok((ident.to_string(), meta))
+        let attribute = meta.remove(index);
+        let span = attribute.span();
+        let extraction_after_finding_attr = if let syn::Meta::NameValue(MetaNameValue {
+            value: syn::Expr::Lit(syn::ExprLit { lit, .. }),
+            ..
+        }) = attribute.meta
+        {
+            extraction_fn(lit)
+        } else {
+            None
+        };
+        return Ok(Some(extraction_after_finding_attr.ok_or_else(|| {
+            syn::Error::new(
+                span,
+                format_args!("Invalid `#[sql_name = {attribute_name:?}]` attribute"),
+            )
+        })?));
     }
+    Ok(None)
 }

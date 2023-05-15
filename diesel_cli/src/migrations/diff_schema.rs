@@ -242,6 +242,7 @@ fn is_same_type(ty: &ColumnType, tpe: ColumnType) -> bool {
     if ty.is_array != tpe.is_array
         || ty.is_nullable != tpe.is_nullable
         || ty.is_unsigned != tpe.is_unsigned
+        || ty.max_length != tpe.max_length
     {
         return false;
     }
@@ -550,6 +551,9 @@ where
 {
     // TODO: handle schema
     query_builder.push_sql(&format!(" {}", ty.sql_name.to_uppercase()));
+    if let Some(max_length) = ty.max_length {
+        query_builder.push_sql(&format!("({max_length})"));
+    }
     if !ty.is_nullable {
         query_builder.push_sql(" NOT NULL");
     }

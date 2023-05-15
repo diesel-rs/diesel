@@ -27,8 +27,10 @@ diesel::table! {
         decimal_col -> Numeric,
         varchar_col -> Varchar,
         varchar2_col -> Varchar,
-        char_col -> Bpchar {1},
-        bit_col -> Bit {1},
+        #[max_length = 1]
+        char_col -> Bpchar,
+        #[max_length = 1]
+        bit_col -> Bit,
         cidr_col -> Cidr,
         inet_col -> Inet,
         jsonb_col -> Jsonb,
