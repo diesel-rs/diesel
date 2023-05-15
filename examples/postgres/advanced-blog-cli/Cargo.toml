@@ -5,11 +5,11 @@ edition = "2018"
 publish = false
 
 [dependencies]
-bcrypt = "0.10.1"
+bcrypt = "0.14.0"
 chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
 diesel = { version = "2.0.0", path = "../../../diesel", features = ["postgres", "chrono"] }
 dotenvy = "0.15"
-structopt = "0.3"
+clap = { version = "4.2.7", features = ["derive"] }
 tempfile = "3.1.0"
 
 [dev-dependencies]
