@@ -367,7 +367,7 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let p = p.build();
 
     p.command("setup").run();
-    p.create_migration("12345_create_schema", &schema, None);
+    p.create_migration("12345_create_schema", &schema, None, None);
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 

@@ -50,6 +50,7 @@ fn database_setup_runs_migrations_if_no_schema_table() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // sanity check
@@ -97,6 +98,7 @@ fn database_setup_respects_migration_dir_by_arg_to_database() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // sanity check
@@ -129,6 +131,7 @@ fn database_setup_respects_migration_dir_by_arg() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // sanity check
@@ -161,6 +164,7 @@ fn database_setup_respects_migration_dir_by_env() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // sanity check
@@ -200,6 +204,7 @@ fn database_setup_respects_migrations_dir_from_diesel_toml() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // sanity check
