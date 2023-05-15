@@ -1,7 +1,7 @@
 use chrono::Utc;
 use clap::ArgMatches;
 use diesel::backend::Backend;
-use diesel::migration::MigrationSource;
+use diesel::migration::{Migration, MigrationSource};
 use diesel::Connection;
 use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationError, MigrationHarness};
 use std::any::Any;
@@ -263,8 +263,11 @@ pub fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
 /// Reverts all the migrations, and then runs them again, if the `--all`
 /// argument is used. Otherwise it only redoes a specific number of migrations
 /// if the `--number` argument is used.
-/// Migrations are performed in a transaction. If either part fails,
+/// We try to execute the migrations in a single transaction so that f either part fails,
 /// the transaction is not committed.
+/// If the list of migrations that need to be redone contains a single migration
+/// with `run_in_transaction = false` or if the backend is MySQL we cannot use a
+/// transaction.
 fn redo_migrations<Conn, DB>(
     conn: &mut Conn,
     migrations_dir: FileBasedMigrations,
@@ -273,55 +276,79 @@ fn redo_migrations<Conn, DB>(
     DB: Backend,
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
 {
-    let migrations_inner = |harness: &mut HarnessWithOutput<Conn, _>| -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-        let reverted_versions = if args.get_flag("REDO_ALL") {
-            harness.revert_all_migrations(migrations_dir.clone())?
-        } else {
-            let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
-            (0..*number)
-                .filter_map(|_|{
-                    match harness.revert_last_migration(migrations_dir.clone()) {
-                        Ok(v) => {
-                            Some(Ok(v))
-                        }
-                        Err(e) if e.is::<MigrationError>() => {
-                            match e.downcast_ref::<MigrationError>() {
-                                // If n is larger then the actual number of migrations,
-                                // just stop reverting them
-                                Some(MigrationError::NoMigrationRun) => None,
-                                _ => Some(Err(e)),
+    let migrations = MigrationSource::<DB>::migrations(&migrations_dir)
+        .unwrap_or_else(handle_error)
+        .into_iter()
+        .map(|m| (m.name().version().as_owned(), m))
+        .collect::<HashMap<_, _>>();
+    let applied_migrations = conn.applied_migrations().unwrap_or_else(handle_error);
+    let versions_to_revert = if args.get_flag("REDO_ALL") {
+        &applied_migrations
+    } else {
+        let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
+        let number = std::cmp::min(*number as usize, applied_migrations.len());
+        &applied_migrations[..number]
+    };
+    let should_use_not_use_transaction = versions_to_revert.iter().any(|v| {
+        migrations
+            .get(v)
+            .map(|m| !m.metadata().run_in_transaction())
+            .unwrap_or_default()
+    });
+
+    let migrations_inner =
+        |harness: &mut HarnessWithOutput<Conn, _>|
+         -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+            // revert all the migrations
+            let reverted_versions = if args.get_flag("REDO_ALL") {
+                harness.revert_all_migrations(migrations_dir.clone())?
+            } else {
+                let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
+                (0..*number)
+                    .filter_map(|_| {
+                        match harness.revert_last_migration(migrations_dir.clone()) {
+                            Ok(v) => Some(Ok(v)),
+                            Err(e) if e.is::<MigrationError>() => {
+                                match e.downcast_ref::<MigrationError>() {
+                                    // If n is larger then the actual number of migrations,
+                                    // just stop reverting them
+                                    Some(MigrationError::NoMigrationRun) => None,
+                                    _ => Some(Err(e)),
+                                }
                             }
+                            Err(e) => Some(Err(e)),
                         }
-                        Err(e) => {
-                            Some(Err(e))
-                        }
-                    }
+                    })
+                    .collect::<Result<Vec<_>, _>>()?
+            };
+
+            // get a mapping between migrations and migration versions
+             let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)
+                 .unwrap_or_else(handle_error)
+                 .into_iter()
+                 .map(|m| (m.name().version().as_owned(), m))
+                 .collect::<HashMap<_, _>>();
+
+            // build a list of migrations that need to be applied
+            let mut migrations = reverted_versions
+                .into_iter()
+                .map(|v| {
+                    migrations
+                        .remove(&v)
+                        .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.as_owned()))
                 })
-                .collect::<Result<Vec<_>, _>>()?
+                .collect::<Result<Vec<_>, _>>()?;
+
+            // Sort the migrations by version to apply them in order.
+            migrations.sort_by_key(|m| m.name().version().as_owned());
+
+            // apply all outstanding migrations
+            harness.run_migrations(&migrations)?;
+
+            Ok(())
         };
 
-        let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)?
-            .into_iter()
-            .map(|m| (m.name().version().as_owned(), m))
-            .collect::<HashMap<_, _>>();
-
-        let mut migrations = reverted_versions
-            .into_iter()
-            .map(|v| {
-                migrations
-                    .remove(&v)
-                    .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.as_owned()))
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        // Sort the migrations by version to apply them in order.
-        migrations.sort_by_key(|m| m.name().version().as_owned());
-
-        harness.run_migrations(&migrations)?;
-
-        Ok(())
-    };
-
-    if should_redo_migration_in_transaction(conn) {
+    if !should_use_not_use_transaction && should_redo_migration_in_transaction(conn) {
         conn.transaction(|conn| migrations_inner(&mut HarnessWithOutput::write_to_stdout(conn)))
             .unwrap_or_else(handle_error);
     } else {

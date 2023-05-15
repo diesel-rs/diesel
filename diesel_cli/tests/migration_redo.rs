@@ -7,6 +7,7 @@ fn migration_redo_runs_the_last_migration_down_and_up() {
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
         Some("DROP TABLE users;"),
+        None,
     );
 
     // Make sure the project is setup
@@ -38,18 +39,21 @@ fn migration_redo_runs_the_last_two_migrations_down_and_up() {
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -88,6 +92,7 @@ fn migration_redo_respects_migration_dir_var() {
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
         Some("DROP TABLE users;"),
+        None,
     );
 
     // Make sure the project is setup
@@ -121,6 +126,7 @@ fn migration_redo_respects_migration_dir_env() {
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
         Some("DROP TABLE users;"),
+        None,
     );
 
     // Make sure the project is setup
@@ -154,6 +160,7 @@ fn error_migrations_fails() {
         "redo_error_migrations_fails",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
         Some("DROP TABLE users};"),
+        None,
     );
 
     // Make sure the project is setup
@@ -185,6 +192,7 @@ fn migration_redo_respects_migrations_dir_from_diesel_toml() {
         "12345_create_users_table",
         "CREATE TABLE users (id INTEGER PRIMARY KEY);",
         Some("DROP TABLE users;"),
+        None,
     );
 
     // Make sure the project is setup
@@ -216,18 +224,21 @@ fn migration_redo_all_runs_all_migrations_down_and_up() {
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -269,18 +280,21 @@ fn migration_redo_with_more_than_max_should_redo_all() {
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -356,6 +370,7 @@ fn migration_redo_with_zero_should_not_revert_any_migration() {
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE customers"),
+        None,
     );
 
     // Make sure the project is setup
@@ -368,4 +383,122 @@ fn migration_redo_with_zero_should_not_revert_any_migration() {
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     assert!(result.stdout() == "");
+}
+
+#[cfg(not(feature = "mysql"))] // mysql does not support DDL + Transactions
+#[test]
+fn migration_redo_without_transaction() {
+    let p = project("migration_redo_without_transaction")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2023-05-08-210424_without_transaction",
+        "BEGIN TRANSACTION;CREATE TABLE customers ( id INTEGER PRIMARY KEY );COMMIT TRANSACTION;",
+        Some("BEGIN TRANSACTION;DROP TABLE customers; COMMIT TRANSACTION;"),
+        Some("run_in_transaction = false"),
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+
+    // Should not revert any migration.
+    let result = p.command("migration").arg("redo").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout()
+            == "Rolling back migration 2023-05-08-210424_without_transaction\n\
+                                Running migration 2023-05-08-210424_without_transaction\n"
+    );
+    assert!(db.table_exists("customers"));
+}
+
+#[cfg(not(feature = "mysql"))] // mysql does not support DDL + Transactions
+#[test]
+fn migration_redo_without_transaction_twice() {
+    let p = project("migration_redo_without_transaction_twice")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2023-05-08-210424_without_transaction",
+        "BEGIN TRANSACTION;CREATE TABLE customers ( id INTEGER PRIMARY KEY );COMMIT TRANSACTION;",
+        Some("BEGIN TRANSACTION;DROP TABLE customers; COMMIT TRANSACTION;"),
+        Some("run_in_transaction = false"),
+    );
+
+    p.create_migration(
+        "2023-05-08-210425_without_transaction2",
+        "BEGIN TRANSACTION;CREATE TABLE customers2 ( id INTEGER PRIMARY KEY );COMMIT TRANSACTION;",
+        Some("BEGIN TRANSACTION;DROP TABLE customers2; COMMIT TRANSACTION;"),
+        Some("run_in_transaction = false"),
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("customers2"));
+
+    // Should not revert any migration.
+    let result = p.command("migration").arg("redo").arg("-n").arg("2").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout()
+            == "Rolling back migration 2023-05-08-210425_without_transaction2\n\
+                Rolling back migration 2023-05-08-210424_without_transaction\n\
+                Running migration 2023-05-08-210424_without_transaction\n\
+                Running migration 2023-05-08-210425_without_transaction2\n"
+    );
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("customers2"));
+}
+
+#[cfg(not(feature = "mysql"))] // mysql does not support DDL + Transactions
+#[test]
+fn migration_redo_without_transaction_all() {
+    let p = project("migration_redo_without_transaction_all")
+        .folder("migrations")
+        .build();
+    let db = database(&p.database_url());
+
+    p.create_migration(
+        "2023-05-08-210424_without_transaction",
+        "BEGIN TRANSACTION;CREATE TABLE customers ( id INTEGER PRIMARY KEY );COMMIT TRANSACTION;",
+        Some("BEGIN TRANSACTION;DROP TABLE customers; COMMIT TRANSACTION;"),
+        Some("run_in_transaction = false"),
+    );
+
+    p.create_migration(
+        "2023-05-08-210425_without_transaction2",
+        "BEGIN TRANSACTION;CREATE TABLE customers2 ( id INTEGER PRIMARY KEY );COMMIT TRANSACTION;",
+        Some("BEGIN TRANSACTION;DROP TABLE customers2; COMMIT TRANSACTION;"),
+        Some("run_in_transaction = false"),
+    );
+
+    // Make sure the project is setup
+    p.command("setup").run();
+
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("customers2"));
+
+    // Should not revert any migration.
+    let result = p.command("migration").arg("redo").arg("--all").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(
+        result.stdout()
+            == "Rolling back migration 2023-05-08-210425_without_transaction2\n\
+                Rolling back migration 2023-05-08-210424_without_transaction\n\
+                Running migration 2023-05-08-210424_without_transaction\n\
+                Running migration 2023-05-08-210425_without_transaction2\n"
+    );
+    assert!(db.table_exists("customers"));
+    assert!(db.table_exists("customers2"));
 }
