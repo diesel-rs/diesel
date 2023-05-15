@@ -14,17 +14,16 @@
     clippy::used_underscore_binding,
     missing_copy_implementations
 )]
+#![cfg_attr(feature = "nightly", feature(proc_macro_diagnostic))]
 
+extern crate diesel_table_macro_syntax;
 extern crate proc_macro;
 extern crate proc_macro2;
 extern crate quote;
-#[macro_use]
 extern crate syn;
-#[macro_use]
-extern crate proc_macro_error;
-extern crate diesel_table_macro_syntax;
 
 use proc_macro::TokenStream;
+use syn::parse_macro_input;
 
 mod attrs;
 mod deprecated;
@@ -103,7 +102,6 @@ mod valid_grouping;
 ///    field type, Diesel will convert the field into `SomeType` using `.into` and
 ///    serialize that instead. By default, this derive will serialize directly using
 ///    the actual field type.
-#[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(
@@ -116,7 +114,9 @@ mod valid_grouping;
     proc_macro_derive(AsChangeset, attributes(diesel))
 )]
 pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
-    as_changeset::derive(parse_macro_input!(input)).into()
+    as_changeset::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implements all required variants of `AsExpression`
@@ -146,7 +146,6 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 ///
 /// * `#[diesel(not_sized)]`, to skip generating impls that require
 ///    that the type is `Sized`
-#[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(AsExpression, attributes(diesel, sql_type))
@@ -156,7 +155,9 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
     proc_macro_derive(AsExpression, attributes(diesel))
 )]
 pub fn derive_as_expression(input: TokenStream) -> TokenStream {
-    as_expression::derive(parse_macro_input!(input)).into()
+    as_expression::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implement required traits for the associations API
@@ -193,7 +194,6 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column the current
 ///    field maps to `some_column_name`. By default, the field name is used
 ///    as a column name.
-#[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))
@@ -203,7 +203,9 @@ pub fn derive_as_expression(input: TokenStream) -> TokenStream {
     proc_macro_derive(Associations, attributes(diesel, belongs_to, column_name, table_name))
 )]
 pub fn derive_associations(input: TokenStream) -> TokenStream {
-    associations::derive(parse_macro_input!(input)).into()
+    associations::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implement numeric operators for the current query node
@@ -218,10 +220,11 @@ pub fn derive_diesel_numeric_ops(input: TokenStream) -> TokenStream {
 /// into rust types not supported by Diesel itself.
 ///
 /// There are no options or special considerations needed for this derive.
-#[proc_macro_error]
 #[proc_macro_derive(FromSqlRow, attributes(diesel))]
 pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
-    from_sql_row::derive(parse_macro_input!(input)).into()
+    from_sql_row::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implements `Identifiable` for references of the current type
@@ -260,7 +263,6 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
 /// * `#[diesel(column_name = some_column_name)]`, overrides the column the current
 ///    field maps to `some_column_name`. By default, the field name is used
 ///    as a column name.
-#[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Identifiable, attributes(diesel, table_name, column_name, primary_key))
@@ -270,7 +272,9 @@ pub fn derive_from_sql_row(input: TokenStream) -> TokenStream {
     proc_macro_derive(Identifiable, attributes(diesel))
 )]
 pub fn derive_identifiable(input: TokenStream) -> TokenStream {
-    identifiable::derive(parse_macro_input!(input)).into()
+    identifiable::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implements `Insertable`
@@ -394,7 +398,6 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 /// # Ok(())
 /// # }
 /// ```
-#[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Insertable, attributes(diesel, table_name, column_name))
@@ -404,7 +407,9 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
     proc_macro_derive(Insertable, attributes(diesel))
 )]
 pub fn derive_insertable(input: TokenStream) -> TokenStream {
-    insertable::derive(parse_macro_input!(input)).into()
+    insertable::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implements `QueryId`
@@ -441,7 +446,6 @@ pub fn derive_insertable(input: TokenStream) -> TokenStream {
 /// meaning that `HAS_STATIC_QUERY_ID` should always be false,
 /// you shouldn't derive this trait.
 /// In that case, you should implement it manually instead.
-#[proc_macro_error]
 #[proc_macro_derive(QueryId)]
 pub fn derive_query_id(input: TokenStream) -> TokenStream {
     query_id::derive(parse_macro_input!(input)).into()
@@ -608,7 +612,6 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
 /// #     Ok(())
 /// # }
 /// ```
-#[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(Queryable, attributes(diesel, column_name))
@@ -618,7 +621,9 @@ pub fn derive_query_id(input: TokenStream) -> TokenStream {
     proc_macro_derive(Queryable, attributes(diesel))
 )]
 pub fn derive_queryable(input: TokenStream) -> TokenStream {
-    queryable::derive(parse_macro_input!(input)).into()
+    queryable::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implements `QueryableByName` for untyped sql queries, such as that one generated
@@ -656,6 +661,13 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///    columns for the specified table. The path is relative to the current module.
 ///    If no field attributes are specified the derive will use the sql type of
 ///    the corresponding column.
+/// * `#[diesel(check_for_backend(diesel::pg::Pg, diesel::mysql::Mysql))]`, instructs
+///    the derive to generate additional code to identify potential type mismatches.
+///    It accepts a list of backend types to check the types against. Using this option
+///    will result in much better error messages in cases where some types in your `QueryableByName`
+///    struct don't match. You need to specify the concrete database backend
+///    this specific struct is indented to be used with, as otherwise rustc can't correctly
+///    identify the required deserialization implementation.
 ///
 /// ## Optional field attributes
 ///
@@ -730,7 +742,7 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 ///     DB: Backend,
 ///     String: FromSql<ST, DB>,
 /// {
-///     fn from_sql(bytes: backend::RawValue<DB>) -> deserialize::Result<Self> {
+///     fn from_sql(bytes: DB::RawValue<'_>) -> deserialize::Result<Self> {
 ///         String::from_sql(bytes)
 ///             .map(|s| LowercaseString(s.to_lowercase()))
 ///     }
@@ -802,7 +814,6 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
 /// #     Ok(())
 /// # }
 /// ```
-#[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(QueryableByName, attributes(diesel, table_name, column_name, sql_type))
@@ -812,7 +823,9 @@ pub fn derive_queryable(input: TokenStream) -> TokenStream {
     proc_macro_derive(QueryableByName, attributes(diesel))
 )]
 pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
-    queryable_by_name::derive(parse_macro_input!(input)).into()
+    queryable_by_name::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implements `Selectable`
@@ -871,10 +884,11 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 /// * `#[diesel(select_expression_type = the_custom_select_expression_type]`, to be used
 ///   in conjunction with `select_expression` (described above).
 ///   For example: `#[diesel(select_expression_type = dsl::IsNotNull<my_table::some_field>)]`
-#[proc_macro_error]
 #[proc_macro_derive(Selectable, attributes(diesel))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
-    selectable::derive(parse_macro_input!(input)).into()
+    selectable::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implement necessary traits for adding a new sql type
@@ -915,7 +929,6 @@ pub fn derive_selectable(input: TokenStream) -> TokenStream {
 /// * `#[diesel(mysql_type(name = "TypeName"))]`, specifies support for a mysql type
 ///    with the given name. `TypeName` needs to be one of the possible values
 ///    in `MysqlType`
-#[proc_macro_error]
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(SqlType, attributes(diesel, postgres, sqlite_type, mysql_type))
@@ -925,7 +938,9 @@ pub fn derive_selectable(input: TokenStream) -> TokenStream {
     proc_macro_derive(SqlType, attributes(diesel))
 )]
 pub fn derive_sql_type(input: TokenStream) -> TokenStream {
-    sql_type::derive(parse_macro_input!(input)).into()
+    sql_type::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Implements `ValidGrouping`
@@ -967,10 +982,11 @@ pub fn derive_sql_type(input: TokenStream) -> TokenStream {
 ///
 /// * `#[diesel(aggregate)]` for cases where the type represents an aggregating
 ///    SQL expression
-#[proc_macro_error]
 #[proc_macro_derive(ValidGrouping, attributes(diesel))]
 pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
-    valid_grouping::derive(parse_macro_input!(input)).into()
+    valid_grouping::derive(parse_macro_input!(input))
+        .unwrap_or_else(syn::Error::into_compile_error)
+        .into()
 }
 
 /// Declare a sql function for use in your code.
@@ -1141,7 +1157,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// sql_function!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
 ///
 /// # #[cfg(feature = "sqlite")]
-/// # fn run_test() -> Result<(), Box<::std::error::Error>> {
+/// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
 /// let connection = &mut SqliteConnection::establish(":memory:")?;
 ///
 /// add_mul::register_impl(connection, |x: i32, y: i32, z: f64| {

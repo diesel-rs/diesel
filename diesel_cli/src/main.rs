@@ -308,6 +308,19 @@ fn regenerate_schema_if_file_specified(
     Ok(())
 }
 
+fn supported_backends() -> String {
+    let features = &[
+        #[cfg(feature = "postgres")]
+        "postgres",
+        #[cfg(feature = "mysql")]
+        "mysql",
+        #[cfg(feature = "sqlite")]
+        "sqlite",
+    ];
+
+    features.join(" ")
+}
+
 #[cfg(test)]
 mod tests {
     extern crate tempfile;

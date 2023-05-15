@@ -1,29 +1,36 @@
-use attrs::AttributeSpanWrapper;
-use field::Field;
-use model::Model;
+use crate::attrs::AttributeSpanWrapper;
+use crate::field::Field;
+use crate::model::Model;
+use crate::util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
 use proc_macro2::TokenStream;
+use quote::quote;
 use quote::quote_spanned;
-use syn::{DeriveInput, Expr, Path, Type};
-use util::{inner_of_option_ty, is_option_ty, wrap_in_dummy_mod};
+use syn::parse_quote;
+use syn::{DeriveInput, Expr, Path, Result, Type};
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false, true);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, false, true)?;
 
     let tokens = model
         .table_names()
         .iter()
-        .map(|table_name| derive_into_single_table(&item, &model, table_name));
+        .map(|table_name| derive_into_single_table(&item, &model, table_name))
+        .collect::<Result<Vec<_>>>()?;
 
-    wrap_in_dummy_mod(quote! {
+    Ok(wrap_in_dummy_mod(quote! {
         use diesel::insertable::Insertable;
         use diesel::internal::derives::insertable::UndecoratedInsertRecord;
         use diesel::prelude::*;
 
         #(#tokens)*
-    })
+    }))
 }
 
-fn derive_into_single_table(item: &DeriveInput, model: &Model, table_name: &Path) -> TokenStream {
+fn derive_into_single_table(
+    item: &DeriveInput,
+    model: &Model,
+    table_name: &Path,
+) -> Result<TokenStream> {
     let treat_none_as_default_value = model.treat_none_as_default_value();
     let struct_name = &item.ident;
 
@@ -50,25 +57,25 @@ fn derive_into_single_table(item: &DeriveInput, model: &Model, table_name: &Path
                     table_name,
                     None,
                     treat_none_as_default_value,
-                ));
+                )?);
                 direct_field_assign.push(field_expr(
                     field,
                     table_name,
                     None,
                     treat_none_as_default_value,
-                ));
+                )?);
                 ref_field_ty.push(field_ty(
                     field,
                     table_name,
                     Some(quote!(&'insert)),
                     treat_none_as_default_value,
-                ));
+                )?);
                 ref_field_assign.push(field_expr(
                     field,
                     table_name,
                     Some(quote!(&)),
                     treat_none_as_default_value,
-                ));
+                )?);
             }
             (Some(AttributeSpanWrapper { item: ty, .. }), false) => {
                 direct_field_ty.push(field_ty_serialize_as(
@@ -76,21 +83,21 @@ fn derive_into_single_table(item: &DeriveInput, model: &Model, table_name: &Path
                     table_name,
                     ty,
                     treat_none_as_default_value,
-                ));
+                )?);
                 direct_field_assign.push(field_expr_serialize_as(
                     field,
                     table_name,
                     ty,
                     treat_none_as_default_value,
-                ));
+                )?);
 
                 generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of Insertable for borrowed structs
             }
             (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
-                abort!(
-                    attribute_span,
-                    "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`"
-                )
+                return Err(syn::Error::new(
+                    *attribute_span,
+                    "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`",
+                ));
             }
         }
     }
@@ -128,7 +135,7 @@ fn derive_into_single_table(item: &DeriveInput, model: &Model, table_name: &Path
         quote! {}
     };
 
-    quote! {
+    Ok(quote! {
         #[allow(unused_qualifications)]
         #insert_owned
 
@@ -140,7 +147,7 @@ fn derive_into_single_table(item: &DeriveInput, model: &Model, table_name: &Path
             #where_clause
         {
         }
-    }
+    })
 }
 
 fn field_ty_embed(field: &Field, lifetime: Option<TokenStream>) -> TokenStream {
@@ -159,26 +166,26 @@ fn field_ty_serialize_as(
     table_name: &Path,
     ty: &Type,
     treat_none_as_default_value: bool,
-) -> TokenStream {
-    let column_name = field.column_name();
-    column_name.valid_ident();
+) -> Result<TokenStream> {
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
     let span = field.span;
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(ty);
 
-        quote_spanned! {span=>
+        Ok(quote_spanned! {span=>
             std::option::Option<diesel::dsl::Eq<
                 #table_name::#column_name,
                 #inner_ty,
             >>
-        }
+        })
     } else {
-        quote_spanned! {span=>
+        Ok(quote_spanned! {span=>
             diesel::dsl::Eq<
                 #table_name::#column_name,
                 #ty,
             >
-        }
+        })
     }
 }
 
@@ -187,19 +194,21 @@ fn field_expr_serialize_as(
     table_name: &Path,
     ty: &Type,
     treat_none_as_default_value: bool,
-) -> TokenStream {
+) -> Result<TokenStream> {
     let field_name = &field.name;
-    let column_name = field.column_name();
-    column_name.valid_ident();
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
     let column = quote!(#table_name::#column_name);
     if treat_none_as_default_value {
         if is_option_ty(ty) {
-            quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x))))
+            Ok(quote!(self.#field_name.map(|x| #column.eq(::std::convert::Into::<#ty>::into(x)))))
         } else {
-            quote!(std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name))))
+            Ok(
+                quote!(std::option::Option::Some(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name)))),
+            )
         }
     } else {
-        quote!(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name)))
+        Ok(quote!(#column.eq(::std::convert::Into::<#ty>::into(self.#field_name))))
     }
 }
 
@@ -208,28 +217,28 @@ fn field_ty(
     table_name: &Path,
     lifetime: Option<TokenStream>,
     treat_none_as_default_value: bool,
-) -> TokenStream {
-    let column_name = field.column_name();
-    column_name.valid_ident();
+) -> Result<TokenStream> {
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
     let span = field.span;
     if treat_none_as_default_value {
         let inner_ty = inner_of_option_ty(&field.ty);
 
-        quote_spanned! {span=>
+        Ok(quote_spanned! {span=>
             std::option::Option<diesel::dsl::Eq<
                 #table_name::#column_name,
                 #lifetime #inner_ty,
             >>
-        }
+        })
     } else {
         let inner_ty = &field.ty;
 
-        quote_spanned! {span=>
+        Ok(quote_spanned! {span=>
             diesel::dsl::Eq<
                 #table_name::#column_name,
                 #lifetime #inner_ty,
             >
-        }
+        })
     }
 }
 
@@ -238,23 +247,23 @@ fn field_expr(
     table_name: &Path,
     lifetime: Option<TokenStream>,
     treat_none_as_default_value: bool,
-) -> TokenStream {
+) -> Result<TokenStream> {
     let field_name = &field.name;
-    let column_name = field.column_name();
-    column_name.valid_ident();
+    let column_name = field.column_name()?;
+    column_name.valid_ident()?;
 
     let column: Expr = parse_quote!(#table_name::#column_name);
     if treat_none_as_default_value {
         if is_option_ty(&field.ty) {
             if lifetime.is_some() {
-                quote!(self.#field_name.as_ref().map(|x| #column.eq(x)))
+                Ok(quote!(self.#field_name.as_ref().map(|x| #column.eq(x))))
             } else {
-                quote!(self.#field_name.map(|x| #column.eq(x)))
+                Ok(quote!(self.#field_name.map(|x| #column.eq(x))))
             }
         } else {
-            quote!(std::option::Option::Some(#column.eq(#lifetime self.#field_name)))
+            Ok(quote!(std::option::Option::Some(#column.eq(#lifetime self.#field_name))))
         }
     } else {
-        quote!(#column.eq(#lifetime self.#field_name))
+        Ok(quote!(#column.eq(#lifetime self.#field_name)))
     }
 }

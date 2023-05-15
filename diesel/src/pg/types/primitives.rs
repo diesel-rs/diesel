@@ -1,6 +1,6 @@
 use std::io::prelude::*;
 
-use crate::deserialize::{self, FromSql};
+use crate::deserialize::{self, FromSql, Queryable};
 use crate::pg::{Pg, PgValue};
 use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types;
@@ -71,6 +71,15 @@ impl FromSql<sql_types::Text, Pg> for *const str {
     }
 }
 
+#[cfg(feature = "postgres_backend")]
+impl Queryable<sql_types::VarChar, Pg> for *const str {
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new
 /// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
@@ -80,6 +89,15 @@ impl FromSql<sql_types::Text, Pg> for *const str {
 impl FromSql<sql_types::Binary, Pg> for *const [u8] {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes() as *const _)
+    }
+}
+
+#[cfg(feature = "postgres_backend")]
+impl Queryable<sql_types::Binary, Pg> for *const [u8] {
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
     }
 }
 

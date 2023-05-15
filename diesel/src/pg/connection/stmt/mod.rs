@@ -1,3 +1,4 @@
+#![allow(unsafe_code)] // ffi code
 extern crate pq_sys;
 
 use std::ffi::CString;

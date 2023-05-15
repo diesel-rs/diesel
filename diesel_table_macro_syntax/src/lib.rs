@@ -1,4 +1,6 @@
+use syn::spanned::Spanned;
 use syn::Ident;
+use syn::MetaNameValue;
 
 #[allow(dead_code)] // punct and brace_token is currently unused
 pub struct TableDecl {
@@ -39,6 +41,27 @@ pub struct ColumnMaxLength {
 struct SqlNameAttribute {
     eq: syn::Token![=],
     lit: syn::LitStr,
+}
+impl SqlNameAttribute {
+    fn from_attribute(element: syn::Attribute) -> Result<Self, syn::Error> {
+        if let syn::Meta::NameValue(MetaNameValue {
+            eq_token,
+            value:
+                syn::Expr::Lit(syn::ExprLit {
+                    lit: syn::Lit::Str(lit),
+                    ..
+                }),
+            ..
+        }) = element.meta
+        {
+            Ok(SqlNameAttribute { eq: eq_token, lit })
+        } else {
+            Err(syn::Error::new(
+                element.span(),
+                "Invalid `#[sql_name = \"column_name\"]` attribute",
+            ))
+        }
+    }
 }
 
 impl syn::parse::Parse for TableDecl {
@@ -89,7 +112,7 @@ impl syn::parse::Parse for PrimaryKey {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let content;
         let paren_token = syn::parenthesized!(content in input);
-        let keys = content.parse_terminated(Ident::parse)?;
+        let keys = content.parse_terminated(Ident::parse, syn::Token![,])?;
         Ok(Self { paren_token, keys })
     }
 }
@@ -144,12 +167,14 @@ fn get_sql_name(
     mut meta: Vec<syn::Attribute>,
     ident: &syn::Ident,
 ) -> Result<(String, Vec<syn::Attribute>), syn::Error> {
-    if let Some(pos) = meta
-        .iter()
-        .position(|m| m.path.get_ident().map(|i| i == "sql_name").unwrap_or(false))
-    {
+    if let Some(pos) = meta.iter().position(|m| {
+        m.path()
+            .get_ident()
+            .map(|i| i == "sql_name")
+            .unwrap_or(false)
+    }) {
         let element = meta.remove(pos);
-        let inner: SqlNameAttribute = syn::parse2(element.tokens)?;
+        let inner = SqlNameAttribute::from_attribute(element)?;
         Ok((inner.lit.value(), meta))
     } else {
         Ok((ident.to_string(), meta))

@@ -3,9 +3,9 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{parenthesized, Ident, LitInt, LitStr};
 
-use deprecated::utils::parse_eq_and_lit_str;
-use parsers::PostgresType;
-use util::{unknown_attribute, POSTGRES_TYPE_NOTE};
+use crate::deprecated::utils::parse_eq_and_lit_str;
+use crate::parsers::PostgresType;
+use crate::util::{unknown_attribute, POSTGRES_TYPE_NOTE};
 
 enum Attr {
     Oid(Ident, LitInt),
@@ -32,18 +32,21 @@ impl Parse for Attr {
                 parse_eq_and_lit_str(name, input, POSTGRES_TYPE_NOTE)?,
             )),
 
-            _ => unknown_attribute(&name, &["oid", "array_oid", "type_name"]),
+            _ => Err(unknown_attribute(&name, &["oid", "array_oid", "type_name"])),
         }
     }
 }
 
 pub fn parse_postgres_type(name: Ident, input: ParseStream) -> Result<PostgresType> {
     if input.is_empty() {
-        abort!(
+        return Err(syn::Error::new(
             name.span(),
-            "unexpected end of input, expected parentheses";
-            help = "The correct format looks like `#[diesel({})]`", POSTGRES_TYPE_NOTE
-        );
+            format!(
+                "unexpected end of input, expected parentheses\n\
+                 help: The correct format looks like `#[diesel({})]`",
+                POSTGRES_TYPE_NOTE
+            ),
+        ));
     }
 
     let content;

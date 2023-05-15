@@ -85,6 +85,58 @@
 //! [`ToSql`]: serialize::ToSql
 //! [`FromSql`]: deserialize::FromSql
 //!
+//! ## How to read diesels compile time error messages
+//!
+//! Diesel is known for generating large complicated looking errors. Usually
+//! most of these error messages can be broken down easily. The following
+//! section tries to give an overview of common error messages and how to read them.
+//! As a general note it's always useful to read the complete error message as emitted
+//! by rustc, including the `required because of …` part of the message.
+//! Your IDE might hide important parts!
+//!
+//! If you use a nightly compiler you might want to enable the `nightly-error-messages`
+//! feature flag to automatically improve some error messages.
+//!
+//! The following error messages are common:
+//!
+//! * `the trait bound (diesel::sql_types::Integer, …, diesel::sql_types::Text): load_dsl::private::CompatibleType<YourModel, Pg> is not satisfied`
+//!    while trying to execute a query:
+//!    This error indicates a mismatch between what your query returns and what your model struct
+//!    expects the query to return. The fields need to match in terms of field order, field type
+//!    and field count. If you are sure that everything matches, double check the enabled diesel
+//!    features (for support for types from other crates) and double check (via `cargo tree`)
+//!    that there is only one version of such a shared crate in your dependency tree.
+//!    Consider using [`#[derive(Selectable)]`](derive@crate::prelude::Selectable) +
+//!    `#[diesel(check_for_backend(diesel::pg::Pg))]`
+//!    to improve the generated error message.
+//! * `the trait bound i32: diesel::Expression is not satisfied` in the context of `Insertable`
+//!    model structs:
+//!    This error indicates a type mismatch between the field you are trying to insert into the database
+//!    and the actual database type. These error messages contain a line
+//!    like ` = note: required for i32 to implement AsExpression<diesel::sql_types::Text>`
+//!    that show both the provided rust side type (`i32` in that case) and the expected
+//!    database side type (`Text` in that case).
+//! * `the trait bound i32: AppearsOnTable<users::table> is not satisfied` in the context of `AsChangeset`
+//!    model structs:
+//!    This error indicates a type mismatch between the field you are trying to update and the actual
+//!    database type. Double check your type mapping.
+//! * `the trait bound SomeLargeType: QueryFragment<Sqlite, SomeMarkerType> is not satisfied` while
+//!    trying to execute a query.
+//!    This error message indicates that a given query is not supported by your backend. This usually
+//!    means that you are trying to use SQL features from one SQL dialect on a different database
+//!    system. Double check your query that everything required is supported by the selected
+//!    backend. If that's the case double check that the relevant feature flags are enabled
+//!    (for example, `returning_clauses_for_sqlite_3_35` for enabling support for returning clauses in newer
+//!    sqlite versions)
+//! * `the trait bound posts::title: SelectableExpression<users::table> is not satisfied` while
+//!    executing a query:
+//!    This error message indicates that you're trying to select a field from a table
+//!    that does not appear in your from clause. If your query joins the relevant table via
+//!    [`left_join`](crate::query_dsl::QueryDsl::left_join) you need to call
+//!    [`.nullable()`](crate::expression_methods::NullableExpressionMethods::nullable)
+//!    on the relevant column in your select clause.
+//!
+//!
 //! ## Getting help
 //!
 //! If you run into problems, Diesel has an active community.
@@ -202,6 +254,7 @@
     clippy::items_after_statements,
     clippy::used_underscore_binding
 )]
+#![deny(unsafe_code)]
 #![cfg_attr(test, allow(clippy::map_unwrap_or, clippy::unwrap_used))]
 
 extern crate diesel_derives;
@@ -262,6 +315,7 @@ pub use diesel_derives::{
 
 pub use diesel_derives::MultiConnection;
 
+#[allow(unknown_lints, ambiguous_glob_reexports)]
 pub mod dsl {
     //! Includes various helper types and bare functions which are named too
     //! generically to be included in prelude, but are often used when using Diesel.
@@ -452,16 +506,96 @@ pub mod helper_types {
     type JoinQuerySource<Left, Right, Kind, On> = joins::JoinOn<joins::Join<Left, Right, Kind>, On>;
 
     /// A query source representing the inner join between two tables.
-    /// For example, for the inner join between three tables that implement `JoinTo`:
-    /// `InnerJoinQuerySource<InnerJoinQuerySource<table1, table2>, table3>`
-    /// Which conveniently lets you omit the exact join condition.
+    ///
+    /// The third generic type (`On`) controls how the tables are
+    /// joined.
+    ///
+    /// By default, the implicit join established by [`joinable!`][]
+    /// will be used, allowing you to omit the exact join
+    /// condition. For example, for the inner join between three
+    /// tables that implement [`JoinTo`][], you only need to specify
+    /// the tables: `InnerJoinQuerySource<InnerJoinQuerySource<table1,
+    /// table2>, table3>`.
+    ///
+    /// [`JoinTo`]: crate::query_source::JoinTo
+    ///
+    /// If you use an explicit `ON` clause, you will need to specify
+    /// the `On` generic type.
+    ///
+    /// ```rust
+    /// # include!("doctest_setup.rs");
+    /// use diesel::{dsl, helper_types::InnerJoinQuerySource};
+    /// # use diesel::{backend::Backend, serialize::ToSql, sql_types};
+    /// use schema::*;
+    ///
+    /// # fn main() -> QueryResult<()> {
+    /// #     let conn = &mut establish_connection();
+    /// #
+    /// // If you have an explicit join like this...
+    /// let join_constraint = comments::columns::post_id.eq(posts::columns::id);
+    /// #     let query =
+    /// posts::table.inner_join(comments::table.on(join_constraint));
+    /// #
+    /// #     // Dummy usage just to ensure the example compiles.
+    /// #     let filter = posts::columns::id.eq(1);
+    /// #     let filter: &FilterExpression<_> = &filter;
+    /// #     query.filter(filter).select(posts::columns::id).get_result::<i32>(conn)?;
+    /// #
+    /// #     Ok(())
+    /// # }
+    ///
+    /// // ... you can use `InnerJoinQuerySource` like this.
+    /// type JoinConstraint = dsl::Eq<comments::columns::post_id, posts::columns::id>;
+    /// type MyInnerJoinQuerySource = InnerJoinQuerySource<posts::table, comments::table, JoinConstraint>;
+    /// # type FilterExpression<DB> = dyn BoxableExpression<MyInnerJoinQuerySource, DB, SqlType = sql_types::Bool>;
+    /// ```
     pub type InnerJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::Inner, On>;
 
     /// A query source representing the left outer join between two tables.
-    /// For example, for the left join between three tables that implement `JoinTo`:
-    /// `LeftJoinQuerySource<LeftJoinQuerySource<table1, table2>, table3>`
-    /// Which conveniently lets you omit the exact join condition.
+    ///
+    /// The third generic type (`On`) controls how the tables are
+    /// joined.
+    ///
+    /// By default, the implicit join established by [`joinable!`][]
+    /// will be used, allowing you to omit the exact join
+    /// condition. For example, for the left join between three
+    /// tables that implement [`JoinTo`][], you only need to specify
+    /// the tables: `LeftJoinQuerySource<LeftJoinQuerySource<table1,
+    /// table2>, table3>`.
+    ///
+    /// [`JoinTo`]: crate::query_source::JoinTo
+    ///
+    /// If you use an explicit `ON` clause, you will need to specify
+    /// the `On` generic type.
+    ///
+    /// ```rust
+    /// # include!("doctest_setup.rs");
+    /// use diesel::{dsl, helper_types::LeftJoinQuerySource};
+    /// # use diesel::{backend::Backend, serialize::ToSql, sql_types};
+    /// use schema::*;
+    ///
+    /// # fn main() -> QueryResult<()> {
+    /// #     let conn = &mut establish_connection();
+    /// #
+    /// // If you have an explicit join like this...
+    /// let join_constraint = comments::columns::post_id.eq(posts::columns::id);
+    /// #     let query =
+    /// posts::table.left_join(comments::table.on(join_constraint));
+    /// #
+    /// #     // Dummy usage just to ensure the example compiles.
+    /// #     let filter = posts::columns::id.eq(1);
+    /// #     let filter: &FilterExpression<_> = &filter;
+    /// #     query.filter(filter).select(posts::columns::id).get_result::<i32>(conn)?;
+    /// #
+    /// #     Ok(())
+    /// # }
+    ///
+    /// // ... you can use `LeftJoinQuerySource` like this.
+    /// type JoinConstraint = dsl::Eq<comments::columns::post_id, posts::columns::id>;
+    /// type MyLeftJoinQuerySource = LeftJoinQuerySource<posts::table, comments::table, JoinConstraint>;
+    /// # type FilterExpression<DB> = dyn BoxableExpression<MyLeftJoinQuerySource, DB, SqlType = sql_types::Bool>;
+    /// ```
     pub type LeftJoinQuerySource<Left, Right, On = <Left as joins::JoinTo<Right>>::OnClause> =
         JoinQuerySource<Left, Right, joins::LeftOuter, On>;
 
@@ -544,6 +678,4 @@ pub use crate::query_builder::functions::{
 };
 pub use crate::result::Error::NotFound;
 
-pub(crate) mod diesel {
-    pub(crate) use super::*;
-}
+extern crate self as diesel;

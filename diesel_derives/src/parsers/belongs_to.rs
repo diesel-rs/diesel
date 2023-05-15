@@ -3,7 +3,7 @@ use syn::punctuated::Punctuated;
 use syn::token::Comma;
 use syn::{Ident, TypePath};
 
-use util::{parse_eq, unknown_attribute, BELONGS_TO_NOTE};
+use crate::util::{parse_eq, unknown_attribute, BELONGS_TO_NOTE};
 
 enum Attr {
     ForeignKey(Ident, Ident),
@@ -17,7 +17,7 @@ impl Parse for Attr {
         match &*name_str {
             "foreign_key" => Ok(Attr::ForeignKey(name, parse_eq(input, BELONGS_TO_NOTE)?)),
 
-            _ => unknown_attribute(&name, &["foreign_key"]),
+            _ => Err(unknown_attribute(&name, &["foreign_key"])),
         }
     }
 }

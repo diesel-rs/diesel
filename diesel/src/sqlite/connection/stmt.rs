@@ -1,5 +1,4 @@
-extern crate libsqlite3_sys as ffi;
-
+#![allow(unsafe_code)] // fii code
 use super::bind_collector::{InternalSqliteBindValue, SqliteBindCollector};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
@@ -9,6 +8,7 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::sqlite::{Sqlite, SqliteType};
 use crate::util::OnceCell;
+use libsqlite3_sys as ffi;
 use std::ffi::{CStr, CString};
 use std::io::{stderr, Write};
 use std::os::raw as libc;
@@ -293,24 +293,29 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
                 .count(),
         );
         for (bind_idx, (bind, tpe)) in (1..).zip(binds) {
-            if matches!(
+            let is_borrowed_bind = matches!(
                 bind,
                 InternalSqliteBindValue::BorrowedString(_)
                     | InternalSqliteBindValue::BorrowedBinary(_)
-            ) {
-                // Store the id's of borrowed binds to unbind them on drop
-                self.binds_to_free.push((bind_idx, None));
-            }
+            );
 
             // It's safe to call bind here as:
             // * The type and value matches
             // * We ensure that corresponding buffers lives long enough below
             // * The statement is not used yet by `step` or anything else
             let res = unsafe { self.statement.bind(tpe, bind, bind_idx) }?;
+
+            // it's important to push these only after
+            // the call to bind succeded, otherwise we might attempt to
+            // call bind to an non-existing bind position in
+            // the destructor
             if let Some(ptr) = res {
                 // Store the id + pointer for a owned bind
                 // as we must unbind and free them on drop
                 self.binds_to_free.push((bind_idx, Some(ptr)));
+            } else if is_borrowed_bind {
+                // Store the id's of borrowed binds to unbind them on drop
+                self.binds_to_free.push((bind_idx, None));
             }
         }
         Ok(())
@@ -469,5 +474,32 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
             ffi::sqlite3_column_value(self.statement.statement.inner_statement.as_ptr(), idx)
         };
         NonNull::new(ptr)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::prelude::*;
+    use crate::sql_types::Text;
+    use crate::SqliteConnection;
+
+    // this is a regression test for
+    // https://github.com/diesel-rs/diesel/issues/3558
+    #[test]
+    fn check_out_of_bounds_bind_does_not_panic_on_drop() {
+        let mut conn = SqliteConnection::establish(":memory:").unwrap();
+
+        let e = crate::sql_query("SELECT '?'")
+            .bind::<Text, _>("foo")
+            .execute(&mut conn);
+
+        assert!(e.is_err());
+        let e = e.unwrap_err();
+        if let crate::result::Error::DatabaseError(crate::result::DatabaseErrorKind::Unknown, m) = e
+        {
+            assert_eq!(m.message(), "column index out of range");
+        } else {
+            panic!("Wrong error returned");
+        }
     }
 }

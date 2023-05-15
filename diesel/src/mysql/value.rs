@@ -39,6 +39,7 @@ impl<'a> MysqlValue<'a> {
     // so clippy is clearly wrong here
     // https://github.com/rust-lang/rust-clippy/issues/2881
     #[allow(dead_code, clippy::cast_ptr_alignment)]
+    #[allow(unsafe_code)] // pointer cast
     pub(crate) fn time_value(&self) -> deserialize::Result<MysqlTime> {
         match self.tpe {
             MysqlType::Time | MysqlType::Date | MysqlType::DateTime | MysqlType::Timestamp => {
@@ -57,8 +58,6 @@ impl<'a> MysqlValue<'a> {
     /// Returns the numeric representation of this value, based on the type code.
     /// Returns an error if the type code is not numeric.
     pub(crate) fn numeric_value(&self) -> deserialize::Result<NumericRepresentation<'_>> {
-        use std::convert::TryInto;
-
         Ok(match self.tpe {
             MysqlType::UnsignedTiny | MysqlType::Tiny => {
                 NumericRepresentation::Tiny(self.raw[0] as i8)

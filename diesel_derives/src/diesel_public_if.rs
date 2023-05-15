@@ -1,3 +1,5 @@
+use quote::quote;
+use syn::Token;
 use syn::{punctuated::Punctuated, DeriveInput};
 
 pub(crate) fn expand(cfg: CfgInput, item: EntryWithVisibility) -> proc_macro2::TokenStream {
@@ -41,18 +43,11 @@ impl syn::parse::Parse for CfgInput {
                 )
             };
             let field_list = if let syn::Meta::List(v) = fields {
-                v.nested
-                    .into_iter()
-                    .map(|v| {
-                        if let syn::NestedMeta::Meta(syn::Meta::Path(p)) = v {
-                            p.get_ident()
-                                .expect("Field names need to be idents")
-                                .clone()
-                        } else {
-                            panic!("The field name key requires a list of field names as argument")
-                        }
-                    })
-                    .collect()
+                use syn::parse::Parser;
+                let parser =
+                    syn::punctuated::Punctuated::<syn::Ident, syn::Token![,]>::parse_terminated;
+                let idents = parser.parse2(v.tokens)?;
+                idents.into_iter().collect()
             } else {
                 unreachable!()
             };
@@ -155,9 +150,7 @@ impl EntryWithVisibility {
                         .map(|i| field_list.contains(i))
                         .unwrap_or(false)
                     {
-                        ret.vis = syn::Visibility::Public(syn::VisPublic {
-                            pub_token: Default::default(),
-                        });
+                        ret.vis = syn::Visibility::Public(Default::default());
                     }
                     ret
                 });

@@ -994,18 +994,7 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
 
     let query_fragment_impls = IntoIterator::into_iter([
         quote::quote!{
-            #query_fragment for diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<'_, super::backend::MultiBackend>
-        },
-        quote::quote!{
             <L, O> #query_fragment for diesel::internal::derives::multiconnection::LimitOffsetClause<L, O>
-        },
-        quote::quote! {
-            <F, S, D, W, O, LOf, G, H, LC> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiSelectStatementSyntax>
-                for diesel::internal::derives::multiconnection::SelectStatement<F, S, D, W, O, LOf, G, H, LC>
-        },
-        quote::quote! {
-            <'a, ST, QS, GB> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiSelectStatementSyntax>
-                for diesel::internal::derives::multiconnection::BoxedSelectStatement<'a, ST, QS, super::backend::MultiBackend, GB>
         },
         quote::quote! {
             <L, R> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiConcatClauseSyntax>
@@ -1094,6 +1083,148 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         }
 
         #(#query_fragment_impls)*
+
+        impl<F, S, D, W, O, LOf, G, H, LC>
+            diesel::query_builder::QueryFragment<
+                super::backend::MultiBackend,
+                super::backend::MultiSelectStatementSyntax,
+            >
+            for diesel::internal::derives::multiconnection::SelectStatement<
+                F,
+                S,
+                D,
+                W,
+                O,
+                LOf,
+                G,
+                H,
+                LC,
+            >
+        where
+            S: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            F: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            D: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            W: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            O: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            LOf: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            G: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            H: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+            LC: diesel::query_builder::QueryFragment<super::backend::MultiBackend>,
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                mut out: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                use diesel::internal::derives::multiconnection::SelectStatementAccessor;
+
+                out.push_sql("SELECT ");
+                self.distinct_clause().walk_ast(out.reborrow())?;
+                self.select_clause().walk_ast(out.reborrow())?;
+                self.from_clause().walk_ast(out.reborrow())?;
+                self.where_clause().walk_ast(out.reborrow())?;
+                self.group_by_clause().walk_ast(out.reborrow())?;
+                self.having_clause().walk_ast(out.reborrow())?;
+                self.order_clause().walk_ast(out.reborrow())?;
+                self.limit_offset_clause().walk_ast(out.reborrow())?;
+                self.locking_clause().walk_ast(out.reborrow())?;
+                Ok(())
+            }
+        }
+
+        impl<'a, ST, QS, GB>
+            diesel::query_builder::QueryFragment<
+            super::backend::MultiBackend,
+            super::backend::MultiSelectStatementSyntax,
+        >
+            for diesel::internal::derives::multiconnection::BoxedSelectStatement<
+                'a,
+                ST,
+                QS,
+                super::backend::MultiBackend,
+                GB,
+            >
+        where
+            QS: diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                use diesel::internal::derives::multiconnection::BoxedQueryHelper;
+                self.build_query(pass, |where_clause, pass| where_clause.walk_ast(pass))
+            }
+        }
+
+        impl diesel::query_builder::QueryFragment<super::backend::MultiBackend>
+            for diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<
+                '_,
+                super::backend::MultiBackend,
+            >
+        {
+            fn walk_ast<'b>(
+                &'b self,
+                mut pass: diesel::query_builder::AstPass<'_, 'b, MultiBackend>,
+            ) -> diesel::QueryResult<()> {
+                if let Some(ref limit) = self.limit {
+                    limit.walk_ast(pass.reborrow())?;
+                }
+                if let Some(ref offset) = self.offset {
+                    offset.walk_ast(pass.reborrow())?;
+                }
+                Ok(())
+            }
+        }
+
+        impl<'a> diesel::query_builder::IntoBoxedClause<'a, super::multi_connection_impl::backend::MultiBackend>
+            for diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::NoOffsetClause>
+        {
+            type BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<'a, super::multi_connection_impl::backend::MultiBackend>;
+
+            fn into_boxed(self) -> Self::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: None,
+                    offset: None,
+                }
+            }
+        }
+        impl<'a, L> diesel::query_builder::IntoBoxedClause<'a, super::multi_connection_impl::backend::MultiBackend>
+            for diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::LimitClause<L>, diesel::internal::derives::multiconnection::NoOffsetClause>
+        where diesel::internal::derives::multiconnection::LimitClause<L>: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send + 'static,
+        {
+            type BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<'a, super::multi_connection_impl::backend::MultiBackend>;
+            fn into_boxed(self) -> Self::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: Some(Box::new(self.limit_clause)),
+                    offset: None,
+                }
+            }
+        }
+        impl<'a, O> diesel::query_builder::IntoBoxedClause<'a, super::multi_connection_impl::backend::MultiBackend>
+            for diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::NoLimitClause, diesel::internal::derives::multiconnection::OffsetClause<O>>
+        where diesel::internal::derives::multiconnection::OffsetClause<O>: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send + 'static,
+
+        {
+            type BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<'a, super::multi_connection_impl::backend::MultiBackend>;
+            fn into_boxed(self) -> Self::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: None,
+                    offset: Some(Box::new(self.offset_clause)),
+                }
+            }
+        }
+        impl<'a, L, O> diesel::query_builder::IntoBoxedClause<'a, super::multi_connection_impl::backend::MultiBackend>
+            for diesel::internal::derives::multiconnection::LimitOffsetClause<diesel::internal::derives::multiconnection::LimitClause<L>, diesel::internal::derives::multiconnection::OffsetClause<O>>
+        where diesel::internal::derives::multiconnection::LimitClause<L>: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send + 'static,
+              diesel::internal::derives::multiconnection::OffsetClause<O>: diesel::query_builder::QueryFragment<super::backend::MultiBackend> + Send + 'static,
+        {
+            type BoxedClause = diesel::internal::derives::multiconnection::BoxedLimitOffsetClause<'a, super::multi_connection_impl::backend::MultiBackend>;
+            fn into_boxed(self) -> Self::BoxedClause {
+                diesel::internal::derives::multiconnection::BoxedLimitOffsetClause {
+                    limit: Some(Box::new(self.limit_clause)),
+                    offset: Some(Box::new(self.offset_clause)),
+                }
+            }
+        }
     }
 }
 

@@ -133,8 +133,26 @@ impl<'a, ST, DB, GB> BoxedSelectStatement<'a, ST, NoFromClause, DB, GB> {
     }
 }
 
-impl<'a, ST, QS, DB, GB> BoxedSelectStatement<'a, ST, QS, DB, GB> {
-    pub(crate) fn build_query<'b, 'c>(
+// that's a trait to control who can access these method
+#[doc(hidden)] // exported via internal::derives::multiconnection
+pub trait BoxedQueryHelper<'a, QS, DB> {
+    fn build_query<'b, 'c>(
+        &'b self,
+        out: AstPass<'_, 'c, DB>,
+        where_clause_handler: impl Fn(
+            &'b BoxedWhereClause<'a, DB>,
+            AstPass<'_, 'c, DB>,
+        ) -> QueryResult<()>,
+    ) -> QueryResult<()>
+    where
+        DB: Backend,
+        QS: QueryFragment<DB>,
+        BoxedLimitOffsetClause<'a, DB>: QueryFragment<DB>,
+        'b: 'c;
+}
+
+impl<'a, ST, QS, DB, GB> BoxedQueryHelper<'a, QS, DB> for BoxedSelectStatement<'a, ST, QS, DB, GB> {
+    fn build_query<'b, 'c>(
         &'b self,
         mut out: AstPass<'_, 'c, DB>,
         where_clause_handler: impl Fn(

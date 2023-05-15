@@ -2,6 +2,9 @@ use super::backend::Mysql;
 use crate::query_builder::QueryBuilder;
 use crate::result::QueryResult;
 
+#[doc(inline)]
+pub use self::query_fragment_impls::DuplicatedKeys;
+
 mod limit_offset;
 mod query_fragment_impls;
 

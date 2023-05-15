@@ -119,9 +119,12 @@ pub struct PgConnection {
     connection_and_transaction_manager: ConnectionAndTransactionManager,
 }
 
+// according to libpq documentation a connection can be transfered to other threads
+#[allow(unsafe_code)]
 unsafe impl Send for PgConnection {}
 
 impl SimpleConnection for PgConnection {
+    #[allow(unsafe_code)] // use of unsafe function
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
         let query = CString::new(query)?;
         let inner_result = unsafe {

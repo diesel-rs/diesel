@@ -2,6 +2,7 @@ use crate::deserialize::{self, FromSql};
 use crate::mysql::{Mysql, MysqlValue, NumericRepresentation};
 use crate::result::Error::DeserializationError;
 use crate::sql_types::{BigInt, Binary, Double, Float, Integer, SmallInt, Text};
+use crate::Queryable;
 use std::convert::TryInto;
 use std::error::Error;
 use std::str::{self, FromStr};
@@ -166,6 +167,15 @@ impl FromSql<Text, Mysql> for *const str {
     }
 }
 
+#[cfg(feature = "mysql_backend")]
+impl Queryable<Text, Mysql> for *const str {
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
+    }
+}
+
 /// The returned pointer is *only* valid for the lifetime to the argument of
 /// `from_sql`. This impl is intended for uses where you want to write a new
 /// impl in terms of `Vec<u8>`, but don't want to allocate. We have to return a
@@ -175,5 +185,14 @@ impl FromSql<Text, Mysql> for *const str {
 impl FromSql<Binary, Mysql> for *const [u8] {
     fn from_sql(value: MysqlValue<'_>) -> deserialize::Result<Self> {
         Ok(value.as_bytes() as *const [u8])
+    }
+}
+
+#[cfg(feature = "mysql_backend")]
+impl Queryable<Binary, Mysql> for *const [u8] {
+    type Row = Self;
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(row)
     }
 }

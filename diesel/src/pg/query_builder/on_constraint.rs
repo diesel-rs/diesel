@@ -1,4 +1,3 @@
-use crate::pg::backend::PgOnConflictClaues;
 use crate::pg::Pg;
 use crate::query_builder::upsert::on_conflict_target::{ConflictTarget, OnConflictTarget};
 use crate::query_builder::*;
@@ -60,7 +59,9 @@ impl<'a> QueryId for OnConstraint<'a> {
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<'a> QueryFragment<Pg, PgOnConflictClaues> for ConflictTarget<OnConstraint<'a>> {
+impl<'a> QueryFragment<Pg, crate::pg::backend::PgOnConflictClaues>
+    for ConflictTarget<OnConstraint<'a>>
+{
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql(" ON CONSTRAINT ");

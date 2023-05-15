@@ -63,6 +63,7 @@ where
     }
 }
 
+#[allow(unsafe_code)] // cast to transparent wrapper type
 impl<'a, T, V, QId, Op, const STATIC_QUERY_ID: bool> DebugQueryHelper<No>
     for DebugQuery<'a, InsertStatement<T, BatchInsert<V, T, QId, STATIC_QUERY_ID>, Op>, Sqlite>
 where

@@ -1,12 +1,20 @@
-error[E0271]: type mismatch resolving `<SqliteConnection as Connection>::Backend == Pg`
+error[E0277]: the trait bound `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>>: QueryFragment<Sqlite>` is not satisfied
   --> tests/fail/insert_from_select_with_on_conflict_without_where_clause_not_supported_on_sqlite.rs:19:18
    |
 19 |         .execute(&mut connection)
-   |          ------- ^^^^^^^^^^^^^^^ expected struct `Pg`, found struct `Sqlite`
+   |          ------- ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<columns::id>>>`
    |          |
    |          required by a bound introduced by this call
    |
-   = note: required for `InsertStatement<table, OnConflictValues<InsertFromSelect<OnConflictSelectWrapper<...>, ...>, ..., ...>>` to implement `ExecuteDsl<diesel::SqliteConnection, Pg>`
+   = help: the following other types implement trait `QueryFragment<DB, SP>`:
+             <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, Sqlite, GB>> as QueryFragment<Sqlite>>
+             <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S> as QueryFragment<Mysql>>
+             <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S> as QueryFragment<Pg>>
+             <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<F, S, D, diesel::query_builder::where_clause::WhereClause<W>, O, LOf, G, H, LC>> as QueryFragment<Sqlite>>
+   = note: required for `InsertFromSelect<OnConflictSelectWrapper<SelectStatement<FromClause<table>, SelectClause<id>>>, id>` to implement `QueryFragment<Sqlite>`
+   = note: 3 redundant requirements hidden
+   = note: required for `InsertStatement<table, OnConflictValues<InsertFromSelect<OnConflictSelectWrapper<...>, ...>, ..., ...>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `InsertStatement<table, OnConflictValues<InsertFromSelect<OnConflictSelectWrapper<...>, ...>, ..., ...>>` to implement `ExecuteDsl<diesel::SqliteConnection, Sqlite>`
 note: required by a bound in `diesel::RunQueryDsl::execute`
   --> $DIESEL/src/query_dsl/mod.rs
    |

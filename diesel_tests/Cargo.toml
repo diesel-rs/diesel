@@ -5,12 +5,12 @@ authors = ["Sage Griffin <sean@seantheprogrammer.com>"]
 license = "MIT OR Apache-2.0"
 autotests = false
 autobenches = false
-edition = "2018"
+edition = "2021"
 publish = false
 
 [dependencies]
 assert_matches = "1.0.1"
-chrono = { version = "0.4.19", default-features = false, features = ["clock", "std"] }
+chrono = { version = "0.4.20", default-features = false, features = ["clock", "std"] }
 diesel = { path = "../diesel", default-features = false, features = ["quickcheck", "chrono", "uuid", "serde_json", "ipnet-address", "network-address", "numeric", "with-deprecated"] }
 diesel_migrations = { path = "../diesel_migrations" }
 dotenvy = "0.15"
@@ -21,7 +21,7 @@ ipnet = { version = "2.5.0" }
 ipnetwork = ">=0.12.2, <0.21.0"
 bigdecimal = ">= 0.0.13, < 0.4.0"
 rand = "0.8.4"
-libsqlite3-sys = { version = "0.25", optional = true }
+libsqlite3-sys = { version = "0.26", optional = true }
 
 [features]
 default = []

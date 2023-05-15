@@ -9,12 +9,12 @@ repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_derives"
 autotests = false
 include = ["src/**/*", "LICENSE-*"]
 rust-version = "1.65.0"
+edition = "2021"
 
 [dependencies]
-syn = { version = "1.0.73", features = ["derive", "fold", "full"] }
+syn = { version = "2.0", features = ["derive", "fold", "full"] }
 quote = "1.0.9"
 proc-macro2 = "1.0.27"
-proc-macro-error = "1.0.4"
 diesel_table_macro_syntax = {version = "0.1",  path = "../diesel_table_macro_syntax"}
 
 [dev-dependencies]

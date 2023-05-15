@@ -1,5 +1,5 @@
-extern crate mysqlclient_sys as ffi;
-
+#![allow(unsafe_code)] // module uses ffi
+use mysqlclient_sys as ffi;
 use std::ffi::CStr;
 use std::os::raw as libc;
 use std::ptr::{self, NonNull};

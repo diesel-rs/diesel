@@ -1,10 +1,9 @@
 error: unexpected end of input, expected parentheses
+       help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
   --> tests/fail/derive/bad_belongs_to.rs:29:20
    |
 29 | #[diesel(belongs_to)]
    |                    ^
-   |
-   = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
 
 error: expected parentheses
   --> tests/fail/derive/bad_belongs_to.rs:36:21
@@ -31,12 +30,11 @@ error: expected `,`
    |                         ^
 
 error: unexpected end of input, expected `=`
+       help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
   --> tests/fail/derive/bad_belongs_to.rs:64:37
    |
 64 | #[diesel(belongs_to(Bar, foreign_key))]
    |                                     ^
-   |
-   = help: The correct format looks like `#[diesel(belongs_to(Foo, foreign_key = foo_id))]`
 
 error: expected `=`
   --> tests/fail/derive/bad_belongs_to.rs:71:37

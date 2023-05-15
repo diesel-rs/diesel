@@ -126,7 +126,7 @@ fn insert_users(
 
     if cfg!(feature = "sqlite") {
         rt.block_on(async {
-            let transaction = conn.start_transaction().await.unwrap();
+            let transaction = conn.start_transaction(None).await.unwrap();
 
             for i in 0..size {
                 let insert = Insert::single_into("users")
@@ -188,7 +188,8 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
                     ("p", "user_id").into(),
                     ("p", "title").into(),
                     ("p", "body").into(),
-                ]);
+                ])
+                .so_that(("u", "hair_color").equals("black"));
             let result_set = conn.select(select).await.unwrap();
             quaint::serde::from_rows::<UserWithPost>(result_set)
                 .unwrap()
@@ -269,7 +270,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         rt.block_on(async { conn.insert(insert_posts.build()).await.unwrap() });
     } else {
         rt.block_on(async {
-            let transaction = conn.start_transaction().await.unwrap();
+            let transaction = conn.start_transaction(None).await.unwrap();
 
             for user in all_users {
                 for i in 0..10 {
@@ -306,7 +307,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
         rt.block_on(async { conn.insert(insert_comments.build()).await.unwrap() });
     } else {
         rt.block_on(async {
-            let transaction = conn.start_transaction().await.unwrap();
+            let transaction = conn.start_transaction(None).await.unwrap();
 
             for post in all_posts {
                 for i in 0..10 {

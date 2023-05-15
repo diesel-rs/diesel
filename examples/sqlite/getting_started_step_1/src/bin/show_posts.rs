@@ -9,7 +9,8 @@ fn main() {
     let results = posts
         .filter(published.eq(true))
         .limit(5)
-        .load::<Post>(connection)
+        .select(Post::as_select())
+        .load(connection)
         .expect("Error loading posts");
 
     println!("Displaying {} posts", results.len());

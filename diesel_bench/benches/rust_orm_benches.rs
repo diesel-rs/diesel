@@ -214,14 +214,20 @@ pub fn bench_medium_complex_query(b: &mut Bencher, size: usize) {
         Some(if i % 2 == 0 { "black" } else { "brown" }.into())
     });
 
+    #[cfg(feature = "postgres")]
+    let bind = "$";
+    #[cfg(any(feature = "sqlite", feature = "mysql"))]
+    let bind = "?";
+
+    let query = format!(
+        "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, \
+         p.user_id, p.title, p.body FROM users as u \
+         LEFT JOIN posts as p ON u.id = p.user_id WHERE u.name = {bind}"
+    );
+
     b.iter(|| {
-        em.execute_sql_with_return::<for_load::UserWithPost>(
-            "SELECT u.id as myuser_id, u.name, u.hair_color, p.id as post_id, \
-             p.user_id, p.title, p.body FROM users as u \
-             LEFT JOIN posts as p ON u.id = p.user_id",
-            &[],
-        )
-        .unwrap()
+        em.execute_sql_with_return::<for_load::UserWithPost>(&query, &[&"black"])
+            .unwrap()
     });
 }
 

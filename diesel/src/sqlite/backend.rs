@@ -75,6 +75,7 @@ impl TrustedBackend for Sqlite {}
 pub struct SqliteOnConflictClause;
 
 impl sql_dialect::on_conflict_clause::SupportsOnConflictClause for SqliteOnConflictClause {}
+impl sql_dialect::on_conflict_clause::PgLikeOnConflictClause for SqliteOnConflictClause {}
 
 #[derive(Debug, Copy, Clone)]
 pub struct SqliteBatchInsert;

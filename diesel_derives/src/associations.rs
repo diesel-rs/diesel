@@ -1,29 +1,33 @@
 use proc_macro2::{Span, TokenStream};
+use quote::quote;
 use syn::fold::Fold;
-use syn::{DeriveInput, Ident, Lifetime};
+use syn::parse_quote;
+use syn::{DeriveInput, Ident, Lifetime, Result};
 
-use model::Model;
-use parsers::BelongsTo;
-use util::{camel_to_snake, wrap_in_dummy_mod};
+use crate::model::Model;
+use crate::parsers::BelongsTo;
+use crate::util::{camel_to_snake, wrap_in_dummy_mod};
 
-pub fn derive(item: DeriveInput) -> TokenStream {
-    let model = Model::from_item(&item, false, false);
+pub fn derive(item: DeriveInput) -> Result<TokenStream> {
+    let model = Model::from_item(&item, false, false)?;
 
     if model.belongs_to.is_empty() {
-        abort_call_site!(
-            "At least one `belongs_to` is needed for deriving `Associations` on a structure."
-        );
+        return Err(syn::Error::new(
+            proc_macro2::Span::call_site(),
+            "At least one `belongs_to` is needed for deriving `Associations` on a structure.",
+        ));
     }
 
     let tokens = model
         .belongs_to
         .iter()
-        .map(|assoc| derive_belongs_to(&item, &model, assoc));
+        .map(|assoc| derive_belongs_to(&item, &model, assoc))
+        .collect::<Result<Vec<_>>>()?;
 
-    wrap_in_dummy_mod(quote!(#(#tokens)*))
+    Ok(wrap_in_dummy_mod(quote!(#(#tokens)*)))
 }
 
-fn derive_belongs_to(item: &DeriveInput, model: &Model, assoc: &BelongsTo) -> TokenStream {
+fn derive_belongs_to(item: &DeriveInput, model: &Model, assoc: &BelongsTo) -> Result<TokenStream> {
     let (_, ty_generics, _) = item.generics.split_for_impl();
 
     let struct_name = &item.ident;
@@ -31,7 +35,7 @@ fn derive_belongs_to(item: &DeriveInput, model: &Model, assoc: &BelongsTo) -> To
 
     let foreign_key = &foreign_key(assoc);
 
-    let foreign_key_field = model.find_column(foreign_key);
+    let foreign_key_field = model.find_column(foreign_key)?;
     let foreign_key_name = &foreign_key_field.name;
     let foreign_key_ty = &foreign_key_field.ty;
 
@@ -64,7 +68,7 @@ fn derive_belongs_to(item: &DeriveInput, model: &Model, assoc: &BelongsTo) -> To
 
     let (impl_generics, _, where_clause) = generics.split_for_impl();
 
-    quote! {
+    Ok(quote! {
         impl #impl_generics diesel::associations::BelongsTo<#parent_struct>
             for #struct_name #ty_generics
         #where_clause
@@ -96,7 +100,7 @@ fn derive_belongs_to(item: &DeriveInput, model: &Model, assoc: &BelongsTo) -> To
                 #table_name::#foreign_key
             }
         }
-    }
+    })
 }
 
 fn foreign_key(assoc: &BelongsTo) -> Ident {

@@ -14,6 +14,7 @@ pub struct StatementIterator<'stmt, 'query> {
 
 impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
     #[cold]
+    #[allow(unsafe_code)] // call to unsafe function
     fn handle_duplicated_row_case(
         outer_last_row: &mut Rc<RefCell<PrivateSqliteRow<'stmt, 'query>>>,
         column_names: &mut Option<Rc<[Option<String>]>>,
@@ -90,6 +91,7 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
 impl<'stmt, 'query> Iterator for StatementIterator<'stmt, 'query> {
     type Item = QueryResult<SqliteRow<'stmt, 'query>>;
 
+    #[allow(unsafe_code)] // call to unsafe function
     fn next(&mut self) -> Option<Self::Item> {
         use PrivateStatementIterator::{NotStarted, Started};
         match &mut self.inner {

@@ -20,11 +20,11 @@ impl SqlOrd for sql_types::Timestamptz {}
 #[cfg(feature = "postgres")]
 impl<T: SqlOrd> SqlOrd for sql_types::Array<T> {}
 
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_backend")]
 impl SqlOrd for sql_types::Datetime {}
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_backend")]
 impl SqlOrd for sql_types::Unsigned<sql_types::SmallInt> {}
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_backend")]
 impl SqlOrd for sql_types::Unsigned<sql_types::Integer> {}
-#[cfg(feature = "mysql")]
+#[cfg(feature = "mysql_backend")]
 impl SqlOrd for sql_types::Unsigned<sql_types::BigInt> {}
