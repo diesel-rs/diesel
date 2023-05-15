@@ -42,7 +42,7 @@ impl ColumnType {
                 .map(|l| {
                     l.base10_parse::<u64>()
                         .map_err(|e| -> Box<dyn Error + Send + Sync> {
-                            format!("Column length litteral can't be parsed as u64: {e}").into()
+                            format!("Column length literal can't be parsed as u64: {e}").into()
                         })
                 })
                 .transpose()?,
