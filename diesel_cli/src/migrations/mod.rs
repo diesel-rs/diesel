@@ -263,8 +263,11 @@ pub fn migrations_dir(matches: &ArgMatches) -> Result<PathBuf, MigrationError> {
 /// Reverts all the migrations, and then runs them again, if the `--all`
 /// argument is used. Otherwise it only redoes a specific number of migrations
 /// if the `--number` argument is used.
-/// Migrations are performed in a transaction. If either part fails,
+/// We try to execute the migrations in a single transaction so that f either part fails,
 /// the transaction is not committed.
+/// If the list of migrations that need to be redone contains a single migration
+/// with `run_in_transaction = false` or if the backend is MySQL we cannot use a
+/// transaction.
 fn redo_migrations<Conn, DB>(
     conn: &mut Conn,
     migrations_dir: FileBasedMigrations,
@@ -296,11 +299,11 @@ fn redo_migrations<Conn, DB>(
     let migrations_inner =
         |harness: &mut HarnessWithOutput<Conn, _>|
          -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
+            // revert all the migrations
             let reverted_versions = if args.get_flag("REDO_ALL") {
                 harness.revert_all_migrations(migrations_dir.clone())?
             } else {
                 let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
-
                 (0..*number)
                     .filter_map(|_| {
                         match harness.revert_last_migration(migrations_dir.clone()) {
@@ -319,12 +322,14 @@ fn redo_migrations<Conn, DB>(
                     .collect::<Result<Vec<_>, _>>()?
             };
 
+            // get a mapping between migrations and migration versions
              let mut migrations = MigrationSource::<DB>::migrations(&migrations_dir)
                  .unwrap_or_else(handle_error)
                  .into_iter()
                  .map(|m| (m.name().version().as_owned(), m))
                  .collect::<HashMap<_, _>>();
 
+            // build a list of migrations that need to be applied
             let mut migrations = reverted_versions
                 .into_iter()
                 .map(|v| {
@@ -333,9 +338,11 @@ fn redo_migrations<Conn, DB>(
                         .ok_or_else(|| MigrationError::UnknownMigrationVersion(v.as_owned()))
                 })
                 .collect::<Result<Vec<_>, _>>()?;
+
             // Sort the migrations by version to apply them in order.
             migrations.sort_by_key(|m| m.name().version().as_owned());
 
+            // apply all outstanding migrations
             harness.run_migrations(&migrations)?;
 
             Ok(())
