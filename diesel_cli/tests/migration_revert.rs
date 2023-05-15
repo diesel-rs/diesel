@@ -11,6 +11,7 @@ fn migration_revert_runs_the_last_migration_down() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // Make sure the project is setup
@@ -39,6 +40,7 @@ fn migration_revert_respects_migration_dir_var() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // Make sure the project is setup.
@@ -71,6 +73,7 @@ fn migration_revert_respects_migration_dir_env() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // Make sure the project is setup.
@@ -113,6 +116,7 @@ fn migration_revert_respects_migration_dir_from_diesel_toml() {
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
         Some("DROP TABLE users"),
+        None,
     );
 
     // Make sure the project is setup.
@@ -142,18 +146,21 @@ fn migration_revert_runs_the_last_two_migration_down() {
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -195,18 +202,21 @@ fn migration_revert_all_runs_the_migrations_down() {
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -245,6 +255,7 @@ fn migration_revert_with_zero_should_not_revert_any_migration() {
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE customers"),
+        None,
     );
 
     // Make sure the project is setup
@@ -307,18 +318,21 @@ fn migration_revert_with_more_than_max_should_revert_all() {
         "2017-08-31-210424_create_customers",
         "CREATE TABLE customers ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE customers"),
+        None,
     );
 
     p.create_migration(
         "2017-09-03-210424_create_contracts",
         "CREATE TABLE contracts ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE contracts"),
+        None,
     );
 
     p.create_migration(
         "2017-09-12-210424_create_bills",
         "CREATE TABLE bills ( id INTEGER PRIMARY KEY )",
         Some("DROP TABLE bills"),
+        None,
     );
 
     // Make sure the project is setup
@@ -361,6 +375,7 @@ fn migration_revert_gives_reasonable_error_message_on_missing_down() {
     p.create_migration(
         "12345_create_users_table",
         "CREATE TABLE users ( id INTEGER )",
+        None,
         None,
     );
 
