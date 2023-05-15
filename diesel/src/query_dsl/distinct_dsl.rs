@@ -31,7 +31,7 @@ where
 {
     type Output = dsl::Distinct<SelectStatement<FromClause<T>>>;
 
-    fn distinct(self) -> Self::Output {
+    fn distinct(self) -> dsl::Distinct<SelectStatement<FromClause<T>>> {
         self.as_query().distinct()
     }
 }
