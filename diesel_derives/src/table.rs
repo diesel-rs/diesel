@@ -665,7 +665,7 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
 
     let max_length = column_def.max_length.as_ref().map(|column_max_length| {
         let max_length = &column_max_length.len;
-        quote! {
+        quote::quote! {
             impl self::diesel::query_source::SizeRestrictedColumn for #column_name {
                 pub const MAX_LENGTH: usize = #max_length;
             }
