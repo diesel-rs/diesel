@@ -366,7 +366,10 @@ fn ssl_cert_tests() {
     let conn_opts2 = ConnectionOptions::parse(url_with_unix_str_and_ssl_cert.as_str()).unwrap();
     assert_eq!(None, conn_opts2.host);
     assert_eq!(None, conn_opts2.port);
-    assert_eq!(CString::new(ssl_cert).unwrap(), conn_opts2.ssl_cert.unwrap());
+    assert_eq!(
+        CString::new(ssl_cert).unwrap(),
+        conn_opts2.ssl_cert.unwrap()
+    );
 }
 
 #[test]
