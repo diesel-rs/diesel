@@ -32,6 +32,7 @@ fn run_infer_schema_include_regex() {
 }
 
 #[test]
+#[cfg(feature = "sqlite")]
 fn run_infer_schema_django_bool_case() {
     test_print_schema(
         "print_schema_django_bool",
