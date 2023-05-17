@@ -32,6 +32,15 @@ fn run_infer_schema_include_regex() {
 }
 
 #[test]
+#[cfg(feature = "sqlite")]
+fn run_infer_schema_django_bool_case() {
+    test_print_schema(
+        "print_schema_django_bool",
+        vec!["--with-docs", "-o", "users1"],
+    );
+}
+
+#[test]
 fn run_infer_schema_exclude() {
     test_print_schema(
         "print_schema_except_tables",
