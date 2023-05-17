@@ -188,7 +188,7 @@ fn convert_auth_error(err: auth::AuthenticationError) -> Box<dyn Error> {
             "No password given. You need to set the BLOG_PASSWORD environment variable.".into()
         }
         EnvironmentError(e) => e.into(),
-        BcryptError(e) => e.into(),
+        Argon2Error(e) => e.to_string().into(),
         DatabaseError(e) => e.into(),
     }
 }
