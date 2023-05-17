@@ -1,5 +1,7 @@
 t1 (id) {
     f0 -> Varchar,
-    f1 -> Varchar {120},
-    f2 -> Nullable<Varchar> {120},
+    #[max_length = 120]
+    f1 -> Varchar,
+    #[max_length = 120]
+    f2 -> Nullable<Varchar>,
 }
