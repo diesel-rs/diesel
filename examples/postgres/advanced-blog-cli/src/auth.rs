@@ -82,6 +82,8 @@ fn register_user(
     username: &str,
     password: &str,
 ) -> Result<User, AuthenticationError> {
+    // In real applications you should never use a constant salt!!
+    // Checkout https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#salting for details
     let salt = SaltString::from_b64(SALT_STRING)?;
     let argon2 = Argon2::default();
     let hashed_password = argon2
