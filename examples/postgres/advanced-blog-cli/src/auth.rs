@@ -1,8 +1,13 @@
-use bcrypt::*;
+use argon2::{
+    password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
 use diesel::prelude::*;
 use diesel::{self, insert_into};
 
 use crate::schema::users;
+
+const SALT_STRING: &str = "dec7901d02ee422ba6bd0333e4fef137";
 
 #[derive(Debug)]
 pub enum AuthenticationError {
@@ -10,13 +15,13 @@ pub enum AuthenticationError {
     NoUsernameSet,
     NoPasswordSet,
     EnvironmentError(dotenvy::Error),
-    BcryptError(BcryptError),
+    Argon2Error(argon2::password_hash::Error),
     DatabaseError(diesel::result::Error),
 }
 
-impl From<BcryptError> for AuthenticationError {
-    fn from(e: BcryptError) -> Self {
-        AuthenticationError::BcryptError(e)
+impl From<argon2::password_hash::Error> for AuthenticationError {
+    fn from(e: argon2::password_hash::Error) -> Self {
+        AuthenticationError::Argon2Error(e)
     }
 }
 
@@ -59,11 +64,14 @@ fn find_user(
         .map_err(AuthenticationError::DatabaseError)?;
 
     if let Some(user_and_password) = user_and_password {
-        if verify(password, &user_and_password.password)? {
-            Ok(Some(user_and_password.user))
-        } else {
-            Err(IncorrectPassword)
-        }
+        let parsed_hash = PasswordHash::new(&user_and_password.password)?;
+        Argon2::default()
+            .verify_password(password.as_bytes(), &parsed_hash)
+            .map_err(|e| match e {
+                argon2::password_hash::Error::Password => IncorrectPassword,
+                _ => AuthenticationError::Argon2Error(e),
+            })?;
+        Ok(Some(user_and_password.user))
     } else {
         Ok(None)
     }
@@ -74,7 +82,13 @@ fn register_user(
     username: &str,
     password: &str,
 ) -> Result<User, AuthenticationError> {
-    let hashed_password = hash(password, DEFAULT_COST)?;
+    // In real applications you should never use a constant salt!!
+    // Checkout https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#salting for details
+    let salt = SaltString::from_b64(SALT_STRING)?;
+    let argon2 = Argon2::default();
+    let hashed_password = argon2
+        .hash_password(password.as_bytes(), &salt)?
+        .to_string();
     insert_into(users::table)
         .values((
             users::username.eq(username),
