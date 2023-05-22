@@ -246,6 +246,10 @@ jobs:
         shell: bash
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/migrations_macros/Cargo.toml --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
 
+      - name: Test table-macro-syntax
+        shell: bash
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_table_macro_syntax/Cargo.toml
+
       - name: Test diesel_migrations
         shell: bash
         run: cargo +${{ matrix.rust }} test --manifest-path diesel_migrations/Cargo.toml --features "${{ matrix.backend }} diesel/${{ matrix.backend }}"

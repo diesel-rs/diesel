@@ -649,8 +649,9 @@ pub mod prelude {
     pub use crate::query_dsl::{
         BelongingToDsl, CombineDsl, JoinOnDsl, QueryDsl, RunQueryDsl, SaveChangesDsl,
     };
+    pub use crate::query_source::SizeRestrictedColumn as _;
     #[doc(inline)]
-    pub use crate::query_source::{Column, JoinTo, QuerySource, SizeRestrictedColumn as _, Table};
+    pub use crate::query_source::{Column, JoinTo, QuerySource, Table};
     #[doc(inline)]
     pub use crate::result::{ConnectionError, ConnectionResult, OptionalExtension, QueryResult};
     #[doc(inline)]
