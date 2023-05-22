@@ -45,13 +45,14 @@ pub fn get_table_data(
         ColumnSorting::Name => query.order(column_name).load(conn)?,
     };
     for c in &mut table_columns {
-        if c.max_length >= Some(u16::MAX as u64) {
-            // This is always the max for mysql regardless
+        if c.max_length.is_some() && !c.type_name.contains('(') {
+            // Mysql returns something in character_maximum_length regardless
             // of whether it's specified at field creation time
-            // In addition this is a shared limitation at row level,
+            // In addition there is typically a shared limitation at row level,
             // so it's typically not even the real max.
             // This basically means no max.
             // https://dev.mysql.com/doc/refman/8.0/en/column-count-limit.html
+            // https://chartio.com/resources/tutorials/understanding-strorage-sizes-for-mysql-text-data-types/
             c.max_length = None;
         }
     }
