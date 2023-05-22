@@ -7,6 +7,7 @@ description: "Test: print_schema_several_keys_with_compound_key"
 diesel::table! {
     payment_card (id) {
         id -> Integer,
+        #[max_length = 50]
         code -> Varchar,
     }
 }
@@ -14,6 +15,7 @@ diesel::table! {
 diesel::table! {
     transaction_one (id) {
         id -> Integer,
+        #[max_length = 50]
         card_code -> Varchar,
         payment_card_id -> Integer,
         by_card_id -> Integer,
@@ -24,6 +26,7 @@ diesel::table! {
     transaction_two (id) {
         id -> Integer,
         payment_card_id -> Integer,
+        #[max_length = 50]
         card_code -> Varchar,
     }
 }
