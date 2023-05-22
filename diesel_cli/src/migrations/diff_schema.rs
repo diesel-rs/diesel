@@ -314,7 +314,7 @@ impl SchemaDiff {
                     .column_defs
                     .iter()
                     .map(|c| {
-                        let ty = ColumnType::for_column_def(&c)
+                        let ty = ColumnType::for_column_def(c)
                             .map_err(diesel::result::Error::QueryBuilderError)?;
                         Ok(ColumnDefinition {
                             sql_name: c.sql_name.to_lowercase(),
@@ -363,7 +363,7 @@ impl SchemaDiff {
                         query_builder,
                         &table.to_lowercase(),
                         &c.column_name.to_string().to_lowercase(),
-                        &ColumnType::for_column_def(&c)
+                        &ColumnType::for_column_def(c)
                             .map_err(diesel::result::Error::QueryBuilderError)?,
                     )?;
                     query_builder.push_sql("\n");
