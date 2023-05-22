@@ -222,7 +222,7 @@ impl Drop for BindData {
 impl BindData {
     fn for_input((tpe, data): (MysqlType, Option<Vec<u8>>)) -> Self {
         let (tpe, flags) = tpe.into();
-        let is_null = i8::from(data.is_none());
+        let is_null = ffi::my_bool::from(data.is_none());
         let mut bytes = data.unwrap_or_default();
         let ptr = NonNull::new(bytes.as_mut_ptr());
         let len = bytes.len() as libc::c_ulong;

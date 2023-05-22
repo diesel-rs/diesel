@@ -9,18 +9,18 @@ mod schema;
 #[cfg(test)]
 mod test_helpers;
 
+use clap::Parser;
 use diesel::prelude::*;
-use structopt::StructOpt;
 
 use std::error::Error;
 
-use self::cli::Cli;
+use self::cli::*;
 use self::pagination::*;
 use self::post::*;
 use self::schema::*;
 
 fn main() {
-    let matches = Cli::from_args();
+    let matches = Cli::parse();
 
     let database_url = dotenvy::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
@@ -30,8 +30,8 @@ fn main() {
 fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
     let conn = &mut PgConnection::establish(database_url)?;
 
-    match cli {
-        Cli::AllPosts { page, per_page } => {
+    match cli.command {
+        Command::AllPosts { page, per_page } => {
             use auth::User;
             use comment::*;
 
@@ -64,7 +64,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
 
             println!("Page {page} of {total_pages}");
         }
-        Cli::CreatePost { title } => {
+        Command::CreatePost { title } => {
             let user = current_user(conn)?;
             let body = editor::edit_string("")?;
             let id = diesel::insert_into(posts::table)
@@ -77,7 +77,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 .get_result::<i32>(conn)?;
             println!("Successfully created post with id {id}");
         }
-        Cli::EditPost { post_id, publish } => {
+        Command::EditPost { post_id, publish } => {
             use diesel::dsl::now;
             use post::Status::*;
             use schema::posts::dsl::*;
@@ -97,7 +97,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 .set((body.eq(new_body), updated_status))
                 .execute(conn)?;
         }
-        Cli::AddComment {
+        Command::AddComment {
             post_id: given_post_id,
         } => {
             use schema::comments::dsl::*;
@@ -112,7 +112,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 .get_result::<i32>(conn)?;
             println!("Created comment with ID {inserted}");
         }
-        Cli::EditComment { comment_id } => {
+        Command::EditComment { comment_id } => {
             use comment::Comment;
             use schema::comments::dsl::*;
 
@@ -126,7 +126,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
                 .set(body.eq(editor::edit_string(&comment.body)?))
                 .execute(conn)?;
         }
-        Cli::MyComments { page, per_page } => {
+        Command::MyComments { page, per_page } => {
             use comment::Comment;
 
             let user = current_user(conn)?;
@@ -147,7 +147,7 @@ fn run_cli(database_url: &str, cli: Cli) -> Result<(), Box<dyn Error>> {
             comment::render(&comments_and_post_title);
             println!("Page {page} of {total_pages}");
         }
-        Cli::Register => {
+        Command::Register => {
             register_user(conn)?;
         }
     }
@@ -188,7 +188,7 @@ fn convert_auth_error(err: auth::AuthenticationError) -> Box<dyn Error> {
             "No password given. You need to set the BLOG_PASSWORD environment variable.".into()
         }
         EnvironmentError(e) => e.into(),
-        BcryptError(e) => e.into(),
+        Argon2Error(e) => e.to_string().into(),
         DatabaseError(e) => e.into(),
     }
 }

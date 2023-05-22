@@ -32,6 +32,15 @@ fn run_infer_schema_include_regex() {
 }
 
 #[test]
+#[cfg(feature = "sqlite")]
+fn run_infer_schema_django_bool_case() {
+    test_print_schema(
+        "print_schema_django_bool",
+        vec!["--with-docs", "-o", "users1"],
+    );
+}
+
+#[test]
 fn run_infer_schema_exclude() {
     test_print_schema(
         "print_schema_except_tables",
@@ -367,7 +376,7 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let p = p.build();
 
     p.command("setup").run();
-    p.create_migration("12345_create_schema", &schema, None);
+    p.create_migration("12345_create_schema", &schema, None, None);
     let result = p.command("migration").arg("run").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
