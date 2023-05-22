@@ -54,6 +54,12 @@ impl RawConnection {
         if let Some(ssl_ca) = connection_options.ssl_ca() {
             self.set_ssl_ca(ssl_ca)
         }
+        if let Some(ssl_cert) = connection_options.ssl_cert() {
+            self.set_ssl_cert(ssl_cert)
+        }
+        if let Some(ssl_key) = connection_options.ssl_key() {
+            self.set_ssl_key(ssl_key)
+        }
 
         unsafe {
             // Make sure you don't use the fake one!
@@ -196,6 +202,26 @@ impl RawConnection {
                 self.0.as_ptr(),
                 mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_CA,
                 ssl_ca.as_ptr() as *const std::ffi::c_void,
+            )
+        };
+    }
+
+    fn set_ssl_cert(&self, ssl_cert: &CStr) {
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_CERT,
+                ssl_cert.as_ptr() as *const std::ffi::c_void,
+            )
+        };
+    }
+
+    fn set_ssl_key(&self, ssl_key: &CStr) {
+        unsafe {
+            mysqlclient_sys::mysql_options(
+                self.0.as_ptr(),
+                mysqlclient_sys::mysql_option::MYSQL_OPT_SSL_KEY,
+                ssl_key.as_ptr() as *const std::ffi::c_void,
             )
         };
     }
