@@ -58,6 +58,7 @@ impl ProjectBuilder {
         Project {
             directory: tempdir,
             name: self.name,
+            skip_drop_db: false,
         }
     }
 }
@@ -65,6 +66,7 @@ impl ProjectBuilder {
 pub struct Project {
     directory: TempDir,
     pub name: String,
+    skip_drop_db: bool,
 }
 
 impl Project {
@@ -184,15 +186,21 @@ impl Project {
             metadata_file.write_all(config.as_bytes()).unwrap();
         }
     }
+
+    pub fn skip_drop_db(&mut self) {
+        self.skip_drop_db = true;
+    }
 }
 
 #[cfg(not(feature = "sqlite"))]
 impl Drop for Project {
     fn drop(&mut self) {
-        try_drop!(
-            self.command("database").arg("drop").run().result(),
-            "Couldn't drop database"
-        );
+        if !self.skip_drop_db {
+            try_drop!(
+                self.command("database").arg("drop").run().result(),
+                "Couldn't drop database"
+            );
+        }
     }
 }
 
