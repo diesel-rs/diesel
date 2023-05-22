@@ -68,3 +68,25 @@ fn missing_mysql_panic() {
         .stderr()
         .contains("panicked at 'Database url `mysql://localhost` requires the `mysql` feature but it's not enabled.'"));
 }
+
+#[test]
+fn broken_dotenv_file_results_in_error() {
+    #[cfg(feature = "postgres")]
+    let url = "postgres://localhost";
+    #[cfg(feature = "mysql")]
+    let url = "mysql://localhost";
+    #[cfg(feature = "sqlite")]
+    let url = ":memory:";
+
+    let mut p = project("broken_dotenv_file_results_in_error")
+        .file(".env", &format!("DATABASE_URL={url}\n;foo\n#bar"))
+        .build();
+
+    p.skip_drop_db();
+
+    let result = p.command_without_database_url("setup").run();
+    assert!(result
+        .stderr()
+        .contains("Initializing `.env` file failed: Error parsing line"));
+    assert!(!result.is_success());
+}

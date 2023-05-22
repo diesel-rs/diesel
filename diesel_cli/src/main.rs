@@ -44,7 +44,15 @@ pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 fn main() {
     use dotenvy::dotenv;
-    dotenv().ok();
+
+    match dotenv() {
+        Err(e) if !matches!(e, dotenvy::Error::Io(ref i) if i.kind() == std::io::ErrorKind::NotFound) =>
+        {
+            eprintln!("Initializing `.env` file failed: {}", e);
+            std::process::exit(1);
+        }
+        _ => {}
+    }
 
     let matches = cli::build_cli().get_matches();
 
