@@ -105,6 +105,8 @@ jobs:
 
           git add metrics/$FOLDER_NAME-$GITHUB_SHA-${{matrix.backend}}
           git -c user.name=Bot -c user.email=dummy@example.com commit --message "📈"
+          git fetch
+          git rebase origin/master
 
           git push origin master
 
