@@ -1,6 +1,6 @@
 [package]
 name = "diesel_cli"
-version = "2.0.1"
+version = "2.1.0"
 license = "MIT OR Apache-2.0"
 description = "Provides the CLI for the Diesel crate"
 readme = "README.md"
@@ -35,12 +35,12 @@ diesel_table_macro_syntax = {version = "0.1", path = "../diesel_table_macro_synt
 syn = { version = "2", features = ["visit"] }
 
 [dependencies.diesel]
-version = "~2.0.0"
+version = "~2.1.0"
 path = "../diesel"
 default-features = false
 
 [dependencies.diesel_migrations]
-version = "~2.0.0"
+version = "~2.1.0"
 path = "../diesel_migrations/"
 
 [dev-dependencies]

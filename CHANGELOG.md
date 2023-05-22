@@ -10,6 +10,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased 
 
+## [2.1.0] 2023-05-xx
+
 ### Changed 
 
 * The minimal officially supported rustc version is now 1.65.0
@@ -26,6 +28,19 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Add support for MySQL's `ON DUPLICATE KEY DO UPDATE` syntax through the existing upsert functions.
 * Add ability to define multiple columns in a single `distinct_on` for PostgreSQL,
   like: `.distinct_on((column_a, column_b))`.
+* Added column size restrictions to the generated `schema.rs` file
+
+## [2.0.4] 2023-04-18
+
+## Fixed 
+
+* Workaround the missing name resolution in rust-analyzer. This should fix type inference for some diesel queries. (It remains broken for queries containing `.filter()`/`.inner_join()`/`.left_join()`. These require fixes in rust-analyzer itself)
+* Fixed a bug that could lead to inserting null values instead of empty values for custom sqlite types
+* Fixed a bug that could lead to an unexpected panic while providing an out of bounds bind for `sql_query` in the sqlite backend
+* Fixed some mysql backend specific impl being behind the `mysql` instead of the `mysql_backend` feature flag
+
+## Added
+
 * Support for `libsqlite3-sys` 0.26
 
 ## [diesel_derives 2.0.2] 2023-03-13 
@@ -33,6 +48,13 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ## Fixed 
 
 * Fixing the fallout of a breaking change from `quote` by not using their internal API
+
+## [2.0.3] 2023-01-24
+
+## Fixed
+
+* Fixed a bug with our transaction manager implementation that caused by marking transactions as broken which could be recovered.
+* Fixed an issue with the combination of `BoxableExpression` and order clauses
 
 ## [2.0.2] 2022-10-11
 
@@ -2000,3 +2022,6 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.0.1]: https://github.com/diesel-rs/diesel/compare/v.2.0.0...v2.0.1
 [2.0.2]: https://github.com/diesel-rs/diesel/compare/v.2.0.1...v2.0.2
 [diesel_derives 2.0.2]: https://github.com/diesel-rs/diesel/compare/v.2.0.2...diesel_derives_v2.0.2
+[2.0.3]: https://github.com/diesel-rs/diesel/compare/v.2.0.2...v2.0.3
+[2.0.4]: https://github.com/diesel-rs/diesel/compare/v.2.0.3...v2.0.4
+[2.1.0]: https://github.com/diesel-rs/diesel/compare/v.2.0.0...v2.1.0
