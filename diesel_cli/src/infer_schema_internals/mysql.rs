@@ -39,10 +39,22 @@ pub fn get_table_data(
         ))
         .filter(table_name.eq(&table.sql_name))
         .filter(table_schema.eq(schema_name));
-    match column_sorting {
-        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
-        ColumnSorting::Name => query.order(column_name).load(conn),
+    let mut table_columns: Vec<ColumnInformation> = match column_sorting {
+        ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn)?,
+        ColumnSorting::Name => query.order(column_name).load(conn)?,
+    };
+    for c in &mut table_columns {
+        if c.max_length >= Some(u16::MAX as u64) {
+            // This is always the max for mysql regardless
+            // of whether it's specified at field creation time
+            // In addition this is a shared limitation at row level,
+            // so it's typically not even the real max.
+            // This basically means no max.
+            // https://dev.mysql.com/doc/refman/8.0/en/column-count-limit.html
+            c.max_length = None;
+        }
     }
+    Ok(table_columns)
 }
 
 mod information_schema {
