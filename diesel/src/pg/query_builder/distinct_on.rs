@@ -1,6 +1,6 @@
 use crate::expression::SelectableExpression;
 use crate::pg::Pg;
-use crate::query_builder::order_clause::{NoOrderClause, OrderClause};
+use crate::query_builder::order_clause::NoOrderClause;
 use crate::query_builder::{
     AstPass, FromClause, QueryFragment, QueryId, SelectQuery, SelectStatement,
 };
@@ -8,6 +8,7 @@ use crate::query_dsl::methods::DistinctOnDsl;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::result::QueryResult;
 use crate::{Expression, QuerySource};
+use diesel::query_builder::order_clause::OrderClause;
 
 /// Represents `DISTINCT ON (...)`
 #[derive(Debug, Clone, Copy, QueryId)]
@@ -17,26 +18,27 @@ pub struct DistinctOnClause<T>(pub(crate) T);
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for NoOrderClause {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: Expression {}
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Desc<T>> where
-    T: Expression
-{
-}
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Asc<T>> where
-    T: Expression
-{
+
+/// A decorator trait for [`OrderClause`]
+/// It helps to have bounds on either Col, Asc<Col> and Desc<Col>.
+pub trait OrderDecorator {
+    /// A column on a database table.
+    type Column;
 }
 
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
-    for OrderClause<(crate::helper_types::Desc<T>,)>
+impl<C> OrderDecorator for C
 where
-    T: Expression,
+    C: crate::Column,
 {
+    type Column = C;
 }
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
-    for OrderClause<(crate::helper_types::Asc<T>,)>
-where
-    T: Expression,
-{
+
+impl<C> OrderDecorator for crate::helper_types::Asc<C> {
+    type Column = C;
+}
+
+impl<C> OrderDecorator for crate::helper_types::Desc<C> {
+    type Column = C;
 }
 
 impl<T> QueryFragment<Pg> for DistinctOnClause<T>

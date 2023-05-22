@@ -24,6 +24,8 @@ pub use self::metadata_lookup::PgMetadataLookup;
 #[doc(inline)]
 pub use self::query_builder::DistinctOnClause;
 #[doc(inline)]
+pub use self::query_builder::OrderDecorator;
+#[doc(inline)]
 pub use self::query_builder::PgQueryBuilder;
 #[doc(inline)]
 pub use self::transaction::TransactionBuilder;
