@@ -1,3 +1,4 @@
+use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
 use diesel::mysql::{Mysql, MysqlConnection};
 use diesel::*;
 use heck::ToUpperCamelCase;
@@ -57,6 +58,38 @@ pub fn get_table_data(
     Ok(table_columns)
 }
 
+impl<ST> Queryable<ST, Mysql> for ColumnInformation
+where
+    (
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<u64>,
+        Option<String>,
+    ): FromStaticSqlRow<ST, Mysql>,
+{
+    type Row = (
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<u64>,
+        Option<String>,
+    );
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(ColumnInformation::new(
+            row.0,
+            row.1,
+            row.2,
+            row.3 == "YES",
+            row.4,
+            row.5,
+        ))
+    }
+}
+
 mod information_schema {
     use diesel::prelude::{allow_tables_to_appear_in_same_query, table};
 
@@ -97,8 +130,8 @@ mod information_schema {
             column_name -> VarChar,
             #[sql_name = "is_nullable"]
             __is_nullable -> VarChar,
-            character_maximum_length -> Nullable<Integer>,
-            ordinal_position -> BigInt,
+            character_maximum_length -> Nullable<Unsigned<BigInt>>,
+            ordinal_position -> Unsigned<BigInt>,
             udt_name -> VarChar,
             udt_schema -> VarChar,
             column_type -> VarChar,

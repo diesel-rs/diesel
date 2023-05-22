@@ -2,7 +2,14 @@ use super::data_structures::*;
 use super::information_schema::DefaultSchema;
 use super::TableName;
 use crate::print_schema::ColumnSorting;
-use diesel::{dsl::AsExprOf, expression::AsExpression, pg::Pg, prelude::*, sql_types};
+use diesel::{
+    deserialize::{self, FromStaticSqlRow, Queryable},
+    dsl::AsExprOf,
+    expression::AsExpression,
+    pg::Pg,
+    prelude::*,
+    sql_types,
+};
 use heck::ToUpperCamelCase;
 use std::borrow::Cow;
 use std::error::Error;
@@ -88,6 +95,44 @@ pub fn get_table_data(
     match column_sorting {
         ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
         ColumnSorting::Name => query.order(column_name).load(conn),
+    }
+}
+
+impl<ST> Queryable<ST, Pg> for ColumnInformation
+where
+    (
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<i32>,
+        Option<String>,
+    ): FromStaticSqlRow<ST, Pg>,
+{
+    type Row = (
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<i32>,
+        Option<String>,
+    );
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(ColumnInformation::new(
+            row.0,
+            row.1,
+            row.2,
+            row.3 == "YES",
+            row.4
+                .map(|n| {
+                    std::convert::TryInto::try_into(n).map_err(|e| {
+                        format!("Max column length can't be converted to u64: {e} (got: {n})")
+                    })
+                })
+                .transpose()?,
+            row.5,
+        ))
     }
 }
 

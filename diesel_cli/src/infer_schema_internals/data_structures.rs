@@ -1,15 +1,7 @@
-#[cfg(feature = "uses_information_schema")]
-use diesel::backend::Backend;
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
-#[cfg(feature = "sqlite")]
-use diesel::sqlite::Sqlite;
-
 use diesel_table_macro_syntax::ColumnDef;
 
 use std::error::Error;
 
-#[cfg(feature = "uses_information_schema")]
-use super::information_schema::DefaultSchema;
 use super::table_data::TableName;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -147,54 +139,6 @@ impl ColumnInformation {
             max_length,
             comment,
         }
-    }
-}
-
-#[cfg(feature = "uses_information_schema")]
-impl<ST, DB> Queryable<ST, DB> for ColumnInformation
-where
-    DB: Backend + DefaultSchema,
-    (
-        String,
-        String,
-        Option<String>,
-        String,
-        Option<i32>,
-        Option<String>,
-    ): FromStaticSqlRow<ST, DB>,
-{
-    type Row = (
-        String,
-        String,
-        Option<String>,
-        String,
-        Option<i32>,
-        Option<String>,
-    );
-
-    fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(
-            row.0,
-            row.1,
-            row.2,
-            row.3 == "YES",
-            row.4.map(std::convert::TryInto::try_into).transpose()?,
-            row.5,
-        ))
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<ST> Queryable<ST, Sqlite> for ColumnInformation
-where
-    (i32, String, String, bool, Option<String>, bool, i32): FromStaticSqlRow<ST, Sqlite>,
-{
-    type Row = (i32, String, String, bool, Option<String>, bool, i32);
-
-    fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(
-            row.1, row.2, None, !row.3, None, None,
-        ))
     }
 }
 
