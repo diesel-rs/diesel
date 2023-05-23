@@ -663,6 +663,14 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
         None
     };
 
+    let max_length = column_def.max_length.as_ref().map(|column_max_length| {
+        quote::quote! {
+            impl self::diesel::query_source::SizeRestrictedColumn for #column_name {
+                const MAX_LENGTH: usize = #column_max_length;
+            }
+        }
+    });
+
     quote::quote_spanned! {span=>
         #(#meta)*
         #[allow(non_camel_case_types, dead_code)]
@@ -767,6 +775,8 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
                 self.eq(__diesel_internal_rhs)
             }
         }
+
+        #max_length
 
         #ops_impls
         #backend_specific_column_impl

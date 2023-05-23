@@ -1,11 +1,7 @@
-#[cfg(feature = "uses_information_schema")]
-use diesel::backend::Backend;
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
-#[cfg(feature = "sqlite")]
-use diesel::sqlite::Sqlite;
+use diesel_table_macro_syntax::ColumnDef;
 
-#[cfg(feature = "uses_information_schema")]
-use super::information_schema::DefaultSchema;
+use std::error::Error;
+
 use super::table_data::TableName;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,6 +10,7 @@ pub struct ColumnInformation {
     pub type_name: String,
     pub type_schema: Option<String>,
     pub nullable: bool,
+    pub max_length: Option<u64>,
     pub comment: Option<String>,
 }
 
@@ -25,10 +22,26 @@ pub struct ColumnType {
     pub is_array: bool,
     pub is_nullable: bool,
     pub is_unsigned: bool,
+    pub max_length: Option<u64>,
 }
 
-impl From<&syn::TypePath> for ColumnType {
-    fn from(t: &syn::TypePath) -> Self {
+impl ColumnType {
+    pub(crate) fn for_column_def(c: &ColumnDef) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        Ok(Self::for_type_path(
+            &c.tpe,
+            c.max_length
+                .as_ref()
+                .map(|l| {
+                    l.base10_parse::<u64>()
+                        .map_err(|e| -> Box<dyn Error + Send + Sync> {
+                            format!("Column length literal can't be parsed as u64: {e}").into()
+                        })
+                })
+                .transpose()?,
+        ))
+    }
+
+    fn for_type_path(t: &syn::TypePath, max_length: Option<u64>) -> Self {
         let last = t
             .path
             .segments
@@ -42,6 +55,7 @@ impl From<&syn::TypePath> for ColumnType {
             is_array: last.ident == "Array",
             is_nullable: last.ident == "Nullable",
             is_unsigned: last.ident == "Unsigned",
+            max_length,
         };
 
         let sql_name = if !ret.is_nullable && !ret.is_array && !ret.is_unsigned {
@@ -53,7 +67,7 @@ impl From<&syn::TypePath> for ColumnType {
         } else if let syn::PathArguments::AngleBracketed(ref args) = last.arguments {
             let arg = args.args.first().expect("There is at least one argument");
             if let syn::GenericArgument::Type(syn::Type::Path(p)) = arg {
-                let s = Self::from(p);
+                let s = Self::for_type_path(p, max_length);
                 ret.is_nullable |= s.is_nullable;
                 ret.is_array |= s.is_array;
                 ret.is_unsigned |= s.is_unsigned;
@@ -110,6 +124,7 @@ impl ColumnInformation {
         type_name: U,
         type_schema: Option<String>,
         nullable: bool,
+        max_length: Option<u64>,
         comment: Option<String>,
     ) -> Self
     where
@@ -121,39 +136,9 @@ impl ColumnInformation {
             type_name: type_name.into(),
             type_schema,
             nullable,
+            max_length,
             comment,
         }
-    }
-}
-
-#[cfg(feature = "uses_information_schema")]
-impl<ST, DB> Queryable<ST, DB> for ColumnInformation
-where
-    DB: Backend + DefaultSchema,
-    (String, String, Option<String>, String, Option<String>): FromStaticSqlRow<ST, DB>,
-{
-    type Row = (String, String, Option<String>, String, Option<String>);
-
-    fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(
-            row.0,
-            row.1,
-            row.2,
-            row.3 == "YES",
-            row.4,
-        ))
-    }
-}
-
-#[cfg(feature = "sqlite")]
-impl<ST> Queryable<ST, Sqlite> for ColumnInformation
-where
-    (i32, String, String, bool, Option<String>, bool, i32): FromStaticSqlRow<ST, Sqlite>,
-{
-    type Row = (i32, String, String, bool, Option<String>, bool, i32);
-
-    fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(row.1, row.2, None, !row.3, None))
     }
 }
 

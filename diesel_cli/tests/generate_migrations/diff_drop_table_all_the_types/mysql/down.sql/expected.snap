@@ -1,6 +1,5 @@
 ---
 source: diesel_cli/tests/migration_generate.rs
-assertion_line: 338
 description: "Test: diff_drop_table_all_the_types"
 ---
 -- This file should undo anything in `up.sql`
@@ -19,7 +18,7 @@ CREATE TABLE `test`(
 	`datetime` DATETIME,
 	`timestamp` TIMESTAMP NOT NULL,
 	`time` TIME,
-	`char` CHAR,
+	`char` CHAR(50),
 	`blob` BLOB,
 	`text` TEXT
 );

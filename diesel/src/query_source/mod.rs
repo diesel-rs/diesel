@@ -189,3 +189,12 @@ mod impls_which_are_only_here_to_improve_error_messages {
         type Selection = this_table_appears_in_your_query_more_than_once_and_must_be_aliased;
     }
 }
+
+/// Max length for columns of type Char/Varchar...
+///
+/// If a given column has a such constraint, this trait will be implemented and specify that
+/// length.
+pub trait SizeRestrictedColumn: Column {
+    /// Max length of that column
+    const MAX_LENGTH: usize;
+}

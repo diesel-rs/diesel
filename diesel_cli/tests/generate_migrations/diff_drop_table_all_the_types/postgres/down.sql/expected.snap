@@ -1,6 +1,5 @@
 ---
 source: diesel_cli/tests/migration_generate.rs
-assertion_line: 319
 description: "Test: diff_drop_table_all_the_types"
 ---
 -- This file should undo anything in `up.sql`
@@ -12,10 +11,10 @@ CREATE TABLE "test"(
 	"bigserial2" INT8 NOT NULL,
 	"boolean" BOOL,
 	"bytea" BYTEA,
-	"character" BPCHAR,
-	"char" BPCHAR,
-	"varchar" VARCHAR,
-	"varchar2" VARCHAR,
+	"character" BPCHAR(5),
+	"char" BPCHAR(5),
+	"varchar" VARCHAR(5),
+	"varchar2" VARCHAR(5),
 	"cidr" CIDR,
 	"date" DATE,
 	"double" FLOAT8,
