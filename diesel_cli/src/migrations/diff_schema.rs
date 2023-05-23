@@ -126,7 +126,7 @@ pub fn generate_sql_based_on_diff_schema(
 
             for c in columns.column_data {
                 if let Some(def) = expected_column_map.remove(&c.sql_name.to_lowercase()) {
-                    let tpe = ColumnType::from(&def.tpe);
+                    let tpe = ColumnType::for_column_def(&def)?;
                     if !is_same_type(&c.ty, tpe) {
                         changed_columns.push((c, def));
                     }
@@ -242,6 +242,7 @@ fn is_same_type(ty: &ColumnType, tpe: ColumnType) -> bool {
     if ty.is_array != tpe.is_array
         || ty.is_nullable != tpe.is_nullable
         || ty.is_unsigned != tpe.is_unsigned
+        || ty.max_length != tpe.max_length
     {
         return false;
     }
@@ -313,15 +314,16 @@ impl SchemaDiff {
                     .column_defs
                     .iter()
                     .map(|c| {
-                        let ty = ColumnType::from(&c.tpe);
-                        ColumnDefinition {
+                        let ty = ColumnType::for_column_def(c)
+                            .map_err(diesel::result::Error::QueryBuilderError)?;
+                        Ok(ColumnDefinition {
                             sql_name: c.sql_name.to_lowercase(),
                             rust_name: c.sql_name.clone(),
                             ty,
                             comment: None,
-                        }
+                        })
                     })
-                    .collect::<Vec<_>>();
+                    .collect::<QueryResult<Vec<_>>>()?;
                 let foreign_keys = foreign_keys
                     .iter()
                     .map(|(f, pk)| {
@@ -361,7 +363,8 @@ impl SchemaDiff {
                         query_builder,
                         &table.to_lowercase(),
                         &c.column_name.to_string().to_lowercase(),
-                        &ColumnType::from(&c.tpe),
+                        &ColumnType::for_column_def(c)
+                            .map_err(diesel::result::Error::QueryBuilderError)?,
                     )?;
                     query_builder.push_sql("\n");
                 }
@@ -545,6 +548,9 @@ where
 {
     // TODO: handle schema
     query_builder.push_sql(&format!(" {}", ty.sql_name.to_uppercase()));
+    if let Some(max_length) = ty.max_length {
+        query_builder.push_sql(&format!("({max_length})"));
+    }
     if !ty.is_nullable {
         query_builder.push_sql(" NOT NULL");
     }

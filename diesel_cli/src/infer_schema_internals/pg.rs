@@ -2,7 +2,14 @@ use super::data_structures::*;
 use super::information_schema::DefaultSchema;
 use super::TableName;
 use crate::print_schema::ColumnSorting;
-use diesel::{dsl::AsExprOf, expression::AsExpression, pg::Pg, prelude::*, sql_types};
+use diesel::{
+    deserialize::{self, FromStaticSqlRow, Queryable},
+    dsl::AsExprOf,
+    expression::AsExpression,
+    pg::Pg,
+    prelude::*,
+    sql_types,
+};
 use heck::ToUpperCamelCase;
 use std::borrow::Cow;
 use std::error::Error;
@@ -48,6 +55,7 @@ pub fn determine_column_type(
         is_array,
         is_nullable: attr.nullable,
         is_unsigned: false,
+        max_length: attr.max_length,
     })
 }
 
@@ -79,6 +87,7 @@ pub fn get_table_data(
             udt_name,
             udt_schema.nullable(),
             __is_nullable,
+            character_maximum_length,
             col_description(regclass(table), ordinal_position),
         ))
         .filter(table_name.eq(&table.sql_name))
@@ -86,6 +95,44 @@ pub fn get_table_data(
     match column_sorting {
         ColumnSorting::OrdinalPosition => query.order(ordinal_position).load(conn),
         ColumnSorting::Name => query.order(column_name).load(conn),
+    }
+}
+
+impl<ST> Queryable<ST, Pg> for ColumnInformation
+where
+    (
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<i32>,
+        Option<String>,
+    ): FromStaticSqlRow<ST, Pg>,
+{
+    type Row = (
+        String,
+        String,
+        Option<String>,
+        String,
+        Option<i32>,
+        Option<String>,
+    );
+
+    fn build(row: Self::Row) -> deserialize::Result<Self> {
+        Ok(ColumnInformation::new(
+            row.0,
+            row.1,
+            row.2,
+            row.3 == "YES",
+            row.4
+                .map(|n| {
+                    std::convert::TryInto::try_into(n).map_err(|e| {
+                        format!("Max column length can't be converted to u64: {e} (got: {n})")
+                    })
+                })
+                .transpose()?,
+            row.5,
+        ))
     }
 }
 
@@ -108,6 +155,7 @@ mod information_schema {
             column_name -> VarChar,
             #[sql_name = "is_nullable"]
             __is_nullable -> VarChar,
+            character_maximum_length -> Nullable<Integer>,
             ordinal_position -> BigInt,
             udt_name -> VarChar,
             udt_schema -> VarChar,
@@ -221,7 +269,7 @@ mod test {
             .execute(&mut connection)
             .unwrap();
         diesel::sql_query(
-                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR, not_null TEXT NOT NULL)",
+                "CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY, text_col VARCHAR(128), not_null TEXT NOT NULL)",
             ).execute(&mut connection)
             .unwrap();
         diesel::sql_query("COMMENT ON COLUMN test_schema.table_1.id IS 'column comment'")
@@ -239,12 +287,21 @@ mod test {
             "int4",
             pg_catalog.clone(),
             false,
+            None,
             Some("column comment".to_string()),
         );
-        let text_col =
-            ColumnInformation::new("text_col", "varchar", pg_catalog.clone(), true, None);
-        let not_null = ColumnInformation::new("not_null", "text", pg_catalog.clone(), false, None);
-        let array_col = ColumnInformation::new("array_col", "_varchar", pg_catalog, false, None);
+        let text_col = ColumnInformation::new(
+            "text_col",
+            "varchar",
+            pg_catalog.clone(),
+            true,
+            Some(128),
+            None,
+        );
+        let not_null =
+            ColumnInformation::new("not_null", "text", pg_catalog.clone(), false, None, None);
+        let array_col =
+            ColumnInformation::new("array_col", "_varchar", pg_catalog, false, None, None);
         assert_eq!(
             Ok(vec![id, text_col, not_null]),
             get_table_data(&mut connection, &table_1, &ColumnSorting::OrdinalPosition)

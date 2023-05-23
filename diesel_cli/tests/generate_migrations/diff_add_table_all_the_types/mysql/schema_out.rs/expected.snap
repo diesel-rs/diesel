@@ -1,6 +1,5 @@
 ---
 source: diesel_cli/tests/migration_generate.rs
-assertion_line: 354
 description: "Test: diff_add_table_all_the_types"
 ---
 // @generated automatically by Diesel CLI.
@@ -12,6 +11,7 @@ diesel::table! {
         integer_column -> Integer,
         small_int_col -> Smallint,
         big_int_col -> Bigint,
+        #[max_length = 1]
         binary_col -> Binary,
         text_col -> Text,
         double_col -> Double,
@@ -28,6 +28,7 @@ diesel::table! {
         big_int2_col -> Bigint,
         float8_col -> Double,
         decimal_col -> Decimal,
+        #[max_length = 1]
         char_col -> Char,
         tinytext_col -> Tinytext,
         mediumtext_col -> Mediumtext,
