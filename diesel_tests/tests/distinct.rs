@@ -168,6 +168,52 @@ fn distinct_of_multiple_columns() {
         .load::<Post>(&mut connection)
         .unwrap();
 
+    // one order by
+    // one distinct on
+    let data = posts::table
+        .order(posts::body)
+        .distinct_on(posts::body)
+        .load(&mut connection);
+    let expected = vec![
+        (posts[0].clone()),
+        (posts[7].clone()),
+    ];
+
+    assert_eq!(Ok(expected), data);
+
+    // multi order by
+    // one distinct on
+    let data = posts::table
+        .inner_join(users::table)
+        .order((users::id, posts::body, posts::title))
+        .distinct_on(users::id)
+        .load(&mut connection);
+    let expected = vec![
+        ((posts[0].clone(), sean.clone())),
+        ((posts[4].clone(), tess.clone())),
+    ];
+
+    assert_eq!(Ok(expected), data);
+
+    // one order by
+    // multi distinct on
+    let data = posts::table
+        .inner_join(users::table)
+        .order(users::id)
+        .distinct_on((users::id, posts::body))
+        .load(&mut connection);
+    let expected = vec![
+        ((posts[0].clone(), sean.clone())),
+        ((posts[1].clone(), sean.clone())),
+        ((posts[4].clone(), tess.clone())),
+        ((posts[7].clone(), tess.clone())),
+    ];
+    
+    assert_eq!(Ok(expected), data);
+
+    // multi order by
+    // multi distinct on
+    // order by > distinct on
     let data = posts::table
         .inner_join(users::table)
         .order((users::id, posts::body, posts::title))
@@ -181,20 +227,25 @@ fn distinct_of_multiple_columns() {
     ];
 
     assert_eq!(Ok(expected), data);
-}
 
-// #[cfg(feature = "postgres")]
-// #[test]
-// #[should_panic(expected = "TBD")]
-// fn invalid_distinct_on_or_order_detected() {
-//     use crate::schema::users;
-//     use crate::schema::posts;
-//
-//     let mut connection = connection();
-//
-//     posts::table
-//         .inner_join(users::table)
-//         .order((users::id, posts::title))
-//         .distinct_on((users::id, posts::body))
-//         .load(&mut connection);
-// }
+    // multi order by
+    // multi distinct on
+    // order by < distinct on
+    let data = posts::table
+        .inner_join(users::table)
+        .order((users::id, posts::body))
+        .distinct_on((users::id, posts::body, posts::title))
+        .load(&mut connection);
+    let expected = vec![
+        ((posts[0].clone(), sean.clone())),
+        ((posts[2].clone(), sean.clone())),
+        ((posts[1].clone(), sean.clone())),
+        ((posts[3].clone(), sean.clone())),
+        ((posts[4].clone(), tess.clone())),
+        ((posts[6].clone(), tess.clone())),
+        ((posts[5].clone(), tess.clone())),
+        ((posts[7].clone(), tess.clone())),
+    ];
+
+    assert_eq!(Ok(expected), data);
+}

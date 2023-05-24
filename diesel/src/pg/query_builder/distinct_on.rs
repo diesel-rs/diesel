@@ -18,13 +18,24 @@ pub struct DistinctOnClause<T>(pub(crate) T);
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for NoOrderClause {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Column {}
-
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Desc<T>>
+    where
+        T: crate::Column,
+{}
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Asc<T>>
+    where
+        T: crate::Column,
+{}
 macro_rules! valid_ordering {
     (@skip: ($ST1: ident, $($ST:ident,)*), $T1:ident, ) => {};
     (@skip: ($ST1: ident, $($ST:ident,)*), $T1:ident, $($T:ident,)+) => {
         valid_ordering!(($($ST,)*), ($ST1,), $($T,)*);
     };
     (($ST1: ident,), ($($OT:ident,)*), $T1:ident,) => {
+        #[allow(unused_parens)]
+        impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($ST1, $($OT,)*)>> for OrderClause<($T1)>
+        where $T1: crate::pg::OrderDecorator<Column = $ST1>,
+        {}
         impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($ST1, $($OT,)*)>> for OrderClause<($T1,)>
         where $T1: crate::pg::OrderDecorator<Column = $ST1>,
         {}
@@ -44,7 +55,7 @@ macro_rules! valid_ordering {
         {}
         impl<$T1, $($T,)* $ST1, $($ST,)* $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($T1, $($T,)*)>> for OrderClause<($ST1, $($ST,)* $($OT,)*)>
         where $ST1: crate::pg::OrderDecorator<Column = $T1>,
-        $($ST: crate::pg::OrderDecorator<Column = $T>,)*
+              $($ST: crate::pg::OrderDecorator<Column = $T>,)*
         {}
         valid_ordering!(($($ST,)*), ($($OT,)* $ST1,), $($T,)*);
     };
