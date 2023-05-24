@@ -189,8 +189,8 @@ fn distinct_of_multiple_columns() {
         .distinct_on(users::id)
         .load(&mut connection);
     let expected = vec![
-        ((posts[0].clone(), sean.clone())),
-        ((posts[4].clone(), tess.clone())),
+        (posts[0].clone(), sean.clone()),
+        (posts[4].clone(), tess.clone()),
     ];
 
     assert_eq!(Ok(expected), data);
@@ -203,12 +203,12 @@ fn distinct_of_multiple_columns() {
         .distinct_on((users::id, posts::body))
         .load(&mut connection);
     let expected = vec![
-        ((posts[0].clone(), sean.clone())),
-        ((posts[1].clone(), sean.clone())),
-        ((posts[4].clone(), tess.clone())),
-        ((posts[7].clone(), tess.clone())),
+        (posts[0].clone(), sean.clone()),
+        (posts[1].clone(), sean.clone()),
+        (posts[4].clone(), tess.clone()),
+        (posts[7].clone(), tess.clone()),
     ];
-    
+
     assert_eq!(Ok(expected), data);
 
     // multi order by
@@ -220,10 +220,10 @@ fn distinct_of_multiple_columns() {
         .distinct_on((users::id, posts::body))
         .load(&mut connection);
     let expected = vec![
-        ((posts[0].clone(), sean.clone())),
-        ((posts[1].clone(), sean.clone())),
-        ((posts[4].clone(), tess.clone())),
-        ((posts[5].clone(), tess.clone())),
+        (posts[0].clone(), sean.clone()),
+        (posts[1].clone(), sean.clone()),
+        (posts[4].clone(), tess.clone()),
+        (posts[5].clone(), tess.clone()),
     ];
 
     assert_eq!(Ok(expected), data);
@@ -237,14 +237,14 @@ fn distinct_of_multiple_columns() {
         .distinct_on((users::id, posts::body, posts::title))
         .load(&mut connection);
     let expected = vec![
-        ((posts[0].clone(), sean.clone())),
-        ((posts[2].clone(), sean.clone())),
-        ((posts[1].clone(), sean.clone())),
-        ((posts[3].clone(), sean.clone())),
-        ((posts[4].clone(), tess.clone())),
-        ((posts[6].clone(), tess.clone())),
-        ((posts[5].clone(), tess.clone())),
-        ((posts[7].clone(), tess.clone())),
+        (posts[0].clone(), sean.clone()),
+        (posts[2].clone(), sean.clone()),
+        (posts[1].clone(), sean.clone()),
+        (posts[3].clone(), sean),
+        (posts[4].clone(), tess.clone()),
+        (posts[6].clone(), tess.clone()),
+        (posts[5].clone(), tess.clone()),
+        (posts[7].clone(), tess),
     ];
 
     assert_eq!(Ok(expected), data);

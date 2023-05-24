@@ -74,12 +74,12 @@ macro_rules! valid_ordering {
 }
 
 // we only generate these impl up to a tuple size of 5 as we generate n*n + 4 impls here
-// If we would generate these impls up to  max_table_column_count tuple elements that
+// If we would generate these impls up to max_table_column_count tuple elements that
 // would be a really large number for 128 tuple elements (~64k trait impls)
 // It's fine to increase this number at some point in the future gradually
 diesel_derives::__diesel_for_each_tuple!(valid_ordering, 5);
 
-/// A decorator trait for [`OrderClause`]
+/// A decorator trait for `OrderClause`
 /// It helps to have bounds on either Col, Asc<Col> and Desc<Col>.
 pub trait OrderDecorator {
     /// A column on a database table.
