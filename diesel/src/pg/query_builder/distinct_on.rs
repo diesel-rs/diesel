@@ -18,14 +18,14 @@ pub struct DistinctOnClause<T>(pub(crate) T);
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for NoOrderClause {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Column {}
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Desc<T>>
-    where
-        T: crate::Column,
-{}
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Asc<T>>
-    where
-        T: crate::Column,
-{}
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Desc<T>> where
+    T: crate::Column
+{
+}
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Asc<T>> where
+    T: crate::Column
+{
+}
 macro_rules! valid_ordering {
     (@skip: ($ST1: ident, $($ST:ident,)*), $T1:ident, ) => {};
     (@skip: ($ST1: ident, $($ST:ident,)*), $T1:ident, $($T:ident,)+) => {

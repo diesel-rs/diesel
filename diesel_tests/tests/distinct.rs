@@ -174,10 +174,7 @@ fn distinct_of_multiple_columns() {
         .order(posts::body)
         .distinct_on(posts::body)
         .load(&mut connection);
-    let expected = vec![
-        (posts[0].clone()),
-        (posts[7].clone()),
-    ];
+    let expected = vec![(posts[0].clone()), (posts[7].clone())];
 
     assert_eq!(Ok(expected), data);
 
@@ -240,11 +237,28 @@ fn distinct_of_multiple_columns() {
         (posts[0].clone(), sean.clone()),
         (posts[2].clone(), sean.clone()),
         (posts[1].clone(), sean.clone()),
-        (posts[3].clone(), sean),
+        (posts[3].clone(), sean.clone()),
         (posts[4].clone(), tess.clone()),
         (posts[6].clone(), tess.clone()),
         (posts[5].clone(), tess.clone()),
-        (posts[7].clone(), tess),
+        (posts[7].clone(), tess.clone()),
+    ];
+
+    assert_eq!(Ok(expected), data);
+
+    // multi order by
+    // multi distinct on
+    // including asc and desc
+    let data = posts::table
+        .inner_join(users::table)
+        .order((users::id.asc(), posts::body.desc(), posts::title))
+        .distinct_on((users::id, posts::body))
+        .load(&mut connection);
+    let expected = vec![
+        (posts[1].clone(), sean.clone()),
+        (posts[0].clone(), sean),
+        (posts[5].clone(), tess.clone()),
+        (posts[4].clone(), tess),
     ];
 
     assert_eq!(Ok(expected), data);

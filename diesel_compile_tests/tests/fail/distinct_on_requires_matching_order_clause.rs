@@ -42,6 +42,33 @@ fn main() {
         .then_order_by(users::id)
         .distinct_on(users::name);
 
+    // same as above, with asc/desc
+    let _ = users::table
+        .order_by(users::name.asc())
+        .distinct_on(users::name)
+        .into_boxed();
+    let _ = users::table
+        .order_by((users::name.asc(), users::id.desc()))
+        .distinct_on(users::name)
+        .into_boxed();
+    let _ = users::table
+        .order_by((users::name.asc(), users::id.desc()))
+        .distinct_on((users::name, users::id))
+        .into_boxed();
+    let _ = users::table
+        .order_by((users::name.asc(), users::id.desc()))
+        .distinct_on((users::name, users::id, users::hair_color))
+        .into_boxed();
+    let _ = users::table
+        .order_by((users::name.asc(), users::id.desc(), users::hair_color))
+        .distinct_on((users::name, users::id))
+        .into_boxed();
+    let _ = users::table
+        .order_by(users::name.asc())
+        .then_order_by(users::id)
+        .distinct_on(users::name)
+        .into_boxed();
+
     // verify that this all works with boxed queries
     let _ = users::table.distinct_on(users::name).into_boxed();
     let _ = users::table
