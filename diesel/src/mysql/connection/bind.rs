@@ -147,7 +147,7 @@ bitflags::bitflags! {
 impl From<u32> for Flags {
     fn from(flags: u32) -> Self {
         Flags::from_bits(flags).expect(
-            "We encountered a unknown type flag while parsing \
+            "We encountered an unknown type flag while parsing \
              Mysql's type information. If you see this error message \
              please open an issue at diesels github page.",
         )
@@ -174,9 +174,9 @@ impl Clone for BindData {
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
                 // location
-                // The length pointer is valid as long as noone missuses `bind_for_truncated_data`
-                // as this is the only location that updates the length vield before the corresponding data are
-                // written. At the time of writting this comment the `BindData::bind_for_truncated_data`
+                // The length pointer is valid as long as none missuses `bind_for_truncated_data`
+                // as this is the only location that updates the length field before the corresponding data are
+                // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
                 std::slice::from_raw_parts(ptr.as_ptr(), self.length as usize)
@@ -411,9 +411,9 @@ impl BindData {
             let slice = unsafe {
                 // We know that this points to a slice and the pointer is not null at this
                 // location
-                // The length pointer is valid as long as noone missuses `bind_for_truncated_data`
-                // as this is the only location that updates the length vield before the corresponding data are
-                // written. At the time of writting this comment the `BindData::bind_for_truncated_data`
+                // The length pointer is valid as long as none missuses `bind_for_truncated_data`
+                // as this is the only location that updates the length field before the corresponding data are
+                // written. At the time of writing this comment, the `BindData::bind_for_truncated_data`
                 // function is only called by `Binds::populate_dynamic_buffers` which ensures the corresponding
                 // invariant.
                 std::slice::from_raw_parts(data.as_ptr(), self.length as usize)
@@ -433,9 +433,9 @@ impl BindData {
         self.length = actual_bytes_in_buffer as libc::c_ulong;
     }
 
-    // This function is marked as unsafe as it returns a owned value
+    // This function is marked as unsafe as it returns an owned value
     // containing a pointer with a lifetime coupled to self.
-    // Callers need to ensure that the returend value cannot outlive `self`
+    // Callers need to ensure that the returned value cannot outlive `self`
     unsafe fn mysql_bind(&mut self) -> ffi::MYSQL_BIND {
         use std::ptr::addr_of_mut;
 
@@ -679,7 +679,7 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             enum_field_types::MYSQL_TYPE_YEAR => unreachable!(
                 "The year type should have set the unsigned flag. If you ever \
                  see this error message, something has gone very wrong. Please \
-                 open an issue at the diesel githup repo in this case"
+                 open an issue at the diesel github repo in this case"
             ),
             // Null value
             enum_field_types::MYSQL_TYPE_NULL => unreachable!(
@@ -706,9 +706,9 @@ impl From<(ffi::enum_field_types, Flags)> for MysqlType {
             | enum_field_types::MYSQL_TYPE_TIME2
             | enum_field_types::MYSQL_TYPE_DATETIME2
             | enum_field_types::MYSQL_TYPE_TIMESTAMP2 => unreachable!(
-                "The mysql documentation states that this types are \
-                 only used on server side, so if you see this error \
-                 something has gone wrong. Please open a issue at \
+                "The mysql documentation states that these types are \
+                 only used on the server side, so if you see this error \
+                 something has gone wrong. Please open an issue at \
                  the diesel github repo."
             ),
         }

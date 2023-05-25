@@ -133,7 +133,7 @@ impl<'a, ST, DB, GB> BoxedSelectStatement<'a, ST, NoFromClause, DB, GB> {
     }
 }
 
-// that's a trait to control who can access these method
+// that's a trait to control who can access these methods
 #[doc(hidden)] // exported via internal::derives::multiconnection
 pub trait BoxedQueryHelper<'a, QS, DB> {
     fn build_query<'b, 'c>(

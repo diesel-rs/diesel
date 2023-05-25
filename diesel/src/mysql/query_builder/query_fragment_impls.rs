@@ -135,7 +135,7 @@ where
 }
 
 /// A marker type signaling that the given `ON CONFLICT` clause
-/// uses mysql's `ON DUPLICATE KEY` syntaxt that triggers on
+/// uses mysql's `ON DUPLICATE KEY` syntax that triggers on
 /// all unique constraints
 ///
 /// See [`InsertStatement::on_conflict`](crate::query_builder::InsertStatement::on_conflict)

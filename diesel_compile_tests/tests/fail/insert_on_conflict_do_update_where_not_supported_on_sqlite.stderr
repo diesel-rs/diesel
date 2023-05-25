@@ -6,7 +6,7 @@ error[E0277]: the trait bound `sqlite::backend::SqliteOnConflictClause: Supports
    |          |
    |          required by a bound introduced by this call
    |
-   = help: the trait `SupportsOnConflictClauseWhere` is implemented for `pg::backend::PgOnConflictClaues`
+   = help: the trait `SupportsOnConflictClauseWhere` is implemented for `pg::backend::PgOnConflictClause`
    = note: required for `OnConflictValues<ValuesClause<ColumnInsertValue<id, Bound<Integer, i32>>, table>, ..., ..., ...>` to implement `QueryFragment<Sqlite>`
    = note: 1 redundant requirement hidden
    = note: required for `InsertStatement<table, OnConflictValues<ValuesClause<ColumnInsertValue<id, ...>, ...>, ..., ..., ...>>` to implement `QueryFragment<Sqlite>`

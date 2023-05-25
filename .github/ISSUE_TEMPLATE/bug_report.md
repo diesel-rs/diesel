@@ -45,13 +45,13 @@ If you want to report a bug, we added some points below which help us track down
 Please include as much of your codebase as needed to reproduce the error.  If the relevant files are large, please consider linking to a public repository or a [Gist](https://gist.github.com/). This includes normally the following parts:
 
 * The exact code where your hit the problem
-* Relevant parts your schema, so any `table!` macro calls required for the
+* Relevant parts your schema, so any `table!` macro calls required for
 * Any other type definitions involved in the code, which produces your problem
 -->
 
 ## Checklist
 
-- [ ] I have already looked over the [issue tracker](https://github.com/diesel-rs/diesel/issues)  and the [disussion forum](https://github.com/diesel-rs/diesel/discussions)  for similar possible closed issues.
+- [ ] I have already looked over the [issue tracker](https://github.com/diesel-rs/diesel/issues) and the [discussion forum](https://github.com/diesel-rs/diesel/discussions) for similar possible closed issues.
 <!--
 If you are unsure if your issue is a duplicate of an existing issue please link the issue in question here
 --> 

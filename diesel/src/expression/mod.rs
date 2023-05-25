@@ -755,7 +755,7 @@ pub mod is_aggregate {
 }
 
 #[cfg(feature = "unstable")]
-// this needs to be a seperate module for the reasons given in
+// this needs to be a separate module for the reasons given in
 // https://github.com/rust-lang/rust/issues/65860
 mod unstable;
 

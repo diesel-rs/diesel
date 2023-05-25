@@ -43,7 +43,7 @@ pub fn exists<T>(query: T) -> exists<T> {
 /// Third party backend can customize the [`QueryFragment`]
 /// implementation of this query dsl node via
 /// [`SqlDialect::ExistsSyntax`]. A customized implementation
-/// is expected to provide the same sematics as a ANSI SQL
+/// is expected to provide the same semantics as an ANSI SQL
 /// `EXIST (subselect)` expression.
 #[derive(Clone, Copy, QueryId, Debug)]
 #[non_exhaustive]

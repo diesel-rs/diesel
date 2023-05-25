@@ -386,7 +386,7 @@ pub trait QueryDsl: Sized {
     /// SQL is referred as ["explicit join"](https://www.postgresql.org/docs/current/explicit-joins.html)
     /// by the PostgreSQL documentation and may have implications on the chosen query plan
     /// for large numbers of joins in the same query. Checkout the documentation of the
-    /// [`join_collapse_limit` paramater](https://www.postgresql.org/docs/current/runtime-config-query.html#GUC-JOIN-COLLAPSE-LIMIT)
+    /// [`join_collapse_limit` parameter](https://www.postgresql.org/docs/current/runtime-config-query.html#GUC-JOIN-COLLAPSE-LIMIT)
     /// to control this behaviour.
     ///
     /// [associations]: crate::associations
@@ -1191,8 +1191,8 @@ pub trait QueryDsl: Sized {
     /// #     use crate::schema::users;
     /// #     let connection = &mut establish_connection();
     /// // Executes `SELECT * FROM users FOR UPDATE SKIP LOCKED`
-    /// let user_skiped_locked = users::table.for_update().skip_locked().load(connection)?;
-    /// # let u: Vec<(i32, String)> = user_skiped_locked;
+    /// let user_skipped_locked = users::table.for_update().skip_locked().load(connection)?;
+    /// # let u: Vec<(i32, String)> = user_skipped_locked;
     /// # Ok(())
     /// # }
     /// # #[cfg(feature = "sqlite")]
@@ -1557,9 +1557,9 @@ pub trait RunQueryDsl<Conn>: Sized {
     /// a tuple of the values, or a struct which implements [`Queryable`].
     /// This type is specified by the first generic type of this function.
     ///
-    /// The second generic type paramater specifies the so called loading mode,
+    /// The second generic type parameter specifies the so called loading mode,
     /// which describes how the connection implementation loads data from the database.
-    /// All connections should provide a implementaiton for
+    /// All connections should provide a implementation for
     /// [`DefaultLoadingMode`](crate::connection::DefaultLoadingMode).
     ///
     /// They may provide additional modes. Checkout the documentation of the concrete

@@ -60,17 +60,17 @@ impl FromSql<SmallInt, Mysql> for i16 {
             }),
             NumericRepresentation::Big(x) => x.try_into().map_err(|_| {
                 Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
+                    "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
             NumericRepresentation::Float(x) => f32_to_i64(x)?.try_into().map_err(|_| {
                 Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
+                    "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
             NumericRepresentation::Double(x) => f64_to_i64(x)?.try_into().map_err(|_| {
                 Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
+                    "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
             NumericRepresentation::Decimal(bytes) => decimal_to_integer(bytes),
@@ -87,20 +87,20 @@ impl FromSql<Integer, Mysql> for i32 {
             NumericRepresentation::Medium(x) => Ok(x),
             NumericRepresentation::Big(x) => x.try_into().map_err(|_| {
                 Box::new(DeserializationError(
-                    "Numeric overflow/underflow occured".into(),
+                    "Numeric overflow/underflow occurred".into(),
                 )) as _
             }),
             NumericRepresentation::Float(x) => f32_to_i64(x).and_then(|i| {
                 i.try_into().map_err(|_| {
                     Box::new(DeserializationError(
-                        "Numeric overflow/underflow occured".into(),
+                        "Numeric overflow/underflow occurred".into(),
                     )) as _
                 })
             }),
             NumericRepresentation::Double(x) => f64_to_i64(x).and_then(|i| {
                 i.try_into().map_err(|_| {
                     Box::new(DeserializationError(
-                        "Numeric overflow/underflow occured".into(),
+                        "Numeric overflow/underflow occurred".into(),
                     )) as _
                 })
             }),

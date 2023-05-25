@@ -117,7 +117,7 @@ pub struct StatementCache<DB: Backend, Statement> {
 ///
 /// This information can be used by the connection implementation
 /// to signal this fact to the database while actually
-/// perparing the statement
+/// preparing the statement
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(
     doc_cfg,

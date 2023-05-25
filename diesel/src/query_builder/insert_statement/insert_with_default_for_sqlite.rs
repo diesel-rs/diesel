@@ -290,8 +290,8 @@ impl<V, T, QId, const STATIC_QUERY_ID: bool> CanInsertInSingleQuery<Sqlite>
     for SqliteBatchInsertWrapper<Vec<ValuesClause<V, T>>, T, QId, STATIC_QUERY_ID>
 where
     // We constrain that here on an internal helper type
-    // to make sure that this does not accidently leak
-    // so that noone does really implement normal batch
+    // to make sure that this does not accidentally leak
+    // so that none does really implement normal batch
     // insert for inserts with default values here
     SqliteCanInsertInSingleQueryHelper<V>: CanInsertInSingleQuery<Sqlite>,
 {

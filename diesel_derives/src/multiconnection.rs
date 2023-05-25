@@ -700,8 +700,8 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             p: std::marker::PhantomData<(ST, T)>
         }
 
-        // we need to have seperate impls for Sized values and str/[u8] as otherwise
-        // we need seperate impls for `Sized` and `str`/`[u8]` here as
+        // we need to have separate impls for Sized values and str/[u8] as otherwise
+        // we need separate impls for `Sized` and `str`/`[u8]` here as
         // we cannot use `Any::downcast_ref` otherwise (which implies `Sized`)
         impl<ST, T, DB> PushBoundValueToCollectorDB<DB> for PushBoundValueToCollectorImpl<ST, T>
         where DB: diesel::backend::Backend

@@ -161,7 +161,6 @@ impl<S, Selection> DistinctOnDsl<Selection> for Alias<S>
 where
     S: AliasSource,
     Selection: SelectableExpression<Self>,
-    Selection::SqlType: crate::sql_types::SingleValue,
     Self: QuerySource + AsQuery<Query = SelectStatement<FromClause<Self>>>,
     SelectStatement<FromClause<Self>>: DistinctOnDsl<Selection>,
     <Self as QuerySource>::DefaultSelection:

@@ -24,6 +24,8 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   on the difference between your database and the provided `schema.rs` file
 * Add a `ON CONFLICT (...) DO UPDATE ... [WHERE ...]` conditional clause support for PostgreSQL.
 * Add support for MySQL's `ON DUPLICATE KEY DO UPDATE` syntax through the existing upsert functions.
+* Add ability to define multiple columns in a single `distinct_on` for PostgreSQL,
+  like: `.distinct_on((column_a, column_b))`.
 * Support for `libsqlite3-sys` 0.26
 
 ## [diesel_derives 2.0.2] 2023-03-13 
@@ -334,7 +336,7 @@ queries or set `PIPES_AS_CONCAT` manually.
 
 ### Fixed
 
-* Fixed a incompatibly between `diesel` and `diesel_migrations` when building both crates with cargos new `resolver = "2"` enabled. This change ensures compatibility with the upcomming 2021 rust edition.
+* Fixed a incompatibly between `diesel` and `diesel_migrations` when building both crates with cargos new `resolver = "2"` enabled. This change ensures compatibility with the upcoming 2021 rust edition.
 
 ## [1.4.7] - 2021-06-08
 
@@ -368,7 +370,7 @@ queries or set `PIPES_AS_CONCAT` manually.
 ### Fixed
 
 * Update several dependencies
-* Fixed a bug with printing embeded migrations
+* Fixed a bug with printing embedded migrations
 
 ## [1.4.3] - 2019-10-11
 

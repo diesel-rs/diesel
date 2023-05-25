@@ -232,6 +232,10 @@ where
         )))
     }
 
+    fn begin_test_transaction(&mut self) -> QueryResult<()> {
+        (**self).begin_test_transaction()
+    }
+
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Self::Backend> + QueryId,
@@ -243,10 +247,6 @@ where
         &mut self,
     ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
         (**self).transaction_state()
-    }
-
-    fn begin_test_transaction(&mut self) -> QueryResult<()> {
-        (**self).begin_test_transaction()
     }
 }
 
@@ -505,7 +505,7 @@ mod tests {
         assert_eq!(checkout_count.load(Ordering::Relaxed), 2);
 
         // check that we remove a connection from the pool that was
-        // open during panicing
+        // open during panicking
         #[allow(unreachable_code, unused_variables)]
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let conn = pool.get();

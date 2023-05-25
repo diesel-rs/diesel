@@ -55,7 +55,7 @@ impl syn::parse::Parse for CfgInput {
         } else {
             panic!(
                 "Incompatible argument list detected. `__diesel_public_if` \
-                 expects a cfg argument and a optional public_fields"
+                 expects a cfg argument and an optional public_fields"
             )
         }
     }

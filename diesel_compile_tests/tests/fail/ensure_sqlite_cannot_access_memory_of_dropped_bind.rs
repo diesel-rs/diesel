@@ -12,7 +12,7 @@ fn main() {
 
         let mut iter = LoadConnection::load(&mut connection, query).unwrap();
 
-        // Sqlite borrows the buffer internally, so droping it here is not allowed
+        // Sqlite borrows the buffer internally, so dropping it here is not allowed
         // while the statement is still alive.
         std::mem::drop(buf);
 

@@ -343,7 +343,7 @@ pub trait AsQuery {
     // This method is part of our public API,
     // so we won't change the name to just appease clippy
     // (Also the trait is literally named `AsQuery` so
-    // naming the method similary is fine)
+    // naming the method similarity is fine)
     #[allow(clippy::wrong_self_convention)]
     fn as_query(self) -> Self::Query;
 }

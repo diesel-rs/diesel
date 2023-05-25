@@ -149,7 +149,7 @@ where
 
 // These traits are not part of the public API
 // because:
-// * we want to control who can implment `Row` (for `RowSealed`)
+// * we want to control who can implement `Row` (for `RowSealed`)
 // * `PartialRow` is an implementation detail
 // * `RowLifetimeHelper` is an internal backward compatibility helper
 pub(crate) mod private {

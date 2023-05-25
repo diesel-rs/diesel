@@ -301,16 +301,16 @@ impl SchemaDiff {
                 generate_drop_table(query_builder, &table.sql_name.to_lowercase())?;
             }
             SchemaDiff::CreateTable {
-                to_create: to_ceate,
+                to_create,
                 foreign_keys,
             } => {
-                let table = &to_ceate.sql_name.to_lowercase();
-                let primary_keys = to_ceate
+                let table = &to_create.sql_name.to_lowercase();
+                let primary_keys = to_create
                     .primary_keys
                     .as_ref()
                     .map(|keys| keys.keys.iter().map(|k| k.to_string()).collect())
                     .unwrap_or_else(|| vec![String::from("id")]);
-                let column_data = to_ceate
+                let column_data = to_create
                     .column_defs
                     .iter()
                     .map(|c| {
@@ -402,11 +402,8 @@ impl SchemaDiff {
                     &fk,
                 )?;
             }
-            SchemaDiff::CreateTable {
-                to_create: to_ceate,
-                ..
-            } => {
-                generate_drop_table(query_builder, &to_ceate.sql_name.to_lowercase())?;
+            SchemaDiff::CreateTable { to_create, .. } => {
+                generate_drop_table(query_builder, &to_create.sql_name.to_lowercase())?;
             }
             SchemaDiff::ChangeTable {
                 table,

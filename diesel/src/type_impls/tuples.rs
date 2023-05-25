@@ -362,18 +362,6 @@ macro_rules! tuple_impls {
             impl<$($ST,)*> SqlTypeOrSelectable for Nullable<($($ST,)*)>
             where ($($ST,)*): SqlTypeOrSelectable
             {}
-
-            #[cfg(feature = "postgres")]
-            impl<__D, $($T,)*> crate::query_dsl::order_dsl::ValidOrderingForDistinct<crate::pg::DistinctOnClause<__D>>
-                for crate::query_builder::order_clause::OrderClause<(__D, $($T,)*)> {}
-
-            #[cfg(feature = "postgres")]
-            impl<__D, $($T,)*> crate::query_dsl::order_dsl::ValidOrderingForDistinct<crate::pg::DistinctOnClause<__D>>
-                for crate::query_builder::order_clause::OrderClause<(crate::helper_types::Desc<__D>, $($T,)*)> {}
-
-            #[cfg(feature = "postgres")]
-            impl<__D, $($T,)*> crate::query_dsl::order_dsl::ValidOrderingForDistinct<crate::pg::DistinctOnClause<__D>>
-                for crate::query_builder::order_clause::OrderClause<(crate::helper_types::Asc<__D>, $($T,)*)> {}
         )+
     }
 }

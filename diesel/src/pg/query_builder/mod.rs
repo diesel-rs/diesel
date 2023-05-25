@@ -8,6 +8,7 @@ pub(crate) mod on_constraint;
 pub(crate) mod only;
 mod query_fragment_impls;
 pub use self::distinct_on::DistinctOnClause;
+pub use self::distinct_on::OrderDecorator;
 
 /// The PostgreSQL query builder
 #[allow(missing_debug_implementations)]

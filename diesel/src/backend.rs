@@ -35,23 +35,23 @@ pub(crate) use self::private::{DieselReserveSpecialization, TrustedBackend};
 /// connection is implemented.
 /// For example, the `Pg` backend does not assume that `libpq` is being used.
 /// Implementations of this trait can and should care about details of the wire
-/// protocol used to communicated with the database.
+/// protocol used to communicate with the database.
 ///
 /// Implementing support for a new backend is a complex topic and depends on the
-/// details how the newly implemented backend may communicate with diesel. As of this
+/// details how the newly implemented backend may communicate with diesel. As of this,
 /// we cannot provide concrete examples here and only present a general outline of
 /// the required steps. Existing backend implementations provide a good starting point
-/// to see how certain things are solve for other backend implementations.
+/// to see how certain things are solved for other backend implementations.
 ///
 /// Types implementing `Backend` should generally be zero sized structs.
 ///
-/// To implement the `Backend` trait you need to:
+/// To implement the `Backend` trait, you need to:
 ///
 /// * Specify how a query should be build from string parts by providing a [`QueryBuilder`]
 /// matching your backend
 /// * Specify the bind value format used by your database connection library by providing
 /// a [`BindCollector`](crate::query_builder::bind_collector::BindCollector) matching your backend
-/// * Specify  how values are receive from the database by providing a corresponding raw value
+/// * Specify how values are received from the database by providing a corresponding raw value
 /// definition
 /// * Control sql dialect specific parts of diesels query dsl implementation by providing a
 /// matching [`SqlDialect`] implementation
@@ -127,7 +127,7 @@ pub type BindCollector<'a, DB> = <DB as Backend>::BindCollector<'a>;
 ///
 /// Accessing anything from this trait is considered to be part of the
 /// public API. Implementing this trait is not considered to be part of
-/// diesels public API, as future versions of diesel may add additional
+/// diesel's public API, as future versions of diesel may add additional
 /// associated constants here.
 ///
 /// Each associated type is used to configure the behaviour
@@ -141,9 +141,9 @@ pub type BindCollector<'a, DB> = <DB as Backend>::BindCollector<'a>;
     doc = "See the [`sql_dialect`] module for options provided by diesel out of the box."
 )]
 pub trait SqlDialect: self::private::TrustedBackend {
-    /// Configures how this backends supports `RETURNING` clauses
+    /// Configures how this backend supports `RETURNING` clauses
     ///
-    /// This allows backends to opt in  `RETURNING` clause support and to
+    /// This allows backends to opt in `RETURNING` clause support and to
     /// provide a custom [`QueryFragment`](crate::query_builder::QueryFragment)
     #[cfg_attr(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
@@ -365,7 +365,7 @@ pub(crate) mod sql_dialect {
     pub mod returning_clause {
         /// A marker trait indicating if a `RETURNING` clause is supported or not
         ///
-        /// If you use custom type to specify specialized support for `RETURNING` clauses
+        /// If you use a custom type to specify specialized support for `RETURNING` clauses
         /// implementing this trait opts in supporting `RETURNING` clause syntax
         pub trait SupportsReturningClause {}
 
@@ -403,7 +403,7 @@ pub(crate) mod sql_dialect {
         pub struct IsoSqlDefaultKeyword;
 
         /// Indicates that a backend does not support `DEFAULT` value
-        /// expressions0for `INSERT INTO` statements
+        /// expressions for `INSERT INTO` statements
         #[derive(Debug, Copy, Clone)]
         pub struct DoesNotSupportDefaultKeyword;
 
@@ -423,7 +423,7 @@ pub(crate) mod sql_dialect {
         /// Indicates that this backend does not support batch
         /// insert statements.
         /// In this case diesel will emulate batch insert support
-        /// by inserting each row on it's own
+        /// by inserting each row on its own
         #[derive(Debug, Copy, Clone)]
         pub struct DoesNotSupportBatchInsert;
 
@@ -529,7 +529,7 @@ pub(crate) mod private {
     /// suggests adding this a bound to a type implementing `Backend`
     /// consider adding the following bound instead
     /// `YourQueryType: QueryFragment<DB>` (the concrete bound
-    /// is likely mentioned by rustc as part of a `note: …`
+    /// is likely mentioned by rustc as part of a `note: …`)
     ///
     /// For any user implementing a custom backend: You likely want to implement
     /// this trait for your custom backend type to opt in the existing [`QueryFragment`] impls in diesel.
@@ -544,7 +544,7 @@ pub(crate) mod private {
     )]
     pub trait DieselReserveSpecialization {}
 
-    /// This trait just indicates that noone implements
+    /// This trait just indicates that none implements
     /// [`SqlDialect`](super::SqlDialect) without enabling the
     /// `i-implement-a-third-party-backend-and-opt-into-breaking-changes`
     /// feature flag.

@@ -3,7 +3,7 @@
 //! To run this:
 //!
 //! ```sh
-//! cargo run --example querying_mutiple_types --features="diesel/sqlite"
+//! cargo run --example querying_multiple_types --features="diesel/sqlite"
 //! ```
 extern crate diesel;
 extern crate diesel_dynamic_schema;

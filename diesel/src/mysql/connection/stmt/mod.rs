@@ -160,7 +160,7 @@ impl<'a> StatementUse<'a> {
     }
 
     /// This function should be called after `execute` only
-    /// otherwise it's not guranteed to return a valid result
+    /// otherwise it's not guaranteed to return a valid result
     pub(in crate::mysql::connection) unsafe fn result_size(&mut self) -> QueryResult<usize> {
         let size = ffi::mysql_stmt_num_rows(self.inner.stmt.as_ptr());
         usize::try_from(size).map_err(|e| Error::DeserializationError(Box::new(e)))

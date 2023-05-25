@@ -78,7 +78,7 @@ use std::os::raw as libc;
 /// ## `PgRowByRowLoadingMode`
 ///
 /// By using this mode `PgConnection` defaults to loading each row of the result set
-/// sepreatly. This might be desired for huge result sets.
+/// separately. This might be desired for huge result sets.
 ///
 /// This loading mode **prevents** creating more than one iterator at once using
 /// the same connection. The following code is **not** allowed:
@@ -119,7 +119,7 @@ pub struct PgConnection {
     connection_and_transaction_manager: ConnectionAndTransactionManager,
 }
 
-// according to libpq documentation a connection can be transfered to other threads
+// according to libpq documentation a connection can be transferred to other threads
 #[allow(unsafe_code)]
 unsafe impl Send for PgConnection {}
 

@@ -151,7 +151,7 @@ fn option_to_sql() {
         let mut bytes = Output::test(ByteWrapper(&mut buffer));
         ToSql::<Type, Pg>::to_sql(&Some("Sean"), &mut bytes).unwrap()
     };
-    let expectd_bytes = b"Sean".to_vec();
+    let expected_bytes = b"Sean".to_vec();
     assert_eq!(IsNull::No, is_null);
-    assert_eq!(buffer, expectd_bytes);
+    assert_eq!(buffer, expected_bytes);
 }

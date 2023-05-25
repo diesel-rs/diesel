@@ -8,7 +8,7 @@ use diesel::migration::{Migration, MigrationName, MigrationSource, MigrationVers
 
 /// A migration source that embeds migrations into the final binary
 ///
-/// This source can be create via the [`embed_migrations!`](crate::embed_migrations!)
+/// This source can be created via the [`embed_migrations!`](crate::embed_migrations!)
 /// at compile time.
 #[allow(missing_copy_implementations)]
 pub struct EmbeddedMigrations {
@@ -90,7 +90,7 @@ impl<'a, DB: Backend> Migration<DB> for &'a EmbeddedMigration {
     fn run(&self, conn: &mut dyn diesel::connection::BoxableConnection<DB>) -> Result<()> {
         Ok(conn.batch_execute(self.up).map_err(|e| {
             let name = DieselMigrationName::from_name(self.name.name)
-                .expect("We have a vaild name here, we checked this in `embed_migration!`");
+                .expect("We have a valid name here, we checked this in `embed_migration!`");
             RunMigrationsError::QueryError(name, e)
         })?)
     }
@@ -99,7 +99,7 @@ impl<'a, DB: Backend> Migration<DB> for &'a EmbeddedMigration {
         match self.down {
             Some(down) => Ok(conn.batch_execute(down).map_err(|e| {
                 let name = DieselMigrationName::from_name(self.name.name)
-                    .expect("We have a vaild name here, we checked this in `embed_migration!`");
+                    .expect("We have a valid name here, we checked this in `embed_migration!`");
                 RunMigrationsError::QueryError(name, e)
             })?),
             None => Err(MigrationError::NoMigrationRevertFile.into()),

@@ -6,7 +6,7 @@ use crate::{QueryResult, QuerySource};
 /// This type represents a not existing from clause
 ///
 /// Custom backends can provide a custom [`QueryFragment`]
-/// impl by specializing the implementtion via
+/// impl by specializing the implementation via
 /// [`SqlDialect::EmptyFromClauseSyntax`](crate::backend::SqlDialect::EmptyFromClauseSyntax)
 #[cfg_attr(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",

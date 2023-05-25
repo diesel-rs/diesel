@@ -207,14 +207,14 @@ where
 /// }
 /// ```
 ///
-/// Using temporary values as part of the `ToSql` implemenation requires additional
+/// Using temporary values as part of the `ToSql` implementation requires additional
 /// work.
 ///
 /// Backends using [`RawBytesBindCollector`] as [`BindCollector`] copy the serialized values as part
 /// of `Write` implementation. This includes the `Mysql` and the `Pg` backend provided by diesel.
-/// This means existing `ToSql` implemenations can be used even with
+/// This means existing `ToSql` implementations can be used even with
 /// temporary values. For these it is required to call
-/// [`Output::reborrow`] to shorten the lifetime of the `Output` type correspondenly.
+/// [`Output::reborrow`] to shorten the lifetime of the `Output` type correspondingly.
 ///
 /// ```
 /// # use diesel::backend::Backend;
