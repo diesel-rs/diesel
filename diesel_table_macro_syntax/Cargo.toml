@@ -1,7 +1,16 @@
 [package]
 name = "diesel_table_macro_syntax"
 version = "0.1.0"
+description = "Internal diesel crate"
+license = "MIT OR Apache-2.0"
+documentation = "https://diesel.rs/guides/"
+homepage = "https://diesel.rs"
+repository = "https://github.com/diesel-rs/diesel/tree/master/diesel_table_macro_syntax"
+autotests = false
+include = ["src/**/*", "LICENSE-*"]
+rust-version = "1.65.0"
 edition = "2021"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
