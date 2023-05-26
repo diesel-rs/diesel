@@ -69,6 +69,11 @@ fn main() {
         .distinct_on(users::name)
         .into_boxed();
 
+    // order by and distinct on with sql literal
+    let _ = users::table
+        .order(dsl::sql::<sql_types::Bool>("name"))
+        .distinct_on(dsl::sql::<sql_types::Bool>("name"));
+
     // verify that this all works with boxed queries
     let _ = users::table.distinct_on(users::name).into_boxed();
     let _ = users::table
@@ -95,6 +100,11 @@ fn main() {
         .order_by(users::name)
         .then_order_by(users::id)
         .distinct_on(users::name)
+        .into_boxed();
+    // order by and distinct on with sql literal
+    let _ = users::table
+        .order(dsl::sql::<sql_types::Bool>("name"))
+        .distinct_on(dsl::sql::<sql_types::Bool>("name"))
         .into_boxed();
 
     // compile fail section

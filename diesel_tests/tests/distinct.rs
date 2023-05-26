@@ -85,6 +85,8 @@ fn distinct_on_select_by() {
 #[cfg(feature = "postgres")]
 #[test]
 fn distinct_on_select_order_by_two_columns() {
+    use diesel::sql_types::Integer;
+
     use crate::schema::users::dsl::*;
 
     let connection = &mut connection();
@@ -129,6 +131,18 @@ fn distinct_on_select_order_by_two_columns() {
         .select((name, hair_color))
         .order((name.desc(), hair_color))
         .distinct_on(name);
+    let expected_data = vec![
+        NewUser::new("Tess", Some("bronze")),
+        NewUser::new("Sean", Some("aqua")),
+    ];
+    let data: Vec<_> = source.load(connection).unwrap();
+
+    assert_eq!(expected_data, data);
+
+    let source = users
+        .select((name, hair_color))
+        .order(dsl::sql::<Integer>("name DESC, hair_color"))
+        .distinct_on(dsl::sql("name"));
     let expected_data = vec![
         NewUser::new("Tess", Some("bronze")),
         NewUser::new("Sean", Some("aqua")),
