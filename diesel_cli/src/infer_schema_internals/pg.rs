@@ -380,4 +380,52 @@ mod test {
             load_foreign_key_constraints(&mut connection, Some("test_schema"))
         );
     }
+
+    #[test]
+    fn get_foreign_keys_loads_foreign_keys_with_same_name() {
+        let mut connection = connection();
+
+        diesel::sql_query("CREATE SCHEMA test_schema")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query("CREATE TABLE test_schema.table_1 (id SERIAL PRIMARY KEY)")
+            .execute(&mut connection)
+            .unwrap();
+        diesel::sql_query(
+                "CREATE TABLE test_schema.table_2 (\
+                    id SERIAL PRIMARY KEY,\
+                    fk_id INTEGER NOT NULL,\
+                    CONSTRAINT fk FOREIGN KEY (fk_id) REFERENCES test_schema.table_1 (id))",
+            ).execute(&mut connection)
+            .unwrap();
+        diesel::sql_query(
+                "CREATE TABLE test_schema.table_3 (\
+                    id SERIAL PRIMARY KEY,\
+                    fk_id INTEGER NOT NULL,\
+                    CONSTRAINT fk FOREIGN KEY (fk_id) REFERENCES test_schema.table_1 (id))",
+            ).execute(&mut connection)
+            .unwrap();
+
+        let table_1 = TableName::new("table_1", "test_schema");
+        let table_2 = TableName::new("table_2", "test_schema");
+        let table_3 = TableName::new("table_3", "test_schema");
+        let fk_one = ForeignKeyConstraint {
+            child_table: table_2,
+            parent_table: table_1.clone(),
+            foreign_key_columns: vec!["fk_id".into()],
+            foreign_key_columns_rust: vec!["fk_id".into()],
+            primary_key_columns: vec!["id".into()],
+        };
+        let fk_two = ForeignKeyConstraint {
+            child_table: table_3,
+            parent_table: table_1,
+            foreign_key_columns: vec!["fk_id".into()],
+            foreign_key_columns_rust: vec!["fk_id".into()],
+            primary_key_columns: vec!["id".into()],
+        };
+        assert_eq!(
+            Ok(vec![fk_one, fk_two]),
+            load_foreign_key_constraints(&mut connection, Some("test_schema"))
+        );
+    }
 }
