@@ -102,8 +102,8 @@ impl Project {
         use std::env;
         dotenv().ok();
 
-        let mut db_url =
-            url::Url::parse(&env::var_os(var).unwrap().into_string().unwrap()).unwrap();
+        let var_os = env::var(var).unwrap();
+        let mut db_url = url::Url::parse(&var_os).unwrap();
         db_url.set_path(&format!("/diesel_{}", &self.name));
         db_url
     }
