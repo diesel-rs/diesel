@@ -173,7 +173,7 @@ pub trait QueryDsl: Sized {
     ///                    Animal::new("spider", None, 8)]), distinct_animals);
     /// # }
     /// ```
-    #[cfg(feature = "postgres")]
+    #[cfg(feature = "postgres_backend")]
     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
     where
         Self: methods::DistinctOnDsl<Expr>,
