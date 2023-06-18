@@ -112,7 +112,7 @@ where
 ///
 /// It works with types that are [Expression]s and have a [`SqlType`](Expression::SqlType) that is
 /// either [`Bool`](sql_types::Bool) or [`Nullable<Bool>`](sql_types::Nullable), and with [`bool`]
-/// (and `&bool` and `&&bool`).
+/// (and `Option<bool>` and references to those).
 ///
 /// Cases where an additional type parameter would still have to be specified in the helper type
 /// generic parameters are:
@@ -142,4 +142,13 @@ impl PreferredBoolSqlType for &bool {
 }
 impl PreferredBoolSqlType for &&bool {
     type PreferredSqlType = sql_types::Bool;
+}
+impl PreferredBoolSqlType for Option<bool> {
+    type PreferredSqlType = sql_types::Nullable<sql_types::Bool>;
+}
+impl PreferredBoolSqlType for &Option<bool> {
+    type PreferredSqlType = sql_types::Nullable<sql_types::Bool>;
+}
+impl PreferredBoolSqlType for &&Option<bool> {
+    type PreferredSqlType = sql_types::Nullable<sql_types::Bool>;
 }
