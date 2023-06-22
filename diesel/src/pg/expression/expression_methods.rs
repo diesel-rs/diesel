@@ -371,7 +371,9 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
         ArrayIndex::new(self, other.as_expression())
     }
 
-    /// Concatenates two PostgreSQL Arrays using the `||` operator.
+    /// Creates a PostgreSQL `||` expression.
+    ///
+    /// This operator concatenates two Array values and returns Array value
     ///
     /// # Example
     ///

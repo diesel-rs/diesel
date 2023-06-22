@@ -185,6 +185,6 @@ pub type LikeBinary<Lhs, Rhs> = Grouped<super::operators::LikeBinary<Lhs, AsExpr
 pub type NotLikeBinary<Lhs, Rhs> =
     Grouped<super::operators::NotLikeBinary<Lhs, AsExprOf<Rhs, Binary>>>;
 
-/// The return type of [`lhs.remove_by_path(rhs)`](super::expression_methods::PgArrayExpressionMethods::concat)
+/// The return type of [`lhs.concat(rhs)`](super::expression_methods::PgArrayExpressionMethods::concat)
 #[cfg(feature = "postgres_backend")]
 pub type ConcatArray<Lhs, Rhs> = Grouped<super::operators::ConcatArray<Lhs, AsExpr<Rhs, Lhs>>>;
