@@ -370,6 +370,52 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     {
         ArrayIndex::new(self, other.as_expression())
     }
+
+    /// Creates a PostgreSQL `||` expression.
+    ///
+    /// This operator concatenates two Array values and returns Array value
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # include!("../../doctest_setup.rs");
+    /// #
+    /// # table! {
+    /// #     posts {
+    /// #         id -> Integer,
+    /// #         tags -> Array<VarChar>,
+    /// #     }
+    /// # }
+    /// #
+    /// # fn main() {
+    /// #     run_test().unwrap();
+    /// # }
+    /// #
+    /// # fn run_test() -> QueryResult<()> {
+    /// #     use self::posts::dsl::*;
+    /// #     let conn = &mut establish_connection();
+    /// #     diesel::sql_query("DROP TABLE IF EXISTS posts").execute(conn).unwrap();
+    /// #     diesel::sql_query("CREATE TABLE posts (id SERIAL PRIMARY KEY, tags TEXT[] NOT NULL)")
+    /// #         .execute(conn)
+    /// #         .unwrap();
+    /// #
+    /// diesel::insert_into(posts)
+    ///     .values(tags.eq(vec!["cool", "awesome"]))
+    ///     .execute(conn)?;
+    ///
+    /// let res = posts.select(tags.concat(vec!["amazing"])).load::<Vec<String>>(conn)?;
+    /// let expected_tags = vec!["cool", "awesome", "amazing"];
+    /// assert_eq!(expected_tags, res[0]);
+    /// #     Ok(())
+    /// # }
+    ///
+    fn concat<T>(self, other: T) -> dsl::ConcatArray<Self, T>
+    where
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
+    {
+        Grouped(ConcatArray::new(self, other.as_expression()))
+    }
 }
 
 impl<T> PgArrayExpressionMethods for T

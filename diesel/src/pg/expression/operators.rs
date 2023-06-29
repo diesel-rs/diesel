@@ -52,6 +52,12 @@ infix_operator!(RemoveByPathFromJsonb, " #-", Jsonb, backend: Pg);
 infix_operator!(ConcatBinary, " || ", Binary, backend: Pg);
 infix_operator!(LikeBinary, " LIKE ", backend: Pg);
 infix_operator!(NotLikeBinary, " NOT LIKE ", backend: Pg);
+__diesel_infix_operator!(
+    ConcatArray,
+    " || ",
+    __diesel_internal_SameResultAsInput,
+    backend: Pg
+);
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]
