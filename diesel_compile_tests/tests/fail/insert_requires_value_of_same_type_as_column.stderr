@@ -13,5 +13,5 @@ error[E0277]: the trait bound `{integer}: diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-           and 124 others
+           and $N others
    = note: required for `{integer}` to implement `AsExpression<diesel::sql_types::Text>`
