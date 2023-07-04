@@ -5,6 +5,7 @@ use super::array_comparison::{AsInExpression, In, NotIn};
 use super::grouped::Grouped;
 use super::select_by::SelectBy;
 use super::{AsExpression, Expression};
+use crate::expression_methods::PreferredBoolSqlType;
 use crate::sql_types;
 
 /// The SQL type of an expression
@@ -94,12 +95,13 @@ pub type AssumeNotNull<Expr> = super::assume_not_null::AssumeNotNull<Expr>;
 
 /// The return type of
 /// [`lhs.and(rhs)`](crate::expression_methods::BoolExpressionMethods::and())
-pub type And<Lhs, Rhs, ST = sql_types::Bool> =
+pub type And<Lhs, Rhs, ST = <Rhs as PreferredBoolSqlType>::PreferredSqlType> =
     Grouped<super::operators::And<Lhs, AsExprOf<Rhs, ST>>>;
 
 /// The return type of
 /// [`lhs.or(rhs)`](crate::expression_methods::BoolExpressionMethods::or())
-pub type Or<Lhs, Rhs, ST = sql_types::Bool> = Grouped<super::operators::Or<Lhs, AsExprOf<Rhs, ST>>>;
+pub type Or<Lhs, Rhs, ST = <Rhs as PreferredBoolSqlType>::PreferredSqlType> =
+    Grouped<super::operators::Or<Lhs, AsExprOf<Rhs, ST>>>;
 
 /// The return type of
 /// [`lhs.escape('x')`](crate::expression_methods::EscapeExpressionMethods::escape())

@@ -11,7 +11,7 @@ mod global_expression_methods;
 mod text_expression_methods;
 
 #[doc(inline)]
-pub use self::bool_expression_methods::BoolExpressionMethods;
+pub use self::bool_expression_methods::{BoolExpressionMethods, PreferredBoolSqlType};
 #[doc(hidden)]
 pub use self::eq_all::EqAll;
 #[doc(inline)]
