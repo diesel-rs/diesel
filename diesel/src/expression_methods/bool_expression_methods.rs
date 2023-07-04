@@ -126,29 +126,36 @@ pub trait PreferredBoolSqlType {
     /// That should be either `Bool` or `Nullable<Bool>`.
     type PreferredSqlType;
 }
+
 impl<E: Expression> PreferredBoolSqlType for E
 where
     E::SqlType: BoolOrNullableBool,
 {
     type PreferredSqlType = <E as Expression>::SqlType;
 }
+
 /// This impl has to live in Diesel because otherwise it would conflict with the blanket impl above
 /// because "diesel might add an implementation of Expression for bool"
 impl PreferredBoolSqlType for bool {
     type PreferredSqlType = sql_types::Bool;
 }
+
 impl PreferredBoolSqlType for &bool {
     type PreferredSqlType = sql_types::Bool;
 }
+
 impl PreferredBoolSqlType for &&bool {
     type PreferredSqlType = sql_types::Bool;
 }
+
 impl PreferredBoolSqlType for Option<bool> {
     type PreferredSqlType = sql_types::Nullable<sql_types::Bool>;
 }
+
 impl PreferredBoolSqlType for &Option<bool> {
     type PreferredSqlType = sql_types::Nullable<sql_types::Bool>;
 }
+
 impl PreferredBoolSqlType for &&Option<bool> {
     type PreferredSqlType = sql_types::Nullable<sql_types::Bool>;
 }
