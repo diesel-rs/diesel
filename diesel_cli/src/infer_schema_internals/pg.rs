@@ -61,8 +61,13 @@ pub fn determine_column_type(
 diesel::postfix_operator!(Regclass, "::regclass", sql_types::Oid, backend: Pg);
 
 fn regclass(table: &TableName) -> Regclass<AsExprOf<String, sql_types::Text>> {
+    let table_name = match table.schema {
+        Some(ref schema_name) => format!("\"{}\".\"{}\"", schema_name, table.sql_name),
+        None => format!("\"{}\"", table.sql_name),
+    };
+
     Regclass::new(<String as AsExpression<sql_types::Text>>::as_expression(
-        table.full_sql_name(),
+        table_name,
     ))
 }
 
