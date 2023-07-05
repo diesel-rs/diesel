@@ -75,6 +75,7 @@
 //! You can come ask for help at
 //! [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel)
 
+#![doc(html_logo_url = "https://diesel.rs/assets/images/logo.svg")]
 // Built-in Lints
 #![warn(missing_docs)]
 

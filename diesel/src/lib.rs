@@ -222,6 +222,7 @@
 //! - `with-deprecated`
 //! - `32-column-tables`
 
+#![doc(html_logo_url = "https://diesel.rs/assets/images/logo.svg")]
 #![cfg_attr(feature = "nightly-error-messages", feature(rustc_attrs))]
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
 #![cfg_attr(doc_cfg, feature(doc_cfg, doc_auto_cfg))]

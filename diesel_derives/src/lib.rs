@@ -1,3 +1,4 @@
+#![doc(html_logo_url = "https://diesel.rs/assets/images/logo.svg")]
 // Clippy lints
 #![allow(
     clippy::needless_doctest_main,
