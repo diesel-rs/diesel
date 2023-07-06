@@ -697,20 +697,11 @@ impl<'a> Display for ColumnDefinitions<'a> {
                 }
 
                 // Write out attributes
-                if column.rust_name != column.sql_name || column.ty.max_length.is_some() {
-                    let mut is_first = true;
-                    write!(out, r#"#["#)?;
-                    if column.rust_name != column.sql_name {
-                        write!(out, r#"sql_name = {:?}"#, column.sql_name)?;
-                        is_first = false;
-                    }
-                    if let Some(max_length) = column.ty.max_length {
-                        if !is_first {
-                            write!(out, ", ")?;
-                        }
-                        write!(out, "max_length = {}", max_length)?;
-                    }
-                    writeln!(out, r#"]"#)?;
+                if column.rust_name != column.sql_name {
+                    writeln!(out, r#"#[sql_name = "{}"]"#, column.sql_name)?;
+                }
+                if let Some(max_length) = column.ty.max_length {
+                    writeln!(out, r#"#[max_length = {}]"#, max_length)?;
                 }
 
                 writeln!(out, "{} -> {},", column.rust_name, column_type)?;

@@ -252,6 +252,12 @@ fn print_schema_generated_columns_with_generated_always() {
 
 #[test]
 #[cfg(feature = "postgres")]
+fn print_schema_multiple_annotations() {
+    test_print_schema("print_schema_multiple_annotations", vec![])
+}
+
+#[test]
+#[cfg(feature = "postgres")]
 fn print_schema_array_type() {
     test_print_schema("print_schema_array_type", vec![])
 }
