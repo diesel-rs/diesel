@@ -315,6 +315,23 @@ fn print_schema_several_keys_with_compound_key() {
     test_print_schema("print_schema_several_keys_with_compound_key", vec![])
 }
 
+// some mysql versions concert quoted table names to lowercase
+// anyway
+#[cfg(any(feature = "postgres", feature = "sqlite"))]
+#[test]
+fn print_schema_quoted_table_name() {
+    test_print_schema("print_schema_quoted_table_name", vec![])
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn print_schema_quoted_schema_and_table_name() {
+    test_print_schema(
+        "print_schema_quoted_schema_and_table_name",
+        vec!["--schema", "CustomSchema"],
+    )
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
