@@ -1,0 +1,12 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_sqlite_without_explicit_primary_key"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    test (rowid) {
+        rowid -> Integer,
+        name -> Text,
+    }
+}

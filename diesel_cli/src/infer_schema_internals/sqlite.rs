@@ -200,10 +200,14 @@ pub fn get_primary_keys(
         format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
     };
     let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
-    Ok(results
+    let mut collected: Vec<String> = results
         .into_iter()
         .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
-        .collect())
+        .collect();
+    if collected.is_empty() {
+        collected.push("rowid".to_owned());
+    }
+    Ok(collected)
 }
 
 pub fn determine_column_type(
