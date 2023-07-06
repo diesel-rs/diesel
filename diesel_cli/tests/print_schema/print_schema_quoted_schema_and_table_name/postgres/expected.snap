@@ -1,0 +1,14 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_quoted_schema_and_table_name"
+---
+// @generated automatically by Diesel CLI.
+
+pub mod CustomSchema {
+    diesel::table! {
+        CustomSchema.User (id) {
+            id -> Int4,
+        }
+    }
+}
+
