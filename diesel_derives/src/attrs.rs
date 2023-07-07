@@ -7,7 +7,7 @@ use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::token::Comma;
-use syn::{Attribute, Ident, LitBool, LitStr, Path, Type, TypePath};
+use syn::{Attribute, Expr, Ident, LitBool, LitStr, Path, Type, TypePath};
 
 use crate::deprecated::ParseDeprecated;
 use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
@@ -18,7 +18,6 @@ use crate::util::{
     TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
 };
 
-use crate::field::SelectExpr;
 use crate::util::{parse_paren_list, CHECK_FOR_BACKEND_NOTE};
 
 pub trait MySpanned {
@@ -38,7 +37,7 @@ pub enum FieldAttr {
     SqlType(Ident, TypePath),
     SerializeAs(Ident, TypePath),
     DeserializeAs(Ident, TypePath),
-    SelectExpression(Ident, SelectExpr),
+    SelectExpression(Ident, Expr),
     SelectExpressionType(Ident, Type),
 }
 

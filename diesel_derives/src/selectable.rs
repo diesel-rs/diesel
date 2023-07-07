@@ -136,9 +136,25 @@ fn to_field_ty_bound(field_ty: &syn::Type) -> Option<TokenStream> {
 }
 
 fn field_column_ty(field: &Field, model: &Model) -> Result<TokenStream> {
-    if let Some(ref select_expression_type) = field.select_expression_type {
+    if let Some(ref select_expression) = field.select_expression {
+        use dsl_auto_type::auto_type::expression_type_inference as type_inference;
+        let expr = &select_expression.item;
+        let (inferred_type, errors) = type_inference::infer_expression_type(
+            expr,
+            field.select_expression_type.as_ref().map(|t| &t.item),
+            &type_inference::InferrerSettings::builder()
+                .dsl_path(parse_quote!(diesel::dsl))
+                .function_types_case(crate::AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE)
+                .method_types_case(crate::AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE)
+                .build(),
+        );
+        let mut type_token_stream = quote!(#inferred_type);
+        type_token_stream.extend(errors.into_iter().map(|e| e.into_compile_error()));
+        Ok(type_token_stream)
+    } else if let Some(ref select_expression_type) = field.select_expression_type {
         let ty = &select_expression_type.item;
-        Ok(quote!(#ty))
+        let span = ty.span();
+        Ok(quote::quote_spanned!(span => #ty))
     } else if field.embed() {
         let embed_ty = &field.ty;
         Ok(quote!(<#embed_ty as Selectable<__DB>>::SelectExpression))

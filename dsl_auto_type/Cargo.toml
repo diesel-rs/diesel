@@ -1,0 +1,20 @@
+[package]
+name = "dsl_auto_type"
+version = "0.1.0"
+license = "MIT OR Apache-2.0"
+description = "Automatically expand query fragment types for factoring as functions"
+documentation = "https://docs.rs/crate/diesel_migrations"
+homepage = "https://diesel.rs"
+edition = "2021"
+rust-version = "1.65.0"
+
+[dependencies]
+darling = "0.20"
+either = "1"
+heck = "0.4"
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["extra-traits", "full", "derive", "parsing"] }
+
+[dev-dependencies]
+diesel = { path = "../diesel" }

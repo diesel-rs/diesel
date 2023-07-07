@@ -547,7 +547,9 @@ where
 /// If you want to avoid nesting types, you can use the
 /// [`Selectable`](derive@Selectable) derive macro's
 /// `select_expression` and `select_expression_type` attributes to
-/// flatten the fields.
+/// flatten the fields. If the `select_expression` is simple enough,
+/// it is not necessary to specify `select_expression_type`
+/// (most query fragments are supported for this).
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
@@ -571,10 +573,8 @@ where
 ///     #[diesel(select_expression_type = users::columns::id)]
 ///     id: i32,
 ///     #[diesel(select_expression = users::columns::name)]
-///     #[diesel(select_expression_type = users::columns::name)]
 ///     name: String,
 ///     #[diesel(select_expression = posts::columns::title)]
-///     #[diesel(select_expression_type = posts::columns::title)]
 ///     title: String,
 /// }
 ///

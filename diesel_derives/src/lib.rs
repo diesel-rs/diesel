@@ -22,8 +22,10 @@ extern crate proc_macro2;
 extern crate quote;
 extern crate syn;
 
-use proc_macro::TokenStream;
-use syn::parse_macro_input;
+use {
+    proc_macro::TokenStream,
+    syn::{parse_macro_input, parse_quote},
+};
 
 mod attrs;
 mod deprecated;
@@ -880,10 +882,12 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///   the entire select expression for the given field. It may be used to select with
 ///   custom tuples, or specify `select_expression = my_table::some_field.is_not_null()`,
 ///   or separate tables...
-///   It should be used in conjunction with `select_expression_type` (described below)
-/// * `#[diesel(select_expression_type = the_custom_select_expression_type]`, to be used
-///   in conjunction with `select_expression` (described above).
-///   For example: `#[diesel(select_expression_type = dsl::IsNotNull<my_table::some_field>)]`
+///   It may be used in conjunction with `select_expression_type` (described below)
+/// * `#[diesel(select_expression_type = the_custom_select_expression_type]`, should be used
+///   in conjunction with `select_expression` (described above) if the type is too complex
+///   for diesel to infer it automatically.
+///   Example use (this would actually be inferred):
+///   `#[diesel(select_expression_type = dsl::IsNotNull<my_table::some_field>)]`
 #[proc_macro_derive(Selectable, attributes(diesel))]
 pub fn derive_selectable(input: TokenStream) -> TokenStream {
     selectable::derive(parse_macro_input!(input))
@@ -1627,3 +1631,151 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
     multiconnection::derive(syn::parse_macro_input!(input)).into()
 }
+
+/// Automatically annotates return type of a query fragment function
+///
+/// This may be useful when factoring out common query fragments into functions.
+/// If not using this, it would typically involve explicitly writing the full
+/// type of the query fragment function, which depending on the length of said
+/// query fragment can be quite difficult (especially to maintain) and verbose.
+///
+/// # Example
+///
+/// ```rust
+/// # extern crate diesel;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// # use schema::{users, posts};
+/// use diesel::dsl;
+///
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let conn = &mut establish_connection();
+/// #
+/// #[dsl::auto_type]
+/// fn user_has_post() -> _ {
+///     dsl::exists(posts::table.filter(posts::user_id.eq(users::id)))
+/// }
+///
+/// let users_with_posts: Vec<String> = users::table
+///     .filter(user_has_post())
+///     .select(users::name)
+///     .load(conn)?;
+///
+/// assert_eq!(
+///     &["Sean", "Tess"] as &[_],
+///     users_with_posts
+///         .iter()
+///         .map(|s| s.as_str())
+///         .collect::<Vec<_>>()
+/// );
+/// #     Ok(())
+/// # }
+/// ```
+///
+/// # Advanced usage
+///
+/// By default, the macro will:
+///  - Generate a type alias for the return type of the function, named the
+///    exact same way as the function itself.
+///  - Assume that functions, unless otherwise annotated, have a type alias for
+///    their return type available at the same path as the function itself
+///    (including case). (e.g. for the `dsl::not(x)` call, it expects that there
+///    is a `dsl::not<X>` type alias available)
+///  - Assume that methods, unless otherwise annotated, have a type alias
+///    available as `diesel::dsl::PascalCaseOfMethodName` (e.g. for the
+///    `x.and(y)` call, it expects that there is a `diesel::dsl::And<X, Y>` type
+///    alias available)
+///
+/// The defaults can be changed by passing the following attributes to the
+/// macro:
+/// - `#[auto_type(no_type_alias)]` to disable the generation of the type alias.
+/// - `#[auto_type(dsl_path = "path::to::dsl")]` to change the path where the
+///   macro will look for type aliases for methods.
+/// - `#[auto_type(method_type_case = "snake_case")]` to change the case of the
+///   method type alias.
+/// - `#[auto_type(function_type_case = "snake_case")]` to change the case of
+///   the function type alias (if you don't want the exact same path but want to
+///   change the case of the last element of the path).
+///
+/// The `dsl_path` attribute in particular may be used to declare an
+/// intermediate module where you would define the few additional needed type
+/// aliases that can't be inferred automatically.
+///
+/// ## Annotating types
+///
+/// Sometimes the macro can't infer the type of a particular sub-expression. In
+/// that case, you can annotate the type of the sub-expression:
+///
+/// ```rust
+/// # extern crate diesel;
+/// # include!("../../diesel/src/doctest_setup.rs");
+/// # use schema::{users, posts};
+/// use diesel::dsl;
+///
+/// # fn main() {
+/// #     run_test().unwrap();
+/// # }
+/// #
+/// # fn run_test() -> QueryResult<()> {
+/// #     let conn = &mut establish_connection();
+/// #
+/// // This will generate a `user_has_post_with_id_greater_than` type alias
+/// #[dsl::auto_type]
+/// fn user_has_post_with_id_greater_than(id_greater_than: i32) -> _ {
+///     dsl::exists(
+///         posts::table
+///             .filter(posts::user_id.eq(users::id))
+///             .filter(posts::id.gt(id_greater_than)),
+///     )
+/// }
+///
+/// #[dsl::auto_type]
+/// fn users_with_posts_with_id_greater_than(id_greater_than: i32) -> _ {
+///     // If we didn't specify the type for this query fragment, the macro would infer it as
+///     // `user_has_post_with_id_greater_than<i32>`, which would be incorrect because there is
+///     // no generic parameter.
+///     let filter: user_has_post_with_id_greater_than =
+///         user_has_post_with_id_greater_than(id_greater_than);
+///     // The macro inferring that it has to pass generic parameters is still the convention
+///     // because it's the most general case, as well as the common case within Diesel itself,
+///     // and because annotating this way is reasonably simple, while the other way around
+///     // would be hard.
+///
+///     users::table.filter(filter).select(users::name)
+/// }
+///
+/// let users_with_posts: Vec<String> = users_with_posts_with_id_greater_than(2).load(conn)?;
+///
+/// assert_eq!(
+///     &["Tess"] as &[_],
+///     users_with_posts
+///         .iter()
+///         .map(|s| s.as_str())
+///         .collect::<Vec<_>>()
+/// );
+/// #     Ok(())
+/// # }
+/// ```
+#[proc_macro_attribute]
+pub fn auto_type(
+    attr: proc_macro::TokenStream,
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    dsl_auto_type::auto_type_proc_macro_attribute(
+        proc_macro2::TokenStream::from(attr),
+        proc_macro2::TokenStream::from(input),
+        dsl_auto_type::DeriveSettings::builder()
+            .default_dsl_path(parse_quote!(diesel::dsl))
+            .default_generate_type_alias(true)
+            .default_method_type_case(AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE)
+            .default_function_type_case(AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE)
+            .build(),
+    )
+    .into()
+}
+
+const AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::UpperCamel;
+const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::DoNotChange;
