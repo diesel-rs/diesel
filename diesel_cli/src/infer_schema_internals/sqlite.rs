@@ -189,6 +189,11 @@ struct ForeignKeyListRow {
     _match: String,
 }
 
+/// All SQLite rowid aliases
+/// Ordered by preference
+/// https://www.sqlite.org/rowidtable.html
+const SQLITE_ROWID_ALIASES: &[&str] = &["rowid", "oid", "_rowid_"];
+
 pub fn get_primary_keys(
     conn: &mut SqliteConnection,
     table: &TableName,
@@ -200,10 +205,32 @@ pub fn get_primary_keys(
         format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
     };
     let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
-    Ok(results
-        .into_iter()
-        .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
-        .collect())
+    let mut collected: Vec<String> = results
+        .iter()
+        .filter_map(|i| {
+            if i.primary_key {
+                Some(i.name.clone())
+            } else {
+                None
+            }
+        })
+        .collect();
+    // SQLite tables without "WITHOUT ROWID" always have aliases for the implicit PRIMARY KEY "rowid" and its aliases
+    // unless the user defines a column with those names, then the name in question refers to the created column
+    // https://www.sqlite.org/rowidtable.html
+    if collected.is_empty() {
+        for alias in SQLITE_ROWID_ALIASES {
+            if results.iter().any(|v| &v.name.as_str() == alias) {
+                continue;
+            }
+
+            // only add one alias as the primary key
+            collected.push(alias.to_string());
+            break;
+        }
+        // if it is still empty at this point, then a "diesel requires a primary key" error will be given
+    }
+    Ok(collected)
 }
 
 pub fn determine_column_type(
@@ -406,4 +433,19 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
 
     let fks = load_foreign_key_constraints(&mut connection, None).unwrap();
     assert_eq!(vec![fk_one, fk_two], fks);
+}
+
+#[test]
+fn all_rowid_aliases_used_empty_result() {
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
+
+    diesel::sql_query("CREATE TABLE table_1 (rowid TEXT, oid TEXT, _rowid_ TEXT)")
+        .execute(&mut connection)
+        .unwrap();
+
+    let table_1 = TableName::from_name("table_1");
+
+    let res = get_primary_keys(&mut connection, &table_1);
+    assert!(res.is_ok());
+    assert!(res.unwrap().is_empty());
 }

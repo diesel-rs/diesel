@@ -1,0 +1,29 @@
+---
+source: diesel_cli/tests/print_schema.rs
+description: "Test: print_schema_sqlite_without_explicit_primary_key"
+---
+// @generated automatically by Diesel CLI.
+
+diesel::table! {
+    no_explicit (rowid) {
+        rowid -> Integer,
+        name -> Text,
+    }
+}
+
+diesel::table! {
+    with_explicit_rowid (oid) {
+        oid -> Integer,
+        name -> Text,
+        rowid -> Text,
+    }
+}
+
+diesel::table! {
+    with_explicit_rowid_oid (_rowid_) {
+        _rowid_ -> Integer,
+        name -> Text,
+        rowid -> Text,
+        oid -> Text,
+    }
+}
