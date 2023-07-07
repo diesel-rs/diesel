@@ -189,6 +189,11 @@ struct ForeignKeyListRow {
     _match: String,
 }
 
+/// All SQLite rowid aliases
+/// Ordered by preference
+/// https://www.sqlite.org/rowidtable.html
+const SQLITE_ROWID_ALIASES: &[&str] = &["rowid", "oid", "_rowid_"];
+
 pub fn get_primary_keys(
     conn: &mut SqliteConnection,
     table: &TableName,
@@ -201,11 +206,23 @@ pub fn get_primary_keys(
     };
     let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
     let mut collected: Vec<String> = results
-        .into_iter()
-        .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
+        .iter()
+        .filter_map(|i| if i.primary_key { Some(i.name.clone()) } else { None })
         .collect();
+    // SQLite tables without "WITHOUT ROWID" always have aliases for the implicit PRIMARY KEY "rowid" and its aliases
+    // unless the user defines a column with those names, then the name in question refers to the created column
+    // https://www.sqlite.org/rowidtable.html
     if collected.is_empty() {
-        collected.push("rowid".to_owned());
+        for alias in SQLITE_ROWID_ALIASES {
+            if results.iter().find(|v| &v.name.as_str() == alias).is_some() {
+                continue;
+            }
+
+            // only add one alias as the primary key
+            collected.push(alias.to_string());
+            break;
+        }
+        // if it is still empty at this point, then a "diesel requires a primary key" error will be given
     }
     Ok(collected)
 }
