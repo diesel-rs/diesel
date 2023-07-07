@@ -8,7 +8,11 @@ default features enabled using some set of dependencies. Those set of dependenci
 an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
-## Unreleased 
+## Unreleased
+
+### Added
+
+* Added automatic usage of all sqlite `rowid` aliases when no explicit primary key is defined for `print-schema`
 
 ## [2.1.0] 2023-05-26
 
