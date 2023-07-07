@@ -434,3 +434,18 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
     let fks = load_foreign_key_constraints(&mut connection, None).unwrap();
     assert_eq!(vec![fk_one, fk_two], fks);
 }
+
+#[test]
+fn all_rowid_aliases_used_empty_result() {
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
+
+    diesel::sql_query("CREATE TABLE table_1 (rowid TEXT, oid TEXT, _rowid_ TEXT)")
+        .execute(&mut connection)
+        .unwrap();
+
+    let table_1 = TableName::from_name("table_1");
+
+    let res = get_primary_keys(&mut connection, &table_1);
+    assert!(res.is_ok());
+    assert!(res.unwrap().is_empty());
+}
