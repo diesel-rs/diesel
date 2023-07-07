@@ -207,14 +207,20 @@ pub fn get_primary_keys(
     let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
     let mut collected: Vec<String> = results
         .iter()
-        .filter_map(|i| if i.primary_key { Some(i.name.clone()) } else { None })
+        .filter_map(|i| {
+            if i.primary_key {
+                Some(i.name.clone())
+            } else {
+                None
+            }
+        })
         .collect();
     // SQLite tables without "WITHOUT ROWID" always have aliases for the implicit PRIMARY KEY "rowid" and its aliases
     // unless the user defines a column with those names, then the name in question refers to the created column
     // https://www.sqlite.org/rowidtable.html
     if collected.is_empty() {
         for alias in SQLITE_ROWID_ALIASES {
-            if results.iter().find(|v| &v.name.as_str() == alias).is_some() {
+            if results.iter().any(|v| &v.name.as_str() == alias) {
                 continue;
             }
 
