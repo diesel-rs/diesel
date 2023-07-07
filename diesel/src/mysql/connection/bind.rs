@@ -734,9 +734,6 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    #[cfg(feature = "bigdecimal")]
-    use bigdecimal::FromPrimitive;
-
     use super::MysqlValue;
     use super::*;
     use crate::connection::statement_cache::MaybeCached;
@@ -744,6 +741,8 @@ mod tests {
     use crate::mysql::connection::stmt::Statement;
     use crate::prelude::*;
     use crate::sql_types::*;
+    #[cfg(feature = "bigdecimal")]
+    use std::str::FromStr;
 
     fn to_value<ST, T>(
         bind: &BindData,
@@ -935,7 +934,7 @@ mod tests {
         assert!(!numeric_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Numeric, bigdecimal::BigDecimal>(numeric_col).unwrap(),
-            bigdecimal::BigDecimal::from_f32(-999.999).unwrap()
+            bigdecimal::BigDecimal::from_str("-999.99900").unwrap()
         );
 
         let decimal_col = &results[8].0;
@@ -947,7 +946,7 @@ mod tests {
         assert!(!decimal_col.flags.contains(Flags::UNSIGNED_FLAG));
         assert_eq!(
             to_value::<Numeric, bigdecimal::BigDecimal>(decimal_col).unwrap(),
-            bigdecimal::BigDecimal::from_f32(3.14).unwrap()
+            bigdecimal::BigDecimal::from_str("3.14000").unwrap()
         );
 
         let float_col = &results[9].0;
