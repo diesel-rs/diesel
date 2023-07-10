@@ -24,6 +24,8 @@ pub use aliased_field::AliasedField;
 #[doc(hidden)] // This is used by the table macro
 pub use field_alias_mapper::{FieldAliasMapper, FieldAliasMapperAssociatedTypesDisjointnessTrick};
 
+pub(crate) use alias::GetAliasSourceFromAlias;
+
 /// Types created by the `alias!` macro that serve to distinguish between aliases implement
 /// this trait.
 ///
