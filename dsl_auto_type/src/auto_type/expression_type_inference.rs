@@ -115,8 +115,11 @@ impl TypeInferrer<'_> {
             (syn::Expr::Path(syn::ExprPath { path, .. }), None) => {
                 // This is either a local variable or we should assume that the type exists at
                 // the same path as the function (with applied casing for last segment)
-                if let Some(LetStatementInferredType { type_, errors }) =
-                    path.get_ident().and_then(|path_single_ident| {
+                let path_is_ident = path.get_ident();
+                if path_is_ident.map_or(false, |ident| ident == "self") {
+                    parse_quote!(Self)
+                } else if let Some(LetStatementInferredType { type_, errors }) = path_is_ident
+                    .and_then(|path_single_ident| {
                         self.local_variables_map.map.get(path_single_ident)
                     })
                 {
