@@ -17,8 +17,7 @@ fn main() {
     let post = connection
         .transaction(|connection| {
             let post = posts
-                .filter(id.eq(post_id))
-                .filter(published.eq(true)) // This will add AND published = true to the WHERE clause
+                .find(id)
                 .select(Post::as_select())
                 .first(connection)
                 .optional()?; // This allows for returning an Option<Post>, otherwise it will throw an error
