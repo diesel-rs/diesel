@@ -1,10 +1,10 @@
 use self::models::Post;
 use diesel::prelude::*;
-use diesel_demo_step_3_mysql::*;
+use diesel_demo_step_3_sqlite::*;
 use std::env::args;
 
 fn main() {
-    use self::schema::posts::dsl::{posts, published, id};
+    use self::schema::posts::dsl::{posts, id};
 
     let post_id = args()
         .nth(1)
@@ -29,5 +29,5 @@ fn main() {
         })
         .unwrap_or_else(|_: diesel::result::Error| panic!("Unable to find post {}", post_id));
 
-    println!("Published post {}", post.title);
+    println!("Post with id: {}, has a title: {}", post.id, post.title);
 }
