@@ -29,5 +29,5 @@ fn main() {
         })
         .unwrap_or_else(|_: diesel::result::Error| panic!("Unable to find post {}", post_id));
 
-    println!("Post with id: {}, has a title: {}", post.id, post.title);
+    println!("Post with id: {} has a title: {}", post.id, post.title);
 }
