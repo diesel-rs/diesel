@@ -21,7 +21,8 @@ fn main() {
         .optional(); // This allows for returning an Option<Post>, otherwise it will throw an error
 
     match post {
-        Some(post) => Ok(println!("Post with id: {} has a title: {}", post.id, post.title)),
-        None => Ok(println!("Unable to find post {}", post_id)),
+        Ok(Some(post)) => println!("Post with id: {} has a title: {}", post.id, post.title),
+        Ok(None) => println!("Unable to find post {}", post_id),
+        Err(_) => println!("An error occured while fetching post {}", post_id),
     }
 }
