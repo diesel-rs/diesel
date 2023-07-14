@@ -48,12 +48,12 @@ const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] = format_descriptio
 const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3][offset_hour sign:mandatory]:[offset_minute]");
 
-const DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
+const PRIMITIVE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     // Most likely formats
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]"),
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
     // All other formats in order of increasing specificity
     format_description!("[year]-[month]-[day] [hour]:[minute]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]Z"),
@@ -67,6 +67,23 @@ const DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]Z"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]Z"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
+];
+
+const DATETIME_FORMATS: [&[FormatItem<'_>]; 12] = [
+    // Most likely formats
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    // All other formats in order of increasing specificity
+    format_description!("[year]-[month]-[day] [hour]:[minute]Z"),
+    format_description!("[year]-[month]-[day] [hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]Z"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]Z"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]Z"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second]Z"),
+    format_description!("[year]-[month]-[day]T[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond]Z"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
 ];
@@ -132,7 +149,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            for format in DATETIME_FORMATS {
+            for format in PRIMITIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
                     return Ok(dt);
                 }
@@ -166,7 +183,7 @@ impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
 impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            for format in DATETIME_FORMATS {
+            for format in PRIMITIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse(text, format) {
                     return Ok(dt);
                 }
@@ -199,6 +216,20 @@ impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        // First try to parse the timezone
+        if let Ok(dt) = value.parse_string(|text| {
+            for format in DATETIME_FORMATS {
+                if let Ok(dt) = OffsetDateTime::parse(text, format) {
+                    return Ok(dt);
+                }
+            }
+
+            Err(())
+        }) {
+            return Ok(dt);
+        }
+
+        // Fallback on assuming UTC
         let primitive_date_time =
             <PrimitiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(primitive_date_time.assume_utc())
@@ -208,6 +239,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
+        // Converting to UTC ensures consistency
         let dt_utc = self.to_offset(UtcOffset::UTC);
         let format = if self.millisecond() == 0 {
             ENCODE_DATETIME_FORMAT_WHOLE_SECOND
@@ -630,22 +662,6 @@ mod tests {
             "1970-01-01T00:00:00+00:00",
             "1970-01-01T00:00:00.000+00:00",
             "1970-01-01T00:00:00.000000+00:00",
-            "1970-01-01 00:00+01:00",
-            "1970-01-01 00:00:00+01:00",
-            "1970-01-01 00:00:00.000+01:00",
-            "1970-01-01 00:00:00.000000+01:00",
-            "1970-01-01T00:00+01:00",
-            "1970-01-01T00:00:00+01:00",
-            "1970-01-01T00:00:00.000+01:00",
-            "1970-01-01T00:00:00.000000+01:00",
-            "1970-01-01T00:00-01:00",
-            "1970-01-01T00:00:00-01:00",
-            "1970-01-01T00:00:00.000-01:00",
-            "1970-01-01T00:00:00.000000-01:00",
-            "1970-01-01T00:00-01:00",
-            "1970-01-01T00:00:00-01:00",
-            "1970-01-01T00:00:00.000-01:00",
-            "1970-01-01T00:00:00.000000-01:00",
             "2440587.5",
         ];
 

@@ -26,12 +26,12 @@ const ENCODE_NAIVE_DATETIME_FORMAT_SUBSECOND: &str = "%F %T%.f";
 const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &str = "%F %T%:z";
 const ENCODE_DATETIME_FORMAT_SUBSECOND: &str = "%F %T%.f%:z";
 
-const DATETIME_FORMATS: [&str; 18] = [
+const NAIVE_DATETIME_FORMATS: [&str; 18] = [
     // Most likely formats
-    "%F %T%.f%:z",
     "%F %T%.f",
-    "%F %T%:z",
+    "%F %T%.f%:z",
     "%F %T",
+    "%F %T%:z",
     // All other formats in order of increasing specificity
     "%F %R",
     "%F %RZ",
@@ -45,6 +45,23 @@ const DATETIME_FORMATS: [&str; 18] = [
     "%FT%TZ",
     "%FT%T%:z",
     "%FT%T%.f",
+    "%FT%T%.fZ",
+    "%FT%T%.f%:z",
+];
+
+const DATETIME_FORMATS: [&str; 12] = [
+    // Most likely formats
+    "%F %T%.f%:z",
+    "%F %T%:z",
+    // All other formats in order of increasing specificity
+    "%F %RZ",
+    "%F %R%:z",
+    "%F %TZ",
+    "%F %T%.fZ",
+    "%FT%RZ",
+    "%FT%R%:z",
+    "%FT%TZ",
+    "%FT%T%:z",
     "%FT%T%.fZ",
     "%FT%T%.f%:z",
 ];
@@ -107,7 +124,7 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            for format in DATETIME_FORMATS {
+            for format in NAIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse_from_str(text, format) {
                     return Ok(dt);
                 }
@@ -141,7 +158,7 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
 impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            for format in DATETIME_FORMATS {
+            for format in NAIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse_from_str(text, format) {
                     return Ok(dt);
                 }
@@ -174,6 +191,20 @@ impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        // First try to parse the timezone
+        if let Ok(dt) = value.parse_string(|text| {
+            for format in DATETIME_FORMATS {
+                if let Ok(dt) = DateTime::parse_from_str(text, format) {
+                    return Ok(dt.with_timezone(&Utc));
+                }
+            }
+
+            Err(())
+        }) {
+            return Ok(dt);
+        }
+
+        // Fallback on assuming Utc
         let naive_date_time =
             <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
@@ -183,6 +214,20 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        // First try to parse the timezone
+        if let Ok(dt) = value.parse_string(|text| {
+            for format in DATETIME_FORMATS {
+                if let Ok(dt) = DateTime::parse_from_str(text, format) {
+                    return Ok(dt.with_timezone(&Local));
+                }
+            }
+
+            Err(())
+        }) {
+            return Ok(dt);
+        }
+
+        // Fallback on assuming Local
         let naive_date_time =
             <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(Local::from_utc_datetime(&Local, &naive_date_time))
@@ -192,6 +237,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl<TZ: TimeZone> ToSql<TimestamptzSqlite, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
+        // Converting to UTC ensures consistency
         let dt_utc = self.with_timezone(&Utc);
         let format = if self.nanosecond() == 0 {
             ENCODE_DATETIME_FORMAT_WHOLE_SECOND
@@ -658,22 +704,6 @@ mod tests {
             "1970-01-01T00:00:00+00:00",
             "1970-01-01T00:00:00.000+00:00",
             "1970-01-01T00:00:00.000000+00:00",
-            "1970-01-01 00:00+01:00",
-            "1970-01-01 00:00:00+01:00",
-            "1970-01-01 00:00:00.000+01:00",
-            "1970-01-01 00:00:00.000000+01:00",
-            "1970-01-01T00:00+01:00",
-            "1970-01-01T00:00:00+01:00",
-            "1970-01-01T00:00:00.000+01:00",
-            "1970-01-01T00:00:00.000000+01:00",
-            "1970-01-01T00:00-01:00",
-            "1970-01-01T00:00:00-01:00",
-            "1970-01-01T00:00:00.000-01:00",
-            "1970-01-01T00:00:00.000000-01:00",
-            "1970-01-01T00:00-01:00",
-            "1970-01-01T00:00:00-01:00",
-            "1970-01-01T00:00:00.000-01:00",
-            "1970-01-01T00:00:00.000000-01:00",
             "2440587.5",
         ];
 
