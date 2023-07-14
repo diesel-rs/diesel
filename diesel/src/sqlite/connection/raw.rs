@@ -579,5 +579,5 @@ where
 
 extern "C" fn destroy_boxed<F>(data: *mut libc::c_void) {
     let ptr = data as *mut F;
-    unsafe { Box::from_raw(ptr) };
+    unsafe { std::mem::drop(Box::from_raw(ptr)) };
 }
