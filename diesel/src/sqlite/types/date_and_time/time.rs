@@ -15,22 +15,22 @@ use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
+
 const ENCODE_TIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
     format_description!("[hour]:[minute]:[second]");
 const ENCODE_TIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[hour]:[minute]:[second].[subsecond digits:6]");
 
 const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
-    // Most likely
+    // Most likely formats
     format_description!("[hour]:[minute]:[second].[subsecond]"),
+    format_description!("[hour]:[minute]:[second]"),
     // All other valid formats in order of increasing specificity
     format_description!("[hour]:[minute]"),
     format_description!("[hour]:[minute]Z"),
     format_description!("[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
-    format_description!("[hour]:[minute]:[second]"),
     format_description!("[hour]:[minute]:[second]Z"),
     format_description!("[hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
-    // here is where the most likely format would go according to the pattern
     format_description!("[hour]:[minute]:[second].[subsecond]Z"),
     format_description!(
         "[hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"
@@ -49,19 +49,17 @@ const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3][offset_hour sign:mandatory]:[offset_minute]");
 
 const DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
-    // Most likely format
+    // Most likely formats
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]"),
-    // Other formats in order of increasing specificity
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]"),
+    // All other formats in order of increasing specificity
     format_description!("[year]-[month]-[day] [hour]:[minute]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]Z"),
     format_description!("[year]-[month]-[day] [hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second]"),
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]Z"),
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"),
-    // here is where the most likely format would go according to the pattern
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]Z"),
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]"),
-    // now the same thing, with T
     format_description!("[year]-[month]-[day]T[hour]:[minute]"),
     format_description!("[year]-[month]-[day]T[hour]:[minute]Z"),
     format_description!("[year]-[month]-[day]T[hour]:[minute][offset_hour sign:mandatory]:[offset_minute]"),
