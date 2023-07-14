@@ -227,6 +227,14 @@ where
         Ok(())
     }
 
+    /// Push a value onto the given query to be sent separate from the SQL
+    ///
+    /// This method affects multiple AST passes. It should be called at the
+    /// point in the raw SQL is inserted. This assumes the parameter placeholder
+    /// (`$1` on PG, `?` on other backends) is already inserted.
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     pub(crate) fn push_bind_param_value_only<T, U>(&mut self, bind: &'b U) -> QueryResult<()>
     where
         DB: HasSqlType<T>,
