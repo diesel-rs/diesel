@@ -10,6 +10,7 @@ use std::ops::Range;
 pub use self::private::{PartialRow, RowSealed};
 
 #[cfg(not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))]
+#[allow(unused_imports)]
 pub(crate) use self::private::{PartialRow, RowSealed};
 
 /// Representing a way to index into database rows
