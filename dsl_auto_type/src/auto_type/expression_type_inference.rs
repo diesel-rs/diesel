@@ -2,6 +2,11 @@ use super::*;
 
 pub use super::settings_builder::InferrerSettingsBuilder;
 
+/// This is meant to be used if there's need to infer a single expression type out of the context
+/// of a function. It will be assumed that there are no intermediate variables (`let` statements).
+/// Consequently, this form prevents usage of `let` statements for annotating types.
+///
+/// This is useful in the context of Diesel's `Selectable` macro.
 pub fn infer_expression_type(
     expr: &syn::Expr,
     type_hint: Option<&syn::Type>,
@@ -61,12 +66,12 @@ impl TypeInferrer<'_> {
 
         match inferred {
             Ok(t) => t,
-            Err(e) => self.register_error(e),
+            Err(e) => self.register_error(e, expr.span()),
         }
     }
-    fn register_error(&self, error: syn::Error) -> syn::Type {
+    fn register_error(&self, error: syn::Error, infer_type_span: Span) -> syn::Type {
         self.errors.borrow_mut().push(Rc::new(error));
-        parse_quote!(_)
+        parse_quote_spanned!(infer_type_span=> _)
     }
     fn try_infer_expression_type(
         &self,
@@ -217,13 +222,13 @@ impl TypeInferrer<'_> {
                 qself: None,
             }),
             (syn::Expr::Lit(syn::ExprLit { lit, .. }), None) => match lit {
-                syn::Lit::Str(_) => parse_quote!(&'static str),
-                syn::Lit::ByteStr(_) => parse_quote!(&'static [u8]),
-                syn::Lit::Byte(_) => parse_quote!(u8),
-                syn::Lit::Char(_) => parse_quote!(char),
+                syn::Lit::Str(_) => parse_quote_spanned!(lit.span()=> &'static str),
+                syn::Lit::ByteStr(_) => parse_quote_spanned!(lit.span()=> &'static [u8]),
+                syn::Lit::Byte(_) => parse_quote_spanned!(lit.span()=> u8),
+                syn::Lit::Char(_) => parse_quote_spanned!(lit.span()=> char),
                 syn::Lit::Int(lit_int) => litteral_type(&lit_int.token())?,
                 syn::Lit::Float(lit_float) => litteral_type(&lit_float.token())?,
-                syn::Lit::Bool(_) => parse_quote!(bool),
+                syn::Lit::Bool(_) => parse_quote_spanned!(lit.span()=> bool),
                 _ => {
                     return Err(syn::Error::new(
                         lit.span(),
@@ -282,6 +287,7 @@ impl TypeInferrer<'_> {
                                             there is no function argument to infer from \
                                             (less function arguments than generic arguments)",
                                     ),
+                                    generic_argument.span(),
                                 )),
                                 (generic_argument, _) => generic_argument.clone(),
                             }),

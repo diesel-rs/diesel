@@ -50,7 +50,7 @@ impl<'a> LocalVariablesMap<'a> {
                             errors: Vec::new(),
                         },
                         (None, None) => LetStatementInferredType {
-                            type_: parse_quote!(_),
+                            type_: parse_quote_spanned!(pat_ident.span()=> _),
                             errors: vec![Rc::new(syn::Error::new_spanned(
                                 pat_ident,
                                 "auto_type: Let statement with no type ascription \

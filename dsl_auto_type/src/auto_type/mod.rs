@@ -9,7 +9,7 @@ use {
     proc_macro2::{Span, TokenStream},
     quote::quote,
     std::{collections::HashMap, rc::Rc},
-    syn::{parse_quote, spanned::Spanned, Ident, ItemFn, Token, Type},
+    syn::{parse_quote, parse_quote_spanned, spanned::Spanned, Ident, ItemFn, Token, Type},
 };
 
 use local_variables_map::*;

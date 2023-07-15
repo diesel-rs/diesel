@@ -1,0 +1,60 @@
+error: Litterals must have type suffix for auto_type, e.g. 2i64
+  --> tests/fail/auto_type.rs:45:13
+   |
+45 |     let n = 2;
+   |             ^
+
+error: auto_type: Can't infer generic argument because there is no function argument to infer from (less function arguments than generic arguments)
+  --> tests/fail/auto_type.rs:56:25
+   |
+56 |     posts::user_id.eq::<_>()
+   |                         ^
+
+error: Litterals must have type suffix for auto_type, e.g. 2i64
+  --> tests/fail/auto_type.rs:66:34
+   |
+66 |             .filter(posts::id.gt(2)),
+   |                                  ^
+
+error[E0107]: this type alias takes 0 generic arguments but 1 generic argument was supplied
+  --> tests/fail/auto_type.rs:36:17
+   |
+30 |   #[dsl::auto_type]
+   |  __________________-
+31 | | fn users_with_posts_with_id_greater_than(id_greater_than: i32) -> _ {
+32 | |     // This fails because the macro infers the type of
+33 | |     // `user_has_post_with_id_greater_than(id_greater_than)` to be
+34 | |     // `user_has_post_with_id_greater_than<i32>`
+35 | |     users::table
+36 | |         .filter(user_has_post_with_id_greater_than(id_greater_than))
+   | |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^-
+   | |_________________|________________________________|
+   |                   |                                help: remove these generics
+   |                   expected 0 generic arguments
+   |
+note: type alias defined here, with 0 generic parameters
+  --> tests/fail/auto_type.rs:22:4
+   |
+22 | fn user_has_post_with_id_greater_than(id_greater_than: i32) -> _ {
+   |    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0121]: the placeholder `_` is not allowed within types on item signatures for type aliases
+  --> tests/fail/auto_type.rs:45:13
+   |
+45 |     let n = 2;
+   |             ^
+   |             |
+   |             not allowed in type signatures
+   |             not allowed in type signatures
+
+error[E0121]: the placeholder `_` is not allowed within types on item signatures for type aliases
+  --> tests/fail/auto_type.rs:56:25
+   |
+56 |     posts::user_id.eq::<_>()
+   |                         ^ not allowed in type signatures
+
+error[E0121]: the placeholder `_` is not allowed within types on item signatures for associated types
+  --> tests/fail/auto_type.rs:66:34
+   |
+66 |             .filter(posts::id.gt(2)),
+   |                                  ^ not allowed in type signatures
