@@ -1,7 +1,7 @@
 [![](https://diesel.rs/assets/images/diesel_logo_stacked_black.png)](https://diesel.rs)
 
-A safe, extensible ORM and Query Builder for Rust
-==========================================================
+# A safe, extensible ORM and Query Builder for Rust
+
 [![Build Status](https://github.com/diesel-rs/diesel/workflows/CI%20Tests/badge.svg)](https://github.com/diesel-rs/diesel/actions?query=workflow%3A%22CI+Tests%22+branch%3Amaster)
 [![Gitter](https://badges.gitter.im/diesel-rs/diesel.svg)](https://gitter.im/diesel-rs/diesel?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 [![Crates.io](https://img.shields.io/crates/v/diesel.svg)](https://crates.io/crates/diesel)
@@ -21,6 +21,7 @@ Supported databases:
 3. [SQLite](https://docs.diesel.rs/master/diesel/sqlite/index.html)
 
 You can configure the database backend in `Cargo.toml`:
+
 ```toml
 [dependencies]
 diesel = { version = "<version>", features = ["<postgres|mysql|sqlite>"] }
@@ -33,18 +34,18 @@ Find our extensive Getting Started tutorial at
 Guides on more specific features are coming soon.
 
 ## Getting help
+
 If you run into problems, Diesel has a very active Gitter room.
 You can come ask for help at
 [gitter.im/diesel-rs/diesel](https://gitter.im/diesel-rs/diesel).
 For help with longer questions and discussion about the future of Diesel,
 open a discussion on [GitHub Discussions](https://github.com/diesel-rs/diesel/discussions).
 
-## Usage 
+## Usage
 
-### Simple queries 
+### Simple queries
 
 Simple queries are a complete breeze. Loading all users from a database:
-
 
 ```rust
 users::table.load(&mut connection)
@@ -86,6 +87,7 @@ let downloads = version_downloads
 ```
 
 Executed SQL:
+
 ```sql
 SELECT version_downloads.*
   WHERE date > (NOW() - '90 days')
@@ -172,7 +174,6 @@ INSERT INTO users (name, hair_color) VALUES
 
 If you need data from the rows you inserted, just change `execute` to `get_result` or `get_results`. Diesel will take care of the rest.
 
-
 ```rust
 let new_users = vec![
     NewUser { name: "Sean", hair_color: Some("Black") },
@@ -194,6 +195,7 @@ INSERT INTO users (name, hair_color) VALUES
 ```
 
 ### Updating data
+
 Diesel's codegen can generate several ways to update a row, letting you encapsulate your logic in the way that makes sense for your app.
 
 Modifying a struct:
@@ -219,7 +221,7 @@ update(Settings::belonging_to(current_user))
     .execute(&mut connection)
 ```
 
-### Raw SQL 
+### Raw SQL
 
 There will always be certain queries that are just easier to write as raw SQL, or can't be expressed with the query builder. Even in these cases, Diesel provides an easy to use API for writing raw SQL.
 
@@ -242,7 +244,6 @@ sql_query(include_str!("complex_users_by_organization.sql"))
     .load::<User>(&mut conn)?;
 ```
 
-
 ## Code of conduct
 
 Anyone who interacts with Diesel in any space, including but not limited to
@@ -258,6 +259,7 @@ Licensed under either of these:
    https://opensource.org/licenses/MIT)
 
 ### Contributing
+
 Before contributing, please read the [contributors guide](https://github.com/diesel-rs/diesel/blob/master/CONTRIBUTING.md)
 for useful information about setting up Diesel locally, coding style and common abbreviations.
 
