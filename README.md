@@ -80,7 +80,7 @@ let versions = Version::belonging_to(krate)
   .limit(5);
 let downloads = version_downloads
   .filter(date.gt(now - 90.days()))
-  .filter(version_id.eq(any(versions)))
+  .filter(version_id.eq_any(versions))
   .order(date)
   .load::<Download>(&mut conn)?;
 ```
