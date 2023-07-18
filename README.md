@@ -1,4 +1,4 @@
-[![](https://diesel.rs/assets/images/diesel_logo_stacked_black.png)](https://diesel.rs)
+[![diesel logo](https://diesel.rs/assets/images/diesel_logo_stacked_black.png)](https://diesel.rs)
 
 # A safe, extensible ORM and Query Builder for Rust
 
