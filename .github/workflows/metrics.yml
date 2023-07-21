@@ -69,7 +69,7 @@ jobs:
 
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio fast_run"
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio"
 
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
@@ -88,6 +88,11 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           df -h
           rm diesel_bench/target/release -rf
+          # delete unwanted files from criterion
+          find diesel_bench/target/criterion/ -iname '*.json' -delete
+          find diesel_bench/target/criterion/ -type d -name "base" -exec rm -rv {} \; || true
+          find diesel_bench/target/criterion/ -type d -empty -delete
+          # free some space on the runner
           df -h
           sudo rm -rf /usr/share/dotnet
           df -h

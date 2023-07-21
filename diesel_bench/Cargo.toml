@@ -10,7 +10,7 @@ autobenches = false
 
 [dependencies]
 dotenvy = "0.15"
-criterion = {version = "0.3.2", default-features = false, features = ["csv_output", "cargo_bench_support"]}
+criterion = {version = "0.5", default-features = false, features = ["csv_output", "cargo_bench_support"]}
 sqlx = {version = "0.7", features = ["runtime-tokio-rustls"], optional = true}
 tokio = {version = "1", optional = true}
 rusqlite = {version = "0.29", optional = true}
