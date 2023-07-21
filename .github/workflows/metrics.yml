@@ -69,7 +69,7 @@ jobs:
 
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio"
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio fast_run"
 
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
@@ -97,6 +97,7 @@ jobs:
           df -h
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
+          pwd
           git clone --depth 1 git@github.com:diesel-rs/metrics.git
           df -h
 
