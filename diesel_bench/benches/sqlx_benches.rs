@@ -70,7 +70,10 @@ type Connection = sqlx::PgConnection;
 fn connection() -> (Runtime, Connection) {
     use sqlx::Connection;
 
-    let runtime = Runtime::new().expect("Failed to create runtime");
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to create runtime");
 
     dotenvy::dotenv().ok();
     let connection_url = dotenvy::var("POSTGRES_DATABASE_URL")
@@ -101,7 +104,10 @@ fn connection() -> (Runtime, Connection) {
 fn connection() -> (Runtime, Connection) {
     use sqlx::Connection;
 
-    let runtime = Runtime::new().expect("Failed to create runtime");
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to create runtime");
 
     dotenvy::dotenv().ok();
     let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
@@ -142,7 +148,10 @@ fn connection() -> (Runtime, Connection) {
 fn connection() -> (Runtime, Connection) {
     use sqlx::Connection;
 
-    let runtime = Runtime::new().expect("Failed to create runtime");
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to create runtime");
 
     let conn = runtime.block_on(async {
         let mut conn = sqlx::SqliteConnection::connect("sqlite::memory:")
@@ -418,7 +427,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                         .bind(user.id)
                         .bind(None::<String>);
 
-                    insert_query.execute(&mut conn).await.unwrap();
+                    insert_query.execute(&mut *conn).await.unwrap();
                 }
             }
 
@@ -477,7 +486,7 @@ pub fn loading_associations_sequentially(b: &mut Bencher) {
                         .bind(format!("Comment {} on post {}", i, post.id))
                         .bind(post.id);
 
-                    insert_query.execute(&mut conn).await.unwrap();
+                    insert_query.execute(&mut *conn).await.unwrap();
                 }
             }
 

@@ -88,6 +88,11 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           df -h
           rm diesel_bench/target/release -rf
+          # delete unwanted files from criterion
+          find diesel_bench/target/criterion/ -iname '*.json' -delete
+          find diesel_bench/target/criterion/ -type d -name "base" -exec rm -rv {} \; || true
+          find diesel_bench/target/criterion/ -type d -empty -delete
+          # free some space on the runner
           df -h
           sudo rm -rf /usr/share/dotnet
           df -h
@@ -97,6 +102,7 @@ jobs:
           df -h
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
           df -h
+          pwd
           git clone --depth 1 git@github.com:diesel-rs/metrics.git
           df -h
 

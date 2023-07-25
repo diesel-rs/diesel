@@ -16,7 +16,10 @@ use self::users::Entity as User;
 fn connection() -> (sqlx::PgPool, DatabaseConnection, Runtime) {
     use sea_orm::SqlxPostgresConnector;
 
-    let rt = Runtime::new().expect("Failed to start runtime");
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to start runtime");
 
     dotenvy::dotenv().ok();
     let connection_url = dotenvy::var("PG_DATABASE_URL")
@@ -43,7 +46,10 @@ fn connection() -> (sqlx::MySqlPool, DatabaseConnection, Runtime) {
     use futures::StreamExt;
     use sea_orm::SqlxMySqlConnector;
 
-    let rt = Runtime::new().expect("Failed to start runtime");
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to start runtime");
 
     dotenvy::dotenv().ok();
     let connection_url = dotenvy::var("MYSQL_DATABASE_URL")
@@ -73,7 +79,10 @@ fn connection() -> (sqlx::MySqlPool, DatabaseConnection, Runtime) {
 fn connection() -> (sqlx::SqlitePool, DatabaseConnection, Runtime) {
     use sea_orm::SqlxSqliteConnector;
 
-    let rt = Runtime::new().expect("Failed to start runtime");
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to start runtime");
     dotenvy::dotenv().ok();
 
     let (pool, db) = rt.block_on(async {
