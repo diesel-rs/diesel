@@ -1,7 +1,8 @@
 use std::error::Error;
 
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
+use diesel::deserialize::{self, Queryable};
 use diesel::dsl::sql;
+use diesel::row::NamedRow;
 use diesel::sqlite::Sqlite;
 use diesel::*;
 
@@ -141,7 +142,10 @@ pub fn get_table_data(
     } else {
         format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
     };
-    let mut result = sql::<pragma_table_info::SqlType>(&query).load(conn)?;
+
+    // See: https://github.com/diesel-rs/diesel/issues/3579 as to why we use a direct
+    // `sql_query` with `QueryableByName` instead of using `sql::<pragma_table_info::SqlType>`.
+    let mut result = sql_query(query).load::<ColumnInformation>(conn)?;
     match column_sorting {
         ColumnSorting::OrdinalPosition => {}
         ColumnSorting::Name => {
@@ -153,15 +157,19 @@ pub fn get_table_data(
     Ok(result)
 }
 
-impl<ST> Queryable<ST, Sqlite> for ColumnInformation
-where
-    (i32, String, String, bool, Option<String>, bool, i32): FromStaticSqlRow<ST, Sqlite>,
-{
-    type Row = (i32, String, String, bool, Option<String>, bool, i32);
+impl QueryableByName<Sqlite> for ColumnInformation {
+    fn build<'a>(row: &impl NamedRow<'a, Sqlite>) -> deserialize::Result<Self> {
+        let column_name = NamedRow::get::<Text, String>(row, "name")?;
+        let type_name = NamedRow::get::<Text, String>(row, "type")?;
+        let notnull = NamedRow::get::<Bool, bool>(row, "notnull")?;
 
-    fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(
-            row.1, row.2, None, !row.3, None, None,
+        Ok(Self::new(
+            column_name,
+            type_name,
+            None,
+            !notnull,
+            None,
+            None,
         ))
     }
 }
