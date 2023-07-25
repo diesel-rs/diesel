@@ -175,6 +175,16 @@ where
     }
 }
 
+impl<DB, const N: usize> ToSql<sql_types::Binary, DB> for [u8; N]
+where
+    DB: Backend,
+    [u8]: ToSql<sql_types::Binary, DB>,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        self.as_slice().to_sql(out)
+    }
+}
+
 impl<DB> ToSql<sql_types::Binary, DB> for [u8]
 where
     for<'a> DB: Backend<BindCollector<'a> = RawBytesBindCollector<DB>>,
