@@ -18,18 +18,6 @@ table! {
 }
 
 table! {
-    pragma_table_info (cid) {
-        cid ->Integer,
-        name -> VarChar,
-        type_name -> VarChar,
-        notnull -> Bool,
-        dflt_value -> Nullable<VarChar>,
-        pk -> Bool,
-        hidden -> Integer,
-    }
-}
-
-table! {
     pragma_foreign_key_list {
         id -> Integer,
         seq -> Integer,
