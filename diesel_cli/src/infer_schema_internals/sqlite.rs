@@ -3,6 +3,7 @@ use std::error::Error;
 use diesel::deserialize::{self, Queryable};
 use diesel::dsl::sql;
 use diesel::row::NamedRow;
+use diesel::sql_types::{Bool, Text};
 use diesel::sqlite::Sqlite;
 use diesel::*;
 
@@ -174,15 +175,18 @@ impl QueryableByName<Sqlite> for ColumnInformation {
     }
 }
 
-#[derive(Queryable)]
-struct FullTableInfo {
-    _cid: i32,
+struct PrimaryKeyInformation {
     name: String,
-    _type_name: String,
-    _not_null: bool,
-    _dflt_value: Option<String>,
     primary_key: bool,
-    _hidden: i32,
+}
+
+impl QueryableByName<Sqlite> for PrimaryKeyInformation {
+    fn build<'a>(row: &impl NamedRow<'a, Sqlite>) -> deserialize::Result<Self> {
+        let name = NamedRow::get::<Text, String>(row, "name")?;
+        let primary_key = NamedRow::get::<Bool, bool>(row, "pk")?;
+
+        Ok(Self { name, primary_key })
+    }
 }
 
 #[derive(Queryable)]
@@ -212,7 +216,7 @@ pub fn get_primary_keys(
     } else {
         format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
     };
-    let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
+    let results = sql_query(query).load::<PrimaryKeyInformation>(conn)?;
     let mut collected: Vec<String> = results
         .iter()
         .filter_map(|i| {
