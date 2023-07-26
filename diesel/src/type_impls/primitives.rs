@@ -116,7 +116,7 @@ mod foreign_impls {
     struct BinarySliceProxy([u8]);
 
     #[derive(AsExpression)]
-    #[diesel(foreign_derive, not_sized)]
+    #[diesel(foreign_derive)]
     #[diesel(sql_type = Binary)]
     struct BinaryArrayProxy<const N: usize>([u8; N]);
 }
