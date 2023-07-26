@@ -92,3 +92,265 @@ impl ToSql<sql_types::TimestamptzSqlite, Sqlite> for String {
         <str as ToSql<sql_types::TimestamptzSqlite, Sqlite>>::to_sql(self as &str, out)
     }
 }
+
+#[cfg(all(test, feature = "chrono", feature = "time"))]
+mod tests {
+    extern crate chrono;
+    extern crate time;
+
+    use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+    use time::{
+        macros::{date, datetime, offset, time},
+        Date, OffsetDateTime, PrimitiveDateTime, Time,
+    };
+
+    use crate::insert_into;
+    use crate::prelude::*;
+    use crate::test_helpers::connection;
+
+    crate::table! {
+        table_timestamp_tz(id) {
+            id -> Integer,
+            timestamp_with_tz -> TimestamptzSqlite,
+        }
+    }
+    crate::table! {
+      table_timestamp(id) {
+          id -> Integer,
+          timestamp -> Timestamp
+      }
+    }
+    crate::table! {
+        table_date(id) {
+            id -> Integer,
+            date -> Date
+        }
+    }
+    crate::table! {
+        table_time(id) {
+            id -> Integer,
+            time -> Time
+        }
+    }
+
+    fn create_tables(conn: &mut SqliteConnection) {
+        crate::sql_query(
+            "CREATE TABLE table_timestamp_tz(id INTEGER PRIMARY KEY, timestamp_with_tz TEXT);",
+        )
+        .execute(conn)
+        .unwrap();
+
+        crate::sql_query("CREATE TABLE table_timestamp(id INTEGER PRIMARY KEY, timestamp TEXT);")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("CREATE TABLE table_date(id INTEGER PRIMARY KEY, date TEXT);")
+            .execute(conn)
+            .unwrap();
+
+        crate::sql_query("CREATE TABLE table_time(id INTEGER PRIMARY KEY, time TEXT);")
+            .execute(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn time_to_chrono_date() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = date!(2000 - 1 - 1);
+
+        insert_into(table_date::table)
+            .values(vec![(table_date::id.eq(1), table_date::date.eq(original))])
+            .execute(conn)
+            .unwrap();
+
+        table_date::table
+            .select(table_date::date)
+            .get_result::<NaiveDate>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn chrono_to_time_date() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+
+        insert_into(table_date::table)
+            .values(vec![(table_date::id.eq(1), table_date::date.eq(original))])
+            .execute(conn)
+            .unwrap();
+
+        table_date::table
+            .select(table_date::date)
+            .get_result::<Date>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn time_to_chrono_time() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = time!(1:1:1.001);
+
+        insert_into(table_time::table)
+            .values(vec![(table_time::id.eq(1), table_time::time.eq(original))])
+            .execute(conn)
+            .unwrap();
+
+        table_time::table
+            .select(table_time::time)
+            .get_result::<NaiveTime>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn chrono_to_time_time() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = NaiveTime::from_hms_milli_opt(1, 1, 1, 1).unwrap();
+
+        insert_into(table_time::table)
+            .values(vec![(table_time::id.eq(1), table_time::time.eq(original))])
+            .execute(conn)
+            .unwrap();
+
+        table_time::table
+            .select(table_time::time)
+            .get_result::<Time>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn time_to_chrono_datetime() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = datetime!(2000-1-1 1:1:1.001);
+
+        insert_into(table_timestamp::table)
+            .values(vec![(
+                table_timestamp::id.eq(1),
+                table_timestamp::timestamp.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        table_timestamp::table
+            .select(table_timestamp::timestamp)
+            .get_result::<NaiveDateTime>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn chrono_to_time_datetime() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = NaiveDate::from_ymd_opt(2000, 1, 1)
+            .unwrap()
+            .and_hms_milli_opt(1, 1, 1, 1)
+            .unwrap();
+
+        insert_into(table_timestamp::table)
+            .values(vec![(
+                table_timestamp::id.eq(1),
+                table_timestamp::timestamp.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        table_timestamp::table
+            .select(table_timestamp::timestamp)
+            .get_result::<PrimitiveDateTime>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn chrono_to_time_datetime_utc() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = Utc::now();
+
+        insert_into(table_timestamp_tz::table)
+            .values(vec![(
+                table_timestamp_tz::id.eq(1),
+                table_timestamp_tz::timestamp_with_tz.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        table_timestamp_tz::table
+            .select(table_timestamp_tz::timestamp_with_tz)
+            .get_result::<OffsetDateTime>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn time_to_chrono_datetime_utc() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = OffsetDateTime::now_utc();
+
+        insert_into(table_timestamp_tz::table)
+            .values(vec![(
+                table_timestamp_tz::id.eq(1),
+                table_timestamp_tz::timestamp_with_tz.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        table_timestamp_tz::table
+            .select(table_timestamp_tz::timestamp_with_tz)
+            .get_result::<DateTime<Utc>>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn chrono_to_time_datetime_timezone() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = Utc::now().with_timezone(&FixedOffset::east_opt(5 * 3600).unwrap());
+
+        insert_into(table_timestamp_tz::table)
+            .values(vec![(
+                table_timestamp_tz::id.eq(1),
+                table_timestamp_tz::timestamp_with_tz.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        table_timestamp_tz::table
+            .select(table_timestamp_tz::timestamp_with_tz)
+            .get_result::<OffsetDateTime>(conn)
+            .unwrap();
+    }
+
+    #[test]
+    fn time_to_chrono_datetime_offset() {
+        let conn = &mut connection();
+        create_tables(conn);
+
+        let original = OffsetDateTime::now_utc().to_offset(offset!(+5));
+
+        insert_into(table_timestamp_tz::table)
+            .values(vec![(
+                table_timestamp_tz::id.eq(1),
+                table_timestamp_tz::timestamp_with_tz.eq(original),
+            )])
+            .execute(conn)
+            .unwrap();
+
+        table_timestamp_tz::table
+            .select(table_timestamp_tz::timestamp_with_tz)
+            .get_result::<DateTime<Utc>>(conn)
+            .unwrap();
+    }
+}
