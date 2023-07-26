@@ -1,5 +1,6 @@
 use crate::schema::users;
 use diesel::prelude::*;
+use diesel::sql_types::{Binary, Float, Integer, Nullable, Text};
 
 #[derive(diesel::MultiConnection)]
 pub enum InferConnection {
@@ -105,4 +106,19 @@ fn check_queries_work() {
 
     // delete
     diesel::delete(users::table).execute(&mut conn).unwrap();
+
+    // more binds
+    // mostly nullable types
+    let (string, int, blob, float) = diesel::select((
+        None::<String>.into_sql::<Nullable<Text>>(),
+        None::<i32>.into_sql::<Nullable<Integer>>(),
+        None::<f32>.into_sql::<Nullable<Float>>(),
+        None::<Vec<u8>>.into_sql::<Nullable<Binary>>(),
+    ))
+    .get_result::<(Option<String>, Option<i32>, Option<f32>, Option<Vec<u8>>)>(&mut conn)
+    .unwrap();
+    assert!(string.is_none());
+    assert!(int.is_none());
+    assert!(float.is_none());
+    assert!(blob.is_none());
 }
