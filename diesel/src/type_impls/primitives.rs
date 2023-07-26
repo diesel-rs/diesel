@@ -114,6 +114,11 @@ mod foreign_impls {
     #[diesel(foreign_derive, not_sized)]
     #[diesel(sql_type = Binary)]
     struct BinarySliceProxy([u8]);
+
+    #[derive(AsExpression)]
+    #[diesel(foreign_derive)]
+    #[diesel(sql_type = Binary)]
+    struct BinaryArrayProxy<const N: usize>([u8; N]);
 }
 
 impl<ST, DB> FromSql<ST, DB> for String
@@ -172,6 +177,16 @@ where
 {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
         (self as &[u8]).to_sql(out)
+    }
+}
+
+impl<DB, const N: usize> ToSql<sql_types::Binary, DB> for [u8; N]
+where
+    DB: Backend,
+    [u8]: ToSql<sql_types::Binary, DB>,
+{
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, DB>) -> serialize::Result {
+        self.as_slice().to_sql(out)
     }
 }
 
