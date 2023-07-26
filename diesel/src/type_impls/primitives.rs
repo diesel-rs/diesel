@@ -114,6 +114,11 @@ mod foreign_impls {
     #[diesel(foreign_derive, not_sized)]
     #[diesel(sql_type = Binary)]
     struct BinarySliceProxy([u8]);
+
+    #[derive(AsExpression)]
+    #[diesel(foreign_derive, not_sized)]
+    #[diesel(sql_type = Binary)]
+    struct BinaryArrayProxy<const N: usize>([u8; N]);
 }
 
 impl<ST, DB> FromSql<ST, DB> for String
