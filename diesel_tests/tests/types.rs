@@ -618,6 +618,10 @@ fn bytes_to_sql_binary() {
         "E'\\\\x1F8B'::bytea",
         &invalid_utf8_bytes
     ));
+    assert!(query_to_sql_equality::<Binary, &[u8; 2]>(
+        "E'\\\\x1F8B'::bytea",
+        &invalid_utf8_bytes
+    ));
     assert!(!query_to_sql_equality::<Binary, &[u8]>(
         "''::bytea",
         &invalid_utf8_bytes
