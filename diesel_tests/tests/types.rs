@@ -610,6 +610,7 @@ fn binary_from_sql() {
 #[cfg(feature = "postgres")]
 fn bytes_to_sql_binary() {
     let invalid_utf8_bytes = vec![0x1Fu8, 0x8Bu8];
+    let invalid_utf8_array = [0x1Fu8, 0x8Bu8];
     assert!(query_to_sql_equality::<Binary, Vec<u8>>(
         "E'\\\\x1F8B'::bytea",
         invalid_utf8_bytes.clone()
@@ -620,7 +621,7 @@ fn bytes_to_sql_binary() {
     ));
     assert!(query_to_sql_equality::<Binary, &[u8; 2]>(
         "E'\\\\x1F8B'::bytea",
-        &invalid_utf8_bytes
+        &invalid_utf8_array
     ));
     assert!(!query_to_sql_equality::<Binary, &[u8]>(
         "''::bytea",
