@@ -1,5 +1,4 @@
 extern crate chrono;
-use chrono::Timelike;
 
 use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
@@ -9,10 +8,16 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
+// Warning to future editors:
+// Changes in the following formats need to be kept in sync
+// with the formats of the "time" module.
+// We do not need a distinction between whole second and
+// subsecond since %.f will only print the dot if needed.
+// We always print as many subsecond as his given to us,
+// this means the subsecond part can be 3, 6 or 9 digits.
 const DATE_FORMAT: &str = "%F";
 
-const ENCODE_TIME_FORMAT_WHOLE_SECOND: &str = "%T";
-const ENCODE_TIME_FORMAT_SUBSECOND: &str = "%T%.f";
+const ENCODE_TIME_FORMAT: &str = "%T%.f";
 
 const TIME_FORMATS: [&str; 9] = [
     // Most likely formats
@@ -20,11 +25,9 @@ const TIME_FORMATS: [&str; 9] = [
     "%R", "%RZ", "%R%:z", "%TZ", "%T%:z", "%T%.fZ", "%T%.f%:z",
 ];
 
-const ENCODE_NAIVE_DATETIME_FORMAT_WHOLE_SECOND: &str = "%F %T";
-const ENCODE_NAIVE_DATETIME_FORMAT_SUBSECOND: &str = "%F %T%.f";
+const ENCODE_NAIVE_DATETIME_FORMAT: &str = "%F %T%.f";
 
-const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &str = "%F %T%:z";
-const ENCODE_DATETIME_FORMAT_SUBSECOND: &str = "%F %T%.f%:z";
+const ENCODE_DATETIME_FORMAT: &str = "%F %T%.f%:z";
 
 const NAIVE_DATETIME_FORMATS: [&str; 18] = [
     // Most likely formats
@@ -110,12 +113,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<Time, Sqlite> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        let format = if self.nanosecond() == 0 {
-            ENCODE_TIME_FORMAT_WHOLE_SECOND
-        } else {
-            ENCODE_TIME_FORMAT_SUBSECOND
-        };
-        out.set_value(self.format(format).to_string());
+        out.set_value(self.format(ENCODE_TIME_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
@@ -144,12 +142,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        let format = if self.nanosecond() == 0 {
-            ENCODE_NAIVE_DATETIME_FORMAT_WHOLE_SECOND
-        } else {
-            ENCODE_NAIVE_DATETIME_FORMAT_SUBSECOND
-        };
-        out.set_value(self.format(format).to_string());
+        out.set_value(self.format(ENCODE_NAIVE_DATETIME_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
@@ -178,12 +171,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        let format = if self.nanosecond() == 0 {
-            ENCODE_NAIVE_DATETIME_FORMAT_WHOLE_SECOND
-        } else {
-            ENCODE_NAIVE_DATETIME_FORMAT_SUBSECOND
-        };
-        out.set_value(self.format(format).to_string());
+        out.set_value(self.format(ENCODE_NAIVE_DATETIME_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
@@ -239,12 +227,7 @@ impl<TZ: TimeZone> ToSql<TimestamptzSqlite, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         // Converting to UTC ensures consistency
         let dt_utc = self.with_timezone(&Utc);
-        let format = if self.nanosecond() == 0 {
-            ENCODE_DATETIME_FORMAT_WHOLE_SECOND
-        } else {
-            ENCODE_DATETIME_FORMAT_SUBSECOND
-        };
-        out.set_value(dt_utc.format(format).to_string());
+        out.set_value(dt_utc.format(ENCODE_DATETIME_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
