@@ -1,7 +1,9 @@
 use std::error::Error;
 
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
+use diesel::deserialize::{self, Queryable};
 use diesel::dsl::sql;
+use diesel::row::NamedRow;
+use diesel::sql_types::{Bool, Text};
 use diesel::sqlite::Sqlite;
 use diesel::*;
 
@@ -12,18 +14,6 @@ use crate::print_schema::ColumnSorting;
 table! {
     sqlite_master (name) {
         name -> VarChar,
-    }
-}
-
-table! {
-    pragma_table_info (cid) {
-        cid ->Integer,
-        name -> VarChar,
-        type_name -> VarChar,
-        notnull -> Bool,
-        dflt_value -> Nullable<VarChar>,
-        pk -> Bool,
-        hidden -> Integer,
     }
 }
 
@@ -141,7 +131,10 @@ pub fn get_table_data(
     } else {
         format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
     };
-    let mut result = sql::<pragma_table_info::SqlType>(&query).load(conn)?;
+
+    // See: https://github.com/diesel-rs/diesel/issues/3579 as to why we use a direct
+    // `sql_query` with `QueryableByName` instead of using `sql::<pragma_table_info::SqlType>`.
+    let mut result = sql_query(query).load::<ColumnInformation>(conn)?;
     match column_sorting {
         ColumnSorting::OrdinalPosition => {}
         ColumnSorting::Name => {
@@ -153,28 +146,35 @@ pub fn get_table_data(
     Ok(result)
 }
 
-impl<ST> Queryable<ST, Sqlite> for ColumnInformation
-where
-    (i32, String, String, bool, Option<String>, bool, i32): FromStaticSqlRow<ST, Sqlite>,
-{
-    type Row = (i32, String, String, bool, Option<String>, bool, i32);
+impl QueryableByName<Sqlite> for ColumnInformation {
+    fn build<'a>(row: &impl NamedRow<'a, Sqlite>) -> deserialize::Result<Self> {
+        let column_name = NamedRow::get::<Text, String>(row, "name")?;
+        let type_name = NamedRow::get::<Text, String>(row, "type")?;
+        let notnull = NamedRow::get::<Bool, bool>(row, "notnull")?;
 
-    fn build(row: Self::Row) -> deserialize::Result<Self> {
-        Ok(ColumnInformation::new(
-            row.1, row.2, None, !row.3, None, None,
+        Ok(Self::new(
+            column_name,
+            type_name,
+            None,
+            !notnull,
+            None,
+            None,
         ))
     }
 }
 
-#[derive(Queryable)]
-struct FullTableInfo {
-    _cid: i32,
+struct PrimaryKeyInformation {
     name: String,
-    _type_name: String,
-    _not_null: bool,
-    _dflt_value: Option<String>,
     primary_key: bool,
-    _hidden: i32,
+}
+
+impl QueryableByName<Sqlite> for PrimaryKeyInformation {
+    fn build<'a>(row: &impl NamedRow<'a, Sqlite>) -> deserialize::Result<Self> {
+        let name = NamedRow::get::<Text, String>(row, "name")?;
+        let primary_key = NamedRow::get::<Bool, bool>(row, "pk")?;
+
+        Ok(Self { name, primary_key })
+    }
 }
 
 #[derive(Queryable)]
@@ -199,7 +199,7 @@ pub fn get_primary_keys(
     } else {
         format!("PRAGMA TABLE_INFO('{}')", &table.sql_name)
     };
-    let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
+    let results = sql_query(query).load::<PrimaryKeyInformation>(conn)?;
     Ok(results
         .into_iter()
         .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
@@ -406,4 +406,19 @@ fn load_foreign_key_constraints_loads_foreign_keys() {
 
     let fks = load_foreign_key_constraints(&mut connection, None).unwrap();
     assert_eq!(vec![fk_one, fk_two], fks);
+}
+
+#[test]
+fn all_rowid_aliases_used_empty_result() {
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
+
+    diesel::sql_query("CREATE TABLE table_1 (rowid TEXT, oid TEXT, _rowid_ TEXT)")
+        .execute(&mut connection)
+        .unwrap();
+
+    let table_1 = TableName::from_name("table_1");
+
+    let res = get_primary_keys(&mut connection, &table_1);
+    assert!(res.is_ok());
+    assert!(res.unwrap().is_empty());
 }
