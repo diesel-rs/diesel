@@ -14,12 +14,19 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
+// Warning to future editors:
+// Changes in the following formats need to be kept in sync
+// with the formats of the "chrono" module.
+// We need a distinction between whole second and subsecond
+// since there is no format option to forgo the dot.
+// We always print as many subsecond as his given to us,
+// this means the subsecond part can be between 1 and 9 digits.
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
 const ENCODE_TIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
     format_description!("[hour]:[minute]:[second]");
 const ENCODE_TIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
-    format_description!("[hour]:[minute]:[second].[subsecond digits:6]");
+    format_description!("[hour]:[minute]:[second].[subsecond]");
 
 const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
     // Most likely formats
@@ -40,13 +47,13 @@ const TIME_FORMATS: [&[FormatItem<'_>]; 9] = [
 const ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
     format_description!("[year]-[month]-[day] [hour]:[minute]:[second]");
 const ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6]");
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond]");
 
 const ENCODE_DATETIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] = format_description!(
     "[year]-[month]-[day] [hour]:[minute]:[second][offset_hour sign:mandatory]:[offset_minute]"
 );
 const ENCODE_DATETIME_FORMAT_SUBSECOND: &[FormatItem<'_>] =
-    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:3][offset_hour sign:mandatory]:[offset_minute]");
+    format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond][offset_hour sign:mandatory]:[offset_minute]");
 
 const PRIMITIVE_DATETIME_FORMATS: [&[FormatItem<'_>]; 18] = [
     // Most likely formats
@@ -169,7 +176,7 @@ impl FromSql<Timestamp, Sqlite> for PrimitiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<Timestamp, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        let format = if self.microsecond() == 0 {
+        let format = if self.nanosecond() == 0 {
             ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND
         } else {
             ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND
@@ -203,7 +210,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "time"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for PrimitiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        let format = if self.microsecond() == 0 {
+        let format = if self.nanosecond() == 0 {
             ENCODE_PRIMITIVE_DATETIME_FORMAT_WHOLE_SECOND
         } else {
             ENCODE_PRIMITIVE_DATETIME_FORMAT_SUBSECOND
@@ -241,7 +248,7 @@ impl ToSql<TimestamptzSqlite, Sqlite> for OffsetDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
         // Converting to UTC ensures consistency
         let dt_utc = self.to_offset(UtcOffset::UTC);
-        let format = if self.millisecond() == 0 {
+        let format = if self.nanosecond() == 0 {
             ENCODE_DATETIME_FORMAT_WHOLE_SECOND
         } else {
             ENCODE_DATETIME_FORMAT_SUBSECOND
@@ -352,15 +359,15 @@ mod tests {
         let connection = &mut connection();
 
         let midnight = NaiveTime::from_hms(0, 0, 0).unwrap();
-        let query = select(time("00:00:00.000000").eq(midnight));
+        let query = select(time("00:00:00").eq(midnight));
         assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
 
         let noon = NaiveTime::from_hms(12, 0, 0).unwrap();
-        let query = select(time("12:00:00.000000").eq(noon));
+        let query = select(time("12:00:00").eq(noon));
         assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
 
         let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200).unwrap();
-        let query = select(sql::<Time>("'23:37:04.002200'").eq(roughly_half_past_eleven));
+        let query = select(sql::<Time>("'23:37:04.0022'").eq(roughly_half_past_eleven));
         assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
     }
 
@@ -497,19 +504,19 @@ mod tests {
     fn datetimes_encode_correctly() {
         let connection = &mut connection();
         let january_first_2000 = datetime!(2000-1-1 0:0:0);
-        let query = select(datetime("2000-01-01 00:00:00.000000").eq(january_first_2000));
+        let query = select(datetime("2000-01-01 00:00:00").eq(january_first_2000));
         assert!(query.get_result::<bool>(connection).unwrap());
 
         let distant_past = datetime!(0-4-11 20:00:20);
-        let query = select(datetime("0000-04-11 20:00:20.000000").eq(distant_past));
+        let query = select(datetime("0000-04-11 20:00:20").eq(distant_past));
         assert!(query.get_result::<bool>(connection).unwrap());
 
         let january_first_2018 = datetime!(2018 - 1 - 1 12:00:00.0005);
-        let query = select(sql::<Timestamp>("'2018-01-01 12:00:00.000500'").eq(january_first_2018));
+        let query = select(sql::<Timestamp>("'2018-01-01 12:00:00.0005'").eq(january_first_2018));
         assert!(query.get_result::<bool>(connection).unwrap());
 
         let distant_future = datetime!(9999-1-8 0:0:0);
-        let query = select(datetime("9999-01-08 00:00:00.000000").eq(distant_future));
+        let query = select(datetime("9999-01-08 00:00:00").eq(distant_future));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
 
