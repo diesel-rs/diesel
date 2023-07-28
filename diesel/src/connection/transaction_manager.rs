@@ -170,13 +170,29 @@ impl TransactionManagerStatus {
         *self = TransactionManagerStatus::InError
     }
 
-    fn transaction_state(&mut self) -> QueryResult<&mut ValidTransactionManagerStatus> {
+    /// Expose access to the inner transaction state
+    ///
+    /// This function returns an error if the Transaction manager is in a broken
+    /// state
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub(self) fn transaction_state(&mut self) -> QueryResult<&mut ValidTransactionManagerStatus> {
         match self {
             TransactionManagerStatus::Valid(valid_status) => Ok(valid_status),
             TransactionManagerStatus::InError => Err(Error::BrokenTransactionManager),
         }
     }
 
+    /// This function allows to flag a transaction manager
+    /// in such a way that it contains a test transaction.
+    ///
+    /// This will disable some checks in regards to open transactions
+    /// to allow `Connection::begin_test_transaction` to work with
+    /// pooled connections as well
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
     pub(crate) fn set_test_transaction_flag(&mut self) {
         if let TransactionManagerStatus::Valid(ValidTransactionManagerStatus {
             in_transaction: Some(s),
@@ -190,17 +206,34 @@ impl TransactionManagerStatus {
 /// Valid transaction status for the manager. Can return the current transaction depth
 #[allow(missing_copy_implementations)]
 #[derive(Debug, Default)]
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(in_transaction)
+)]
 pub struct ValidTransactionManagerStatus {
+    /// Inner status, or `None` if no transaction is runnin
     in_transaction: Option<InTransactionStatus>,
 }
 
+/// Various status fields to track the status of
+/// a transaction manager with a started transaction
 #[allow(missing_copy_implementations)]
 #[derive(Debug)]
-struct InTransactionStatus {
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(
+        test_transaction,
+        transaction_depth,
+        requires_rollback_maybe_up_to_top_level
+    )
+)]
+pub struct InTransactionStatus {
+    /// The current depth of nested transactions
     transaction_depth: NonZeroU32,
     /// If that is registered, savepoints rollbacks will still be attempted, but failure to do so
     /// will not result in an error. (Some may succeed, some may not.)
     requires_rollback_maybe_up_to_top_level: bool,
+    /// Is this transaction manager status marked as test-transaction?
     test_transaction: bool,
 }
 
