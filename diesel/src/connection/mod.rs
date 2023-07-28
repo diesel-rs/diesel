@@ -16,8 +16,8 @@ use crate::result::*;
 use std::fmt::Debug;
 
 pub use self::transaction_manager::{
-    AnsiTransactionManager, TransactionDepthChange, TransactionManager, TransactionManagerStatus,
-    ValidTransactionManagerStatus,
+    AnsiTransactionManager, InTransactionStatus, TransactionDepthChange, TransactionManager,
+    TransactionManagerStatus, ValidTransactionManagerStatus,
 };
 
 #[diesel_derives::__diesel_public_if(
