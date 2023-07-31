@@ -145,3 +145,30 @@ fn manually_specified_expression() {
     let data = my_structs::table.select(A::as_select()).get_result(conn);
     assert!(data.is_err());
 }
+
+#[allow(dead_code)] // that's essentially a compile test
+#[test]
+fn check_for_backend_with_deserialize_as() {
+    table! {
+        tests {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+
+    struct MyString(String);
+
+    impl From<String> for MyString {
+        fn from(s: String) -> Self {
+            Self(s)
+        }
+    }
+
+    #[derive(Queryable, Selectable)]
+    #[diesel(check_for_backend(crate::helpers::TestBackend))]
+    struct Test {
+        id: i32,
+        #[diesel(deserialize_as = String)]
+        name: MyString,
+    }
+}
