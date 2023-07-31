@@ -88,6 +88,7 @@ impl SqlDialect for Mysql {
     type ArrayComparison = sql_dialect::array_comparison::AnsiSqlArrayComparison;
 
     type ConcatClause = MysqlConcatClause;
+    type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
 }
 
 impl DieselReserveSpecialization for Mysql {}

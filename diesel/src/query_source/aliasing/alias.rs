@@ -1,7 +1,7 @@
 use super::field_alias_mapper::FieldAliasMapper;
 use super::{AliasSource, AliasedField};
 
-use crate::backend::Backend;
+use crate::backend::{sql_dialect, Backend};
 use crate::expression::{Expression, SelectableExpression, ValidGrouping};
 use crate::helper_types::AliasedFields;
 use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
@@ -14,7 +14,12 @@ use std::marker::PhantomData;
 /// Represents an alias within diesel's query builder
 ///
 /// See [`alias!`](crate::alias) for more details.
+#[diesel_derives::__diesel_public_if(
+    feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+    public_fields(source)
+)]
 pub struct Alias<S> {
+    /// The inner alias definition
     pub(crate) source: S,
 }
 
@@ -80,6 +85,17 @@ where
 }
 
 impl<S, DB> QueryFragment<DB> for Alias<S>
+where
+    S: AliasSource,
+    DB: Backend,
+    Self: QueryFragment<DB, DB::AliasSyntax>,
+{
+    fn walk_ast<'b>(&'b self, pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
+        <Self as QueryFragment<DB, DB::AliasSyntax>>::walk_ast(self, pass)
+    }
+}
+
+impl<S, DB> QueryFragment<DB, sql_dialect::alias_syntax::AsAliasSyntax> for Alias<S>
 where
     S: AliasSource,
     DB: Backend,
