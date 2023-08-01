@@ -1,4 +1,4 @@
-use crate::config::{Config, FilteringT};
+use crate::config::Config;
 use crate::database::{Backend, InferConnection};
 use crate::infer_schema_internals::*;
 
@@ -147,8 +147,10 @@ pub fn output_schema(
     connection: &mut InferConnection,
     config: &Config,
 ) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
-    let table_names = load_table_names(connection, config.print_schema.schema_name())?
-        .filter_table_names(config);
+    let table_names = filter_table_names(
+        load_table_names(connection, config.print_schema.schema_name())?,
+        config,
+    );
 
     let config = &config.print_schema;
 

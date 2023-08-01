@@ -124,6 +124,13 @@ pub fn load_table_names(
     }
 }
 
+pub fn filter_table_names(table_names: Vec<TableName>, config: &crate::Config) -> Vec<TableName> {
+    table_names
+        .into_iter()
+        .filter(|t| !config.print_schema.filter.should_ignore_table(t))
+        .collect::<_>()
+}
+
 fn get_table_comment(
     conn: &mut InferConnection,
     table: &TableName,

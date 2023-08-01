@@ -181,19 +181,6 @@ impl Filtering {
     }
 }
 
-pub trait FilteringT {
-    fn filter_table_names(self, config: &Config) -> Self;
-}
-
-impl FilteringT for Vec<TableName> {
-    fn filter_table_names(self, config: &Config) -> Self {
-        self
-            .into_iter()
-            .filter(|t| !config.print_schema.filter.should_ignore_table(t))
-            .collect::<Self>()
-    }
-}
-
 impl<'de> Deserialize<'de> for Filtering {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
