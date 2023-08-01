@@ -256,8 +256,8 @@ fn migration_generate_from_diff_add_table_composite_key() {
 }
 
 #[test]
-fn migration_generate_from_diff_drop_table_composite_key() {
-    test_generate_migration("diff_drop_table_composite_key", Vec::new());
+fn migration_generate_from_diff_filter() {
+    test_generate_migration("diff_table_filter", Vec::new());
 }
 
 #[cfg(feature = "sqlite")]
