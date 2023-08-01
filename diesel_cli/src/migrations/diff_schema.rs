@@ -10,7 +10,7 @@ use std::io::Read;
 use std::path::Path;
 use syn::visit::Visit;
 
-use crate::config::Config;
+use crate::config::{Config, FilteringT};
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
     ColumnDefinition, ColumnType, ForeignKeyConstraint, TableData, TableName,
@@ -31,6 +31,8 @@ pub fn generate_sql_based_on_diff_schema(
     matches: &ArgMatches,
     schema_file_path: &Path,
 ) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
+    let config = config.set_filters(matches)?;
+
     let project_root = crate::find_project_root()?;
 
     let schema_path = project_root.join(schema_file_path);
@@ -44,9 +46,7 @@ pub fn generate_sql_based_on_diff_schema(
     tables_from_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_matches(matches);
     let tables_from_database = crate::infer_schema_internals::load_table_names(&mut conn, None)?
-        .into_iter()
-        .filter(|t| !config.print_schema.filter.should_ignore_table(t))
-        .collect::<Vec<_>>();
+        .filter_table_names(&config);
 
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;

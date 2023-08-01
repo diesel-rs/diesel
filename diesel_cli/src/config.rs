@@ -49,6 +49,26 @@ impl Config {
             migration.set_relative_path_base(base);
         }
     }
+
+    pub fn set_filters(
+        mut self,
+        matches: &ArgMatches,
+    ) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+        let table_names = matches
+            .get_many::<String>("table-name")
+            .unwrap_or_default()
+            .map(|table_name_regex| regex::Regex::new(table_name_regex).map(Into::into))
+            .collect::<Result<Vec<Regex>, _>>()
+            .map_err(|e| format!("invalid argument for table filtering regex: {e}"))?;
+
+        if matches.get_flag("only-tables") {
+            self.print_schema.filter = Filtering::OnlyTables(table_names)
+        } else if matches.get_flag("except-tables") {
+            self.print_schema.filter = Filtering::ExceptTables(table_names)
+        }
+
+        Ok(self)
+    }
 }
 
 #[derive(Default, Deserialize)]
@@ -135,6 +155,7 @@ impl MigrationsDirectory {
 
 type Regex = RegexWrapper<::regex::Regex>;
 
+#[derive(Clone)]
 pub enum Filtering {
     OnlyTables(Vec<Regex>),
     ExceptTables(Vec<Regex>),
@@ -157,6 +178,19 @@ impl Filtering {
             ExceptTables(ref regexes) => regexes.iter().any(|regex| regex.is_match(&name.sql_name)),
             None => false,
         }
+    }
+}
+
+pub trait FilteringT {
+    fn filter_table_names(self, config: &Config) -> Self;
+}
+
+impl FilteringT for Vec<TableName> {
+    fn filter_table_names(self, config: &Config) -> Self {
+        self
+            .into_iter()
+            .filter(|t| !config.print_schema.filter.should_ignore_table(t))
+            .collect::<Self>()
     }
 }
 

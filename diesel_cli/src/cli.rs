@@ -98,6 +98,8 @@ pub fn build_cli() -> Command {
                 )
                 .arg(
                     Arg::new("MIGRATION_NAME")
+                        .index(1)
+                        .num_args(1)
                         .help("The name of the migration to create.")
                         .required(true),
                 )
@@ -145,6 +147,29 @@ pub fn build_cli() -> Command {
                         .default_missing_value("NOT_SET")
                         .num_args(0..=1)
                         .require_equals(true),
+                )
+                .arg(
+                    Arg::new("table-name")
+                        .index(2)
+                        .num_args(1..)
+                        .action(clap::ArgAction::Append)
+                        .help("Table names to filter (default only-tables if not empty)."),
+                )
+                .arg(
+                    Arg::new("only-tables")
+                        .short('o')
+                        .long("only-tables")
+                        .action(ArgAction::SetTrue)
+                        .help("Only include tables from table-name that matches regexp.")
+                        .conflicts_with("except-tables"),
+                )
+                .arg(
+                    Arg::new("except-tables")
+                        .short('e')
+                        .long("except-tables")
+                        .action(ArgAction::SetTrue)
+                        .help("Exclude tables from table-name that matches regex.")
+                        .conflicts_with("only-tables"),
                 ),
         )
         .subcommand_required(true)

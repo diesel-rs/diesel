@@ -1,4 +1,4 @@
-use crate::config;
+use crate::config::{Config, FilteringT};
 use crate::database::{Backend, InferConnection};
 use crate::infer_schema_internals::*;
 
@@ -44,7 +44,7 @@ impl Default for DocConfig {
 
 pub fn run_print_schema<W: IoWrite>(
     connection: &mut InferConnection,
-    config: &config::PrintSchema,
+    config: &Config,
     output: &mut W,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     let schema = output_schema(connection, config)?;
@@ -145,12 +145,13 @@ fn sqlite_diesel_types() -> HashSet<&'static str> {
 
 pub fn output_schema(
     connection: &mut InferConnection,
-    config: &config::PrintSchema,
+    config: &Config,
 ) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
-    let table_names = load_table_names(connection, config.schema_name())?
-        .into_iter()
-        .filter(|t| !config.filter.should_ignore_table(t))
-        .collect::<Vec<_>>();
+    let table_names = load_table_names(connection, config.print_schema.schema_name())?
+        .filter_table_names(config);
+
+    let config = &config.print_schema;
+
     let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
     let foreign_keys =
         remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, &table_names);

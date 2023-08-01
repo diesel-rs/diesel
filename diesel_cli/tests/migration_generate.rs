@@ -212,52 +212,52 @@ Creating custom_migrations.12345_stuff.down.sql
 
 #[test]
 fn migration_generate_from_diff_drop_table() {
-    test_generate_migration("diff_drop_table", Vec::new(), false);
+    test_generate_migration("diff_drop_table", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_add_table() {
-    test_generate_migration("diff_add_table", Vec::new(), false);
+    test_generate_migration("diff_add_table", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_drop_alter_table_add_column() {
-    test_generate_migration("diff_alter_table_add_column", Vec::new(), false);
+    test_generate_migration("diff_alter_table_add_column", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_alter_table_drop_column() {
-    test_generate_migration("diff_alter_table_drop_column", Vec::new(), false);
+    test_generate_migration("diff_alter_table_drop_column", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_add_table_with_fk() {
-    test_generate_migration("diff_add_table_with_fk", Vec::new(), false);
+    test_generate_migration("diff_add_table_with_fk", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_drop_table_with_fk() {
-    test_generate_migration("diff_drop_table_with_fk", Vec::new(), false);
+    test_generate_migration("diff_drop_table_with_fk", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_drop_table_all_the_types() {
-    test_generate_migration("diff_drop_table_all_the_types", Vec::new(), false);
+    test_generate_migration("diff_drop_table_all_the_types", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_add_table_all_the_types() {
-    test_generate_migration("diff_add_table_all_the_types", Vec::new(), false);
+    test_generate_migration("diff_add_table_all_the_types", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_add_table_composite_key() {
-    test_generate_migration("diff_add_table_composite_key", Vec::new(), false);
+    test_generate_migration("diff_add_table_composite_key", Vec::new());
 }
 
 #[test]
 fn migration_generate_from_diff_filter() {
-    test_generate_migration("diff_table_filter", Vec::new(), true);
+    test_generate_migration("diff_table_filter", vec!["-o", "table_a"]);
 }
 
 #[cfg(feature = "sqlite")]
@@ -276,20 +276,8 @@ fn backend_file_path(test_name: &str, file: &str) -> PathBuf {
         .join(file)
 }
 
-fn test_generate_migration(test_name: &str, args: Vec<&str>, with_config: bool) {
-    let p = match with_config {
-        true => {
-            let test_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("tests")
-                .join("generate_migrations")
-                .join(test_name);
-            let config = read_file(&test_path.join("diesel.toml"));
-
-            project(test_name).file("diesel.toml", &config).build()
-        }
-        false => project(test_name).build(),
-    };
-
+fn test_generate_migration(test_name: &str, args: Vec<&str>) {
+    let p = project(test_name).build();
     let db = crate::support::database(&p.database_url());
 
     p.command("setup").run();
@@ -318,7 +306,7 @@ fn test_generate_migration(test_name: &str, args: Vec<&str>, with_config: bool) 
             "--diff-schema={schema_rs}",
             schema_rs = schema_rs.display()
         ))
-        .args(args)
+        .args(args.clone())
         .run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -350,7 +338,7 @@ fn test_generate_migration(test_name: &str, args: Vec<&str>, with_config: bool) 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
     // check that we get back the expected schema
-    let result = p.command("print-schema").run();
+    let result = p.command("print-schema").args(args).run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     let result = result.stdout().replace("\r\n", "\n");
 
