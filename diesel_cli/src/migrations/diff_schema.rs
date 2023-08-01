@@ -27,7 +27,7 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
 }
 
 pub fn generate_sql_based_on_diff_schema(
-    _config: Config,
+    config: Config,
     matches: &ArgMatches,
     schema_file_path: &Path,
 ) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
@@ -43,7 +43,11 @@ pub fn generate_sql_based_on_diff_schema(
 
     tables_from_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_matches(matches);
-    let tables_from_database = crate::infer_schema_internals::load_table_names(&mut conn, None)?;
+    let tables_from_database = crate::infer_schema_internals::load_table_names(&mut conn, None)?
+        .into_iter()
+        .filter(|t| !config.print_schema.filter.should_ignore_table(t))
+        .collect::<Vec<_>>();
+
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
     let foreign_key_map = foreign_keys.into_iter().fold(HashMap::new(), |mut acc, t| {

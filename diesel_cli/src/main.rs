@@ -39,6 +39,7 @@ use std::path::{Path, PathBuf};
 use std::{env, fs};
 
 use self::config::Config;
+use self::config::Filtering;
 use self::database_error::{DatabaseError, DatabaseResult};
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
