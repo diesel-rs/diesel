@@ -36,6 +36,9 @@ pub enum FieldAttr {
 
     ColumnName(Ident, SqlIdentifier),
     SqlType(Ident, TypePath),
+    TreatNoneAsDefaultValue(Ident, LitBool),
+    TreatNoneAsNull(Ident, LitBool),
+
     SerializeAs(Ident, TypePath),
     DeserializeAs(Ident, TypePath),
     SelectExpression(Ident, SelectExpr),
@@ -127,6 +130,14 @@ impl Parse for FieldAttr {
                 parse_eq(input, COLUMN_NAME_NOTE)?,
             )),
             "sql_type" => Ok(FieldAttr::SqlType(name, parse_eq(input, SQL_TYPE_NOTE)?)),
+            "treat_none_as_default_value" => Ok(FieldAttr::TreatNoneAsDefaultValue(
+                name,
+                parse_eq(input, TREAT_NONE_AS_DEFAULT_VALUE_NOTE)?,
+            )),
+            "treat_none_as_null" => Ok(FieldAttr::TreatNoneAsNull(
+                name,
+                parse_eq(input, TREAT_NONE_AS_NULL_NOTE)?,
+            )),
             "serialize_as" => Ok(FieldAttr::SerializeAs(
                 name,
                 parse_eq(input, SERIALIZE_AS_NOTE)?,
@@ -165,6 +176,8 @@ impl MySpanned for FieldAttr {
             FieldAttr::Embed(ident)
             | FieldAttr::ColumnName(ident, _)
             | FieldAttr::SqlType(ident, _)
+            | FieldAttr::TreatNoneAsNull(ident, _)
+            | FieldAttr::TreatNoneAsDefaultValue(ident, _)
             | FieldAttr::SerializeAs(ident, _)
             | FieldAttr::DeserializeAs(ident, _)
             | FieldAttr::SelectExpression(ident, _)
