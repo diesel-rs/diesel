@@ -4,7 +4,7 @@ use std::{fs::File, io::Read};
 use chrono::prelude::*;
 use regex::Regex;
 
-use crate::support::project;
+use crate::support::{project, Project};
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 #[test]
@@ -283,6 +283,24 @@ fn backend_file_path(test_name: &str, file: &str) -> PathBuf {
 
 fn test_generate_migration(test_name: &str, args: Vec<&str>) {
     let p = project(test_name).build();
+    run_generate_migration_test(test_name, args, p);
+
+    let config_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("generate_migrations")
+        .join(test_name)
+        .join("diesel.toml");
+
+    if Path::new(&config_path).exists() {
+        let p = project(test_name)
+            .file("diesel.toml", &read_file(&config_path))
+            .build();
+
+        run_generate_migration_test(test_name, Vec::new(), p);
+    }
+}
+
+fn run_generate_migration_test(test_name: &str, args: Vec<&str>, p: Project) {
     let db = crate::support::database(&p.database_url());
 
     p.command("setup").run();
