@@ -6,7 +6,7 @@ description: "Test: diff_table_filter"
 
 diesel::table! {
     table_a (id) {
-        id -> Int4,
+        id -> Integer,
         script -> Text,
     }
 }
