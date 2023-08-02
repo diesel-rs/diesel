@@ -32,4 +32,12 @@ struct UserForm3 {
     name: String,
 }
 
+#[derive(AsChangeset)]
+#[diesel(table_name = users)]
+struct UserForm4 {
+    id: i32,
+    #[diesel(treat_none_as_null = true)]
+    name: String,
+}
+
 fn main() {}

@@ -1,5 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::spanned::Spanned as _;
 use syn::{parse_quote, DeriveInput, Expr, Path, Result, Type};
 
 use crate::attrs::AttributeSpanWrapper;
@@ -47,7 +48,16 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     for field in fields_for_update {
         // Use field-level attr. with fallback to the struct-level one.
         let treat_none_as_null = match &field.treat_none_as_null {
-            Some(attr) => attr.item,
+            Some(attr) => {
+                if !is_option_ty(&field.ty) {
+                    return Err(syn::Error::new(
+                        field.ty.span(),
+                        "expected `treat_none_as_null` field to be of type `Option<_>`",
+                    ));
+                }
+
+                attr.item
+            }
             None => treat_none_as_null,
         };
 
