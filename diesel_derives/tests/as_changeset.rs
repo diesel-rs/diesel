@@ -496,7 +496,8 @@ fn option_fields_are_assigned_null_when_specified() {
     #[diesel(table_name = users)]
     #[diesel(treat_none_as_null = true)]
     struct UserForm<'a> {
-        name: &'a str,
+        #[diesel(treat_none_as_null = false)]
+        name: Option<&'a str>,
         hair_color: Option<&'a str>,
     }
 
@@ -504,21 +505,21 @@ fn option_fields_are_assigned_null_when_specified() {
 
     update(users::table.find(1))
         .set(&UserForm {
-            name: "Jim",
+            name: None,
             hair_color: Some("blue"),
         })
         .execute(connection)
         .unwrap();
     update(users::table.find(2))
         .set(&UserForm {
-            name: "Ruby",
+            name: Some("Ruby"),
             hair_color: None,
         })
         .execute(connection)
         .unwrap();
 
     let expected = vec![
-        (1, String::from("Jim"), Some(String::from("blue"))),
+        (1, String::from("Sean"), Some(String::from("blue"))),
         (2, String::from("Ruby"), None),
     ];
     let actual = users::table.order(users::id).load(connection);
