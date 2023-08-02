@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::config;
 use crate::database::{Backend, InferConnection};
 use crate::infer_schema_internals::*;
 
@@ -44,7 +44,7 @@ impl Default for DocConfig {
 
 pub fn run_print_schema<W: IoWrite>(
     connection: &mut InferConnection,
-    config: &Config,
+    config: &config::PrintSchema,
     output: &mut W,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     let schema = output_schema(connection, config)?;
@@ -145,14 +145,12 @@ fn sqlite_diesel_types() -> HashSet<&'static str> {
 
 pub fn output_schema(
     connection: &mut InferConnection,
-    config: &Config,
+    config: &config::PrintSchema,
 ) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
     let table_names = filter_table_names(
-        load_table_names(connection, config.print_schema.schema_name())?,
-        config,
+        load_table_names(connection, config.schema_name())?,
+        &config.filter,
     );
-
-    let config = &config.print_schema;
 
     let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
     let foreign_keys =

@@ -32,7 +32,7 @@ pub fn generate_sql_based_on_diff_schema(
     matches: &ArgMatches,
     schema_file_path: &Path,
 ) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
-    let config = config.set_filters(matches)?;
+    let config = config.set_filter(matches)?;
 
     let project_root = crate::find_project_root()?;
 
@@ -46,7 +46,10 @@ pub fn generate_sql_based_on_diff_schema(
 
     tables_from_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_matches(matches);
-    let tables_from_database = filter_table_names(load_table_names(&mut conn, None)?, &config);
+    let tables_from_database = filter_table_names(
+        load_table_names(&mut conn, None)?,
+        &config.print_schema.filter,
+    );
 
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;

@@ -50,7 +50,7 @@ impl Config {
         }
     }
 
-    pub fn set_filters(
+    pub fn set_filter(
         mut self,
         matches: &ArgMatches,
     ) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
