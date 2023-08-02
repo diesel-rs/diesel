@@ -256,8 +256,13 @@ fn migration_generate_from_diff_add_table_composite_key() {
 }
 
 #[test]
-fn migration_generate_from_diff_filter() {
-    test_generate_migration("diff_table_filter", vec!["-o", "table_a"]);
+fn migration_generate_from_diff_only_tables() {
+    test_generate_migration("diff_only_tables", vec!["-o", "table_a"]);
+}
+
+#[test]
+fn migration_generate_from_diff_except_tables() {
+    test_generate_migration("diff_except_tables", vec!["-e", "table_b", "table_c"]);
 }
 
 #[cfg(feature = "sqlite")]
