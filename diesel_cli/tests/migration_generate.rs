@@ -256,6 +256,11 @@ fn migration_generate_from_diff_add_table_composite_key() {
 }
 
 #[test]
+fn migration_generate_from_diff_drop_table_composite_key() {
+    test_generate_migration("diff_drop_table_composite_key", Vec::new());
+}
+
+#[test]
 fn migration_generate_from_diff_only_tables() {
     test_generate_migration("diff_only_tables", vec!["-o", "table_a"]);
 }
