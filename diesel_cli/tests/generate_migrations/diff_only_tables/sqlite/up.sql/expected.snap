@@ -1,6 +1,6 @@
 ---
 source: diesel_cli/tests/migration_generate.rs
-description: "Test: diff_table_filter"
+description: "Test: diff_only_tables"
 ---
 -- Your SQL goes here
 ALTER TABLE `table_a` DROP COLUMN `code`;
