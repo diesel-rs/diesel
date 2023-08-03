@@ -10,6 +10,8 @@ pub struct Field {
     pub name: FieldName,
     column_name: Option<AttributeSpanWrapper<SqlIdentifier>>,
     pub sql_type: Option<AttributeSpanWrapper<Type>>,
+    pub treat_none_as_default_value: Option<AttributeSpanWrapper<bool>>,
+    pub treat_none_as_null: Option<AttributeSpanWrapper<bool>>,
     pub serialize_as: Option<AttributeSpanWrapper<Type>>,
     pub deserialize_as: Option<AttributeSpanWrapper<Type>>,
     pub select_expression: Option<AttributeSpanWrapper<SelectExpr>>,
@@ -30,6 +32,8 @@ impl Field {
         let mut embed = None;
         let mut select_expression = None;
         let mut select_expression_type = None;
+        let mut treat_none_as_default_value = None;
+        let mut treat_none_as_null = None;
 
         for attr in parse_attributes(attrs)? {
             let attribute_span = attr.attribute_span;
@@ -45,6 +49,20 @@ impl Field {
                 FieldAttr::SqlType(_, value) => {
                     sql_type = Some(AttributeSpanWrapper {
                         item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::TreatNoneAsDefaultValue(_, value) => {
+                    treat_none_as_default_value = Some(AttributeSpanWrapper {
+                        item: value.value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::TreatNoneAsNull(_, value) => {
+                    treat_none_as_null = Some(AttributeSpanWrapper {
+                        item: value.value,
                         attribute_span,
                         ident_span,
                     })
@@ -103,6 +121,8 @@ impl Field {
             name,
             column_name,
             sql_type,
+            treat_none_as_default_value,
+            treat_none_as_null,
             serialize_as,
             deserialize_as,
             select_expression,

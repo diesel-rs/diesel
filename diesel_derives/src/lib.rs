@@ -102,6 +102,8 @@ mod valid_grouping;
 ///    field type, Diesel will convert the field into `SomeType` using `.into` and
 ///    serialize that instead. By default, this derive will serialize directly using
 ///    the actual field type.
+/// * `#[diesel(treat_none_as_null = true/false)]`, overrides the container-level
+///   `treat_none_as_null` attribute for the current field.
 #[cfg_attr(
     all(not(feature = "without-deprecated"), feature = "with-deprecated"),
     proc_macro_derive(
@@ -330,6 +332,8 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///    field type, Diesel will convert the field into `SomeType` using `.into` and
 ///    serialize that instead. By default, this derive will serialize directly using
 ///    the actual field type.
+/// * `#[diesel(treat_none_as_default_value = true/false)]`, overrides the container-level
+///   `treat_none_as_default_value` attribute for the current field.
 ///
 /// # Examples
 ///

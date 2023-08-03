@@ -32,4 +32,12 @@ struct UserForm3 {
     name: String,
 }
 
+#[derive(Insertable)]
+#[diesel(table_name = users)]
+struct UserForm4 {
+    id: i32,
+    #[diesel(treat_none_as_default_value = false)]
+    name: String,
+}
+
 fn main() {}

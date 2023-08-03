@@ -6,6 +6,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use quote::quote_spanned;
 use syn::parse_quote;
+use syn::spanned::Spanned as _;
 use syn::{DeriveInput, Expr, Path, Result, Type};
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
@@ -44,6 +45,28 @@ fn derive_into_single_table(
     let mut ref_field_assign = Vec::with_capacity(model.fields().len());
 
     for field in model.fields() {
+        // Use field-level attr. with fallback to the struct-level one.
+        let treat_none_as_default_value = match &field.treat_none_as_default_value {
+            Some(attr) => {
+                if let Some(embed) = &field.embed {
+                    return Err(syn::Error::new(
+                        embed.attribute_span,
+                        "`embed` and `treat_none_as_default_value` are mutually exclusive",
+                    ));
+                }
+
+                if !is_option_ty(&field.ty) {
+                    return Err(syn::Error::new(
+                        field.ty.span(),
+                        "expected `treat_none_as_default_value` field to be of type `Option<_>`",
+                    ));
+                }
+
+                attr.item
+            }
+            None => treat_none_as_default_value,
+        };
+
         match (field.serialize_as.as_ref(), field.embed()) {
             (None, true) => {
                 direct_field_ty.push(field_ty_embed(field, None));
