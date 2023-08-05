@@ -44,11 +44,42 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
         .collect::<Vec<_>>();
     let column_names = &column_names;
     let primary_key: TokenStream = match input.primary_keys.as_ref() {
-        None => {
+        None if column_names.contains(&&syn::Ident::new(
+            DEFAULT_PRIMARY_KEY_NAME,
+            proc_macro2::Span::call_site(),
+        )) =>
+        {
             let id = syn::Ident::new(DEFAULT_PRIMARY_KEY_NAME, proc_macro2::Span::call_site());
             parse_quote! {
                 #id
             }
+        }
+        None => {
+            let mut message = format!(
+                "Neither an explict primary key found nor does an `id` column exist.\n\
+                 Consider explicitly defining a primary key. \n\
+                 For example for specifying `{}` as primary key:\n\n\
+                 table! {{\n",
+                column_names[0],
+            );
+            message += &format!("\t{table_name} ({}) {{\n", &column_names[0]);
+            for c in &input.column_defs {
+                let tpe = c
+                    .tpe
+                    .path
+                    .segments
+                    .iter()
+                    .map(|p| p.ident.to_string())
+                    .collect::<Vec<_>>()
+                    .join("::");
+                message += &format!("\t\t{} -> {tpe},\n", c.column_name);
+            }
+            message += "\t}\n}";
+
+            let span = input.table_name.span();
+            return quote::quote_spanned! {span=>
+                compile_error!(#message);
+            };
         }
         Some(a) if a.keys.len() == 1 => {
             let k = a.keys.first().unwrap();

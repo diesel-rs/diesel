@@ -1035,6 +1035,10 @@ fn generate_querybuilder(connection_types: &[ConnectionVariant]) -> TokenStream 
         quote::quote! {
             <Tab, V, QId, const HAS_STATIC_QUERY_ID: bool> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiBatchInsertSupport>
                 for diesel::internal::derives::multiconnection::BatchInsert<V, Tab, QId, HAS_STATIC_QUERY_ID>
+        },
+        quote::quote! {
+            <S> diesel::query_builder::QueryFragment<super::backend::MultiBackend, super::backend::MultiAliasSyntax>
+                for diesel::query_source::Alias<S>
         }
     ])
     .map(|t| generate_queryfragment_impls(t, &query_fragment_bounds));
@@ -1414,6 +1418,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         pub struct MultiArrayComparisonSyntax;
         pub struct MultiConcatClauseSyntax;
         pub struct MultiSelectStatementSyntax;
+        pub struct MultiAliasSyntax;
 
         impl diesel::backend::SqlDialect for MultiBackend {
             type ReturningClause = MultiReturningClause;
@@ -1427,6 +1432,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
             type ArrayComparison = MultiArrayComparisonSyntax;
             type ConcatClause = MultiConcatClauseSyntax;
             type SelectStatementSyntax = MultiSelectStatementSyntax;
+            type AliasSyntax = MultiAliasSyntax;
         }
 
         impl diesel::internal::derives::multiconnection::TrustedBackend for MultiBackend {}

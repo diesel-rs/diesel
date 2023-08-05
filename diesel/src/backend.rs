@@ -306,6 +306,17 @@ pub trait SqlDialect: self::private::TrustedBackend {
         doc = "See [`sql_dialect::select_statement_syntax`] for provided default implementations"
     )]
     type SelectStatementSyntax;
+
+    /// Configures how this backend structures `SELECT` queries
+    ///
+    /// This allows backends to provide custom [`QueryFragment`](crate::query_builder::QueryFragment)
+    /// implementations for [`Alias<T>`](crate::query_source::Alias)
+    ///
+    #[cfg_attr(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes",
+        doc = "See [`sql_dialect::alias_syntax`] for provided default implementations"
+    )]
+    type AliasSyntax;
 }
 
 /// This module contains all options provided by diesel to configure the [`SqlDialect`] trait.
@@ -515,6 +526,18 @@ pub(crate) mod sql_dialect {
         /// ANSI select statement structure
         #[derive(Debug, Copy, Clone)]
         pub struct AnsiSqlSelectStatement;
+    }
+
+    /// This module contains all reusable options to configure
+    /// [`SqlDialect::AliasSyntax`]
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    pub mod alias_syntax {
+        /// Indicates that this backend uses `table AS alias` for
+        /// defining table aliases
+        #[derive(Debug, Copy, Clone)]
+        pub struct AsAliasSyntax;
     }
 }
 

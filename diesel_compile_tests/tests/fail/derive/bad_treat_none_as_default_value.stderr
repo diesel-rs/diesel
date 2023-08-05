@@ -16,3 +16,9 @@ error: expected boolean literal
    |
 29 | #[diesel(treat_none_as_default_value = "foo")]
    |                                        ^^^^^
+
+error: expected `treat_none_as_default_value` field to be of type `Option<_>`
+  --> tests/fail/derive/bad_treat_none_as_default_value.rs:40:11
+   |
+40 |     name: String,
+   |           ^^^^^^

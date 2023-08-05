@@ -139,6 +139,7 @@ impl SqlDialect for Pg {
 
     type ExistsSyntax = sql_dialect::exists_syntax::AnsiSqlExistsSyntax;
     type ArrayComparison = PgStyleArrayComparison;
+    type AliasSyntax = sql_dialect::alias_syntax::AsAliasSyntax;
 }
 
 impl DieselReserveSpecialization for Pg {}

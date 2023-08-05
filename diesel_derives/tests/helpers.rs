@@ -1,6 +1,9 @@
 use diesel::prelude::*;
 use diesel::sql_query;
 
+#[allow(dead_code)] // that's used in one of the compile tests
+pub type TestBackend = <TestConnection as diesel::Connection>::Backend;
+
 cfg_if! {
     if #[cfg(feature = "sqlite")] {
         pub type TestConnection = SqliteConnection;

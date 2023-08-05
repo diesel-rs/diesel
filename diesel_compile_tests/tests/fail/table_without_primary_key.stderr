@@ -1,0 +1,14 @@
+error: Neither an explict primary key found nor does an `id` column exist.
+       Consider explicitly defining a primary key.
+       For example for specifying `user_id` as primary key:
+
+       table! {
+           user (user_id) {
+               user_id -> Integer,
+               name -> Text,
+           }
+       }
+ --> tests/fail/table_without_primary_key.rs:4:5
+  |
+4 |     user {
+  |     ^^^^

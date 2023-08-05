@@ -16,3 +16,9 @@ error: expected boolean literal
    |
 29 | #[diesel(treat_none_as_null = "foo")]
    |                               ^^^^^
+
+error: expected `treat_none_as_null` field to be of type `Option<_>`
+  --> tests/fail/derive/bad_treat_none_as_null.rs:40:11
+   |
+40 |     name: String,
+   |           ^^^^^^

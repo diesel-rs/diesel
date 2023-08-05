@@ -25,9 +25,9 @@ fn missing_sqlite_panic_scheme() {
         .command_without_database_url("setup")
         .env("DATABASE_URL", "sqlite://example.db")
         .run();
-    assert!(result
-        .stderr()
-        .contains("panicked at 'Database url `sqlite://example.db` requires the `sqlite` feature but it's not enabled.'"));
+    assert!(result.stderr().contains(
+        "Database url `sqlite://example.db` requires the `sqlite` feature but it's not enabled."
+    ));
 }
 
 #[test]
@@ -38,9 +38,9 @@ fn missing_postgres_panic_postgres() {
         .command_without_database_url("setup")
         .env("DATABASE_URL", "postgres://localhost")
         .run();
-    assert!(result
-        .stderr()
-        .contains("panicked at 'Database url `postgres://localhost` requires the `postgres` feature but it's not enabled.'"));
+    assert!(result.stderr().contains(
+        "Database url `postgres://localhost` requires the `postgres` feature but it's not enabled."
+    ));
 }
 
 #[test]
@@ -53,7 +53,7 @@ fn missing_postgres_panic_postgresql() {
         .run();
     assert!(result
         .stderr()
-        .contains("panicked at 'Database url `postgresql://localhost` requires the `postgres` feature but it's not enabled.'"));
+        .contains("Database url `postgresql://localhost` requires the `postgres` feature but it's not enabled."));
 }
 
 #[test]
@@ -64,9 +64,9 @@ fn missing_mysql_panic() {
         .command_without_database_url("setup")
         .env("DATABASE_URL", "mysql://localhost")
         .run();
-    assert!(result
-        .stderr()
-        .contains("panicked at 'Database url `mysql://localhost` requires the `mysql` feature but it's not enabled.'"));
+    assert!(result.stderr().contains(
+        "Database url `mysql://localhost` requires the `mysql` feature but it's not enabled."
+    ));
 }
 
 #[test]

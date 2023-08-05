@@ -51,7 +51,7 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             .filter(|(f, _)| !f.embed())
             .flat_map(|(f, ty)| {
                 backends.iter().map(move |b| {
-                    let field_ty = to_field_ty_bound(&f.ty);
+                    let field_ty = to_field_ty_bound(f.ty_for_deserialize());
                     let span = field_ty.span();
                     quote::quote_spanned! {span =>
                         #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
