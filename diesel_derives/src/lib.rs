@@ -1692,7 +1692,18 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 /// macro:
 /// - `#[auto_type(no_type_alias)]` to disable the generation of the type alias.
 /// - `#[auto_type(dsl_path = "path::to::dsl")]` to change the path where the
-///   macro will look for type aliases for methods.
+///     macro will look for type aliases for methods. This is required if you mix your own
+///   custom query dsl extensions with diesel types. In that case, you may use this argument to
+///   reference a module defined like so:
+///   ```ignore
+///   mod dsl {
+///       /// export all of diesel dsl
+///       pub use diesel::dsl::*;
+///    
+///       /// Export your extension types here
+///       pub use crate::your_extension::dsl::YourType;
+///    }
+///    ```
 /// - `#[auto_type(method_type_case = "snake_case")]` to change the case of the
 ///   method type alias.
 /// - `#[auto_type(function_type_case = "snake_case")]` to change the case of
