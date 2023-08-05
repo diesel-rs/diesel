@@ -84,10 +84,6 @@ macro_rules! alias {
                 pub const $alias_name: Alias<$alias_ty> = $($table)::+ as $alias_name;
             )*
         }
-        $(
-            #[allow(non_camel_case_types)]
-            type $alias_name = $crate::query_source::Alias::<$alias_ty>;
-        )*
     };
     ($($vis: vis const $const_name: ident: Alias<$alias_ty: ident> = $($table: ident)::+ as $alias_sql_name: ident);* $(;)?) => {
         $crate::alias!(NoConst $($($table)::+ as $alias_sql_name: $vis $alias_ty,)*);
@@ -95,6 +91,9 @@ macro_rules! alias {
             #[allow(non_upper_case_globals)]
             $vis const $const_name: $crate::query_source::Alias::<$alias_ty> =
                 $crate::query_source::Alias::new($alias_ty { table: $($table)::+::table });
+
+            #[allow(non_camel_case_types)]
+            $vis type $const_name = $crate::query_source::Alias::<$alias_ty>;
         )*
     };
     (NoConst $($($table: ident)::+ as $alias_sql_name: ident: $vis: vis $alias_ty: ident),* $(,)?) => {
