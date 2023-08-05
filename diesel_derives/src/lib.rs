@@ -883,7 +883,8 @@ pub fn derive_queryable_by_name(input: TokenStream) -> TokenStream {
 ///   It may be used in conjunction with `select_expression_type` (described below)
 /// * `#[diesel(select_expression_type = the_custom_select_expression_type]`, should be used
 ///   in conjunction with `select_expression` (described above) if the type is too complex
-///   for diesel to infer it automatically.
+///   for diesel to infer it automatically. This will be required if select_expression is a custom
+///   function call that doesn't have the corresponding associated type defined at the same path.
 ///   Example use (this would actually be inferred):
 ///   `#[diesel(select_expression_type = dsl::IsNotNull<my_table::some_field>)]`
 #[proc_macro_derive(Selectable, attributes(diesel))]
