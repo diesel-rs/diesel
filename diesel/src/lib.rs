@@ -330,6 +330,9 @@ pub mod dsl {
     pub use crate::query_builder::functions::{
         delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,
     };
+
+    #[doc(inline)]
+    pub use diesel_derives::auto_type;
 }
 
 pub mod helper_types {

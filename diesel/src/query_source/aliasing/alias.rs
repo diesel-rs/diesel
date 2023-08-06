@@ -203,3 +203,13 @@ where
 {
     type Count = Never;
 }
+
+/// To be able to define `helper_types::Fields` with the ususal conventions
+///
+/// This type is intentionally not publically exported
+pub trait GetAliasSourceFromAlias {
+    type Source;
+}
+impl<S> GetAliasSourceFromAlias for Alias<S> {
+    type Source = S;
+}

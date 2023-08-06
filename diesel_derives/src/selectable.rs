@@ -31,10 +31,11 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
 
     let struct_name = &item.ident;
 
+    let mut compile_errors: Vec<syn::Error> = Vec::new();
     let field_columns_ty = model
         .fields()
         .iter()
-        .map(|f| field_column_ty(f, &model))
+        .map(|f| field_column_ty(f, &model, &mut compile_errors))
         .collect::<Result<Vec<_>>>()?;
     let field_columns_inst = model
         .fields()
@@ -69,6 +70,11 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         None
     };
 
+    let errors: TokenStream = compile_errors
+        .into_iter()
+        .map(|e| e.into_compile_error())
+        .collect();
+
     Ok(wrap_in_dummy_mod(quote! {
         use diesel::expression::Selectable;
 
@@ -84,6 +90,8 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
         }
 
         #check_function
+
+        #errors
     }))
 }
 
@@ -135,8 +143,26 @@ fn to_field_ty_bound(field_ty: &syn::Type) -> Option<TokenStream> {
     }
 }
 
-fn field_column_ty(field: &Field, model: &Model) -> Result<TokenStream> {
-    if let Some(ref select_expression_type) = field.select_expression_type {
+fn field_column_ty(
+    field: &Field,
+    model: &Model,
+    compile_errors: &mut Vec<syn::Error>,
+) -> Result<TokenStream> {
+    if let Some(ref select_expression) = field.select_expression {
+        use dsl_auto_type::auto_type::expression_type_inference as type_inference;
+        let expr = &select_expression.item;
+        let (inferred_type, errors) = type_inference::infer_expression_type(
+            expr,
+            field.select_expression_type.as_ref().map(|t| &t.item),
+            &type_inference::InferrerSettings::builder()
+                .dsl_path(parse_quote!(diesel::dsl))
+                .function_types_case(crate::AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE)
+                .method_types_case(crate::AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE)
+                .build(),
+        );
+        compile_errors.extend(errors);
+        Ok(quote::quote!(#inferred_type))
+    } else if let Some(ref select_expression_type) = field.select_expression_type {
         let ty = &select_expression_type.item;
         Ok(quote!(#ty))
     } else if field.embed() {
@@ -152,8 +178,7 @@ fn field_column_ty(field: &Field, model: &Model) -> Result<TokenStream> {
 fn field_column_inst(field: &Field, model: &Model) -> Result<TokenStream> {
     if let Some(ref select_expression) = field.select_expression {
         let expr = &select_expression.item;
-        let span = expr.span();
-        Ok(quote::quote_spanned!(span => #expr))
+        Ok(quote!(#expr))
     } else if field.embed() {
         let embed_ty = &field.ty;
         Ok(quote!(<#embed_ty as Selectable<__DB>>::construct_selection()))

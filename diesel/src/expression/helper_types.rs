@@ -123,6 +123,14 @@ pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs
 /// Represents the return type of [`.as_select()`](crate::prelude::SelectableHelper::as_select)
 pub type AsSelect<Source, DB> = SelectBy<Source, DB>;
 
+/// The return type of [`alias.field(field)`](crate::query_source::Alias::field)
+pub type Field<Alias, Field> = Fields<Alias, Field>;
+
+/// The return type of [`alias.fields(fields)`](crate::query_source::Alias::fields)
+pub type Fields<Alias, Fields> = <Fields as crate::query_source::aliasing::FieldAliasMapper<
+    <Alias as crate::query_source::aliasing::GetAliasSourceFromAlias>::Source,
+>>::Out;
+
 // we allow unreachable_pub here
 // as rustc otherwise shows false positives
 // for every item in this module. We reexport

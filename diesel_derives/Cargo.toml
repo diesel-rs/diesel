@@ -15,7 +15,8 @@ edition = "2021"
 syn = { version = "2.0", features = ["derive", "fold", "full"] }
 quote = "1.0.9"
 proc-macro2 = "1.0.27"
-diesel_table_macro_syntax = {version = "0.1",  path = "../diesel_table_macro_syntax"}
+diesel_table_macro_syntax = {version = "0.1", path = "../diesel_table_macro_syntax"}
+dsl_auto_type = { version = "0.1", path = "../dsl_auto_type" }
 
 [dev-dependencies]
 cfg-if = "1"
