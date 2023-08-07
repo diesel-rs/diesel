@@ -79,8 +79,16 @@ mod time {
     #[cfg_attr(feature = "mysql_backend", diesel(sql_type = crate::sql_types::Datetime))]
     struct NaiveDateTimeProxy(PrimitiveDateTime);
 
-    #[derive(AsExpression, FromSqlRow)]
+    #[derive(FromSqlRow)]
     #[diesel(foreign_derive)]
+    #[cfg_attr(
+        any(
+            feature = "postgres_backend",
+            feature = "sqlite",
+            feature = "mysql_backend"
+        ),
+        derive(AsExpression)
+    )]
     #[cfg_attr(
         feature = "postgres_backend",
         diesel(sql_type = crate::sql_types::Timestamptz)
