@@ -655,14 +655,15 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         let ty = c.ty;
         quote::quote! {
             Self::#ident(ref mut bc) => {
-                let out = out.inner.unwrap();
+                let out = out.inner.expect("This inner value is set via our custom `ToSql` impls");
                 let callback = out.push_bound_value_to_collector;
                 let value = out.value;
                 <_ as PushBoundValueToCollectorDB<<#ty as diesel::Connection>::Backend>>::push_bound_value(
                      callback,
                      value,
                      bc,
-                     <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(metadata_lookup).unwrap()
+                     <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(metadata_lookup)
+                        .expect("We can downcast the metadata lookup to the right type")
                  )?
             }
         }
@@ -707,6 +708,8 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         where DB: diesel::backend::Backend
                   + diesel::sql_types::HasSqlType<ST>,
               T: diesel::serialize::ToSql<ST, DB> + 'static,
+              Option<T>: diesel::serialize::ToSql<diesel::sql_types::Nullable<ST>, DB> + 'static,
+              ST: diesel::sql_types::SqlType,
         {
             fn push_bound_value<'a: 'b, 'b>(
                 &self,
@@ -715,11 +718,15 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
                 lookup: &mut <DB as diesel::sql_types::TypeMetadata>::MetadataLookup,
             ) -> diesel::result::QueryResult<()> {
                 use diesel::query_builder::BindCollector;
-                if let InnerBindValueKind::Sized(v) = v {
-                    let v = v.downcast_ref::<T>().expect("We know the type statically here");
-                    collector.push_bound_value::<ST, T>(v, lookup)
-                } else {
-                    unreachable!("We set the value to `InnerBindValueKind::Sized`")
+                match v {
+                    InnerBindValueKind::Sized(v) => {
+                        let v = v.downcast_ref::<T>().expect("We know the type statically here");
+                        collector.push_bound_value::<ST, T>(v, lookup)
+                    }
+                    InnerBindValueKind::Null => {
+                        collector.push_bound_value::<diesel::sql_types::Nullable<ST>, Option<T>>(&None, lookup)
+                    },
+                    _ => unreachable!("We set the value to `InnerBindValueKind::Sized` or `InnerBindValueKind::Null`")
                 }
             }
         }
@@ -783,6 +790,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             Sized(&'a (dyn std::any::Any + std::marker::Send + std::marker::Sync)),
             Str(&'a str),
             Bytes(&'a [u8]),
+            Null,
         }
 
         impl<'a> From<(diesel::sql_types::Text, &'a str)> for BindValue<'a> {
@@ -814,7 +822,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
         impl<'a, T, ST> From<(ST, &'a T)> for BindValue<'a>
         where
             T: std::any::Any #(+ #into_bind_value_bounds)* + Send + Sync + 'static,
-            ST: Send + 'static,
+            ST: Send + diesel::sql_types::SqlType<IsNull = diesel::sql_types::is_nullable::NotNull> + 'static,
             #(#has_sql_type_bounds,)*
         {
             fn from((_, v): (ST, &'a T)) -> Self {
@@ -845,14 +853,34 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
                     let out = multi_connection_impl::bind_collector::BindValue::default();
                     let mut out =
                         diesel::serialize::Output::<MultiBackend>::new(out, metadata_lookup);
-
-                    bind.to_sql(&mut out).unwrap();
-                    out.into_inner()
+                    let bind_is_null = bind.to_sql(&mut out).map_err(diesel::result::Error::SerializationError)?;
+                    if matches!(bind_is_null, diesel::serialize::IsNull::Yes) {
+                        // nulls are special and need a special handling because
+                        // there is a wildcard `ToSql` impl in diesel. That means we won't
+                        // set the `inner` field of `BindValue` to something for the `None`
+                        // case. Therefore we need to handle that explicitly here.
+                        //
+                        // We just use a specific sql + rust type here to workaround
+                        // the fact that rustc is not able to see that the underlying DBMS
+                        // must support that sql + rust type combination. All tested DBMS
+                        // (postgres, sqlite, mysql, oracle) seems to not care about the
+                        // actual type here and coerce null values to the "right" type
+                        // anyway
+                        BindValue {
+                            inner: Some(InnerBindValue {
+                                value: InnerBindValueKind::Null,
+                                push_bound_value_to_collector: &PushBoundValueToCollectorImpl {
+                                    p: std::marker::PhantomData::<(diesel::sql_types::Integer, i32)>
+                                }
+                            })
+                        }
+                    } else {
+                        out.into_inner()
+                    }
                 };
                 match self {
                     #(#push_to_inner_collector)*
                 }
-
 
                 Ok(())
             }
@@ -1315,7 +1343,10 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
                         super::bind_collector::MultiBindCollector::#lower_ident,
                         super::query_builder::MultiQueryBuilder::#lower_ident,
                         super::backend::MultiBackend::#lower_ident,
-                        |l| <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(l).unwrap(),
+                        |l| {
+                            <#ty as diesel::internal::derives::multiconnection::MultiConnectionHelper>::from_any(l)
+                                .expect("It's possible to downcast the metadata lookup type to the correct type")
+                        },
                     ),
                 )
             }
