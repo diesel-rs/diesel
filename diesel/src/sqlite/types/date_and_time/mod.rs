@@ -98,7 +98,9 @@ mod tests {
     extern crate chrono;
     extern crate time;
 
-    use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+    use chrono::{
+        DateTime, Datelike, FixedOffset, NaiveDate, NaiveDateTime, NaiveTime, Timelike, Utc,
+    };
     use time::{
         macros::{date, datetime, offset, time},
         Date, OffsetDateTime, PrimitiveDateTime, Time,
@@ -133,6 +135,31 @@ mod tests {
         }
     }
 
+    fn eq_date(left: Date, right: NaiveDate) -> bool {
+        left.year() == right.year()
+            && left.month() as u8 == right.month() as u8
+            && left.day() == right.day() as u8
+    }
+
+    fn eq_time(left: Time, right: NaiveTime) -> bool {
+        left.hour() == right.hour() as u8
+            && left.minute() == right.minute() as u8
+            && left.second() == right.second() as u8
+            && left.nanosecond() == right.nanosecond()
+    }
+
+    fn eq_datetime(left: PrimitiveDateTime, right: NaiveDateTime) -> bool {
+        eq_date(left.date(), right.date()) && eq_time(left.time(), right.time())
+    }
+
+    fn eq_datetime_utc(left: OffsetDateTime, right: DateTime<Utc>) -> bool {
+        left.unix_timestamp_nanos() == right.timestamp_nanos() as i128
+    }
+
+    fn eq_datetime_offset(left: OffsetDateTime, right: DateTime<FixedOffset>) -> bool {
+        left.unix_timestamp_nanos() == right.timestamp_nanos() as i128
+    }
+
     fn create_tables(conn: &mut SqliteConnection) {
         crate::sql_query(
             "CREATE TABLE table_timestamp_tz(id INTEGER PRIMARY KEY, timestamp_with_tz TEXT);",
@@ -165,10 +192,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_date::table
+        let translated = table_date::table
             .select(table_date::date)
             .get_result::<NaiveDate>(conn)
             .unwrap();
+
+        assert!(eq_date(original, translated))
     }
 
     #[test]
@@ -183,10 +212,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_date::table
+        let translated = table_date::table
             .select(table_date::date)
             .get_result::<Date>(conn)
             .unwrap();
+
+        assert!(eq_date(translated, original))
     }
 
     #[test]
@@ -201,10 +232,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_time::table
+        let translated = table_time::table
             .select(table_time::time)
             .get_result::<NaiveTime>(conn)
             .unwrap();
+
+        assert!(eq_time(original, translated))
     }
 
     #[test]
@@ -219,10 +252,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_time::table
+        let translated = table_time::table
             .select(table_time::time)
             .get_result::<Time>(conn)
             .unwrap();
+
+        assert!(eq_time(translated, original))
     }
 
     #[test]
@@ -240,10 +275,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_timestamp::table
+        let translated = table_timestamp::table
             .select(table_timestamp::timestamp)
             .get_result::<NaiveDateTime>(conn)
             .unwrap();
+
+        assert!(eq_datetime(original, translated))
     }
 
     #[test]
@@ -264,10 +301,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_timestamp::table
+        let translated = table_timestamp::table
             .select(table_timestamp::timestamp)
             .get_result::<PrimitiveDateTime>(conn)
             .unwrap();
+
+        assert!(eq_datetime(translated, original))
     }
 
     #[test]
@@ -285,10 +324,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_timestamp_tz::table
+        let translated = table_timestamp_tz::table
             .select(table_timestamp_tz::timestamp_with_tz)
             .get_result::<OffsetDateTime>(conn)
             .unwrap();
+
+        assert!(eq_datetime_utc(translated, original))
     }
 
     #[test]
@@ -306,10 +347,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_timestamp_tz::table
+        let translated = table_timestamp_tz::table
             .select(table_timestamp_tz::timestamp_with_tz)
             .get_result::<DateTime<Utc>>(conn)
             .unwrap();
+
+        assert!(eq_datetime_utc(original, translated))
     }
 
     #[test]
@@ -327,10 +370,12 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_timestamp_tz::table
+        let translated = table_timestamp_tz::table
             .select(table_timestamp_tz::timestamp_with_tz)
             .get_result::<OffsetDateTime>(conn)
             .unwrap();
+
+        assert!(eq_datetime_offset(translated, original))
     }
 
     #[test]
@@ -348,9 +393,11 @@ mod tests {
             .execute(conn)
             .unwrap();
 
-        table_timestamp_tz::table
+        let translated = table_timestamp_tz::table
             .select(table_timestamp_tz::timestamp_with_tz)
             .get_result::<DateTime<Utc>>(conn)
             .unwrap();
+
+        assert!(eq_datetime_utc(original, translated))
     }
 }

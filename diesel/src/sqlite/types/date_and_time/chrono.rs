@@ -8,13 +8,13 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
-// Warning to future editors:
-// Changes in the following formats need to be kept in sync
-// with the formats of the "time" module.
-// We do not need a distinction between whole second and
-// subsecond since %.f will only print the dot if needed.
-// We always print as many subsecond as his given to us,
-// this means the subsecond part can be 3, 6 or 9 digits.
+/// Warning to future editors:
+/// Changes in the following formats need to be kept in sync
+/// with the formats of the ["time"](super::time) module.
+/// We do not need a distinction between whole second and
+/// subsecond since %.f will only print the dot if needed.
+/// We always print as many subsecond as his given to us,
+/// this means the subsecond part can be 3, 6 or 9 digits.
 const DATE_FORMAT: &str = "%F";
 
 const ENCODE_TIME_FORMAT: &str = "%T%.f";

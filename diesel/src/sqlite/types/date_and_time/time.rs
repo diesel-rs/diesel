@@ -14,13 +14,13 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
-// Warning to future editors:
-// Changes in the following formats need to be kept in sync
-// with the formats of the "chrono" module.
-// We need a distinction between whole second and subsecond
-// since there is no format option to forgo the dot.
-// We always print as many subsecond as his given to us,
-// this means the subsecond part can be between 1 and 9 digits.
+/// Warning to future editors:
+/// Changes in the following formats need to be kept in sync
+/// with the formats of the ["chrono"](super::chrono) module.
+/// We need a distinction between whole second and subsecond
+/// since there is no format option to forgo the dot.
+/// We always print as many subsecond as his given to us,
+/// this means the subsecond part can be between 1 and 9 digits.
 const DATE_FORMAT: &[FormatItem<'_>] = format_description!("[year]-[month]-[day]");
 
 const ENCODE_TIME_FORMAT_WHOLE_SECOND: &[FormatItem<'_>] =
