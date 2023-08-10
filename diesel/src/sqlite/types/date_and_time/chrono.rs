@@ -1,4 +1,5 @@
 extern crate chrono;
+
 use self::chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 
 use crate::backend::Backend;
@@ -7,13 +8,81 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{Date, Time, Timestamp, TimestamptzSqlite};
 use crate::sqlite::Sqlite;
 
-const SQLITE_DATE_FORMAT: &str = "%F";
+/// Warning to future editors:
+/// Changes in the following formats need to be kept in sync
+/// with the formats of the ["time"](super::time) module.
+/// We do not need a distinction between whole second and
+/// subsecond since %.f will only print the dot if needed.
+/// We always print as many subsecond as his given to us,
+/// this means the subsecond part can be 3, 6 or 9 digits.
+const DATE_FORMAT: &str = "%F";
+
+const ENCODE_TIME_FORMAT: &str = "%T%.f";
+
+const TIME_FORMATS: [&str; 9] = [
+    // Most likely formats
+    "%T%.f", "%T", // All other valid formats in order of increasing specificity
+    "%R", "%RZ", "%R%:z", "%TZ", "%T%:z", "%T%.fZ", "%T%.f%:z",
+];
+
+const ENCODE_NAIVE_DATETIME_FORMAT: &str = "%F %T%.f";
+
+const ENCODE_DATETIME_FORMAT: &str = "%F %T%.f%:z";
+
+const NAIVE_DATETIME_FORMATS: [&str; 18] = [
+    // Most likely formats
+    "%F %T%.f",
+    "%F %T%.f%:z",
+    "%F %T",
+    "%F %T%:z",
+    // All other formats in order of increasing specificity
+    "%F %R",
+    "%F %RZ",
+    "%F %R%:z",
+    "%F %TZ",
+    "%F %T%.fZ",
+    "%FT%R",
+    "%FT%RZ",
+    "%FT%R%:z",
+    "%FT%T",
+    "%FT%TZ",
+    "%FT%T%:z",
+    "%FT%T%.f",
+    "%FT%T%.fZ",
+    "%FT%T%.f%:z",
+];
+
+const DATETIME_FORMATS: [&str; 12] = [
+    // Most likely formats
+    "%F %T%.f%:z",
+    "%F %T%:z",
+    // All other formats in order of increasing specificity
+    "%F %RZ",
+    "%F %R%:z",
+    "%F %TZ",
+    "%F %T%.fZ",
+    "%FT%RZ",
+    "%FT%R%:z",
+    "%FT%TZ",
+    "%FT%T%:z",
+    "%FT%T%.fZ",
+    "%FT%T%.f%:z",
+];
+
+fn parse_julian(julian_days: f64) -> Option<NaiveDateTime> {
+    const EPOCH_IN_JULIAN_DAYS: f64 = 2_440_587.5;
+    const SECONDS_IN_DAY: f64 = 86400.0;
+    let timestamp = (julian_days - EPOCH_IN_JULIAN_DAYS) * SECONDS_IN_DAY;
+    let seconds = timestamp as i64;
+    let nanos = (timestamp.fract() * 1E9) as u32;
+    NaiveDateTime::from_timestamp_opt(seconds, nanos)
+}
 
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<Date, Sqlite> for NaiveDate {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value
-            .parse_string(|s| Self::parse_from_str(s, SQLITE_DATE_FORMAT))
+            .parse_string(|s| Self::parse_from_str(s, DATE_FORMAT))
             .map_err(Into::into)
     }
 }
@@ -21,7 +90,7 @@ impl FromSql<Date, Sqlite> for NaiveDate {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<Date, Sqlite> for NaiveDate {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format(SQLITE_DATE_FORMAT).to_string());
+        out.set_value(self.format(DATE_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
@@ -30,13 +99,7 @@ impl ToSql<Date, Sqlite> for NaiveDate {
 impl FromSql<Time, Sqlite> for NaiveTime {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            let valid_time_formats = &[
-                // Most likely
-                "%T%.f", // All other valid formats in order of documentation
-                "%R", "%RZ", "%T%.fZ", "%R%:z", "%T%.f%:z",
-            ];
-
-            for format in valid_time_formats {
+            for format in TIME_FORMATS {
                 if let Ok(time) = Self::parse_from_str(text, format) {
                     return Ok(time);
                 }
@@ -50,7 +113,7 @@ impl FromSql<Time, Sqlite> for NaiveTime {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<Time, Sqlite> for NaiveTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format("%T%.f").to_string());
+        out.set_value(self.format(ENCODE_TIME_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
@@ -59,36 +122,14 @@ impl ToSql<Time, Sqlite> for NaiveTime {
 impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            let sqlite_datetime_formats = &[
-                // Most likely format
-                "%F %T%.f",
-                // Other formats in order of appearance in docs
-                "%F %R",
-                "%F %RZ",
-                "%F %R%:z",
-                "%F %T%.fZ",
-                "%F %T%.f%:z",
-                "%FT%R",
-                "%FT%RZ",
-                "%FT%R%:z",
-                "%FT%T%.f",
-                "%FT%T%.fZ",
-                "%FT%T%.f%:z",
-            ];
-
-            for format in sqlite_datetime_formats {
+            for format in NAIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse_from_str(text, format) {
                     return Ok(dt);
                 }
             }
 
             if let Ok(julian_days) = text.parse::<f64>() {
-                let epoch_in_julian_days = 2_440_587.5;
-                let seconds_in_day = 86400.0;
-                let timestamp = (julian_days - epoch_in_julian_days) * seconds_in_day;
-                let seconds = timestamp as i64;
-                let nanos = (timestamp.fract() * 1E9) as u32;
-                if let Some(timestamp) = Self::from_timestamp_opt(seconds, nanos) {
+                if let Some(timestamp) = parse_julian(julian_days) {
                     return Ok(timestamp);
                 }
             }
@@ -101,7 +142,7 @@ impl FromSql<Timestamp, Sqlite> for NaiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format("%F %T%.f").to_string());
+        out.set_value(self.format(ENCODE_NAIVE_DATETIME_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
@@ -110,34 +151,14 @@ impl ToSql<Timestamp, Sqlite> for NaiveDateTime {
 impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
         value.parse_string(|text| {
-            let sqlite_datetime_formats = &[
-                "%F %RZ",
-                "%F %R%:z",
-                "%F %TZ",
-                "%F %T%:z",
-                "%F %T%.fZ",
-                "%F %T%.f%:z",
-                "%FT%RZ",
-                "%FT%R%:z",
-                "%FT%TZ",
-                "%FT%T%:z",
-                "%FT%T%.fZ",
-                "%FT%T%.f%:z",
-            ];
-
-            for format in sqlite_datetime_formats {
+            for format in NAIVE_DATETIME_FORMATS {
                 if let Ok(dt) = Self::parse_from_str(text, format) {
                     return Ok(dt);
                 }
             }
 
             if let Ok(julian_days) = text.parse::<f64>() {
-                let epoch_in_julian_days = 2_440_587.5;
-                let seconds_in_day = 86400.0;
-                let timestamp = (julian_days - epoch_in_julian_days) * seconds_in_day;
-                let seconds = timestamp as i64;
-                let nanos = (timestamp.fract() * 1E9) as u32;
-                if let Some(timestamp) = Self::from_timestamp_opt(seconds, nanos) {
+                if let Some(timestamp) = parse_julian(julian_days) {
                     return Ok(timestamp);
                 }
             }
@@ -150,7 +171,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.format("%F %T%.f+00:00").to_string());
+        out.set_value(self.format(ENCODE_NAIVE_DATETIME_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
@@ -158,6 +179,20 @@ impl ToSql<TimestamptzSqlite, Sqlite> for NaiveDateTime {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        // First try to parse the timezone
+        if let Ok(dt) = value.parse_string(|text| {
+            for format in DATETIME_FORMATS {
+                if let Ok(dt) = DateTime::parse_from_str(text, format) {
+                    return Ok(dt.with_timezone(&Utc));
+                }
+            }
+
+            Err(())
+        }) {
+            return Ok(dt);
+        }
+
+        // Fallback on assuming Utc
         let naive_date_time =
             <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(DateTime::from_utc(naive_date_time, Utc))
@@ -167,6 +202,20 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
     fn from_sql(value: <Sqlite as Backend>::RawValue<'_>) -> deserialize::Result<Self> {
+        // First try to parse the timezone
+        if let Ok(dt) = value.parse_string(|text| {
+            for format in DATETIME_FORMATS {
+                if let Ok(dt) = DateTime::parse_from_str(text, format) {
+                    return Ok(dt.with_timezone(&Local));
+                }
+            }
+
+            Err(())
+        }) {
+            return Ok(dt);
+        }
+
+        // Fallback on assuming Local
         let naive_date_time =
             <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
         Ok(Local::from_utc_datetime(&Local, &naive_date_time))
@@ -176,7 +225,9 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Local> {
 #[cfg(all(feature = "sqlite", feature = "chrono"))]
 impl<TZ: TimeZone> ToSql<TimestamptzSqlite, Sqlite> for DateTime<TZ> {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Sqlite>) -> serialize::Result {
-        out.set_value(self.naive_utc().format("%F %T%.f+00:00").to_string());
+        // Converting to UTC ensures consistency
+        let dt_utc = self.with_timezone(&Utc);
+        out.set_value(dt_utc.format(ENCODE_DATETIME_FORMAT).to_string());
         Ok(IsNull::No)
     }
 }
@@ -636,22 +687,6 @@ mod tests {
             "1970-01-01T00:00:00+00:00",
             "1970-01-01T00:00:00.000+00:00",
             "1970-01-01T00:00:00.000000+00:00",
-            "1970-01-01 00:00+01:00",
-            "1970-01-01 00:00:00+01:00",
-            "1970-01-01 00:00:00.000+01:00",
-            "1970-01-01 00:00:00.000000+01:00",
-            "1970-01-01T00:00+01:00",
-            "1970-01-01T00:00:00+01:00",
-            "1970-01-01T00:00:00.000+01:00",
-            "1970-01-01T00:00:00.000000+01:00",
-            "1970-01-01T00:00-01:00",
-            "1970-01-01T00:00:00-01:00",
-            "1970-01-01T00:00:00.000-01:00",
-            "1970-01-01T00:00:00.000000-01:00",
-            "1970-01-01T00:00-01:00",
-            "1970-01-01T00:00:00-01:00",
-            "1970-01-01T00:00:00.000-01:00",
-            "1970-01-01T00:00:00.000000-01:00",
             "2440587.5",
         ];
 
