@@ -789,7 +789,7 @@ pub trait QueryDsl: Sized {
     }
 
     /// Alias for `order`
-    fn order_by<Expr>(self, expr: Expr) -> Order<Self, Expr>
+    fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
     where
         Expr: Expression,
         Self: methods::OrderDsl<Expr>,
