@@ -398,6 +398,11 @@ pub mod helper_types {
     /// Represents the return type of [`.order(ordering)`](crate::prelude::QueryDsl::order)
     pub type Order<Source, Ordering> = <Source as OrderDsl<Ordering>>::Output;
 
+    /// Represents the return type of [`.order_by(ordering)`](crate::prelude::QueryDsl::order_by)
+    ///
+    /// Type alias of [Order]
+    pub type OrderBy<Source, Ordering> = Order<Source, Ordering>;
+
     /// Represents the return type of [`.then_order_by(ordering)`](crate::prelude::QueryDsl::then_order_by)
     pub type ThenOrderBy<Source, Ordering> = <Source as ThenOrderDsl<Ordering>>::Output;
 
