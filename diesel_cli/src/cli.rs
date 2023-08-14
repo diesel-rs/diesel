@@ -153,7 +153,7 @@ pub fn build_cli() -> Command {
                         .index(2)
                         .num_args(1..)
                         .action(clap::ArgAction::Append)
-                        .help("Table names to filter (default only-tables if not empty)."),
+                        .help("Table names to filter."),
                 )
                 .arg(
                     Arg::new("only-tables")
@@ -223,7 +223,7 @@ pub fn build_cli() -> Command {
                 .index(1)
                 .num_args(1..)
                 .action(clap::ArgAction::Append)
-                .help("Table names to filter (default only-tables if not empty)."),
+                .help("Table names to filter."),
         )
         .arg(
             Arg::new("only-tables")
