@@ -88,7 +88,7 @@ pub(super) fn run_migration_command(
                 if let Some(diff_schema) = diff_schema {
                     self::diff_schema::generate_sql_based_on_diff_schema(
                         config,
-                        matches,
+                        args,
                         &diff_schema,
                     )?
                 } else {

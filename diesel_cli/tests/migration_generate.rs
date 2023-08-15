@@ -4,7 +4,7 @@ use std::{fs::File, io::Read};
 use chrono::prelude::*;
 use regex::Regex;
 
-use crate::support::project;
+use crate::support::{project, Project};
 pub static TIMESTAMP_FORMAT: &str = "%Y-%m-%d-%H%M%S";
 
 #[test]
@@ -260,6 +260,16 @@ fn migration_generate_from_diff_drop_table_composite_key() {
     test_generate_migration("diff_drop_table_composite_key", Vec::new());
 }
 
+#[test]
+fn migration_generate_from_diff_only_tables() {
+    test_generate_migration("diff_only_tables", vec!["-o", "table_a"]);
+}
+
+#[test]
+fn migration_generate_from_diff_except_tables() {
+    test_generate_migration("diff_except_tables", vec!["-e", "table_b", "table_c"]);
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
@@ -278,6 +288,24 @@ fn backend_file_path(test_name: &str, file: &str) -> PathBuf {
 
 fn test_generate_migration(test_name: &str, args: Vec<&str>) {
     let p = project(test_name).build();
+    run_generate_migration_test(test_name, args, p);
+
+    let config_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("generate_migrations")
+        .join(test_name)
+        .join("diesel.toml");
+
+    if Path::new(&config_path).exists() {
+        let p = project(test_name)
+            .file("diesel.toml", &read_file(&config_path))
+            .build();
+
+        run_generate_migration_test(test_name, Vec::new(), p);
+    }
+}
+
+fn run_generate_migration_test(test_name: &str, args: Vec<&str>, p: Project) {
     let db = crate::support::database(&p.database_url());
 
     p.command("setup").run();
@@ -306,7 +334,7 @@ fn test_generate_migration(test_name: &str, args: Vec<&str>) {
             "--diff-schema={schema_rs}",
             schema_rs = schema_rs.display()
         ))
-        .args(args)
+        .args(args.clone())
         .run();
 
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
@@ -338,7 +366,7 @@ fn test_generate_migration(test_name: &str, args: Vec<&str>) {
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 
     // check that we get back the expected schema
-    let result = p.command("print-schema").run();
+    let result = p.command("print-schema").args(args).run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
     let result = result.stdout().replace("\r\n", "\n");
 
