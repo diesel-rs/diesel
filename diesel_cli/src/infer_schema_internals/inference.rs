@@ -4,6 +4,9 @@ use diesel::result::Error::NotFound;
 
 use super::data_structures::*;
 use super::table_data::*;
+
+use crate::config::Filtering;
+
 use crate::database::InferConnection;
 use crate::print_schema::{ColumnSorting, DocConfig};
 
@@ -122,6 +125,13 @@ pub fn load_table_names(
             super::information_schema::load_table_names(c, schema_name)
         }
     }
+}
+
+pub fn filter_table_names(table_names: Vec<TableName>, table_filter: &Filtering) -> Vec<TableName> {
+    table_names
+        .into_iter()
+        .filter(|t| !table_filter.should_ignore_table(t))
+        .collect::<_>()
 }
 
 fn get_table_comment(

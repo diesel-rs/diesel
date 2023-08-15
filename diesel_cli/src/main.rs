@@ -31,7 +31,6 @@ use database::InferConnection;
 use diesel::backend::Backend;
 use diesel::Connection;
 use diesel_migrations::{FileBasedMigrations, HarnessWithOutput, MigrationHarness};
-use regex::Regex;
 use std::error::Error;
 use std::fmt::Display;
 use std::io::stdout;
@@ -220,23 +219,10 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), Box<dyn Error + Send + S
     use crate::print_schema::*;
 
     let mut conn = InferConnection::from_matches(matches);
-    let mut config = Config::read(matches)?.print_schema;
+    let mut config = Config::read(matches)?.set_filter(matches)?.print_schema;
 
     if let Some(schema_name) = matches.get_one::<String>("schema") {
         config.schema = Some(schema_name.clone())
-    }
-
-    let filter = matches
-        .get_many::<String>("table-name")
-        .unwrap_or_default()
-        .map(|table_name_regex| Regex::new(table_name_regex).map(Into::into))
-        .collect::<Result<_, _>>()
-        .map_err(|e| format!("invalid argument for table filtering regex: {e}"));
-
-    if matches.get_flag("only-tables") {
-        config.filter = Filtering::OnlyTables(filter?)
-    } else if matches.get_flag("except-tables") {
-        config.filter = Filtering::ExceptTables(filter?)
     }
 
     if matches.get_flag("with-docs") {
@@ -282,8 +268,8 @@ fn regenerate_schema_if_file_specified(
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     use std::io::Read;
 
-    let config = Config::read(matches)?;
-    if let Some(ref path) = config.print_schema.file {
+    let config = Config::read(matches)?.print_schema;
+    if let Some(ref path) = config.file {
         let mut connection = InferConnection::from_matches(matches);
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
@@ -291,7 +277,7 @@ fn regenerate_schema_if_file_specified(
 
         if matches.get_flag("LOCKED_SCHEMA") {
             let mut buf = Vec::new();
-            print_schema::run_print_schema(&mut connection, &config.print_schema, &mut buf)?;
+            print_schema::run_print_schema(&mut connection, &config, &mut buf)?;
 
             let mut old_buf = Vec::new();
             let mut file = fs::File::open(path)?;
@@ -309,7 +295,7 @@ fn regenerate_schema_if_file_specified(
             use std::io::Write;
 
             let mut file = fs::File::create(path)?;
-            let schema = print_schema::output_schema(&mut connection, &config.print_schema)?;
+            let schema = print_schema::output_schema(&mut connection, &config)?;
             file.write_all(schema.as_bytes())?;
         }
     }

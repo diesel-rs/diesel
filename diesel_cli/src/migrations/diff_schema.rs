@@ -13,7 +13,8 @@ use syn::visit::Visit;
 use crate::config::Config;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
-    ColumnDefinition, ColumnType, ForeignKeyConstraint, TableData, TableName,
+    filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
+    TableData, TableName,
 };
 use crate::print_schema::DocConfig;
 
@@ -27,10 +28,12 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
 }
 
 pub fn generate_sql_based_on_diff_schema(
-    _config: Config,
+    config: Config,
     matches: &ArgMatches,
     schema_file_path: &Path,
 ) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
+    let config = config.set_filter(matches)?;
+
     let project_root = crate::find_project_root()?;
 
     let schema_path = project_root.join(schema_file_path);
@@ -43,7 +46,11 @@ pub fn generate_sql_based_on_diff_schema(
 
     tables_from_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_matches(matches);
-    let tables_from_database = crate::infer_schema_internals::load_table_names(&mut conn, None)?;
+    let tables_from_database = filter_table_names(
+        load_table_names(&mut conn, None)?,
+        &config.print_schema.filter,
+    );
+
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
     let foreign_key_map = foreign_keys.into_iter().fold(HashMap::new(), |mut acc, t| {
