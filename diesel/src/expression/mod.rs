@@ -547,12 +547,12 @@ where
 /// It is also possible to specify an entirely custom select expression
 /// for fields when deriving [`Selectable`](derive@Selectable).
 /// This is useful for example to
-/// 
+///
 ///  * avoid nesting types, or to
 ///  * populate fields with values other than table columns, such as
 ///    the result of an SQL function like `CURRENT_TIMESTAMP()`
 ///    or a custom SQL function.
-/// 
+///
 /// The select expression is specified via the `select_expression` parameter.
 /// For more complex expressions, it may be required to also specify the result type
 /// of the expression with `select_expression_type` (most query fragments are supported for this).
