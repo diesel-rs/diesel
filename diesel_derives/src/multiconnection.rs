@@ -582,6 +582,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             quote::quote!(diesel::sql_types::Binary),
             quote::quote!([u8]),
         ),
+        (quote::quote!(diesel::sql_types::Bool), quote::quote!(bool)),
     ]
     .into_iter()
     .map(|t| generate_to_sql_impls(t, connection_types));
@@ -606,6 +607,7 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             quote::quote!(diesel::sql_types::Binary),
             quote::quote!(Vec<u8>),
         ),
+        (quote::quote!(diesel::sql_types::Bool), quote::quote!(bool)),
     ]
     .into_iter()
     .map(generate_from_sql_impls);
@@ -1292,6 +1294,7 @@ fn generate_backend(connection_types: &[ConnectionVariant]) -> TokenStream {
         quote::quote!(diesel::sql_types::Date),
         quote::quote!(diesel::sql_types::Time),
         quote::quote!(diesel::sql_types::Timestamp),
+        quote::quote!(diesel::sql_types::Bool),
     ]
     .into_iter()
     .map(generate_has_sql_type_impls);
