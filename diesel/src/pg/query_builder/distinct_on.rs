@@ -7,6 +7,7 @@ use crate::query_builder::{
 use crate::query_dsl::methods::DistinctOnDsl;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::result::QueryResult;
+use crate::sql_types::SingleValue;
 use crate::QuerySource;
 use diesel::query_builder::order_clause::OrderClause;
 
@@ -17,23 +18,79 @@ pub struct DistinctOnClause<T>(pub(crate) T);
 
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for NoOrderClause {}
 impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<(T,)> {}
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Column {}
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Desc<T>> where
-    T: crate::Column
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<T> where T: crate::Expression {}
+
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+    for OrderClause<crate::expression::operators::Asc<T>>
+where
+    T: crate::Expression,
+    T::SqlType: SingleValue,
 {
 }
-impl<T> ValidOrderingForDistinct<DistinctOnClause<T>> for OrderClause<crate::helper_types::Asc<T>> where
-    T: crate::Column
+
+impl<T> ValidOrderingForDistinct<DistinctOnClause<T>>
+    for OrderClause<crate::expression::operators::Desc<T>>
+where
+    T: crate::Expression,
+    T::SqlType: SingleValue,
 {
 }
+
 macro_rules! valid_ordering {
+    // Special-case: rule out the all ident case:
+    (@impl_one:
+     $generics:tt
+     [$($T_:ident, )*]
+    ) => {
+        /* skip this one */
+    };
+    (@impl_one:
+     [generics: $($T:ident)*]
+     [$($Ty:ty, )*]
+    ) => {
+        impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<($($T, )*)>>
+            for OrderClause<($($Ty, )*)>
+        {}
+    };
+    (
+        @perm:
+        $generics:tt
+        [acc: $([$($acc:tt)*])*]
+        $T:ident
+        $($rest:tt)*
+    ) => {
+        valid_ordering! {
+            @perm:
+            $generics
+                [acc:
+                 $(
+                     [$($acc)* crate::expression::operators::Asc<$T>, ]
+                     [$($acc)*     $T  , ]
+                     [$($acc)* crate::expression::operators::Desc<$T>, ]
+                 )*
+                ]
+                $($rest)*
+        }
+    };
+    (
+        @perm:
+        $generics:tt
+        [acc: $($Tys:tt)*]
+        /* nothing left */
+    ) => (
+        $(
+            valid_ordering! {@impl_one:
+                $generics
+                $Tys
+            }
+        )*
+    );
     (@skip: ($ST1: ident, $($ST:ident,)*), $T1:ident, ) => {};
     (@skip: ($ST1: ident, $($ST:ident,)*), $T1:ident, $($T:ident,)+) => {
         valid_ordering!(($($ST,)*), ($ST1,), $($T,)*);
     };
     (($ST1: ident,), ($($OT:ident,)*), $T1:ident,) => {
-        #[allow(unused_parens)]
-        impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($ST1, $($OT,)*)>> for OrderClause<($T1)>
+        impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($ST1, $($OT,)*)>> for OrderClause<$T1>
         where $T1: crate::pg::OrderDecorator<Column = $ST1>,
         {}
         impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($ST1, $($OT,)*)>> for OrderClause<($T1,)>
@@ -65,10 +122,8 @@ macro_rules! valid_ordering {
         }
     )+) => {
         $(
-            impl<$($T,)* $($ST,)*> ValidOrderingForDistinct<DistinctOnClause<($($T,)*)>> for OrderClause<($($ST,)*)>
-            where $($ST: crate::pg::OrderDecorator<Column = $T>,)*
-            {}
             valid_ordering!(@skip: ($($ST,)*), $($T,)*);
+            valid_ordering!(@perm: [generics: $($T)*] [acc: []] $($T)*);
         )*
     }
 }
