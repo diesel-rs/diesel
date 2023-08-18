@@ -565,7 +565,7 @@ fn generate_row(connection_types: &[ConnectionVariant]) -> TokenStream {
 }
 
 fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStream {
-    let to_sql_impls = vec![
+    let mut to_sql_impls = vec![
         (
             quote::quote!(diesel::sql_types::SmallInt),
             quote::quote!(i16),
@@ -583,11 +583,40 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             quote::quote!([u8]),
         ),
         (quote::quote!(diesel::sql_types::Bool), quote::quote!(bool)),
-    ]
-    .into_iter()
-    .map(|t| generate_to_sql_impls(t, connection_types));
+    ];
+    if cfg!(feature = "chrono") {
+        to_sql_impls.push((
+            quote::quote!(diesel::sql_types::Timestamp),
+            quote::quote!(diesel::internal::derives::multiconnection::chrono::NaiveDateTime),
+        ));
+        to_sql_impls.push((
+            quote::quote!(diesel::sql_types::Date),
+            quote::quote!(diesel::internal::derives::multiconnection::chrono::NaiveDate),
+        ));
+        to_sql_impls.push((
+            quote::quote!(diesel::sql_types::Time),
+            quote::quote!(diesel::internal::derives::multiconnection::chrono::NaiveTime),
+        ));
+    }
+    if cfg!(feature = "time") {
+        to_sql_impls.push((
+            quote::quote!(diesel::sql_types::Timestamp),
+            quote::quote!(diesel::internal::derives::multiconnection::time::PrimitiveDateTime),
+        ));
+        to_sql_impls.push((
+            quote::quote!(diesel::sql_types::Time),
+            quote::quote!(diesel::internal::derives::multiconnection::time::Time),
+        ));
+        to_sql_impls.push((
+            quote::quote!(diesel::sql_types::Date),
+            quote::quote!(diesel::internal::derives::multiconnection::time::Date),
+        ));
+    }
+    let to_sql_impls = to_sql_impls
+        .into_iter()
+        .map(|t| generate_to_sql_impls(t, connection_types));
 
-    let from_sql_impls = vec![
+    let mut from_sql_impls = vec![
         (
             quote::quote!(diesel::sql_types::SmallInt),
             quote::quote!(i16),
@@ -608,9 +637,36 @@ fn generate_bind_collector(connection_types: &[ConnectionVariant]) -> TokenStrea
             quote::quote!(Vec<u8>),
         ),
         (quote::quote!(diesel::sql_types::Bool), quote::quote!(bool)),
-    ]
-    .into_iter()
-    .map(generate_from_sql_impls);
+    ];
+    if cfg!(feature = "chrono") {
+        from_sql_impls.push((
+            quote::quote!(diesel::sql_types::Timestamp),
+            quote::quote!(diesel::internal::derives::multiconnection::chrono::NaiveDateTime),
+        ));
+        from_sql_impls.push((
+            quote::quote!(diesel::sql_types::Date),
+            quote::quote!(diesel::internal::derives::multiconnection::chrono::NaiveDate),
+        ));
+        from_sql_impls.push((
+            quote::quote!(diesel::sql_types::Time),
+            quote::quote!(diesel::internal::derives::multiconnection::chrono::NaiveTime),
+        ));
+    }
+    if cfg!(feature = "time") {
+        from_sql_impls.push((
+            quote::quote!(diesel::sql_types::Timestamp),
+            quote::quote!(diesel::internal::derives::multiconnection::time::PrimitiveDateTime),
+        ));
+        from_sql_impls.push((
+            quote::quote!(diesel::sql_types::Time),
+            quote::quote!(diesel::internal::derives::multiconnection::time::Time),
+        ));
+        from_sql_impls.push((
+            quote::quote!(diesel::sql_types::Date),
+            quote::quote!(diesel::internal::derives::multiconnection::time::Date),
+        ));
+    }
+    let from_sql_impls = from_sql_impls.into_iter().map(generate_from_sql_impls);
 
     let into_bind_value_bounds = connection_types.iter().map(|c| {
         let ty = c.ty;
