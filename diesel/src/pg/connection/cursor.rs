@@ -1,3 +1,5 @@
+use crate::connection::instrumentation::StrQueryHelper;
+
 use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
@@ -87,6 +89,9 @@ impl Iterator for RowByRowCursor<'_> {
             let get_next_result = super::update_transaction_manager_status(
                 self.conn.raw_connection.get_next_result(),
                 self.conn,
+                // todo
+                &StrQueryHelper::new(""),
+                false,
             );
             match get_next_result {
                 Ok(Some(res)) => {
@@ -120,6 +125,9 @@ impl Drop for RowByRowCursor<'_> {
             let res = super::update_transaction_manager_status(
                 self.conn.raw_connection.get_next_result(),
                 self.conn,
+                // todo
+                &StrQueryHelper::new(""),
+                false,
             );
             if matches!(res, Err(_) | Ok(None)) {
                 break;

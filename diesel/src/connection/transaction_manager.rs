@@ -336,12 +336,19 @@ where
 
     fn begin_transaction(conn: &mut Conn) -> QueryResult<()> {
         let transaction_state = Self::get_transaction_state(conn)?;
-        let start_transaction_sql = match transaction_state.transaction_depth() {
+        let transaction_depth = transaction_state.transaction_depth();
+        let start_transaction_sql = match transaction_depth {
             None => Cow::from("BEGIN"),
             Some(transaction_depth) => {
                 Cow::from(format!("SAVEPOINT diesel_savepoint_{transaction_depth}"))
             }
         };
+        let depth = transaction_depth
+            .and_then(|d| d.checked_add(1))
+            .unwrap_or(NonZeroU32::new(1).expect("It's not 0"));
+        conn.instrumentation().on_connection_event(
+            super::instrumentation::InstrumentationEvent::BeginTransaction { depth },
+        );
         conn.batch_execute(&start_transaction_sql)?;
         Self::get_transaction_state(conn)?
             .change_transaction_depth(TransactionDepthChange::IncreaseDepth)?;
@@ -371,6 +378,12 @@ where
             ),
             None => return Err(Error::NotInTransaction),
         };
+        let depth = transaction_state
+            .transaction_depth()
+            .expect("We know that we are in a transaction here");
+        conn.instrumentation().on_connection_event(
+            super::instrumentation::InstrumentationEvent::RollbackTransaction { depth },
+        );
 
         match conn.batch_execute(&rollback_sql) {
             Ok(()) => {
@@ -449,6 +462,12 @@ where
                 false,
             ),
         };
+        let depth = transaction_state
+            .transaction_depth()
+            .expect("We know that we are in a transaction here");
+        conn.instrumentation().on_connection_event(
+            super::instrumentation::InstrumentationEvent::CommitTransaction { depth },
+        );
         match conn.batch_execute(&commit_sql) {
             Ok(()) => {
                 match Self::get_transaction_state(conn)?
@@ -500,6 +519,7 @@ mod test {
     // Mock connection.
     mod mock {
         use crate::connection::transaction_manager::AnsiTransactionManager;
+        use crate::connection::Instrumentation;
         use crate::connection::{
             Connection, ConnectionSealed, SimpleConnection, TransactionManager,
         };
@@ -512,6 +532,7 @@ mod test {
             pub(crate) next_batch_execute_results: VecDeque<QueryResult<()>>,
             pub(crate) top_level_requires_rollback_after_next_batch_execute: bool,
             transaction_state: AnsiTransactionManager,
+            instrumentation: Option<Box<dyn Instrumentation>>,
         }
 
         impl SimpleConnection for MockConnection {
@@ -542,6 +563,7 @@ mod test {
                     next_batch_execute_results: VecDeque::new(),
                     top_level_requires_rollback_after_next_batch_execute: false,
                     transaction_state: AnsiTransactionManager::default(),
+                    instrumentation: None,
                 })
             }
 
@@ -558,6 +580,17 @@ mod test {
             ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData
             {
                 &mut self.transaction_state
+            }
+
+            fn instrumentation(&mut self) -> &mut dyn crate::connection::Instrumentation {
+                &mut self.instrumentation
+            }
+
+            fn set_instrumentation(
+                &mut self,
+                instrumentation: impl crate::connection::Instrumentation,
+            ) {
+                self.instrumentation = Some(Box::new(instrumentation));
             }
         }
     }

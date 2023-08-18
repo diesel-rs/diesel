@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use diesel::deserialize::FromSql;
+use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::sql_types::Text;
 use diesel::*;
 
