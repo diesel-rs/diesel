@@ -583,6 +583,8 @@ where
 ///     name: String,
 ///     #[diesel(select_expression = posts::columns::title)]
 ///     title: String,
+///     #[diesel(select_expression = diesel::dsl::now)]
+///     access_time: chrono::DateTime<chrono::Utc>,
 /// }
 ///
 /// # fn main() -> QueryResult<()> {
@@ -597,6 +599,7 @@ where
 ///     id: 1,
 ///     name: "Sean".into(),
 ///     title: "My first post".into(),
+///     access_time: first_user_post.access_time,
 /// };
 /// assert_eq!(expected_user_post, first_user_post);
 /// #
