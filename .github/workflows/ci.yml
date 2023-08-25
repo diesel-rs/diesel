@@ -223,11 +223,11 @@ jobs:
       - name: Test diesel-derives (nightly)
         if: matrix.rust == 'nightly'
         shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} diesel/unstable diesel/time time diesel/chrono chrono"
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} diesel/unstable diesel/time time diesel/chrono chrono ${{ matrix.backend }}"
 
       - name: Test diesel-derives
         shell: bash
-        run: cargo +${{ matrix.rust }} test --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }}"
+        run: cargo +${{ matrix.rust }} test --manifest-path diesel_derives/Cargo.toml --no-default-features --features "diesel/${{ matrix.backend }} ${{ matrix.backend }}"
 
       - name: Test diesel-cli
         shell: bash
