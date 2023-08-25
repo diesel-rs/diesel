@@ -10,7 +10,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased 
 
-## [2.1.1] 2023-08-xx
+## [2.1.1] 2023-08-25
 
 ## Fixed
 
