@@ -196,14 +196,13 @@ pub type Decimal = Numeric;
 ///
 /// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
-/// - [`String`][String]
+/// - [`String`]
 /// - [`&str`][str]
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
-/// - [`String`][String]
+/// - [`String`]
 ///
-/// [String]: std::string::String
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 25, array_oid = 1009))]

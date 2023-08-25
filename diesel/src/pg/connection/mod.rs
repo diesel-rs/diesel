@@ -850,7 +850,7 @@ mod tests {
 
         results.sort_by_key(|r| r.is_err());
 
-        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        assert!(results[0].is_ok(), "Got {:?} instead", results);
         assert!(
             matches!(&results[1], Err(DatabaseError(SerializationFailure, _))),
             "Got {:?} instead",
@@ -966,7 +966,7 @@ mod tests {
 
         results.sort_by_key(|r| r.is_err());
 
-        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        assert!(results[0].is_ok(), "Got {:?} instead", results);
         assert!(
             matches!(&results[1], Err(DatabaseError(SerializationFailure, _))),
             "Got {:?} instead",
