@@ -69,4 +69,12 @@ pub mod multiconnection {
 
     #[doc(hidden)]
     pub use crate::query_builder::select_statement::SelectStatementAccessor;
+
+    #[doc(hidden)]
+    #[cfg(feature = "chrono")]
+    pub use chrono;
+
+    #[doc(hidden)]
+    #[cfg(feature = "time")]
+    pub use time;
 }

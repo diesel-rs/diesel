@@ -216,8 +216,8 @@ where
 
 /// Wraps a possibly cached prepared statement
 ///
-/// Essentially a customized version of [`Cow`](std::borrow::Cow)
-/// that does not depend on [`ToOwned`](std::borrow::ToOwned)
+/// Essentially a customized version of [`Cow`]
+/// that does not depend on [`ToOwned`]
 #[allow(missing_debug_implementations, unreachable_pub)]
 #[cfg_attr(
     doc_cfg,

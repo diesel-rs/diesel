@@ -232,7 +232,7 @@ where
     /// If the transaction fails to commit due to a `SerializationFailure` or a
     /// `ReadOnlyTransaction` a rollback will be attempted.
     /// If the rollback fails, the error will be returned in a
-    /// [`Error::RollbackErrorOnCommit`](crate::result::Error::RollbackErrorOnCommit),
+    /// [`Error::RollbackErrorOnCommit`],
     /// from which you will be able to extract both the original commit error and
     /// the rollback error.
     /// In addition, the connection will be considered broken

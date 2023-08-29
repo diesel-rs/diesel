@@ -873,7 +873,7 @@ mod test {
             .collect::<Vec<_>>();
 
         results.sort_by_key(|r| r.is_err());
-        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        assert!(results[0].is_ok(), "Got {:?} instead", results);
         // Note that contrary to Postgres, this is not a commit failure
         assert!(
             matches!(&results[1], Err(DatabaseError(SerializationFailure, _))),
@@ -982,7 +982,7 @@ mod test {
             .collect::<Vec<_>>();
 
         results.sort_by_key(|r| r.is_err());
-        assert!(matches!(results[0], Ok(_)), "Got {:?} instead", results);
+        assert!(results[0].is_ok(), "Got {:?} instead", results);
         assert!(
             matches!(&results[1], Err(DatabaseError(SerializationFailure, _))),
             "Got {:?} instead",

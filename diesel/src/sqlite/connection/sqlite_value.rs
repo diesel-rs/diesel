@@ -64,7 +64,7 @@ impl<'row, 'stmt, 'query> SqliteValue<'row, 'stmt, 'query> {
         let s = unsafe {
             let ptr = ffi::sqlite3_value_text(self.value.as_ptr());
             let len = ffi::sqlite3_value_bytes(self.value.as_ptr());
-            let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
+            let bytes = slice::from_raw_parts(ptr, len as usize);
             // The string is guaranteed to be utf8 according to
             // https://www.sqlite.org/c3ref/value_blob.html
             str::from_utf8_unchecked(bytes)
