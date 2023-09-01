@@ -70,7 +70,7 @@ pub(crate) mod dsl {
     pub use crate::pg::expression::dsl::*;
 
     /// The return type of [`count(expr)`](crate::dsl::count())
-    pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
+    pub type count<Expr> = super::count::count<SqlTypeOf<Expr>, Expr>;
 
     /// The return type of [`count_star()`](crate::dsl::count_star())
     pub type count_star = super::count::CountStar;
@@ -79,7 +79,7 @@ pub(crate) mod dsl {
     pub type count_distinct<Expr> = super::count::CountDistinct<SqlTypeOf<Expr>, Expr>;
 
     /// The return type of [`date(expr)`](crate::dsl::date())
-    pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
+    pub type date<Expr> = super::functions::date_and_time::date<Expr>;
 
     #[cfg(feature = "mysql_backend")]
     pub use crate::mysql::query_builder::DuplicatedKeys;

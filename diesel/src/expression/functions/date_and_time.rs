@@ -1,6 +1,6 @@
 use crate::backend::Backend;
 use crate::expression::coerce::Coerce;
-use crate::expression::functions::sql_function;
+use crate::expression::functions::sql_function_v2;
 use crate::expression::{AsExpression, Expression, ValidGrouping};
 use crate::query_builder::*;
 use crate::result::QueryResult;
@@ -27,7 +27,7 @@ impl_selectable_expression!(now);
 
 operator_allowed!(now, Add, add);
 operator_allowed!(now, Sub, sub);
-sql_function! {
+sql_function_v2! {
     /// Represents the SQL `DATE` function. The argument should be a Timestamp
     /// expression, and the return value will be an expression of type Date.
     ///

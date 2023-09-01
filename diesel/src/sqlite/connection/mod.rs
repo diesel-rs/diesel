@@ -486,7 +486,7 @@ mod tests {
     }
 
     use crate::sql_types::Text;
-    sql_function!(fn fun_case(x: Text) -> Text);
+    sql_function_v2!(fn fun_case(x: Text) -> Text);
 
     #[test]
     fn register_custom_function() {
@@ -511,7 +511,7 @@ mod tests {
         assert_eq!("fOoBaR", mapped_string);
     }
 
-    sql_function!(fn my_add(x: Integer, y: Integer) -> Integer);
+    sql_function_v2!(fn my_add(x: Integer, y: Integer) -> Integer);
 
     #[test]
     fn register_multiarg_function() {
@@ -522,7 +522,7 @@ mod tests {
         assert_eq!(Ok(3), added);
     }
 
-    sql_function!(fn answer() -> Integer);
+    sql_function_v2!(fn answer() -> Integer);
 
     #[test]
     fn register_noarg_function() {
@@ -542,7 +542,7 @@ mod tests {
         assert_eq!(Ok(42), answer);
     }
 
-    sql_function!(fn add_counter(x: Integer) -> Integer);
+    sql_function_v2!(fn add_counter(x: Integer) -> Integer);
 
     #[test]
     fn register_nondeterministic_function() {
@@ -561,7 +561,7 @@ mod tests {
 
     use crate::sqlite::SqliteAggregateFunction;
 
-    sql_function! {
+    sql_function_v2! {
         #[aggregate]
         fn my_sum(expr: Integer) -> Integer;
     }
@@ -631,7 +631,7 @@ mod tests {
         assert_eq!(Ok(0), result);
     }
 
-    sql_function! {
+    sql_function_v2! {
         #[aggregate]
         fn range_max(expr1: Integer, expr2: Integer, expr3: Integer) -> Nullable<Integer>;
     }

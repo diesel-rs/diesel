@@ -489,7 +489,7 @@ mod tests {
         assert_eq!(2, connection.statement_cache.len());
     }
 
-    sql_function!(fn lower(x: VarChar) -> VarChar);
+    sql_function_v2!(fn lower(x: VarChar) -> VarChar);
 
     #[test]
     fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {

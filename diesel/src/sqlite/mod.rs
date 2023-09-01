@@ -20,9 +20,9 @@ pub use self::query_builder::SqliteQueryBuilder;
 
 /// Trait for the implementation of a SQLite aggregate function
 ///
-/// This trait is to be used in conjunction with the `sql_function!`
+/// This trait is to be used in conjunction with the `sql_function_v2!`
 /// macro for defining a custom SQLite aggregate function. See
-/// the documentation [there](super::prelude::sql_function!) for details.
+/// the documentation [there](super::prelude::sql_function_v2!) for details.
 pub trait SqliteAggregateFunction<Args>: Default {
     /// The result type of the SQLite aggregate function
     type Output;

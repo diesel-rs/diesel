@@ -71,7 +71,7 @@ fn regclass(table: &TableName) -> Regclass<AsExprOf<String, sql_types::Text>> {
     ))
 }
 
-diesel::sql_function!(fn col_description(table: sql_types::Oid, column_number: sql_types::BigInt) -> sql_types::Nullable<sql_types::Text>);
+diesel::sql_function_v2!(fn col_description(table: sql_types::Oid, column_number: sql_types::BigInt) -> sql_types::Nullable<sql_types::Text>);
 
 pub fn get_table_data(
     conn: &mut PgConnection,
@@ -140,7 +140,7 @@ where
     }
 }
 
-sql_function!(fn obj_description(oid: sql_types::Oid, catalog: sql_types::Text) -> Nullable<Text>);
+sql_function_v2!(fn obj_description(oid: sql_types::Oid, catalog: sql_types::Text) -> Nullable<Text>);
 
 pub fn get_table_comment(
     conn: &mut PgConnection,
@@ -167,7 +167,7 @@ mod information_schema {
     }
 }
 
-sql_function! {
+sql_function_v2! {
     #[aggregate]
     fn array_agg(input: diesel::sql_types::Text) -> diesel::sql_types::Array<diesel::sql_types::Text>;
 }

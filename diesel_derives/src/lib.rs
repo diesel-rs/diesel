@@ -1017,7 +1017,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// will generate this code:
 ///
 /// ```ignore
-/// pub fn lower<X>(x: X) -> lower::HelperType<X> {
+/// pub fn lower<X>(x: X) -> lower<X> {
 ///     ...
 /// }
 ///
@@ -1044,7 +1044,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///
 /// pub mod helper_types {
 ///     /// The return type of `length(expr)`
-///     pub type Length<Expr> = functions::length::HelperType<Expr>;
+///     pub type Length<Expr> = functions::length<Expr>;
 /// }
 ///
 /// pub mod dsl {

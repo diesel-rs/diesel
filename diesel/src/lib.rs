@@ -57,7 +57,7 @@
 //!   They live in [the `dsl` module](dsl).
 //!   Diesel only supports a very small number of these functions.
 //!   You can declare additional functions you want to use
-//!   with [the `sql_function!` macro][`sql_function!`].
+//!   with [the `sql_function_v2!` macro][`sql_function_v2!`].
 //!
 //! [`std::ops`]: //doc.rust-lang.org/stable/std/ops/index.html
 //!
@@ -639,7 +639,7 @@ pub mod prelude {
     };
 
     #[doc(inline)]
-    pub use crate::expression::functions::sql_function;
+    pub use crate::expression::functions::{sql_function, sql_function_v2};
 
     #[doc(inline)]
     pub use crate::expression::SelectableHelper;
