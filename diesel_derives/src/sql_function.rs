@@ -8,7 +8,7 @@ use syn::{
     PathArguments, Token, Type,
 };
 
-pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
+pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool) -> TokenStream {
     let SqlFunctionDecl {
         mut attributes,
         fn_token,
@@ -94,6 +94,15 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
         numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
     }
 
+    let inside_module_helper_type = legacy_helper_type_and_module.then(|| {
+        quote! {
+            pub type HelperType #ty_generics = #fn_name <
+                #(#type_args,)*
+                #(<#arg_name as AsExpression<#arg_type>>::Expression,)*
+            >;
+        }
+    });
+
     let args_iter = args.iter();
     let mut tokens = quote! {
         use diesel::{self, QueryResult};
@@ -109,10 +118,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
             #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*
         }
 
-        pub type HelperType #ty_generics = #fn_name <
-            #(#type_args,)*
-            #(<#arg_name as AsExpression<#arg_type>>::Expression,)*
-        >;
+        #inside_module_helper_type
 
         impl #impl_generics Expression for #fn_name #ty_generics
         #where_clause
@@ -391,23 +397,45 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
 
     let args_iter = args.iter();
 
+    let (outside_of_module_helper_type, return_type_path, internals_module_name) =
+        if legacy_helper_type_and_module {
+            (None, quote! { #fn_name }, fn_name.clone())
+        } else {
+            let internals_module_name = Ident::new(&format!("{fn_name}_internals"), fn_name.span());
+            let doc = format!("The return type of [`{fn_name}()`]");
+            (
+                Some(quote! {
+                    #[allow(non_camel_case_types, non_snake_case)]
+                    #[doc = #doc]
+                    pub type #fn_name #ty_generics = #internals_module_name::#fn_name <
+                        #(#type_args,)*
+                        #(<#arg_name as ::diesel::expression::AsExpression<#arg_type>>::Expression,)*
+                    >;
+                }),
+                quote! { #fn_name },
+                internals_module_name,
+            )
+        };
+
     quote! {
         #(#attributes)*
         #[allow(non_camel_case_types)]
         pub #fn_token #fn_name #impl_generics (#(#args_iter,)*)
-            -> #fn_name::HelperType #ty_generics
+            -> #return_type_path #ty_generics
         #where_clause
             #(#arg_name: ::diesel::expression::AsExpression<#arg_type>,)*
         {
-            #fn_name::#fn_name {
+            #internals_module_name::#fn_name {
                 #(#arg_struct_assign,)*
                 #(#type_args: ::std::marker::PhantomData,)*
             }
         }
 
+        #outside_of_module_helper_type
+
         #[doc(hidden)]
         #[allow(non_camel_case_types, non_snake_case, unused_imports)]
-        pub(crate) mod #fn_name {
+        pub(crate) mod #internals_module_name {
             #tokens
         }
     }

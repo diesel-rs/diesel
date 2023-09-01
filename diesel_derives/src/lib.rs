@@ -1011,7 +1011,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// function. For example, this invocation:
 ///
 /// ```ignore
-/// sql_function!(fn lower(x: Text) -> Text);
+/// sql_function_v2!(fn lower(x: Text) -> Text);
 /// ```
 ///
 /// will generate this code:
@@ -1036,7 +1036,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///     use super::types::*;
 ///     use diesel::sql_types::*;
 ///
-///     sql_function! {
+///     sql_function_v2! {
 ///         /// Represents the Pg `LENGTH` function used with `tsvector`s.
 ///         fn length(x: TsVector) -> Integer;
 ///     }
@@ -1066,7 +1066,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// use diesel::sql_types::Text;
 ///
-/// sql_function! {
+/// sql_function_v2! {
 ///     /// Represents the `canon_crate_name` SQL function, created in
 ///     /// migration ....
 ///     fn canon_crate_name(a: Text) -> Text;
@@ -1104,7 +1104,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// use diesel::sql_types::Foldable;
 ///
-/// sql_function! {
+/// sql_function_v2! {
 ///     #[aggregate]
 ///     #[sql_name = "SUM"]
 ///     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
@@ -1119,7 +1119,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # SQL Functions without Arguments
 ///
 /// A common example is ordering a query using the `RANDOM()` sql function,
-/// which can be implemented using `sql_function!` like this:
+/// which can be implemented using `sql_function_v2!` like this:
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -1127,7 +1127,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
-/// sql_function!(fn random() -> Text);
+/// sql_function_v2!(fn random() -> Text);
 ///
 /// # fn main() {
 /// # use self::crates::dsl::*;
@@ -1161,7 +1161,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # }
 /// #
 /// use diesel::sql_types::{Integer, Double};
-/// sql_function!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
+/// sql_function_v2!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
 ///
 /// # #[cfg(feature = "sqlite")]
 /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
@@ -1189,7 +1189,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// ## Custom Aggregate Functions
 ///
 /// Custom aggregate functions can be created in SQLite by adding an `#[aggregate]`
-/// attribute inside `sql_function`. `register_impl` needs to be called on
+/// attribute inside `sql_function_v2`. `register_impl` needs to be called on
 /// the generated function with a type implementing the
 /// [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html)
 /// trait as a type parameter as shown in the examples below.
@@ -1210,7 +1210,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///
-/// sql_function! {
+/// sql_function_v2! {
 ///     #[aggregate]
 ///     fn my_sum(x: Integer) -> Integer;
 /// }
@@ -1278,7 +1278,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///
-/// sql_function! {
+/// sql_function_v2! {
 ///     #[aggregate]
 ///     fn range_max(x0: Float, x1: Float) -> Nullable<Float>;
 /// }
@@ -1342,8 +1342,41 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 #[proc_macro]
+pub fn sql_function_v2(input: TokenStream) -> TokenStream {
+    sql_function::expand(parse_macro_input!(input), false).into()
+}
+
+/// A legacy version of [`sql_function_v2`].
+///
+/// The difference is that it makes the helper type available in a module named the exact same as
+/// the function:
+///
+/// ```ignore
+/// sql_function!(fn lower(x: Text) -> Text);
+/// ```
+///
+/// will generate this code:
+///
+/// ```ignore
+/// pub fn lower<X>(x: X) -> lower::HelperType<X> {
+///     ...
+/// }
+///
+/// pub(crate) mod lower {
+///     pub type HelperType<X> = ...;
+/// }
+/// ```
+///
+/// This turned out to be an issue for the support of the `auto_type` feature, which is why
+/// [`sql_function_v2`] was introduced (and why this is deprecated).
+///
+/// SQL functions declared with this version of the macro will not be usable with `#[auto_type]`
+/// or `Selectable` `select_expression` type inference.
+
+#[deprecated = "Use [`sql_function_v2`] instead"]
+#[proc_macro]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input)).into()
+    sql_function::expand(parse_macro_input!(input), true).into()
 }
 
 /// This is an internal diesel macro that
