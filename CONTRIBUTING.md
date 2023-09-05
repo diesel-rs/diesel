@@ -65,7 +65,7 @@ Thank you! We'll try to respond as quickly as possible.
 
    *Shortcut:* On macOS, you don't need to install anything to work with SQLite.
    For PostgreSQL, you'll only need the server (`libpq` is installed by
-   default). To get started, `brew install postgresql mysql` and follow the
+   default). To get started, `brew install postgresql@14 mysql` and follow the
    instructions shown to set up the database servers.
 3. Clone this repository and open it in your favorite editor.
 4. Create a `.env` file in this directory, and add the connection details for
