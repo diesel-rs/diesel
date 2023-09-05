@@ -1,8 +1,8 @@
 use diesel::associations::HasTable;
 use diesel::backend::Backend;
 use diesel::dsl;
-use diesel::migration::{
-    Migration, MigrationConnection, MigrationSource, MigrationVersion, Result,
+use crate::migration::{
+    Migration, MigrationConnection, MigrationSource, MigrationVersion, Result, MigrationMetadata,
 };
 use diesel::prelude::*;
 use diesel::query_builder::{DeleteStatement, InsertStatement, IntoUpdateTarget};
@@ -15,13 +15,6 @@ use std::collections::HashMap;
 use std::io::Write;
 
 use crate::errors::MigrationError;
-
-diesel::table! {
-    __diesel_schema_migrations (version) {
-        version -> VarChar,
-        run_on -> Timestamp,
-    }
-}
 
 /// A migration harness is an entity which applies migration to an existing database
 pub trait MigrationHarness<DB: Backend> {
@@ -92,8 +85,9 @@ pub trait MigrationHarness<DB: Backend> {
     fn revert_last_migration<S: MigrationSource<DB>>(
         &mut self,
         source: S,
+        metadata: &Box<dyn MigrationMetadata>,
     ) -> Result<MigrationVersion<'static>> {
-        let applied_versions = self.applied_migrations()?;
+        let applied_versions = self.applied_migrations(metadata)?;
         let migrations = source.migrations()?;
         let last_migration_version = applied_versions
             .first()
@@ -150,33 +144,13 @@ pub trait MigrationHarness<DB: Backend> {
     ) -> Result<MigrationVersion<'static>>;
 
     /// Get a list of already applied migration versions
-    fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>>;
+    fn applied_migrations(&mut self, metadata: &Box<dyn MigrationMetadata>) -> Result<Vec<MigrationVersion<'static>>>;
 }
 
 impl<'b, C, DB> MigrationHarness<DB> for C
 where
     DB: Backend,
     C: Connection<Backend = DB> + MigrationConnection + 'static,
-    dsl::Order<
-        dsl::Select<__diesel_schema_migrations::table, __diesel_schema_migrations::version>,
-        dsl::Desc<__diesel_schema_migrations::version>,
-    >: LoadQuery<'b, C, MigrationVersion<'static>>,
-    for<'a> InsertStatement<
-        __diesel_schema_migrations::table,
-        <dsl::Eq<__diesel_schema_migrations::version, MigrationVersion<'static>> as Insertable<
-            __diesel_schema_migrations::table,
-        >>::Values,
-    >: diesel::query_builder::QueryFragment<DB> + ExecuteDsl<C, DB>,
-    DeleteStatement<
-        <dsl::Find<
-            __diesel_schema_migrations::table,
-            MigrationVersion<'static>,
-        > as HasTable>::Table,
-        <dsl::Find<
-            __diesel_schema_migrations::table,
-            MigrationVersion<'static>,
-        > as IntoUpdateTarget>::WhereClause,
-    >: ExecuteDsl<C>,
     str: ToSql<Text, DB>,
 {
     fn run_migration(
@@ -185,8 +159,8 @@ where
     ) -> Result<MigrationVersion<'static>> {
         let apply_migration = |conn: &mut C| -> Result<()> {
             migration.run(conn)?;
-            diesel::insert_into(__diesel_schema_migrations::table)
-                .values(__diesel_schema_migrations::version.eq(migration.name().version().as_owned())).execute(conn)?;
+            diesel::insert_into(migration.metadata().migration_table())
+                .values(migration.metadata().migration_version_column().eq(migration.name().version().as_owned())).execute(conn)?;
             Ok(())
         };
 
@@ -204,7 +178,7 @@ where
     ) -> Result<MigrationVersion<'static>> {
         let revert_migration = |conn: &mut C| -> Result<()> {
             migration.revert(conn)?;
-            diesel::delete(__diesel_schema_migrations::table.find(migration.name().version().as_owned()))
+            diesel::delete(migration.metadata().migration_table().find(migration.name().version().as_owned()))
                .execute(conn)?;
             Ok(())
         };
@@ -217,11 +191,11 @@ where
         Ok(migration.name().version().as_owned())
     }
 
-    fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
-        setup_database(self)?;
-        Ok(__diesel_schema_migrations::table
-            .select(__diesel_schema_migrations::version)
-            .order(__diesel_schema_migrations::version.desc())
+    fn applied_migrations(&mut self, metadata: &Box<dyn MigrationMetadata>) -> Result<Vec<MigrationVersion<'static>>> {
+        setup_database(self, metadata)?;
+        Ok(metadata.migration_table()
+            .select(metadata.migration_version_column())
+            .order(metadata.migration_version_column().desc())
             .load(self)?)
     }
 }
@@ -290,11 +264,11 @@ where
         self.connection.revert_migration(migration)
     }
 
-    fn applied_migrations(&mut self) -> Result<Vec<MigrationVersion<'static>>> {
-        self.connection.applied_migrations()
+    fn applied_migrations(&mut self, metadata: &Box<dyn MigrationMetadata>) -> Result<Vec<MigrationVersion<'static>>> {
+        self.connection.applied_migrations(metadata)
     }
 }
 
-fn setup_database<Conn: MigrationConnection>(conn: &mut Conn) -> QueryResult<usize> {
-    conn.setup()
+fn setup_database<Conn: MigrationConnection>(conn: &mut Conn, metadata: &Box<dyn MigrationMetadata>) -> QueryResult<usize> {
+    conn.setup(metadata)
 }

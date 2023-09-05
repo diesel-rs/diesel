@@ -1,12 +1,13 @@
 //! Representation of migrations
 
-use crate::backend::Backend;
-use crate::connection::{BoxableConnection, Connection};
-use crate::deserialize::{FromSql, FromSqlRow};
-use crate::expression::AsExpression;
-use crate::result::QueryResult;
-use crate::serialize::ToSql;
-use crate::sql_types::Text;
+use diesel::backend::Backend;
+use diesel::connection::{BoxableConnection, Connection};
+use diesel::deserialize::{FromSql, FromSqlRow};
+use diesel::expression::AsExpression;
+use diesel::result::QueryResult;
+use diesel::serialize::ToSql;
+use diesel::sql_types::{Text, VarChar, Timestamp};
+use diesel_dynamic_schema::Table;
 use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::Display;
@@ -37,7 +38,7 @@ where
     String: FromSql<Text, DB>,
     DB: Backend,
 {
-    fn from_sql(bytes: DB::RawValue<'_>) -> crate::deserialize::Result<Self> {
+    fn from_sql(bytes: DB::RawValue<'_>) -> diesel::deserialize::Result<Self> {
         let s = String::from_sql(bytes)?;
         Ok(Self(Cow::Owned(s)))
     }
@@ -50,8 +51,8 @@ where
 {
     fn to_sql<'b>(
         &'b self,
-        out: &mut crate::serialize::Output<'b, '_, DB>,
-    ) -> crate::serialize::Result {
+        out: &mut diesel::serialize::Output<'b, '_, DB>,
+    ) -> diesel::serialize::Result {
         self.0.to_sql(out)
     }
 }
@@ -130,6 +131,12 @@ pub trait MigrationMetadata {
     fn run_in_transaction(&self) -> bool {
         true
     }
+
+    fn migration_table(&self) -> diesel_dynamic_schema::Table<String>;
+
+    fn migration_version_column(&self) -> diesel_dynamic_schema::Column<String, String, VarChar>;
+
+    fn migration_run_on_column(&self) -> diesel_dynamic_schema::Column<String, String, Timestamp>;
 }
 
 /// A migration source is an entity that can be used
@@ -176,6 +183,8 @@ impl<'a, DB: Backend> Migration<DB> for &'a dyn Migration<DB> {
     }
 }
 
+pub const DEFAULT_MIGRATION_TABLE: &str = "__diesel_schema_migrations";
+
 /// Create table statement for the `__diesel_schema_migrations` used
 /// used by the postgresql, sqlite and mysql backend
 pub const CREATE_MIGRATIONS_TABLE: &str = include_str!("setup_migration_table.sql");
@@ -195,29 +204,32 @@ pub trait MigrationConnection: Connection {
     ///      }
     /// }
     /// ```
-    fn setup(&mut self) -> QueryResult<usize>;
+    fn setup(&mut self, metadata: &Box<dyn MigrationMetadata>) -> QueryResult<usize>;
 }
 
 #[cfg(feature = "postgres")]
-impl MigrationConnection for crate::pg::PgConnection {
-    fn setup(&mut self) -> QueryResult<usize> {
-        use crate::RunQueryDsl;
-        crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+impl MigrationConnection for diesel::pg::PgConnection {
+    fn setup(&mut self, metadata: Box<dyn MigrationMetadata>) -> QueryResult<usize> {
+        use diesel::RunQueryDsl;
+        let migration_table = metadata.migration_table().unwrap_or(DEFAULT_MIGRATION_TABLE.to_string());
+        diesel::sql_query(format!(CREATE_MIGRATIONS_TABLE, migration_table)).execute(self)
     }
 }
 
 #[cfg(feature = "mysql")]
-impl MigrationConnection for crate::mysql::MysqlConnection {
-    fn setup(&mut self) -> QueryResult<usize> {
-        use crate::RunQueryDsl;
-        crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+impl MigrationConnection for diesel::mysql::MysqlConnection {
+    fn setup(&mut self, metadata: Box<dyn MigrationMetadata>) -> QueryResult<usize> {
+        use diesel::RunQueryDsl;
+        let migration_table = metadata.migration_table().unwrap_or(DEFAULT_MIGRATION_TABLE.to_string());
+        diesel::sql_query(format!(CREATE_MIGRATIONS_TABLE, migration_table)).execute(self)
     }
 }
 
 #[cfg(feature = "sqlite")]
-impl MigrationConnection for crate::sqlite::SqliteConnection {
-    fn setup(&mut self) -> QueryResult<usize> {
-        use crate::RunQueryDsl;
-        crate::sql_query(CREATE_MIGRATIONS_TABLE).execute(self)
+impl MigrationConnection for diesel::sqlite::SqliteConnection {
+    fn setup(&mut self, metadata: Box<dyn MigrationMetadata>) -> QueryResult<usize> {
+        use diesel::RunQueryDsl;
+        let migration_table = metadata.migration_table().unwrap_or(DEFAULT_MIGRATION_TABLE.to_string());
+        diesel::sql_query(format!(CREATE_MIGRATIONS_TABLE, migration_table)).execute(self)
     }
 }

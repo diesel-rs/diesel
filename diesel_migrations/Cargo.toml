@@ -8,6 +8,10 @@ homepage = "https://diesel.rs"
 edition = "2021"
 rust-version = "1.65.0"
 
+[dependencies.diesel-dynamic-schema]
+version = "~0.2.1"
+path = "../diesel_dynamic_schema"
+
 [dependencies.migrations_internals]
 version = "~2.1.0"
 path = "migrations_internals"

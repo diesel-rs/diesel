@@ -301,10 +301,10 @@ where
     }
 }
 
-impl<M> crate::migration::MigrationConnection for PooledConnection<M>
+impl<M> diesel_migrations::migration::MigrationConnection for PooledConnection<M>
 where
     M: ManageConnection,
-    M::Connection: crate::migration::MigrationConnection,
+    M::Connection: diesel_migrations::migration::MigrationConnection,
     Self: Connection,
 {
     fn setup(&mut self) -> QueryResult<usize> {

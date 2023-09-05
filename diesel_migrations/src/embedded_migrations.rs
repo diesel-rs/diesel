@@ -4,7 +4,7 @@ use crate::errors::RunMigrationsError;
 use crate::file_based_migrations::{DieselMigrationName, TomlMetadataWrapper};
 use crate::MigrationError;
 use diesel::backend::Backend;
-use diesel::migration::{Migration, MigrationName, MigrationSource, MigrationVersion, Result};
+use crate::migration::{Migration, MigrationName, MigrationSource, MigrationVersion, Result, MigrationMetadata};
 
 /// A migration source that embeds migrations into the final binary
 ///
@@ -106,8 +106,8 @@ impl<'a, DB: Backend> Migration<DB> for &'a EmbeddedMigration {
         }
     }
 
-    fn metadata(&self) -> &dyn diesel::migration::MigrationMetadata {
-        &self.metadata as &dyn diesel::migration::MigrationMetadata
+    fn metadata(&self) -> &dyn MigrationMetadata {
+        &self.metadata as &dyn MigrationMetadata
     }
 
     fn name(&self) -> &dyn MigrationName {

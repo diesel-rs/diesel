@@ -5,8 +5,9 @@ use std::path::{Path, PathBuf};
 
 use diesel::backend::Backend;
 use diesel::connection::BoxableConnection;
-use diesel::migration::{
-    self, Migration, MigrationMetadata, MigrationName, MigrationSource, MigrationVersion,
+use diesel::sql_types::{VarChar, Timestamp, Text};
+use crate::migration::{
+    self, Migration, MigrationMetadata, MigrationName, MigrationSource, MigrationVersion, DEFAULT_MIGRATION_TABLE,
 };
 use migrations_internals::TomlMetadata;
 
@@ -255,14 +256,26 @@ pub struct TomlMetadataWrapper(TomlMetadata);
 
 impl TomlMetadataWrapper {
     #[doc(hidden)]
-    pub const fn new(run_in_transaction: bool) -> Self {
-        Self(TomlMetadata::new(run_in_transaction))
+    pub const fn new(run_in_transaction: bool, migration_table: Option<String>) -> Self {
+        Self(TomlMetadata::new(run_in_transaction, migration_table))
     }
 }
 
 impl MigrationMetadata for TomlMetadataWrapper {
     fn run_in_transaction(&self) -> bool {
         self.0.run_in_transaction
+    }
+
+    fn migration_table(&self) -> diesel_dynamic_schema::Table<String> {
+        diesel_dynamic_schema::table(self.0.migration_table.unwrap_or(DEFAULT_MIGRATION_TABLE.to_string()))            
+    }
+
+    fn migration_run_on_column(&self) -> diesel_dynamic_schema::Column<String, String, diesel::sql_types::Timestamp> {
+        self.migration_table().column::<Timestamp, _>("run_on".to_string())
+    }
+
+    fn migration_version_column(&self) -> diesel_dynamic_schema::Column<String, String, Text> {
+        self.migration_table().column::<Text, _>("version".to_string())   
     }
 }
 

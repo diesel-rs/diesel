@@ -7,7 +7,7 @@ use std::error::Error;
 use std::path::PathBuf;
 use std::{fmt, io};
 
-use diesel::migration::MigrationVersion;
+use crate::migration::MigrationVersion;
 
 use crate::file_based_migrations::DieselMigrationName;
 

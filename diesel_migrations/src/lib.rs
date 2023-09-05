@@ -37,6 +37,7 @@
 mod embedded_migrations;
 mod errors;
 mod file_based_migrations;
+mod migration;
 mod migration_harness;
 
 pub use crate::embedded_migrations::EmbeddedMigrations;

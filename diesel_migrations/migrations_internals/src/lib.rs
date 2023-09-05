@@ -31,19 +31,22 @@ use std::path::{Path, PathBuf};
 pub struct TomlMetadata {
     #[serde(default)]
     pub run_in_transaction: bool,
+    #[serde(default)]
+    pub migration_table: Option<String>,
 }
 
 impl Default for TomlMetadata {
     fn default() -> Self {
         Self {
             run_in_transaction: true,
+            migration_table: None,
         }
     }
 }
 
 impl TomlMetadata {
-    pub const fn new(run_in_transaction: bool) -> Self {
-        Self { run_in_transaction }
+    pub const fn new(run_in_transaction: bool, migration_table: Option<String>) -> Self {
+        Self { run_in_transaction, migration_table }
     }
 
     pub fn read_from_file(path: &Path) -> Result<Self, Box<dyn std::error::Error>> {

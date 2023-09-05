@@ -292,7 +292,6 @@ pub mod serialize;
 pub mod upsert;
 #[macro_use]
 pub mod sql_types;
-pub mod migration;
 pub mod row;
 
 #[cfg(feature = "mysql_backend")]

@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS __diesel_schema_migrations (
+CREATE TABLE IF NOT EXISTS {{migration_table}} (
        version VARCHAR(50) PRIMARY KEY NOT NULL,
        run_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

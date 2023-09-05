@@ -56,6 +56,7 @@ fn migration_literal_from_path(path: &Path) -> proc_macro2::TokenStream {
     let down_sql_path = path.join("down.sql");
     let metadata = TomlMetadata::read_from_file(&path.join("metadata.toml")).unwrap_or_default();
     let run_in_transaction = metadata.run_in_transaction;
+    let migration_table: Option<String> = metadata.migration_table;
 
     let down_sql = match down_sql_path.metadata() {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => quote! { None },
@@ -69,6 +70,6 @@ fn migration_literal_from_path(path: &Path) -> proc_macro2::TokenStream {
         include_str!(#up_sql_path),
         #down_sql,
         diesel_migrations::EmbeddedName::new(#name),
-        diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction)
+        diesel_migrations::TomlMetadataWrapper::new(#run_in_transaction, #migration_table)
     ))
 }

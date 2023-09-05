@@ -196,13 +196,14 @@ where
 fn revert_migration_with_output<Conn, DB>(
     conn: &mut Conn,
     migrations: FileBasedMigrations,
+    metadata: &Box<dyn MigrationMetadata>,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>>
 where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
     HarnessWithOutput::write_to_stdout(conn)
-        .revert_last_migration(migrations)
+        .revert_last_migration(migrations, metadata)
         .map(|_| ())
 }
 
@@ -214,6 +215,7 @@ where
     Conn: MigrationHarness<DB> + Connection<Backend = DB> + 'static,
     DB: Backend,
 {
+    // TODO push list migrations into diesel_migrations to hide metadata from the cli.
     let applied_migrations = conn
         .applied_migrations()?
         .into_iter()
@@ -289,12 +291,8 @@ fn redo_migrations<Conn, DB>(
         let number = std::cmp::min(*number as usize, applied_migrations.len());
         &applied_migrations[..number]
     };
-    let should_use_not_use_transaction = versions_to_revert.iter().any(|v| {
-        migrations
-            .get(v)
-            .map(|m| !m.metadata().run_in_transaction())
-            .unwrap_or_default()
-    });
+    let metadata = versions_to_revert.get(0).unwrap().metadata;
+    let should_use_not_use_transaction = !metadata.run_in_transaction();
 
     let migrations_inner =
         |harness: &mut HarnessWithOutput<Conn, _>|
@@ -306,7 +304,7 @@ fn redo_migrations<Conn, DB>(
                 let number = args.get_one::<u64>("REDO_NUMBER").unwrap();
                 (0..*number)
                     .filter_map(|_| {
-                        match harness.revert_last_migration(migrations_dir.clone()) {
+                        match harness.revert_last_migration(migrations_dir.clone(), metadata) {
                             Ok(v) => Some(Ok(v)),
                             Err(e) if e.is::<MigrationError>() => {
                                 match e.downcast_ref::<MigrationError>() {
