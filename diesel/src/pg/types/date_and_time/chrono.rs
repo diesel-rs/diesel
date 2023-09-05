@@ -65,7 +65,7 @@ impl ToSql<Timestamptz, Pg> for NaiveDateTime {
 impl FromSql<Timestamptz, Pg> for DateTime<Utc> {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let naive_date_time = <NaiveDateTime as FromSql<Timestamptz, Pg>>::from_sql(bytes)?;
-        Ok(DateTime::from_native_utc_and_offset(naive_date_time, Utc))
+        Ok(DateTime::from_naive_utc_and_offset(naive_date_time, Utc))
     }
 }
 
