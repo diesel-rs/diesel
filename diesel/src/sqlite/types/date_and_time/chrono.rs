@@ -195,7 +195,7 @@ impl FromSql<TimestamptzSqlite, Sqlite> for DateTime<Utc> {
         // Fallback on assuming Utc
         let naive_date_time =
             <NaiveDateTime as FromSql<TimestamptzSqlite, Sqlite>>::from_sql(value)?;
-        Ok(DateTime::from_utc(naive_date_time, Utc))
+        Ok(DateTime::from_native_utc_and_offset(naive_date_time, Utc))
     }
 }
 
