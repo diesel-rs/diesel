@@ -177,29 +177,9 @@ where
     /// parameter indicates if the constructed prepared statement will be cached or not.
     /// See the [module](self) documentation for details
     /// about which statements are cached and which are not cached.
+    // Note: This function is intentionally monomorphic over the "source" type.
     #[allow(unreachable_pub)]
-    pub fn cached_statement<T, F>(
-        &mut self,
-        source: &T,
-        backend: &DB,
-        bind_types: &[DB::TypeMetadata],
-        prepare_fn: F,
-    ) -> QueryResult<MaybeCached<'_, Statement>>
-    where
-        T: QueryFragment<DB> + QueryId,
-        F: FnOnce(&str, PrepareForCache) -> QueryResult<Statement>,
-    {
-        let mut f = Some(prepare_fn);
-        self.cached_statement_inner(T::query_id(), source, backend, bind_types, &mut |s, p| {
-            let f = f.take().unwrap();
-            f(s, p)
-        })
-    }
-
-    // Note: This function is a direct implementation of "cached_statement", but
-    // it is intentionally monomorphic over the "source" type.
-    #[inline(never)]
-    fn cached_statement_inner(
+    pub fn cached_statement(
         &mut self,
         maybe_type_id: Option<TypeId>,
         source: &dyn QueryFragment<DB>,
@@ -307,7 +287,6 @@ where
 {
     /// Create a new statement cache key for the given query source
     // Note: Intentionally monomorphic over source.
-    #[inline(never)]
     #[allow(unreachable_pub)]
     pub fn for_source(
         maybe_type_id: Option<TypeId>,
@@ -332,7 +311,6 @@ where
     /// This is an optimization that may skip constructing the query string
     /// twice if it's already part of the current cache key
     // Note: Intentionally monomorphic over source.
-    #[inline(never)]
     #[allow(unreachable_pub)]
     pub fn sql(&self, source: &dyn QueryFragment<DB>, backend: &DB) -> QueryResult<Cow<'_, str>> {
         match *self {
@@ -342,7 +320,6 @@ where
     }
 
     // Note: Intentionally monomorphic over source.
-    #[inline(never)]
     fn construct_sql(source: &dyn QueryFragment<DB>, backend: &DB) -> QueryResult<String> {
         let mut query_builder = DB::QueryBuilder::default();
         source.to_sql(&mut query_builder, backend)?;
