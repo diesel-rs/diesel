@@ -229,7 +229,7 @@ mod postgres {
             ts: (Bound::Included(dt), Bound::Unbounded),
             tstz: (
                 Bound::Unbounded,
-                Bound::Excluded(DateTime::<Utc>::from_utc(dt, Utc)),
+                Bound::Excluded(Utc.from_utc_datetime(&dt)),
             ),
             date: (Bound::Included(dt.date()), Bound::Unbounded),
         };
