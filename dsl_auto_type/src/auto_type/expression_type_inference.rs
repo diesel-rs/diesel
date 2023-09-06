@@ -312,12 +312,14 @@ impl TypeInferrer<'_> {
 
 fn litteral_type(t: &proc_macro2::Literal) -> Result<syn::Type, syn::Error> {
     let val = t.to_string();
-    let type_suffix = &val[val.find(|c: char| !c.is_ascii_digit()).ok_or_else(|| {
-        syn::Error::new_spanned(
-            t,
-            format_args!("Litterals must have type suffix for auto_type, e.g. {val}i64"),
-        )
-    })?..];
+    let type_suffix = &val[val
+        .find(|c: char| !c.is_ascii_digit() && c != '_')
+        .ok_or_else(|| {
+            syn::Error::new_spanned(
+                t,
+                format_args!("Litterals must have type suffix for auto_type, e.g. {val}i64"),
+            )
+        })?..];
     syn::parse_str(type_suffix)
         .map_err(|_| syn::Error::new_spanned(t, "Invalid type suffix for litteral"))
 }
