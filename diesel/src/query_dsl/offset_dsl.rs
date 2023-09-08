@@ -7,7 +7,7 @@ use crate::query_source::Table;
 /// to call `offset` from generic code.
 ///
 /// [`QueryDsl`]: crate::QueryDsl
-pub trait OffsetDsl {
+pub trait OffsetDsl<DummyArg = i64> {
     /// The type returned by `.offset`.
     type Output;
 

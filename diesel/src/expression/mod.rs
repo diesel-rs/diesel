@@ -53,7 +53,7 @@ pub(crate) mod dsl {
     use crate::dsl::SqlTypeOf;
 
     #[doc(inline)]
-    pub use super::case_when::*;
+    pub use super::case_when::case_when;
     #[doc(inline)]
     pub use super::count::*;
     #[doc(inline)]
@@ -65,6 +65,8 @@ pub(crate) mod dsl {
     #[doc(inline)]
     pub use super::functions::date_and_time::*;
     #[doc(inline)]
+    pub use super::helper_types::{CaseWhen, Otherwise, When};
+    #[doc(inline)]
     pub use super::not::not;
     #[doc(inline)]
     pub use super::sql_literal::sql;
@@ -73,21 +75,47 @@ pub(crate) mod dsl {
     pub use crate::pg::expression::dsl::*;
 
     /// The return type of [`count(expr)`](crate::dsl::count())
-    pub type count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
+    pub type Count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
+
+    #[doc(hidden)]
+    // cannot put deprecated on this because rustc then
+    // also reports the function as deprecated
+    #[cfg(any(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    pub type count<Expr> = Count<Expr>;
 
     /// The return type of [`count_star()`](crate::dsl::count_star())
-    pub type count_star = super::count::CountStar;
+    pub type CountStar = super::count::CountStar;
+
+    #[doc(hidden)]
+    // cannot put deprecated on this because rustc then
+    // also reports the function as deprecated
+    #[cfg(any(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    pub type count_star = CountStar;
 
     /// The return type of [`count_distinct()`](crate::dsl::count_distinct())
-    pub type count_distinct<Expr> = super::count::CountDistinct<SqlTypeOf<Expr>, Expr>;
+    pub type CountDistinct<Expr> = super::count::CountDistinct<SqlTypeOf<Expr>, Expr>;
+
+    #[doc(hidden)]
+    // cannot put deprecated on this because rustc then
+    // also reports the function as deprecated
+    #[cfg(any(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    pub type count_distinct<Expr> = CountDistinct<Expr>;
 
     /// The return type of [`date(expr)`](crate::dsl::date())
-    pub type date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
+    pub type Date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
+
+    #[doc(hidden)]
+    // cannot put deprecated on this because rustc then
+    // also reports the function as deprecated
+    #[cfg(any(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    pub type date<Expr> = Date<Expr>;
 
     #[cfg(feature = "mysql_backend")]
     pub use crate::mysql::query_builder::DuplicatedKeys;
 }
 
+#[doc(inline)]
+pub use self::case_when::CaseWhen;
 #[doc(inline)]
 pub use self::sql_literal::{SqlLiteral, UncheckedBind};
 

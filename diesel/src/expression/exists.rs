@@ -4,7 +4,7 @@
 use crate::backend::{sql_dialect, Backend, SqlDialect};
 use crate::expression::subselect::Subselect;
 use crate::expression::{AppearsOnTable, Expression, SelectableExpression, ValidGrouping};
-use crate::helper_types::exists;
+use crate::helper_types;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::sql_types::Bool;
@@ -32,7 +32,7 @@ use crate::sql_types::Bool;
 /// assert_eq!(Ok(false), jim_exists);
 /// # }
 /// ```
-pub fn exists<T>(query: T) -> exists<T> {
+pub fn exists<T>(query: T) -> helper_types::Exists<T> {
     Exists {
         subselect: Subselect::new(query),
     }

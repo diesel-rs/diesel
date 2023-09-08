@@ -8,10 +8,10 @@ use super::date_and_time::{AtTimeZone, DateTimeLike};
 use super::operators::*;
 use crate::dsl;
 use crate::expression::grouped::Grouped;
-use crate::expression::operators::{Asc, Desc};
+use crate::expression::operators::{Asc, Concat, Desc, Like, NotLike};
 use crate::expression::{AsExpression, Expression, IntoSql, TypedExpressionType};
 use crate::pg::expression::expression_methods::private::BinaryOrNullableBinary;
-use crate::sql_types::{Array, Binary, Inet, Integer, Jsonb, SqlType, Text, VarChar};
+use crate::sql_types::{Array, Inet, Integer, SqlType, Text, VarChar};
 use crate::EscapeExpressionMethods;
 
 /// PostgreSQL specific methods which are present on all expressions.
@@ -253,7 +253,7 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn contains<T>(self, other: T) -> dsl::ArrayContains<Self, T>
+    fn contains<T>(self, other: T) -> dsl::Contains<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
@@ -363,7 +363,7 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn index<T>(self, other: T) -> dsl::ArrayIndex<Self, T>
+    fn index<T>(self, other: T) -> dsl::Index<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Integer>,
@@ -409,12 +409,12 @@ pub trait PgArrayExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     ///
-    fn concat<T>(self, other: T) -> dsl::ConcatArray<Self, T>
+    fn concat<T>(self, other: T) -> dsl::Concat<Self, T>
     where
         Self::SqlType: SqlType,
         T: AsExpression<Self::SqlType>,
     {
-        Grouped(ConcatArray::new(self, other.as_expression()))
+        Grouped(Concat::new(self, other.as_expression()))
     }
 }
 
@@ -1303,11 +1303,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn concat<T>(self, other: T) -> dsl::ConcatJsonb<Self, T>
+    fn concat<T>(self, other: T) -> dsl::Concat<Self, T>
     where
-        T: AsExpression<Jsonb>,
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
     {
-        Grouped(ConcatJsonb::new(self, other.as_expression()))
+        Grouped(Concat::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL `?` expression.
@@ -1546,11 +1547,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// #     Ok(())
     /// # }
     /// ```
-    fn contains<T>(self, other: T) -> dsl::ContainsJsonb<Self, T>
+    fn contains<T>(self, other: T) -> dsl::Contains<Self, T>
     where
-        T: AsExpression<Jsonb>,
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
     {
-        Grouped(ContainsJsonb::new(self, other.as_expression()))
+        Grouped(Contains::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL `<@` expression.
@@ -1611,11 +1613,12 @@ pub trait PgJsonbExpressionMethods: Expression + Sized {
     /// # }
     /// ```
     #[allow(clippy::wrong_self_convention)] // This is named after the sql operator
-    fn is_contained_by<T>(self, other: T) -> dsl::IsContainedByJsonb<Self, T>
+    fn is_contained_by<T>(self, other: T) -> dsl::IsContainedBy<Self, T>
     where
-        T: AsExpression<Jsonb>,
+        Self::SqlType: SqlType,
+        T: AsExpression<Self::SqlType>,
     {
-        Grouped(IsContainedByJsonb::new(self, other.as_expression()))
+        Grouped(IsContainedBy::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL `-` expression.
@@ -2277,12 +2280,12 @@ pub trait PgBinaryExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(expected_names), names);
     /// # }
     /// ```
-    fn concat<T>(self, other: T) -> dsl::ConcatBinary<Self, T>
+    fn concat<T>(self, other: T) -> dsl::Concat<Self, T>
     where
         Self::SqlType: SqlType,
-        T: AsExpression<Binary>,
+        T: AsExpression<Self::SqlType>,
     {
-        Grouped(ConcatBinary::new(self, other.as_expression()))
+        Grouped(Concat::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL binary `LIKE` expression.
@@ -2327,12 +2330,12 @@ pub trait PgBinaryExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(vec![b"Sean".to_vec()]), starts_with_s);
     /// # }
     /// ```
-    fn like<T>(self, other: T) -> dsl::LikeBinary<Self, T>
+    fn like<T>(self, other: T) -> dsl::Like<Self, T>
     where
         Self::SqlType: SqlType,
-        T: AsExpression<Binary>,
+        T: AsExpression<Self::SqlType>,
     {
-        Grouped(LikeBinary::new(self, other.as_expression()))
+        Grouped(Like::new(self, other.as_expression()))
     }
 
     /// Creates a PostgreSQL binary `LIKE` expression.
@@ -2377,12 +2380,12 @@ pub trait PgBinaryExpressionMethods: Expression + Sized {
     /// assert_eq!(Ok(vec![b"Tess".to_vec()]), starts_with_s);
     /// # }
     /// ```
-    fn not_like<T>(self, other: T) -> dsl::NotLikeBinary<Self, T>
+    fn not_like<T>(self, other: T) -> dsl::NotLike<Self, T>
     where
         Self::SqlType: SqlType,
-        T: AsExpression<Binary>,
+        T: AsExpression<Self::SqlType>,
     {
-        Grouped(NotLikeBinary::new(self, other.as_expression()))
+        Grouped(NotLike::new(self, other.as_expression()))
     }
 }
 
@@ -2394,7 +2397,7 @@ where
 {
 }
 
-mod private {
+pub(in crate::pg) mod private {
     use crate::sql_types::{
         Array, Binary, Cidr, Inet, Integer, Json, Jsonb, Nullable, Range, SqlType, Text,
     };

@@ -7,8 +7,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
    = help: the following other types implement trait `MixedAggregates<Other>`:
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
-   = note: required for `(columns::id, CountStar)` to implement `ValidGrouping<()>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(columns::id, CountStar)>`
+   = note: required for `(columns::id, diesel::expression::count::CountStar)` to implement `ValidGrouping<()>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(columns::id, diesel::expression::count::CountStar)>`
 
 error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggregates<diesel::expression::is_aggregate::Yes>` is not satisfied
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:22:24

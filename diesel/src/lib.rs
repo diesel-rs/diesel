@@ -408,10 +408,10 @@ pub mod helper_types {
     pub type ThenOrderBy<Source, Ordering> = <Source as ThenOrderDsl<Ordering>>::Output;
 
     /// Represents the return type of [`.limit()`](crate::prelude::QueryDsl::limit)
-    pub type Limit<Source> = <Source as LimitDsl>::Output;
+    pub type Limit<Source, DummyArg = i64> = <Source as LimitDsl<DummyArg>>::Output;
 
     /// Represents the return type of [`.offset()`](crate::prelude::QueryDsl::offset)
-    pub type Offset<Source> = <Source as OffsetDsl>::Output;
+    pub type Offset<Source, DummyArg = i64> = <Source as OffsetDsl<DummyArg>>::Output;
 
     /// Represents the return type of [`.inner_join(rhs)`](crate::prelude::QueryDsl::inner_join)
     pub type InnerJoin<Source, Rhs> =
@@ -623,6 +623,39 @@ pub mod helper_types {
     #[deprecated(note = "Use `LoadQuery::RowIter` directly")]
     pub type LoadIter<'conn, 'query, Q, Conn, U, B = crate::connection::DefaultLoadingMode> =
         <Q as load_dsl::LoadQuery<'query, Conn, U, B>>::RowIter<'conn>;
+
+    /// Represents the return type of [`diesel::delete`]
+    pub type Delete<T> = crate::query_builder::DeleteStatement<
+        <T as HasTable>::Table,
+        <T as IntoUpdateTarget>::WhereClause,
+    >;
+
+    /// Represents the return type of [`diesel::insert_into`]
+    pub type InsertInto<T> = crate::query_builder::IncompleteInsertStatement<T>;
+
+    /// Represents the return type of [`diesel::insert_or_ignore_into`]
+    pub type InsertOrIgnoreInto<T> = crate::query_builder::IncompleteInsertOrIgnoreStatement<T>;
+
+    /// Represents the return type of [`diesel::replace_into`]
+    pub type ReplaceInto<T> = crate::query_builder::IncompleteReplaceStatement<T>;
+
+    /// Represents the return type of
+    /// [`IncompleteInsertStatement::values()`](crate::query_builder::IncompleteInsertStatement::values)
+    pub type Values<I, U> = crate::query_builder::InsertStatement<
+        <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+        <U as crate::Insertable<
+            <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Table,
+        >>::Values,
+        <I as crate::query_builder::insert_statement::InsertAutoTypeHelper>::Op,
+    >;
+
+    /// Represents the return type of
+    /// [`UpdateStatement::set()`](crate::query_builder::UpdateStatement::set)
+    pub type Set<U, V> = crate::query_builder::UpdateStatement<
+        <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Table,
+        <U as crate::query_builder::update_statement::UpdateAutoTypeHelper>::Where,
+        <V as crate::AsChangeset>::Changeset,
+    >;
 }
 
 pub mod prelude {

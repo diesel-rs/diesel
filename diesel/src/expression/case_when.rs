@@ -67,7 +67,7 @@ use super::{AsExpression, TypedExpressionType};
 /// assert_eq!(&[(1, Some(1)), (2, Some(2))], users_with_name.as_slice());
 /// # }
 /// ```
-pub fn case_when<C, T, ST>(condition: C, if_true: T) -> helper_types::case_when<C, T, ST>
+pub fn case_when<C, T, ST>(condition: C, if_true: T) -> helper_types::CaseWhen<C, T, ST>
 where
     C: Expression,
     <C as Expression>::SqlType: BoolOrNullableBool,

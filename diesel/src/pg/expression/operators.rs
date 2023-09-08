@@ -5,7 +5,7 @@ use crate::pg::Pg;
 use crate::query_builder::update_statement::changeset::AssignmentTarget;
 use crate::query_builder::{AstPass, QueryFragment, QueryId};
 use crate::sql_types::{
-    Array, Bigint, Binary, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
+    Array, Bigint, Bool, DieselNumericOps, Inet, Integer, Jsonb, SqlType, Text,
 };
 use crate::{Column, QueryResult};
 
@@ -27,12 +27,9 @@ infix_operator!(IsContainedByNetLoose, " <<= ", backend: Pg);
 infix_operator!(AndNet, " & ", Inet, backend: Pg);
 infix_operator!(OrNet, " | ", Inet, backend: Pg);
 infix_operator!(DifferenceNet, " - ", Bigint, backend: Pg);
-infix_operator!(ConcatJsonb, " || ", Jsonb, backend: Pg);
 infix_operator!(HasKeyJsonb, " ? ", backend: Pg);
 infix_operator!(HasAnyKeyJsonb, " ?| ", backend: Pg);
 infix_operator!(HasAllKeysJsonb, " ?& ", backend: Pg);
-infix_operator!(ContainsJsonb, " @> ", backend: Pg);
-infix_operator!(IsContainedByJsonb, " <@ ", backend: Pg);
 infix_operator!(RemoveFromJsonb, " - ", Jsonb, backend: Pg);
 __diesel_infix_operator!(
     RetrieveAsObjectJson,
@@ -49,15 +46,6 @@ __diesel_infix_operator!(
 );
 infix_operator!(RetrieveByPathAsTextJson, " #>> ", Text, backend: Pg);
 infix_operator!(RemoveByPathFromJsonb, " #-", Jsonb, backend: Pg);
-infix_operator!(ConcatBinary, " || ", Binary, backend: Pg);
-infix_operator!(LikeBinary, " LIKE ", backend: Pg);
-infix_operator!(NotLikeBinary, " NOT LIKE ", backend: Pg);
-__diesel_infix_operator!(
-    ConcatArray,
-    " || ",
-    __diesel_internal_SameResultAsInput,
-    backend: Pg
-);
 
 #[derive(Debug, Clone, Copy, QueryId, DieselNumericOps, ValidGrouping)]
 #[doc(hidden)]

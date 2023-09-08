@@ -1543,7 +1543,7 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
     }
 }
 
-/// This derives implements [`diesel::Connection`] and related traits for an enum of
+/// This derives implements `diesel::Connection` and related traits for an enum of
 /// connections to different databases.
 ///
 /// By applying this derive to such an enum, you can use the enum as a connection type in
@@ -1552,12 +1552,12 @@ pub fn table_proc(input: TokenStream) -> TokenStream {
 /// `diesel::Connection` and a number of related traits. Connection types form Diesel itself
 /// as well as third party connection types are supported by this derive.
 ///
-/// The implementation of [`diesel::Connection::establish`] tries to establish
+/// The implementation of `diesel::Connection::establish` tries to establish
 /// a new connection with the given connection string in the order the connections
 /// are specified in the enum. If one connection fails, it tries the next one and so on.
 /// That means that as soon as more than one connection type accepts a certain connection
 /// string the first matching type in your enum will always establish the connection. This
-/// is especially important if one of the connection types is [`diesel::SqliteConnection`]
+/// is especially important if one of the connection types is `diesel::SqliteConnection`
 /// as this connection type accepts arbitrary paths. It should normally place as last entry
 /// in your enum. If you want control of which connection type is created, just construct the
 /// corresponding enum manually by first establishing the connection via the inner type and then
@@ -1677,6 +1677,20 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 /// #     Ok(())
 /// # }
 /// ```
+/// # Limitations
+///
+/// While this attribute tries to support as much of diesels built-in DSL as possible it's unfortunally not
+/// possible to support everything. Notable unsupported types are:
+///
+/// * Update statements
+/// * Insert from select statements
+/// * Select statements without from clause
+/// * Query constructed by `diesel::sql_query`
+/// * Expressions using `diesel::dsl::sql`
+///
+/// For this cases a manual type annotation is required. See the "Annotating Types" section below
+/// for details.
+///
 ///
 /// # Advanced usage
 ///
@@ -1751,7 +1765,7 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 ///     // If we didn't specify the type for this query fragment, the macro would infer it as
 ///     // `user_has_post_with_id_greater_than<i32>`, which would be incorrect because there is
 ///     // no generic parameter.
-///     let filter: user_has_post_with_id_greater_than =
+///     let filter: UserHasPostWithIdGreaterThan =
 ///         user_has_post_with_id_greater_than(id_greater_than);
 ///     // The macro inferring that it has to pass generic parameters is still the convention
 ///     // because it's the most general case, as well as the common case within Diesel itself,
@@ -1792,4 +1806,4 @@ pub fn auto_type(
 }
 
 const AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::UpperCamel;
-const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::DoNotChange;
+const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::UpperCamel;

@@ -19,6 +19,8 @@ use crate::result::QueryResult;
 use crate::{insertable::*, QuerySource};
 use std::marker::PhantomData;
 
+pub(crate) use self::private::InsertAutoTypeHelper;
+
 #[cfg(feature = "sqlite")]
 mod insert_with_default_for_sqlite;
 
@@ -533,5 +535,15 @@ mod private {
             out.push_sql("REPLACE");
             Ok(())
         }
+    }
+
+    pub trait InsertAutoTypeHelper {
+        type Table;
+        type Op;
+    }
+
+    impl<T, Op> InsertAutoTypeHelper for crate::query_builder::IncompleteInsertStatement<T, Op> {
+        type Table = T;
+        type Op = Op;
     }
 }
