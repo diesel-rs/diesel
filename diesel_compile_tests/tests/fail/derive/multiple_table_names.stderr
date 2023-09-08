@@ -25,10 +25,3 @@ error: expected a single table name attribute
    |
 52 | #[diesel(table_name = users_)]
    |          ^^^^^^^^^^
-
-error: expected a single table name attribute
-       note: remove this attribute
-  --> tests/fail/derive/multiple_table_names.rs:59:30
-   |
-59 | #[diesel(table_name = users, table_name = users_)]
-   |                              ^^^^^^^^^^
