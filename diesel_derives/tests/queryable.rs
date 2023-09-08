@@ -39,3 +39,27 @@ fn tuple_struct_without_column_name_annotations() {
     let data = select(sql::<(Integer, Integer)>("1, 2")).get_result(conn);
     assert_eq!(Ok(MyStruct(1, 2)), data);
 }
+
+#[test]
+fn multiple_tables() {
+    #[derive(Debug, Clone, PartialEq, Eq, Queryable)]
+    #[diesel(table_name = users)]
+    #[diesel(table_name = users_)]
+    struct NewUser {
+        name: String,
+        hair_color: String,
+    }
+
+    let conn = &mut connection();
+    let data = select(sql::<(diesel::sql_types::Text, diesel::sql_types::Text)>(
+        "'red', 'red'",
+    ))
+    .get_result(conn);
+    assert_eq!(
+        Ok(NewUser {
+            name: "red".to_string(),
+            hair_color: "red".to_string()
+        }),
+        data
+    );
+}

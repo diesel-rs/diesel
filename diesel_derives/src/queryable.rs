@@ -7,7 +7,7 @@ use crate::model::Model;
 use crate::util::wrap_in_dummy_mod;
 
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
-    let model = Model::from_item(&item, false, false)?;
+    let model = Model::from_item(&item, false, true)?;
 
     let struct_name = &item.ident;
     let field_ty = &model
