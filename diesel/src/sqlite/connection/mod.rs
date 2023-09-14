@@ -1,3 +1,4 @@
+#![allow(unsafe_code)] // ffi calls
 extern crate libsqlite3_sys as ffi;
 
 mod bind_collector;
@@ -406,6 +407,32 @@ impl SqliteConnection {
             .register_collation_function(collation_name, collation)
     }
 
+    pub fn deserialize_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
+        let db_ptr = self.raw_connection.internal_connection.as_ptr();
+        let data_ptr = data.as_ptr() as *mut u8;
+        let data_len = data.len() as i64;
+
+        unsafe {
+            let result = ffi::sqlite3_deserialize(
+                db_ptr,
+                std::ptr::null(),
+                data_ptr,
+                data_len,
+                data_len,
+                ffi::SQLITE_DESERIALIZE_READONLY as u32,
+            );
+
+            if result == ffi::SQLITE_ERROR {
+                Err(Error::DatabaseError(
+                    DatabaseErrorKind::UnableToSendCommand,
+                    Box::new("Failed to load database from buffer".to_string()),
+                ))
+            } else {
+                Ok(())
+            }
+        }
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -435,6 +462,24 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::Integer;
+
+    #[test]
+    fn database_deserializes_successfully() {
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        let data = include_bytes!("sqlite_test.db");
+        connection.deserialize_database_from_buffer(data).unwrap();
+
+        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+        let actual_users = query.load::<(i32, String, String)>(connection).unwrap();
+
+        let expected_users = vec![
+            (1, "John Doe".to_string(), "john.doe@example.com".to_string()),
+            (2, "Jane Doe".to_string(), "jane.doe@example.com".to_string()),
+            (3, "Alice Smith".to_string(), "alice.smith@example.com".to_string()),
+        ];
+
+        assert_eq!(expected_users, actual_users);
+    }
 
     #[test]
     fn prepared_statements_are_cached_when_run() {
