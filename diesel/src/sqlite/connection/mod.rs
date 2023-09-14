@@ -416,20 +416,6 @@ impl SqliteConnection {
     /// # Errors
     ///
     /// This function will return `Err` if the deserialization fails.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use diesel::sqlite::SqliteConnection;
-    /// # use diesel::result::QueryResult;
-    /// #
-    /// # fn main() -> QueryResult<()> {
-    /// #     let mut conn = SqliteConnection::establish(":memory:")?;
-    /// #     let data = include_bytes!("my_database.db");
-    /// #     conn.deserialize_database_from_buffer(data)?;
-    /// #     Ok(())
-    /// # }
-    /// ```
     pub fn deserialize_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
         let db_ptr = self.raw_connection.internal_connection.as_ptr();
         let data_ptr = data.as_ptr() as *mut u8;
