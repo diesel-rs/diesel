@@ -407,15 +407,11 @@ impl SqliteConnection {
             .register_collation_function(collation_name, collation)
     }
 
-    /// Deserialize an SQLite database from a byte buffer.
+    /// Deserialize anz SQLite database from a byte buffer.
     ///
     /// This function takes a byte slice and attempts to deserialize it into a SQLite database.
     /// If successful, the database is loaded into the connection. If the deserialization fails,
     /// an error is returned.
-    ///
-    /// # Safety
-    ///
-    /// This function is marked as unsafe because it uses ffi (`sqlite3_deserialize` function).
     ///
     /// # Errors
     ///
@@ -434,27 +430,29 @@ impl SqliteConnection {
     /// #     Ok(())
     /// # }
     /// ```
-    pub unsafe fn deserialize_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
+    pub fn deserialize_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
         let db_ptr = self.raw_connection.internal_connection.as_ptr();
         let data_ptr = data.as_ptr() as *mut u8;
         let data_len = data.len() as i64;
 
-        let result = ffi::sqlite3_deserialize(
-            db_ptr,
-            std::ptr::null(),
-            data_ptr,
-            data_len,
-            data_len,
-            ffi::SQLITE_DESERIALIZE_READONLY as u32,
-        );
+        unsafe {
+            let result = ffi::sqlite3_deserialize(
+                db_ptr,
+                std::ptr::null(),
+                data_ptr,
+                data_len,
+                data_len,
+                ffi::SQLITE_DESERIALIZE_READONLY as u32,
+            );
 
-        if result == ffi::SQLITE_ERROR {
-            Err(Error::DatabaseError(
-                DatabaseErrorKind::UnableToSendCommand,
-                Box::new("Failed to load database from buffer".to_string()),
-            ))
-        } else {
-            Ok(())
+            if result == ffi::SQLITE_ERROR {
+                Err(Error::DatabaseError(
+                    DatabaseErrorKind::UnableToSendCommand,
+                    Box::new("Failed to load database from buffer".to_string()),
+                ))
+            } else {
+                Ok(())
+            }
         }
     }
 
