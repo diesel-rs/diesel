@@ -407,7 +407,7 @@ impl SqliteConnection {
             .register_collation_function(collation_name, collation)
     }
 
-    /// Deserialize anz SQLite database from a byte buffer.
+    /// Deserialize an SQLite database from a byte buffer.
     ///
     /// This function takes a byte slice and attempts to deserialize it into a SQLite database.
     /// If successful, the database is loaded into the connection. If the deserialization fails,
