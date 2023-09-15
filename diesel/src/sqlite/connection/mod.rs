@@ -434,22 +434,22 @@ impl SqliteConnection {
     /// # use diesel::sql_query;
     /// # use diesel::Connection;
     /// # use diesel::RunQueryDsl;
-    /// # fn main() -> QueryResult<()> {
+    /// # fn main() {
     /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///
     /// sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
-    ///     .execute(connection)?;
+    ///     .execute(connection).unwrap();
     /// sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
-    ///     .execute(connection)?;
+    ///     .execute(connection).unwrap();
     ///
     /// // Serialize the database to a byte vector
     /// let serialized_db: Vec<u8> = connection.serialize_database_to_buffer().to_vec();
     ///
     /// // Create a new in-memory SQLite database
-    /// let connection = &mut SqliteConnection::establish(":memory:")?;
+    /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///
     /// // Deserialize the byte vector into the new database
-    /// connection.deserialize_readonly_database_from_buffer(&serialized_db)?;
+    /// connection.deserialize_readonly_database_from_buffer(&serialized_db).unwrap();
     /// # Ok(())
     /// # }
     /// ```
