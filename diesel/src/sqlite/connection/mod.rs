@@ -450,7 +450,7 @@ impl SqliteConnection {
     /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///
     /// // Deserialize the byte vector into the new database
-    /// connection.deserialize_readonly_database_from_buffer(&serialized_db).unwrap();
+    /// connection.deserialize_readonly_database_from_buffer(serialized_db.as_slice()).unwrap();
     /// #
     /// # }
     /// ```
