@@ -434,7 +434,7 @@ impl SqliteConnection {
     /// # use diesel::sql_query;
     /// # use diesel::Connection;
     /// # fn main() -> QueryResult<()> {
-    /// let connection = &mut SqliteConnection::establish(":memory:")?;
+    /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///
     /// sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
     ///     .execute(connection)?;
