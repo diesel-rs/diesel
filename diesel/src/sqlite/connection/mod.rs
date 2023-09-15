@@ -435,6 +435,7 @@ impl SqliteConnection {
     /// # use diesel::sql_query;
     /// # use diesel::Connection;
     /// # use diesel::RunQueryDsl;
+    /// # use crate::sqlite::types::serialized_database::SerializedDatabase;
     /// # fn main() {
     /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///
