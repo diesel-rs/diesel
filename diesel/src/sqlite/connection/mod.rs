@@ -431,12 +431,12 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```no_run
+    /// # use diesel::sqlite::SerializedDatabase;
     /// # use diesel::sqlite::SqliteConnection;
     /// # use diesel::result::QueryResult;
     /// # use diesel::sql_query;
     /// # use diesel::Connection;
     /// # use diesel::RunQueryDsl;
-    /// # use diesel::sqlite::connection::serialized_database::SerializedDatabase;
     /// # fn main() {
     /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///
