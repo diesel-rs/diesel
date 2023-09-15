@@ -450,7 +450,7 @@ impl SqliteConnection {
     ///
     /// // Deserialize the byte vector into the new database
     /// connection.deserialize_readonly_database_from_buffer(&serialized_db).unwrap();
-    /// # ()
+    /// #
     /// # }
     /// ```
     pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
