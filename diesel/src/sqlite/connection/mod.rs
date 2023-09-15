@@ -429,10 +429,26 @@ impl SqliteConnection {
     /// # Example
     ///
     /// ```no_run
-    /// # fn main() {
-    /// let serialized_db = include_bytes!("example.db");;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # use diesel::result::QueryResult;
+    /// # use diesel::sql_query;
+    /// # fn main() -> QueryResult<()> {
     /// let connection = &mut SqliteConnection::establish(":memory:")?;
-    /// connection.deserialize_readonly_database_from_buffer(&serialized_data)?;
+    ///
+    /// sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+    ///     .execute(connection)?;
+    /// sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+    ///     .execute(connection)?;
+    ///
+    /// // Serialize the database to a byte vector
+    /// let serialized_db: Vec<u8> = connection.serialize_database_to_buffer().to_vec();
+    ///
+    /// // Create a new in-memory SQLite database
+    /// let connection = &mut SqliteConnection::establish(":memory:")?;
+    ///
+    /// // Deserialize the byte vector into the new database
+    /// connection.deserialize_readonly_database_from_buffer(&serialized_db)?;
+    /// # Ok(())
     /// # }
     /// ```
     pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
