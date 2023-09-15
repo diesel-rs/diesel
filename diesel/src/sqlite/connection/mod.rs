@@ -433,6 +433,7 @@ impl SqliteConnection {
     /// # use diesel::result::QueryResult;
     /// # use diesel::sql_query;
     /// # use diesel::Connection;
+    /// # use diesel::RunQueryDsl;
     /// # fn main() -> QueryResult<()> {
     /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///
@@ -484,7 +485,6 @@ mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
-    use crate::sql_query;
     use crate::sql_types::Integer;
 
     #[test]
@@ -503,9 +503,10 @@ mod tests {
         ];
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        let _ = sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
-            .execute(connection);
-        let _ = sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+        let _ =
+            crate::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+                .execute(connection);
+        let _ = crate::sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
             .execute(connection);
 
         let serialized_data = connection.serialize_database_to_buffer();
