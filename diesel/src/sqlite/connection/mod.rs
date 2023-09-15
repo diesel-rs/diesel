@@ -11,12 +11,12 @@ mod stmt;
 
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
 
 use self::raw::RawConnection;
-use self::serialized_database::SerializedDatabase;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
