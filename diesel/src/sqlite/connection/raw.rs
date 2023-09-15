@@ -185,6 +185,34 @@ impl RawConnection {
         result
     }
 
+    pub(super) fn serialize(&mut self) -> &[u8] {
+        unsafe {
+            let mut size: ffi::sqlite3_int64 = 0;
+            let data_ptr = ffi::sqlite3_serialize(
+                self.internal_connection.as_ptr(),
+                std::ptr::null(),
+                &mut size as *mut _,
+                0,
+            );
+            std::slice::from_raw_parts(data_ptr, size as usize)
+        }
+    }
+
+    pub(super) fn deserialize(&mut self, data: &[u8]) -> QueryResult<()> {
+        unsafe {
+            let result = ffi::sqlite3_deserialize(
+                self.internal_connection.as_ptr(),
+                std::ptr::null(),
+                data.as_ptr() as *mut u8,
+                data.len() as i64,
+                data.len() as i64,
+                ffi::SQLITE_DESERIALIZE_READONLY as u32,
+            );
+
+            ensure_sqlite_ok(result, self.internal_connection.as_ptr())
+        }
+    }
+
     fn get_fn_name(fn_name: &str) -> Result<CString, NulError> {
         CString::new(fn_name)
     }

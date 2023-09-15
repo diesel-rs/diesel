@@ -1,4 +1,3 @@
-#![allow(unsafe_code)] // ffi calls
 extern crate libsqlite3_sys as ffi;
 
 mod bind_collector;
@@ -407,39 +406,37 @@ impl SqliteConnection {
             .register_collation_function(collation_name, collation)
     }
 
+    /// Serialize the current SQLite database into a byte buffer.
+    ///
+    /// The serialized data is identical to the data that would be written to disk if the database
+    /// was saved in a file.
+    ///
+    /// # Returns
+    ///
+    /// This function returns a byte slice representing the serialized database.
+    pub fn serialize_database_to_buffer(&mut self) -> &[u8] {
+        self.raw_connection.serialize()
+    }
+
     /// Deserialize an SQLite database from a byte buffer.
     ///
     /// This function takes a byte slice and attempts to deserialize it into a SQLite database.
     /// If successful, the database is loaded into the connection. If the deserialization fails,
     /// an error is returned.
     ///
-    /// # Errors
+    /// The database is opened in READONLY mode.
     ///
-    /// This function will return `Err` if the deserialization fails.
-    pub fn deserialize_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
-        let db_ptr = self.raw_connection.internal_connection.as_ptr();
-        let data_ptr = data.as_ptr() as *mut u8;
-        let data_len = data.len() as i64;
-
-        unsafe {
-            let result = ffi::sqlite3_deserialize(
-                db_ptr,
-                std::ptr::null(),
-                data_ptr,
-                data_len,
-                data_len,
-                ffi::SQLITE_DESERIALIZE_READONLY as u32,
-            );
-
-            if result == ffi::SQLITE_ERROR {
-                Err(Error::DatabaseError(
-                    DatabaseErrorKind::UnableToSendCommand,
-                    Box::new("Failed to load database from buffer".to_string()),
-                ))
-            } else {
-                Ok(())
-            }
-        }
+    /// # Example
+    ///
+    /// ```no_run
+    /// # fn main() {
+    /// let serialized_db = include_bytes!("example.db");;
+    /// let connection = &mut SqliteConnection::establish(":memory:")?;
+    /// connection.deserialize_readonly_database_from_buffer(&serialized_data)?;
+    /// # }
+    /// ```
+    pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
+        self.raw_connection.deserialize(data)
     }
 
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
@@ -470,17 +467,11 @@ mod tests {
     use super::*;
     use crate::dsl::sql;
     use crate::prelude::*;
+    use crate::sql_query;
     use crate::sql_types::Integer;
 
     #[test]
-    fn database_deserializes_successfully() {
-        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        let data = include_bytes!("sqlite_test.db");
-        connection.deserialize_database_from_buffer(data).unwrap();
-
-        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
-        let actual_users = query.load::<(i32, String, String)>(connection).unwrap();
-
+    fn database_serializes_and_deserializes_successfully() {
         let expected_users = vec![
             (
                 1,
@@ -492,12 +483,23 @@ mod tests {
                 "Jane Doe".to_string(),
                 "jane.doe@example.com".to_string(),
             ),
-            (
-                3,
-                "Alice Smith".to_string(),
-                "alice.smith@example.com".to_string(),
-            ),
         ];
+
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        let _ = sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+            .execute(connection);
+        let _ = sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+            .execute(connection);
+
+        let serialized_data = connection.serialize_database_to_buffer();
+
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .deserialize_readonly_database_from_buffer(&serialized_data)
+            .unwrap();
+
+        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+        let actual_users = query.load::<(i32, String, String)>(connection).unwrap();
 
         assert_eq!(expected_users, actual_users);
     }
