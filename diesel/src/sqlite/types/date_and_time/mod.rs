@@ -153,11 +153,11 @@ mod tests {
     }
 
     fn eq_datetime_utc(left: OffsetDateTime, right: DateTime<Utc>) -> bool {
-        left.unix_timestamp_nanos() == right.timestamp_nanos() as i128
+        left.unix_timestamp_nanos() == right.timestamp_nanos_opt().unwrap() as i128
     }
 
     fn eq_datetime_offset(left: OffsetDateTime, right: DateTime<FixedOffset>) -> bool {
-        left.unix_timestamp_nanos() == right.timestamp_nanos() as i128
+        left.unix_timestamp_nanos() == right.timestamp_nanos_opt().unwrap() as i128
     }
 
     fn create_tables(conn: &mut SqliteConnection) {
