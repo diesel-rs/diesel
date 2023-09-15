@@ -26,6 +26,7 @@ use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
+use crate::sqlite::types::serialized_database::SerializedDatabase;
 use crate::sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
@@ -414,7 +415,7 @@ impl SqliteConnection {
     /// # Returns
     ///
     /// This function returns a byte slice representing the serialized database.
-    pub fn serialize_database_to_buffer(&mut self) -> &[u8] {
+    pub fn serialize_database_to_buffer(&mut self) -> SerializedDatabase {
         self.raw_connection.serialize()
     }
 
@@ -443,7 +444,7 @@ impl SqliteConnection {
     ///     .execute(connection).unwrap();
     ///
     /// // Serialize the database to a byte vector
-    /// let serialized_db: Vec<u8> = connection.serialize_database_to_buffer().to_vec();
+    /// let serialized_db: SerializedDatabase = connection.serialize_database_to_buffer();
     ///
     /// // Create a new in-memory SQLite database
     /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
@@ -509,11 +510,11 @@ mod tests {
         let _ = crate::sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
             .execute(connection);
 
-        let serialized_data = connection.serialize_database_to_buffer();
+        let serialized_database = connection.serialize_database_to_buffer();
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         connection
-            .deserialize_readonly_database_from_buffer(serialized_data)
+            .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
             .unwrap();
 
         let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");

@@ -15,6 +15,7 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
+use crate::sqlite::types::serialized_database::SerializedDatabase;
 
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).
@@ -185,7 +186,7 @@ impl RawConnection {
         result
     }
 
-    pub(super) fn serialize(&mut self) -> &[u8] {
+    pub(super) fn serialize(&mut self) -> SerializedDatabase {
         unsafe {
             let mut size: ffi::sqlite3_int64 = 0;
             let data_ptr = ffi::sqlite3_serialize(
@@ -194,7 +195,7 @@ impl RawConnection {
                 &mut size as *mut _,
                 0,
             );
-            std::slice::from_raw_parts(data_ptr, size as usize)
+            SerializedDatabase::new(data_ptr, size as usize)
         }
     }
 
