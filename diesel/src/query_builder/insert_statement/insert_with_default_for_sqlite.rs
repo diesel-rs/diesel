@@ -338,6 +338,7 @@ where
             target: query.target,
             returning: query.returning,
             into_clause: query.into_clause,
+            schema_name: query.schema_name,
         };
         query.execute(conn)
     }

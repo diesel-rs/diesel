@@ -26,6 +26,7 @@ use crate::query_builder::{
 use crate::query_dsl::methods::*;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_dsl::*;
+use crate::query_dsl::schema_name_dsl::SchemaNameDsl;
 use crate::query_source::joins::{Join, JoinOn, JoinTo};
 use crate::query_source::QuerySource;
 use crate::sql_types::{BigInt, BoolOrNullableBool};
@@ -681,6 +682,28 @@ where
             self.limit_offset,
             self.group_by,
             HavingClause(predicate),
+            self.locking,
+        )
+    }
+}
+
+impl<F, S, D, W, O, LOf, G, H> SchemaNameDsl
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>
+where
+  F: QuerySource,
+{
+    type Output = SelectStatement<FromClause<F>, S, D, W, O, LOf, G, H>;
+
+    fn schema_name(self, schema_name: &String) -> Self::Output {
+        SelectStatement::new(
+            self.select,
+            self.from.set_schema_name(schema_name),
+            self.distinct,
+            self.where_clause,
+            self.order,
+            self.limit_offset,
+            self.group_by,
+            self.having,
             self.locking,
         )
     }

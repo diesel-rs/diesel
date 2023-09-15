@@ -55,6 +55,7 @@ where
 #[doc(hidden)]
 pub struct FromClause<F: QuerySource> {
     pub(crate) source: F,
+    pub(crate) schema_name: Option<String>,
     pub(crate) from_clause: F::FromClause,
 }
 
@@ -78,13 +79,6 @@ where
     const HAS_STATIC_QUERY_ID: bool = F::HAS_STATIC_QUERY_ID;
 }
 
-impl<F> Copy for FromClause<F>
-where
-    F: QuerySource + Copy,
-    F::FromClause: Copy,
-{
-}
-
 impl<F> Clone for FromClause<F>
 where
     F: QuerySource + Clone,
@@ -93,6 +87,7 @@ where
     fn clone(&self) -> Self {
         Self {
             source: self.source.clone(),
+            schema_name: self.schema_name.clone(),
             from_clause: self.from_clause.clone(),
         }
     }
@@ -114,8 +109,17 @@ impl<F: QuerySource> FromClause<F> {
     pub(crate) fn new(qs: F) -> Self {
         Self {
             from_clause: qs.from_clause(),
+            schema_name: None,
             source: qs,
         }
+    }
+
+    pub(crate) fn set_schema_name(self, schema_name: &String) -> Self {
+      Self {
+        from_clause: self.from_clause,
+        schema_name: Some(schema_name.to_owned()),
+        source: self.source,
+      }
     }
 }
 
@@ -127,6 +131,7 @@ where
 {
     fn walk_ast<'b>(&'b self, mut pass: AstPass<'_, 'b, DB>) -> QueryResult<()> {
         pass.push_sql(" FROM ");
+        self.schema_name.as_ref().map(|schema| pass.push_sql(format!("{}.", schema).as_str()));
         self.from_clause.walk_ast(pass)
     }
 }

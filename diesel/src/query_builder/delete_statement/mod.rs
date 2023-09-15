@@ -198,6 +198,14 @@ impl<T: QuerySource, U> DeleteStatement<T, U, NoReturningClause> {
     {
         BoxedDsl::internal_into_boxed(self)
     }
+
+    pub fn schema_name(self, schema_name: &String) -> Self {
+      DeleteStatement {
+          from_clause: self.from_clause.set_schema_name(schema_name),
+          where_clause: self.where_clause,
+          returning: self.returning,
+      }
+    }
 }
 
 impl<T, U, Ret, Predicate> FilterDsl<Predicate> for DeleteStatement<T, U, Ret>
