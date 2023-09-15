@@ -432,6 +432,7 @@ impl SqliteConnection {
     /// # use diesel::sqlite::SqliteConnection;
     /// # use diesel::result::QueryResult;
     /// # use diesel::sql_query;
+    /// # use diesel::Connection;
     /// # fn main() -> QueryResult<()> {
     /// let connection = &mut SqliteConnection::establish(":memory:")?;
     ///
@@ -511,7 +512,7 @@ mod tests {
 
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         connection
-            .deserialize_readonly_database_from_buffer(&serialized_data)
+            .deserialize_readonly_database_from_buffer(serialized_data)
             .unwrap();
 
         let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
