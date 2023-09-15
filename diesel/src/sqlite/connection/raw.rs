@@ -8,6 +8,7 @@ use std::ptr::NonNull;
 use std::{mem, ptr, slice, str};
 
 use super::functions::{build_sql_function_args, process_sql_function_result};
+use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
@@ -15,7 +16,6 @@ use crate::result::Error::DatabaseError;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
-use crate::sqlite::types::serialized_database::SerializedDatabase;
 
 /// For use in FFI function, which cannot unwind.
 /// Print the message, ask to open an issue at Github and [`abort`](std::process::abort).

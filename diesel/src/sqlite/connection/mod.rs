@@ -4,6 +4,7 @@ mod bind_collector;
 mod functions;
 mod raw;
 mod row;
+mod serialized_database;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
@@ -15,6 +16,7 @@ pub use self::sqlite_value::SqliteValue;
 use std::os::raw as libc;
 
 use self::raw::RawConnection;
+use self::serialized_database::SerializedDatabase;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
@@ -26,7 +28,6 @@ use crate::query_builder::*;
 use crate::result::*;
 use crate::serialize::ToSql;
 use crate::sql_types::HasSqlType;
-use crate::sqlite::types::serialized_database::SerializedDatabase;
 use crate::sqlite::Sqlite;
 
 /// Connections for the SQLite backend. Unlike other backends, SQLite supported
@@ -435,7 +436,7 @@ impl SqliteConnection {
     /// # use diesel::sql_query;
     /// # use diesel::Connection;
     /// # use diesel::RunQueryDsl;
-    /// # use diesel::sqlite::types::serialized_database::SerializedDatabase;
+    /// # use diesel::sqlite::connection::serialized_database::SerializedDatabase;
     /// # fn main() {
     /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
     ///

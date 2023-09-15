@@ -1,6 +1,5 @@
 mod date_and_time;
 mod numeric;
-pub mod serialized_database;
 
 use super::connection::SqliteValue;
 use super::Sqlite;
