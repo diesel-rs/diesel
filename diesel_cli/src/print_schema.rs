@@ -47,7 +47,8 @@ pub fn run_print_schema<W: IoWrite>(
     config: &config::PrintSchema,
     output: &mut W,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
-    let schema = output_schema(connection, config)?;
+    let (schema, _table_names, _table_data, _foreign_keys, _backend) =
+        output_schema(connection, config)?;
 
     output.write_all(schema.as_bytes())?;
     Ok(())
@@ -143,28 +144,24 @@ fn sqlite_diesel_types() -> HashSet<&'static str> {
     types
 }
 
-pub fn output_schema(
-    connection: &mut InferConnection,
+pub fn output_sub_schema(
     config: &config::PrintSchema,
+    table_names: Vec<TableName>,
+    table_data: Vec<TableData>,
+    foreign_keys: Vec<ForeignKeyConstraint>,
+    backend: Backend,
 ) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
-    let table_names = filter_table_names(
-        load_table_names(connection, config.schema_name())?,
-        &config.filter,
-    );
-
-    let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
-    let foreign_keys =
-        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, &table_names);
-    let table_data = table_names
+    let table_names = filter_table_names(table_names, &config.filter);
+    let table_data: Vec<TableData> = table_data
         .into_iter()
-        .map(|t| load_table_data(connection, t, &config.column_sorting, config.with_docs))
-        .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync + 'static>>>()?;
-
+        .filter(|t| table_names.contains(&t.name))
+        .collect();
+    let foreign_keys = foreign_keys
+        .into_iter()
+        .filter(|fk| table_names.contains(&fk.child_table))
+        .filter(|fk| table_names.contains(&fk.parent_table))
+        .collect();
     let mut out = String::new();
-    writeln!(out, "{SCHEMA_HEADER}")?;
-
-    let backend = Backend::for_connection(connection);
-
     let columns_custom_types = if config.generate_missing_sql_type_definitions() {
         let diesel_provided_types = match backend {
             #[cfg(feature = "postgres")]
@@ -233,6 +230,7 @@ pub fn output_schema(
         import_types: config.import_types(),
     };
 
+    writeln!(out, "{SCHEMA_HEADER}")?;
     if let Some(schema_name) = config.schema_name() {
         write!(out, "{}", ModuleDefinition(schema_name, definitions))?;
     } else {
@@ -258,6 +256,139 @@ pub fn output_schema(
     }
 
     Ok(out)
+}
+
+pub fn output_schema(
+    connection: &mut InferConnection,
+    config: &config::PrintSchema,
+) -> Result<
+    (
+        String,
+        Vec<TableName>,
+        Vec<TableData>,
+        Vec<ForeignKeyConstraint>,
+        Backend,
+    ),
+    Box<dyn Error + Send + Sync + 'static>,
+> {
+    let table_names = filter_table_names(
+        load_table_names(connection, config.schema_name())?,
+        &config.filter,
+    );
+
+    let foreign_keys = load_foreign_key_constraints(connection, config.schema_name())?;
+    let foreign_keys =
+        remove_unsafe_foreign_keys_for_codegen(connection, &foreign_keys, &table_names);
+    let table_data = table_names
+        .clone()
+        .into_iter()
+        .map(|t| load_table_data(connection, t, &config.column_sorting, config.with_docs))
+        .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync + 'static>>>()?;
+
+    let mut out = String::new();
+
+    let backend = Backend::for_connection(connection);
+
+    let columns_custom_types = if config.generate_missing_sql_type_definitions() {
+        let diesel_provided_types = match backend {
+            #[cfg(feature = "postgres")]
+            Backend::Pg => pg_diesel_types(),
+            #[cfg(feature = "sqlite")]
+            Backend::Sqlite => sqlite_diesel_types(),
+            #[cfg(feature = "mysql")]
+            Backend::Mysql => mysql_diesel_types(),
+        };
+
+        Some(
+            table_data
+                .iter()
+                .map(|t| {
+                    t.column_data
+                        .iter()
+                        .map(|c| {
+                            Some(&c.ty)
+                                .filter(|ty| !diesel_provided_types.contains(ty.rust_name.as_str()))
+                                .map(|ty| match backend {
+                                    #[cfg(feature = "postgres")]
+                                    Backend::Pg => ty.clone(),
+                                    #[cfg(feature = "sqlite")]
+                                    Backend::Sqlite => ty.clone(),
+                                    #[cfg(feature = "mysql")]
+                                    Backend::Mysql => {
+                                        // For MySQL we generate custom types for unknown types that
+                                        // are dedicated to the column
+                                        use heck::ToUpperCamelCase;
+
+                                        ColumnType {
+                                            rust_name: format!(
+                                                "{} {} {}",
+                                                &t.name.rust_name, &c.rust_name, &ty.rust_name
+                                            )
+                                            .to_upper_camel_case(),
+                                            ..ty.clone()
+                                        }
+                                    }
+                                })
+                        })
+                        .collect::<Vec<Option<ColumnType>>>()
+                })
+                .collect::<Vec<_>>(),
+        )
+    } else {
+        None
+    };
+
+    let definitions = TableDefinitions {
+        tables: table_data.clone(),
+        fk_constraints: foreign_keys.clone(),
+        with_docs: config.with_docs,
+        custom_types_for_tables: columns_custom_types.map(|custom_types_sorted| {
+            CustomTypesForTables {
+                backend,
+                types_overrides_sorted: custom_types_sorted,
+                with_docs: match config.with_docs {
+                    DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment => true,
+                    DocConfig::OnlyDatabaseComments | DocConfig::NoDocComments => false,
+                },
+                #[cfg(any(feature = "postgres", feature = "mysql"))]
+                derives: config.custom_type_derives(),
+            }
+        }),
+        import_types: config.import_types(),
+    };
+
+    writeln!(out, "{SCHEMA_HEADER}")?;
+    if let Some(schema_name) = config.schema_name() {
+        write!(out, "{}", ModuleDefinition(schema_name, definitions))?;
+    } else {
+        if let Some(ref custom_types_for_tables) = definitions.custom_types_for_tables {
+            write!(
+                out,
+                "{}",
+                CustomTypesForTablesForDisplay {
+                    custom_types: custom_types_for_tables,
+                    tables: &definitions.tables
+                }
+            )?;
+        }
+
+        write!(out, "{definitions}")?;
+    }
+
+    if let Some(ref patch_file) = config.patch_file {
+        let patch = std::fs::read_to_string(patch_file)?;
+        let patch = diffy::Patch::from_str(&patch)?;
+
+        out = diffy::apply(&out, &patch)?;
+    }
+
+    Ok((
+        out,
+        table_names.clone(),
+        table_data.clone(),
+        foreign_keys.clone(),
+        backend,
+    ))
 }
 
 struct CustomTypesForTables {

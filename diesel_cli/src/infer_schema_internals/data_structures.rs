@@ -110,7 +110,7 @@ impl fmt::Display for ColumnType {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ColumnDefinition {
     pub sql_name: String,
     pub rust_name: String,

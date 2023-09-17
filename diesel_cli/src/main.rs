@@ -268,9 +268,12 @@ fn regenerate_schema_if_file_specified(
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     use std::io::Read;
 
-    let config = Config::read(matches)?.print_schema;
+    let config = Config::read(matches)?;
+    let sub_schema = config.sub_print_schema;
+    let config = config.print_schema;
+    let mut connection = InferConnection::from_matches(matches);
+
     if let Some(ref path) = config.file {
-        let mut connection = InferConnection::from_matches(matches);
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -291,13 +294,35 @@ fn regenerate_schema_if_file_specified(
                 )
                 .into());
             }
-        } else {
-            use std::io::Write;
-
-            let mut file = fs::File::create(path)?;
-            let schema = print_schema::output_schema(&mut connection, &config)?;
-            file.write_all(schema.as_bytes())?;
+            return Ok(());
         }
+    }
+    use std::io::Write;
+
+    let (schema, table_names, table_data, foreign_keys, backend) =
+        print_schema::output_schema(&mut connection, &config)?;
+    if let Some(path) = config.file {
+        let mut file = fs::File::create(path)?;
+        file.write_all(schema.as_bytes())?;
+    }
+    if let Some(sub_schema) = sub_schema {
+        sub_schema
+            .iter()
+            .map(|config| {
+                if let Some(path) = &config.file {
+                    let mut file = fs::File::create(path)?;
+                    let schema = print_schema::output_sub_schema(
+                        &config,
+                        table_names.clone(),
+                        table_data.clone(),
+                        foreign_keys.clone(),
+                        backend,
+                    )?;
+                    file.write_all(schema.as_bytes())?;
+                }
+                Ok(())
+            })
+            .collect::<Result<Vec<()>, Box<dyn Error + Send + Sync + 'static>>>()?;
     }
     Ok(())
 }
