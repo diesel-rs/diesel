@@ -36,7 +36,6 @@ impl Drop for SerializedDatabase {
     /// Deallocates the memory of the serialized database when it goes out of scope.
     fn drop(&mut self) {
         unsafe {
-            // Call the FFI function to free the memory
             ffi::sqlite3_free(self.data as _);
         }
     }
