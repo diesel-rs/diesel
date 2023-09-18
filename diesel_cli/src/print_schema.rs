@@ -152,6 +152,9 @@ pub fn output_sub_schema(
     backend: Backend,
 ) -> Result<String, Box<dyn Error + Send + Sync + 'static>> {
     let table_names = filter_table_names(table_names, &config.filter);
+    if table_names.is_empty() {
+        return Ok(String::from(""));
+    }
     let table_data: Vec<TableData> = table_data
         .into_iter()
         .filter(|t| table_names.contains(&t.name))
@@ -382,13 +385,7 @@ pub fn output_schema(
         out = diffy::apply(&out, &patch)?;
     }
 
-    Ok((
-        out,
-        table_names.clone(),
-        table_data.clone(),
-        foreign_keys.clone(),
-        backend,
-    ))
+    Ok((out, table_names.clone(), table_data, foreign_keys, backend))
 }
 
 struct CustomTypesForTables {

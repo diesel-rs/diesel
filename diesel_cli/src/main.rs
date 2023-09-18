@@ -1,6 +1,6 @@
 // Built-in Lints
 // Clippy lints
-#![allow(clippy::map_unwrap_or)]
+#![allow(clippy::map_unwrap_or, clippy::type_complexity)]
 #![warn(
     clippy::if_not_else,
     clippy::items_after_statements,
@@ -267,6 +267,7 @@ fn regenerate_schema_if_file_specified(
     matches: &ArgMatches,
 ) -> Result<(), Box<dyn Error + Send + Sync + 'static>> {
     use std::io::Read;
+    use std::io::Write;
 
     let config = Config::read(matches)?;
     let sub_schema = config.sub_print_schema;
@@ -297,33 +298,39 @@ fn regenerate_schema_if_file_specified(
             return Ok(());
         }
     }
-    use std::io::Write;
 
-    let (schema, table_names, table_data, foreign_keys, backend) =
-        print_schema::output_schema(&mut connection, &config)?;
-    if let Some(path) = config.file {
-        let mut file = fs::File::create(path)?;
-        file.write_all(schema.as_bytes())?;
+    if config.file.is_some()
+        || sub_schema.as_ref().map_or(false, |sub_schema| {
+            sub_schema.iter().any(|config| config.file.is_some())
+        })
+    {
+        let (schema, table_names, table_data, foreign_keys, backend) =
+            print_schema::output_schema(&mut connection, &config)?;
+        if let Some(path) = config.file {
+            let mut file = fs::File::create(path)?;
+            file.write_all(schema.as_bytes())?;
+        }
+        if let Some(sub_schema) = sub_schema {
+            sub_schema
+                .iter()
+                .map(|config| {
+                    if let Some(path) = &config.file {
+                        let mut file = fs::File::create(path)?;
+                        let schema = print_schema::output_sub_schema(
+                            config,
+                            table_names.clone(),
+                            table_data.clone(),
+                            foreign_keys.clone(),
+                            backend,
+                        )?;
+                        file.write_all(schema.as_bytes())?;
+                    }
+                    Ok(())
+                })
+                .collect::<Result<Vec<()>, Box<dyn Error + Send + Sync + 'static>>>()?;
+        }
     }
-    if let Some(sub_schema) = sub_schema {
-        sub_schema
-            .iter()
-            .map(|config| {
-                if let Some(path) = &config.file {
-                    let mut file = fs::File::create(path)?;
-                    let schema = print_schema::output_sub_schema(
-                        &config,
-                        table_names.clone(),
-                        table_data.clone(),
-                        foreign_keys.clone(),
-                        backend,
-                    )?;
-                    file.write_all(schema.as_bytes())?;
-                }
-                Ok(())
-            })
-            .collect::<Result<Vec<()>, Box<dyn Error + Send + Sync + 'static>>>()?;
-    }
+
     Ok(())
 }
 
