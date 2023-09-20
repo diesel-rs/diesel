@@ -37,31 +37,84 @@ where
 }
 
 macro_rules! valid_ordering {
-    // Special-case: rule out the all ident case:
+    // Special-case: for single tuple elements
+    // generate plain impls as well:
+    (
+        @optional_untuple:
+        [generics: $($T: ident)*]
+        [distinct: $D:ident]
+        [order: $O: ty,]
+    ) => {
+        // nothing if both a single tuple elements
+    };
+    (
+        @optional_untuple:
+        [generics: $($T: ident)*]
+        [distinct: $D:ident]
+        [order: $($O: ty,)*]
+    ) => {
+        impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<$D>>
+            for OrderClause<($($O,)*)>
+        {}
+    };
+    (
+        @optional_untuple:
+        [generics: $($T: ident)*]
+        [distinct: $($D:ident)*]
+        [order: $O: ty,]
+    ) => {
+        impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<($($D,)*)>>
+            for OrderClause<$O>
+        {}
+    };
+    (
+        @optional_untuple:
+        [generics: $($T: ident)*]
+        [distinct: $($D:ident)*]
+        [order: $($O: ty,)*]
+    ) => {};
+    // Special-case: rule out the all ident case if the
+    // corresponding flag is set
+    // We want to have these impls if
+    // the tuple sizes do **not** match
+    // therefore we set the flag below
     (@impl_one:
+     [allow_plain = false]
      $generics:tt
+     $distinct:tt
+     $other:tt
      [$($T_:ident, )*]
     ) => {
         /* skip this one */
     };
     (@impl_one:
+     [allow_plain = $allow_plain: expr]
      [generics: $($T:ident)*]
+     [distinct: $($D:ident)*]
+     [other: $($O:ident)*]
      [$($Ty:ty, )*]
     ) => {
-        impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<($($T, )*)>>
-            for OrderClause<($($Ty, )*)>
+        impl<$($T,)*> ValidOrderingForDistinct<DistinctOnClause<($($D, )*)>>
+            for OrderClause<($($Ty, )* $($O,)*)>
         {}
+        valid_ordering!(@optional_untuple: [generics: $($T)*] [distinct: $($D)*] [order: $($Ty,)* $($O,)*]);
     };
     (
         @perm:
+        $allow_plain:tt
         $generics:tt
+        $distinct:tt
+        $other:tt
         [acc: $([$($acc:tt)*])*]
         $T:ident
         $($rest:tt)*
     ) => {
         valid_ordering! {
             @perm:
+            $allow_plain
             $generics
+            $distinct
+            $other
                 [acc:
                  $(
                      [$($acc)* crate::expression::operators::Asc<$T>, ]
@@ -74,47 +127,95 @@ macro_rules! valid_ordering {
     };
     (
         @perm:
+        $allow_plain:tt
         $generics:tt
+        $distinct:tt
+        $other:tt
         [acc: $($Tys:tt)*]
         /* nothing left */
     ) => (
         $(
             valid_ordering! {@impl_one:
+                $allow_plain
                 $generics
+                $distinct
+                $other
                 $Tys
             }
         )*
     );
-    (@skip: ($ST1: ident, $($ST:ident,)*), $T1:ident, ) => {};
-    (@skip: ($ST1: ident, $($ST:ident,)*), $T1:ident, $($T:ident,)+) => {
-        valid_ordering!(($($ST,)*), ($ST1,), $($T,)*);
+    (@skip_distinct_rev: [generics: $($G: ident)*] [other: $($O: ident)*] [acc: $($T: ident)*]) => {
+        valid_ordering!(@perm:
+                        [allow_plain = true]
+                        [generics: $($G)*]
+                        [distinct: $($T)*]
+                        [other: $($O)* ]
+                        [acc: []]
+                        $($T)*
+        );
     };
-    (($ST1: ident,), ($($OT:ident,)*), $T1:ident,) => {
-        impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($ST1, $($OT,)*)>> for OrderClause<$T1>
-        where $T1: crate::pg::OrderDecorator<Column = $ST1>,
-        {}
-        impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($ST1, $($OT,)*)>> for OrderClause<($T1,)>
-        where $T1: crate::pg::OrderDecorator<Column = $ST1>,
-        {}
-        impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($T1,)>> for OrderClause<($ST1, $($OT,)*)>
-        where $ST1: crate::pg::OrderDecorator<Column = $T1>,
-        {}
-
-        impl<$T1, $ST1, $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<$T1>> for OrderClause<($ST1, $($OT,)*)>
-        where $ST1: crate::pg::OrderDecorator<Column = $T1>,
-              $T1: crate::Column,
-        {}
+    (@skip_distinct_rev: [generics: $($G: ident)*] [other: $($O: ident)*] [acc: $($I: ident)*] $T: ident $($Ts: ident)*) => {
+        valid_ordering!(
+            @skip_distinct_rev:
+            [generics: $($G)*]
+            [other: $($O)*]
+            [acc: $T $($I)*]
+            $($Ts)*
+        );
     };
-    (($ST1: ident, $($ST:ident,)*), ($($OT: ident,)*), $T1:ident, $($T:ident,)+) => {
-        impl<$T1, $($T,)* $ST1, $($ST,)* $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($ST1, $($ST,)* $($OT,)*)>> for OrderClause<($T1, $($T,)*)>
-        where $T1: crate::pg::OrderDecorator<Column = $ST1>,
-              $($T: crate::pg::OrderDecorator<Column = $ST>,)*
-        {}
-        impl<$T1, $($T,)* $ST1, $($ST,)* $($OT,)*> ValidOrderingForDistinct<DistinctOnClause<($T1, $($T,)*)>> for OrderClause<($ST1, $($ST,)* $($OT,)*)>
-        where $ST1: crate::pg::OrderDecorator<Column = $T1>,
-              $($ST: crate::pg::OrderDecorator<Column = $T>,)*
-        {}
-        valid_ordering!(($($ST,)*), ($($OT,)* $ST1,), $($T,)*);
+    (@skip_distinct:
+     [generics: $($G: ident)*]
+     [acc: $($O: ident)*]
+     $T: ident
+    ) => {};
+    (@skip_distinct:
+     [generics: $($G: ident)*]
+     [acc: $($O: ident)*]
+     $T:ident $($Ts: ident)*
+    ) => {
+        valid_ordering!(@skip_distinct_rev:
+            [generics: $($G)*]
+            [other: $($O)* $T]
+            [acc: ]
+            $($Ts)*
+        );
+        valid_ordering!(@skip_distinct: [generics: $($G)*] [acc: $($O)* $T] $($Ts)*);
+    };
+    (@skip_order_rev: [generics: $($G: ident)*] [acc: $($T: ident)*]) => {
+        valid_ordering!(@perm:
+            [allow_plain = true]
+            [generics: $($G)*]
+            [distinct: $($G)*]
+            [other: ]
+            [acc: []]
+            $($T)*
+        );
+    };
+    (@skip_order_rev: [generics: $($G: ident)*] [acc: $($I: ident)*] $T: ident $($Ts: ident)*) => {
+        valid_ordering!(
+            @skip_order_rev:
+            [generics: $($G)*]
+            [acc: $T $($I)*]
+            $($Ts)*
+        );
+    };
+    (@skip_order:
+     [generics: $($G: ident)*]
+     $T: ident
+    ) => {};
+    (@skip_order:
+     [generics: $($G: ident)*]
+     $T: ident $($Ts: ident)*
+    ) => {
+        valid_ordering!(@skip_order_rev: [generics: $($G)*] [acc: ] $($Ts)*);
+        valid_ordering!(@skip_order: [generics: $($G)*] $($Ts)*);
+    };
+    (@reverse_list: [generics: $($G: ident)*] [acc: $($I: ident)*]) => {
+        valid_ordering!(@skip_order: [generics: $($G)*] $($I)*);
+        valid_ordering!(@skip_distinct: [generics: $($G)*] [acc: ] $($I)*);
+    };
+    (@reverse_list: [generics: $($G: ident)*] [acc: $($I: ident)*] $T: ident $($Ts: ident)*) => {
+        valid_ordering!(@reverse_list: [generics: $($G)*] [acc: $T $($I)*] $($Ts)*);
     };
     ($(
         $Tuple:tt {
@@ -122,8 +223,15 @@ macro_rules! valid_ordering {
         }
     )+) => {
         $(
-            valid_ordering!(@skip: ($($ST,)*), $($T,)*);
-            valid_ordering!(@perm: [generics: $($T)*] [acc: []] $($T)*);
+            valid_ordering!(@perm:
+                [allow_plain = false]
+                [generics: $($T)*]
+                [distinct: $($T)*]
+                [other: ]
+                [acc: []]
+                $($T)*
+            );
+            valid_ordering!(@reverse_list: [generics: $($T)*] [acc: ] $($T)*);
         )*
     }
 }
@@ -132,7 +240,7 @@ macro_rules! valid_ordering {
 // If we would generate these impls up to max_table_column_count tuple elements that
 // would be a really large number for 128 tuple elements (~64k trait impls)
 // It's fine to increase this number at some point in the future gradually
-diesel_derives::__diesel_for_each_tuple!(valid_ordering, 5);
+diesel_derives::__diesel_for_each_tuple!(valid_ordering, 3);
 
 /// A decorator trait for `OrderClause`
 /// It helps to have bounds on either Col, Asc<Col> and Desc<Col>.
