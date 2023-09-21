@@ -25,5 +25,9 @@ doc = false
 name = "publish_post"
 doc = false
 
+[[bin]]
+name = "get_post"
+doc = false
+
 [lib]
 doc = false
