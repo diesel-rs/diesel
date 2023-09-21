@@ -18,6 +18,9 @@ error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -42,5 +45,8 @@ error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

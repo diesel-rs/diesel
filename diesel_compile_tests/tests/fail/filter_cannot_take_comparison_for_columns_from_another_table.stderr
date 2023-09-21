@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:32:23
    |
 32 |         .load::<User>(&mut conn);
-   |          ----         ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          ----         ^^^^^^^^^ expected `Once`, found `Never`
    |          |
    |          required by a bound introduced by this call
    |
@@ -19,6 +19,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -26,7 +29,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:36:10
    |
 36 |         .filter(posts::id.eq(1));
-   |          ^^^^^^ expected struct `Never`, found struct `Once`
+   |          ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:15:9
@@ -51,7 +54,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:43:23
    |
 43 |         .load::<User>(&mut conn);
-   |          ----         ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          ----         ^^^^^^^^^ expected `Once`, found `Never`
    |          |
    |          required by a bound introduced by this call
    |
@@ -68,6 +71,9 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -75,7 +81,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:47:10
    |
 47 |         .filter(users::name.eq(posts::title));
-   |          ^^^^^^ expected struct `Never`, found struct `Once`
+   |          ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/filter_cannot_take_comparison_for_columns_from_another_table.rs:16:9

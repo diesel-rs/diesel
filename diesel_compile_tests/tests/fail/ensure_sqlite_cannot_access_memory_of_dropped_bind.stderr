@@ -1,6 +1,9 @@
 error[E0505]: cannot move out of `buf` because it is borrowed
   --> tests/fail/ensure_sqlite_cannot_access_memory_of_dropped_bind.rs:17:24
    |
+9  |         let buf: Vec<u8> = vec![0, 1, 2];
+   |             --- binding `buf` declared here
+10 |
 11 |         let query = diesel::select((&buf as &[u8]).into_sql::<sql_types::Binary>());
    |                                     ---- borrow of `buf` occurs here
 ...
@@ -8,4 +11,4 @@ error[E0505]: cannot move out of `buf` because it is borrowed
    |                        ^^^ move out of `buf` occurs here
 18 |
 19 |         assert_eq!(iter.next().is_some(), true);
-   |                    ----------- borrow later used here
+   |                    ---- borrow later used here

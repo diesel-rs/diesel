@@ -16,7 +16,7 @@ error: Litterals must have type suffix for auto_type, e.g. 2i64
 66 |             .filter(posts::id.gt(2)),
    |                                  ^
 
-error[E0107]: this type alias takes 0 generic arguments but 1 generic argument was supplied
+error[E0107]: type alias takes 0 generic arguments but 1 generic argument was supplied
   --> tests/fail/auto_type.rs:36:17
    |
 30 |   #[dsl::auto_type]

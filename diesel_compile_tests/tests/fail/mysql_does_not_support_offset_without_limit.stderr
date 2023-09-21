@@ -7,14 +7,14 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<die
    |                             required by a bound introduced by this call
    |
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
-             <LimitOffsetClause<L, O> as QueryFragment<Pg>>
-             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as QueryFragment<Mysql>>
-             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as QueryFragment<Sqlite>>
              <LimitOffsetClause<LimitClause<L>, OffsetClause<O>> as QueryFragment<Mysql>>
              <LimitOffsetClause<LimitClause<L>, OffsetClause<O>> as QueryFragment<Sqlite>>
+             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as QueryFragment<Mysql>>
+             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as QueryFragment<Sqlite>>
+             <LimitOffsetClause<NoLimitClause, OffsetClause<O>> as QueryFragment<Sqlite>>
              <LimitOffsetClause<NoLimitClause, NoOffsetClause> as QueryFragment<Mysql>>
              <LimitOffsetClause<NoLimitClause, NoOffsetClause> as QueryFragment<Sqlite>>
-             <LimitOffsetClause<NoLimitClause, OffsetClause<O>> as QueryFragment<Sqlite>>
+             <LimitOffsetClause<L, O> as QueryFragment<Pg>>
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ..., ...>` to implement `QueryFragment<Mysql, AnsiSqlSelectStatement>`
    = note: 1 redundant requirement hidden
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ..., ...>` to implement `QueryFragment<Mysql>`
@@ -22,6 +22,9 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<die
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+   |        ---------- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
 
@@ -32,14 +35,14 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<die
    |                             ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
    |
    = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
-             <LimitOffsetClause<L, O> as IntoBoxedClause<'a, Pg>>
-             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as IntoBoxedClause<'a, Mysql>>
-             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as IntoBoxedClause<'a, Sqlite>>
              <LimitOffsetClause<LimitClause<L>, OffsetClause<O>> as IntoBoxedClause<'a, Mysql>>
              <LimitOffsetClause<LimitClause<L>, OffsetClause<O>> as IntoBoxedClause<'a, Sqlite>>
+             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as IntoBoxedClause<'a, Mysql>>
+             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as IntoBoxedClause<'a, Sqlite>>
+             <LimitOffsetClause<NoLimitClause, OffsetClause<O>> as IntoBoxedClause<'a, Sqlite>>
              <LimitOffsetClause<NoLimitClause, NoOffsetClause> as IntoBoxedClause<'a, Mysql>>
              <LimitOffsetClause<NoLimitClause, NoOffsetClause> as IntoBoxedClause<'a, Sqlite>>
-             <LimitOffsetClause<NoLimitClause, OffsetClause<O>> as IntoBoxedClause<'a, Sqlite>>
+             <LimitOffsetClause<L, O> as IntoBoxedClause<'a, Pg>>
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`
 
 error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>: IntoBoxedClause<'_, Mysql>` is not satisfied
@@ -49,17 +52,20 @@ error[E0277]: the trait bound `LimitOffsetClause<NoLimitClause, OffsetClause<die
    |                             ^^^^^^^^^^ the trait `IntoBoxedClause<'_, Mysql>` is not implemented for `LimitOffsetClause<NoLimitClause, OffsetClause<diesel::expression::bound::Bound<BigInt, i64>>>`
    |
    = help: the following other types implement trait `IntoBoxedClause<'a, DB>`:
-             <LimitOffsetClause<L, O> as IntoBoxedClause<'a, Pg>>
-             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as IntoBoxedClause<'a, Mysql>>
-             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as IntoBoxedClause<'a, Sqlite>>
              <LimitOffsetClause<LimitClause<L>, OffsetClause<O>> as IntoBoxedClause<'a, Mysql>>
              <LimitOffsetClause<LimitClause<L>, OffsetClause<O>> as IntoBoxedClause<'a, Sqlite>>
+             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as IntoBoxedClause<'a, Mysql>>
+             <LimitOffsetClause<LimitClause<L>, NoOffsetClause> as IntoBoxedClause<'a, Sqlite>>
+             <LimitOffsetClause<NoLimitClause, OffsetClause<O>> as IntoBoxedClause<'a, Sqlite>>
              <LimitOffsetClause<NoLimitClause, NoOffsetClause> as IntoBoxedClause<'a, Mysql>>
              <LimitOffsetClause<NoLimitClause, NoOffsetClause> as IntoBoxedClause<'a, Sqlite>>
-             <LimitOffsetClause<NoLimitClause, OffsetClause<O>> as IntoBoxedClause<'a, Sqlite>>
+             <LimitOffsetClause<L, O> as IntoBoxedClause<'a, Pg>>
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ..., ...>` to implement `BoxedDsl<'_, Mysql>`
 note: required by a bound in `diesel::QueryDsl::into_boxed`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn into_boxed<'a, DB>(self) -> IntoBoxed<'a, Self, DB>
+   |        ---------- required by a bound in this associated function
+...
    |         Self: methods::BoxedDsl<'a, DB>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::into_boxed`

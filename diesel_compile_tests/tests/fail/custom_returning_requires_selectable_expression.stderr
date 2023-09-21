@@ -8,16 +8,19 @@ error[E0277]: Cannot select `bad::columns::age` from `users::table`
    |
    = note: `bad::columns::age` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
-             <bad::columns::age as SelectableExpression<Only<bad::table>>>
-             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
              <bad::columns::age as SelectableExpression<bad::table>>
              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
+             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
+             <bad::columns::age as SelectableExpression<Only<bad::table>>>
    = note: required for `UpdateStatement<table, WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>, Assign<..., ...>, ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
   --> $DIESEL/src/query_builder/update_statement/mod.rs
    |
+   |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+   |            --------- required by a bound in this associated function
+...
    |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
@@ -31,17 +34,20 @@ error[E0277]: Cannot select `bad::columns::age` from `users::table`
    |
    = note: `bad::columns::age` is no valid selection for `users::table`
    = help: the following other types implement trait `SelectableExpression<QS>`:
-             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
-             <bad::columns::age as SelectableExpression<Only<bad::table>>>
-             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
              <bad::columns::age as SelectableExpression<bad::table>>
              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, Inner>>>
              <bad::columns::age as SelectableExpression<query_source::joins::Join<Left, Right, LeftOuter>>>
+             <bad::columns::age as SelectableExpression<SelectStatement<FromClause<From>>>>
+             <bad::columns::age as SelectableExpression<JoinOn<Join, On>>>
+             <bad::columns::age as SelectableExpression<Only<bad::table>>>
    = note: required for `(users::columns::name, bad::columns::age)` to implement `SelectableExpression<users::table>`
    = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>, ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+   |            --------- required by a bound in this associated function
+   |     where
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
@@ -49,7 +55,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/custom_returning_requires_selectable_expression.rs:33:63
    |
 33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
-   |                                                     --------- ^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |                                                     --------- ^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
    |                                                     |
    |                                                     required by a bound introduced by this call
    |
@@ -65,6 +71,9 @@ note: required for `bad::columns::age` to implement `AppearsOnTable<users::table
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+   |            --------- required by a bound in this associated function
+   |     where
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
@@ -96,5 +105,8 @@ note: required for `bad::columns::age` to implement `AppearsOnTable<users::table
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+   |            --------- required by a bound in this associated function
+   |     where
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`

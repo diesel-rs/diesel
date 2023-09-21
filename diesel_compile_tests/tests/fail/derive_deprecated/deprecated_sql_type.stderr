@@ -85,6 +85,9 @@ error[E0277]: Cannot deserialize a value of the database type `_` as `i32`
 note: required by a bound in `diesel::row::NamedRow::get`
   --> $DIESEL/src/row.rs
    |
+   |     fn get<ST, T>(&self, column_name: &str) -> deserialize::Result<T>
+   |        --- required by a bound in this associated function
+   |     where
    |         T: FromSql<ST, DB>;
    |            ^^^^^^^^^^^^^^^ required by this bound in `NamedRow::get`
    = note: this error originates in the derive macro `QueryableByName` (in Nightly builds, run with -Z macro-backtrace for more info)
