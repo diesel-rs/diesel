@@ -1,7 +1,7 @@
 error[E0277]: Cannot select `bad::columns::age` from `users::table`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:28:78
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:29:78
    |
-28 |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(bad::age);
+29 |     let stmt = update(users.filter(id.eq(1))).set(name.eq("Bill")).returning(bad::age);
    |                                                                    --------- ^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
    |                                                                    |
    |                                                                    required by a bound introduced by this call
@@ -25,9 +25,9 @@ note: required by a bound in `UpdateStatement::<T, U, V>::returning`
    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
 error[E0277]: Cannot select `bad::columns::age` from `users::table`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:33:63
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:34:63
    |
-33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+34 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
    |                                                     --------- ^^^^^^^^^^^^^^^^ the trait `SelectableExpression<users::table>` is not implemented for `bad::columns::age`
    |                                                     |
    |                                                     required by a bound introduced by this call
@@ -52,17 +52,17 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:33:63
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:34:63
    |
-33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+34 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
    |                                                     --------- ^^^^^^^^^^^^^^^^ expected `Once`, found `Never`
    |                                                     |
    |                                                     required by a bound introduced by this call
    |
 note: required for `bad::columns::age` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:16:7
    |
-15 |       age -> Integer,
+16 |       age -> Integer,
    |       ^^^
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<users::table>`
@@ -78,9 +78,9 @@ note: required by a bound in `InsertStatement::<T, U, Op>::returning`
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not satisfied
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:33:63
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:34:63
    |
-33 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
+34 |     let stmt = insert_into(users).values(&new_user).returning((name, bad::age));
    |                                                     --------- ^^^^^^^^^^^^^^^^ the trait `TableNotEqual<bad::table>` is not implemented for `users::table`
    |                                                     |
    |                                                     required by a bound introduced by this call
@@ -94,9 +94,9 @@ error[E0277]: the trait bound `users::table: TableNotEqual<bad::table>` is not s
              <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
    = note: required for `users::table` to implement `AppearsInFromClause<bad::table>`
 note: required for `bad::columns::age` to implement `AppearsOnTable<users::table>`
-  --> tests/fail/custom_returning_requires_selectable_expression.rs:15:7
+  --> tests/fail/custom_returning_requires_selectable_expression.rs:16:7
    |
-15 |       age -> Integer,
+16 |       age -> Integer,
    |       ^^^
    = note: 1 redundant requirement hidden
    = note: required for `(users::columns::name, bad::columns::age)` to implement `AppearsOnTable<users::table>`

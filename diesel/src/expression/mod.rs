@@ -313,7 +313,7 @@ where
 /// a left join, you must call `.nullable()` on it.
 #[cfg_attr(
     feature = "nightly-error-messages",
-    rustc_on_unimplemented(
+    diagnostic::on_unimplemented(
         message = "Cannot select `{Self}` from `{QS}`",
         note = "`{Self}` is no valid selection for `{QS}`"
     )

@@ -1,7 +1,7 @@
 error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
-  --> tests/fail/broken_queryable_by_name.rs:17:5
+  --> tests/fail/broken_queryable_by_name.rs:18:5
    |
-17 |     name: i32,
+18 |     name: i32,
    |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
    |
    = note: Double check your type mappings via the documentation of `diesel::sql_types::Text`
@@ -15,9 +15,9 @@ error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types
    = help: add `#![feature(trivial_bounds)]` to the crate attributes to enable
 
 error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
-  --> tests/fail/broken_queryable_by_name.rs:16:5
+  --> tests/fail/broken_queryable_by_name.rs:17:5
    |
-16 |     id: String,
+17 |     id: String,
    |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`
    |
    = note: Double check your type mappings via the documentation of `diesel::sql_types::Integer`
@@ -32,9 +32,9 @@ error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types
    = help: add `#![feature(trivial_bounds)]` to the crate attributes to enable
 
 error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Text` as `i32`
-  --> tests/fail/broken_queryable_by_name.rs:26:5
+  --> tests/fail/broken_queryable_by_name.rs:27:5
    |
-26 |     name: i32,
+27 |     name: i32,
    |     ^^^^^^^^^ the trait `FromSql<diesel::sql_types::Text, Pg>` is not implemented for `i32`
    |
    = note: Double check your type mappings via the documentation of `diesel::sql_types::Text`
@@ -48,9 +48,9 @@ error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types
    = help: add `#![feature(trivial_bounds)]` to the crate attributes to enable
 
 error[E0277]: Cannot deserialize a value of the database type `diesel::sql_types::Integer` as `*const str`
-  --> tests/fail/broken_queryable_by_name.rs:24:5
+  --> tests/fail/broken_queryable_by_name.rs:25:5
    |
-24 |     id: String,
+25 |     id: String,
    |     ^^^^^^^^^^ the trait `FromSql<diesel::sql_types::Integer, Pg>` is not implemented for `*const str`
    |
    = note: Double check your type mappings via the documentation of `diesel::sql_types::Integer`
