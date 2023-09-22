@@ -367,7 +367,7 @@ mod pg_types {
     }
 
     pub fn mk_datetime(data: (i64, u32)) -> DateTime<Utc> {
-        DateTime::from_utc(mk_pg_naive_datetime(data), Utc)
+        Utc.from_utc_datetime(&mk_pg_naive_datetime(data))
     }
 }
 
