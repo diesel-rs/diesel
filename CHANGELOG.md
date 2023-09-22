@@ -8,7 +8,14 @@ default features enabled using some set of dependencies. Those set of dependenci
 an up to date version of the specific dependency. We check this by using the unstable `-Z minimal-version` cargo flag. 
 Increasing the minimal supported Rust version will always be coupled at least with a minor release.
 
-## Unreleased 
+## Unreleased
+
+## [2.1.2] 2023-09-xx
+
+## Fixed
+
+* Fixed another potential breaking chaneg around queries containing `DISTINCT ON` and `ORDER BY` clauses consisting of custom sql expressions (e.g. `.nullable()`)
+* Fixed an issue where `#[derive(Selectable)]` and `#[diesel(check_for_backend)]` generates invalid rust code if the struct contains lifetimes/generic types 
 
 ## [2.1.1] 2023-08-25
 

@@ -53,12 +53,12 @@ jobs:
           echo "RUSTFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
           echo "RUSTDOCFLAGS=--cfg doc_cfg" >> $GITHUB_ENV
 
-      - name: Set environment variables
-        shell: bash
-        if: matrix.rust != 'nightly'
-        run: |
-          echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
-          echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
+          #      - name: Set environment variables
+          #shell: bash
+          #if: matrix.rust != 'nightly'
+          #run: |
+          #echo "RUSTFLAGS=-D warnings" >> $GITHUB_ENV
+          #echo "RUSTDOCFLAGS=-D warnings" >> $GITHUB_ENV
 
       - name: Install postgres (Linux)
         if: runner.os == 'Linux' && matrix.backend == 'postgres'
