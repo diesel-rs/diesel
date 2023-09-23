@@ -9,6 +9,7 @@ publish = false
 [dependencies]
 diesel = { version = "2.1.0", path = "../../../diesel", features = ["sqlite"] }
 dotenvy = "0.15"
+libsqlite3-sys = { version = ">=0.17.2, <0.27.0", features = ["bundled"] }
 
 [[bin]]
 name = "show_posts"
