@@ -10,7 +10,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.1.2] 2023-09-xx
+## [2.1.2] 2023-09-25
 
 ## Fixed
 
@@ -2052,3 +2052,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.0.4]: https://github.com/diesel-rs/diesel/compare/v2.0.3...v2.0.4
 [2.1.0]: https://github.com/diesel-rs/diesel/compare/v2.0.0...v2.1.0
 [2.1.1]: https://github.com/diesel-rs/diesel/compare/v2.1.0...v2.1.1
+[2.1.2]: https://github.com/diesel-rs/diesel/compare/v2.1.1...v2.1.2
