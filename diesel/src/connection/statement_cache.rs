@@ -177,21 +177,19 @@ where
     /// parameter indicates if the constructed prepared statement will be cached or not.
     /// See the [module](self) documentation for details
     /// about which statements are cached and which are not cached.
+    // Note: This function is intentionally monomorphic over the "source" type.
     #[allow(unreachable_pub)]
-    pub fn cached_statement<T, F>(
+    pub fn cached_statement(
         &mut self,
-        source: &T,
+        maybe_type_id: Option<TypeId>,
+        source: &dyn QueryFragment<DB>,
         backend: &DB,
         bind_types: &[DB::TypeMetadata],
-        prepare_fn: F,
-    ) -> QueryResult<MaybeCached<'_, Statement>>
-    where
-        T: QueryFragment<DB> + QueryId,
-        F: FnOnce(&str, PrepareForCache) -> QueryResult<Statement>,
-    {
+        prepare_fn: &mut dyn FnMut(&str, PrepareForCache) -> QueryResult<Statement>,
+    ) -> QueryResult<MaybeCached<'_, Statement>> {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
-        let cache_key = StatementCacheKey::for_source(source, bind_types, backend)?;
+        let cache_key = StatementCacheKey::for_source(maybe_type_id, source, bind_types, backend)?;
 
         if !source.is_safe_to_cache_prepared(backend)? {
             let sql = cache_key.sql(source, backend)?;
@@ -288,16 +286,15 @@ where
     DB::TypeMetadata: Clone,
 {
     /// Create a new statement cache key for the given query source
+    // Note: Intentionally monomorphic over source.
     #[allow(unreachable_pub)]
-    pub fn for_source<T>(
-        source: &T,
+    pub fn for_source(
+        maybe_type_id: Option<TypeId>,
+        source: &dyn QueryFragment<DB>,
         bind_types: &[DB::TypeMetadata],
         backend: &DB,
-    ) -> QueryResult<Self>
-    where
-        T: QueryFragment<DB> + QueryId,
-    {
-        match T::query_id() {
+    ) -> QueryResult<Self> {
+        match maybe_type_id {
             Some(id) => Ok(StatementCacheKey::Type(id)),
             None => {
                 let sql = Self::construct_sql(source, backend)?;
@@ -313,15 +310,17 @@ where
     ///
     /// This is an optimization that may skip constructing the query string
     /// twice if it's already part of the current cache key
+    // Note: Intentionally monomorphic over source.
     #[allow(unreachable_pub)]
-    pub fn sql<T: QueryFragment<DB>>(&self, source: &T, backend: &DB) -> QueryResult<Cow<'_, str>> {
+    pub fn sql(&self, source: &dyn QueryFragment<DB>, backend: &DB) -> QueryResult<Cow<'_, str>> {
         match *self {
             StatementCacheKey::Type(_) => Self::construct_sql(source, backend).map(Cow::Owned),
             StatementCacheKey::Sql { ref sql, .. } => Ok(Cow::Borrowed(sql)),
         }
     }
 
-    fn construct_sql<T: QueryFragment<DB>>(source: &T, backend: &DB) -> QueryResult<String> {
+    // Note: Intentionally monomorphic over source.
+    fn construct_sql(source: &dyn QueryFragment<DB>, backend: &DB) -> QueryResult<String> {
         let mut query_builder = DB::QueryBuilder::default();
         source.to_sql(&mut query_builder, backend)?;
         Ok(query_builder.finish())
