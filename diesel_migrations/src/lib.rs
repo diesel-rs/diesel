@@ -1,3 +1,4 @@
+#![doc(html_logo_url = "https://diesel.rs/assets/images/logo.svg")]
 // Built-in Lints
 // Clippy lints
 #![allow(clippy::needless_pass_by_value, clippy::map_unwrap_or)]

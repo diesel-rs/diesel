@@ -1,3 +1,5 @@
+#![doc(html_logo_url = "https://diesel.rs/assets/images/logo.svg")]
+
 use syn::spanned::Spanned;
 use syn::Ident;
 use syn::MetaNameValue;
