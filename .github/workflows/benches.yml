@@ -65,11 +65,11 @@ jobs:
         run: |
           cd diesel_bench
           critcmp master changes
-          echo "# ${{matrix.backend}}" > output.txt
-          echo "" >> output.txt
-          echo '```' >> output.txt
-          critcmp master changes >> output.txt
-          echo '```' >> output.txt
+          echo "# ${{matrix.backend}}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          critcmp master changes >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
 
       # This does not work due to github not allowing to post comments from forked repos
       # - name: Post the output as comment
