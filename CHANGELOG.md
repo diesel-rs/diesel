@@ -10,6 +10,10 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
+## [2.1.3] 2023-10-xx
+
+* Increased accidently decreased limit around element count in  `DISTINCT ON` and `ORDER BY` clauses again as that broke existing code
+
 ## [2.1.2] 2023-09-25
 
 ## Fixed
