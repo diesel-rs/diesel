@@ -21,6 +21,7 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
+    needs: [sqlite_bundled, rustfmt_and_clippy]
     strategy:
       fail-fast: false
       matrix:
