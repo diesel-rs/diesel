@@ -21,6 +21,7 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
+    needs: [sqlite_bundled, rustfmt_and_clippy]
     strategy:
       fail-fast: false
       matrix:
@@ -328,7 +329,7 @@ jobs:
         with:
           components: clippy, rustfmt
       - name: Cache cargo registry
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -407,7 +408,7 @@ jobs:
         with:
           components: "rust-src"
       - name: Cache cargo registry
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
@@ -440,7 +441,7 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-minimal-versions
       - name: Cache cargo registry
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.cargo/registry
