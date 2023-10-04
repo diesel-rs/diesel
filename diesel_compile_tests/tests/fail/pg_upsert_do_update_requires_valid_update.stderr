@@ -1,16 +1,22 @@
-error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<name, Bound<Text, &&str>>>,), table>>, ConflictTarget<id>>`, but its trait bounds were not satisfied
+error[E0599]: the method `execute` exists for struct `IncompleteDoUpdate<InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>>, ...>`, but its trait bounds were not satisfied
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:42:10
    |
-42 |         .execute(&mut connection);
-   |          ^^^^^^^ method cannot be called due to unsatisfied trait bounds
+38 | /     insert_into(users)
+39 | |         .values(&NewUser("Sean"))
+40 | |         .on_conflict(id)
+41 | |         .do_update()
+42 | |         .execute(&mut connection);
+   | |         -^^^^^^^ method cannot be called due to unsatisfied trait bounds
+   | |_________|
+   |
    |
   ::: $DIESEL/src/upsert/on_conflict_extension.rs
    |
-   | pub struct IncompleteDoUpdate<Stmt, Target> {
-   | -------------------------------------------
-   | |
-   | doesn't satisfy `_: RunQueryDsl<_>`
-   | doesn't satisfy `_: Table`
+   |   pub struct IncompleteDoUpdate<Stmt, Target> {
+   |   -------------------------------------------
+   |   |
+   |   doesn't satisfy `_: RunQueryDsl<_>`
+   |   doesn't satisfy `_: Table`
    |
    = note: the following trait bounds were not satisfied:
            `IncompleteDoUpdate<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<users::columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<users::columns::id>>: Table`
@@ -24,12 +30,12 @@ error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:49:14
    |
 49 |         .set(posts::title.eq("Sean"));
-   |          --- ^^^^^^^^^^^^^^^^^^^^^^^ expected struct `users::table`, found struct `posts::table`
+   |          --- ^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
    |          |
    |          required by a bound introduced by this call
    |
-   = note: struct `posts::table` and struct `users::table` have similar names, but are actually distinct types
-note: struct `posts::table` is defined in module `crate::posts` of the current crate
+   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
    |
 13 | / table! {
@@ -39,7 +45,7 @@ note: struct `posts::table` is defined in module `crate::posts` of the current c
 17 | |     }
 18 | | }
    | |_^
-note: struct `users::table` is defined in module `crate::users` of the current crate
+note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
    |
 6  | / table! {
@@ -59,6 +65,9 @@ note: the method call chain might not have had the expected associated types
 note: required by a bound in `IncompleteDoUpdate::<InsertStatement<T, U, Op, Ret>, Target>::set`
   --> $DIESEL/src/upsert/on_conflict_extension.rs
    |
+   |     pub fn set<Changes>(
+   |            --- required by a bound in this associated function
+...
    |         Changes: AsChangeset<Target = T>,
    |                              ^^^^^^^^^^ required by this bound in `IncompleteDoUpdate::<InsertStatement<T, U, Op, Ret>, Target>::set`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -67,7 +76,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:56:10
    |
 56 |         .set(name.eq(posts::title));
-   |          ^^^ expected struct `Never`, found struct `Once`
+   |          ^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:16:9
@@ -108,8 +117,8 @@ note: expected this to be `posts::table`
    |
 16 |         title -> VarChar,
    |         ^^^^^
-   = note: struct `users::table` and struct `posts::table` have similar names, but are actually distinct types
-note: struct `users::table` is defined in module `crate::users` of the current crate
+   = note: `users::table` and `posts::table` have similar names, but are actually distinct types
+note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:6:1
    |
 6  | / table! {
@@ -119,7 +128,7 @@ note: struct `users::table` is defined in module `crate::users` of the current c
 10 | |     }
 11 | | }
    | |_^
-note: struct `posts::table` is defined in module `crate::posts` of the current crate
+note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:13:1
    |
 13 | / table! {
@@ -136,6 +145,6 @@ error[E0271]: type mismatch resolving `<Excluded<id> as Expression>::SqlType == 
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:70:19
    |
 70 |         .set(name.eq(excluded(id)));
-   |                   ^^ expected struct `Integer`, found struct `Text`
+   |                   ^^ expected `Integer`, found `Text`
    |
    = note: required for `diesel::query_builder::upsert::on_conflict_actions::Excluded<users::columns::id>` to implement `AsExpression<diesel::sql_types::Text>`

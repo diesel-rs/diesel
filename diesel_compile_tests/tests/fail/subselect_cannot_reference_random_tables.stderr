@@ -16,7 +16,7 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
   --> tests/fail/subselect_cannot_reference_random_tables.rs:32:25
    |
 32 |         .load::<(i32,)>(&mut conn);
-   |          ----           ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          ----           ^^^^^^^^^ expected `Once`, found `Never`
    |          |
    |          required by a bound introduced by this call
    |
@@ -36,6 +36,9 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -43,7 +46,7 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
   --> tests/fail/subselect_cannot_reference_random_tables.rs:38:25
    |
 38 |         .load::<(i32,)>(&mut conn);
-   |          ----           ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          ----           ^^^^^^^^^ expected `Once`, found `Never`
    |          |
    |          required by a bound introduced by this call
    |
@@ -63,6 +66,9 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -70,7 +76,7 @@ error[E0271]: type mismatch resolving `<Join<table, table, Inner> as AppearsInFr
   --> tests/fail/subselect_cannot_reference_random_tables.rs:42:25
    |
 42 |         .load::<(i32,)>(&mut conn);
-   |          ----           ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          ----           ^^^^^^^^^ expected `Once`, found `Never`
    |          |
    |          required by a bound introduced by this call
    |
@@ -90,5 +96,8 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

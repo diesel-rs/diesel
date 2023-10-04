@@ -5,14 +5,14 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
    |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
-             (T0, T1)
-             (T0, T1, T2)
-             (T0, T1, T2, T3)
-             (T0, T1, T2, T3, T4)
-             (T0, T1, T2, T3, T4, T5)
-             (T0, T1, T2, T3, T4, T5, T6)
-             (T0, T1, T2, T3, T4, T5, T6, T7)
+             columns::name
+             columns::id
+             Box<T>
+             columns::star
+             diesel::expression::ops::numeric::Add<Lhs, Rhs>
+             diesel::expression::ops::numeric::Sub<Lhs, Rhs>
+             diesel::expression::ops::numeric::Mul<Lhs, Rhs>
+             diesel::expression::ops::numeric::Div<Lhs, Rhs>
            and $N others
    = note: required for `std::string::String` to implement `AsExpression<diesel::sql_types::Integer>`
 
@@ -23,14 +23,14 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
    |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
-             (T0, T1)
-             (T0, T1, T2)
-             (T0, T1, T2, T3)
-             (T0, T1, T2, T3, T4)
-             (T0, T1, T2, T3, T4, T5)
-             (T0, T1, T2, T3, T4, T5, T6)
-             (T0, T1, T2, T3, T4, T5, T6, T7)
+             columns::name
+             columns::id
+             Box<T>
+             columns::star
+             diesel::expression::ops::numeric::Add<Lhs, Rhs>
+             diesel::expression::ops::numeric::Sub<Lhs, Rhs>
+             diesel::expression::ops::numeric::Mul<Lhs, Rhs>
+             diesel::expression::ops::numeric::Div<Lhs, Rhs>
            and $N others
    = note: required for `i32` to implement `AsExpression<diesel::sql_types::Text>`
 
@@ -41,14 +41,14 @@ error[E0277]: the trait bound `std::string::String: diesel::Expression` is not s
    |     ^^ the trait `diesel::Expression` is not implemented for `std::string::String`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
-             (T0, T1)
-             (T0, T1, T2)
-             (T0, T1, T2, T3)
-             (T0, T1, T2, T3, T4)
-             (T0, T1, T2, T3, T4, T5)
-             (T0, T1, T2, T3, T4, T5, T6)
-             (T0, T1, T2, T3, T4, T5, T6, T7)
+             columns::name
+             columns::id
+             Box<T>
+             columns::star
+             diesel::expression::ops::numeric::Add<Lhs, Rhs>
+             diesel::expression::ops::numeric::Sub<Lhs, Rhs>
+             diesel::expression::ops::numeric::Mul<Lhs, Rhs>
+             diesel::expression::ops::numeric::Div<Lhs, Rhs>
            and $N others
    = note: required for `&'insert std::string::String` to implement `diesel::Expression`
    = note: required for `&'insert std::string::String` to implement `AsExpression<diesel::sql_types::Integer>`
@@ -60,14 +60,14 @@ error[E0277]: the trait bound `i32: diesel::Expression` is not satisfied
    |     ^^^^ the trait `diesel::Expression` is not implemented for `i32`
    |
    = help: the following other types implement trait `diesel::Expression`:
-             &'a T
-             (T0, T1)
-             (T0, T1, T2)
-             (T0, T1, T2, T3)
-             (T0, T1, T2, T3, T4)
-             (T0, T1, T2, T3, T4, T5)
-             (T0, T1, T2, T3, T4, T5, T6)
-             (T0, T1, T2, T3, T4, T5, T6, T7)
+             columns::name
+             columns::id
+             Box<T>
+             columns::star
+             diesel::expression::ops::numeric::Add<Lhs, Rhs>
+             diesel::expression::ops::numeric::Sub<Lhs, Rhs>
+             diesel::expression::ops::numeric::Mul<Lhs, Rhs>
+             diesel::expression::ops::numeric::Div<Lhs, Rhs>
            and $N others
    = note: required for `&'insert i32` to implement `diesel::Expression`
    = note: required for `&'insert i32` to implement `AsExpression<diesel::sql_types::Text>`

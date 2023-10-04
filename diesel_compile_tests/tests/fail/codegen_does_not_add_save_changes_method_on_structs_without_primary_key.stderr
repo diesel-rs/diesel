@@ -46,5 +46,6 @@ note: the traits `HasTable` and `IntoUpdateTarget` must be implemented
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 help: consider annotating `User` with `#[derive(Clone, Copy)]`
     |
-15  | #[derive(Clone, Copy)]
+15  + #[derive(Clone, Copy)]
+16  | pub struct User {
     |

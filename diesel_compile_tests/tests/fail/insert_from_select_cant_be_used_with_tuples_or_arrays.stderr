@@ -5,14 +5,14 @@ error[E0277]: the trait bound `users::table: UndecoratedInsertRecord<posts::tabl
    |          ^^^^^^ the trait `UndecoratedInsertRecord<posts::table>` is not implemented for `users::table`
    |
    = help: the following other types implement trait `UndecoratedInsertRecord<Table>`:
-             <&'a T as UndecoratedInsertRecord<Tab>>
-             <(T0, T1) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3, T4) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3, T4, T5) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3, T4, T5, T6) as UndecoratedInsertRecord<Tab>>
-             <(T0, T1, T2, T3, T4, T5, T6, T7) as UndecoratedInsertRecord<Tab>>
+             <Vec<T> as UndecoratedInsertRecord<Table>>
+             <diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<Lhs, Rhs>> as UndecoratedInsertRecord<<Lhs as Column>::Table>>
+             <diesel::expression::operators::Eq<Lhs, Rhs> as UndecoratedInsertRecord<<Lhs as Column>::Table>>
+             <ColumnInsertValue<T, U> as UndecoratedInsertRecord<<T as Column>::Table>>
+             <DefaultableColumnInsertValue<ColumnInsertValue<T, U>> as UndecoratedInsertRecord<<T as Column>::Table>>
+             <BatchInsert<T, Table, QId, STATIC_QUERY_ID> as UndecoratedInsertRecord<Table>>
+             <diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<Select, Columns> as UndecoratedInsertRecord<<Columns as diesel::query_builder::insert_statement::column_list::ColumnList>::Table>>
+             <diesel::query_builder::insert_statement::ValuesClause<T, Table> as UndecoratedInsertRecord<Table>>
            and $N others
    = note: required for `Vec<users::table>` to implement `diesel::Insertable<posts::table>`
 
@@ -20,7 +20,7 @@ error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == V
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:10
    |
 37 |         .values((users, users));
-   |          ^^^^^^ expected struct `InsertFromSelect`, found struct `ValuesClause`
+   |          ^^^^^^ expected `InsertFromSelect<SelectStatement<...>, ...>`, found `ValuesClause<_, table>`
    |
    = note: expected struct `InsertFromSelect<SelectStatement<FromClause<table>>, (user_id, title, body)>`
               found struct `diesel::query_builder::insert_statement::ValuesClause<_, posts::table>`
@@ -30,7 +30,7 @@ error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == V
   --> tests/fail/insert_from_select_cant_be_used_with_tuples_or_arrays.rs:37:17
    |
 37 |         .values((users, users));
-   |          ------ ^^^^^^^^^^^^^^ expected struct `ValuesClause`, found struct `InsertFromSelect`
+   |          ------ ^^^^^^^^^^^^^^ expected `ValuesClause<_, table>`, found `InsertFromSelect<SelectStatement<...>, ...>`
    |          |
    |          required by a bound introduced by this call
    |
@@ -40,5 +40,8 @@ error[E0271]: type mismatch resolving `<table as Insertable<table>>::Values == V
 note: required by a bound in `IncompleteInsertStatement::<T, Op>::values`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn values<U>(self, records: U) -> InsertStatement<T, U::Values, Op>
+   |            ------ required by a bound in this associated function
+   |     where
    |         U: Insertable<T>,
    |            ^^^^^^^^^^^^^ required by this bound in `IncompleteInsertStatement::<T, Op>::values`

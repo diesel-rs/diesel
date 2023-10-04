@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<foo<Bound<Integer, i32>> as Expression>:
   --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:35:38
    |
 35 |     let _ = users::table.filter(name.eq(foo(1)));
-   |                                      ^^ expected struct `Integer`, found struct `Text`
+   |                                      ^^ expected `Integer`, found `Text`
    |
    = note: required for `foo::foo<diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>` to implement `AsExpression<diesel::sql_types::Text>`
 
@@ -10,7 +10,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/user_defined_functions_follow_same_selection_rules.rs:38:23
    |
 38 |         .load::<User>(&mut conn);
-   |          ----         ^^^^^^^^^ expected struct `Once`, found struct `Never`
+   |          ----         ^^^^^^^^^ expected `Once`, found `Never`
    |          |
    |          required by a bound introduced by this call
    |
@@ -27,6 +27,9 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -59,5 +62,8 @@ note: required for `posts::columns::title` to implement `AppearsOnTable<users::t
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

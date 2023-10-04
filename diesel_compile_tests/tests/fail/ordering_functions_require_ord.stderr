@@ -5,14 +5,14 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
    |                                      ^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
-             Array<T>
+             diesel::sql_types::SmallInt
+             diesel::sql_types::Integer
              BigInt
-             Datetime
+             diesel::sql_types::Float
+             diesel::sql_types::Double
+             diesel::sql_types::Text
+             diesel::sql_types::Date
              Interval
-             Nullable<T>
-             Unsigned<BigInt>
-             Unsigned<diesel::sql_types::Integer>
-             Unsigned<diesel::sql_types::SmallInt>
            and $N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::max`
@@ -28,14 +28,14 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
    |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
-             Array<T>
+             diesel::sql_types::SmallInt
+             diesel::sql_types::Integer
              BigInt
-             Datetime
+             diesel::sql_types::Float
+             diesel::sql_types::Double
+             diesel::sql_types::Text
+             diesel::sql_types::Date
              Interval
-             Nullable<T>
-             Unsigned<BigInt>
-             Unsigned<diesel::sql_types::Integer>
-             Unsigned<diesel::sql_types::SmallInt>
            and $N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
    = note: required for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Bool, columns::b>` to implement `diesel::Expression`
@@ -48,14 +48,14 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
    |                                      ^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
-             Array<T>
+             diesel::sql_types::SmallInt
+             diesel::sql_types::Integer
              BigInt
-             Datetime
+             diesel::sql_types::Float
+             diesel::sql_types::Double
+             diesel::sql_types::Text
+             diesel::sql_types::Date
              Interval
-             Nullable<T>
-             Unsigned<BigInt>
-             Unsigned<diesel::sql_types::Integer>
-             Unsigned<diesel::sql_types::SmallInt>
            and $N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
 note: required by a bound in `diesel::dsl::min`
@@ -71,14 +71,14 @@ error[E0277]: the trait bound `diesel::sql_types::Bool: SqlOrd` is not satisfied
    |                               ^^^^^^ the trait `SqlOrd` is not implemented for `diesel::sql_types::Bool`
    |
    = help: the following other types implement trait `SqlOrd`:
-             Array<T>
+             diesel::sql_types::SmallInt
+             diesel::sql_types::Integer
              BigInt
-             Datetime
+             diesel::sql_types::Float
+             diesel::sql_types::Double
+             diesel::sql_types::Text
+             diesel::sql_types::Date
              Interval
-             Nullable<T>
-             Unsigned<BigInt>
-             Unsigned<diesel::sql_types::Integer>
-             Unsigned<diesel::sql_types::SmallInt>
            and $N others
    = note: required for `diesel::sql_types::Bool` to implement `diesel::expression::functions::aggregate_ordering::private::SqlOrdAggregate`
    = note: required for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Bool, columns::b>` to implement `diesel::Expression`

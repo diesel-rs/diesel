@@ -420,7 +420,7 @@ pub use diesel_derives::QueryableByName;
 /// ```
 #[cfg_attr(
     feature = "nightly-error-messages",
-    rustc_on_unimplemented(
+    diagnostic::on_unimplemented(
         message = "Cannot deserialize a value of the database type `{A}` as `{Self}`",
         note = "Double check your type mappings via the documentation of `{A}`"
     )
@@ -453,11 +453,10 @@ pub trait FromSql<A, DB: Backend>: Sized {
 ///    * [`QueryableByName`]
 #[cfg_attr(
     feature = "nightly-error-messages",
-    rustc_on_unimplemented(on(
-        ST = "diesel::sql_types::Untyped",
+    diagnostic::on_unimplemented(
         note = "`diesel::sql_query` requires the loading target to column names for loading values.\n\
                  You need to provide a type that explicitly derives `diesel::deserialize::QueryableByName`",
-    ))
+    )
 )]
 pub trait FromSqlRow<ST, DB: Backend>: Sized {
     /// See the trait documentation.
