@@ -10,7 +10,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ## Unreleased
 
-## [2.1.3] 2023-10-xx
+## [2.1.3] 2023-10-05
 
 * Increased accidently decreased limit around element count in  `DISTINCT ON` and `ORDER BY` clauses again as that broke existing code
 
@@ -2057,3 +2057,4 @@ queries or set `PIPES_AS_CONCAT` manually.
 [2.1.0]: https://github.com/diesel-rs/diesel/compare/v2.0.0...v2.1.0
 [2.1.1]: https://github.com/diesel-rs/diesel/compare/v2.1.0...v2.1.1
 [2.1.2]: https://github.com/diesel-rs/diesel/compare/v2.1.1...v2.1.2
+[2.1.3]: https://github.com/diesel-rs/diesel/compare/v2.1.2...v2.1.3
