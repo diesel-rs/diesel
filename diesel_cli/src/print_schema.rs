@@ -555,6 +555,7 @@ impl<'a> Display for TableDefinition<'a> {
                 {
                     if already_imported_custom_types.insert(&ct.rust_name) {
                         if !has_written_import {
+                            writeln!(out, "#[allow(clippy::pedantic)]")?;
                             writeln!(out, "use diesel::sql_types::*;")?;
                         }
                         writeln!(out, "use super::sql_types::{};", ct.rust_name)?;
