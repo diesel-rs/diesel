@@ -45,7 +45,6 @@ const USEC_PER_SEC: u64 = 1_000_000;
 const NANO_PER_USEC: u32 = 1_000;
 
 fn usecs_to_duration(usecs_passed: u64) -> Duration {
-    let usecs_passed = usecs_passed;
     let seconds = usecs_passed / USEC_PER_SEC;
     let subsecond_usecs = usecs_passed % USEC_PER_SEC;
     let subseconds = subsecond_usecs as u32 * NANO_PER_USEC;
