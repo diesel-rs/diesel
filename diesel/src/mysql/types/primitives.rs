@@ -13,10 +13,10 @@ where
     T::Err: Error + Send + Sync + 'static,
 {
     let string = str::from_utf8(bytes)?;
-    let mut splited = string.split('.');
-    let integer_portion = splited.next().unwrap_or_default();
-    let _decimal_portion = splited.next().unwrap_or_default();
-    if splited.next().is_some() {
+    let mut split = string.split('.');
+    let integer_portion = split.next().unwrap_or_default();
+    let _decimal_portion = split.next().unwrap_or_default();
+    if split.next().is_some() {
         Err(format!("Invalid decimal format: {string:?}").into())
     } else {
         Ok(integer_portion.parse()?)

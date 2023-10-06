@@ -352,7 +352,7 @@ mod pg_types {
             }
         }
         // Strip of nano second precision as postgres
-        // does not accuratly handle them
+        // does not accurately handle them
         let nanos = (r.nanosecond() / 1000) * 1000;
         r.with_nanosecond(nanos).unwrap()
     }
@@ -361,7 +361,7 @@ mod pg_types {
         let time = mk_naive_time(data);
 
         // Strip of nano second precision as postgres
-        // does not accuratly handle them
+        // does not accurately handle them
         let nanos = (time.nanosecond() / 1000) * 1000;
         time.with_nanosecond(nanos).unwrap()
     }
@@ -517,7 +517,7 @@ mod mysql_types {
         let r = mk_naive_datetime((seconds, nanos));
 
         // Strip of nano second precision as mysql
-        // does not accuratly handle them
+        // does not accurately handle them
         let nanos = (r.nanosecond() / 1000) * 1000;
         r.with_nanosecond(nanos).unwrap()
     }
@@ -547,7 +547,7 @@ mod mysql_types {
         }
 
         // Strip of nano second precision as mysql
-        // does not accuratly handle them
+        // does not accurately handle them
         let nanos = (r.nanosecond() / 1000) * 1000;
         r.with_nanosecond(nanos).unwrap()
     }

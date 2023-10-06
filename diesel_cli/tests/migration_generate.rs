@@ -380,7 +380,7 @@ fn run_generate_migration_test(test_name: &str, args: Vec<&str>, p: Project) {
         insta::assert_snapshot!("expected", result);
     });
 
-    // revert the migration and compare the schema to the inital one
+    // revert the migration and compare the schema to the initial one
     let result = p.command("migration").arg("revert").run();
     assert!(result.is_success(), "Result was unsuccessful {:?}", result);
 

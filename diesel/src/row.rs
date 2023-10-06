@@ -94,7 +94,7 @@ pub trait Row<'a, DB: Backend>:
 
 /// Represents a single field in a database row.
 ///
-/// This trait allows retrieving information on the name of the colum and on the value of the
+/// This trait allows retrieving information on the name of the column and on the value of the
 /// field.
 pub trait Field<'a, DB: Backend> {
     /// The name of the current field

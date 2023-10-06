@@ -277,7 +277,7 @@ fn distinct_of_multiple_columns() {
 
     assert_eq!(Ok(expected), data);
 
-    // with arbitary expressions
+    // with arbitrary expressions
 
     let data = posts::table
         .left_join(users::table)

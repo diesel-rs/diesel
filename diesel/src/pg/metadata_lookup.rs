@@ -150,7 +150,7 @@ impl<'a> PgMetadataCacheKey<'a> {
     }
 
     /// Convert the possibly borrowed version of this metadata cache key
-    /// into a lifetime independ owned version
+    /// into a lifetime independent owned version
     pub fn into_owned(self) -> PgMetadataCacheKey<'static> {
         let PgMetadataCacheKey { schema, type_name } = self;
         PgMetadataCacheKey {

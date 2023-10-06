@@ -1,0 +1,23 @@
+[default]
+extend-ignore-re = [
+    # that's a ipv6
+    "2001:4f8:3:ba",
+    # that is just strangly cased
+    "dO_nOt_cHaNgE_cAsE", "fOoBaR",
+    # that is the name of a book author
+    "michael_ende", "Michael Ende",
+    # That's an actual money unit (include the commet to only match that part)
+    "Fils;  // 1/1000th unit of Dinar",
+    # That's a name (include the expression to only match the relevant part)
+    "name\\.eq\\(\"Claus\"\\)",
+    # thats a test for a typo,
+    "cannot find value `titel` in module `posts`",
+    "cannot find type `titel` in module `posts`",
+    "[0-9]+[[:space]]+|[[:space:]]+titel: String",
+]
+
+[type.md]
+extend-ignore-re = [
+    # occurs in the changelog
+    "derive\\(Queriable\\)", "`Queriable`"
+]

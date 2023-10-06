@@ -1,4 +1,4 @@
-error: Litterals must have type suffix for auto_type, e.g. 2i64
+error: Literals must have type suffix for auto_type, e.g. 2i64
   --> tests/fail/auto_type.rs:45:13
    |
 45 |     let n = 2;
@@ -10,7 +10,7 @@ error: auto_type: Can't infer generic argument because there is no function argu
 56 |     posts::user_id.eq::<_>()
    |                         ^
 
-error: Litterals must have type suffix for auto_type, e.g. 2i64
+error: Literals must have type suffix for auto_type, e.g. 2i64
   --> tests/fail/auto_type.rs:66:34
    |
 66 |             .filter(posts::id.gt(2)),
