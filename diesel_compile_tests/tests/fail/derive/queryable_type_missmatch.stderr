@@ -7,6 +7,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+             (ST0,)
              (ST0, ST1)
              (ST0, ST1, ST2)
              (ST0, ST1, ST2, ST3)
@@ -14,12 +15,14 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
              (ST0, ST1, ST2, ST3, ST4, ST5)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
-             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
            and $N others
    = note: required for `users::table` to implement `LoadQuery<'_, _, UserWithToFewFields>`
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -32,6 +35,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+             (ST0,)
              (ST0, ST1)
              (ST0, ST1, ST2)
              (ST0, ST1, ST2, ST3)
@@ -39,12 +43,14 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
              (ST0, ST1, ST2, ST3, ST4, ST5)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
-             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
            and $N others
    = note: required for `users::table` to implement `LoadQuery<'_, _, UserWithToManyFields>`
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -57,6 +63,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+             (ST0,)
              (ST0, ST1)
              (ST0, ST1, ST2)
              (ST0, ST1, ST2, ST3)
@@ -64,12 +71,14 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
              (ST0, ST1, ST2, ST3, ST4, ST5)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
-             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
            and $N others
    = note: required for `users::table` to implement `LoadQuery<'_, _, UserWrongOrder>`
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -82,6 +91,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
    |                          required by a bound introduced by this call
    |
    = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+             (ST0,)
              (ST0, ST1)
              (ST0, ST1, ST2)
              (ST0, ST1, ST2, ST3)
@@ -89,11 +99,13 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
              (ST0, ST1, ST2, ST3, ST4, ST5)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
-             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7, ST8)
            and $N others
    = note: required for `users::table` to implement `LoadQuery<'_, _, UserTypeMissmatch>`
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

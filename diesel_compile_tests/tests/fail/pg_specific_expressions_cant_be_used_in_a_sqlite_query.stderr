@@ -22,6 +22,9 @@ error[E0277]: the trait bound `diesel::pg::expression::array_comparison::Any<die
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -41,6 +44,9 @@ error[E0277]: the trait bound `diesel::pg::expression::operators::IsNotDistinctF
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
@@ -60,22 +66,29 @@ error[E0277]: the trait bound `diesel::pg::expression::date_and_time::AtTimeZone
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0599]: the method `execute` exists for struct `IncompleteOnConflict<InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<name, Bound<Text, &&str>>>,), table>>, ConflictTarget<OnConstraint<'_>>>`, but its trait bounds were not satisfied
+error[E0599]: the method `execute` exists for struct `IncompleteOnConflict<InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>>, ...>`, but its trait bounds were not satisfied
   --> tests/fail/pg_specific_expressions_cant_be_used_in_a_sqlite_query.rs:34:10
    |
-34 |         .execute(&mut connection);
-   |          ^^^^^^^ method cannot be called due to unsatisfied trait bounds
+32 | /     insert_into(users).values(&NewUser("Sean"))
+33 | |         .on_conflict(on_constraint("name"))
+34 | |         .execute(&mut connection);
+   | |         -^^^^^^^ method cannot be called due to unsatisfied trait bounds
+   | |_________|
+   |
    |
   ::: $DIESEL/src/upsert/on_conflict_extension.rs
    |
-   | pub struct IncompleteOnConflict<Stmt, Target> {
-   | ---------------------------------------------
-   | |
-   | doesn't satisfy `_: RunQueryDsl<_>`
-   | doesn't satisfy `_: Table`
+   |   pub struct IncompleteOnConflict<Stmt, Target> {
+   |   ---------------------------------------------
+   |   |
+   |   doesn't satisfy `_: RunQueryDsl<_>`
+   |   doesn't satisfy `_: Table`
    |
    = note: the following trait bounds were not satisfied:
            `IncompleteOnConflict<InsertStatement<users::table, diesel::query_builder::insert_statement::ValuesClause<(DefaultableColumnInsertValue<ColumnInsertValue<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Text, &&str>>>,), users::table>>, diesel::query_builder::upsert::on_conflict_target::ConflictTarget<OnConstraint<'_>>>: Table`

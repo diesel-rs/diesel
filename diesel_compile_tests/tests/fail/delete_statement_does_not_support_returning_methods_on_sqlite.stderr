@@ -7,9 +7,9 @@ error[E0277]: the trait bound `ReturningClause<(columns::id, columns::name)>: Qu
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
+             <ReturningClause<Expr> as QueryFragment<DB>>
              <ReturningClause<Expr> as QueryFragment<DB, PgLikeReturningClause>>
              <ReturningClause<Expr> as QueryFragment<DB, sqlite::backend::SqliteReturningClause>>
-             <ReturningClause<Expr> as QueryFragment<DB>>
    = note: required for `ReturningClause<(columns::id, columns::name)>` to implement `QueryFragment<Sqlite>`
    = note: 1 redundant requirement hidden
    = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, Bound<Text, &str>>>>, ReturningClause<(id, name)>>` to implement `QueryFragment<Sqlite>`
@@ -17,6 +17,9 @@ error[E0277]: the trait bound `ReturningClause<(columns::id, columns::name)>: Qu
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+   |        ---------- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
 
@@ -29,9 +32,9 @@ error[E0277]: the trait bound `ReturningClause<columns::name>: QueryFragment<Sql
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
+             <ReturningClause<Expr> as QueryFragment<DB>>
              <ReturningClause<Expr> as QueryFragment<DB, PgLikeReturningClause>>
              <ReturningClause<Expr> as QueryFragment<DB, sqlite::backend::SqliteReturningClause>>
-             <ReturningClause<Expr> as QueryFragment<DB>>
    = note: required for `ReturningClause<columns::name>` to implement `QueryFragment<Sqlite>`
    = note: 1 redundant requirement hidden
    = note: required for `DeleteStatement<table, WhereClause<Grouped<Eq<name, Bound<Text, &str>>>>, ReturningClause<name>>` to implement `QueryFragment<Sqlite>`
@@ -39,5 +42,8 @@ error[E0277]: the trait bound `ReturningClause<columns::name>: QueryFragment<Sql
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+   |        ---------- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`

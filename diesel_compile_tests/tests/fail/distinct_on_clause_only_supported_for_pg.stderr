@@ -14,6 +14,9 @@ error[E0277]: the trait bound `DistinctOnClause<columns::name>: QueryFragment<Sq
 note: required by a bound in `get_results`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ----------- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`
 
@@ -33,5 +36,8 @@ error[E0277]: the trait bound `DistinctOnClause<columns::name>: QueryFragment<My
 note: required by a bound in `get_results`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn get_results<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ----------- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_results`

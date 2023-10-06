@@ -8,9 +8,9 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::into_conflict_clau
    |
    = help: the following other types implement trait `QueryFragment<DB, SP>`:
              <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<BoxedSelectStatement<'a, ST, QS, Sqlite, GB>> as QueryFragment<Sqlite>>
+             <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<F, S, D, diesel::query_builder::where_clause::WhereClause<W>, O, LOf, G, H, LC>> as QueryFragment<Sqlite>>
              <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S> as QueryFragment<Mysql>>
              <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<S> as QueryFragment<Pg>>
-             <diesel::query_builder::upsert::into_conflict_clause::OnConflictSelectWrapper<SelectStatement<F, S, D, diesel::query_builder::where_clause::WhereClause<W>, O, LOf, G, H, LC>> as QueryFragment<Sqlite>>
    = note: required for `InsertFromSelect<OnConflictSelectWrapper<SelectStatement<FromClause<table>, SelectClause<id>>>, id>` to implement `QueryFragment<Sqlite>`
    = note: 3 redundant requirements hidden
    = note: required for `InsertStatement<table, OnConflictValues<InsertFromSelect<OnConflictSelectWrapper<...>, ...>, ..., ...>>` to implement `QueryFragment<Sqlite>`
@@ -18,5 +18,8 @@ error[E0277]: the trait bound `diesel::query_builder::upsert::into_conflict_clau
 note: required by a bound in `diesel::RunQueryDsl::execute`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+   |        ------- required by a bound in this associated function
+...
    |         Self: methods::ExecuteDsl<Conn>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`

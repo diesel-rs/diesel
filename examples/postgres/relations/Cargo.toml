@@ -8,3 +8,7 @@ edition = "2021"
 [dependencies]
 diesel = { version = "2.1.0", features = ["postgres"], path = "../../../diesel" }
 dotenvy = "0.15.6"
+
+[[bin]]
+name = "relations"
+doc = false

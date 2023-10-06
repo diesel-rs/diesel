@@ -1,3 +1,7 @@
+use std::marker::PhantomData;
+
+use diesel::deserialize::FromSql;
+use diesel::sql_types::Text;
 use diesel::*;
 
 use crate::helpers::connection;
@@ -170,5 +174,52 @@ fn check_for_backend_with_deserialize_as() {
         id: i32,
         #[diesel(deserialize_as = String)]
         name: MyString,
+    }
+}
+
+#[allow(dead_code)] // that's essentially a compile test
+#[test]
+fn check_with_lifetime_and_type_param() {
+    use std::borrow::Cow;
+    table! {
+        test {
+            id -> Integer,
+            name -> Text,
+        }
+    }
+
+    #[derive(Queryable, Selectable)]
+    #[diesel(table_name = test)]
+    #[diesel(check_for_backend(crate::helpers::TestBackend))]
+    pub struct Account<'n0> {
+        id: i32,
+        name: Cow<'n0, str>,
+    }
+
+    #[derive(Queryable, Selectable)]
+    #[diesel(table_name = test)]
+    #[diesel(check_for_backend(crate::helpers::TestBackend))]
+    pub struct Foo<T>
+    where
+        T: Copy,
+    {
+        name: FooInner<T>,
+    }
+
+    #[derive(FromSqlRow)]
+    pub struct FooInner<T>(String, PhantomData<T>);
+
+    impl<T> FromSql<Text, crate::helpers::TestBackend> for FooInner<T>
+    where
+        T: Copy,
+    {
+        fn from_sql(
+            bytes: <crate::helpers::TestBackend as backend::Backend>::RawValue<'_>,
+        ) -> deserialize::Result<Self> {
+            Ok(Self(
+                <String as FromSql<Text, crate::helpers::TestBackend>>::from_sql(bytes)?,
+                PhantomData,
+            ))
+        }
     }
 }

@@ -11,7 +11,7 @@ use crate::util::wrap_in_dummy_mod;
 pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     let model = Model::from_item(&item, false, false)?;
 
-    let (_, ty_generics, _) = item.generics.split_for_impl();
+    let (_, ty_generics, original_where_clause) = item.generics.split_for_impl();
 
     let mut generics = item.generics.clone();
     generics
@@ -51,20 +51,23 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
             .filter(|(f, _)| !f.embed())
             .flat_map(|(f, ty)| {
                 backends.iter().map(move |b| {
-                    let field_ty = to_field_ty_bound(f.ty_for_deserialize());
-                    let span = field_ty.span();
-                    quote::quote_spanned! {span =>
+                    let span = f.ty.span();
+                    let field_ty = to_field_ty_bound(f.ty_for_deserialize())?;
+                    Ok(syn::parse_quote_spanned! {span =>
                         #field_ty: diesel::deserialize::FromSqlRow<diesel::dsl::SqlTypeOf<#ty>, #b>
-                    }
+                    })
                 })
-            });
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let where_clause = &mut original_where_clause.cloned();
+        let where_clause = where_clause.get_or_insert_with(|| parse_quote!(where));
+        for field_check in field_check_bound {
+            where_clause.predicates.push(field_check);
+        }
         Some(quote::quote! {
-            fn _check_field_compatibility()
-            where
-                #(#field_check_bound,)*
-            {
-
-            }
+            fn _check_field_compatibility #impl_generics()
+                #where_clause
+            {}
         })
     } else {
         None
@@ -95,49 +98,27 @@ pub fn derive(item: DeriveInput) -> Result<TokenStream> {
     }))
 }
 
-fn to_field_ty_bound(field_ty: &syn::Type) -> Option<TokenStream> {
+fn to_field_ty_bound(field_ty: &syn::Type) -> Result<TokenStream> {
     match field_ty {
-        syn::Type::Path(p) => {
-            if let syn::PathArguments::AngleBracketed(ref args) =
-                p.path.segments.last().unwrap().arguments
-            {
-                let lt = args
-                    .args
-                    .iter()
-                    .filter_map(|f| {
-                        if let syn::GenericArgument::Lifetime(lt) = f {
-                            Some(lt)
-                        } else {
-                            None
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                if lt.is_empty() {
-                    Some(quote::quote! {
-                        #field_ty
-                    })
-                } else if lt.len() == args.args.len() {
-                    Some(quote::quote! {
-                        for<#(#lt,)*> #field_ty
-                    })
-                } else {
-                    // type parameters are not supported for checking
-                    // for now
-                    None
-                }
-            } else {
-                Some(quote::quote! {
-                    #field_ty
-                })
-            }
-        }
-        syn::Type::Reference(_r) => {
+        syn::Type::Reference(r) => {
+            use crate::quote::ToTokens;
             // references are not supported for checking for now
             //
             // (How ever you can even have references in a `Queryable` struct anyway)
-            None
+            Err(syn::Error::new(
+                field_ty.span(),
+                format!(
+                    "References are not supported in `Queryable` types\n\
+                         Consider using `std::borrow::Cow<'{}, {}>` instead",
+                    r.lifetime
+                        .as_ref()
+                        .expect("It's a struct field so it must have a named lifetime")
+                        .ident,
+                    r.elem.to_token_stream()
+                ),
+            ))
         }
-        field_ty => Some(quote::quote! {
+        field_ty => Ok(quote::quote! {
             #field_ty
         }),
     }

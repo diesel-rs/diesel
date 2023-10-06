@@ -25,7 +25,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/update_requires_valid_where_clause.rs:23:26
    |
 23 |     update(users::table).filter(posts::id.eq(1));
-   |                          ^^^^^^ expected struct `Never`, found struct `Once`
+   |                          ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/update_requires_valid_where_clause.rs:13:9
@@ -63,7 +63,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/update_requires_valid_where_clause.rs:26:10
    |
 26 |         .filter(posts::id.eq(1));
-   |          ^^^^^^ expected struct `Never`, found struct `Once`
+   |          ^^^^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/update_requires_valid_where_clause.rs:13:9

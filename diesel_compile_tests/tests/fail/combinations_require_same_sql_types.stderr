@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<table as AsQuery>::SqlType == (Integer, 
   --> tests/fail/combinations_require_same_sql_types.rs:30:32
    |
 30 |     let _ = users::table.union(comments::table);
-   |                          ----- ^^^^^^^^^^^^^^^ expected struct `Text`, found struct `Integer`
+   |                          ----- ^^^^^^^^^^^^^^^ expected `(Integer, Text)`, found `(Integer, Integer)`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -11,6 +11,9 @@ error[E0271]: type mismatch resolving `<table as AsQuery>::SqlType == (Integer, 
 note: required by a bound in `union`
   --> $DIESEL/src/query_dsl/combine_dsl.rs
    |
+   |     fn union<Rhs>(self, rhs: Rhs) -> dsl::Union<Self, Rhs>
+   |        ----- required by a bound in this associated function
+   |     where
    |         Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>;
    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CombineDsl::union`
 
@@ -18,7 +21,7 @@ error[E0271]: type mismatch resolving `<table as AsQuery>::SqlType == (Integer, 
   --> tests/fail/combinations_require_same_sql_types.rs:35:25
    |
 35 |     let _ = union.union(comments::table);
-   |                   ----- ^^^^^^^^^^^^^^^ expected struct `Text`, found struct `Integer`
+   |                   ----- ^^^^^^^^^^^^^^^ expected `(Integer, Text)`, found `(Integer, Integer)`
    |                   |
    |                   required by a bound introduced by this call
    |
@@ -27,5 +30,8 @@ error[E0271]: type mismatch resolving `<table as AsQuery>::SqlType == (Integer, 
 note: required by a bound in `union`
   --> $DIESEL/src/query_dsl/combine_dsl.rs
    |
+   |     fn union<Rhs>(self, rhs: Rhs) -> dsl::Union<Self, Rhs>
+   |        ----- required by a bound in this associated function
+   |     where
    |         Rhs: AsQuery<SqlType = <Self::Query as Query>::SqlType>;
    |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `CombineDsl::union`
