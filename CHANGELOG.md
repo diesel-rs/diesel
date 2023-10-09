@@ -18,7 +18,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 ### Changed
 
-* The minimal offically supported rustc version is now 1.66.0
+* The minimal officially supported rustc version is now 1.66.0
 
 ## [2.1.0] 2023-05-26
 
@@ -258,7 +258,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
   and a bound to `QueryableByName<DB>` with `FromSqlRow<Untyped, DB>`. 
 
 * CLI flags of `only-tables` and `except-tables` are now interpreted as regular expressions.
-  Similarly, `only_tabels` and `except_tables` in `diesel.toml` are treated as regular expressions.
+  Similarly, `only_tables` and `except_tables` in `diesel.toml` are treated as regular expressions.
 
 * Now you can sort column fields by name with the `column-sorting` option. 
   It can be set to either `ordinal_position` (default) or `name`.

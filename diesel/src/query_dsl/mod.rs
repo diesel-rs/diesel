@@ -1563,7 +1563,7 @@ pub trait RunQueryDsl<Conn>: Sized {
     ///
     /// They may provide additional modes. Checkout the documentation of the concrete
     /// connection types for details. For connection implementations that provide
-    /// more than one loading mode it is **required** to specify this generic paramater.
+    /// more than one loading mode it is **required** to specify this generic parameter.
     /// This is currently true for `PgConnection`.
     ///
     /// When this method is called on [`sql_query`],

@@ -204,9 +204,9 @@ where
     type Count = Never;
 }
 
-/// To be able to define `helper_types::Fields` with the ususal conventions
+/// To be able to define `helper_types::Fields` with the usual conventions
 ///
-/// This type is intentionally not publically exported
+/// This type is intentionally not publicly exported
 pub trait GetAliasSourceFromAlias {
     type Source;
 }

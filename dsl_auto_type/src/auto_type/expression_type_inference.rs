@@ -226,8 +226,8 @@ impl TypeInferrer<'_> {
                 syn::Lit::ByteStr(_) => parse_quote_spanned!(lit.span()=> &'static [u8]),
                 syn::Lit::Byte(_) => parse_quote_spanned!(lit.span()=> u8),
                 syn::Lit::Char(_) => parse_quote_spanned!(lit.span()=> char),
-                syn::Lit::Int(lit_int) => litteral_type(&lit_int.token())?,
-                syn::Lit::Float(lit_float) => litteral_type(&lit_float.token())?,
+                syn::Lit::Int(lit_int) => literal_type(&lit_int.token())?,
+                syn::Lit::Float(lit_float) => literal_type(&lit_float.token())?,
                 syn::Lit::Bool(_) => parse_quote_spanned!(lit.span()=> bool),
                 _ => {
                     return Err(syn::Error::new(
@@ -310,16 +310,16 @@ impl TypeInferrer<'_> {
     }
 }
 
-fn litteral_type(t: &proc_macro2::Literal) -> Result<syn::Type, syn::Error> {
+fn literal_type(t: &proc_macro2::Literal) -> Result<syn::Type, syn::Error> {
     let val = t.to_string();
     let type_suffix = &val[val
         .find(|c: char| !c.is_ascii_digit() && c != '_')
         .ok_or_else(|| {
             syn::Error::new_spanned(
                 t,
-                format_args!("Litterals must have type suffix for auto_type, e.g. {val}i64"),
+                format_args!("Literals must have type suffix for auto_type, e.g. {val}i64"),
             )
         })?..];
     syn::parse_str(type_suffix)
-        .map_err(|_| syn::Error::new_spanned(t, "Invalid type suffix for litteral"))
+        .map_err(|_| syn::Error::new_spanned(t, "Invalid type suffix for literal"))
 }

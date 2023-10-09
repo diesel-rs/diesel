@@ -56,7 +56,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
         }
         None => {
             let mut message = format!(
-                "Neither an explict primary key found nor does an `id` column exist.\n\
+                "Neither an explicit primary key found nor does an `id` column exist.\n\
                  Consider explicitly defining a primary key. \n\
                  For example for specifying `{}` as primary key:\n\n\
                  table! {{\n",

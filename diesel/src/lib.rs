@@ -164,12 +164,12 @@
 //! copy of `libpq` for your target architecture. This features implies `postgres_backend`
 //! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
 //! of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
-//! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependend
+//! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
 //! on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
 //! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
 //! postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
 //! postgres backend
-//! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependend
+//! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependent
 //! on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
 //! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
 //! mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the

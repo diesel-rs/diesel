@@ -1,4 +1,4 @@
-error: Neither an explict primary key found nor does an `id` column exist.
+error: Neither an explicit primary key found nor does an `id` column exist.
        Consider explicitly defining a primary key.
        For example for specifying `user_id` as primary key:
 
