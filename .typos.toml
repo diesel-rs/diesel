@@ -1,3 +1,9 @@
+[files]
+extend-exclude = [
+    ".git/",
+]
+ignore-hidden = false
+
 [default]
 extend-ignore-re = [
     # that's a ipv6
