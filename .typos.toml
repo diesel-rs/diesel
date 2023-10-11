@@ -1,16 +1,16 @@
 [default]
 extend-ignore-re = [
-    # that's a ipv6
+    # That's a ipv6
     "2001:4f8:3:ba",
-    # that is just strangly cased
+    # That is just strangely cased
     "dO_nOt_cHaNgE_cAsE", "fOoBaR",
-    # that is the name of a book author
+    # That is the name of a book author
     "michael_ende", "Michael Ende",
     # That's an actual money unit (include the commet to only match that part)
     "Fils;  // 1/1000th unit of Dinar",
     # That's a name (include the expression to only match the relevant part)
     "name\\.eq\\(\"Claus\"\\)",
-    # thats a test for a typo,
+    # Thats a test for a typo,
     "cannot find value `titel` in module `posts`",
     "cannot find type `titel` in module `posts`",
     "[0-9]+[[:space]]+|[[:space:]]+titel: String",
@@ -18,6 +18,6 @@ extend-ignore-re = [
 
 [type.md]
 extend-ignore-re = [
-    # occurs in the changelog
+    # Occurs in the changelog
     "derive\\(Queriable\\)", "`Queriable`"
 ]
