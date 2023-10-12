@@ -120,6 +120,15 @@ pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlT
 /// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
+/// The return type of [`case_when_else()`](crate::expression::case_when::case_when_else)
+#[allow(non_camel_case_types)]
+pub type case_when_else<C, T, F, ST = <T as Expression>::SqlType> =
+    crate::expression::case_when::CaseWhenElse<
+        Grouped<C>,
+        Grouped<AsExprOf<T, ST>>,
+        Grouped<AsExprOf<F, ST>>,
+    >;
+
 /// Represents the return type of [`.as_select()`](crate::prelude::SelectableHelper::as_select)
 pub type AsSelect<Source, DB> = SelectBy<Source, DB>;
 
