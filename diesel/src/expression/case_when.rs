@@ -25,6 +25,12 @@ use super::{AsExpression, TypedExpressionType};
 /// assert_eq!(&[(1, 1), (2, 0)], users_with_name.as_slice());
 /// # }
 /// ```
+///
+/// Note that the SQL types of the `if_true` and `if_false` expressions should
+/// be equal. This includes whether they are wrapped in
+/// [`Nullable`](crate::sql_types::Nullable), so you may need to call
+/// [`nullable`](crate::expression_methods::NullableExpressionMethods::nullable)
+/// on one of them.
 pub fn case_when_else<C, T, F, ST>(
     condition: C,
     if_true: T,
