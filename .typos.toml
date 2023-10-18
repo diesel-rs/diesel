@@ -20,6 +20,7 @@ extend-ignore-re = [
     "cannot find value `titel` in module `posts`",
     "cannot find type `titel` in module `posts`",
     "[0-9]+[[:space]]+|[[:space:]]+titel: String",
+    "big_sur"
 ]
 
 [type.md]

@@ -194,6 +194,7 @@ jobs:
           echo "MYSQLCLIENT_LIB_DIR=C:\tools\mysql\current\lib" >> $GITHUB_ENV
           echo "C:\tools\mysql\current\lib" >> $GITHUB_PATH
           echo "C:\tools\mysql\current\bin" >> $GITHUB_PATH
+          dir "C:\tools\mysql\current\lib"
 
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@master

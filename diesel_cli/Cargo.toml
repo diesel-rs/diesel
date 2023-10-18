@@ -13,6 +13,10 @@ edition = "2021"
 include = ["src/**/*", "LICENSE-*", "README.md"]
 rust-version = "1.66.0"
 
+[package.metadata.wix]
+upgrade-guid = "AC330981-F4F8-4D8A-AD78-F8B7ECC32DF3"
+path-guid = "1730337B-A19D-4DDE-AFA5-983752956861"
+
 [[bin]]
 name = "diesel"
 path = "src/main.rs"
@@ -58,3 +62,18 @@ uses_information_schema = []
 
 [[test]]
 name = "tests"
+
+[package.metadata.dist]
+features = ["sqlite-bundled"]
+
+[package.metadata.dist.dependencies.apt]
+libpq-dev = '*'
+libmysqlclient-dev = '*'
+
+[package.metadata.dist.dependencies.homebrew]
+libpq = '*'
+mysql-client = '*'
+
+[package.metadata.dist.dependencies.chocolatey]
+postgresql12 = '*'
+mysql = '*'
