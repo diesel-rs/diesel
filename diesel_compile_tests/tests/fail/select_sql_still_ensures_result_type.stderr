@@ -1,7 +1,7 @@
 error[E0277]: Cannot deserialize a value of the database type `BigInt` as `*const str`
-  --> tests/fail/select_sql_still_ensures_result_type.rs:16:51
+  --> tests/fail/select_sql_still_ensures_result_type.rs:17:51
    |
-16 |     let count = select_count.get_result::<String>(&mut connection).unwrap();
+17 |     let count = select_count.get_result::<String>(&mut connection).unwrap();
    |                              ----------           ^^^^^^^^^^^^^^^ the trait `FromSql<BigInt, _>` is not implemented for `*const str`
    |                              |
    |                              required by a bound introduced by this call
@@ -19,5 +19,8 @@ error[E0277]: Cannot deserialize a value of the database type `BigInt` as `*cons
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
+   |        ---------- required by a bound in this associated function
+   |     where
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`

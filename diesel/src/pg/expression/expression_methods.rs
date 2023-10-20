@@ -1178,7 +1178,7 @@ pub trait PgNetExpressionMethods: Expression + Sized {
 
     /// Creates a PostgreSQL `-` expression.
     ///
-    /// This operator substracts an address from an address to compute the distance between the two
+    /// This operator subtracts an address from an address to compute the distance between the two
     ///
     /// # Example
     ///

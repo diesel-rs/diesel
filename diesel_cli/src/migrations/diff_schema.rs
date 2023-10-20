@@ -53,25 +53,25 @@ pub fn generate_sql_based_on_diff_schema(
 
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
-    let foreign_key_map = foreign_keys.into_iter().fold(HashMap::new(), |mut acc, t| {
-        acc.entry(t.child_table.rust_name.clone())
-            .or_insert_with(Vec::new)
-            .push(t);
-        acc
-    });
-
-    let mut expected_fk_map =
-        tables_from_schema
-            .joinable
+    let foreign_key_map =
+        foreign_keys
             .into_iter()
-            .try_fold(HashMap::new(), |mut acc, t| {
-                t.map(|t| {
-                    acc.entry(t.child_table.to_string())
-                        .or_insert_with(Vec::new)
-                        .push(t);
-                    acc
-                })
-            })?;
+            .fold(HashMap::<_, Vec<_>>::new(), |mut acc, t| {
+                acc.entry(t.child_table.rust_name.clone())
+                    .or_default()
+                    .push(t);
+                acc
+            });
+
+    let mut expected_fk_map = tables_from_schema.joinable.into_iter().try_fold(
+        HashMap::<_, Vec<_>>::new(),
+        |mut acc, t| {
+            t.map(|t| {
+                acc.entry(t.child_table.to_string()).or_default().push(t);
+                acc
+            })
+        },
+    )?;
 
     let table_pk_key_list = tables_from_schema
         .table_decls

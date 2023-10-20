@@ -51,13 +51,10 @@ impl<'stmt, 'query> StatementIterator<'stmt, 'query> {
             match res {
                 Err(e) => Some(Err(e)),
                 Ok(false) => None,
-                Ok(true) => {
-                    let field_count = field_count;
-                    Some(Ok(SqliteRow {
-                        inner: Rc::clone(outer_last_row),
-                        field_count,
-                    }))
-                }
+                Ok(true) => Some(Ok(SqliteRow {
+                    inner: Rc::clone(outer_last_row),
+                    field_count,
+                })),
             }
         } else {
             // any other state than `PrivateSqliteRow::Direct` is invalid here

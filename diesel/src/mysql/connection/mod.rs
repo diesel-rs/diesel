@@ -248,8 +248,10 @@ fn prepared_query<'a, T: QueryFragment<Mysql> + QueryId>(
     statement_cache: &'a mut StatementCache<Mysql, Statement>,
     raw_connection: &'a mut RawConnection,
 ) -> QueryResult<MaybeCached<'a, Statement>> {
-    let mut stmt = statement_cache
-        .cached_statement(source, &Mysql, &[], |sql, _| raw_connection.prepare(sql))?;
+    let mut stmt =
+        statement_cache.cached_statement(T::query_id(), source, &Mysql, &[], &mut |sql, _| {
+            raw_connection.prepare(sql)
+        })?;
     let mut bind_collector = RawBytesBindCollector::new();
     source.collect_binds(&mut bind_collector, &mut (), &Mysql)?;
     let binds = bind_collector

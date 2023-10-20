@@ -6,10 +6,10 @@ error[E0369]: cannot add `columns::name` to `columns::name`
    |                          |
    |                          columns::name
    |
-note: an implementation of `std::ops::Add<_>` might be missing for `columns::name`
+note: an implementation of `std::ops::Add` might be missing for `columns::name`
   --> tests/fail/numeric_ops_require_numeric_column.rs:8:9
    |
 8  |         name -> VarChar,
-   |         ^^^^ must implement `std::ops::Add<_>`
+   |         ^^^^ must implement `std::ops::Add`
 note: the trait `std::ops::Add` must be implemented
-  --> /rustc/52372f9c71d8ade4cb815524f179119656f0aa2e/library/core/src/ops/arith.rs:77:1
+  --> /rustc/3223b0b5e8dadda3f76c3fd1a8d6c5addc09599e/library/core/src/ops/arith.rs:76:1

@@ -2,7 +2,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
   --> tests/fail/invalid_joins.rs:41:37
    |
 41 |     let _ = users::table.inner_join(posts::table.inner_join(users::table));
-   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `MoreThanOnce`
+   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -23,6 +23,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 note: required by a bound in `inner_join`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
+   |        ---------- required by a bound in this associated function
+   |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
@@ -30,7 +33,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:41:26
    |
 41 |     let _ = users::table.inner_join(posts::table.inner_join(users::table));
-   |                          ^^^^^^^^^^ expected struct `MoreThanOnce`, found struct `Once`
+   |                          ^^^^^^^^^^ expected `MoreThanOnce`, found `Once`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -46,7 +49,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
   --> tests/fail/invalid_joins.rs:44:37
    |
 44 |     let _ = users::table.inner_join(posts::table.inner_join(users::table.on(posts::user_id.eq(users::id))));
-   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `MoreThanOnce`
+   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -67,6 +70,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 note: required by a bound in `inner_join`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
+   |        ---------- required by a bound in this associated function
+   |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
@@ -74,7 +80,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:44:26
    |
 44 |     let _ = users::table.inner_join(posts::table.inner_join(users::table.on(posts::user_id.eq(users::id))));
-   |                          ^^^^^^^^^^ expected struct `MoreThanOnce`, found struct `Once`
+   |                          ^^^^^^^^^^ expected `MoreThanOnce`, found `Once`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -90,7 +96,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
   --> tests/fail/invalid_joins.rs:47:37
    |
 47 |     let _ = users::table.inner_join(posts::table.on(users::id.eq(posts::user_id)).inner_join(users::table));
-   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `MoreThanOnce`
+   |                          ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -111,6 +117,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 note: required by a bound in `inner_join`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
+   |        ---------- required by a bound in this associated function
+   |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
@@ -118,7 +127,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:47:26
    |
 47 |     let _ = users::table.inner_join(posts::table.on(users::id.eq(posts::user_id)).inner_join(users::table));
-   |                          ^^^^^^^^^^ expected struct `MoreThanOnce`, found struct `Once`
+   |                          ^^^^^^^^^^ expected `MoreThanOnce`, found `Once`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, Inner>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -134,7 +143,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
   --> tests/fail/invalid_joins.rs:50:65
    |
 50 |     let _ = users::table.inner_join(comments::table).inner_join(posts::table.inner_join(comments::table));
-   |                                                      ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `MoreThanOnce`
+   |                                                      ---------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |                                                      |
    |                                                      required by a bound introduced by this call
    |
@@ -153,6 +162,9 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
 note: required by a bound in `inner_join`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
+   |        ---------- required by a bound in this associated function
+   |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::Inner>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::inner_join`
 
@@ -160,7 +172,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
   --> tests/fail/invalid_joins.rs:58:36
    |
 58 |     let _ = users::table.left_join(posts::table.left_join(users::table));
-   |                          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `MoreThanOnce`
+   |                          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -181,6 +193,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 note: required by a bound in `left_join`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
+   |        --------- required by a bound in this associated function
+   |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
 
@@ -188,7 +203,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:58:26
    |
 58 |     let _ = users::table.left_join(posts::table.left_join(users::table));
-   |                          ^^^^^^^^^ expected struct `MoreThanOnce`, found struct `Once`
+   |                          ^^^^^^^^^ expected `MoreThanOnce`, found `Once`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -204,7 +219,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
   --> tests/fail/invalid_joins.rs:61:36
    |
 61 |     let _ = users::table.left_join(posts::table.left_join(users::table.on(posts::user_id.eq(users::id))));
-   |                          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `MoreThanOnce`
+   |                          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -225,6 +240,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 note: required by a bound in `left_join`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
+   |        --------- required by a bound in this associated function
+   |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
 
@@ -232,7 +250,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:61:26
    |
 61 |     let _ = users::table.left_join(posts::table.left_join(users::table.on(posts::user_id.eq(users::id))));
-   |                          ^^^^^^^^^ expected struct `MoreThanOnce`, found struct `Once`
+   |                          ^^^^^^^^^ expected `MoreThanOnce`, found `Once`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::user_id, users::columns::id>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -248,7 +266,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
   --> tests/fail/invalid_joins.rs:64:36
    |
 64 |     let _ = users::table.left_join(posts::table.on(users::id.eq(posts::user_id)).left_join(users::table));
-   |                          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `MoreThanOnce`
+   |                          --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -269,6 +287,9 @@ note: required for `users::columns::id` to implement `AppearsOnTable<query_sourc
 note: required by a bound in `left_join`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
+   |        --------- required by a bound in this associated function
+   |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`
 
@@ -276,7 +297,7 @@ error[E0271]: type mismatch resolving `<Join<table, SelectStatement<FromClause<J
   --> tests/fail/invalid_joins.rs:64:26
    |
 64 |     let _ = users::table.left_join(posts::table.on(users::id.eq(posts::user_id)).left_join(users::table));
-   |                          ^^^^^^^^^ expected struct `MoreThanOnce`, found struct `Once`
+   |                          ^^^^^^^^^ expected `MoreThanOnce`, found `Once`
    |
 note: required for `users::columns::id` to implement `AppearsOnTable<query_source::joins::Join<users::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, users::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/invalid_joins.rs:7:9
@@ -292,7 +313,7 @@ error[E0271]: type mismatch resolving `<Once as Plus<Once>>::Output == Once`
   --> tests/fail/invalid_joins.rs:67:63
    |
 67 |     let _ = users::table.left_join(comments::table).left_join(posts::table.left_join(comments::table));
-   |                                                     --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `Once`, found struct `MoreThanOnce`
+   |                                                     --------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `Once`, found `MoreThanOnce`
    |                                                     |
    |                                                     required by a bound introduced by this call
    |
@@ -311,5 +332,8 @@ note: required for `comments::columns::id` to implement `AppearsOnTable<query_so
 note: required by a bound in `left_join`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn left_join<Rhs>(self, rhs: Rhs) -> LeftJoin<Self, Rhs>
+   |        --------- required by a bound in this associated function
+   |     where
    |         Self: JoinWithImplicitOnClause<Rhs, joins::LeftOuter>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::left_join`

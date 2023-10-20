@@ -7,39 +7,80 @@ error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<
     |                                              required by a bound introduced by this call
     |
     = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T1>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST4, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3, T4)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T2>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST3, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
             and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ...>` to implement `DistinctOnDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> $DIESEL/src/query_dsl/mod.rs
     |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+    |     where
     |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
-error[E0271]: type mismatch resolving `<id as OrderDecorator>::Column == name`
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:117:61
+error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not satisfied
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:117:73
     |
 117 |     let _ = users::table.order_by((users::id, users::name)).distinct_on(users::name);
-    |                                                             ^^^^^^^^^^^ expected struct `id`, found struct `name`
+    |                                                             ----------- ^^^^^^^^^^^ the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
+    |                                                             |
+    |                                                             required by a bound introduced by this call
     |
-    = note: required for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>` to implement `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>`
+    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+            and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ...>` to implement `DistinctOnDsl<columns::name>`
+note: required by a bound in `diesel::QueryDsl::distinct_on`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+    |     where
+    |         Self: methods::DistinctOnDsl<Expr>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
-error[E0271]: type mismatch resolving `<id as OrderDecorator>::Column == name`
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:123:10
+error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not satisfied
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:123:22
     |
 123 |         .distinct_on(users::name);
-    |          ^^^^^^^^^^^ expected struct `id`, found struct `name`
+    |          ----------- ^^^^^^^^^^^ the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
+    |          |
+    |          required by a bound introduced by this call
     |
-    = note: required for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>` to implement `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>`
+    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+            and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ...>` to implement `DistinctOnDsl<columns::name>`
+note: required by a bound in `diesel::QueryDsl::distinct_on`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+    |     where
+    |         Self: methods::DistinctOnDsl<Expr>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
 error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<columns::id>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not satisfied
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:127:60
@@ -50,19 +91,22 @@ error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<
     |                                                   required by a bound introduced by this call
     |
     = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T1>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST4, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3, T4)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T2>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST3, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
             and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `OrderDsl<columns::id>`
 note: required by a bound in `order_by`
    --> $DIESEL/src/query_dsl/mod.rs
     |
+    |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
+    |        -------- required by a bound in this associated function
+...
     |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`
 
@@ -75,30 +119,52 @@ error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<
     |                                              required by a bound introduced by this call
     |
     = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T1>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST4, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3, T4)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T2>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST3, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
             and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ...>` to implement `DistinctOnDsl<columns::name>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> $DIESEL/src/query_dsl/mod.rs
     |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+    |     where
     |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
-error[E0271]: type mismatch resolving `<id as OrderDecorator>::Column == name`
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:136:10
+error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not satisfied
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:136:22
     |
 136 |         .distinct_on(users::name)
-    |          ^^^^^^^^^^^ expected struct `id`, found struct `name`
+    |          ----------- ^^^^^^^^^^^ the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
+    |          |
+    |          required by a bound introduced by this call
     |
-    = note: required for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>` to implement `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>`
+    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+            and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ...>` to implement `DistinctOnDsl<columns::name>`
+note: required by a bound in `diesel::QueryDsl::distinct_on`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+    |     where
+    |         Self: methods::DistinctOnDsl<Expr>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
 error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(columns::name, columns::id)>>` is not satisfied
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:143:22
@@ -109,39 +175,80 @@ error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<
     |          required by a bound introduced by this call
     |
     = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T1>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST4, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3, T4)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T2>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST3, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
             and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ...>` to implement `DistinctOnDsl<(columns::name, columns::id)>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
    --> $DIESEL/src/query_dsl/mod.rs
     |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+    |     where
     |         Self: methods::DistinctOnDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
-error[E0271]: type mismatch resolving `<id as OrderDecorator>::Column == name`
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:150:10
+error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<columns::id>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(columns::name, columns::id)>>` is not satisfied
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:150:22
     |
 150 |         .distinct_on((users::name, users::id))
-    |          ^^^^^^^^^^^ expected struct `id`, found struct `name`
+    |          ----------- ^^^^^^^^^^^^^^^^^^^^^^^^ the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(columns::name, columns::id)>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<columns::id>`
+    |          |
+    |          required by a bound introduced by this call
     |
-    = note: required for `diesel::query_builder::order_clause::OrderClause<columns::id>` to implement `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(columns::name, columns::id)>>`
+    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+            and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ...>` to implement `DistinctOnDsl<(columns::name, columns::id)>`
+note: required by a bound in `diesel::QueryDsl::distinct_on`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+    |     where
+    |         Self: methods::DistinctOnDsl<Expr>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
-error[E0271]: type mismatch resolving `<id as OrderDecorator>::Column == name`
-   --> tests/fail/distinct_on_requires_matching_order_clause.rs:157:10
+error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not satisfied
+   --> tests/fail/distinct_on_requires_matching_order_clause.rs:157:22
     |
 157 |         .distinct_on(users::name)
-    |          ^^^^^^^^^^^ expected struct `id`, found struct `name`
+    |          ----------- ^^^^^^^^^^^ the trait `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not implemented for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>`
+    |          |
+    |          required by a bound introduced by this call
     |
-    = note: required for `diesel::query_builder::order_clause::OrderClause<(columns::id, columns::name)>` to implement `query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>`
+    = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+            and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, NoDistinctClause, ..., ...>` to implement `DistinctOnDsl<columns::name>`
+note: required by a bound in `diesel::QueryDsl::distinct_on`
+   --> $DIESEL/src/query_dsl/mod.rs
+    |
+    |     fn distinct_on<Expr>(self, expr: Expr) -> DistinctOn<Self, Expr>
+    |        ----------- required by a bound in this associated function
+    |     where
+    |         Self: methods::DistinctOnDsl<Expr>,
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::distinct_on`
 
 error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<columns::id>: query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<columns::name>>` is not satisfied
    --> tests/fail/distinct_on_requires_matching_order_clause.rs:164:19
@@ -152,18 +259,21 @@ error[E0277]: the trait bound `diesel::query_builder::order_clause::OrderClause<
     |          required by a bound introduced by this call
     |
     = help: the following other types implement trait `query_dsl::order_dsl::ValidOrderingForDistinct<D>`:
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T1>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST1, ST2, ST3, ST4, ST0)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T1, T2, T3, T4)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2,)>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T2>>>
-              <diesel::query_builder::order_clause::OrderClause<(ST2, ST3, ST0, ST1)> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Asc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2, T3, T4)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<T>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1)>>>
+              <diesel::query_builder::order_clause::OrderClause<diesel::expression::operators::Desc<T0>> as query_dsl::order_dsl::ValidOrderingForDistinct<DistinctOnClause<(T0, T1, T2)>>>
             and $N others
     = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<name>>` to implement `OrderDsl<columns::id>`
 note: required by a bound in `order_by`
    --> $DIESEL/src/query_dsl/mod.rs
     |
+    |     fn order_by<Expr>(self, expr: Expr) -> OrderBy<Self, Expr>
+    |        -------- required by a bound in this associated function
+...
     |         Self: methods::OrderDsl<Expr>,
     |               ^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `QueryDsl::order_by`

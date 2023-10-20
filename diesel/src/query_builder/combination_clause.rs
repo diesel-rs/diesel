@@ -287,7 +287,7 @@ mod sqlite {
 
     impl<T: QueryFragment<Sqlite>> QueryFragment<Sqlite> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-            // SQLite does not support parenthesis around Ths
+            // SQLite does not support parenthesis around this clause
             // we can emulate this by construct a fake outer
             // SELECT * FROM (inner_query) statement
             out.push_sql("SELECT * FROM (");

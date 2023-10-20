@@ -1,4 +1,4 @@
-error: Litterals must have type suffix for auto_type, e.g. 2i64
+error: Literals must have type suffix for auto_type, e.g. 2i64
   --> tests/fail/auto_type.rs:45:13
    |
 45 |     let n = 2;
@@ -10,13 +10,13 @@ error: auto_type: Can't infer generic argument because there is no function argu
 56 |     posts::user_id.eq::<_>()
    |                         ^
 
-error: Litterals must have type suffix for auto_type, e.g. 2i64
+error: Literals must have type suffix for auto_type, e.g. 2i64
   --> tests/fail/auto_type.rs:66:34
    |
 66 |             .filter(posts::id.gt(2)),
    |                                  ^
 
-error[E0107]: this type alias takes 0 generic arguments but 1 generic argument was supplied
+error[E0107]: type alias takes 0 generic arguments but 1 generic argument was supplied
   --> tests/fail/auto_type.rs:36:17
    |
 30 |   #[dsl::auto_type]

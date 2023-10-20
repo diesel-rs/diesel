@@ -61,11 +61,11 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, diesel::sql_types::Text,
    |          ^^^^^^^^^^ the trait `Table` is not implemented for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>`
    |
    = help: the following other types implement trait `Table`:
+             posts::table
+             users::table
              Only<S>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
-             posts::table
-             users::table
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>` to implement `JoinTo<query_source::joins::OnClauseWrapper<_, _>>`
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::name>` to implement `JoinWithImplicitOnClause<query_source::joins::OnClauseWrapper<_, _>, Inner>`
 
@@ -73,7 +73,7 @@ error[E0308]: mismatched types
   --> tests/fail/boxed_queries_and_group_by.rs:73:21
    |
 73 |         .inner_join(posts::table)
-   |          ---------- ^^^^^^^^^^^^ expected struct `OnClauseWrapper`, found struct `table`
+   |          ---------- ^^^^^^^^^^^^ expected `OnClauseWrapper<_, _>`, found `table`
    |          |
    |          arguments to this method are incorrect
    |
@@ -90,7 +90,7 @@ help: the return type of this call is `posts::table` due to the type of the argu
     | |_____________________------------^
     |                       |
     |                       this argument influences the return type of `inner_join`
-note: associated function defined here
+note: method defined here
    --> $DIESEL/src/query_dsl/mod.rs
     |
     |     fn inner_join<Rhs>(self, rhs: Rhs) -> InnerJoin<Self, Rhs>
@@ -103,7 +103,7 @@ error[E0308]: mismatched types
    |                 ------------------------- expected due to this value
 ...
 79 |     a = users::table.group_by(users::id).into_boxed();
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `()`, found struct `id`
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `BoxedSelectStatement<'_, (..., ...), ..., ...>`, found `BoxedSelectStatement<'_, (..., ...), ..., ..., ...>`
    |
    = note: expected struct `BoxedSelectStatement<'_, _, _, _, ()>`
               found struct `BoxedSelectStatement<'_, _, _, _, users::columns::id>`
@@ -112,7 +112,7 @@ error[E0271]: type mismatch resolving `<BoxedSelectStatement<'_, (Integer, Text)
   --> tests/fail/boxed_queries_and_group_by.rs:84:10
    |
 84 |         .group_by(users::id)
-   |          ^^^^^^^^ expected struct `BoxedSelectStatement`, found struct `SelectStatement`
+   |          ^^^^^^^^ expected `BoxedSelectStatement<'_, (..., ...), ..., ...>`, found `SelectStatement<FromClause<...>>`
    |
    = note: expected struct `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`
               found struct `SelectStatement<FromClause<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>>>`
@@ -125,11 +125,11 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, (diesel::sql_types::Inte
    |          ^^^^^^^^ the trait `Table` is not implemented for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>`
    |
    = help: the following other types implement trait `Table`:
+             posts::table
+             users::table
              Only<S>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
-             posts::table
-             users::table
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>` to implement `GroupByDsl<_>`
 
 error[E0277]: the trait bound `SelectStatement<FromClause<BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>>>: GroupByDsl<_>` is not satisfied

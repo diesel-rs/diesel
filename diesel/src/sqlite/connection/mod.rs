@@ -4,12 +4,14 @@ mod bind_collector;
 mod functions;
 mod raw;
 mod row;
+mod serialized_database;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
 
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
@@ -306,9 +308,13 @@ impl SqliteConnection {
     {
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
-        let statement = cache.cached_statement(&source, &Sqlite, &[], |sql, is_cached| {
-            Statement::prepare(raw_connection, sql, is_cached)
-        })?;
+        let statement = cache.cached_statement(
+            T::query_id(),
+            &source,
+            &Sqlite,
+            &[],
+            &mut |sql, is_cached| Statement::prepare(raw_connection, sql, is_cached),
+        )?;
 
         StatementUse::bind(statement, source)
     }
@@ -406,6 +412,58 @@ impl SqliteConnection {
             .register_collation_function(collation_name, collation)
     }
 
+    /// Serialize the current SQLite database into a byte buffer.
+    ///
+    /// The serialized data is identical to the data that would be written to disk if the database
+    /// was saved in a file.
+    ///
+    /// # Returns
+    ///
+    /// This function returns a byte slice representing the serialized database.
+    pub fn serialize_database_to_buffer(&mut self) -> SerializedDatabase {
+        self.raw_connection.serialize()
+    }
+
+    /// Deserialize an SQLite database from a byte buffer.
+    ///
+    /// This function takes a byte slice and attempts to deserialize it into a SQLite database.
+    /// If successful, the database is loaded into the connection. If the deserialization fails,
+    /// an error is returned.
+    ///
+    /// The database is opened in READONLY mode.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use diesel::sqlite::SerializedDatabase;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # use diesel::result::QueryResult;
+    /// # use diesel::sql_query;
+    /// # use diesel::Connection;
+    /// # use diesel::RunQueryDsl;
+    /// # fn main() {
+    /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+    ///     .execute(connection).unwrap();
+    /// sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+    ///     .execute(connection).unwrap();
+    ///
+    /// // Serialize the database to a byte vector
+    /// let serialized_db: SerializedDatabase = connection.serialize_database_to_buffer();
+    ///
+    /// // Create a new in-memory SQLite database
+    /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// // Deserialize the byte vector into the new database
+    /// connection.deserialize_readonly_database_from_buffer(serialized_db.as_slice()).unwrap();
+    /// #
+    /// # }
+    /// ```
+    pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
+        self.raw_connection.deserialize(data)
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -435,6 +493,41 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::Integer;
+
+    #[test]
+    fn database_serializes_and_deserializes_successfully() {
+        let expected_users = vec![
+            (
+                1,
+                "John Doe".to_string(),
+                "john.doe@example.com".to_string(),
+            ),
+            (
+                2,
+                "Jane Doe".to_string(),
+                "jane.doe@example.com".to_string(),
+            ),
+        ];
+
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        let _ =
+            crate::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+                .execute(connection);
+        let _ = crate::sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+            .execute(connection);
+
+        let serialized_database = connection.serialize_database_to_buffer();
+
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
+            .unwrap();
+
+        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+        let actual_users = query.load::<(i32, String, String)>(connection).unwrap();
+
+        assert_eq!(expected_users, actual_users);
+    }
 
     #[test]
     fn prepared_statements_are_cached_when_run() {

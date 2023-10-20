@@ -8,6 +8,7 @@ use std::ptr::NonNull;
 use std::{mem, ptr, slice, str};
 
 use super::functions::{build_sql_function_args, process_sql_function_result};
+use super::serialized_database::SerializedDatabase;
 use super::stmt::ensure_sqlite_ok;
 use super::{Sqlite, SqliteAggregateFunction};
 use crate::deserialize::FromSqlRow;
@@ -183,6 +184,34 @@ impl RawConnection {
             destroy_boxed::<CollationUserPtr<F>>(callback_fn as *mut _);
         }
         result
+    }
+
+    pub(super) fn serialize(&mut self) -> SerializedDatabase {
+        unsafe {
+            let mut size: ffi::sqlite3_int64 = 0;
+            let data_ptr = ffi::sqlite3_serialize(
+                self.internal_connection.as_ptr(),
+                std::ptr::null(),
+                &mut size as *mut _,
+                0,
+            );
+            SerializedDatabase::new(data_ptr, size as usize)
+        }
+    }
+
+    pub(super) fn deserialize(&mut self, data: &[u8]) -> QueryResult<()> {
+        unsafe {
+            let result = ffi::sqlite3_deserialize(
+                self.internal_connection.as_ptr(),
+                std::ptr::null(),
+                data.as_ptr() as *mut u8,
+                data.len() as i64,
+                data.len() as i64,
+                ffi::SQLITE_DESERIALIZE_READONLY as u32,
+            );
+
+            ensure_sqlite_ok(result, self.internal_connection.as_ptr())
+        }
     }
 
     fn get_fn_name(fn_name: &str) -> Result<CString, NulError> {

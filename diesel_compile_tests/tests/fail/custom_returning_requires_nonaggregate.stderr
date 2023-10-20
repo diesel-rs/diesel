@@ -7,12 +7,15 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
    |                                                                    required by a bound introduced by this call
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
-             <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
+             <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
    = note: required for `UpdateStatement<table, WhereClause<Grouped<Eq<id, Bound<Integer, i32>>>>, Assign<..., ...>, ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
   --> $DIESEL/src/query_builder/update_statement/mod.rs
    |
+   |     pub fn returning<E>(self, returns: E) -> UpdateStatement<T, U, V, ReturningClause<E>>
+   |            --------- required by a bound in this associated function
+...
    |         UpdateStatement<T, U, V, ReturningClause<E>>: Query,
    |                                                       ^^^^^ required by this bound in `UpdateStatement::<T, U, V>::returning`
 
@@ -25,13 +28,16 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
    |                                                     required by a bound introduced by this call
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
-             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
+             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
    = note: required for `(columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, columns::name>)` to implement `ValidGrouping<()>`
    = note: required for `(columns::name, diesel::expression::count::count::count<diesel::sql_types::Text, columns::name>)` to implement `NonAggregate`
    = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>, ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn returning<E>(self, returns: E) -> InsertStatement<T, U, Op, ReturningClause<E>>
+   |            --------- required by a bound in this associated function
+   |     where
    |         InsertStatement<T, U, Op, ReturningClause<E>>: Query,
    |                                                        ^^^^^ required by this bound in `InsertStatement::<T, U, Op>::returning`

@@ -223,8 +223,8 @@ impl Drop for Statement {
 // * https://github.com/rust-lang/unsafe-code-guidelines/issues/194
 struct BoundStatement<'stmt, 'query> {
     statement: MaybeCached<'stmt, Statement>,
-    // we need to store the query here to ensure none does
-    // drop it till the end ot the statement
+    // we need to store the query here to ensure no one does
+    // drop it till the end of the statement
     // We use a boxed queryfragment here just to erase the
     // generic type, we use NonNull to communicate
     // that this is a shared buffer

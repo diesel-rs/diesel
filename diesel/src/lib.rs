@@ -164,12 +164,12 @@
 //! copy of `libpq` for your target architecture. This features implies `postgres_backend`
 //! - `mysql`: This feature enables the idesel mysql backend. Enabling this feature requires a compatible copy
 //! of `libmysqlclient` for your target architecture. This feature implies `mysql_backend`
-//! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependend
+//! - `postgres_backend`: This feature enables those parts of diesels postgres backend, that are not dependent
 //! on `libpq`. Diesel does not provide any connection implementation with only this feature enabled.
 //! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
 //! postgres backend outside of diesel itself, while reusing the existing query dsl extensions for the
 //! postgres backend
-//! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependend
+//! - `mysql_backend`: This feature enables those parts of diesels mysql backend, that are not dependent
 //! on `libmysqlclient`. Diesel does not provide any connection implementation with only this feature enabled.
 //! This feature can be used to implement a custom implementation of diesels `Connection` trait for the
 //! mysql backend outside of diesel itself, while reusing the existing query dsl extensions for the
@@ -214,6 +214,7 @@
 //! various bugs in rustdoc. It can be used to check if you depend on any such hidden `#[deprecated]` item.
 //! - `nightly-error-messages`: This feature enables the generation of improved compiler error messages for
 //! common mistakes using diesel. This feature requires a nightly rust compiler and is considered to be unstable.
+//! It requires adding `#![feature(diagnostic_namespace)]` to your crate.
 //! We might remove it in future diesel versions without replacement or deprecation.
 //!
 //!
@@ -222,7 +223,7 @@
 //! - `with-deprecated`
 //! - `32-column-tables`
 
-#![cfg_attr(feature = "nightly-error-messages", feature(rustc_attrs))]
+#![cfg_attr(feature = "nightly-error-messages", feature(diagnostic_namespace))]
 #![cfg_attr(feature = "unstable", feature(trait_alias))]
 #![cfg_attr(doc_cfg, feature(doc_cfg, doc_auto_cfg))]
 #![cfg_attr(feature = "128-column-tables", recursion_limit = "256")]

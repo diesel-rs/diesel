@@ -270,10 +270,54 @@ fn distinct_of_multiple_columns() {
         .load(&mut connection);
     let expected = vec![
         (posts[1].clone(), sean.clone()),
-        (posts[0].clone(), sean),
+        (posts[0].clone(), sean.clone()),
         (posts[5].clone(), tess.clone()),
-        (posts[4].clone(), tess),
+        (posts[4].clone(), tess.clone()),
     ];
 
+    assert_eq!(Ok(expected), data);
+
+    // with arbitrary expressions
+
+    let data = posts::table
+        .left_join(users::table)
+        .order((users::id.nullable(), posts::body.nullable().desc()))
+        .distinct_on((users::id.nullable(), posts::body.nullable()))
+        .load(&mut connection);
+
+    let expected = vec![
+        (posts[1].clone(), Some(sean.clone())),
+        (posts[0].clone(), Some(sean.clone())),
+        (posts[7].clone(), Some(tess.clone())),
+        (posts[6].clone(), Some(tess.clone())),
+    ];
+
+    assert_eq!(Ok(expected), data);
+
+    let data = posts::table
+        .left_join(users::table)
+        .order((users::id.nullable(), posts::body.nullable().desc()))
+        .distinct_on(users::id.nullable())
+        .load(&mut connection);
+
+    let expected = vec![
+        (posts[1].clone(), Some(sean.clone())),
+        (posts[7].clone(), Some(tess.clone())),
+    ];
+
+    assert_eq!(Ok(expected), data);
+
+    let data = posts::table
+        .left_join(users::table)
+        .order(users::id.nullable())
+        .distinct_on((users::id.nullable(), posts::body.nullable()))
+        .load(&mut connection);
+
+    let expected = vec![
+        (posts[0].clone(), Some(sean.clone())),
+        (posts[1].clone(), Some(sean)),
+        (posts[4].clone(), Some(tess.clone())),
+        (posts[7].clone(), Some(tess)),
+    ];
     assert_eq!(Ok(expected), data);
 }

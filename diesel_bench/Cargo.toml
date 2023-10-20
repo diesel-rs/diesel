@@ -23,7 +23,7 @@ serde = {version = "1", optional = true, features = ["derive"]}
 sea-orm = {  git = "https://github.com/SeaQL/sea-orm/", branch = "master", optional = true, features = ["runtime-tokio-rustls"]}
 futures = {version = "0.3", optional = true}
 diesel-async = {version = "0.2", optional = true, default-features = false}
-criterion-perf-events = { version = "0.2", optional = true}
+criterion-perf-events = { version = "0.4", optional = true}
 perfcnt = {version = "0.8", optional = true}
 
 [dependencies.diesel]

@@ -100,7 +100,7 @@ fn select_multiple_from_join() {
         .load::<(String, i32)>(connection)
         .unwrap();
 
-    // using mutiple aliases for the same table works if they are declared in the same alias call
+    // using multiple aliases for the same table works if they are declared in the same alias call
     let (user1_alias, user2_alias, _post_alias) =
         alias!(users as user1, users as user2, posts as post1,);
 
