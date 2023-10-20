@@ -11,7 +11,6 @@ pub const SQL_TYPE_NOTE: &str = "sql_type = Foo";
 pub const SERIALIZE_AS_NOTE: &str = "serialize_as = Foo";
 pub const DESERIALIZE_AS_NOTE: &str = "deserialize_as = Foo";
 pub const SERIALIZE_FN_NOTE: &str = "serialize_fn = some_function";
-pub const DESERIALIZE_FN_NOTE: &str = "deserialize_fn = some_function";
 pub const TABLE_NAME_NOTE: &str = "table_name = foo";
 pub const TREAT_NONE_AS_DEFAULT_VALUE_NOTE: &str = "treat_none_as_default_value = true";
 pub const TREAT_NONE_AS_NULL_NOTE: &str = "treat_none_as_null = true";
