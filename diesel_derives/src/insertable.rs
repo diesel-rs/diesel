@@ -67,14 +67,18 @@ fn derive_into_single_table(
             None => treat_none_as_default_value,
         };
 
-        match (field.serialize_as.as_ref(), field.embed()) {
-            (None, true) => {
+        match (
+            field.serialize_as.as_ref(),
+            field.serialize_fn.as_ref(),
+            field.embed(),
+        ) {
+            (None, None, true) => {
                 direct_field_ty.push(field_ty_embed(field, None));
                 direct_field_assign.push(field_expr_embed(field, None));
                 ref_field_ty.push(field_ty_embed(field, Some(quote!(&'insert))));
                 ref_field_assign.push(field_expr_embed(field, Some(quote!(&))));
             }
-            (None, false) => {
+            (None, None, false) => {
                 direct_field_ty.push(field_ty(
                     field,
                     table_name,
@@ -100,14 +104,22 @@ fn derive_into_single_table(
                     treat_none_as_default_value,
                 )?);
             }
-            (Some(AttributeSpanWrapper { item: ty, .. }), false) => {
+            (Some(AttributeSpanWrapper { item: ty, .. }), serialize_fn, false) => {
                 direct_field_ty.push(field_ty_serialize_as(
                     field,
                     table_name,
                     ty,
                     treat_none_as_default_value,
                 )?);
-                if field.serialize_fn.is_none() {
+                if let Some(AttributeSpanWrapper { item: function, .. }) = serialize_fn {
+                    direct_field_assign.push(field_expr_serialize_fn(
+                        field,
+                        table_name,
+                        ty,
+                        function,
+                        treat_none_as_default_value,
+                    )?);
+                } else {
                     direct_field_assign.push(field_expr_serialize_as(
                         field,
                         table_name,
@@ -118,76 +130,22 @@ fn derive_into_single_table(
 
                 generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_as)] there is no point in generating the impl of Insertable for borrowed structs
             }
-            (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
+            (Some(AttributeSpanWrapper { attribute_span, .. }), _, true) => {
                 return Err(syn::Error::new(
                     *attribute_span,
                     "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`",
                 ));
             }
-        }
-
-        match (field.serialize_fn.as_ref(), field.embed()) {
-            (None, true) => {
-                direct_field_ty.push(field_ty_embed(field, None));
-                direct_field_assign.push(field_expr_embed(field, None));
-                ref_field_ty.push(field_ty_embed(field, Some(quote!(&'insert))));
-                ref_field_assign.push(field_expr_embed(field, Some(quote!(&))));
-            }
-            (None, false) => {
-                direct_field_ty.push(field_ty(
-                    field,
-                    table_name,
-                    None,
-                    treat_none_as_default_value,
-                )?);
-                direct_field_assign.push(field_expr(
-                    field,
-                    table_name,
-                    None,
-                    treat_none_as_default_value,
-                )?);
-                ref_field_ty.push(field_ty(
-                    field,
-                    table_name,
-                    Some(quote!(&'insert)),
-                    treat_none_as_default_value,
-                )?);
-                ref_field_assign.push(field_expr(
-                    field,
-                    table_name,
-                    Some(quote!(&)),
-                    treat_none_as_default_value,
-                )?);
-            }
-            (
-                Some(AttributeSpanWrapper {
-                    item: function,
-                    attribute_span,
-                    ..
-                }),
-                false,
-            ) => {
-                if let Some(AttributeSpanWrapper { item: ty, .. }) = field.serialize_as.as_ref() {
-                    direct_field_assign.push(field_expr_serialize_fn(
-                        field,
-                        table_name,
-                        ty,
-                        function,
-                        treat_none_as_default_value,
-                    )?);
-
-                    generate_borrowed_insert = false; // as soon as we hit one field with #[diesel(serialize_fn)] there is no point in generating the impl of Insertable for borrowed structs
-                } else {
-                    return Err(syn::Error::new(
-                        *attribute_span,
-                        "`#[diesel(serialize_fn)]` reqires `#[diesel(serialize_as)]` to be set for the same field",
-                    ));
-                }
-            }
-            (Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
+            (None, Some(AttributeSpanWrapper { attribute_span, .. }), true) => {
                 return Err(syn::Error::new(
                     *attribute_span,
-                    "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_as)]`",
+                    "`#[diesel(embed)]` cannot be combined with `#[diesel(serialize_fn)]`",
+                ));
+            }
+            (None, Some(AttributeSpanWrapper { attribute_span, .. }), false) => {
+                return Err(syn::Error::new(
+                    *attribute_span,
+                    "`#[diesel(serialize_fn)]` requires `#[diesel(serialize_as)]` to be declared as well",
                 ));
             }
         }
