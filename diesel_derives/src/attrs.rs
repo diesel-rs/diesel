@@ -13,9 +13,10 @@ use crate::deprecated::ParseDeprecated;
 use crate::parsers::{BelongsTo, MysqlType, PostgresType, SqliteType};
 use crate::util::{
     parse_eq, parse_paren, unknown_attribute, BELONGS_TO_NOTE, COLUMN_NAME_NOTE,
-    DESERIALIZE_AS_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE, SELECT_EXPRESSION_NOTE,
-    SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SQLITE_TYPE_NOTE, SQL_TYPE_NOTE,
-    TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE, TREAT_NONE_AS_NULL_NOTE,
+    DESERIALIZE_AS_NOTE, DESERIALIZE_FN_NOTE, MYSQL_TYPE_NOTE, POSTGRES_TYPE_NOTE,
+    SELECT_EXPRESSION_NOTE, SELECT_EXPRESSION_TYPE_NOTE, SERIALIZE_AS_NOTE, SERIALIZE_FN_NOTE,
+    SQLITE_TYPE_NOTE, SQL_TYPE_NOTE, TABLE_NAME_NOTE, TREAT_NONE_AS_DEFAULT_VALUE_NOTE,
+    TREAT_NONE_AS_NULL_NOTE,
 };
 
 use crate::util::{parse_paren_list, CHECK_FOR_BACKEND_NOTE};
@@ -40,6 +41,8 @@ pub enum FieldAttr {
 
     SerializeAs(Ident, TypePath),
     DeserializeAs(Ident, TypePath),
+    SerializeFn(Ident, Expr),
+    DeserializeFn(Ident, Expr),
     SelectExpression(Ident, Expr),
     SelectExpressionType(Ident, Type),
 }
@@ -145,6 +148,14 @@ impl Parse for FieldAttr {
                 name,
                 parse_eq(input, DESERIALIZE_AS_NOTE)?,
             )),
+            "serialize_fn" => Ok(FieldAttr::SerializeFn(
+                name,
+                parse_eq(input, SERIALIZE_FN_NOTE)?,
+            )),
+            "deserialize_fn" => Ok(FieldAttr::DeserializeFn(
+                name,
+                parse_eq(input, DESERIALIZE_FN_NOTE)?,
+            )),
             "select_expression" => Ok(FieldAttr::SelectExpression(
                 name,
                 parse_eq(input, SELECT_EXPRESSION_NOTE)?,
@@ -179,6 +190,8 @@ impl MySpanned for FieldAttr {
             | FieldAttr::TreatNoneAsDefaultValue(ident, _)
             | FieldAttr::SerializeAs(ident, _)
             | FieldAttr::DeserializeAs(ident, _)
+            | FieldAttr::SerializeFn(ident, _)
+            | FieldAttr::DeserializeFn(ident, _)
             | FieldAttr::SelectExpression(ident, _)
             | FieldAttr::SelectExpressionType(ident, _) => ident.span(),
         }

@@ -377,3 +377,39 @@ fn embedded_struct() {
     let expected = vec![(1, "Sean".to_string(), Some("Black".to_string()))];
     assert_eq!(Ok(expected), saved);
 }
+
+#[test]
+fn serialize_fn_custom_option_field() {
+    #[derive(Debug, Clone)]
+    struct UserName(String);
+    impl From<UserName> for String {
+        fn from(value: UserName) -> Self {
+            value.0
+        }
+    }
+
+    #[derive(Insertable, Debug, Clone)]
+    #[diesel(table_name = users)]
+    #[diesel(treat_none_as_default_value = false)]
+    struct NewUser {
+        #[diesel(serialize_as = String)]
+        name: UserName,
+        hair_color: Option<String>,
+    }
+
+    let conn = &mut connection();
+    let new_user = NewUser {
+        name: "Sean".into(),
+        hair_color: "Black".into(),
+    };
+    insert_into(users::table)
+        .values(&new_user)
+        .execute(conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color))
+        .load::<(String, Option<String>)>(conn);
+    let expected = vec![("Sean".to_string(), Some("Black".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}
