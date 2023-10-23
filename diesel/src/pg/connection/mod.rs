@@ -356,7 +356,7 @@ impl PgConnection {
         let cache_len = self.statement_cache.len();
         let cache = &mut self.statement_cache;
         let conn = &mut self.connection_and_transaction_manager.raw_connection;
-        let query = cache.cached_statement(T::query_id(), source, &Pg, &metadata, &mut |sql, _| {
+        let query = cache.cached_statement(source, &Pg, &metadata, |sql, _| {
             let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
                 Some(format!("__diesel_stmt_{cache_len}"))
             } else {
