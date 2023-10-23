@@ -5,6 +5,7 @@ use super::array_comparison::{AsInExpression, In, NotIn};
 use super::grouped::Grouped;
 use super::select_by::SelectBy;
 use super::{AsExpression, Expression};
+use crate::expression;
 use crate::expression_methods::PreferredBoolSqlType;
 use crate::sql_types;
 
@@ -120,14 +121,26 @@ pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlT
 /// [`lhs.not_like(rhs)`](crate::expression_methods::TextExpressionMethods::not_like())
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
-/// The return type of [`case_when_else()`](crate::expression::case_when::case_when_else)
+/// The return type of [`case_when()`](expression::case_when::case_when)
 #[allow(non_camel_case_types)]
-pub type case_when_else<C, T, F, ST = <T as Expression>::SqlType> =
-    crate::expression::case_when::CaseWhenElse<
+pub type case_when<C, T, ST = <T as Expression>::SqlType> = expression::case_when::CaseWhen<
+    expression::case_when::CaseWhenConditionsLeaf<Grouped<C>, Grouped<AsExprOf<T, ST>>>,
+    expression::case_when::NoElseExpression,
+>;
+/// The return type of [`case_when(...).when(...)`](expression::case_when::CaseWhen::when)
+pub type When<W, C, T> = expression::case_when::CaseWhen<
+    expression::case_when::CaseWhenConditionsIntermediateNode<
         Grouped<C>,
-        Grouped<AsExprOf<T, ST>>,
-        Grouped<AsExprOf<F, ST>>,
-    >;
+        Grouped<AsExprOf<T, <W as expression::case_when::CaseWhenTypesExtractor>::OutputExpressionSpecifiedSqlType>>,
+        <W as expression::case_when::CaseWhenTypesExtractor>::Whens,
+    >,
+    <W as expression::case_when::CaseWhenTypesExtractor>::Else,
+>;
+/// The return type of [`case_when(...).else_(...)`](expression::case_when::CaseWhen::else_)
+pub type Else_<W, E> = expression::case_when::CaseWhen<
+    <W as expression::case_when::CaseWhenTypesExtractor>::Whens,
+    expression::case_when::ElseExpression<Grouped<AsExprOf<E, <W as expression::case_when::CaseWhenTypesExtractor>::OutputExpressionSpecifiedSqlType>>>,
+>;
 
 /// Represents the return type of [`.as_select()`](crate::prelude::SelectableHelper::as_select)
 pub type AsSelect<Source, DB> = SelectBy<Source, DB>;
