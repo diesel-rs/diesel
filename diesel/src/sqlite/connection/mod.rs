@@ -308,13 +308,9 @@ impl SqliteConnection {
     {
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
-        let statement = cache.cached_statement(
-            T::query_id(),
-            &source,
-            &Sqlite,
-            &[],
-            &mut |sql, is_cached| Statement::prepare(raw_connection, sql, is_cached),
-        )?;
+        let statement = cache.cached_statement(&source, &Sqlite, &[], |sql, is_cached| {
+            Statement::prepare(raw_connection, sql, is_cached)
+        })?;
 
         StatementUse::bind(statement, source)
     }
