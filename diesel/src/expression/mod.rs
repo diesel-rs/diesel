@@ -36,6 +36,7 @@ mod not;
 pub(crate) mod nullable;
 #[macro_use]
 pub(crate) mod operators;
+mod case_when;
 pub(crate) mod select_by;
 mod sql_literal;
 pub(crate) mod subselect;
@@ -51,6 +52,8 @@ pub use self::operators::Concat;
 pub(crate) mod dsl {
     use crate::dsl::SqlTypeOf;
 
+    #[doc(inline)]
+    pub use super::case_when::*;
     #[doc(inline)]
     pub use super::count::*;
     #[doc(inline)]
