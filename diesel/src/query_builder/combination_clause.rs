@@ -234,7 +234,7 @@ pub trait SupportsCombinationClause<Combinator, Rule> {}
 /// Wrapper used to wrap rhs sql in parenthesis when supported by backend
 pub struct ParenthesisWrapper<T>(T);
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 mod postgres {
     use super::*;
     use crate::pg::Pg;
