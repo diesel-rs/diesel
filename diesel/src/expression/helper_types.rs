@@ -136,8 +136,8 @@ pub type When<W, C, T> = expression::case_when::CaseWhen<
     >,
     <W as expression::case_when::CaseWhenTypesExtractor>::Else,
 >;
-/// The return type of [`case_when(...).else_(...)`](expression::case_when::CaseWhen::else_)
-pub type Else_<W, E> = expression::case_when::CaseWhen<
+/// The return type of [`case_when(...).otherwise(...)`](expression::case_when::CaseWhen::otherwise)
+pub type Otherwise<W, E> = expression::case_when::CaseWhen<
     <W as expression::case_when::CaseWhenTypesExtractor>::Whens,
     expression::case_when::ElseExpression<Grouped<AsExprOf<E, <W as expression::case_when::CaseWhenTypesExtractor>::OutputExpressionSpecifiedSqlType>>>,
 >;

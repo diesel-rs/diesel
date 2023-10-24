@@ -36,7 +36,7 @@ use super::{AsExpression, TypedExpressionType};
 /// use diesel::dsl::case_when;
 ///
 /// let users_with_name: Vec<(i32, i32)> = users
-///     .select((id, case_when(name.eq("Sean"), id).else_(0)))
+///     .select((id, case_when(name.eq("Sean"), id).otherwise(0)))
 ///     .load(connection)
 ///     .unwrap();
 ///
@@ -117,8 +117,10 @@ impl<Whens, E> CaseWhen<Whens, E> {
 impl<Whens> CaseWhen<Whens, NoElseExpression> {
     /// Sets the `ELSE` branch of the `CASE` expression
     ///
+    /// It is named this way because `else` is a reserved keyword in Rust
+    ///
     /// See the [`case_when`] documentation for more details.
-    pub fn else_<E>(self, if_no_other_branch_matched: E) -> helper_types::Else_<Self, E>
+    pub fn otherwise<E>(self, if_no_other_branch_matched: E) -> helper_types::Otherwise<Self, E>
     where
         Self: CaseWhenTypesExtractor<Whens = Whens, Else = NoElseExpression>,
         E: AsExpression<<Self as CaseWhenTypesExtractor>::OutputExpressionSpecifiedSqlType>,
@@ -184,8 +186,8 @@ mod non_public_types {
         pub(super) expr: E,
     }
 
-    /// Largely internal trait used to define the [`When`] and [`Else_`] type
-    /// aliases
+    /// Largely internal trait used to define the [`When`] and [`Otherwise`]
+    /// type aliases
     ///
     /// It should typically not be needed in user code unless writing extremely
     /// generic functions
