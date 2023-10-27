@@ -379,7 +379,7 @@ fn embedded_struct() {
 }
 
 #[test]
-fn serialize_fn_custom_option_field() {
+fn serialize_fn_custom_option_field_closure() {
     struct UserName(String);
     impl From<UserName> for String {
         fn from(value: UserName) -> Self {
@@ -390,6 +390,7 @@ fn serialize_fn_custom_option_field() {
     enum HairColor {
         Green,
     }
+
     impl From<HairColor> for String {
         fn from(value: HairColor) -> Self {
             match value {
@@ -407,6 +408,157 @@ fn serialize_fn_custom_option_field() {
         #[diesel(serialize_as = Option<String>)]
         #[diesel(serialize_fn = |x: Option<HairColor>| x.map(Into::into))]
         hair_color: Option<HairColor>,
+    }
+
+    let conn = &mut connection();
+    let new_user = NewUser {
+        name: UserName("Sean".into()),
+        hair_color: Some(HairColor::Green),
+    };
+    insert_into(users::table)
+        .values(new_user)
+        .execute(conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color))
+        .load::<(String, Option<String>)>(conn);
+    let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn serialize_fn_custom_option_field_function() {
+    struct UserName(String);
+    impl From<UserName> for String {
+        fn from(value: UserName) -> Self {
+            value.0
+        }
+    }
+
+    enum HairColor {
+        Green,
+    }
+
+    fn hair_color_to_string(value: &Option<HairColor>) -> Option<String> {
+        value.map(|value| match value {
+            HairColor::Green => "Green".into(),
+        })
+    }
+
+    #[derive(Insertable)]
+    #[diesel(table_name = users)]
+    #[diesel(treat_none_as_default_value = false)]
+    struct NewUser {
+        #[diesel(serialize_as = String)]
+        name: UserName,
+        #[diesel(serialize_as = Option<String>)]
+        #[diesel(serialize_fn = hair_color_to_string)]
+        hair_color: Option<HairColor>,
+    }
+
+    let conn = &mut connection();
+    let new_user = NewUser {
+        name: UserName("Sean".into()),
+        hair_color: Some(HairColor::Green),
+    };
+    insert_into(users::table)
+        .values(new_user)
+        .execute(conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color))
+        .load::<(String, Option<String>)>(conn);
+    let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn serialize_fn_custom_option_field_associated_function() {
+    struct UserName(String);
+    impl From<UserName> for String {
+        fn from(value: UserName) -> Self {
+            value.0
+        }
+    }
+
+    enum HairColor {
+        Green,
+    }
+
+    impl HairColor {
+        fn to_string(value: &Option<Self>) -> Option<String> {
+            value.map(|value| match value {
+                HairColor::Green => "Green".into(),
+            })
+        }
+    }
+
+    #[derive(Insertable)]
+    #[diesel(table_name = users)]
+    #[diesel(treat_none_as_default_value = false)]
+    struct NewUser {
+        #[diesel(serialize_as = String)]
+        name: UserName,
+        #[diesel(serialize_as = Option<String>)]
+        #[diesel(serialize_fn = HairColor::to_string)]
+        hair_color: Option<HairColor>,
+    }
+
+    let conn = &mut connection();
+    let new_user = NewUser {
+        name: UserName("Sean".into()),
+        hair_color: Some(HairColor::Green),
+    };
+    insert_into(users::table)
+        .values(new_user)
+        .execute(conn)
+        .unwrap();
+
+    let saved = users::table
+        .select((users::name, users::hair_color))
+        .load::<(String, Option<String>)>(conn);
+    let expected = vec![("Sean".to_string(), Some("Green".to_string()))];
+    assert_eq!(Ok(expected), saved);
+}
+
+#[test]
+fn serialize_fn_overrides_from() {
+    struct UserName(String);
+    impl From<UserName> for String {
+        fn from(value: UserName) -> Self {
+            value.0
+        }
+    }
+
+    enum HairColor {
+        Green,
+    }
+
+    impl From<HairColor> for String {
+        fn from(value: HairColor) -> Self {
+            match value {
+                HairColor::Green => "error".into(),
+            }
+        }
+    }
+
+    fn hair_color_to_string(value: &HairColor) -> String {
+        match value {
+            HairColor::Green => "Green".into(),
+        }
+    }
+
+    #[derive(Insertable)]
+    #[diesel(table_name = users)]
+    #[diesel(treat_none_as_default_value = false)]
+    struct NewUser {
+        #[diesel(serialize_as = String)]
+        name: UserName,
+        #[diesel(serialize_as = String)]
+        #[diesel(serialize_fn = hair_color_to_string)]
+        hair_color: HairColor,
     }
 
     let conn = &mut connection();
