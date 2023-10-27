@@ -440,7 +440,7 @@ fn serialize_fn_custom_option_field_function() {
         Green,
     }
 
-    fn hair_color_to_string(value: &Option<HairColor>) -> Option<String> {
+    fn hair_color_to_string(value: Option<HairColor>) -> Option<String> {
         value.map(|value| match value {
             HairColor::Green => "Green".into(),
         })
@@ -488,7 +488,7 @@ fn serialize_fn_custom_option_field_associated_function() {
     }
 
     impl HairColor {
-        fn to_string(value: &Option<Self>) -> Option<String> {
+        fn to_string(value: Option<Self>) -> Option<String> {
             value.map(|value| match value {
                 HairColor::Green => "Green".into(),
             })
@@ -544,7 +544,7 @@ fn serialize_fn_overrides_from() {
         }
     }
 
-    fn hair_color_to_string(value: &HairColor) -> String {
+    fn hair_color_to_string(value: HairColor) -> String {
         match value {
             HairColor::Green => "Green".into(),
         }
@@ -564,7 +564,7 @@ fn serialize_fn_overrides_from() {
     let conn = &mut connection();
     let new_user = NewUser {
         name: UserName("Sean".into()),
-        hair_color: Some(HairColor::Green),
+        hair_color: HairColor::Green,
     };
     insert_into(users::table)
         .values(new_user)
