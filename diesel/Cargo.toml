@@ -1,6 +1,6 @@
 [package]
 name = "diesel"
-version = "2.1.0"
+version = "2.1.1"
 license = "MIT OR Apache-2.0"
 description = "A safe, extensible ORM and Query Builder for PostgreSQL, SQLite, and MySQL"
 readme = "README.md"
