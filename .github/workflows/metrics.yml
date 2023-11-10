@@ -19,6 +19,10 @@ jobs:
       fail-fast: false
       matrix:
         backend: ["postgres", "sqlite", "mysql"]
+    env:
+      BENCHER_PROJECT: diesel
+      BENCHER_BRANCH: master
+      BENCHER_ADAPTER: rust_criterion
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -59,17 +63,29 @@ jobs:
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install Bencher CLI
+        uses: bencherdev/bencher@main
+
       - name: Run Benchmarks (Postgres)
         if: matrix.backend == 'postgres'
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rust_postgres futures sea-orm sea-orm/sqlx-postgres criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde diesel-async diesel-async/postgres wtx"
+        env:
+          BENCHER_TESTBED: ubuntu-latest-postgres
+          BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+        run: bencher run 'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rust_postgres futures sea-orm sea-orm/sqlx-postgres criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde diesel-async diesel-async/postgres wtx"'
 
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio"
+        env:
+          BENCHER_TESTBED: ubuntu-latest-sqlite
+          BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+        run: bencher run 'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "sqlite sqlx-bench sqlx/sqlite tokio rusqlite futures sea-orm sea-orm/sqlx-sqlite criterion/async_tokio"'
 
       - name: Run Benchmarks (Mysql)
         if: matrix.backend == 'mysql'
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "mysql sqlx-bench sqlx/mysql tokio rustorm rustorm/with-mysql rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-mysql criterion/async_tokio quaint quaint/mysql quaint/serde-support serde diesel-async diesel-async/mysql"
+        env:
+          BENCHER_TESTBED: ubuntu-latest-mysql
+          BENCHER_API_TOKEN: ${{ secrets.BENCHER_API_TOKEN }}
+        run: bencher run 'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "mysql sqlx-bench sqlx/mysql tokio rustorm rustorm/with-mysql rustorm_dao rust_mysql futures sea-orm sea-orm/sqlx-mysql criterion/async_tokio quaint quaint/mysql quaint/serde-support serde diesel-async diesel-async/mysql"'
 
       - name: Push metrics
         env:
