@@ -31,6 +31,6 @@ impl<O> ValidOrderingForDistinct<NoDistinctClause> for O {}
 impl<O> ValidOrderingForDistinct<DistinctClause> for O {}
 
 // This is rexported from another location
-#[allow(unreachable_pub)]
+#[allow(unreachable_pub, unused_imports)]
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::DistinctOnClause;

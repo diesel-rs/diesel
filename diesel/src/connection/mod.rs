@@ -547,6 +547,7 @@ pub(crate) mod private {
 
     // These impls are only there for backward compatibility reasons
     // Remove them on the next breaking release
+    #[allow(unreachable_pub)] // must be pub for the type def using this trait
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
     pub trait ConnectionHelperType<DB, B>: super::LoadConnection<B, Backend = DB> {
         type Cursor<'conn, 'query>
