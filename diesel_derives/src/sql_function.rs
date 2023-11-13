@@ -221,7 +221,7 @@ pub(crate) fn expand(input: SqlFunctionDecl) -> TokenStream {
                         }
                     };
                 }
-                x if x == 1 => {
+                1 => {
                     let arg_name = arg_name[0];
                     let arg_type = arg_type[0];
 

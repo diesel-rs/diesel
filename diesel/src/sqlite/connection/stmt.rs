@@ -26,6 +26,8 @@ impl Statement {
     ) -> QueryResult<Self> {
         let mut stmt = ptr::null_mut();
         let mut unused_portion = ptr::null();
+        // the cast for `ffi::SQLITE_PREPARE_PERSISTENT` is required for old libsqlite3-sys versions
+        #[allow(clippy::unnecessary_cast)]
         let prepare_result = unsafe {
             ffi::sqlite3_prepare_v3(
                 raw_connection.internal_connection.as_ptr(),

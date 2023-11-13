@@ -3,9 +3,9 @@ use diesel::query_dsl::LoadQuery;
 pub use quickcheck::quickcheck;
 
 pub use crate::schema::{connection_without_transaction, TestConnection};
+#[cfg(not(feature = "sqlite"))]
 pub use diesel::data_types::*;
 pub use diesel::result::Error;
-pub use diesel::serialize::ToSql;
 pub use diesel::sql_types::{HasSqlType, SingleValue, SqlType};
 pub use diesel::*;
 
