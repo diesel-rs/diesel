@@ -1,18 +1,19 @@
 on:
-  pull_request:
-    types:
-      - labeled
+  pull_request_target:
 
 name: Benchmarks
 
 jobs:
   benchmarks:
-    if: github.event.label.name == 'run-benchmarks'
+    if: contains(github.event.pull_request.labels.*.name, 'run-benchmarks')
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         backend: ["postgres", "sqlite", "mysql"]
+    env:
+      BENCHER_PROJECT: diesel
+      BENCHER_ADAPTER: rust_criterion
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -47,42 +48,34 @@ jobs:
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install critcmp
-        run: cargo +stable install critcmp
-
-      - name: Benchmark changes
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}" -- --save-baseline changes
-
-      - name: Checkout master
-        run: |
-          git fetch origin
-          git reset --hard origin/master
+      - name: Install Bencher CLI
+        uses: bencherdev/bencher@main
 
       - name: Benchmark master
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}" -- --save-baseline master
-
-      - name: Critcmp
+        env:
+          BENCHER_BRANCH: master
+          BENCHER_TESTBED: ubuntu-latest-${{ matrix.backend }}
         run: |
-          cd diesel_bench
-          critcmp master changes
-          echo "# ${{matrix.backend}}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          critcmp master changes >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          bencher run \
+          --token "${{ secrets.BENCHER_API_TOKEN }}" \
+          'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}"'
 
-      # This does not work due to github not allowing to post comments from forked repos
-      # - name: Post the output as comment
-      #   uses: actions/github-script@v3
-      #   with:
-      #     github-token: ${{secrets.GITHUB_TOKEN}}
-      #     script: |
-      #       const fs = require('fs');
-      #       const data = fs.readFileSync('diesel_bench/output.txt', 'utf8');
+      - name: Checkout PR sources
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          persist-credentials: false
 
-      #       github.issues.createComment({
-      #         issue_number: context.issue.number,
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         body: data
-      #       })
+      - name: Benchmark PR ${{ github.event.pull_request.number }}
+        env:
+          BENCHER_TESTBED: ubuntu-latest-${{ matrix.backend }}
+        run: |
+          bencher run \
+          --if-branch "${{ github.event.pull_request.head.ref }}" \
+          --else-if-branch "${{ github.event.pull_request.base.ref }}" \
+          --else-if-branch master \
+          --err \
+          --github-actions "${{ secrets.GITHUB_TOKEN }}" \
+          --token "${{ secrets.BENCHER_API_TOKEN }}" \
+          'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}"'
