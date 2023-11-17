@@ -129,7 +129,7 @@ On the Rust side, we define the interpretation of both functions differently, th
 sql_function!(fn color2grey(r: Integer, g: Integer,b: Integer) -> Record<(Float,Text)>);
 sql_function!(fn color2gray(r: Integer, g: Integer,b: Integer) -> PgGrayType);
 ```
-As this only creates a type with anonymous fields, which can be adressed by their field number **object.0**, **object.1** etc., it would be more convenient to attach names to the fields. Therefore we need to define a type with our intended field names, which we can use _globally_ (or at least outside the database related code space):
+As this only creates a type with anonymous fields, which can be addressed by their field number **object.0**, **object.1** etc., it would be more convenient to attach names to the fields. Therefore we need to define a type with our intended field names, which we can use _globally_ (or at least outside the database related code space):
 ```rust
 #[derive(Debug, FromSqlRow)]
 pub struct GrayType {
