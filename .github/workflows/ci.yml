@@ -371,6 +371,7 @@ jobs:
           cargo +stable clippy --tests --manifest-path examples/postgres/all_about_inserts/Cargo.toml
           cargo +stable clippy --tests --manifest-path examples/postgres/all_about_updates/Cargo.toml
           cargo +stable clippy --tests --manifest-path examples/postgres/custom_types/Cargo.toml
+          cargo +stable clippy --tests --manifest-path examples/postgres/composite_types/Cargo.toml
           cargo +stable clippy --tests --manifest-path examples/postgres/relations/Cargo.toml
 
           cargo +stable clippy --tests --manifest-path diesel_derives/Cargo.toml --features "sqlite diesel/sqlite"
