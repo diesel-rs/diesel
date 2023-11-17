@@ -94,7 +94,7 @@ pub trait Row<'a, DB: Backend>:
 
 /// Represents a single field in a database row.
 ///
-/// This trait allows retrieving information on the name of the colum and on the value of the
+/// This trait allows retrieving information on the name of the column and on the value of the
 /// field.
 pub trait Field<'a, DB: Backend> {
     /// The name of the current field
@@ -265,6 +265,7 @@ pub(crate) mod private {
     // These impls are only there for backward compatibility reasons
     // Remove them on the next breaking release
     #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    #[allow(unreachable_pub)]
     pub trait RowLifetimeHelper<DB>: for<'a> super::Row<'a, DB>
     where
         DB: Backend,

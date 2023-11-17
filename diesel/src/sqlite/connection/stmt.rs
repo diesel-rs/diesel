@@ -26,6 +26,8 @@ impl Statement {
     ) -> QueryResult<Self> {
         let mut stmt = ptr::null_mut();
         let mut unused_portion = ptr::null();
+        // the cast for `ffi::SQLITE_PREPARE_PERSISTENT` is required for old libsqlite3-sys versions
+        #[allow(clippy::unnecessary_cast)]
         let prepare_result = unsafe {
             ffi::sqlite3_prepare_v3(
                 raw_connection.internal_connection.as_ptr(),
@@ -223,8 +225,8 @@ impl Drop for Statement {
 // * https://github.com/rust-lang/unsafe-code-guidelines/issues/194
 struct BoundStatement<'stmt, 'query> {
     statement: MaybeCached<'stmt, Statement>,
-    // we need to store the query here to ensure none does
-    // drop it till the end ot the statement
+    // we need to store the query here to ensure no one does
+    // drop it till the end of the statement
     // We use a boxed queryfragment here just to erase the
     // generic type, we use NonNull to communicate
     // that this is a shared buffer

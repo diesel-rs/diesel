@@ -26,7 +26,7 @@
 /// ```
 ///
 ///
-/// Make type expressable
+/// Make type expressible
 /// ---------------------
 /// It may sometimes be useful to declare an alias at the module level, in such a way that the type
 /// of a query using it can be expressed (to not declare it anonymously).

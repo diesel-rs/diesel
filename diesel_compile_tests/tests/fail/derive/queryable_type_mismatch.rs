@@ -39,14 +39,14 @@ struct UserWrongOrder {
 }
 
 #[derive(Queryable)]
-struct UserTypeMissmatch {
+struct UserTypeMismatch {
     id: i32,
     name: i32,
     bio: Option<String>,
 }
 
 #[derive(Queryable)]
-struct UserNullableTypeMissmatch {
+struct UserNullableTypeMismatch {
     id: i32,
     name: String,
     bio: Option<String>,
@@ -62,9 +62,9 @@ fn test(conn: &mut PgConnection) {
 
     let _ = users::table.load::<UserWrongOrder>(conn);
 
-    let _ = users::table.load::<UserTypeMissmatch>(conn);
+    let _ = users::table.load::<UserTypeMismatch>(conn);
 
-    let _ = users::table.load::<UserNullableTypeMissmatch>(conn);
+    let _ = users::table.load::<UserNullableTypeMismatch>(conn);
 }
 
 fn main() {}

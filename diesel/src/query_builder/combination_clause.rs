@@ -234,7 +234,7 @@ pub trait SupportsCombinationClause<Combinator, Rule> {}
 /// Wrapper used to wrap rhs sql in parenthesis when supported by backend
 pub struct ParenthesisWrapper<T>(T);
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 mod postgres {
     use super::*;
     use crate::pg::Pg;
@@ -287,7 +287,7 @@ mod sqlite {
 
     impl<T: QueryFragment<Sqlite>> QueryFragment<Sqlite> for ParenthesisWrapper<T> {
         fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Sqlite>) -> QueryResult<()> {
-            // SQLite does not support parenthesis around Ths
+            // SQLite does not support parenthesis around this clause
             // we can emulate this by construct a fake outer
             // SELECT * FROM (inner_query) statement
             out.push_sql("SELECT * FROM (");

@@ -211,7 +211,7 @@ impl TransactionManagerStatus {
     public_fields(in_transaction)
 )]
 pub struct ValidTransactionManagerStatus {
-    /// Inner status, or `None` if no transaction is runnin
+    /// Inner status, or `None` if no transaction is running
     in_transaction: Option<InTransactionStatus>,
 }
 

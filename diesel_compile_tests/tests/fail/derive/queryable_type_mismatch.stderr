@@ -1,5 +1,5 @@
 error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): load_dsl::private::CompatibleType<UserWithToFewFields, _>` is not satisfied
-  --> tests/fail/derive/queryable_type_missmatch.rs:59:54
+  --> tests/fail/derive/queryable_type_mismatch.rs:59:54
    |
 59 |     let _ = users::table.load::<UserWithToFewFields>(conn);
    |                          ----                        ^^^^ the trait `load_dsl::private::CompatibleType<UserWithToFewFields, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
@@ -27,7 +27,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): load_dsl::private::CompatibleType<UserWithToManyFields, _>` is not satisfied
-  --> tests/fail/derive/queryable_type_missmatch.rs:61:55
+  --> tests/fail/derive/queryable_type_mismatch.rs:61:55
    |
 61 |     let _ = users::table.load::<UserWithToManyFields>(conn);
    |                          ----                         ^^^^ the trait `load_dsl::private::CompatibleType<UserWithToManyFields, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
@@ -55,7 +55,7 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
 error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): load_dsl::private::CompatibleType<UserWrongOrder, _>` is not satisfied
-  --> tests/fail/derive/queryable_type_missmatch.rs:63:49
+  --> tests/fail/derive/queryable_type_mismatch.rs:63:49
    |
 63 |     let _ = users::table.load::<UserWrongOrder>(conn);
    |                          ----                   ^^^^ the trait `load_dsl::private::CompatibleType<UserWrongOrder, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
@@ -82,11 +82,11 @@ note: required by a bound in `diesel::RunQueryDsl::load`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
 
-error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): load_dsl::private::CompatibleType<UserTypeMissmatch, _>` is not satisfied
-  --> tests/fail/derive/queryable_type_missmatch.rs:65:52
+error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>): load_dsl::private::CompatibleType<UserTypeMismatch, _>` is not satisfied
+  --> tests/fail/derive/queryable_type_mismatch.rs:65:51
    |
-65 |     let _ = users::table.load::<UserTypeMissmatch>(conn);
-   |                          ----                      ^^^^ the trait `load_dsl::private::CompatibleType<UserTypeMissmatch, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
+65 |     let _ = users::table.load::<UserTypeMismatch>(conn);
+   |                          ----                     ^^^^ the trait `load_dsl::private::CompatibleType<UserTypeMismatch, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
    |                          |
    |                          required by a bound introduced by this call
    |
@@ -100,7 +100,7 @@ error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::T
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
              (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
            and $N others
-   = note: required for `users::table` to implement `LoadQuery<'_, _, UserTypeMissmatch>`
+   = note: required for `users::table` to implement `LoadQuery<'_, _, UserTypeMismatch>`
 note: required by a bound in `diesel::RunQueryDsl::load`
   --> $DIESEL/src/query_dsl/mod.rs
    |

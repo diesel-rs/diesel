@@ -577,7 +577,7 @@ pub mod is_nullable {
 
     /// No, this type cannot be null as it is marked as `NOT NULL` at database level
     ///
-    /// This should be choosen for basically all manual impls of `SqlType`
+    /// This should be chosen for basically all manual impls of `SqlType`
     /// beside implementing your own `Nullable<>` wrapper type
     #[derive(Debug, Clone, Copy)]
     pub struct NotNull;

@@ -4,7 +4,7 @@ pub(crate) mod prelude {
         allow(deprecated)
     )]
     // This is a false positive, we reexport it later
-    #[allow(unreachable_pub)]
+    #[allow(unreachable_pub, unused_imports)]
     #[doc(inline)]
     pub use crate::{
         allow_columns_to_appear_in_same_group_by_clause, allow_tables_to_appear_in_same_query,
