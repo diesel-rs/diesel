@@ -90,7 +90,7 @@ impl FromStr for TableName {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct TableData {
     pub name: TableName,
     pub primary_key: Vec<String>,

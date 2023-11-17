@@ -19,8 +19,6 @@ pub struct Config {
     pub print_schema: PrintSchema,
     #[serde(default)]
     pub migrations_directory: Option<MigrationsDirectory>,
-    #[serde(default)]
-    pub sub_print_schema: Option<Vec<PrintSchema>>,
 }
 
 impl Config {
@@ -47,11 +45,6 @@ impl Config {
 
     fn set_relative_path_base(&mut self, base: &Path) {
         self.print_schema.set_relative_path_base(base);
-        if let Some(ref mut sub_print_schema) = self.sub_print_schema {
-            for print_schema in sub_print_schema {
-                print_schema.set_relative_path_base(base);
-            }
-        }
         if let Some(ref mut migration) = self.migrations_directory {
             migration.set_relative_path_base(base);
         }
