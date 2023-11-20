@@ -141,7 +141,7 @@ The derived [FromSqlRow](https://docs.rs/diesel/latest/diesel/deserialize/trait.
 ```rust
 impl FromSql<PgGrayType, Pg> for GrayType {
     fn from_sql(bytes: PgValue) -> deserialize::Result<Self> {
-        let (intensity, suggestion) = FromSql::<Record<(Float, Text)>, Pg>::from_sql(bytes)?;
+        let (intensity, suggestion) = FromSql::<PgGrayType, Pg>::from_sql(bytes)?;
         Ok(GrayType {
             intensity,
             suggestion,
