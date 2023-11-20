@@ -30,7 +30,7 @@ type PgGrayType = Record<(Float, Text)>;
 // Explain how this Postgres type can be converted to a Rust type.
 impl FromSql<PgGrayType, Pg> for GrayType {
     fn from_sql(bytes: PgValue) -> deserialize::Result<Self> {
-        let (intensity, suggestion) = FromSql::<Record<(Float, Text)>, Pg>::from_sql(bytes)?;
+        let (intensity, suggestion) = FromSql::<PgGrayType, Pg>::from_sql(bytes)?;
         Ok(GrayType {
             intensity,
             suggestion,
