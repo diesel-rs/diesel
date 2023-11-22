@@ -331,8 +331,7 @@ fn upsert_with_sql_literal_for_target() {
     let connection = &mut connection();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
-    // As tests can run concurrently, lock the table of interest.
-    diesel::sql_query("BEGIN; LOCK TABLE users; CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'; COMMIT;")
+    diesel::sql_query("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
         .execute(connection)
         .unwrap();
     insert_sean_and_tess_into_users_table(connection);
@@ -370,8 +369,7 @@ fn upsert_with_sql_literal_for_target_with_condition() {
     let connection = &mut connection();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
-    // As tests can run concurrently, lock the table of interest.
-    diesel::sql_query("BEGIN; LOCK TABLE users; CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'; COMMIT;")
+    diesel::sql_query("CREATE UNIQUE INDEX ON users (name) WHERE name != 'Tess'")
         .execute(connection)
         .unwrap();
     insert_sean_and_tess_into_users_table(connection);
