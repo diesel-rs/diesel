@@ -176,6 +176,15 @@ table! {
 }
 
 table! {
+    user_with_last_names (id) {
+        id -> Int4,
+        first_name -> Varchar,
+        last_name -> Varchar,
+        full_name -> Varchar,
+    }
+}
+
+table! {
     with_keywords (fn_) {
         #[sql_name = "fn"]
         fn_ -> Int4,

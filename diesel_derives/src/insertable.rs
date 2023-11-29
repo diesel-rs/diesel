@@ -45,6 +45,10 @@ fn derive_into_single_table(
     let mut ref_field_assign = Vec::with_capacity(model.fields().len());
 
     for field in model.fields() {
+        // skip this field while generating the insertion
+        if let true = field.skip_insertion() {
+            continue;
+        }
         // Use field-level attr. with fallback to the struct-level one.
         let treat_none_as_default_value = match &field.treat_none_as_default_value {
             Some(attr) => {
