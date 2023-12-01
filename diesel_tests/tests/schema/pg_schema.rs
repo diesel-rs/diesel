@@ -176,8 +176,7 @@ table! {
 }
 
 table! {
-    user_with_last_names (id) {
-        id -> Int4,
+    user_with_last_names (first_name) {
         first_name -> Varchar,
         last_name -> Varchar,
         full_name -> Varchar,

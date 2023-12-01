@@ -46,7 +46,7 @@ fn derive_into_single_table(
 
     for field in model.fields() {
         // skip this field while generating the insertion
-        if let true = field.skip_insertion() {
+        if field.skip_insertion() {
             continue;
         }
         // Use field-level attr. with fallback to the struct-level one.

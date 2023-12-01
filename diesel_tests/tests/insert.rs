@@ -458,7 +458,6 @@ fn insert_with_generated_column() {
     use crate::schema::user_with_last_names::table as users;
     #[derive(Debug, Queryable, Insertable, Selectable, Default)]
     struct UserWithLastName {
-        id: i32,
         first_name: String,
         last_name: String,
         #[diesel(skip_insertion)]
@@ -468,8 +467,7 @@ fn insert_with_generated_column() {
     let connection = &mut connection();
     diesel::sql_query(
         "CREATE TABLE user_with_last_names (
-        id SERIAL PRIMARY KEY,
-        first_name VARCHAR NOT NULL,
+        first_name VARCHAR NOT NULL PRIMARY KEY,
         last_name VARCHAR NOT NULL,
         full_NAME VARCHAR GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED
     )",
