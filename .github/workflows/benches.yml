@@ -1,11 +1,13 @@
 on:
+  push:
+    branches: master
   pull_request_target:
 
 name: Benchmarks
 
 jobs:
   benchmarks:
-    if: contains(github.event.pull_request.labels.*.name, 'run-benchmarks')
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/master') || (github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks'))
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -52,15 +54,17 @@ jobs:
         uses: bencherdev/bencher@main
 
       - name: Benchmark master
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         env:
           BENCHER_BRANCH: master
           BENCHER_TESTBED: ubuntu-latest-${{ matrix.backend }}
         run: |
           bencher run \
-          --token "${{ secrets.BENCHER_API_TOKEN }}" \
-          'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}"'
+          --token '${{ secrets.BENCHER_API_TOKEN }}' \
+          'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}"'
 
       - name: Checkout PR sources
+        if: github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks')
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -68,14 +72,15 @@ jobs:
           persist-credentials: false
 
       - name: Benchmark PR ${{ github.event.pull_request.number }}
+        if: github.event_name == 'pull_request_target' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks')
         env:
           BENCHER_TESTBED: ubuntu-latest-${{ matrix.backend }}
         run: |
           bencher run \
-          --if-branch "${{ github.event.pull_request.head.ref }}" \
-          --else-if-branch "${{ github.event.pull_request.base.ref }}" \
+          --if-branch '${{ github.event.pull_request.head.ref }}' \
+          --else-if-branch '${{ github.event.pull_request.base.ref }}' \
           --else-if-branch master \
           --err \
-          --github-actions "${{ secrets.GITHUB_TOKEN }}" \
-          --token "${{ secrets.BENCHER_API_TOKEN }}" \
-          'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{matrix.backend}}"'
+          --github-actions '${{ secrets.GITHUB_TOKEN }}' \
+          --token '${{ secrets.BENCHER_API_TOKEN }}' \
+          'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}"'
