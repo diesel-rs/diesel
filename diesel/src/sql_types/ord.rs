@@ -15,9 +15,9 @@ impl SqlOrd for sql_types::Time {}
 impl SqlOrd for sql_types::Timestamp {}
 impl<T> SqlOrd for sql_types::Nullable<T> where T: SqlOrd + SqlType<IsNull = is_nullable::NotNull> {}
 
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl SqlOrd for sql_types::Timestamptz {}
-#[cfg(feature = "postgres")]
+#[cfg(feature = "postgres_backend")]
 impl<T: SqlOrd> SqlOrd for sql_types::Array<T> {}
 
 #[cfg(feature = "mysql_backend")]
