@@ -469,7 +469,7 @@ fn insert_with_generated_column() {
         "CREATE TABLE user_with_last_names (
         first_name VARCHAR NOT NULL PRIMARY KEY,
         last_name VARCHAR NOT NULL,
-        full_NAME VARCHAR GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED
+        full_name VARCHAR GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED
     )",
     )
     .execute(connection)
@@ -477,7 +477,7 @@ fn insert_with_generated_column() {
     let new_users: &[_] = &[UserWithLastName {
         first_name: "Sean".to_string(),
         last_name: "Black".to_string(),
-        ..Default::default()
+        full_name: "This field not inserted".to_string(),
     }];
     let count = insert_into(users)
         .values(new_users)
