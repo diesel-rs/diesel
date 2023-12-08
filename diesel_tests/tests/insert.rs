@@ -452,6 +452,45 @@ fn insert_returning_count_returns_number_of_rows_inserted() {
     assert_eq!(1, second_count);
 }
 
+#[test]
+#[cfg(not(any(feature = "mysql", feature = "sqlite")))]
+fn insert_with_generated_column() {
+    use crate::schema::user_with_last_names::table as users;
+    #[derive(Debug, Queryable, Insertable, Selectable, Default)]
+    struct UserWithLastName {
+        first_name: String,
+        last_name: String,
+        #[diesel(skip_insertion)]
+        full_name: String,
+    }
+
+    let connection = &mut connection();
+    diesel::sql_query(
+        "CREATE TABLE user_with_last_names (
+        first_name VARCHAR NOT NULL PRIMARY KEY,
+        last_name VARCHAR NOT NULL,
+        full_name VARCHAR GENERATED ALWAYS AS (first_name || ' ' || last_name) STORED
+    )",
+    )
+    .execute(connection)
+    .unwrap();
+    let new_users: &[_] = &[UserWithLastName {
+        first_name: "Sean".to_string(),
+        last_name: "Black".to_string(),
+        full_name: "This field not inserted".to_string(),
+    }];
+    let count = insert_into(users)
+        .values(new_users)
+        .execute(connection)
+        .unwrap();
+
+    assert_eq!(1, count);
+
+    let sean_black: UserWithLastName = users.first(connection).unwrap();
+
+    assert_eq!("Sean Black", sean_black.full_name.as_str());
+}
+
 #[derive(Insertable)]
 #[diesel(table_name = users)]
 struct BaldUser {
