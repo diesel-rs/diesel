@@ -4,8 +4,12 @@ use std::num::NonZeroU32;
 use std::ops::DerefMut;
 
 static GLOBAL_INSTRUMENTATION: std::sync::RwLock<fn() -> Option<Box<dyn Instrumentation>>> =
-    std::sync::RwLock::new(default_instrumentation);
+    std::sync::RwLock::new(|| None);
 
+/// A helper trait for opaque query representations
+/// which allows to get a `Display` and `Debug`
+/// representation of the underlying type without
+/// exposing type specific details
 pub trait DebugQuery: Debug + Display {}
 
 impl<T, DB> DebugQuery for crate::query_builder::DebugQuery<'_, T, DB> where Self: Debug + Display {}
@@ -19,16 +23,22 @@ impl<T, DB> DebugQuery for crate::query_builder::DebugQuery<'_, T, DB> where Sel
 #[diesel_derives::__diesel_public_if(
     feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
 )]
-pub(crate) struct StrQueryHelper<'a> {
-    s: &'a str,
+pub(crate) struct StrQueryHelper<'query> {
+    s: &'query str,
 }
 
-impl<'a> StrQueryHelper<'a> {
+impl<'query> StrQueryHelper<'query> {
     /// Construct a new `StrQueryHelper`
     #[diesel_derives::__diesel_public_if(
         feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
     )]
-    pub(crate) fn new(s: &'a str) -> Self {
+    #[cfg(any(
+        feature = "postgres",
+        feature = "sqlite",
+        feature = "mysql",
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    ))]
+    pub(crate) fn new(s: &'query str) -> Self {
         Self { s }
     }
 }
@@ -64,6 +74,11 @@ impl DebugQuery for StrQueryHelper<'_> {}
 // taking references for all things
 // and by not performing any additional
 // work until required.
+// In addition it's carefully designed
+// not to be dependent on the actual backend
+// type, as that makes it easier to to reuse
+// `Instrumentation` implementations in
+// different a different context
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum InstrumentationEvent<'a> {
@@ -230,10 +245,6 @@ impl<'a> InstrumentationEvent<'a> {
 pub trait Instrumentation: Send + 'static {
     /// The function that is invoced for each event
     fn on_connection_event(&mut self, event: InstrumentationEvent<'_>);
-}
-
-fn default_instrumentation() -> Option<Box<dyn Instrumentation>> {
-    None
 }
 
 /// Get an instance of the default [`Instrumentation`]

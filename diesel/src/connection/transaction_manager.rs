@@ -343,11 +343,13 @@ where
                 Cow::from(format!("SAVEPOINT diesel_savepoint_{transaction_depth}"))
             }
         };
-        let depth = transaction_depth
-            .and_then(|d| d.checked_add(1))
-            .unwrap_or(NonZeroU32::new(1).expect("It's not 0"));
         conn.instrumentation().on_connection_event(
-            super::instrumentation::InstrumentationEvent::BeginTransaction { depth },
+            super::instrumentation::InstrumentationEvent::BeginTransaction {
+                depth: NonZeroU32::new(
+                    transaction_depth.map_or(0, NonZeroU32::get).wrapping_add(1),
+                )
+                .expect("Transaction depth is too large"),
+            },
         );
         conn.batch_execute(&start_transaction_sql)?;
         Self::get_transaction_state(conn)?

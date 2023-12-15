@@ -229,3 +229,44 @@ fn check_events_transaction_nested() {
     assert_matches!(events[10], Event::StartQuery { .. });
     assert_matches!(events[11], Event::FinishQuery { .. });
 }
+
+#[cfg(feature = "postgres")]
+#[test]
+fn check_events_are_emitted_for_load_pg_row_by_row() {
+    use diesel::pg::PgRowByRowLoadingMode;
+
+    let (events_to_check, mut conn) = setup_test_case();
+    LoadConnection::<PgRowByRowLoadingMode>::load(&mut conn, users::table.as_query()).unwrap();
+    let events = events_to_check.lock().unwrap();
+    assert_eq!(events.len(), 3, "{:?}", events);
+    assert_matches!(events[0], Event::StartQuery { .. });
+    assert_matches!(events[1], Event::CacheQuery { .. });
+    assert_matches!(events[2], Event::FinishQuery { .. });
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn check_events_are_emitted_for_load_does_not_contain_cache_for_uncached_queries_pg_row_by_row() {
+    use diesel::pg::PgRowByRowLoadingMode;
+
+    let (events_to_check, mut conn) = setup_test_case();
+    LoadConnection::<PgRowByRowLoadingMode>::load(&mut conn, diesel::sql_query("select 1"))
+        .unwrap();
+    let events = events_to_check.lock().unwrap();
+    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_matches!(events[0], Event::StartQuery { .. });
+    assert_matches!(events[1], Event::FinishQuery { .. });
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn check_events_are_emitted_for_load_does_contain_error_for_failures_pg_row_by_row() {
+    use diesel::pg::PgRowByRowLoadingMode;
+
+    let (events_to_check, mut conn) = setup_test_case();
+    let _ = LoadConnection::<PgRowByRowLoadingMode>::load(&mut conn, diesel::sql_query("invalid"));
+    let events = events_to_check.lock().unwrap();
+    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_matches!(events[0], Event::StartQuery { .. });
+    assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
+}

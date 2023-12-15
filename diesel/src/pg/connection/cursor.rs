@@ -1,8 +1,9 @@
-use crate::connection::instrumentation::StrQueryHelper;
-
 use super::raw::RawConnection;
 use super::result::PgResult;
 use super::row::PgRow;
+use crate::connection::Instrumentation;
+use crate::pg::Pg;
+use crate::query_builder::QueryFragment;
 use std::rc::Rc;
 
 #[allow(missing_debug_implementations)]
@@ -62,26 +63,29 @@ impl Iterator for Cursor {
 /// The type returned by various [`Connection`] methods.
 /// Acts as an iterator over `T`.
 #[allow(missing_debug_implementations)]
-pub struct RowByRowCursor<'a> {
+pub struct RowByRowCursor<'conn, 'query> {
     first_row: bool,
     db_result: Rc<PgResult>,
-    conn: &'a mut super::ConnectionAndTransactionManager,
+    conn: &'conn mut super::ConnectionAndTransactionManager,
+    query: Box<dyn QueryFragment<Pg> + 'query>,
 }
 
-impl<'a> RowByRowCursor<'a> {
+impl<'conn, 'query> RowByRowCursor<'conn, 'query> {
     pub(super) fn new(
         db_result: PgResult,
-        conn: &'a mut super::ConnectionAndTransactionManager,
+        conn: &'conn mut super::ConnectionAndTransactionManager,
+        query: Box<dyn QueryFragment<Pg> + 'query>,
     ) -> Self {
         RowByRowCursor {
             first_row: true,
             db_result: Rc::new(db_result),
             conn,
+            query,
         }
     }
 }
 
-impl Iterator for RowByRowCursor<'_> {
+impl<'conn, 'query> Iterator for RowByRowCursor<'conn, 'query> {
     type Item = crate::QueryResult<PgRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -89,8 +93,7 @@ impl Iterator for RowByRowCursor<'_> {
             let get_next_result = super::update_transaction_manager_status(
                 self.conn.raw_connection.get_next_result(),
                 self.conn,
-                // todo
-                &StrQueryHelper::new(""),
+                &crate::debug_query(&self.query),
                 false,
             );
             match get_next_result {
@@ -119,17 +122,25 @@ impl Iterator for RowByRowCursor<'_> {
     }
 }
 
-impl Drop for RowByRowCursor<'_> {
+impl<'conn, 'query> Drop for RowByRowCursor<'conn, 'query> {
     fn drop(&mut self) {
         loop {
             let res = super::update_transaction_manager_status(
                 self.conn.raw_connection.get_next_result(),
                 self.conn,
-                // todo
-                &StrQueryHelper::new(""),
+                &crate::debug_query(&self.query),
                 false,
             );
             if matches!(res, Err(_) | Ok(None)) {
+                // the error case is handled in update_transaction_manager_status
+                if res.is_ok() {
+                    self.conn.instrumentation.on_connection_event(
+                        crate::connection::InstrumentationEvent::FinishQuery {
+                            query: &crate::debug_query(&self.query),
+                            error: None,
+                        },
+                    );
+                }
                 break;
             }
         }

@@ -201,7 +201,7 @@ impl Connection for PgConnection {
         T: QueryFragment<Pg> + QueryId,
     {
         update_transaction_manager_status(
-            self.with_prepared_query(source, true, |query, params, conn| {
+            self.with_prepared_query(source, true, |query, params, conn, _source| {
                 let res = query
                     .execute(&mut conn.raw_connection, &params, false)
                     .map(|r| r.rows_affected());
@@ -247,7 +247,7 @@ where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source, false, |stmt, params, conn| {
+        self.with_prepared_query(source, false, |stmt, params, conn, source| {
             use self::private::PgLoadingMode;
             let result = stmt.execute(&mut conn.raw_connection, &params, Self::USE_ROW_BY_ROW_MODE);
             let result = update_transaction_manager_status(
@@ -256,7 +256,7 @@ where
                 &crate::debug_query(&source),
                 false,
             )?;
-            Self::get_cursor(conn, result, &source)
+            Self::get_cursor(conn, result, source)
         })
     }
 }
@@ -395,18 +395,19 @@ impl PgConnection {
 
     fn with_prepared_query<'conn, T: QueryFragment<Pg> + QueryId, R>(
         &'conn mut self,
-        source: &'_ T,
+        source: T,
         execute_returning_count: bool,
         f: impl FnOnce(
             MaybeCached<'_, Statement>,
             Vec<Option<Vec<u8>>>,
             &'conn mut ConnectionAndTransactionManager,
+            T,
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
         self.connection_and_transaction_manager
             .instrumentation
             .on_connection_event(InstrumentationEvent::StartQuery {
-                query: &crate::debug_query(source),
+                query: &crate::debug_query(&source),
             });
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         source.collect_binds(&mut bind_collector, self, &Pg)?;
@@ -417,7 +418,7 @@ impl PgConnection {
         let cache = &mut self.statement_cache;
         let conn = &mut self.connection_and_transaction_manager.raw_connection;
         let query = cache.cached_statement(
-            source,
+            &source,
             &Pg,
             &metadata,
             |sql, _| {
@@ -441,7 +442,12 @@ impl PgConnection {
             }
         }
 
-        f(query?, binds, &mut self.connection_and_transaction_manager)
+        f(
+            query?,
+            binds,
+            &mut self.connection_and_transaction_manager,
+            source,
+        )
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {
@@ -474,7 +480,7 @@ mod private {
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-            source: &dyn QueryFragment<Pg>,
+            source: impl QueryFragment<Pg> + 'query,
         ) -> QueryResult<Self::Cursor<'conn, 'query>>;
     }
 
@@ -486,7 +492,7 @@ mod private {
         fn get_cursor<'conn, 'query>(
             conn: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-            source: &dyn QueryFragment<Pg>,
+            source: impl QueryFragment<Pg> + 'query,
         ) -> QueryResult<Self::Cursor<'conn, 'query>> {
             update_transaction_manager_status(
                 Cursor::new(result, &mut conn.raw_connection),
@@ -499,15 +505,19 @@ mod private {
 
     impl PgLoadingMode<PgRowByRowLoadingMode> for PgConnection {
         const USE_ROW_BY_ROW_MODE: bool = true;
-        type Cursor<'conn, 'query> = RowByRowCursor<'conn>;
+        type Cursor<'conn, 'query> = RowByRowCursor<'conn, 'query>;
         type Row<'conn, 'query> = self::row::PgRow;
 
         fn get_cursor<'conn, 'query>(
             raw_connection: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-            _source: &dyn QueryFragment<Pg>,
+            source: impl QueryFragment<Pg> + 'query,
         ) -> QueryResult<Self::Cursor<'conn, 'query>> {
-            Ok(RowByRowCursor::new(result, raw_connection))
+            Ok(RowByRowCursor::new(
+                result,
+                raw_connection,
+                Box::new(source),
+            ))
         }
     }
 }
