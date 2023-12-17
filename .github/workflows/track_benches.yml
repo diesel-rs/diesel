@@ -20,7 +20,7 @@ jobs:
       BENCHER_TESTBED: ubuntu-latest-${{ matrix.backend }}
       PR_BENCHMARK_RESULTS: pr_${{ matrix.backend }}.txt
       BASE_BENCHMARK_RESULTS: base_${{ matrix.backend }}.txt
-      GITHUB_EVENT: event.json
+      GITHUB_EVENT: event_${{ matrix.backend }}.json
     steps:
       - name: Download Benchmark Results
         uses: actions/github-script@v6
@@ -60,7 +60,7 @@ jobs:
         with:
           script: |
             let fs = require('fs');
-            let githubEvent = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT, {encoding: 'utf8'}));
+            let githubEvent = JSON.parse(fs.readFileSync("event.json", {encoding: 'utf8'}));
             console.log(githubEvent);
             core.exportVariable("PR_HEAD", `${githubEvent.pull_request.head.ref}-${githubEvent.pull_request.head.sha.slice(0, 8)}`);
             core.exportVariable("PR_ID", `${githubEvent.pull_request.head.ref}/${process.env.BENCHER_TESTBED}/${process.env.BENCHER_ADAPTER}`);

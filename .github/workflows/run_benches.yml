@@ -50,7 +50,7 @@ jobs:
         run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" > pr_${{ matrix.backend }}.txt
 
       - name: Upload PR ${{ matrix.backend }} Benchmark Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: pr_${{ matrix.backend }}.txt
           path: ./pr_${{ matrix.backend }}.txt
@@ -65,13 +65,13 @@ jobs:
         run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" > base_${{ matrix.backend }}.txt
 
       - name: Upload base ${{ matrix.backend }} Benchmark Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: base_${{ matrix.backend }}.txt
           path: ./base_${{ matrix.backend }}.txt
 
       - name: Upload GitHub Event
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: event.json
+          name: event_${{ matrix.backend }}.json
           path: ${{ github.event_path }}
