@@ -76,7 +76,7 @@ impl<T> QueryFragment<Mysql, crate::mysql::backend::MysqlOnConflictClause> for D
 where
     T: Table + StaticQueryFragment,
     T::Component: QueryFragment<Mysql>,
-    T::PrimaryKey: DoNothingHelper,
+    T::PrimaryKey: DoNothingClauseHelper,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.push_sql(" UPDATE ");
@@ -89,7 +89,7 @@ impl<T, Tab> QueryFragment<Mysql, crate::mysql::backend::MysqlOnConflictClause> 
 where
     T: QueryFragment<Mysql>,
     Tab: Table + StaticQueryFragment,
-    Tab::PrimaryKey: DoNothingHelper,
+    Tab::PrimaryKey: DoNothingClauseHelper,
     Tab::Component: QueryFragment<Mysql>,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
@@ -148,14 +148,18 @@ where
     }
 }
 
-trait DoNothingHelper {
+/// This is a helper trait
+/// that provideds a fake `DO NOTHING` clause
+/// based on reassigning the possible
+/// composite primary key to itself
+trait DoNothingClauseHelper {
     fn walk_ast<T>(out: AstPass<'_, '_, Mysql>) -> QueryResult<()>
     where
         T: StaticQueryFragment,
         T::Component: QueryFragment<Mysql>;
 }
 
-impl<C> DoNothingHelper for C
+impl<C> DoNothingClauseHelper for C
 where
     C: Column,
 {
@@ -182,7 +186,7 @@ macro_rules! do_nothing_for_composite_keys {
         }
     )+) => {
         $(
-            impl<$($T,)*> DoNothingHelper for ($($T,)*)
+            impl<$($T,)*> DoNothingClauseHelper for ($($T,)*)
             where $($T: Column,)*
             {
                 fn walk_ast<Table>(mut out: AstPass<'_, '_, Mysql>) -> QueryResult<()>
