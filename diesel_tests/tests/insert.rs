@@ -865,3 +865,70 @@ fn mixed_defaultable_insert() {
 
     assert_eq!(Ok(expected_data), actual_data);
 }
+
+// regression test for https://github.com/diesel-rs/diesel/issues/3872
+#[test]
+fn upsert_with_composite_primary_key_do_nothing() {
+    table! {
+        users (id, name) {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Nullable<Text>,
+        }
+    }
+
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    diesel::insert_into(users::table)
+        .values((users::id.eq(1), users::name.eq("John")))
+        .on_conflict_do_nothing()
+        .execute(conn)
+        .unwrap();
+    let users = users::table
+        .select(users::name)
+        .load::<String>(conn)
+        .unwrap();
+
+    assert_eq!(users[0], "Sean");
+    assert_eq!(users[1], "Tess");
+}
+
+// regression test for https://github.com/diesel-rs/diesel/issues/3872
+#[test]
+fn upsert_with_composite_primary_key_do_update() {
+    table! {
+        users (id, name) {
+            id -> Integer,
+            name -> Text,
+            hair_color -> Nullable<Text>,
+        }
+    }
+
+    let conn = &mut connection_with_sean_and_tess_in_users_table();
+
+    #[cfg(feature = "mysql")]
+    diesel::insert_into(users::table)
+        .values((users::id.eq(1), users::name.eq("John")))
+        .on_conflict(diesel::dsl::DuplicatedKeys)
+        .do_update()
+        .set(users::name.eq("Jane"))
+        .execute(conn)
+        .unwrap();
+
+    #[cfg(not(feature = "mysql"))]
+    diesel::insert_into(users::table)
+        .values((users::id.eq(1), users::name.eq("John")))
+        .on_conflict(users::id)
+        .do_update()
+        .set(users::name.eq("Jane"))
+        .execute(conn)
+        .unwrap();
+    let users = users::table
+        .select(users::name)
+        .order(users::id)
+        .load::<String>(conn)
+        .unwrap();
+
+    assert_eq!(users[0], "Jane");
+    assert_eq!(users[1], "Tess");
+}
