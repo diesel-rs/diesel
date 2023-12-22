@@ -1,5 +1,6 @@
 //! Types related to database connections
 
+pub(crate) mod instrumentation;
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
     any(feature = "sqlite", feature = "postgres", feature = "mysql")
@@ -15,6 +16,12 @@ use crate::query_builder::{Query, QueryFragment, QueryId};
 use crate::result::*;
 use std::fmt::Debug;
 
+#[doc(inline)]
+pub use self::instrumentation::{
+    get_default_instrumentation, set_default_instrumentation, DebugQuery, Instrumentation,
+    InstrumentationEvent,
+};
+#[doc(inline)]
 pub use self::transaction_manager::{
     AnsiTransactionManager, InTransactionStatus, TransactionDepthChange, TransactionManager,
     TransactionManagerStatus, ValidTransactionManagerStatus,
@@ -27,6 +34,9 @@ pub(crate) use self::private::ConnectionSealed;
 
 #[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
 pub use self::private::MultiConnectionHelper;
+
+#[cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes")]
+pub use self::instrumentation::StrQueryHelper;
 
 #[cfg(all(
     not(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"),
@@ -381,6 +391,14 @@ where
     fn transaction_state(
         &mut self,
     ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData;
+
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn instrumentation(&mut self) -> &mut dyn Instrumentation;
+
+    /// Set a specific [`Instrumentation`] implementation for this connection
+    fn set_instrumentation(&mut self, instrumentation: impl Instrumentation);
 }
 
 /// The specific part of a [`Connection`] which actually loads data from the database

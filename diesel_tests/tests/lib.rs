@@ -28,6 +28,7 @@ mod group_by;
 mod having;
 mod insert;
 mod insert_from_select;
+mod instrumentation;
 mod internal_details;
 mod joins;
 mod limit_offset;

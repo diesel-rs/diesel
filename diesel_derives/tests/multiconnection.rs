@@ -1,4 +1,5 @@
 use crate::schema::users;
+use diesel::connection::Instrumentation;
 use diesel::prelude::*;
 
 #[derive(diesel::MultiConnection)]
@@ -20,6 +21,10 @@ pub struct User {
 #[test]
 fn check_queries_work() {
     let mut conn = establish_connection();
+
+    // checks that this trait is implemented
+    conn.set_instrumentation(None::<Box<dyn Instrumentation>>);
+    let _ = conn.instrumentation();
 
     diesel::sql_query(
         "CREATE TEMPORARY TABLE users(\

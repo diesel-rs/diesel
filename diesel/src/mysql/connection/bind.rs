@@ -862,6 +862,7 @@ mod tests {
             ),
             &mut conn.statement_cache,
             &mut conn.raw_connection,
+            &mut conn.instrumentation,
         ).unwrap();
 
         let metadata = stmt.metadata().unwrap();

@@ -99,8 +99,11 @@ use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
 use crate::backend::Backend;
+use crate::connection::InstrumentationEvent;
 use crate::query_builder::*;
 use crate::result::QueryResult;
+
+use super::Instrumentation;
 
 /// A prepared statement cache
 #[allow(missing_debug_implementations, unreachable_pub)]
@@ -184,6 +187,7 @@ where
         backend: &DB,
         bind_types: &[DB::TypeMetadata],
         mut prepare_fn: F,
+        instrumentation: &mut dyn Instrumentation,
     ) -> QueryResult<MaybeCached<'_, Statement>>
     where
         T: QueryFragment<DB> + QueryId,
@@ -195,6 +199,7 @@ where
             backend,
             bind_types,
             &mut prepare_fn,
+            instrumentation,
         )
     }
 
@@ -206,6 +211,7 @@ where
         backend: &DB,
         bind_types: &[DB::TypeMetadata],
         prepare_fn: &mut dyn FnMut(&str, PrepareForCache) -> QueryResult<Statement>,
+        instrumentation: &mut dyn Instrumentation,
     ) -> QueryResult<MaybeCached<'_, Statement>> {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
@@ -221,6 +227,8 @@ where
             Vacant(entry) => {
                 let statement = {
                     let sql = entry.key().sql(source, backend)?;
+                    instrumentation
+                        .on_connection_event(InstrumentationEvent::CacheQuery { sql: &sql });
                     prepare_fn(&sql, PrepareForCache::Yes)
                 };
 
