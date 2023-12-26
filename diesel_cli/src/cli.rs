@@ -160,16 +160,21 @@ pub fn build_cli() -> Command {
                         .short('o')
                         .long("only-tables")
                         .action(ArgAction::SetTrue)
-                        .help("Only include tables from table-name that matches regexp.")
-                        .conflicts_with("except-tables"),
+                        .help("Only include tables from table-name that matches regexp."),
                 )
                 .arg(
                     Arg::new("except-tables")
                         .short('e')
                         .long("except-tables")
                         .action(ArgAction::SetTrue)
-                        .help("Exclude tables from table-name that matches regex.")
-                        .conflicts_with("only-tables"),
+                        .help("Exclude tables from table-name that matches regex."),
+                )
+                .arg(
+                    Arg::new("print-schema-key")
+                        .long("print-schema-key")
+                        .action(clap::ArgAction::Append)
+                        .num_args(1..)
+                        .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
                 ),
         )
         .subcommand_required(true)
@@ -231,7 +236,6 @@ pub fn build_cli() -> Command {
                 .long("only-tables")
                 .action(ArgAction::SetTrue)
                 .help("Only include tables from table-name that matches regexp.")
-                .conflicts_with("except-tables"),
         )
         .arg(
             Arg::new("except-tables")
@@ -239,7 +243,6 @@ pub fn build_cli() -> Command {
                 .long("except-tables")
                 .action(ArgAction::SetTrue)
                 .help("Exclude tables from table-name that matches regex.")
-                .conflicts_with("only-tables"),
         )
         .arg(
             Arg::new("with-docs")
@@ -289,6 +292,13 @@ pub fn build_cli() -> Command {
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
+        )
+        .arg(
+            Arg::new("print-schema-key")
+                .long("print-schema-key")
+                .action(ArgAction::Append)
+                .num_args(1..)
+                .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
         );
 
     let config_arg = Arg::new("CONFIG_FILE")

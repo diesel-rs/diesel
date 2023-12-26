@@ -46,10 +46,6 @@ pub fn generate_sql_based_on_diff_schema(
 
     tables_from_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_matches(matches);
-    let tables_from_database = filter_table_names(
-        load_table_names(&mut conn, None)?,
-        &config.print_schema.filter,
-    );
 
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
@@ -100,7 +96,17 @@ pub fn generate_sql_based_on_diff_schema(
         .collect::<Result<HashMap<_, _>, syn::Error>>()?;
 
     let mut schema_diff = Vec::new();
-
+    let table_names = load_table_names(&mut conn, None)?;
+    let tables_from_database = filter_table_names(
+        table_names.clone(),
+        &config
+            .print_schema
+            .all_configs
+            .first_key_value()
+            .ok_or("select exact one print schema key")?
+            .1
+            .filter,
+    );
     for table in tables_from_database {
         let columns = crate::infer_schema_internals::load_table_data(
             &mut conn,

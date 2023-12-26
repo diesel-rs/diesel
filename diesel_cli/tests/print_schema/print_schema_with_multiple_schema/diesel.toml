@@ -1,0 +1,10 @@
+[print_schema.user1]
+file = "src/schema1.rs"
+with_docs = true
+filter = { only_tables = ["users1"] }
+
+
+[print_schema.user2]
+file = "src/schema2.rs"
+with_docs = true
+filter = { only_tables = ["users2"] }

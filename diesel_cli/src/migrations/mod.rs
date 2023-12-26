@@ -81,7 +81,14 @@ pub(super) fn run_migration_command(
             {
                 let config = Config::read(matches)?;
                 let diff_schema = if diff_schema == "NOT_SET" {
-                    config.print_schema.file.clone()
+                    if config.print_schema.all_configs.len() != 1 {
+                        return Err("Please select exact one print schema key".into());
+                    }
+                    config
+                        .print_schema
+                        .all_configs
+                        .first_key_value()
+                        .and_then(|v| v.1.file.clone())
                 } else {
                     Some(PathBuf::from(diff_schema))
                 };
