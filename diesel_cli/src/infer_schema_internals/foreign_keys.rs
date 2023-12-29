@@ -33,7 +33,7 @@ pub fn remove_unsafe_foreign_keys_for_codegen(
                 "Error loading primary keys for `{}`",
                 fk.parent_table
             ));
-            pk_columns.len() == 1 && Some(&pk_columns[0]) == fk.primary_key_columns.get(0)
+            pk_columns.len() == 1 && Some(&pk_columns[0]) == fk.primary_key_columns.first()
         })
         .filter(|fk| !duplicates.contains(&fk.ordered_tables()))
         .cloned()
