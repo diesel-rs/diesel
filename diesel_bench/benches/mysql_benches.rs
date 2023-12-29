@@ -1,27 +1,12 @@
+#[path = "common.rs"]
+mod common;
+
+use common::*;
 use super::Bencher;
 use rust_mysql::params::Params;
 use rust_mysql::prelude::*;
 use rust_mysql::{Conn, Opts, Row};
 use std::collections::HashMap;
-
-pub struct User {
-    pub id: i32,
-    pub name: String,
-    pub hair_color: Option<String>,
-}
-
-pub struct Post {
-    pub id: i32,
-    pub user_id: i32,
-    pub title: String,
-    pub body: Option<String>,
-}
-
-pub struct Comment {
-    pub id: i32,
-    pub post_id: i32,
-    pub text: String,
-}
 
 fn connection() -> Conn {
     dotenvy::dotenv().ok();

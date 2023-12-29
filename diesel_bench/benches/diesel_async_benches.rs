@@ -1,10 +1,9 @@
+#[path = "common.rs"]
+mod common;
+
+use common::*;
 use super::Bencher;
-use diesel::insert_into;
-use diesel::prelude::{
-    allow_tables_to_appear_in_same_query, joinable, table, AsChangeset, Associations,
-    BelongingToDsl, ExpressionMethods, GroupedBy, Identifiable, Insertable, QueryDsl, Queryable,
-    QueryableByName,
-};
+use diesel::*;
 use diesel_async::AsyncConnection;
 use diesel_async::RunQueryDsl;
 use tokio::runtime::Runtime;
@@ -14,45 +13,6 @@ type TestConnection = diesel_async::AsyncPgConnection;
 
 #[cfg(feature = "mysql")]
 type TestConnection = diesel_async::AsyncMysqlConnection;
-
-table! {
-    users {
-        id -> Integer,
-        name -> Text,
-        hair_color -> Nullable<Text>,
-    }
-}
-
-table! {
-    posts {
-        id -> Integer,
-        user_id -> Integer,
-        title -> Text,
-        body -> Nullable<Text>,
-    }
-}
-
-table! {
-    comments {
-        id -> Integer,
-        post_id -> Integer,
-        text -> Text,
-    }
-}
-
-joinable!(comments -> posts (post_id));
-joinable!(posts -> users (user_id));
-allow_tables_to_appear_in_same_query!(users, posts, comments);
-
-#[derive(
-    PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Insertable, AsChangeset, QueryableByName,
-)]
-#[diesel(table_name = users)]
-pub struct User {
-    pub id: i32,
-    pub name: String,
-    pub hair_color: Option<String>,
-}
 
 #[derive(Debug, PartialEq, Eq, Queryable, Clone, Insertable, AsChangeset)]
 #[diesel(table_name = users)]
@@ -71,16 +31,6 @@ impl NewUser {
     }
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations, QueryableByName)]
-#[diesel(belongs_to(User))]
-#[diesel(table_name = posts)]
-pub struct Post {
-    pub id: i32,
-    pub user_id: i32,
-    pub title: String,
-    pub body: Option<String>,
-}
-
 #[derive(Insertable)]
 #[diesel(table_name = posts)]
 pub struct NewPost {
@@ -97,14 +47,6 @@ impl NewPost {
             body: body.map(|b| b.into()),
         }
     }
-}
-
-#[derive(PartialEq, Eq, Debug, Clone, Queryable, Identifiable, Associations)]
-#[diesel(belongs_to(Post))]
-pub struct Comment {
-    id: i32,
-    post_id: i32,
-    text: String,
 }
 
 #[derive(Debug, Clone, Copy, Insertable)]

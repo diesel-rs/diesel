@@ -1,31 +1,11 @@
+#[path = "common.rs"]
+mod common;
+
+use common::*;
 use super::Bencher;
 use sqlx::*;
 use std::collections::HashMap;
 use tokio::runtime::Runtime;
-
-#[derive(sqlx::FromRow)]
-pub struct User {
-    #[cfg(not(feature = "sqlite"))]
-    pub id: i32,
-    #[cfg(feature = "sqlite")]
-    pub id: i64,
-    pub name: String,
-    pub hair_color: Option<String>,
-}
-
-#[derive(sqlx::FromRow)]
-pub struct Post {
-    #[cfg(not(feature = "sqlite"))]
-    pub id: i32,
-    #[cfg(feature = "sqlite")]
-    pub id: i64,
-    #[cfg(not(feature = "sqlite"))]
-    pub user_id: i32,
-    #[cfg(feature = "sqlite")]
-    pub user_id: i64,
-    pub title: String,
-    pub body: Option<String>,
-}
 
 #[derive(sqlx::FromRow)]
 pub struct UserWithPost {
@@ -45,16 +25,6 @@ pub struct UserWithPost {
     pub user_id: Option<i64>,
     pub title: Option<String>,
     pub body: Option<String>,
-}
-
-#[derive(sqlx::FromRow)]
-pub struct Comment {
-    pub id: i32,
-    #[cfg(feature = "sqlite")]
-    pub post_id: i64,
-    #[cfg(not(feature = "sqlite"))]
-    pub post_id: i32,
-    pub text: String,
 }
 
 #[cfg(feature = "sqlite")]

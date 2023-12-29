@@ -1,3 +1,7 @@
+#[path = "common.rs"]
+mod common;
+
+use common::*;
 use super::Bencher;
 use rust_postgres::fallible_iterator::FallibleIterator;
 use rust_postgres::types::ToSql;
@@ -5,25 +9,6 @@ use rust_postgres::{Client, NoTls};
 use std::collections::HashMap;
 
 const NO_PARAMS: Vec<&dyn ToSql> = Vec::new();
-
-pub struct User {
-    pub id: i32,
-    pub name: String,
-    pub hair_color: Option<String>,
-}
-
-pub struct Post {
-    pub id: i32,
-    pub user_id: i32,
-    pub title: String,
-    pub body: Option<String>,
-}
-
-pub struct Comment {
-    pub id: i32,
-    pub post_id: i32,
-    pub text: String,
-}
 
 fn connection() -> Client {
     dotenvy::dotenv().ok();

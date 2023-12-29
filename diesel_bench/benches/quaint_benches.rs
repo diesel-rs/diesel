@@ -1,31 +1,13 @@
+#[path = "common.rs"]
+mod common;
+
+use common::*;
 use super::Bencher;
 use quaint::prelude::*;
 use quaint::single::Quaint;
 use serde::Deserialize;
 use std::collections::HashMap;
 use tokio::runtime::Runtime;
-
-#[derive(Deserialize)]
-pub struct User {
-    pub id: i32,
-    pub name: String,
-    pub hair_color: Option<String>,
-}
-
-#[derive(Deserialize)]
-pub struct Post {
-    pub id: i32,
-    pub user_id: i32,
-    pub title: String,
-    pub body: Option<String>,
-}
-
-#[derive(Deserialize)]
-pub struct Comment {
-    pub id: i32,
-    pub post_id: i32,
-    pub text: String,
-}
 
 #[derive(Deserialize)]
 pub struct UserWithPost {

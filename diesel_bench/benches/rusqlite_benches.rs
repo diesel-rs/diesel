@@ -1,15 +1,13 @@
+#[path = "common.rs"]
+mod common;
+
+use common::*;
 use super::Bencher;
 use rusqlite::params;
 use rusqlite::Connection;
 use rusqlite::Row;
 use rusqlite::ToSql;
 use std::collections::HashMap;
-
-pub struct User {
-    pub id: i64,
-    pub name: String,
-    pub hair_color: Option<String>,
-}
 
 impl User {
     fn from_row_by_id(row: &Row) -> User {
@@ -29,13 +27,6 @@ impl User {
     }
 }
 
-pub struct Post {
-    pub id: i64,
-    pub user_id: i64,
-    pub title: String,
-    pub body: Option<String>,
-}
-
 impl Post {
     fn from_row_by_id(row: &Row) -> Post {
         Post {
@@ -46,13 +37,6 @@ impl Post {
         }
     }
 }
-
-pub struct Comment {
-    pub id: i64,
-    pub post_id: i64,
-    pub text: String,
-}
-
 impl Comment {
     fn from_row_by_id(row: &Row) -> Comment {
         Comment {
