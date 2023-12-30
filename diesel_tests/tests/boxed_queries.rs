@@ -179,3 +179,14 @@ fn can_box_query_with_boxable_expression() {
     let expected = vec![find_user_by_name("Sean", connection)];
     assert_eq!(Ok(expected), data);
 }
+
+#[test]
+fn can_box_query_having_with_boxable_expression() {
+    let connection = &mut connection_with_sean_and_tess_in_users_table();
+
+   let expr: Box<dyn BoxableExpression<users::table, _, SqlType = _>> =
+        Box::new(count(users::id).eq(2)) as _;
+
+    use diesel::dsl::count;
+    let data: Vec<i64> = users::table.select(count(users::id)).group_by(users::id).having(expr).into_boxed().load(connection).expect("db error");
+}
