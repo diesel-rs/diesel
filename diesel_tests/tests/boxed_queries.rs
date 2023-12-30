@@ -184,9 +184,10 @@ fn can_box_query_with_boxable_expression() {
 fn can_box_query_having_with_boxable_expression() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-   let expr: Box<dyn BoxableExpression<users::table, _, SqlType = _>> =
+   use diesel::expression::ValidGrouping;
+   let expr: Box<dyn BoxableExpression<users::table, <users::id as ValidGrouping<(users::id)>>::IsAggregate, SqlType = _>> =
         Box::new(count(users::id).eq(2)) as _;
 
     use diesel::dsl::count;
-    let data: Vec<i64> = users::table.select(count(users::id)).group_by(users::id).having(expr).into_boxed().load(connection).expect("db error");
+    let data: Vec<i64> = users::table.select(count(users::id)).group_by(users::id).into_boxed().having(expr).load(connection).expect("db error");
 }
