@@ -1,6 +1,6 @@
-#[cfg(feature = "sqlite")]
+#[cfg(all(feature = "sqlx", feature = "sqlite"))]
 type Id = i64;
-#[cfg(not(feature = "sqlite"))]
+#[cfg(not(all(feature = "sqlx", feature = "sqlite")))]
 type Id = i32;
 
 diesel::table! {
