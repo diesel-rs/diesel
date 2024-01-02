@@ -1,4 +1,5 @@
 use super::schema::*;
+use diesel::expression::is_aggregate;
 use diesel::*;
 
 #[test]
@@ -184,10 +185,42 @@ fn can_box_query_with_boxable_expression() {
 fn can_box_query_having_with_boxable_expression() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
 
-   use diesel::expression::ValidGrouping;
-   let expr: Box<dyn BoxableExpression<users::table, <users::id as ValidGrouping<(users::id)>>::IsAggregate, SqlType = _>> =
-        Box::new(count(users::id).eq(2)) as _;
+    let expr: Box<
+        dyn BoxableExpression<
+            users::table,
+            crate::schema::TestBackend,
+            users::id,
+            is_aggregate::Yes,
+            SqlType = _,
+        >,
+    > = Box::new(count(users::id).eq(1)) as _;
 
     use diesel::dsl::count;
-    let data: Vec<i64> = users::table.select(count(users::id)).group_by(users::id).into_boxed().having(expr).load(connection).expect("db error");
+
+    let data = users::table
+        .select(count(users::id))
+        .group_by(users::id)
+        .having(expr)
+        .load::<i64>(connection)
+        .expect("db error");
+    assert_eq!(data, [1, 1]);
+
+    let expr: Box<
+        dyn BoxableExpression<
+            users::table,
+            crate::schema::TestBackend,
+            users::id,
+            is_aggregate::Yes,
+            SqlType = _,
+        >,
+    > = Box::new(count(users::id).eq(1)) as _;
+
+    let data = users::table
+        .select(count(users::id))
+        .group_by(users::id)
+        .into_boxed()
+        .having(expr)
+        .load::<i64>(connection)
+        .expect("db error");
+    assert_eq!(data, [1, 1]);
 }
