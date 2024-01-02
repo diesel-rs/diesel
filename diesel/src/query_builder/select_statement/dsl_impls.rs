@@ -669,7 +669,8 @@ where
     Predicate: Expression,
     Predicate::SqlType: BoolOrNullableBool,
 {
-    type Output = SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<G>, HavingClause<Predicate>>;
+    type Output =
+        SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<G>, HavingClause<Predicate>>;
 
     fn having(self, predicate: Predicate) -> Self::Output {
         SelectStatement::new(
