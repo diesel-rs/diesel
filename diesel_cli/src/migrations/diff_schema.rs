@@ -4,7 +4,6 @@ use diesel::query_builder::QueryBuilder;
 use diesel::QueryResult;
 use diesel_table_macro_syntax::{ColumnDef, TableDecl};
 use std::collections::HashMap;
-use std::error::Error;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -27,11 +26,12 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
     map
 }
 
+#[tracing::instrument]
 pub fn generate_sql_based_on_diff_schema(
     config: Config,
     matches: &ArgMatches,
     schema_file_path: &Path,
-) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
+) -> Result<(String, String), crate::errors::Error> {
     let config = config.set_filter(matches)?;
 
     let project_root = crate::find_project_root()?;
@@ -45,7 +45,7 @@ pub fn generate_sql_based_on_diff_schema(
     let mut tables_from_schema = SchemaCollector::default();
 
     tables_from_schema.visit_file(&syn_file);
-    let mut conn = InferConnection::from_matches(matches);
+    let mut conn = InferConnection::from_matches(matches)?;
     let tables_from_database = filter_table_names(
         load_table_names(&mut conn, None)?,
         &config.print_schema.filter,
@@ -73,35 +73,25 @@ pub fn generate_sql_based_on_diff_schema(
         },
     )?;
 
-    let table_pk_key_list = tables_from_schema
-        .table_decls
-        .iter()
-        .map(|t| {
-            let t = t.as_ref().unwrap();
-            Ok((
-                t.table_name.to_string(),
-                t.primary_keys.as_ref().map(|keys| {
-                    keys.keys
-                        .iter()
-                        .map(ToString::to_string)
-                        .collect::<Vec<_>>()
-                }),
-            ))
-        })
-        .collect::<Result<HashMap<_, _>, &syn::Error>>()?;
+    let mut table_pk_key_list = HashMap::new();
+    let mut expected_schema_map = HashMap::new();
 
-    let mut expected_schema_map = tables_from_schema
-        .table_decls
-        .into_iter()
-        .map(|t| {
-            let t = t?;
-            Ok((t.table_name.to_string().to_lowercase(), t))
-        })
-        .collect::<Result<HashMap<_, _>, syn::Error>>()?;
+    for t in tables_from_schema.table_decls {
+        let t = t?;
+        let keys = t.primary_keys.as_ref().map(|keys| {
+            keys.keys
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+        });
+        table_pk_key_list.insert(t.table_name.to_string(), keys);
+        expected_schema_map.insert(t.table_name.to_string(), t);
+    }
 
     let mut schema_diff = Vec::new();
 
     for table in tables_from_database {
+        tracing::info!(?table, "Diff for existing table");
         let columns = crate::infer_schema_internals::load_table_data(
             &mut conn,
             table.clone(),
@@ -109,6 +99,7 @@ pub fn generate_sql_based_on_diff_schema(
             DocConfig::NoDocComments,
         )?;
         if let Some(t) = expected_schema_map.remove(&table.sql_name.to_lowercase()) {
+            tracing::info!(table = ?t.sql_name, "Table exists in schema.rs");
             let mut primary_keys_in_db =
                 crate::infer_schema_internals::get_primary_keys(&mut conn, &table)?;
             primary_keys_in_db.sort();
@@ -118,7 +109,14 @@ pub fn generate_sql_based_on_diff_schema(
                 .unwrap_or_else(|| vec!["id".into()]);
             primary_keys_in_schema.sort();
             if primary_keys_in_db != primary_keys_in_schema {
-                return Err("Cannot change primary keys with --diff-schema yet".into());
+                tracing::debug!(
+                    ?primary_keys_in_schema,
+                    ?primary_keys_in_db,
+                    "Primary keys changed"
+                );
+                return Err(crate::errors::Error::UnsupportedFeature(
+                    "Cannot change primary keys with --diff-schema yet".into(),
+                ));
             }
 
             let mut expected_column_map = t
@@ -135,13 +133,22 @@ pub fn generate_sql_based_on_diff_schema(
                 if let Some(def) = expected_column_map.remove(&c.sql_name.to_lowercase()) {
                     let tpe = ColumnType::for_column_def(&def)?;
                     if !is_same_type(&c.ty, tpe) {
+                        tracing::info!(old = ?c, new = ?def.sql_name, "Column changed type");
                         changed_columns.push((c, def));
                     }
                 } else {
+                    tracing::info!(column = ?c, "Column was removed");
                     removed_columns.push(c);
                 }
             }
 
+            if !expected_column_map.is_empty() {
+                let columns = expected_column_map
+                    .values()
+                    .map(|v| v.column_name.to_string())
+                    .collect::<Vec<_>>();
+                tracing::info!(added = ?columns, "Added columns");
+            }
             added_columns.extend(expected_column_map.into_values());
 
             schema_diff.push(SchemaDiff::ChangeTable {
@@ -151,6 +158,7 @@ pub fn generate_sql_based_on_diff_schema(
                 changed_columns,
             });
         } else {
+            tracing::info!("Table does not exist yet");
             let foreign_keys = foreign_key_map
                 .get(&table.rust_name)
                 .cloned()
@@ -159,9 +167,9 @@ pub fn generate_sql_based_on_diff_schema(
                 .iter()
                 .any(|fk| fk.foreign_key_columns.len() != 1 || fk.primary_key_columns.len() != 1)
             {
-                return Err(
+                return Err(crate::errors::Error::UnsupportedFeature(
                     "Tables with composite foreign keys are not supported by --diff-schema".into(),
-                );
+                ));
             }
             schema_diff.push(SchemaDiff::DropTable {
                 table,
@@ -172,6 +180,7 @@ pub fn generate_sql_based_on_diff_schema(
     }
 
     schema_diff.extend(expected_schema_map.into_values().map(|t| {
+        tracing::info!(table = ?t.sql_name, "Tables does not exist in database");
         let foreign_keys = expected_fk_map
             .remove(&t.table_name.to_string())
             .unwrap_or_default()
@@ -299,7 +308,10 @@ enum SchemaDiff {
 }
 
 impl SchemaDiff {
-    fn generate_up_sql<DB>(&self, query_builder: &mut impl QueryBuilder<DB>) -> QueryResult<()>
+    fn generate_up_sql<DB>(
+        &self,
+        query_builder: &mut impl QueryBuilder<DB>,
+    ) -> Result<(), crate::errors::Error>
     where
         DB: Backend,
     {
@@ -321,8 +333,7 @@ impl SchemaDiff {
                     .column_defs
                     .iter()
                     .map(|c| {
-                        let ty = ColumnType::for_column_def(c)
-                            .map_err(diesel::result::Error::QueryBuilderError)?;
+                        let ty = ColumnType::for_column_def(c)?;
                         Ok(ColumnDefinition {
                             sql_name: c.sql_name.to_lowercase(),
                             rust_name: c.sql_name.clone(),
@@ -330,7 +341,7 @@ impl SchemaDiff {
                             comment: None,
                         })
                     })
-                    .collect::<QueryResult<Vec<_>>>()?;
+                    .collect::<Result<Vec<_>, crate::errors::Error>>()?;
                 let foreign_keys = foreign_keys
                     .iter()
                     .map(|(f, pk)| {
@@ -370,8 +381,7 @@ impl SchemaDiff {
                         query_builder,
                         &table.to_lowercase(),
                         &c.column_name.to_string().to_lowercase(),
-                        &ColumnType::for_column_def(c)
-                            .map_err(diesel::result::Error::QueryBuilderError)?,
+                        &ColumnType::for_column_def(c)?,
                     )?;
                     query_builder.push_sql("\n");
                 }
