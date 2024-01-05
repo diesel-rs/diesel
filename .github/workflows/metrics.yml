@@ -65,7 +65,7 @@ jobs:
 
       - name: Run Benchmarks (Postgres)
         if: matrix.backend == 'postgres'
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rust_postgres futures sea-orm sea-orm/sqlx-postgres criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde diesel-async diesel-async/postgres"
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rust_postgres futures sea-orm sea-orm/sqlx-postgres criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde diesel-async diesel-async/postgres wtx"
 
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'

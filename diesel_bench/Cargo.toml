@@ -25,6 +25,7 @@ futures = {version = "0.3", optional = true}
 diesel-async = {version = "0.4", optional = true, default-features = false}
 criterion-perf-events = { version = "0.4", optional = true}
 perfcnt = {version = "0.8", optional = true}
+wtx = { default-features = false, features = ["atoi", "postgres", "simdutf8", "std", "tokio"], optional = true, version = "0.12" }
 
 [dependencies.diesel]
 path = "../diesel"
