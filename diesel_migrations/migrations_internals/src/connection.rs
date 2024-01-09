@@ -41,7 +41,7 @@ where
     }
 
     fn latest_run_migration_version(&self) -> QueryResult<Option<String>> {
-        use diesel::dsl::max;
+        use diesel::expression::dsl::max;
         __diesel_schema_migrations.select(max(version)).first(self)
     }
 
