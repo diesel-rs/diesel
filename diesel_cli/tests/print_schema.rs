@@ -292,6 +292,8 @@ fn print_schema_with_enum_set_types() {
             "--with-docs",
             "--custom-type-derives",
             "diesel::query_builder::QueryId",
+            "--custom-type-derives",
+            "Clone",
         ],
     )
 }

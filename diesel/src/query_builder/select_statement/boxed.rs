@@ -507,8 +507,9 @@ where
 }
 
 impl<'a, ST, QS, DB, GB, Predicate> HavingDsl<Predicate>
-    for BoxedSelectStatement<'a, ST, QS, DB, GB>
+    for BoxedSelectStatement<'a, ST, FromClause<QS>, DB, GB>
 where
+    QS: QuerySource,
     DB: Backend,
     GB: Expression,
     HavingClause<Predicate>: QueryFragment<DB> + Send + 'a,
