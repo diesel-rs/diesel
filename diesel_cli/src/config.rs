@@ -162,9 +162,17 @@ impl Config {
                 .collect::<Result<Vec<Regex>, _>>()
                 .map_err(|e| format!("invalid argument for table filtering regex: {e}"))?;
 
-            if matches.get_flag("only-tables") {
+            if matches
+                .try_get_one::<bool>("only-tables")?
+                .cloned()
+                .unwrap_or(false)
+            {
                 print_schema.filter = Filtering::OnlyTables(table_names)
-            } else if matches.get_flag("except-tables") {
+            } else if matches
+                .try_get_one::<bool>("except-tables")?
+                .cloned()
+                .unwrap_or(false)
+            {
                 print_schema.filter = Filtering::ExceptTables(table_names)
             }
         }

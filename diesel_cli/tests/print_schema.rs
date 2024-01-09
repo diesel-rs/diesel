@@ -340,7 +340,23 @@ fn print_schema_quoted_schema_and_table_name() {
 
 #[test]
 fn print_schema_with_multiple_schema() {
-    test_multiple_print_schema("print_schema_with_multiple_schema", vec![])
+    test_multiple_print_schema(
+        "print_schema_with_multiple_schema",
+        vec![
+            "--print-schema-key",
+            "default",
+            "--print-schema-key",
+            "user1",
+            "-o",
+            "users1",
+            "--with-docs",
+            "--print-schema-key",
+            "user2",
+            "-o",
+            "users2",
+            "--with-docs",
+        ],
+    )
 }
 
 #[cfg(feature = "sqlite")]
@@ -364,7 +380,15 @@ fn test_multiple_print_schema(test_name: &str, args: Vec<&str>) {
         .join("tests")
         .join("print_schema")
         .join(test_name);
-    let p = project(test_name).build();
+    let p = project(test_name)
+        .file(
+            "diesel.toml",
+            r#"
+            [print_schema.user1]
+            [print_schema.user2]
+            "#,
+        )
+        .build();
     let db = database(&p.database_url());
 
     p.command("setup").run();

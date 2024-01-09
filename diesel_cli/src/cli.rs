@@ -6,6 +6,13 @@ use clap_complete::Shell;
 
 use crate::print_schema;
 
+fn position_sensitive_flag(arg: Arg) -> Arg {
+    arg.num_args(0)
+        .value_parser(clap::value_parser!(bool))
+        .default_missing_value("true")
+        .default_value("false")
+}
+
 pub fn build_cli() -> Command {
     let database_arg = Arg::new("DATABASE_URL")
         .long("database-url")
@@ -156,24 +163,23 @@ pub fn build_cli() -> Command {
                         .help("Table names to filter."),
                 )
                 .arg(
-                    Arg::new("only-tables")
+                    position_sensitive_flag(Arg::new("only-tables"))
                         .short('o')
                         .long("only-tables")
-                        .action(ArgAction::SetTrue)
+                        .action(ArgAction::Append)
                         .help("Only include tables from table-name that matches regexp."),
                 )
                 .arg(
-                    Arg::new("except-tables")
+                    position_sensitive_flag(Arg::new("except-tables"))
                         .short('e')
                         .long("except-tables")
-                        .action(ArgAction::SetTrue)
+                        .action(ArgAction::Append)
                         .help("Exclude tables from table-name that matches regex."),
                 )
                 .arg(
                     Arg::new("print-schema-key")
                         .long("print-schema-key")
                         .action(clap::ArgAction::Append)
-                        .num_args(1..)
                         .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
                 ),
         )
@@ -231,23 +237,23 @@ pub fn build_cli() -> Command {
                 .help("Table names to filter."),
         )
         .arg(
-            Arg::new("only-tables")
+            position_sensitive_flag(Arg::new("only-tables"))
                 .short('o')
                 .long("only-tables")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help("Only include tables from table-name that matches regexp.")
         )
         .arg(
-            Arg::new("except-tables")
+            position_sensitive_flag(Arg::new("except-tables"))
                 .short('e')
                 .long("except-tables")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help("Exclude tables from table-name that matches regex.")
         )
         .arg(
-            Arg::new("with-docs")
+            position_sensitive_flag(Arg::new("with-docs"))
                 .long("with-docs")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help("Render documentation comments for tables and columns."),
         )
         .arg(
@@ -255,6 +261,7 @@ pub fn build_cli() -> Command {
                 .long("with-docs-config")
                 .help("Render documentation comments for tables and columns.")
                 .num_args(1)
+                .action(ArgAction::Append)
                 .value_parser(PossibleValuesParser::new(print_schema::DocConfig::VARIANTS_STR)),
         )
         .arg(
@@ -262,12 +269,14 @@ pub fn build_cli() -> Command {
                 .long("column-sorting")
                 .help("Sort order for table columns.")
                 .num_args(1)
+                .action(ArgAction::Append)
                 .value_parser(PossibleValuesParser::new(["ordinal_position", "name"])),
         )
         .arg(
             Arg::new("patch-file")
                 .long("patch-file")
                 .num_args(1)
+                .action(ArgAction::Append)
                 .value_parser(clap::value_parser!(std::path::PathBuf))
                 .help("A unified diff file to be applied to the final schema."),
         )
@@ -275,14 +284,15 @@ pub fn build_cli() -> Command {
             Arg::new("import-types")
                 .long("import-types")
                 .num_args(1..)
+                .action(ArgAction::Append)
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of types to import for every table, separated by commas."),
         )
         .arg(
-            Arg::new("generate-custom-type-definitions")
+            position_sensitive_flag(Arg::new("generate-custom-type-definitions"))
                 .long("no-generate-missing-sql-type-definitions")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help("Generate SQL type definitions for types not provided by diesel"),
         )
         .arg(
@@ -297,7 +307,6 @@ pub fn build_cli() -> Command {
             Arg::new("print-schema-key")
                 .long("print-schema-key")
                 .action(ArgAction::Append)
-                .num_args(1..)
                 .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
         );
 
