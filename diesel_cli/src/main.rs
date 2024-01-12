@@ -251,7 +251,6 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
 #[tracing::instrument]
 fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
     use std::io::Read;
-    use std::io::Write;
 
     tracing::debug!("Regenerate schema if required");
 
@@ -265,7 +264,7 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
 
             if matches.get_flag("LOCKED_SCHEMA") {
                 let mut buf = Vec::new();
-                print_schema::run_print_schema(&mut connection, &config, &mut buf)?;
+                print_schema::run_print_schema(&mut connection, config, &mut buf)?;
 
                 let mut old_buf = Vec::new();
                 let mut file = fs::File::open(path)?;
@@ -280,7 +279,7 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
                 use std::io::Write;
 
                 let mut file = fs::File::create(path)?;
-                let schema = print_schema::output_schema(&mut connection, &config)?;
+                let schema = print_schema::output_schema(&mut connection, config)?;
                 file.write_all(schema.as_bytes())?;
             }
         }
