@@ -94,14 +94,7 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
         numeric_derive = Some(quote!(#[derive(diesel::sql_types::DieselNumericOps)]));
     }
 
-    let inside_module_helper_type = legacy_helper_type_and_module.then(|| {
-        quote! {
-            pub type HelperType #ty_generics = #fn_name <
-                #(#type_args,)*
-                #(<#arg_name as AsExpression<#arg_type>>::Expression,)*
-            >;
-        }
-    });
+    let helper_type_doc = format!("The return type of [`{fn_name}()`](super::fn_name)");
 
     let args_iter = args.iter();
     let mut tokens = quote! {
@@ -118,7 +111,11 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
             #(pub(in super) #type_args: ::std::marker::PhantomData<#type_args>,)*
         }
 
-        #inside_module_helper_type
+        #[doc = #helper_type_doc]
+        pub type HelperType #ty_generics = #fn_name <
+            #(#type_args,)*
+            #(<#arg_name as AsExpression<#arg_type>>::Expression,)*
+        >;
 
         impl #impl_generics Expression for #fn_name #ty_generics
         #where_clause
@@ -402,11 +399,10 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
             (None, quote! { #fn_name }, fn_name.clone())
         } else {
             let internals_module_name = Ident::new(&format!("{fn_name}_internals"), fn_name.span());
-            let doc = format!("The return type of [`{fn_name}()`]");
             (
                 Some(quote! {
                     #[allow(non_camel_case_types, non_snake_case)]
-                    #[doc = #doc]
+                    #[doc = #helper_type_doc]
                     pub type #fn_name #ty_generics = #internals_module_name::#fn_name <
                         #(#type_args,)*
                         #(<#arg_name as ::diesel::expression::AsExpression<#arg_type>>::Expression,)*
