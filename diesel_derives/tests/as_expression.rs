@@ -2,6 +2,7 @@ use diesel::backend::Backend;
 use diesel::deserialize::{FromSql, FromSqlRow};
 use diesel::expression::AsExpression;
 use diesel::serialize::{Output, ToSql};
+use diesel::sql_types::Binary;
 use diesel::sql_types::Text;
 use diesel::*;
 use std::convert::TryInto;
@@ -58,3 +59,9 @@ fn struct_with_sql_type() {
         .get_result(conn);
     assert!(data.is_err());
 }
+
+// check that defaulted type parameters compile correctly
+// This is a regression test for https://github.com/diesel-rs/diesel/issues/3902
+#[derive(AsExpression, FromSqlRow)]
+#[diesel(sql_type = Binary)]
+pub struct Ewkb<B: AsRef<[u8]> = Vec<u8>>(pub B);
