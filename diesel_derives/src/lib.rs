@@ -1346,7 +1346,7 @@ pub fn sql_function_v2(input: TokenStream) -> TokenStream {
     sql_function::expand(parse_macro_input!(input), false).into()
 }
 
-/// A legacy version of [`sql_function_v2`].
+/// A legacy version of [`sql_function_v2!`].
 ///
 /// The difference is that it makes the helper type available in a module named the exact same as
 /// the function:
@@ -1368,7 +1368,7 @@ pub fn sql_function_v2(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// This turned out to be an issue for the support of the `auto_type` feature, which is why
-/// [`sql_function_v2`] was introduced (and why this is deprecated).
+/// [`sql_function_v2!`] was introduced (and why this is deprecated).
 ///
 /// SQL functions declared with this version of the macro will not be usable with `#[auto_type]`
 /// or `Selectable` `select_expression` type inference.
