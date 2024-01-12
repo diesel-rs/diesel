@@ -1021,36 +1021,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 ///     ...
 /// }
 ///
-/// pub(crate) mod lower {
-///     pub type HelperType<X> = ...;
-/// }
-/// ```
-///
-/// If you are using this macro for part of a library, where the function is
-/// part of your public API, it is highly recommended that you re-export this
-/// helper type with the same name as your function. This is the standard
-/// structure:
-///
-/// ```ignore
-/// pub mod functions {
-///     use super::types::*;
-///     use diesel::sql_types::*;
-///
-///     sql_function_v2! {
-///         /// Represents the Pg `LENGTH` function used with `tsvector`s.
-///         fn length(x: TsVector) -> Integer;
-///     }
-/// }
-///
-/// pub mod helper_types {
-///     /// The return type of `length(expr)`
-///     pub type Length<Expr> = functions::length<Expr>;
-/// }
-///
-/// pub mod dsl {
-///     pub use functions::*;
-///     pub use helper_types::*;
-/// }
+/// pub type lower<X> = ...;
 /// ```
 ///
 /// Most attributes given to this macro will be put on the generated function
