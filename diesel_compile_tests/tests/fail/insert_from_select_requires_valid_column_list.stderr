@@ -15,6 +15,9 @@ error[E0271]: type mismatch resolving `<SelectStatement<FromClause<table>, Selec
 note: required by a bound in `diesel::RunQueryDsl::execute`
   --> $DIESEL/src/query_dsl/mod.rs
    |
+   |     fn execute(self, conn: &mut Conn) -> QueryResult<usize>
+   |        ------- required by a bound in this associated function
+...
    |         Self: methods::ExecuteDsl<Conn>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::execute`
 
@@ -22,12 +25,12 @@ error[E0271]: type mismatch resolving `<post_id as ColumnList>::Table == table`
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:63:23
    |
 63 |         .into_columns(comments::post_id);
-   |          ------------ ^^^^^^^^^^^^^^^^^ expected struct `posts::table`, found struct `comments::table`
+   |          ------------ ^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
    |          |
    |          required by a bound introduced by this call
    |
-   = note: struct `comments::table` and struct `posts::table` have similar names, but are actually distinct types
-note: struct `comments::table` is defined in module `crate::comments` of the current crate
+   = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
+note: `comments::table` is defined in module `crate::comments` of the current crate
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
    |
 22 | / table! {
@@ -37,7 +40,7 @@ note: struct `comments::table` is defined in module `crate::comments` of the cur
 26 | |     }
 27 | | }
    | |_^
-note: struct `posts::table` is defined in module `crate::posts` of the current crate
+note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
    |
 14 | / table! {
@@ -51,6 +54,9 @@ note: struct `posts::table` is defined in module `crate::posts` of the current c
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn into_columns<C2>(
+   |            ------------ required by a bound in this associated function
+...
    |         C2: ColumnList<Table = T> + Expression,
    |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -76,6 +82,7 @@ error[E0277]: the trait bound `(comments::columns::post_id, posts::columns::titl
    |          required by a bound introduced by this call
    |
    = help: the following other types implement trait `diesel::query_builder::insert_statement::column_list::ColumnList`:
+             (T0,)
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -83,11 +90,13 @@ error[E0277]: the trait bound `(comments::columns::post_id, posts::columns::titl
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-             (T0, T1, T2, T3, T4, T5, T6, T7, T8)
            and $N others
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn into_columns<C2>(
+   |            ------------ required by a bound in this associated function
+...
    |         C2: ColumnList<Table = T> + Expression,
    |             ^^^^^^^^^^^^^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
 
@@ -95,12 +104,12 @@ error[E0271]: type mismatch resolving `<post_id as ColumnList>::Table == table`
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:78:23
    |
 78 |         .into_columns((comments::post_id, comments::body));
-   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `posts::table`, found struct `comments::table`
+   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
    |          |
    |          required by a bound introduced by this call
    |
-   = note: struct `comments::table` and struct `posts::table` have similar names, but are actually distinct types
-note: struct `comments::table` is defined in module `crate::comments` of the current crate
+   = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
+note: `comments::table` is defined in module `crate::comments` of the current crate
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
    |
 22 | / table! {
@@ -110,7 +119,7 @@ note: struct `comments::table` is defined in module `crate::comments` of the cur
 26 | |     }
 27 | | }
    | |_^
-note: struct `posts::table` is defined in module `crate::posts` of the current crate
+note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
    |
 14 | / table! {
@@ -125,6 +134,9 @@ note: struct `posts::table` is defined in module `crate::posts` of the current c
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn into_columns<C2>(
+   |            ------------ required by a bound in this associated function
+...
    |         C2: ColumnList<Table = T> + Expression,
    |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -133,12 +145,12 @@ error[E0271]: type mismatch resolving `<body as ColumnList>::Table == table`
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:78:23
    |
 78 |         .into_columns((comments::post_id, comments::body));
-   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `posts::table`, found struct `comments::table`
+   |          ------------ ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `posts::table`, found `comments::table`
    |          |
    |          required by a bound introduced by this call
    |
-   = note: struct `comments::table` and struct `posts::table` have similar names, but are actually distinct types
-note: struct `comments::table` is defined in module `crate::comments` of the current crate
+   = note: `comments::table` and `posts::table` have similar names, but are actually distinct types
+note: `comments::table` is defined in module `crate::comments` of the current crate
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:22:1
    |
 22 | / table! {
@@ -148,7 +160,7 @@ note: struct `comments::table` is defined in module `crate::comments` of the cur
 26 | |     }
 27 | | }
    | |_^
-note: struct `posts::table` is defined in module `crate::posts` of the current crate
+note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:14:1
    |
 14 | / table! {
@@ -163,6 +175,9 @@ note: struct `posts::table` is defined in module `crate::posts` of the current c
 note: required by a bound in `InsertStatement::<T, diesel::query_builder::insert_statement::insert_from_select::InsertFromSelect<U, C>, Op, Ret>::into_columns`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
    |
+   |     pub fn into_columns<C2>(
+   |            ------------ required by a bound in this associated function
+...
    |         C2: ColumnList<Table = T> + Expression,
    |                        ^^^^^^^^^ required by this bound in `InsertStatement::<T, InsertFromSelect<U, C>, Op, Ret>::into_columns`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -171,7 +186,7 @@ error[E0271]: type mismatch resolving `<(user_id, body) as Expression>::SqlType 
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:83:10
    |
 83 |         .into_columns((user_id, body));
-   |          ^^^^^^^^^^^^ expected struct `Nullable`, found struct `Text`
+   |          ^^^^^^^^^^^^ expected `(Integer, Nullable<Text>)`, found `(Integer, Text)`
    |
    = note: expected tuple `(diesel::sql_types::Integer, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
               found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`
@@ -180,7 +195,7 @@ error[E0271]: type mismatch resolving `<(title, body) as Expression>::SqlType ==
   --> tests/fail/insert_from_select_requires_valid_column_list.rs:88:10
    |
 88 |         .into_columns((title, body));
-   |          ^^^^^^^^^^^^ expected struct `Text`, found struct `Integer`
+   |          ^^^^^^^^^^^^ expected `(Text, Nullable<Text>)`, found `(Integer, Text)`
    |
    = note: expected tuple `(diesel::sql_types::Text, diesel::sql_types::Nullable<diesel::sql_types::Text>)`
               found tuple `(diesel::sql_types::Integer, diesel::sql_types::Text)`

@@ -40,7 +40,7 @@ fn users_with_posts_with_id_greater_than(id_greater_than: i32) -> _ {
 #[dsl::auto_type]
 fn user_has_post_with_id_greater_than_2() -> _ {
     // We check here that only the error on n shows, and that it shows only once
-    // (Litterals must have type suffix for auto_type, e.g. 2i64), and that it's properly spanned
+    // (Literals must have type suffix for auto_type, e.g. 2i64), and that it's properly spanned
     // (on the `2`)
     let n = 2;
     let m = 3;

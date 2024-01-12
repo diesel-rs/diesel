@@ -4,7 +4,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
 26 |     users::table.select(users::name).having(users::id.gt(1)).load(&mut conn);
    |                                      ^^^^^^ the trait `HavingDsl<_>` is not implemented for `SelectStatement<FromClause<users::table>, diesel::query_builder::select_clause::SelectClause<users::columns::name>>`
    |
-   = help: the trait `HavingDsl<Predicate>` is implemented for `SelectStatement<F, S, D, W, O, LOf, diesel::query_builder::group_by_clause::GroupByClause<G>, H>`
+   = help: the trait `HavingDsl<Predicate>` is implemented for `SelectStatement<FromClause<F>, S, D, W, O, LOf, diesel::query_builder::group_by_clause::GroupByClause<G>, H>`
 
 error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
   --> tests/fail/having_cant_be_used_without_group_by.rs:28:31
@@ -13,6 +13,7 @@ error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
    |                               ^^^^^^ the trait `diesel::Expression` is not implemented for `()`
    |
    = help: the following other types implement trait `diesel::Expression`:
+             (T0,)
              (T0, T1)
              (T0, T1, T2)
              (T0, T1, T2, T3)
@@ -20,36 +21,35 @@ error[E0277]: the trait bound `(): diesel::Expression` is not satisfied
              (T0, T1, T2, T3, T4, T5)
              (T0, T1, T2, T3, T4, T5, T6)
              (T0, T1, T2, T3, T4, T5, T6, T7)
-             (T0, T1, T2, T3, T4, T5, T6, T7, T8)
            and $N others
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer, diesel::sql_types::Text), FromClause<users::table>, _>` to implement `HavingDsl<_>`
 
-error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:30:58
    |
 30 |     users::table.select(users::name).group_by(users::id).having(posts::id.eq(42)).load(&mut conn);
-   |                                                          ^^^^^^ expected struct `Never`, found struct `Once`
+   |                                                          ^^^^^^ expected `Never`, found `Once`
    |
-note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<users::table>>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/having_cant_be_used_without_group_by.rs:14:9
    |
 14 |         id -> Integer,
    |         ^^
    = note: 2 redundant requirements hidden
-   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<FromClause<users::table>>`
+   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `SelectStatement<FromClause<table>, SelectClause<name>, NoDistinctClause, NoWhereClause, ..., ..., ...>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`
 
-error[E0271]: type mismatch resolving `<FromClause<table> as AppearsInFromClause<table>>::Count == Once`
+error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/having_cant_be_used_without_group_by.rs:32:71
    |
 32 |     users::table.select(users::name).group_by(users::id).into_boxed().having(posts::id.eq(42)).load(&mut conn);
-   |                                                                       ^^^^^^ expected struct `Never`, found struct `Once`
+   |                                                                       ^^^^^^ expected `Never`, found `Once`
    |
-note: required for `posts::columns::id` to implement `AppearsOnTable<FromClause<users::table>>`
+note: required for `posts::columns::id` to implement `AppearsOnTable<users::table>`
   --> tests/fail/having_cant_be_used_without_group_by.rs:14:9
    |
 14 |         id -> Integer,
    |         ^^
    = note: 2 redundant requirements hidden
-   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<FromClause<users::table>>`
+   = note: required for `Grouped<Eq<id, Bound<Integer, i32>>>` to implement `AppearsOnTable<users::table>`
    = note: required for `BoxedSelectStatement<'_, diesel::sql_types::Text, FromClause<users::table>, _, users::columns::id>` to implement `HavingDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<posts::columns::id, diesel::expression::bound::Bound<diesel::sql_types::Integer, i32>>>>`

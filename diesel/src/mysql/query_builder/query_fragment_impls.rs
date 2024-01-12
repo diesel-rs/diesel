@@ -76,17 +76,11 @@ impl<T> QueryFragment<Mysql, crate::mysql::backend::MysqlOnConflictClause> for D
 where
     T: Table + StaticQueryFragment,
     T::Component: QueryFragment<Mysql>,
-    T::PrimaryKey: Column,
+    T::PrimaryKey: DoNothingClauseHelper,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.push_sql(" UPDATE ");
-        T::STATIC_COMPONENT.walk_ast(out.reborrow())?;
-        out.push_sql(".");
-        out.push_identifier(<T::PrimaryKey as Column>::NAME)?;
-        out.push_sql(" = ");
-        T::STATIC_COMPONENT.walk_ast(out.reborrow())?;
-        out.push_sql(".");
-        out.push_identifier(<T::PrimaryKey as Column>::NAME)?;
+        T::PrimaryKey::walk_ast::<T>(out.reborrow())?;
         Ok(())
     }
 }
@@ -95,20 +89,14 @@ impl<T, Tab> QueryFragment<Mysql, crate::mysql::backend::MysqlOnConflictClause> 
 where
     T: QueryFragment<Mysql>,
     Tab: Table + StaticQueryFragment,
+    Tab::PrimaryKey: DoNothingClauseHelper,
     Tab::Component: QueryFragment<Mysql>,
-    Tab::PrimaryKey: Column,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Mysql>) -> QueryResult<()> {
         out.unsafe_to_cache_prepared();
         out.push_sql(" UPDATE ");
         if self.changeset.is_noop(out.backend())? {
-            Tab::STATIC_COMPONENT.walk_ast(out.reborrow())?;
-            out.push_sql(".");
-            out.push_identifier(<Tab::PrimaryKey as Column>::NAME)?;
-            out.push_sql(" = ");
-            Tab::STATIC_COMPONENT.walk_ast(out.reborrow())?;
-            out.push_sql(".");
-            out.push_identifier(<Tab::PrimaryKey as Column>::NAME)?;
+            Tab::PrimaryKey::walk_ast::<Tab>(out.reborrow())?;
         } else {
             self.changeset.walk_ast(out.reborrow())?;
         }
@@ -159,3 +147,74 @@ where
         self.0.walk_ast(out)
     }
 }
+
+/// This is a helper trait
+/// that provideds a fake `DO NOTHING` clause
+/// based on reassigning the possible
+/// composite primary key to itself
+trait DoNothingClauseHelper {
+    fn walk_ast<T>(out: AstPass<'_, '_, Mysql>) -> QueryResult<()>
+    where
+        T: StaticQueryFragment,
+        T::Component: QueryFragment<Mysql>;
+}
+
+impl<C> DoNothingClauseHelper for C
+where
+    C: Column,
+{
+    fn walk_ast<T>(mut out: AstPass<'_, '_, Mysql>) -> QueryResult<()>
+    where
+        T: StaticQueryFragment,
+        T::Component: QueryFragment<Mysql>,
+    {
+        T::STATIC_COMPONENT.walk_ast(out.reborrow())?;
+        out.push_sql(".");
+        out.push_identifier(C::NAME)?;
+        out.push_sql(" = ");
+        T::STATIC_COMPONENT.walk_ast(out.reborrow())?;
+        out.push_sql(".");
+        out.push_identifier(C::NAME)?;
+        Ok(())
+    }
+}
+
+macro_rules! do_nothing_for_composite_keys {
+    ($(
+        $Tuple:tt {
+            $(($idx:tt) -> $T:ident, $ST:ident, $TT:ident,)+
+        }
+    )+) => {
+        $(
+            impl<$($T,)*> DoNothingClauseHelper for ($($T,)*)
+            where $($T: Column,)*
+            {
+                fn walk_ast<Table>(mut out: AstPass<'_, '_, Mysql>) -> QueryResult<()>
+                where
+                    Table: StaticQueryFragment,
+                    Table::Component: QueryFragment<Mysql>,
+                {
+                    let mut first = true;
+                    $(
+                        #[allow(unused_assignments)]
+                        if first {
+                            first = false;
+                        } else {
+                            out.push_sql(", ");
+                        }
+                        Table::STATIC_COMPONENT.walk_ast(out.reborrow())?;
+                        out.push_sql(".");
+                        out.push_identifier($T::NAME)?;
+                        out.push_sql(" = ");
+                        Table::STATIC_COMPONENT.walk_ast(out.reborrow())?;
+                        out.push_sql(".");
+                        out.push_identifier($T::NAME)?;
+                    )*
+                    Ok(())
+                }
+            }
+        )*
+    }
+}
+
+diesel_derives::__diesel_for_each_tuple!(do_nothing_for_composite_keys);

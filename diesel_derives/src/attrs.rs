@@ -32,6 +32,7 @@ pub struct AttributeSpanWrapper<T> {
 
 pub enum FieldAttr {
     Embed(Ident),
+    SkipInsertion(Ident),
 
     ColumnName(Ident, SqlIdentifier),
     SqlType(Ident, TypePath),
@@ -123,6 +124,7 @@ impl Parse for FieldAttr {
 
         match &*name_str {
             "embed" => Ok(FieldAttr::Embed(name)),
+            "skip_insertion" => Ok(FieldAttr::SkipInsertion(name)),
 
             "column_name" => Ok(FieldAttr::ColumnName(
                 name,
@@ -173,6 +175,7 @@ impl MySpanned for FieldAttr {
     fn span(&self) -> Span {
         match self {
             FieldAttr::Embed(ident)
+            | FieldAttr::SkipInsertion(ident)
             | FieldAttr::ColumnName(ident, _)
             | FieldAttr::SqlType(ident, _)
             | FieldAttr::TreatNoneAsNull(ident, _)

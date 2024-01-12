@@ -360,15 +360,15 @@ mod tests {
 
         let midnight = NaiveTime::from_hms(0, 0, 0).unwrap();
         let query = select(time("00:00:00").eq(midnight));
-        assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let noon = NaiveTime::from_hms(12, 0, 0).unwrap();
         let query = select(time("12:00:00").eq(noon));
-        assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
+        assert!(query.get_result::<bool>(connection).unwrap());
 
         let roughly_half_past_eleven = NaiveTime::from_hms_micro(23, 37, 4, 2200).unwrap();
         let query = select(sql::<Time>("'23:37:04.0022'").eq(roughly_half_past_eleven));
-        assert_eq!(query.get_result::<bool>(connection).unwrap(), true);
+        assert!(query.get_result::<bool>(connection).unwrap());
     }
 
     #[test]

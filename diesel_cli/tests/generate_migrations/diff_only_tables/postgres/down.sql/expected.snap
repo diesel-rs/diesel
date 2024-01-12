@@ -1,0 +1,9 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+description: "Test: diff_only_tables"
+---
+-- This file should undo anything in `up.sql`
+ALTER TABLE "table_a" DROP COLUMN "script";
+ALTER TABLE "table_a" ADD COLUMN "code" TEXT NOT NULL;
+
+

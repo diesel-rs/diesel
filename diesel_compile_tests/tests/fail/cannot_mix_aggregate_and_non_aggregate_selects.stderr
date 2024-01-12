@@ -5,8 +5,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
-             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
+             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
    = note: required for `(columns::id, CountStar)` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<(columns::id, CountStar)>`
 
@@ -17,8 +17,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
-             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
+             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
    = note: required for `Add<nullable_int_col, max<Nullable<Integer>, nullable_int_col>>` to implement `ValidGrouping<()>`
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::ops::numeric::Add<columns::nullable_int_col, diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Nullable<diesel::sql_types::Integer>, columns::nullable_int_col>>>`
 
@@ -29,8 +29,8 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
    |                        ^^^^^^ the trait `MixedAggregates<diesel::expression::is_aggregate::Yes>` is not implemented for `diesel::expression::is_aggregate::No`
    |
    = help: the following other types implement trait `MixedAggregates<Other>`:
-             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
              <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
+             <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
 note: required for `__Derived<nullable_int_col, max<Nullable<Integer>, nullable_int_col>>` to implement `ValidGrouping<()>`
   --> tests/fail/cannot_mix_aggregate_and_non_aggregate_selects.rs:14:1
    |

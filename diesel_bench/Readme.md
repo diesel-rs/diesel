@@ -22,6 +22,7 @@ and the following crates:
 * [Rusqlite](https://github.com/rusqlite/rusqlite)
 * [Mysql](https://github.com/blackbeam/rust-mysql-simple)
 * [diesel-async](https://github.com/weiznich/diesel_async)
+* [wtx](https://github.com/c410-f3r/wtx)
 
 By default only diesels own benchmarks are executed. To run the benchmark do the following:
 
@@ -40,6 +41,7 @@ To enable other crates add the following features:
 * `Rusqlite`: `rusqlite $backend`
 * `Mysql`: `rust-mysql $backend`
 * `diesel-async`: `diesel-async diesel-async/$backend $backend tokio`
+* `wtx`: `$backend tokio/rt-multi-thread wtx`
 
 ## Benchmarks
 
@@ -48,6 +50,7 @@ To enable other crates add the following features:
 #### Table definitions
 
 The following schema definition was used. (For Mysql/Sqlite postgres specific types where replaced by their equivalent type).
+
 ```sql
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -67,9 +70,7 @@ CREATE TABLE comments (
   post_id INTEGER NOT NULL,
   text TEXT NOT NULL
 );
-
 ```
-
 
 #### Struct definitions
 
@@ -97,7 +98,6 @@ pub struct Comment {
 Field types are allowed to differ, to whatever type is expected compatible by the corresponding crate.
 
 ### `bench_trivial_query`
-
 
 This benchmark tests how entities from a single table are loaded. Before starting the benchmark 1, 10, 100, 1000 or 10000 entries are inserted into the `users` table. For this the `id` of the user is provided by the autoincrementing id, the `name` is set to `User {id}` and the `hair_color` is set to `Null`. An implementation of this benchmark is expected to return a list of the type `User.
 

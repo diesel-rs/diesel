@@ -196,14 +196,13 @@ pub type Decimal = Numeric;
 ///
 /// ### [`ToSql`](crate::serialize::ToSql) impls
 ///
-/// - [`String`][String]
+/// - [`String`]
 /// - [`&str`][str]
 ///
 /// ### [`FromSql`](crate::deserialize::FromSql) impls
 ///
-/// - [`String`][String]
+/// - [`String`]
 ///
-/// [String]: std::string::String
 /// [str]: https://doc.rust-lang.org/nightly/std/primitive.str.html
 #[derive(Debug, Clone, Copy, Default, QueryId, SqlType)]
 #[diesel(postgres_type(oid = 25, array_oid = 1009))]
@@ -578,7 +577,7 @@ pub mod is_nullable {
 
     /// No, this type cannot be null as it is marked as `NOT NULL` at database level
     ///
-    /// This should be choosen for basically all manual impls of `SqlType`
+    /// This should be chosen for basically all manual impls of `SqlType`
     /// beside implementing your own `Nullable<>` wrapper type
     #[derive(Debug, Clone, Copy)]
     pub struct NotNull;

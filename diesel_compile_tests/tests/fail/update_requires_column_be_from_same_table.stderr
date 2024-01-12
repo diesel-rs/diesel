@@ -2,12 +2,12 @@ error[E0271]: type mismatch resolving `<Grouped<Eq<title, Bound<Text, &str>>> as
   --> tests/fail/update_requires_column_be_from_same_table.rs:22:37
    |
 22 |     let command = update(users).set(posts::title.eq("Hello"));
-   |                                 --- ^^^^^^^^^^^^^^^^^^^^^^^^ expected struct `users::table`, found struct `posts::table`
+   |                                 --- ^^^^^^^^^^^^^^^^^^^^^^^^ expected `users::table`, found `posts::table`
    |                                 |
    |                                 required by a bound introduced by this call
    |
-   = note: struct `posts::table` and struct `users::table` have similar names, but are actually distinct types
-note: struct `posts::table` is defined in module `crate::posts` of the current crate
+   = note: `posts::table` and `users::table` have similar names, but are actually distinct types
+note: `posts::table` is defined in module `crate::posts` of the current crate
   --> tests/fail/update_requires_column_be_from_same_table.rs:12:1
    |
 12 | / table! {
@@ -17,7 +17,7 @@ note: struct `posts::table` is defined in module `crate::posts` of the current c
 16 | |     }
 17 | | }
    | |_^
-note: struct `users::table` is defined in module `crate::users` of the current crate
+note: `users::table` is defined in module `crate::users` of the current crate
   --> tests/fail/update_requires_column_be_from_same_table.rs:5:1
    |
 5  | / table! {
@@ -37,6 +37,9 @@ note: the method call chain might not have had the expected associated types
 note: required by a bound in `UpdateStatement::<T, U>::set`
   --> $DIESEL/src/query_builder/update_statement/mod.rs
    |
+   |     pub fn set<V>(self, values: V) -> UpdateStatement<T, U, V::Changeset>
+   |            --- required by a bound in this associated function
+...
    |         V: changeset::AsChangeset<Target = T>,
    |                                   ^^^^^^^^^^ required by this bound in `UpdateStatement::<T, U>::set`
    = note: this error originates in the macro `table` (in Nightly builds, run with -Z macro-backtrace for more info)
@@ -45,7 +48,7 @@ error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Co
   --> tests/fail/update_requires_column_be_from_same_table.rs:23:33
    |
 23 |     let command = update(users).set(name.eq(posts::title));
-   |                                 ^^^ expected struct `Never`, found struct `Once`
+   |                                 ^^^ expected `Never`, found `Once`
    |
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/update_requires_column_be_from_same_table.rs:15:9

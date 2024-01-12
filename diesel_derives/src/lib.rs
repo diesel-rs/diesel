@@ -334,6 +334,8 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///    the actual field type.
 /// * `#[diesel(treat_none_as_default_value = true/false)]`, overrides the container-level
 ///   `treat_none_as_default_value` attribute for the current field.
+/// * `#[diesel(skip_insertion)]`, skips insertion of this field. Useful for working with
+///    generated columns.
 ///
 /// # Examples
 ///

@@ -99,8 +99,11 @@ use std::hash::Hash;
 use std::ops::{Deref, DerefMut};
 
 use crate::backend::Backend;
+use crate::connection::InstrumentationEvent;
 use crate::query_builder::*;
 use crate::result::QueryResult;
+
+use super::Instrumentation;
 
 /// A prepared statement cache
 #[allow(missing_debug_implementations, unreachable_pub)]
@@ -183,15 +186,36 @@ where
         source: &T,
         backend: &DB,
         bind_types: &[DB::TypeMetadata],
-        prepare_fn: F,
+        mut prepare_fn: F,
+        instrumentation: &mut dyn Instrumentation,
     ) -> QueryResult<MaybeCached<'_, Statement>>
     where
         T: QueryFragment<DB> + QueryId,
-        F: FnOnce(&str, PrepareForCache) -> QueryResult<Statement>,
+        F: FnMut(&str, PrepareForCache) -> QueryResult<Statement>,
     {
+        self.cached_statement_non_generic(
+            T::query_id(),
+            source,
+            backend,
+            bind_types,
+            &mut prepare_fn,
+            instrumentation,
+        )
+    }
+
+    /// Reduce the amount of monomorphized code by factoring this via dynamic dispatch
+    fn cached_statement_non_generic(
+        &mut self,
+        maybe_type_id: Option<TypeId>,
+        source: &dyn QueryFragmentForCachedStatement<DB>,
+        backend: &DB,
+        bind_types: &[DB::TypeMetadata],
+        prepare_fn: &mut dyn FnMut(&str, PrepareForCache) -> QueryResult<Statement>,
+        instrumentation: &mut dyn Instrumentation,
+    ) -> QueryResult<MaybeCached<'_, Statement>> {
         use std::collections::hash_map::Entry::{Occupied, Vacant};
 
-        let cache_key = StatementCacheKey::for_source(source, bind_types, backend)?;
+        let cache_key = StatementCacheKey::for_source(maybe_type_id, source, bind_types, backend)?;
 
         if !source.is_safe_to_cache_prepared(backend)? {
             let sql = cache_key.sql(source, backend)?;
@@ -203,6 +227,8 @@ where
             Vacant(entry) => {
                 let statement = {
                     let sql = entry.key().sql(source, backend)?;
+                    instrumentation
+                        .on_connection_event(InstrumentationEvent::CacheQuery { sql: &sql });
                     prepare_fn(&sql, PrepareForCache::Yes)
                 };
 
@@ -214,10 +240,44 @@ where
     }
 }
 
+/// Implemented for all `QueryFragment`s, dedicated to dynamic dispatch within the context of
+/// `statement_cache`
+///
+/// We want the generated code to be as small as possible, so for each query passed to
+/// [`StatementCache::cached_statement`] the generated assembly will just call a non generic
+/// version with dynamic dispatch pointing to the VTABLE of this minimal trait
+///
+/// This preserves the opportunity for the compiler to entirely optimize the `construct_sql`
+/// function as a function that simply returns a constant `String`.
+#[allow(unreachable_pub)]
+#[cfg_attr(
+    doc_cfg,
+    doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
+)]
+pub trait QueryFragmentForCachedStatement<DB> {
+    fn construct_sql(&self, backend: &DB) -> QueryResult<String>;
+    fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool>;
+}
+impl<T, DB> QueryFragmentForCachedStatement<DB> for T
+where
+    DB: Backend,
+    DB::QueryBuilder: Default,
+    T: QueryFragment<DB>,
+{
+    fn construct_sql(&self, backend: &DB) -> QueryResult<String> {
+        let mut query_builder = DB::QueryBuilder::default();
+        self.to_sql(&mut query_builder, backend)?;
+        Ok(query_builder.finish())
+    }
+    fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool> {
+        <T as QueryFragment<DB>>::is_safe_to_cache_prepared(self, backend)
+    }
+}
+
 /// Wraps a possibly cached prepared statement
 ///
-/// Essentially a customized version of [`Cow`](std::borrow::Cow)
-/// that does not depend on [`ToOwned`](std::borrow::ToOwned)
+/// Essentially a customized version of [`Cow`]
+/// that does not depend on [`ToOwned`]
 #[allow(missing_debug_implementations, unreachable_pub)]
 #[cfg_attr(
     doc_cfg,
@@ -288,19 +348,18 @@ where
     DB::TypeMetadata: Clone,
 {
     /// Create a new statement cache key for the given query source
+    // Note: Intentionally monomorphic over source.
     #[allow(unreachable_pub)]
-    pub fn for_source<T>(
-        source: &T,
+    pub fn for_source(
+        maybe_type_id: Option<TypeId>,
+        source: &dyn QueryFragmentForCachedStatement<DB>,
         bind_types: &[DB::TypeMetadata],
         backend: &DB,
-    ) -> QueryResult<Self>
-    where
-        T: QueryFragment<DB> + QueryId,
-    {
-        match T::query_id() {
+    ) -> QueryResult<Self> {
+        match maybe_type_id {
             Some(id) => Ok(StatementCacheKey::Type(id)),
             None => {
-                let sql = Self::construct_sql(source, backend)?;
+                let sql = source.construct_sql(backend)?;
                 Ok(StatementCacheKey::Sql {
                     sql,
                     bind_types: bind_types.into(),
@@ -313,17 +372,16 @@ where
     ///
     /// This is an optimization that may skip constructing the query string
     /// twice if it's already part of the current cache key
+    // Note: Intentionally monomorphic over source.
     #[allow(unreachable_pub)]
-    pub fn sql<T: QueryFragment<DB>>(&self, source: &T, backend: &DB) -> QueryResult<Cow<'_, str>> {
+    pub fn sql(
+        &self,
+        source: &dyn QueryFragmentForCachedStatement<DB>,
+        backend: &DB,
+    ) -> QueryResult<Cow<'_, str>> {
         match *self {
-            StatementCacheKey::Type(_) => Self::construct_sql(source, backend).map(Cow::Owned),
+            StatementCacheKey::Type(_) => source.construct_sql(backend).map(Cow::Owned),
             StatementCacheKey::Sql { ref sql, .. } => Ok(Cow::Borrowed(sql)),
         }
-    }
-
-    fn construct_sql<T: QueryFragment<DB>>(source: &T, backend: &DB) -> QueryResult<String> {
-        let mut query_builder = DB::QueryBuilder::default();
-        source.to_sql(&mut query_builder, backend)?;
-        Ok(query_builder.finish())
     }
 }

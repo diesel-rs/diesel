@@ -662,13 +662,15 @@ where
 }
 
 impl<F, S, D, W, O, LOf, G, H, Predicate> HavingDsl<Predicate>
-    for SelectStatement<F, S, D, W, O, LOf, GroupByClause<G>, H>
+    for SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<G>, H>
 where
+    F: QuerySource,
     Predicate: AppearsOnTable<F>,
     Predicate: Expression,
     Predicate::SqlType: BoolOrNullableBool,
 {
-    type Output = SelectStatement<F, S, D, W, O, LOf, GroupByClause<G>, HavingClause<Predicate>>;
+    type Output =
+        SelectStatement<FromClause<F>, S, D, W, O, LOf, GroupByClause<G>, HavingClause<Predicate>>;
 
     fn having(self, predicate: Predicate) -> Self::Output {
         SelectStatement::new(

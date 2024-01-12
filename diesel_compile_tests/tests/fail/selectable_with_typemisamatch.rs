@@ -1,3 +1,4 @@
+#![feature(diagnostic_namespace)]
 extern crate diesel;
 
 use diesel::prelude::*;

@@ -227,7 +227,7 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
                         }
                     };
                 }
-                x if x == 1 => {
+                1 => {
                     let arg_name = arg_name[0];
                     let arg_type = arg_type[0];
 

@@ -15,6 +15,8 @@ mod rust_orm_benches;
 mod sea_orm_benches;
 #[cfg(feature = "sqlx-bench")]
 mod sqlx_benches;
+#[cfg(feature = "wtx")]
+mod wtx;
 
 use criterion::{BenchmarkId, Criterion};
 
@@ -154,6 +156,11 @@ fn bench_trivial_query(c: &mut CriterionType) {
         group.bench_with_input(BenchmarkId::new("sea-orm", size), size, |b, i| {
             crate::sea_orm_benches::bench_trivial_query(b, *i);
         });
+
+        #[cfg(all(feature = "postgres", feature = "wtx"))]
+        group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
+            crate::wtx::bench_trivial_query(b, *i);
+        });
     }
 
     group.finish();
@@ -252,6 +259,11 @@ fn bench_medium_complex_query(c: &mut CriterionType) {
         group.bench_with_input(BenchmarkId::new("sea-orm", size), size, |b, i| {
             crate::sea_orm_benches::bench_medium_complex_query(b, *i);
         });
+
+        #[cfg(all(feature = "postgres", feature = "wtx"))]
+        group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
+            crate::wtx::bench_medium_complex_query(b, *i);
+        });
     }
 
     group.finish();
@@ -305,6 +317,11 @@ fn bench_loading_associations_sequentially(c: &mut CriterionType) {
         crate::sea_orm_benches::loading_associations_sequentially(b);
     });
 
+    #[cfg(feature = "wtx")]
+    group.bench_function("wtx", |b| {
+        crate::wtx::bench_loading_associations_sequentially(b);
+    });
+
     group.finish();
 }
 
@@ -354,6 +371,11 @@ fn bench_insert(c: &mut CriterionType) {
         #[cfg(feature = "sea-orm")]
         group.bench_with_input(BenchmarkId::new("sea-orm", size), size, |b, i| {
             crate::sea_orm_benches::bench_insert(b, *i);
+        });
+
+        #[cfg(all(feature = "postgres", feature = "wtx"))]
+        group.bench_with_input(BenchmarkId::new("wtx", size), size, |b, i| {
+            crate::wtx::bench_insert(b, *i);
         });
     }
 

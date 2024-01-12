@@ -4,12 +4,14 @@ mod bind_collector;
 mod functions;
 mod raw;
 mod row;
+mod serialized_database;
 mod sqlite_value;
 mod statement_iterator;
 mod stmt;
 
 pub(in crate::sqlite) use self::bind_collector::SqliteBindCollector;
 pub use self::bind_collector::SqliteBindValue;
+pub use self::serialized_database::SerializedDatabase;
 pub use self::sqlite_value::SqliteValue;
 
 use std::os::raw as libc;
@@ -18,6 +20,8 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
+use crate::connection::instrumentation::InstrumentationEvent;
+use crate::connection::instrumentation::StrQueryHelper;
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
 use crate::deserialize::{FromSqlRow, StaticallySizedRow};
@@ -120,6 +124,7 @@ pub struct SqliteConnection {
     statement_cache: StatementCache<Sqlite, Statement>,
     raw_connection: RawConnection,
     transaction_state: AnsiTransactionManager,
+    instrumentation: Option<Box<dyn Instrumentation>>,
 }
 
 // This relies on the invariant that RawConnection or Statement are never
@@ -130,7 +135,17 @@ unsafe impl Send for SqliteConnection {}
 
 impl SimpleConnection for SqliteConnection {
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
-        self.raw_connection.exec(query)
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &StrQueryHelper::new(query),
+            });
+        let resp = self.raw_connection.exec(query);
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::FinishQuery {
+                query: &StrQueryHelper::new(query),
+                error: resp.as_ref().err(),
+            });
+        resp
     }
 }
 
@@ -147,16 +162,18 @@ impl Connection for SqliteConnection {
     /// If the database does not exist, this method will try to
     /// create a new database and then establish a connection to it.
     fn establish(database_url: &str) -> ConnectionResult<Self> {
-        use crate::result::ConnectionError::CouldntSetupConfiguration;
+        let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
+        instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
+            url: database_url,
+        });
 
-        let raw_connection = RawConnection::establish(database_url)?;
-        let conn = Self {
-            statement_cache: StatementCache::new(),
-            raw_connection,
-            transaction_state: AnsiTransactionManager::default(),
-        };
-        conn.register_diesel_sql_functions()
-            .map_err(CouldntSetupConfiguration)?;
+        let establish_result = Self::establish_inner(database_url);
+        instrumentation.on_connection_event(InstrumentationEvent::FinishEstablishConnection {
+            url: database_url,
+            error: establish_result.as_ref().err(),
+        });
+        let mut conn = establish_result?;
+        conn.instrumentation = instrumentation;
         Ok(conn)
     }
 
@@ -165,9 +182,9 @@ impl Connection for SqliteConnection {
         T: QueryFragment<Self::Backend> + QueryId,
     {
         let statement_use = self.prepared_query(source)?;
-        statement_use.run()?;
-
-        Ok(self.raw_connection.rows_affected_by_last_query())
+        statement_use
+            .run()
+            .map(|_| self.raw_connection.rows_affected_by_last_query())
     }
 
     fn transaction_state(&mut self) -> &mut AnsiTransactionManager
@@ -175,6 +192,14 @@ impl Connection for SqliteConnection {
         Self: Sized,
     {
         &mut self.transaction_state
+    }
+
+    fn instrumentation(&mut self) -> &mut dyn Instrumentation {
+        &mut self.instrumentation
+    }
+
+    fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
+        self.instrumentation = Some(Box::new(instrumentation));
     }
 }
 
@@ -190,9 +215,9 @@ impl LoadConnection<DefaultLoadingMode> for SqliteConnection {
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        let statement_use = self.prepared_query(source)?;
+        let statement = self.prepared_query(source)?;
 
-        Ok(StatementIterator::new(statement_use))
+        Ok(StatementIterator::new(statement))
     }
 }
 
@@ -300,17 +325,39 @@ impl SqliteConnection {
         }
     }
 
-    fn prepared_query<'a, 'b, T>(&'a mut self, source: T) -> QueryResult<StatementUse<'a, 'b>>
+    fn prepared_query<'conn, 'query, T>(
+        &'conn mut self,
+        source: T,
+    ) -> QueryResult<StatementUse<'conn, 'query>>
     where
-        T: QueryFragment<Sqlite> + QueryId + 'b,
+        T: QueryFragment<Sqlite> + QueryId + 'query,
     {
+        self.instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &crate::debug_query(&source),
+            });
         let raw_connection = &self.raw_connection;
         let cache = &mut self.statement_cache;
-        let statement = cache.cached_statement(&source, &Sqlite, &[], |sql, is_cached| {
-            Statement::prepare(raw_connection, sql, is_cached)
-        })?;
+        let statement = match cache.cached_statement(
+            &source,
+            &Sqlite,
+            &[],
+            |sql, is_cached| Statement::prepare(raw_connection, sql, is_cached),
+            &mut self.instrumentation,
+        ) {
+            Ok(statement) => statement,
+            Err(e) => {
+                self.instrumentation
+                    .on_connection_event(InstrumentationEvent::FinishQuery {
+                        query: &crate::debug_query(&source),
+                        error: Some(&e),
+                    });
 
-        StatementUse::bind(statement, source)
+                return Err(e);
+            }
+        };
+
+        StatementUse::bind(statement, source, &mut self.instrumentation)
     }
 
     #[doc(hidden)]
@@ -406,6 +453,58 @@ impl SqliteConnection {
             .register_collation_function(collation_name, collation)
     }
 
+    /// Serialize the current SQLite database into a byte buffer.
+    ///
+    /// The serialized data is identical to the data that would be written to disk if the database
+    /// was saved in a file.
+    ///
+    /// # Returns
+    ///
+    /// This function returns a byte slice representing the serialized database.
+    pub fn serialize_database_to_buffer(&mut self) -> SerializedDatabase {
+        self.raw_connection.serialize()
+    }
+
+    /// Deserialize an SQLite database from a byte buffer.
+    ///
+    /// This function takes a byte slice and attempts to deserialize it into a SQLite database.
+    /// If successful, the database is loaded into the connection. If the deserialization fails,
+    /// an error is returned.
+    ///
+    /// The database is opened in READONLY mode.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # use diesel::sqlite::SerializedDatabase;
+    /// # use diesel::sqlite::SqliteConnection;
+    /// # use diesel::result::QueryResult;
+    /// # use diesel::sql_query;
+    /// # use diesel::Connection;
+    /// # use diesel::RunQueryDsl;
+    /// # fn main() {
+    /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+    ///     .execute(connection).unwrap();
+    /// sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+    ///     .execute(connection).unwrap();
+    ///
+    /// // Serialize the database to a byte vector
+    /// let serialized_db: SerializedDatabase = connection.serialize_database_to_buffer();
+    ///
+    /// // Create a new in-memory SQLite database
+    /// let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+    ///
+    /// // Deserialize the byte vector into the new database
+    /// connection.deserialize_readonly_database_from_buffer(serialized_db.as_slice()).unwrap();
+    /// #
+    /// # }
+    /// ```
+    pub fn deserialize_readonly_database_from_buffer(&mut self, data: &[u8]) -> QueryResult<()> {
+        self.raw_connection.deserialize(data)
+    }
+
     fn register_diesel_sql_functions(&self) -> QueryResult<()> {
         use crate::sql_types::{Integer, Text};
 
@@ -423,6 +522,20 @@ impl SqliteConnection {
             },
         )
     }
+
+    fn establish_inner(database_url: &str) -> Result<SqliteConnection, ConnectionError> {
+        use crate::result::ConnectionError::CouldntSetupConfiguration;
+        let raw_connection = RawConnection::establish(database_url)?;
+        let conn = Self {
+            statement_cache: StatementCache::new(),
+            raw_connection,
+            transaction_state: AnsiTransactionManager::default(),
+            instrumentation: None,
+        };
+        conn.register_diesel_sql_functions()
+            .map_err(CouldntSetupConfiguration)?;
+        Ok(conn)
+    }
 }
 
 fn error_message(err_code: libc::c_int) -> &'static str {
@@ -435,6 +548,41 @@ mod tests {
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::sql_types::Integer;
+
+    #[test]
+    fn database_serializes_and_deserializes_successfully() {
+        let expected_users = vec![
+            (
+                1,
+                "John Doe".to_string(),
+                "john.doe@example.com".to_string(),
+            ),
+            (
+                2,
+                "Jane Doe".to_string(),
+                "jane.doe@example.com".to_string(),
+            ),
+        ];
+
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        let _ =
+            crate::sql_query("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+                .execute(connection);
+        let _ = crate::sql_query("INSERT INTO users (name, email) VALUES ('John Doe', 'john.doe@example.com'), ('Jane Doe', 'jane.doe@example.com')")
+            .execute(connection);
+
+        let serialized_database = connection.serialize_database_to_buffer();
+
+        let connection = &mut SqliteConnection::establish(":memory:").unwrap();
+        connection
+            .deserialize_readonly_database_from_buffer(serialized_database.as_slice())
+            .unwrap();
+
+        let query = sql::<(Integer, Text, Text)>("SELECT id, name, email FROM users ORDER BY id");
+        let actual_users = query.load::<(i32, String, String)>(connection).unwrap();
+
+        assert_eq!(expected_users, actual_users);
+    }
 
     #[test]
     fn prepared_statements_are_cached_when_run() {

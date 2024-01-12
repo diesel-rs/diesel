@@ -326,7 +326,7 @@ pub trait SqlDialect: self::private::TrustedBackend {
 // * The backend fixed/introduced a bug that requires special handling
 // * We got some edge case wrong with sharing the implementation between backends
 //
-// By not exposing these types publically we are able to change the exact definitions later on
+// By not exposing these types publicly we are able to change the exact definitions later on
 // as users cannot write trait bounds that ensure that a specific type is used in place of
 // an existing associated type.
 #[diesel_derives::__diesel_public_if(

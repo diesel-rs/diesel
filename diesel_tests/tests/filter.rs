@@ -484,7 +484,7 @@ fn filter_subselect_with_boxed_query() {
 fn filter_subselect_with_nullable_column() {
     use crate::schema_dsl::*;
     table! {
-        heros {
+        heroes {
             id -> Integer,
             name -> Text,
             home_world -> Nullable<Integer>,
@@ -497,7 +497,7 @@ fn filter_subselect_with_nullable_column() {
         }
     }
 
-    allow_tables_to_appear_in_same_query!(heros, home_worlds);
+    allow_tables_to_appear_in_same_query!(heroes, home_worlds);
 
     #[derive(Debug, Queryable, PartialEq)]
     struct Hero {
@@ -518,7 +518,7 @@ fn filter_subselect_with_nullable_column() {
     .unwrap();
 
     create_table(
-        "heros",
+        "heroes",
         (
             integer("id").primary_key().auto_increment(),
             string("name").not_null(),
@@ -532,17 +532,17 @@ fn filter_subselect_with_nullable_column() {
         .values(home_worlds::name.eq("Tatooine"))
         .execute(connection)
         .unwrap();
-    ::diesel::insert_into(heros::table)
+    ::diesel::insert_into(heroes::table)
         .values((
-            heros::name.eq("Luke Skywalker"),
-            heros::home_world.eq(Some(1)),
+            heroes::name.eq("Luke Skywalker"),
+            heroes::home_world.eq(Some(1)),
         ))
         .execute(connection)
         .unwrap();
-    ::diesel::insert_into(heros::table)
+    ::diesel::insert_into(heroes::table)
         .values((
-            heros::name.eq("R2D2"),
-            heros::home_world.eq::<Option<i32>>(None),
+            heroes::name.eq("R2D2"),
+            heroes::home_world.eq::<Option<i32>>(None),
         ))
         .execute(connection)
         .unwrap();
@@ -553,16 +553,16 @@ fn filter_subselect_with_nullable_column() {
         home_world: Some(1),
     }];
 
-    let query = heros::table
-        .filter(heros::home_world.eq_any(home_worlds::table.select(home_worlds::id).nullable()))
+    let query = heroes::table
+        .filter(heroes::home_world.eq_any(home_worlds::table.select(home_worlds::id).nullable()))
         .load::<Hero>(connection)
         .unwrap();
 
     assert_eq!(query, expected);
 
-    let query = heros::table
+    let query = heroes::table
         .filter(
-            heros::home_world.eq_any(
+            heroes::home_world.eq_any(
                 home_worlds::table
                     .select(home_worlds::id)
                     .into_boxed()
@@ -574,9 +574,9 @@ fn filter_subselect_with_nullable_column() {
 
     assert_eq!(query, expected);
 
-    let query = heros::table
+    let query = heroes::table
         .filter(
-            heros::home_world.eq_any(
+            heroes::home_world.eq_any(
                 home_worlds::table
                     .select(home_worlds::id)
                     .nullable()

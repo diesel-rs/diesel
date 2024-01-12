@@ -20,7 +20,7 @@ error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroup
   --> tests/fail/select_requires_valid_grouping.rs:88:10
    |
 88 |         .select(users::id);
-   |          ^^^^^^ expected struct `No`, found struct `Yes`
+   |          ^^^^^^ expected `No`, found `Yes`
    |
 note: required for `users::columns::id` to implement `ValidGrouping<(users::columns::name, users::columns::hair_color)>`
   --> tests/fail/select_requires_valid_grouping.rs:7:9
@@ -53,7 +53,7 @@ error[E0271]: type mismatch resolving `<(name, hair_color) as IsContainedInGroup
   --> tests/fail/select_requires_valid_grouping.rs:94:10
    |
 94 |         .select(users::id);
-   |          ^^^^^^ expected struct `No`, found struct `Yes`
+   |          ^^^^^^ expected `No`, found `Yes`
    |
 note: required for `users::columns::id` to implement `ValidGrouping<(users::columns::name, users::columns::hair_color)>`
   --> tests/fail/select_requires_valid_grouping.rs:7:9
@@ -66,7 +66,7 @@ error[E0271]: type mismatch resolving `<(id, title) as IsContainedInGroupBy<id>>
   --> tests/fail/select_requires_valid_grouping.rs:98:10
    |
 98 |         .select((users::all_columns, posts::id));
-   |          ^^^^^^ expected struct `No`, found struct `Yes`
+   |          ^^^^^^ expected `No`, found `Yes`
    |
 note: required for `posts::columns::id` to implement `ValidGrouping<(users::columns::id, posts::columns::title)>`
   --> tests/fail/select_requires_valid_grouping.rs:15:9
@@ -84,12 +84,12 @@ error[E0277]: the trait bound `users::columns::id: IsContainedInGroupBy<comments
     |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `users::columns::id`
     |
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
-              <users::columns::id as IsContainedInGroupBy<posts::columns::id>>
-              <users::columns::id as IsContainedInGroupBy<posts::columns::title>>
               <users::columns::id as IsContainedInGroupBy<posts::columns::user_id>>
+              <users::columns::id as IsContainedInGroupBy<posts::columns::title>>
+              <users::columns::id as IsContainedInGroupBy<posts::columns::id>>
               <users::columns::id as IsContainedInGroupBy<users::columns::hair_color>>
-              <users::columns::id as IsContainedInGroupBy<users::columns::id>>
               <users::columns::id as IsContainedInGroupBy<users::columns::name>>
+              <users::columns::id as IsContainedInGroupBy<users::columns::id>>
     = note: required for `(users::columns::id, posts::columns::id)` to implement `IsContainedInGroupBy<comments::columns::id>`
 note: required for `comments::columns::id` to implement `ValidGrouping<(users::columns::id, posts::columns::id)>`
    --> tests/fail/select_requires_valid_grouping.rs:23:9
@@ -107,12 +107,12 @@ error[E0277]: the trait bound `posts::columns::id: IsContainedInGroupBy<comments
     |          ^^^^^^ the trait `IsContainedInGroupBy<comments::columns::id>` is not implemented for `posts::columns::id`
     |
     = help: the following other types implement trait `IsContainedInGroupBy<T>`:
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::id>>
-              <posts::columns::id as IsContainedInGroupBy<posts::columns::title>>
               <posts::columns::id as IsContainedInGroupBy<posts::columns::user_id>>
+              <posts::columns::id as IsContainedInGroupBy<posts::columns::title>>
+              <posts::columns::id as IsContainedInGroupBy<posts::columns::id>>
               <posts::columns::id as IsContainedInGroupBy<users::columns::hair_color>>
-              <posts::columns::id as IsContainedInGroupBy<users::columns::id>>
               <posts::columns::id as IsContainedInGroupBy<users::columns::name>>
+              <posts::columns::id as IsContainedInGroupBy<users::columns::id>>
     = note: required for `(posts::columns::id,)` to implement `IsContainedInGroupBy<comments::columns::id>`
     = note: 1 redundant requirement hidden
     = note: required for `(users::columns::id, posts::columns::id)` to implement `IsContainedInGroupBy<comments::columns::id>`

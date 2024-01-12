@@ -1,0 +1,2 @@
+[print_schema]
+filter = { only_tables = ["table_a"] }

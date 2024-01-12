@@ -123,7 +123,7 @@ impl FromSql<Datetime, Mysql> for OffsetDateTime {
     }
 }
 
-// delegate timestamp column to datetime colum for offset datetimes
+// delegate timestamp column to datetime column for offset datetimes
 #[cfg(all(feature = "time", feature = "mysql_backend"))]
 impl ToSql<Timestamp, Mysql> for OffsetDateTime {
     fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Mysql>) -> serialize::Result {

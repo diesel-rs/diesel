@@ -3,6 +3,7 @@ use super::bind_collector::{InternalSqliteBindValue, SqliteBindCollector};
 use super::raw::RawConnection;
 use super::sqlite_value::OwnedSqliteValue;
 use crate::connection::statement_cache::{MaybeCached, PrepareForCache};
+use crate::connection::Instrumentation;
 use crate::query_builder::{QueryFragment, QueryId};
 use crate::result::Error::DatabaseError;
 use crate::result::*;
@@ -26,6 +27,8 @@ impl Statement {
     ) -> QueryResult<Self> {
         let mut stmt = ptr::null_mut();
         let mut unused_portion = ptr::null();
+        // the cast for `ffi::SQLITE_PREPARE_PERSISTENT` is required for old libsqlite3-sys versions
+        #[allow(clippy::unnecessary_cast)]
         let prepare_result = unsafe {
             ffi::sqlite3_prepare_v3(
                 raw_connection.internal_connection.as_ptr(),
@@ -223,8 +226,8 @@ impl Drop for Statement {
 // * https://github.com/rust-lang/unsafe-code-guidelines/issues/194
 struct BoundStatement<'stmt, 'query> {
     statement: MaybeCached<'stmt, Statement>,
-    // we need to store the query here to ensure none does
-    // drop it till the end ot the statement
+    // we need to store the query here to ensure no one does
+    // drop it till the end of the statement
     // We use a boxed queryfragment here just to erase the
     // generic type, we use NonNull to communicate
     // that this is a shared buffer
@@ -233,12 +236,15 @@ struct BoundStatement<'stmt, 'query> {
     // contained in the query itself. We use NonNull to
     // communicate that this is a shared buffer
     binds_to_free: Vec<(i32, Option<NonNull<[u8]>>)>,
+    instrumentation: &'stmt mut dyn Instrumentation,
+    has_error: bool,
 }
 
 impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
     fn bind<T>(
         statement: MaybeCached<'stmt, Statement>,
         query: T,
+        instrumentation: &'stmt mut dyn Instrumentation,
     ) -> QueryResult<BoundStatement<'stmt, 'query>>
     where
         T: QueryFragment<Sqlite> + QueryId + 'query,
@@ -257,6 +263,8 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
             statement,
             query: None,
             binds_to_free: Vec::new(),
+            instrumentation,
+            has_error: false,
         };
 
         ret.bind_buffers(binds)?;
@@ -320,6 +328,20 @@ impl<'stmt, 'query> BoundStatement<'stmt, 'query> {
         }
         Ok(())
     }
+
+    fn finish_query_with_error(mut self, e: &Error) {
+        self.has_error = true;
+        if let Some(q) = self.query {
+            // it's safe to get a reference from this ptr as it's guaranteed to not be null
+            let q = unsafe { q.as_ref() };
+            self.instrumentation.on_connection_event(
+                crate::connection::InstrumentationEvent::FinishQuery {
+                    query: &crate::debug_query(&q),
+                    error: Some(e),
+                },
+            );
+        }
+    }
 }
 
 impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
@@ -351,11 +373,20 @@ impl<'stmt, 'query> Drop for BoundStatement<'stmt, 'query> {
         }
 
         if let Some(query) = self.query {
-            unsafe {
+            let query = unsafe {
                 // Constructing the `Box` here is safe as we
                 // got the pointer from a box + it is guaranteed to be not null.
-                std::mem::drop(Box::from_raw(query.as_ptr()));
+                Box::from_raw(query.as_ptr())
+            };
+            if !self.has_error {
+                self.instrumentation.on_connection_event(
+                    crate::connection::InstrumentationEvent::FinishQuery {
+                        query: &crate::debug_query(&query),
+                        error: None,
+                    },
+                );
             }
+            std::mem::drop(query);
             self.query = None;
         }
     }
@@ -371,23 +402,28 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
     pub(super) fn bind<T>(
         statement: MaybeCached<'stmt, Statement>,
         query: T,
+        instrumentation: &'stmt mut dyn Instrumentation,
     ) -> QueryResult<StatementUse<'stmt, 'query>>
     where
         T: QueryFragment<Sqlite> + QueryId + 'query,
     {
         Ok(Self {
-            statement: BoundStatement::bind(statement, query)?,
+            statement: BoundStatement::bind(statement, query, instrumentation)?,
             column_names: OnceCell::new(),
         })
     }
 
     pub(super) fn run(mut self) -> QueryResult<()> {
-        unsafe {
+        let r = unsafe {
             // This is safe as we pass `first_step = true`
             // and we consume the statement so nobody could
             // access the columns later on anyway.
             self.step(true).map(|_| ())
+        };
+        if let Err(ref e) = r {
+            self.statement.finish_query_with_error(e);
         }
+        r
     }
 
     // This function is marked as unsafe incorrectly passing `false` to `first_step`

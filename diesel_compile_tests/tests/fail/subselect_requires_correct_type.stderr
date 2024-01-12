@@ -10,5 +10,8 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
 note: required by a bound in `eq_any`
   --> $DIESEL/src/expression_methods/global_expression_methods.rs
    |
+   |     fn eq_any<T>(self, values: T) -> dsl::EqAny<Self, T>
+   |        ------ required by a bound in this associated function
+...
    |         T: AsInExpression<Self::SqlType>,
    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `ExpressionMethods::eq_any`

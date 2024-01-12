@@ -11,7 +11,7 @@ repository = "https://github.com/diesel-rs/diesel"
 keywords = ["orm", "database", "sql"]
 categories = ["database"]
 include = ["src/**/*", "LICENSE-*", "README.md"]
-rust-version = "1.65.0"
+rust-version.workspace = true
 
 [dependencies.diesel]
 version = "~2.1.0"

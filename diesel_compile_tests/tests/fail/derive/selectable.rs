@@ -41,4 +41,11 @@ struct User {
     no_tuple: i32,
 }
 
+#[derive(Selectable)]
+#[diesel(table_name = users)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+struct User1<'a> {
+    name: &'a str,
+}
+
 fn main() {}

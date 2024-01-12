@@ -11,7 +11,11 @@ keywords = ["diesel", "migrations", "cli"]
 autotests = false
 edition = "2021"
 include = ["src/**/*", "LICENSE-*", "README.md"]
-rust-version = "1.65.0"
+rust-version.workspace = true
+
+[package.metadata.wix]
+upgrade-guid = "AC330981-F4F8-4D8A-AD78-F8B7ECC32DF3"
+path-guid = "1730337B-A19D-4DDE-AFA5-983752956861"
 
 [[bin]]
 name = "diesel"
@@ -25,14 +29,17 @@ clap_complete = "4"
 dotenvy = "0.15"
 heck = "0.4.0"
 serde = { version = "1.0.0", features = ["derive"] }
-toml = "0.7"
+toml = "0.8"
 url = { version = "2.2.2" }
-libsqlite3-sys = { version = ">=0.17.2, <0.27.0", optional = true }
+libsqlite3-sys = { version = ">=0.17.2, <0.28.0", optional = true }
 diffy = "0.3.0"
 regex = "1.0.6"
 serde_regex = "1.1"
 diesel_table_macro_syntax = {version = "0.1", path = "../diesel_table_macro_syntax"}
 syn = { version = "2", features = ["visit"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3.10", features = ["env-filter"] }
+thiserror = "1.0.10"
 
 [dependencies.diesel]
 version = "~2.1.0"
@@ -58,3 +65,18 @@ uses_information_schema = []
 
 [[test]]
 name = "tests"
+
+[package.metadata.dist]
+features = ["sqlite-bundled"]
+
+[package.metadata.dist.dependencies.apt]
+libpq-dev = '*'
+libmysqlclient-dev = '*'
+
+[package.metadata.dist.dependencies.homebrew]
+libpq = '*'
+mysql-client = '*'
+
+[package.metadata.dist.dependencies.chocolatey]
+postgresql12 = '*'
+mysql = '*'

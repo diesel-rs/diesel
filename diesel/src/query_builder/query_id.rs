@@ -136,9 +136,9 @@ mod tests {
     }
 
     #[test]
-    #[cfg(features = "postgres")]
+    #[cfg(feature = "postgres")]
     fn boxed_queries_do_not_have_static_query_id() {
-        use pg::Pg;
+        use crate::pg::Pg;
         assert!(query_id(users::table.into_boxed::<Pg>()).is_none());
     }
 }
