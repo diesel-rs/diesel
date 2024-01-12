@@ -235,7 +235,7 @@ fn convert_absolute_path_to_relative(target_path: &Path, mut current_path: &Path
 fn run_infer_schema(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
     use crate::print_schema::*;
 
-    let mut conn = InferConnection::from_matches(matches);
+    let mut conn = InferConnection::from_matches(matches)?;
     let root_config = Config::read(matches)?
         .set_filter(matches)?
         .update_config(matches)?
@@ -255,24 +255,11 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
     tracing::debug!("Regenerate schema if required");
 
     let config = Config::read(matches)?.print_schema;
-    if let Some(ref path) = config.file {
-        let mut connection = InferConnection::from_matches(matches)?;
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent)?;
-        }
-
-        if matches.get_flag("LOCKED_SCHEMA") {
-            let mut buf = Vec::new();
-            print_schema::run_print_schema(&mut connection, &config, &mut buf)?;
-
-            let mut old_buf = Vec::new();
-            let mut file = fs::File::open(path)?;
-            file.read_to_end(&mut old_buf)?;
-
-            if buf != old_buf {
-                return Err(crate::errors::Error::SchemaWouldChange(
-                    path.display().to_string(),
-                ));
+    for config in config.all_configs.values() {
+        if let Some(ref path) = config.file {
+            let mut connection = InferConnection::from_matches(matches)?;
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent)?;
             }
 
             if matches.get_flag("LOCKED_SCHEMA") {
@@ -284,17 +271,27 @@ fn regenerate_schema_if_file_specified(matches: &ArgMatches) -> Result<(), crate
                 file.read_to_end(&mut old_buf)?;
 
                 if buf != old_buf {
-                    return Err(format!(
-                        "Command would result in changes to {}. \
-                     Rerun the command locally, and commit the changes.",
-                        path.display()
-                    )
-                    .into());
+                    return Err(crate::errors::Error::SchemaWouldChange(
+                        path.display().to_string(),
+                    ));
                 }
-            } else {
-                let mut file = fs::File::create(path)?;
-                let schema = print_schema::output_schema(&mut connection, config)?;
-                file.write_all(schema.as_bytes())?;
+
+                if matches.get_flag("LOCKED_SCHEMA") {
+                    let mut buf = Vec::new();
+                    print_schema::run_print_schema(&mut connection, config, &mut buf)?;
+
+                    let mut old_buf = Vec::new();
+                    let mut file = fs::File::open(path)?;
+                    file.read_to_end(&mut old_buf)?;
+
+                    if buf != old_buf {
+                        return Err(errors::Error::SchemaWouldChange(path.display().to_string()));
+                    }
+                } else {
+                    let mut file = fs::File::create(path)?;
+                    let schema = print_schema::output_schema(&mut connection, config)?;
+                    file.write_all(schema.as_bytes())?;
+                }
             }
         }
     }

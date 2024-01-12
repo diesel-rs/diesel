@@ -8,8 +8,6 @@ use serde::{Deserialize, Deserializer};
 use serde_regex::Serde as RegexWrapper;
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
-use std::error::Error;
-use std::fs;
 use std::ops::Bound;
 use std::path::{Path, PathBuf};
 use std::{env, fmt};
@@ -27,7 +25,7 @@ pub struct Config {
 fn get_values_with_indices<T: Clone + Send + Sync + 'static>(
     matches: &ArgMatches,
     id: &str,
-) -> Result<Option<BTreeMap<usize, T>>, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<Option<BTreeMap<usize, T>>, crate::errors::Error> {
     match matches.indices_of(id) {
         Some(indices) => match matches.try_get_many::<T>(id) {
             Ok(Some(values)) => Ok(Some(
@@ -39,15 +37,7 @@ fn get_values_with_indices<T: Clone + Send + Sync + 'static>(
             Ok(None) => {
                 unreachable!("`ids` only reports what is present")
             }
-            Err(clap::parser::MatchesError::UnknownArgument { .. }) => {
-                unreachable!("id came from matches")
-            }
-            Err(clap::parser::MatchesError::Downcast { .. }) => {
-                Err(format!("cannot get value of {}", id).into())
-            }
-            Err(_) => {
-                unreachable!("id came from matches")
-            }
+            Err(e) => Err(e.into()),
         },
         None => Ok(None),
     }
@@ -85,10 +75,7 @@ impl Config {
         }
     }
 
-    pub fn set_filter(
-        mut self,
-        matches: &ArgMatches,
-    ) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+    pub fn set_filter(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
         if self.print_schema.has_multiple_schema {
             let selected_schema_keys =
                 get_values_with_indices::<String>(matches, "print-schema-key")?.unwrap_or_default();
@@ -112,10 +99,11 @@ impl Config {
                             .chain(iter::once(Bound::Unbounded)),
                     ),
             ) {
-                let print_schema = self.print_schema.all_configs.get_mut(&key).ok_or(format!(
-                    "print schema key '{}' not found in diesel.toml",
-                    key
-                ))?;
+                let print_schema = self
+                    .print_schema
+                    .all_configs
+                    .get_mut(&key)
+                    .ok_or(crate::errors::Error::NoPrintSchemaKeyFound(key))?;
                 if let Some(table_names_with_indices) = table_names_with_indices.clone() {
                     let table_names = table_names_with_indices
                         .range(boundary)
@@ -123,8 +111,7 @@ impl Config {
                         .map(|table_name_regex| {
                             regex::Regex::new(&table_name_regex).map(Into::into)
                         })
-                        .collect::<Result<Vec<Regex>, _>>()
-                        .map_err(|e| format!("invalid argument for table filtering regex: {e}"))?;
+                        .collect::<Result<Vec<Regex>, _>>()?;
                     if table_names.is_empty() {
                         continue;
                     }
@@ -163,8 +150,7 @@ impl Config {
                 .get_many::<String>("table-name")
                 .unwrap_or_default()
                 .map(|table_name_regex| regex::Regex::new(table_name_regex).map(Into::into))
-                .collect::<Result<Vec<Regex>, _>>()
-                .map_err(|e| format!("invalid argument for table filtering regex: {e}"))?;
+                .collect::<Result<Vec<Regex>, _>>()?;
 
             if matches
                 .try_get_one::<bool>("only-tables")?
@@ -183,10 +169,7 @@ impl Config {
         Ok(self)
     }
 
-    pub fn update_config(
-        mut self,
-        matches: &ArgMatches,
-    ) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+    pub fn update_config(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
         if self.print_schema.has_multiple_schema {
             if let Some(selected_schema_keys) =
                 get_values_with_indices::<String>(matches, "print-schema-key")?
@@ -219,9 +202,11 @@ impl Config {
                                 .chain(iter::once(Bound::Unbounded)),
                         ),
                 ) {
-                    let print_schema = self.print_schema.all_configs.get_mut(&key).ok_or(
-                        format!("print schema key '{}' not found in diesel.toml", key),
-                    )?;
+                    let print_schema = self
+                        .print_schema
+                        .all_configs
+                        .get_mut(&key)
+                        .ok_or(crate::errors::Error::NoPrintSchemaKeyFound(key))?;
                     if let Some(schema) = schema_with_indices
                         .clone()
                         .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
@@ -239,11 +224,15 @@ impl Config {
                             DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment;
                     }
 
-                    if let Some(with_docs) = with_docs_config_with_indices
+                    if let Some(doc_config) = with_docs_config_with_indices
                         .clone()
                         .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
                     {
-                        print_schema.with_docs = with_docs.parse()?;
+                        print_schema.with_docs = doc_config.parse().map_err(|_| {
+                            crate::errors::Error::UnsupportedFeature(format!(
+                                "Invalid documentation config mode: {doc_config}"
+                            ))
+                        })?;
                     }
 
                     if let Some(sorting) = column_sorting_with_indices
@@ -256,7 +245,9 @@ impl Config {
                             }
                             "name" => print_schema.column_sorting = ColumnSorting::Name,
                             _ => {
-                                return Err(format!("Invalid column sorting mode: {sorting}").into())
+                                return Err(crate::errors::Error::UnsupportedFeature(format!(
+                                    "Invalid column sorting mode: {sorting}"
+                                )))
                             }
                         }
                     }
@@ -309,15 +300,23 @@ impl Config {
             if matches.get_flag("with-docs") {
                 config.with_docs = DocConfig::DatabaseCommentsFallbackToAutoGeneratedDocComment;
             }
-            if let Some(docs_config) = matches.get_one::<String>("with-docs-config") {
-                config.with_docs = docs_config.parse()?;
+            if let Some(doc_config) = matches.get_one::<String>("with-docs-config") {
+                config.with_docs = doc_config.parse().map_err(|_| {
+                    crate::errors::Error::UnsupportedFeature(format!(
+                        "Invalid documentation config mode: {doc_config}"
+                    ))
+                })?;
             }
 
             if let Some(sorting) = matches.get_one::<String>("column-sorting") {
                 match sorting as &str {
                     "ordinal_position" => config.column_sorting = ColumnSorting::OrdinalPosition,
                     "name" => config.column_sorting = ColumnSorting::Name,
-                    _ => return Err(format!("Invalid column sorting mode: {sorting}").into()),
+                    _ => {
+                        return Err(crate::errors::Error::UnsupportedFeature(format!(
+                            "Invalid column sorting mode: {sorting}"
+                        )))
+                    }
                 }
             }
 

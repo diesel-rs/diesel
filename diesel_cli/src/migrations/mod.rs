@@ -94,7 +94,9 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
                 let config = Config::read(matches)?;
                 let diff_schema = if diff_schema == "NOT_SET" {
                     if config.print_schema.all_configs.len() != 1 {
-                        return Err("Please select exact one print schema key".into());
+                        return Err(crate::errors::Error::UnsupportedFeature(
+                            "Please select exact one print schema key".into(),
+                        ));
                     }
                     config
                         .print_schema

@@ -11,6 +11,7 @@ use syn::visit::Visit;
 
 use crate::config::Config;
 use crate::database::InferConnection;
+use crate::errors;
 use crate::infer_schema_internals::{
     filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
     TableData, TableName,
@@ -46,10 +47,6 @@ pub fn generate_sql_based_on_diff_schema(
 
     tables_from_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_matches(matches)?;
-    let tables_from_database = filter_table_names(
-        load_table_names(&mut conn, None)?,
-        &config.print_schema.filter,
-    );
 
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
@@ -96,7 +93,9 @@ pub fn generate_sql_based_on_diff_schema(
             .print_schema
             .all_configs
             .first_key_value()
-            .ok_or("select exact one print schema key")?
+            .ok_or(errors::Error::UnsupportedFeature(
+                "select exact one print schema key".to_string(),
+            ))?
             .1
             .filter,
     );

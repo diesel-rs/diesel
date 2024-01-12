@@ -58,4 +58,8 @@ pub enum Error {
     ColumnLiteralParseError(syn::Error),
     #[error("Failed to parse database url: {0}")]
     UrlParsingError(#[from] url::ParseError),
+    #[error("Failed to parse CLI parameter: {0}")]
+    ClapMachesError(#[from] clap::parser::MatchesError),
+    #[error("No print schema key with the name `{0}` exists")]
+    NoPrintSchemaKeyFound(String),
 }
