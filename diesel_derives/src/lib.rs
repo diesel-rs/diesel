@@ -1113,8 +1113,8 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// On most backends, the implementation of the function is defined in a
 /// migration using `CREATE FUNCTION`. On SQLite, the function is implemented in
 /// Rust instead. You must call `register_impl` or
-/// `register_nondeterministic_impl` with every connection before you can use
-/// the function.
+/// `register_nondeterministic_impl` (in the generated function's `_internals`
+/// module) with every connection before you can use the function.
 ///
 /// These functions will only be generated if the `sqlite` feature is enabled,
 /// and the function is not generic.
@@ -1140,7 +1140,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
 /// let connection = &mut SqliteConnection::establish(":memory:")?;
 ///
-/// add_mul::register_impl(connection, |x: i32, y: i32, z: f64| {
+/// add_mul_internals::register_impl(connection, |x: i32, y: i32, z: f64| {
 ///     (x + y) as f64 * z
 /// })?;
 ///
@@ -1162,8 +1162,8 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// ## Custom Aggregate Functions
 ///
 /// Custom aggregate functions can be created in SQLite by adding an `#[aggregate]`
-/// attribute inside `sql_function_v2`. `register_impl` needs to be called on
-/// the generated function with a type implementing the
+/// attribute inside `sql_function_v2`. `register_impl` (in the generated function's `_internals`
+/// module) needs to be called with a type implementing the
 /// [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html)
 /// trait as a type parameter as shown in the examples below.
 ///
@@ -1221,7 +1221,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #        .execute(connection)
 /// #        .unwrap();
 ///
-///     my_sum::register_impl::<MySum, _>(connection)?;
+///     my_sum_internals::register_impl::<MySum, _>(connection)?;
 ///
 ///     let total_score = players.select(my_sum(score))
 ///         .get_result::<i32>(connection)?;
@@ -1301,7 +1301,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #        .execute(connection)
 /// #        .unwrap();
 ///
-///     range_max::register_impl::<RangeMax<f32>, _, _>(connection)?;
+///     range_max_internals::register_impl::<RangeMax<f32>, _, _>(connection)?;
 ///
 ///     let result = student_avgs.select(range_max(s1_avg, s2_avg))
 ///         .get_result::<Option<f32>>(connection)?;
