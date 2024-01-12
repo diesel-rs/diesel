@@ -1,15 +1,13 @@
 #[cfg(any(feature = "postgres", feature = "mysql"))]
 use super::query_helper;
 use clap::ArgMatches;
+use diesel::connection::InstrumentationEvent;
 use diesel::dsl::sql;
 use diesel::sql_types::Bool;
 use diesel::*;
 use diesel_migrations::FileBasedMigrations;
 
-use crate::database_error::{DatabaseError, DatabaseResult};
-
 use std::env;
-use std::error::Error;
 #[cfg(feature = "postgres")]
 use std::fs::{self, File};
 #[cfg(feature = "postgres")]
@@ -119,8 +117,12 @@ pub enum InferConnection {
 }
 
 impl InferConnection {
-    pub fn from_matches(matches: &ArgMatches) -> Self {
-        let database_url = database_url(matches);
+    pub fn from_matches(matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
+        let database_url = database_url(matches)?;
+        Self::from_url(database_url)
+    }
+
+    fn from_url(database_url: String) -> Result<InferConnection, crate::errors::Error> {
         // we construct `InferConnection` manually
         // here because that allows us to emit better error messages
         // than the generic ` Invalid connection url for multiconnection`
@@ -134,17 +136,37 @@ impl InferConnection {
             Backend::Sqlite => SqliteConnection::establish(&database_url).map(Self::Sqlite),
         };
 
-        result.unwrap_or_else(|err| handle_error_with_database_url(&database_url, err))
+        let mut conn = result.map_err(|err| crate::errors::Error::ConnectionError {
+            error: err,
+            url: database_url,
+        })?;
+
+        conn.set_instrumentation(|event: InstrumentationEvent<'_>| {
+            if let InstrumentationEvent::FinishQuery { query, error, .. } = event {
+                if let Some(err) = error {
+                    tracing::error!(?query, ?err, "Failed to execute query");
+                } else {
+                    tracing::debug!(?query);
+                }
+            }
+        });
+        Ok(conn)
     }
 }
 
-pub fn reset_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResult<()> {
-    drop_database(&database_url(args))?;
+pub fn reset_database(
+    args: &ArgMatches,
+    migrations_dir: &Path,
+) -> Result<(), crate::errors::Error> {
+    drop_database(&database_url(args)?)?;
     setup_database(args, migrations_dir)
 }
 
-pub fn setup_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResult<()> {
-    let database_url = database_url(args);
+pub fn setup_database(
+    args: &ArgMatches,
+    migrations_dir: &Path,
+) -> Result<(), crate::errors::Error> {
+    let database_url = database_url(args)?;
 
     create_database_if_needed(&database_url)?;
     create_default_migration_if_needed(&database_url, migrations_dir)?;
@@ -152,20 +174,25 @@ pub fn setup_database(args: &ArgMatches, migrations_dir: &Path) -> DatabaseResul
     Ok(())
 }
 
-pub fn drop_database_command(args: &ArgMatches) -> DatabaseResult<()> {
-    drop_database(&database_url(args))
+pub fn drop_database_command(args: &ArgMatches) -> Result<(), crate::errors::Error> {
+    drop_database(&database_url(args)?)
 }
 
 /// Creates the database specified in the connection url. It returns an error
 /// it was unable to create the database.
-fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
+fn create_database_if_needed(database_url: &str) -> Result<(), crate::errors::Error> {
     match Backend::for_url(database_url) {
         #[cfg(feature = "postgres")]
         Backend::Pg => {
             if PgConnection::establish(database_url).is_err() {
-                let (database, postgres_url) = change_database_of_url(database_url, "postgres");
+                let (database, postgres_url) = change_database_of_url(database_url, "postgres")?;
                 println!("Creating database: {database}");
-                let mut conn = PgConnection::establish(&postgres_url)?;
+                let mut conn = PgConnection::establish(&postgres_url).map_err(|error| {
+                    crate::errors::Error::ConnectionError {
+                        error,
+                        url: postgres_url,
+                    }
+                })?;
                 query_helper::create_database(&database).execute(&mut conn)?;
             }
         }
@@ -174,16 +201,26 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
             let path = path_from_sqlite_url(database_url)?;
             if !path.exists() {
                 println!("Creating database: {database_url}");
-                SqliteConnection::establish(database_url)?;
+                SqliteConnection::establish(database_url).map_err(|error| {
+                    crate::errors::Error::ConnectionError {
+                        error,
+                        url: database_url.to_owned(),
+                    }
+                })?;
             }
         }
         #[cfg(feature = "mysql")]
         Backend::Mysql => {
             if MysqlConnection::establish(database_url).is_err() {
                 let (database, mysql_url) =
-                    change_database_of_url(database_url, "information_schema");
+                    change_database_of_url(database_url, "information_schema")?;
                 println!("Creating database: {database}");
-                let mut conn = MysqlConnection::establish(&mysql_url)?;
+                let mut conn = MysqlConnection::establish(&mysql_url).map_err(|error| {
+                    crate::errors::Error::ConnectionError {
+                        error,
+                        url: mysql_url,
+                    }
+                })?;
                 query_helper::create_database(&database).execute(&mut conn)?;
             }
         }
@@ -195,7 +232,7 @@ fn create_database_if_needed(database_url: &str) -> DatabaseResult<()> {
 fn create_default_migration_if_needed(
     database_url: &str,
     migrations_dir: &Path,
-) -> DatabaseResult<()> {
+) -> Result<(), crate::errors::Error> {
     let initial_migration_path = migrations_dir.join("00000000000000_diesel_initial_setup");
     if initial_migration_path.exists() {
         return Ok(());
@@ -224,24 +261,30 @@ fn create_default_migration_if_needed(
 fn create_schema_table_and_run_migrations_if_needed(
     database_url: &str,
     migrations_dir: &Path,
-) -> DatabaseResult<()> {
-    if !schema_table_exists(database_url).unwrap_or_else(handle_error) {
-        let migrations =
-            FileBasedMigrations::from_path(migrations_dir).unwrap_or_else(handle_error);
-        let mut conn = InferConnection::establish(database_url)?;
-        super::run_migrations_with_output(&mut conn, migrations)?;
+) -> Result<(), crate::errors::Error> {
+    if !schema_table_exists(database_url)? {
+        let migrations = FileBasedMigrations::from_path(migrations_dir)
+            .map_err(|e| crate::errors::Error::MigrationError(Box::new(e)))?;
+        let mut conn = InferConnection::from_url(database_url.to_owned())?;
+        super::run_migrations_with_output(&mut conn, migrations)
+            .map_err(crate::errors::Error::MigrationError)?;
     };
     Ok(())
 }
 
 /// Drops the database specified in the connection url. It returns an error
 /// if it was unable to drop the database.
-fn drop_database(database_url: &str) -> DatabaseResult<()> {
+fn drop_database(database_url: &str) -> Result<(), crate::errors::Error> {
     match Backend::for_url(database_url) {
         #[cfg(feature = "postgres")]
         Backend::Pg => {
-            let (database, postgres_url) = change_database_of_url(database_url, "postgres");
-            let mut conn = PgConnection::establish(&postgres_url)?;
+            let (database, postgres_url) = change_database_of_url(database_url, "postgres")?;
+            let mut conn = PgConnection::establish(&postgres_url).map_err(|e| {
+                crate::errors::Error::ConnectionError {
+                    error: e,
+                    url: postgres_url,
+                }
+            })?;
             if pg_database_exists(&mut conn, &database)? {
                 println!("Dropping database: {database}");
                 query_helper::drop_database(&database)
@@ -258,8 +301,13 @@ fn drop_database(database_url: &str) -> DatabaseResult<()> {
         }
         #[cfg(feature = "mysql")]
         Backend::Mysql => {
-            let (database, mysql_url) = change_database_of_url(database_url, "information_schema");
-            let mut conn = MysqlConnection::establish(&mysql_url)?;
+            let (database, mysql_url) = change_database_of_url(database_url, "information_schema")?;
+            let mut conn = MysqlConnection::establish(&mysql_url).map_err(|e| {
+                crate::errors::Error::ConnectionError {
+                    error: e,
+                    url: mysql_url,
+                }
+            })?;
             if mysql_database_exists(&mut conn, &database)? {
                 println!("Dropping database: {database}");
                 query_helper::drop_database(&database)
@@ -313,8 +361,8 @@ fn mysql_database_exists(conn: &mut MysqlConnection, database_name: &str) -> Que
 
 /// Returns true if the `__diesel_schema_migrations` table exists in the
 /// database we connect to, returns false if it does not.
-pub fn schema_table_exists(database_url: &str) -> DatabaseResult<bool> {
-    match InferConnection::establish(database_url).unwrap() {
+pub fn schema_table_exists(database_url: &str) -> Result<bool, crate::errors::Error> {
+    match InferConnection::from_url(database_url.to_owned())? {
         #[cfg(feature = "postgres")]
         InferConnection::Pg(mut conn) => select(sql::<Bool>(
             "EXISTS \
@@ -345,55 +393,64 @@ pub fn schema_table_exists(database_url: &str) -> DatabaseResult<bool> {
     .map_err(Into::into)
 }
 
-pub fn database_url(matches: &ArgMatches) -> String {
+pub fn database_url(matches: &ArgMatches) -> Result<String, crate::errors::Error> {
     matches
         .get_one::<String>("DATABASE_URL")
         .cloned()
         .or_else(|| env::var("DATABASE_URL").ok())
-        .unwrap_or_else(|| handle_error(DatabaseError::DatabaseUrlMissing))
+        .ok_or(crate::errors::Error::DatabaseUrlMissing)
 }
 
 #[cfg(any(feature = "postgres", feature = "mysql"))]
-fn change_database_of_url(database_url: &str, default_database: &str) -> (String, String) {
-    let base = ::url::Url::parse(database_url).unwrap();
-    let database = base.path_segments().unwrap().last().unwrap().to_owned();
-    let mut new_url = base.join(default_database).unwrap();
+fn change_database_of_url(
+    database_url: &str,
+    default_database: &str,
+) -> Result<(String, String), crate::errors::Error> {
+    let base = url::Url::parse(database_url)?;
+    let database = base
+        .path_segments()
+        .expect("The database url has at least one path segment")
+        .last()
+        .expect("The database url has at least one path segment")
+        .to_owned();
+    let mut new_url = base
+        .join(default_database)
+        .expect("The provided database is always valid");
     new_url.set_query(base.query());
-    (database, new_url.into())
+    Ok((database, new_url.into()))
 }
 
 #[cfg(feature = "sqlite")]
 /// sqlite accepts either file: URLs, or bare paths (the latter of which may be relative).
 /// Check for which case we're in and return the path if we can retrieve it.
-fn path_from_sqlite_url(database_url: &str) -> DatabaseResult<::std::path::PathBuf> {
+fn path_from_sqlite_url(database_url: &str) -> Result<std::path::PathBuf, crate::errors::Error> {
     if database_url.starts_with("file:/") {
         // looks like a file URL
         match ::url::Url::parse(database_url) {
-            Ok(url) if url.scheme() == "file" => Ok(url.to_file_path().map_err(|_err| {
-                result::ConnectionError::InvalidConnectionUrl(String::from(database_url))
-            })?),
+            Ok(url) if url.scheme() == "file" => {
+                Ok(url
+                    .to_file_path()
+                    .map_err(|_err| crate::errors::Error::ConnectionError {
+                        error: result::ConnectionError::InvalidConnectionUrl(String::from(
+                            database_url,
+                        )),
+                        url: database_url.into(),
+                    })?)
+            }
             _ => {
                 // invalid URL or scheme
-                Err(
-                    result::ConnectionError::InvalidConnectionUrl(String::from(database_url))
-                        .into(),
-                )
+                Err(crate::errors::Error::ConnectionError {
+                    error: result::ConnectionError::InvalidConnectionUrl(String::from(
+                        database_url,
+                    )),
+                    url: database_url.into(),
+                })
             }
         }
     } else {
         // assume it's a bare path
         Ok(::std::path::PathBuf::from(database_url))
     }
-}
-
-fn handle_error<E: Error, T>(error: E) -> T {
-    println!("{error}");
-    ::std::process::exit(1);
-}
-
-pub fn handle_error_with_database_url<E: Error, T>(database_url: &str, error: E) -> T {
-    eprintln!("Could not connect to database via `{database_url}`: {error}");
-    ::std::process::exit(1);
 }
 
 #[cfg(all(test, any(feature = "postgres", feature = "mysql")))]
@@ -408,7 +465,7 @@ mod tests {
         let postgres_url = format!("{}/{}", base_url, "postgres");
         assert_eq!(
             (database, postgres_url),
-            change_database_of_url(&database_url, "postgres")
+            change_database_of_url(&database_url, "postgres").unwrap()
         );
     }
 
@@ -420,7 +477,7 @@ mod tests {
         let postgres_url = format!("{}/{}", base_url, "postgres");
         assert_eq!(
             (database, postgres_url),
-            change_database_of_url(&database_url, "postgres")
+            change_database_of_url(&database_url, "postgres").unwrap()
         );
     }
 
@@ -433,7 +490,7 @@ mod tests {
         let postgres_url = format!("{}/{}{}", base_url, "postgres", query);
         assert_eq!(
             (database, postgres_url),
-            change_database_of_url(&database_url, "postgres")
+            change_database_of_url(&database_url, "postgres").unwrap()
         );
     }
 }

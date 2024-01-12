@@ -9,12 +9,13 @@ use serde_regex::Serde as RegexWrapper;
 use std::collections::btree_map::Entry;
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::fs;
 use std::ops::Bound;
 use std::path::{Path, PathBuf};
 use std::{env, fmt};
 use std::{fs, iter};
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default)]
@@ -61,13 +62,16 @@ impl Config {
             .unwrap_or_else(|| find_project_root().unwrap_or_default().join("diesel.toml"))
     }
 
-    pub fn read(matches: &ArgMatches) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+    pub fn read(matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
         let path = Self::file_path(matches);
 
         if path.exists() {
             let content = fs::read_to_string(&path)?;
             let mut result = toml::from_str::<Self>(&content)?;
-            result.set_relative_path_base(path.parent().unwrap());
+            result.set_relative_path_base(
+                path.parent()
+                    .expect("This is not executed in the file-system root, right?"),
+            );
             Ok(result)
         } else {
             Ok(Self::default())
@@ -458,7 +462,7 @@ impl PrintSchema {
     }
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct MigrationsDirectory {
     pub dir: PathBuf,
