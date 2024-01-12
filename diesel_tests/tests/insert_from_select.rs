@@ -316,11 +316,15 @@ fn on_conflict_do_update_with_select() {
 
     query.execute(conn).unwrap();
 
-    let data = posts.select((title, body)).load(conn).unwrap();
+    let data = posts
+        .select((title, body))
+        .order_by(title)
+        .load(conn)
+        .unwrap();
     let expected = vec![
+        (String::from("Ruby says hi"), None),
         (String::from("Sean says hi"), Some(String::from("updated"))),
         (String::from("Tess says hi"), Some(String::from("updated"))),
-        (String::from("Ruby says hi"), None),
     ];
     assert_eq!(expected, data);
 }
