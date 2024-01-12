@@ -2,7 +2,6 @@ use clap::ArgMatches;
 use serde::de::{self, MapAccess, Visitor};
 use serde::{Deserialize, Deserializer};
 use serde_regex::Serde as RegexWrapper;
-use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::{env, fmt};
@@ -12,7 +11,7 @@ use crate::infer_schema_internals::TableName;
 use crate::print_schema;
 use crate::print_schema::ColumnSorting;
 
-#[derive(Deserialize, Default)]
+#[derive(Deserialize, Default, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default)]
@@ -30,13 +29,16 @@ impl Config {
             .unwrap_or_else(|| find_project_root().unwrap_or_default().join("diesel.toml"))
     }
 
-    pub fn read(matches: &ArgMatches) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+    pub fn read(matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
         let path = Self::file_path(matches);
 
         if path.exists() {
             let content = fs::read_to_string(&path)?;
             let mut result = toml::from_str::<Self>(&content)?;
-            result.set_relative_path_base(path.parent().unwrap());
+            result.set_relative_path_base(
+                path.parent()
+                    .expect("This is not executed in the file-system root, right?"),
+            );
             Ok(result)
         } else {
             Ok(Self::default())
@@ -50,16 +52,12 @@ impl Config {
         }
     }
 
-    pub fn set_filter(
-        mut self,
-        matches: &ArgMatches,
-    ) -> Result<Self, Box<dyn Error + Send + Sync + 'static>> {
+    pub fn set_filter(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
         let table_names = matches
             .get_many::<String>("table-name")
             .unwrap_or_default()
             .map(|table_name_regex| regex::Regex::new(table_name_regex).map(Into::into))
-            .collect::<Result<Vec<Regex>, _>>()
-            .map_err(|e| format!("invalid argument for table filtering regex: {e}"))?;
+            .collect::<Result<Vec<Regex>, _>>()?;
 
         if matches.get_flag("only-tables") {
             self.print_schema.filter = Filtering::OnlyTables(table_names)
@@ -71,7 +69,7 @@ impl Config {
     }
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct PrintSchema {
     #[serde(default)]
@@ -139,7 +137,7 @@ impl PrintSchema {
     }
 }
 
-#[derive(Default, Deserialize)]
+#[derive(Default, Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct MigrationsDirectory {
     pub dir: PathBuf,
@@ -155,7 +153,7 @@ impl MigrationsDirectory {
 
 type Regex = RegexWrapper<::regex::Regex>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Filtering {
     OnlyTables(Vec<Regex>),
     ExceptTables(Vec<Regex>),

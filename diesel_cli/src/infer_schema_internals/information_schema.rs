@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::error::Error;
 
 use diesel::backend::Backend;
 use diesel::connection::LoadConnection;
@@ -141,7 +140,7 @@ where
 pub fn load_table_names<'a, Conn>(
     connection: &mut Conn,
     schema_name: Option<&'a str>,
-) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>>
+) -> Result<Vec<TableName>, crate::errors::Error>
 where
     Conn: LoadConnection,
     Conn::Backend: DefaultSchema + 'static,
