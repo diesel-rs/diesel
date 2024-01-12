@@ -337,6 +337,7 @@ impl Config {
                 let derives = derives.cloned().collect();
                 config.custom_type_derives = Some(derives);
             }
+            dbg!(config.clone());
         }
         Ok(self)
     }
