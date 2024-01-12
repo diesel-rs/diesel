@@ -30,6 +30,9 @@ members = [
     "examples/sqlite/getting_started_step_3",
 ]
 
+[workspace.package]
+rust-version = "1.70.0"
+
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
