@@ -12,7 +12,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
              more than 128 columns. Consider using less columns."
         } else if input.column_defs.len() > 64 {
             "Table contains more than 64 columns. Consider enabling the \
-             `32-column-tables` feature to enable diesels support for \
+             `128-column-tables` feature to enable diesels support for \
              tables with more than 64 columns."
         } else if input.column_defs.len() > 32 {
             "Table contains more than 32 columns. Consider enabling the \
