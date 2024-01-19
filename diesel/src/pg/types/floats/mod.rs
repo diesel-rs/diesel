@@ -63,14 +63,14 @@ impl FromSql<sql_types::Numeric, Pg> for PgNumeric {
 
         match sign {
             0 => Ok(PgNumeric::Positive {
-                weight: weight,
-                scale: scale,
-                digits: digits,
+                weight,
+                scale,
+                digits,
             }),
             0x4000 => Ok(PgNumeric::Negative {
-                weight: weight,
-                scale: scale,
-                digits: digits,
+                weight,
+                scale,
+                digits,
             }),
             0xC000 => Ok(PgNumeric::NaN),
             invalid => Err(Box::new(InvalidNumericSign(invalid))),
