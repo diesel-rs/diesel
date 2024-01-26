@@ -282,8 +282,8 @@ mod tests {
         let query = select(sql::<Date>("'J0'::date").eq(julian_epoch));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let max_date = NaiveDate::MAX;
-        let query = select(sql::<Date>("'262143-12-31'::date").eq(max_date));
+        let max_date = NaiveDate::from_ymd_opt(262142, 12, 31).unwrap();
+        let query = select(sql::<Date>("'262142-12-31'::date").eq(max_date));
         assert!(query.get_result::<bool>(connection).unwrap());
 
         let january_first_2018 = NaiveDate::from_ymd_opt(2018, 1, 1).unwrap();
@@ -313,8 +313,8 @@ mod tests {
         let query = select(sql::<Date>("'J0'::date"));
         assert_eq!(Ok(julian_epoch), query.get_result::<NaiveDate>(connection));
 
-        let max_date = NaiveDate::MAX;
-        let query = select(sql::<Date>("'262143-12-31'::date"));
+        let max_date = NaiveDate::from_ymd_opt(262142, 12, 31).unwrap();
+        let query = select(sql::<Date>("'262142-12-31'::date"));
         assert_eq!(Ok(max_date), query.get_result::<NaiveDate>(connection));
 
         let january_first_2018 = NaiveDate::from_ymd_opt(2018, 1, 1).unwrap();
