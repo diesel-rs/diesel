@@ -21,6 +21,11 @@ jobs:
       PR_BENCHMARK_RESULTS: pr_${{ matrix.backend }}.txt
       BASE_BENCHMARK_RESULTS: base_${{ matrix.backend }}.txt
       GITHUB_EVENT: event_${{ matrix.backend }}.json
+      # This is the confidence interval for the t-test Threshold
+      # Adjust this value to lower to make the test more sensitive to changes
+      # Adjust this value to higher to make the test less sensitive to changes
+      # https://bencher.dev/docs/explanation/thresholds/#t-test-threshold-upper-boundary
+      UPPER_BOUNDARY: 0.98
     steps:
       - name: Download Benchmark Results
         uses: actions/github-script@v6
@@ -81,7 +86,7 @@ jobs:
           --testbed "$BENCHER_TESTBED" \
           --measure latency \
           --test t \
-          --upper-boundary 0.98 \
+          --upper-boundary ${{ env.UPPER_BOUNDARY }} \
           --token "${{ secrets.BENCHER_API_TOKEN }}"
       - name: Track PR Benchmarks
         run: |
