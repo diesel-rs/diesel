@@ -172,6 +172,34 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
             {
                 type Count = diesel::query_source::Once;
             }
+
+            impl<S> diesel::JoinTo<diesel::query_builder::Tablesample<S>> for table
+            where
+                diesel::query_builder::Tablesample<S>: diesel::JoinTo<table>,
+            {
+                type FromClause = diesel::query_builder::Tablesample<S>;
+                type OnClause = <diesel::query_builder::Tablesample<S> as diesel::JoinTo<table>>::OnClause;
+
+                fn join_target(__diesel_internal_rhs: diesel::query_builder::Tablesample<S>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = diesel::query_builder::Tablesample::<S>::join_target(table);
+                    (__diesel_internal_rhs, __diesel_internal_on_clause)
+                }
+            }
+
+            // TODO: Are both of these really needed?
+            impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<table>>
+                for table
+            {
+                // TODO: Is this accurate?
+                type Count = diesel::query_source::Once;
+            }
+
+            impl diesel::query_source::AppearsInFromClause<table>
+                for diesel::query_builder::Tablesample<table>
+            {
+                // TODO: Is this accurate?
+                type Count = diesel::query_source::Once;
+            }
         })
     } else {
         None
@@ -667,6 +695,13 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
                 type Count = diesel::query_source::Once;
             }
             impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>> for #column_name {}
+
+            impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<super::table>>
+                for #column_name
+            {
+                type Count = diesel::query_source::Once;
+            }
+            impl diesel::SelectableExpression<diesel::query_builder::Tablesample<super::table>> for #column_name {}
         })
     } else {
         None
