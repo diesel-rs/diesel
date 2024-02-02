@@ -31,14 +31,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: ${{ runner.os }}-${{ matrix.backend }}-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Set environment variables
@@ -300,16 +297,13 @@ jobs:
     name: Compiletests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: nightly-2023-09-21
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: compile_test-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install dependencies
@@ -325,16 +319,13 @@ jobs:
     name: Check rustfmt style && run clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: clippy-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install dependencies
@@ -405,16 +396,13 @@ jobs:
     name: Check sqlite bundled + Sqlite with asan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: "rust-src"
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: sqlite_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Test diesel-cli
@@ -437,17 +425,14 @@ jobs:
     name: Check Minimal supported rust version (1.70.0)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.70.0
       - uses: dtolnay/rust-toolchain@nightly
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-minimal-versions
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
           key: minimal_rust_version-cargo-${{ hashFiles('**/Cargo.toml') }}
       - name: Install dependencies
         run: |
@@ -471,7 +456,7 @@ jobs:
 
     steps:
       - name: Checkout Actions Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check the spelling of the files in our repo
         uses: crate-ci/typos@master
