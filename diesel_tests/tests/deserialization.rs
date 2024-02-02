@@ -22,11 +22,17 @@ fn generated_queryable_allows_lifetimes() {
     };
     assert_eq!(
         Ok(expected_user),
-        users.select((id, name)).first(connection)
+        users.select((id, name)).order(id).first(connection)
     );
     assert_eq!(
-        users.select((id, name)).first::<CowUser<'_>>(connection),
-        users.select(CowUser::as_select()).first(connection)
+        users
+            .select((id, name))
+            .order(id)
+            .first::<CowUser<'_>>(connection),
+        users
+            .select(CowUser::as_select())
+            .order(id)
+            .first(connection)
     );
 }
 

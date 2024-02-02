@@ -1,6 +1,9 @@
 use crate::schema::*;
 use diesel::*;
 
+#[cfg(feature = "postgres")]
+static USER_INDEX_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[test]
 fn test_updating_single_column() {
     use crate::schema::users::dsl::*;
@@ -328,6 +331,9 @@ fn upsert_with_sql_literal_for_target() {
     use diesel::sql_types::Text;
     use diesel::upsert::*;
 
+    // cannot run these tests in parallel due to index creation
+    let _guard = USER_INDEX_LOCK.lock();
+
     let connection = &mut connection();
     // This index needs to happen before the insert or we'll get a deadlock
     // with any transactions that are trying to get the row lock from insert
@@ -365,6 +371,9 @@ fn upsert_with_sql_literal_for_target_with_condition() {
     use diesel::query_dsl::methods::FilterDsl;
     use diesel::sql_types::Text;
     use diesel::upsert::*;
+
+    // cannot run these tests in parallel due to index creation
+    let _guard = USER_INDEX_LOCK.lock();
 
     let connection = &mut connection();
     // This index needs to happen before the insert or we'll get a deadlock
