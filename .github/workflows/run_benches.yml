@@ -46,8 +46,11 @@ jobs:
       - name: Install rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install critcmp
+        run: cargo +stable install critcmp
+
       - name: Benchmark PR ${{ matrix.backend }}
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" > pr_${{ matrix.backend }}.txt
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" -- --save-baseline changes > pr_${{ matrix.backend }}.txt
 
       - name: Upload PR ${{ matrix.backend }} Benchmark Results
         uses: actions/upload-artifact@v4
@@ -62,7 +65,7 @@ jobs:
           repository: ${{ github.event.pull_request.base.repo.full_name }}
 
       - name: Benchmark base ${{ matrix.backend }}
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" > base_${{ matrix.backend }}.txt
+        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "${{ matrix.backend }}" -- --save-baseline master > base_${{ matrix.backend }}.txt
 
       - name: Upload base ${{ matrix.backend }} Benchmark Results
         uses: actions/upload-artifact@v4
@@ -75,3 +78,13 @@ jobs:
         with:
           name: event_${{ matrix.backend }}.json
           path: ${{ github.event_path }}
+
+      - name: Critcmp
+        run: |
+          cd diesel_bench
+          critcmp master changes
+          echo "# ${{matrix.backend}}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          critcmp master changes >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
