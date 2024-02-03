@@ -1,6 +1,27 @@
 use crate::query_builder::Tablesample;
-pub(crate) use crate::query_builder::{TablesampleMethod, TablesampleSeed};
+pub(crate) use crate::query_builder::TablesampleMethod;
 use crate::Table;
+use std::marker::PhantomData;
+
+#[derive(Clone, Copy, Debug)]
+/// Used to specify the `BERNOULLI` sampling method.
+pub struct BernoulliMethod;
+
+impl TablesampleMethod for BernoulliMethod {
+    fn method_name_sql() -> &'static str {
+        "BERNOULLI"
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Used to specify the `SYSTEM` sampling method.
+pub struct SystemMethod;
+
+impl TablesampleMethod for SystemMethod {
+    fn method_name_sql() -> &'static str {
+        "SYSTEM"
+    }
+}
 
 /// The `tablesample` method
 ///
@@ -11,9 +32,15 @@ use crate::Table;
 /// supporting a wide variety of sampling methods.
 ///
 /// Calling this function on a table (`mytable.tablesample(...)`) will result in the SQL
-/// `FROM mytable TABLESAMPLE ...`.
+/// `FROM mytable TABLESAMPLE ...` --
 /// `mytable.tablesample(...)` can be used just like any table in diesel since it implements
 /// [Table](crate::Table).
+///
+/// The `BernoulliMethod` and `SystemMethod` types can be used to indicate the sampling method for
+/// a `TABLESAMPLE method(p)` clause where p is specified by the portion argument. The provided
+/// percentage should be an integer between 0 and 100.
+///
+/// If the seed argument is is Some(f) then f becomes the seed in `TABLESAMPLE ... REPEATABLE (f)`.
 ///
 /// Example:
 ///
@@ -21,13 +48,12 @@ use crate::Table;
 /// # include!("../../../doctest_setup.rs");
 /// # use schema::{posts, users};
 /// # use diesel::dsl::*;
-/// # use crate::pg::query_builder::{TablesampleMethod, TablesampleSeed};
 /// # fn main() {
 /// # let connection = &mut establish_connection();
 /// let random_user_ids = users::table
-///     .tablesample(TablesampleMethod::Bernoulli(10), TablesampleSeed::Auto)
+///     .tablesample::<BernoulliMethod>(10, None)
 ///     .select((users::id))
-///     .load::<i64>(connection);
+///     .load::<i32>(connection);
 /// # }
 /// ```
 /// Selects the ids for a random 10 percent of users.
@@ -38,25 +64,30 @@ use crate::Table;
 /// # include!("../../../doctest_setup.rs");
 /// # use schema::{posts, users};
 /// # use diesel::dsl::*;
-/// # use crate::query_builder::{TablesampleMethod, TablesampleSeed};
 /// # fn main() {
 /// # let connection = &mut establish_connection();
 /// # let _ =
 /// users::table
-///     .tablesample(TablesampleMethod::Bernoulli(10), TablesampleSeed::Auto)
-///     .inner_join(posts::table.only())
+///     .tablesample::<BernoulliMethod>(10, Some(42.0))
+///     .inner_join(posts::table)
 ///     .select((users::name, posts::title))
 ///     .load::<(String, String)>(connection);
 /// # }
 /// ```
-/// That query selects all of the posts for a random 10 percent of users.
+/// That query selects all of the posts for a random 10 percent of users, returning the same
+/// results each time it is run due to the static seed of 42.0.
 ///
 pub trait TablesampleDsl: Table {
     /// See the trait-level docs.
-    fn tablesample(self, method: TablesampleMethod, seed: TablesampleSeed) -> Tablesample<Self> {
+    fn tablesample<TSM: TablesampleMethod>(
+        self,
+        portion: i16,
+        seed: Option<f64>,
+    ) -> Tablesample<Self, TSM> {
         Tablesample {
             source: self,
-            method,
+            method: PhantomData,
+            portion,
             seed,
         }
     }

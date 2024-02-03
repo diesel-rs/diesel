@@ -173,27 +173,32 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
                 type Count = diesel::query_source::Once;
             }
 
-            impl<S> diesel::JoinTo<diesel::query_builder::Tablesample<S>> for table
+            impl<S, TSM> diesel::JoinTo<diesel::query_builder::Tablesample<S, TSM>> for table
             where
-                diesel::query_builder::Tablesample<S>: diesel::JoinTo<table>,
+                diesel::query_builder::Tablesample<S, TSM>: diesel::JoinTo<table>,
+                TSM: diesel::query_builder::TablesampleMethod
             {
-                type FromClause = diesel::query_builder::Tablesample<S>;
-                type OnClause = <diesel::query_builder::Tablesample<S> as diesel::JoinTo<table>>::OnClause;
+                type FromClause = diesel::query_builder::Tablesample<S, TSM>;
+                type OnClause = <diesel::query_builder::Tablesample<S, TSM> as diesel::JoinTo<table>>::OnClause;
 
-                fn join_target(__diesel_internal_rhs: diesel::query_builder::Tablesample<S>) -> (Self::FromClause, Self::OnClause) {
-                    let (_, __diesel_internal_on_clause) = diesel::query_builder::Tablesample::<S>::join_target(table);
+                fn join_target(__diesel_internal_rhs: diesel::query_builder::Tablesample<S, TSM>) -> (Self::FromClause, Self::OnClause) {
+                    let (_, __diesel_internal_on_clause) = diesel::query_builder::Tablesample::<S, TSM>::join_target(table);
                     (__diesel_internal_rhs, __diesel_internal_on_clause)
                 }
             }
 
-            impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<table>>
+            impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<table, TSM>>
                 for table
+                    where
+                TSM:  diesel::query_builder::TablesampleMethod
             {
                 type Count = diesel::query_source::Once;
             }
 
-            impl diesel::query_source::AppearsInFromClause<table>
-                for diesel::query_builder::Tablesample<table>
+            impl<TSM> diesel::query_source::AppearsInFromClause<table>
+                for diesel::query_builder::Tablesample<table, TSM>
+                    where
+                TSM:  diesel::query_builder::TablesampleMethod
             {
                 type Count = diesel::query_source::Once;
             }
@@ -693,12 +698,14 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
             }
             impl diesel::SelectableExpression<diesel::query_builder::Only<super::table>> for #column_name {}
 
-            impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<super::table>>
+            impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<super::table, TSM>>
                 for #column_name
+                where TSM:  diesel::query_builder::TablesampleMethod
             {
                 type Count = diesel::query_source::Once;
             }
-            impl diesel::SelectableExpression<diesel::query_builder::Tablesample<super::table>> for #column_name {}
+            impl<TSM> diesel::SelectableExpression<diesel::query_builder::Tablesample<super::table, TSM>>
+                for #column_name where TSM: diesel::query_builder::TablesampleMethod {}
         })
     } else {
         None

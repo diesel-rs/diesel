@@ -7,4 +7,4 @@ mod tablesample_dsl;
 
 pub use self::interval_dsl::IntervalDsl;
 pub use self::only_dsl::OnlyDsl;
-pub use self::tablesample_dsl::TablesampleDsl;
+pub use self::tablesample_dsl::{BernoulliMethod, SystemMethod, TablesampleDsl};

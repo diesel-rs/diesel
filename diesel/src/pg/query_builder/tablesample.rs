@@ -7,49 +7,38 @@ use crate::{
     sql_types::{Double, SmallInt},
     JoinTo, SelectableExpression, Table,
 };
+use std::marker::PhantomData;
 
-/// Indicates the sampling method for a `TABLESAMPLE method(n)` clause. The provided percentage
-/// should be an integer between 0 and 100.
-#[derive(Debug, Clone, Copy)]
-pub enum TablesampleMethod {
-    /// Use the BERNOULLI sampline method. This is row-based, slower but more accurate.
-    Bernoulli(i16),
-
-    /// Use the SYSTEM sampling method. This is page-based, faster but less accurate.
-    System(i16),
-}
-
-/// Indicates the random number seed for a `TABLESAMPLE ... REPEATABLE(f)` clause.
-#[derive(Debug, Clone, Copy)]
-pub enum TablesampleSeed {
-    /// Have PostgreSQL generate an implied random number generator seed.
-    Auto,
-
-    /// Provide your own random number generator seed.
-    Repeatable(f64),
+#[doc(hidden)]
+pub trait TablesampleMethod: Clone {
+    fn method_name_sql() -> &'static str;
 }
 
 /// Represents a query with a `TABLESAMPLE` clause.
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
-pub struct Tablesample<S> {
+pub struct Tablesample<S, TSM> {
     pub source: S,
-    pub method: TablesampleMethod,
-    pub seed: TablesampleSeed,
+    pub method: PhantomData<TSM>,
+    pub portion: i16,
+    pub seed: Option<f64>,
 }
 
-impl<S> QueryId for Tablesample<S>
+impl<S, TSM> QueryId for Tablesample<S, TSM>
 where
     S: QueryId,
+    TSM: TablesampleMethod,
 {
     type QueryId = ();
     const HAS_STATIC_QUERY_ID: bool = false;
 }
 
-impl<S> QuerySource for Tablesample<S>
+impl<S, TSM> QuerySource for Tablesample<S, TSM>
 where
     S: Table + Clone,
-    <S as QuerySource>::DefaultSelection: ValidGrouping<()> + SelectableExpression<Tablesample<S>>,
+    TSM: TablesampleMethod,
+    <S as QuerySource>::DefaultSelection:
+        ValidGrouping<()> + SelectableExpression<Tablesample<S, TSM>>,
 {
     type FromClause = Self;
     type DefaultSelection = <S as QuerySource>::DefaultSelection;
@@ -63,41 +52,33 @@ where
     }
 }
 
-impl<S> QueryFragment<Pg> for Tablesample<S>
+impl<S, TSM> QueryFragment<Pg> for Tablesample<S, TSM>
 where
     S: QueryFragment<Pg>,
+    TSM: TablesampleMethod,
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         self.source.walk_ast(out.reborrow())?;
         out.push_sql(" TABLESAMPLE ");
-        match &self.method {
-            TablesampleMethod::Bernoulli(p) => {
-                out.push_sql("BERNOULLI(");
-                out.push_bind_param::<SmallInt, _>(p)?;
-                out.push_sql(")");
-            }
-            TablesampleMethod::System(p) => {
-                out.push_sql("SYSTEM(");
-                out.push_bind_param::<SmallInt, _>(p)?;
-                out.push_sql(")");
-            }
-        };
-        match &self.seed {
-            TablesampleSeed::Auto => { /* no-op, this is the default */ }
-            TablesampleSeed::Repeatable(f) => {
-                out.push_sql(" REPEATABLE(");
-                out.push_bind_param::<Double, _>(f)?;
-                out.push_sql(")");
-            }
+        out.push_sql(TSM::method_name_sql());
+        out.push_sql("(");
+        out.push_bind_param::<SmallInt, _>(&self.portion)?;
+        out.push_sql(")");
+        if let Some(f) = &self.seed {
+            out.push_sql(" REPEATABLE(");
+            out.push_bind_param::<Double, _>(f)?;
+            out.push_sql(")");
         }
         Ok(())
     }
 }
 
-impl<S> AsQuery for Tablesample<S>
+impl<S, TSM> AsQuery for Tablesample<S, TSM>
 where
     S: Table + Clone,
-    <S as QuerySource>::DefaultSelection: ValidGrouping<()> + SelectableExpression<Tablesample<S>>,
+    TSM: TablesampleMethod,
+    <S as QuerySource>::DefaultSelection:
+        ValidGrouping<()> + SelectableExpression<Tablesample<S, TSM>>,
 {
     type SqlType = <<Self as QuerySource>::DefaultSelection as Expression>::SqlType;
     type Query = SelectStatement<FromClause<Self>>;
@@ -106,11 +87,12 @@ where
     }
 }
 
-impl<S, T> JoinTo<T> for Tablesample<S>
+impl<S, T, TSM> JoinTo<T> for Tablesample<S, TSM>
 where
     S: JoinTo<T>,
     T: Table,
     S: Table,
+    TSM: TablesampleMethod,
 {
     type FromClause = <S as JoinTo<T>>::FromClause;
     type OnClause = <S as JoinTo<T>>::OnClause;
@@ -120,13 +102,15 @@ where
     }
 }
 
-impl<S> Table for Tablesample<S>
+impl<S, TSM> Table for Tablesample<S, TSM>
 where
     S: Table + Clone + AsQuery,
+    TSM: TablesampleMethod,
 
-    <S as Table>::PrimaryKey: SelectableExpression<Tablesample<S>>,
-    <S as Table>::AllColumns: SelectableExpression<Tablesample<S>>,
-    <S as QuerySource>::DefaultSelection: ValidGrouping<()> + SelectableExpression<Tablesample<S>>,
+    <S as Table>::PrimaryKey: SelectableExpression<Tablesample<S, TSM>>,
+    <S as Table>::AllColumns: SelectableExpression<Tablesample<S, TSM>>,
+    <S as QuerySource>::DefaultSelection:
+        ValidGrouping<()> + SelectableExpression<Tablesample<S, TSM>>,
 {
     type PrimaryKey = <S as Table>::PrimaryKey;
     type AllColumns = <S as Table>::AllColumns;
@@ -169,20 +153,17 @@ mod test {
     #[test]
     fn test_generated_tablesample_sql() {
         assert_sql!(
-            users::table.tablesample(TablesampleMethod::Bernoulli(10), TablesampleSeed::Auto),
+            users::table.tablesample::<BernoulliMethod>(10, None),
             "\"users\" TABLESAMPLE BERNOULLI($1)"
         );
 
         assert_sql!(
-            users::table.tablesample(TablesampleMethod::System(10), TablesampleSeed::Auto),
+            users::table.tablesample::<SystemMethod>(10, None),
             "\"users\" TABLESAMPLE SYSTEM($1)"
         );
 
         assert_sql!(
-            users::table.tablesample(
-                TablesampleMethod::System(10),
-                TablesampleSeed::Repeatable(42.0),
-            ),
+            users::table.tablesample::<SystemMethod>(10, Some(42.0),),
             "\"users\" TABLESAMPLE SYSTEM($1) REPEATABLE($2)"
         );
     }

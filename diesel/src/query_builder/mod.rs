@@ -121,7 +121,7 @@ pub(crate) use self::insert_statement::ColumnList;
 pub use crate::pg::query_builder::only::Only;
 
 #[cfg(feature = "postgres_backend")]
-pub use crate::pg::query_builder::tablesample::{Tablesample, TablesampleMethod, TablesampleSeed};
+pub use crate::pg::query_builder::tablesample::{Tablesample, TablesampleMethod};
 
 use crate::backend::Backend;
 use crate::result::QueryResult;
