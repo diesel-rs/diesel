@@ -4,6 +4,7 @@ use crate::{
     query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement},
     query_source::QuerySource,
     result::QueryResult,
+    sql_types::{Double, SmallInt},
     JoinTo, SelectableExpression, Table,
 };
 
@@ -12,16 +13,16 @@ use crate::{
 #[derive(Debug, Clone, Copy)]
 pub enum TablesampleMethod {
     /// Use the BERNOULLI sampline method. This is row-based, slower but more accurate.
-    Bernoulli(u8),
+    Bernoulli(i16),
 
     /// Use the SYSTEM sampling method. This is page-based, faster but less accurate.
-    System(u8),
+    System(i16),
 }
 
 /// Indicates the random number seed for a `TABLESAMPLE ... REPEATABLE(f)` clause.
 #[derive(Debug, Clone, Copy)]
 pub enum TablesampleSeed {
-    /// Have PostgreSQL generate an implied rando number generator seed.
+    /// Have PostgreSQL generate an implied random number generator seed.
     Auto,
 
     /// Provide your own random number generator seed.
@@ -39,11 +40,10 @@ pub struct Tablesample<S> {
 
 impl<S> QueryId for Tablesample<S>
 where
-    Self: 'static,
     S: QueryId,
 {
-    type QueryId = Self;
-    const HAS_STATIC_QUERY_ID: bool = <S as QueryId>::HAS_STATIC_QUERY_ID;
+    type QueryId = ();
+    const HAS_STATIC_QUERY_ID: bool = false;
 }
 
 impl<S> QuerySource for Tablesample<S>
@@ -69,15 +69,25 @@ where
 {
     fn walk_ast<'b>(&'b self, mut out: AstPass<'_, 'b, Pg>) -> QueryResult<()> {
         self.source.walk_ast(out.reborrow())?;
-        let method_text = match self.method {
-            TablesampleMethod::Bernoulli(p) => format!("BERNOULLI({})", p),
-            TablesampleMethod::System(p) => format!("SYSTEM({})", p),
+        out.push_sql(" TABLESAMPLE ");
+        match &self.method {
+            TablesampleMethod::Bernoulli(p) => {
+                out.push_sql("BERNOULLI(");
+                out.push_bind_param::<SmallInt, _>(p)?;
+                out.push_sql(")");
+            }
+            TablesampleMethod::System(p) => {
+                out.push_sql("SYSTEM(");
+                out.push_bind_param::<SmallInt, _>(p)?;
+                out.push_sql(")");
+            }
         };
-        out.push_sql(format!(" TABLESAMPLE {}", method_text).as_str());
-        match self.seed {
+        match &self.seed {
             TablesampleSeed::Auto => { /* no-op, this is the default */ }
             TablesampleSeed::Repeatable(f) => {
-                out.push_sql(format!(" REPEATABLE({})", f).as_str());
+                out.push_sql(" REPEATABLE(");
+                out.push_bind_param::<Double, _>(f)?;
+                out.push_sql(")");
             }
         }
         Ok(())

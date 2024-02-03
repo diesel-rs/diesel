@@ -186,18 +186,15 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
                 }
             }
 
-            // TODO: Are both of these really needed?
             impl diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<table>>
                 for table
             {
-                // TODO: Is this accurate?
                 type Count = diesel::query_source::Once;
             }
 
             impl diesel::query_source::AppearsInFromClause<table>
                 for diesel::query_builder::Tablesample<table>
             {
-                // TODO: Is this accurate?
                 type Count = diesel::query_source::Once;
             }
         })

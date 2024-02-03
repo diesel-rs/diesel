@@ -21,11 +21,12 @@ use crate::Table;
 /// # include!("../../../doctest_setup.rs");
 /// # use schema::{posts, users};
 /// # use diesel::dsl::*;
+/// # use crate::pg::query_builder::{TablesampleMethod, TablesampleSeed};
 /// # fn main() {
 /// # let connection = &mut establish_connection();
 /// let random_user_ids = users::table
 ///     .tablesample(TablesampleMethod::Bernoulli(10), TablesampleSeed::Auto)
-///     .select(users::id)
+///     .select((users::id))
 ///     .load::<i64>(connection);
 /// # }
 /// ```
@@ -37,6 +38,7 @@ use crate::Table;
 /// # include!("../../../doctest_setup.rs");
 /// # use schema::{posts, users};
 /// # use diesel::dsl::*;
+/// # use crate::query_builder::{TablesampleMethod, TablesampleSeed};
 /// # fn main() {
 /// # let connection = &mut establish_connection();
 /// # let _ =

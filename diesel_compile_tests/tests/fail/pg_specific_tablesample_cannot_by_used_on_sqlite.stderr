@@ -1,0 +1,79 @@
+warning: unused import: `diesel::sql_types::*`
+ --> tests/fail/pg_specific_tablesample_cannot_by_used_on_sqlite.rs:5:5
+  |
+5 | use diesel::sql_types::*;
+  |     ^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `diesel::upsert::on_constraint`
+ --> tests/fail/pg_specific_tablesample_cannot_by_used_on_sqlite.rs:6:5
+  |
+6 | use diesel::upsert::on_constraint;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error[E0308]: mismatched types
+  --> tests/fail/pg_specific_tablesample_cannot_by_used_on_sqlite.rs:23:41
+   |
+23 |             TablesampleSeed::Repeatable(42),
+   |             --------------------------- ^^
+   |             |                           |
+   |             |                           expected `f64`, found integer
+   |             |                           help: use a float literal: `42.0`
+   |             arguments to this enum variant are incorrect
+   |
+note: tuple variant defined here
+  --> $DIESEL/src/pg/query_builder/tablesample.rs
+   |
+   |     Repeatable(f64),
+   |     ^^^^^^^^^^
+
+error[E0277]: the trait bound `(diesel::sql_types::Integer, diesel::sql_types::Text): load_dsl::private::CompatibleType<i32, _>` is not satisfied
+  --> tests/fail/pg_specific_tablesample_cannot_by_used_on_sqlite.rs:25:22
+   |
+25 |         .load::<i32>(&mut connection);
+   |          ----        ^^^^^^^^^^^^^^^ the trait `load_dsl::private::CompatibleType<i32, _>` is not implemented for `(diesel::sql_types::Integer, diesel::sql_types::Text)`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the following other types implement trait `load_dsl::private::CompatibleType<U, DB>`:
+             (ST0,)
+             (ST0, ST1)
+             (ST0, ST1, ST2)
+             (ST0, ST1, ST2, ST3)
+             (ST0, ST1, ST2, ST3, ST4)
+             (ST0, ST1, ST2, ST3, ST4, ST5)
+             (ST0, ST1, ST2, ST3, ST4, ST5, ST6)
+             (ST0, ST1, ST2, ST3, ST4, ST5, ST6, ST7)
+           and $N others
+   = note: required for `Tablesample<users::table>` to implement `LoadQuery<'_, _, i32>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
+
+error[E0277]: the trait bound `Tablesample<users::table>: QueryFragment<Sqlite>` is not satisfied
+  --> tests/fail/pg_specific_tablesample_cannot_by_used_on_sqlite.rs:25:22
+   |
+25 |         .load::<i32>(&mut connection);
+   |          ----        ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `Tablesample<users::table>`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the trait `QueryFragment<Pg>` is implemented for `Tablesample<S>`
+   = note: required for `FromClause<Tablesample<users::table>>` to implement `QueryFragment<Sqlite>`
+   = note: 2 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<Tablesample<users::table>>>` to implement `QueryFragment<Sqlite>`
+   = note: required for `Tablesample<users::table>` to implement `LoadQuery<'_, diesel::SqliteConnection, i32>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`
