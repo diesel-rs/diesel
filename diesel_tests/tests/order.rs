@@ -12,10 +12,10 @@ fn order_by_column() {
         NewUser::new("Jim", None),
     ];
     insert_into(users).values(&data).execute(conn).unwrap();
-    let data = users.load::<User>(conn).unwrap();
-    let sean = &data[0];
-    let tess = &data[1];
-    let jim = &data[2];
+    let data = users.order(name).load::<User>(conn).unwrap();
+    let sean = &data[1];
+    let tess = &data[2];
+    let jim = &data[0];
 
     let expected_data = vec![
         User::new(jim.id, "Jim"),

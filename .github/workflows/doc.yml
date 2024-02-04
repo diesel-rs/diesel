@@ -14,13 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Cache cargo registry
-      uses: actions/cache@v3
+      uses: Swatinem/rust-cache@v2
       with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
         key: cargo-doc-cargo-${{ hashFiles('**/Cargo.toml') }}
     - name: Get the branch name
       id: current_branch

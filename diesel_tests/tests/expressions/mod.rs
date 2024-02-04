@@ -238,6 +238,7 @@ fn function_with_multiple_arguments() {
     let expected_data = vec!["black".to_string(), "Tess".to_string()];
     let data = users
         .select(coalesce(hair_color, name))
+        .order(id)
         .load::<String>(connection);
 
     assert_eq!(Ok(expected_data), data);

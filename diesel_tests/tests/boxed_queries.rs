@@ -37,7 +37,7 @@ fn boxed_queries_can_differ_conditionally() {
     }
 
     let source = |query| match query {
-        Query::All => users::table.into_boxed(),
+        Query::All => users::table.order(users::name.desc()).into_boxed(),
         Query::Ordered => users::table.order(users::name.desc()).into_boxed(),
         Query::One => users::table
             .filter(users::name.ne("jim"))
@@ -51,7 +51,7 @@ fn boxed_queries_can_differ_conditionally() {
     let jim = find_user_by_name("Jim", connection);
 
     let all = source(Query::All).load(connection);
-    let expected_data = vec![sean.clone(), tess.clone(), jim.clone()];
+    let expected_data = vec![tess.clone(), sean.clone(), jim.clone()];
     assert_eq!(Ok(expected_data), all);
 
     let ordered = source(Query::Ordered).load(connection);
@@ -69,6 +69,7 @@ fn boxed_queries_implement_select_dsl() {
     let data = users::table
         .into_boxed()
         .select(users::name)
+        .order(users::name)
         .load::<String>(connection);
     assert_eq!(Ok(vec!["Sean".into(), "Tess".into()]), data);
 }
@@ -92,7 +93,11 @@ fn boxed_queries_implement_filter_dsl() {
 #[test]
 fn boxed_queries_implement_limit_dsl() {
     let connection = &mut connection_with_sean_and_tess_in_users_table();
-    let data = users::table.into_boxed().limit(1).load(connection);
+    let data = users::table
+        .into_boxed()
+        .limit(1)
+        .order(users::id)
+        .load(connection);
     let expected_data = vec![find_user_by_name("Sean", connection)];
     assert_eq!(Ok(expected_data), data);
 }
@@ -104,6 +109,7 @@ fn boxed_queries_implement_offset_dsl() {
         .into_boxed()
         .limit(1)
         .offset(1)
+        .order(users::id)
         .load(connection);
     let expected_data = vec![find_user_by_name("Tess", connection)];
     assert_eq!(Ok(expected_data), data);
@@ -154,6 +160,7 @@ fn boxed_queries_implement_or_filter() {
         .into_boxed()
         .filter(users::name.eq("Sean"))
         .or_filter(users::name.eq("Tess"))
+        .order(users::name)
         .load(connection);
     let expected = vec![
         find_user_by_name("Sean", connection),

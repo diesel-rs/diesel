@@ -21,15 +21,11 @@ jobs:
         backend: ["postgres", "sqlite", "mysql"]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: cache
-        uses: actions/cache@v3
+        uses: Swatinem/rust-cache@v2
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            diesel_bench/target
           key: metrics-${{matrix.backend}}-cargo-${{ hashFiles('diesel_bench/Cargo.toml')}}
 
       - name: Install postgres (Linux)

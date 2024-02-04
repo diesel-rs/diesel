@@ -29,7 +29,11 @@ fn selecting_a_struct() {
         .unwrap();
 
     let expected_users = vec![NewUser::new("Sean", None), NewUser::new("Tess", None)];
-    let actual_users: Vec<_> = users.select((name, hair_color)).load(connection).unwrap();
+    let actual_users: Vec<_> = users
+        .select((name, hair_color))
+        .order(name)
+        .load(connection)
+        .unwrap();
     assert_eq!(expected_users, actual_users);
 }
 
@@ -42,7 +46,7 @@ fn with_safe_select() {
         .execute(connection)
         .unwrap();
 
-    let select_name = users.select(name);
+    let select_name = users.select(name).order(name);
     let names: Vec<String> = select_name.load(connection).unwrap();
 
     assert_eq!(vec!["Sean".to_string(), "Tess".to_string()], names);
@@ -93,7 +97,7 @@ fn selecting_expression_with_bind_param() {
         .execute(connection)
         .unwrap();
 
-    let source = users.select(name.eq("Sean".to_string()));
+    let source = users.select(name.eq("Sean".to_string())).order(id);
     let expected_data = vec![true, false];
     let actual_data = source.load::<bool>(connection).unwrap();
 
@@ -165,7 +169,11 @@ fn selection_using_subselect() {
     use crate::schema::posts::dsl::*;
 
     let connection = &mut connection_with_sean_and_tess_in_users_table();
-    let ids: Vec<i32> = users::table.select(users::id).load(connection).unwrap();
+    let ids: Vec<i32> = users::table
+        .select(users::id)
+        .order(users::id)
+        .load(connection)
+        .unwrap();
     let query = format!(
         "INSERT INTO posts (user_id, title) VALUES ({}, 'Hello'), ({}, 'World')",
         ids[0], ids[1]
