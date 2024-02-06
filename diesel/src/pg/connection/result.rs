@@ -31,6 +31,8 @@ impl PgResult {
         match result_status {
             ExecStatusType::PGRES_SINGLE_TUPLE
             | ExecStatusType::PGRES_COMMAND_OK
+            | ExecStatusType::PGRES_COPY_IN
+            | ExecStatusType::PGRES_COPY_OUT
             | ExecStatusType::PGRES_TUPLES_OK => {
                 let column_count = unsafe { PQnfields(internal_result.as_ptr()) as usize };
                 let row_count = unsafe { PQntuples(internal_result.as_ptr()) as usize };
@@ -138,7 +140,7 @@ impl PgResult {
         }
     }
 
-    pub(super) fn column_type(&self, col_idx: usize) -> NonZeroU32 {
+    pub(in crate::pg) fn column_type(&self, col_idx: usize) -> NonZeroU32 {
         let type_oid = unsafe { PQftype(self.internal_result.as_ptr(), col_idx as libc::c_int) };
         NonZeroU32::new(type_oid).expect(
             "Got a zero oid from postgres. If you see this error message \

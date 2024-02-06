@@ -123,6 +123,7 @@ pub use crate::pg::query_builder::only::Only;
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::query_builder::tablesample::{Tablesample, TablesampleMethod};
 
+pub(crate) use self::bind_collector::ByteWrapper;
 use crate::backend::Backend;
 use crate::result::QueryResult;
 use std::error::Error;
