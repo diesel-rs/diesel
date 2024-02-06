@@ -10,7 +10,7 @@ use crate::sql_types::{DieselNumericOps, HasSqlType, SqlType};
 #[doc(hidden)] // This is used by the `AsExpression` derive
 #[derive(Debug, Clone, Copy, DieselNumericOps)]
 pub struct Bound<T, U> {
-    item: U,
+    pub(crate) item: U,
     _marker: PhantomData<T>,
 }
 

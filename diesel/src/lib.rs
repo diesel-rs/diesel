@@ -333,6 +333,10 @@ pub mod dsl {
     };
 
     #[doc(inline)]
+    #[cfg(feature = "postgres")]
+    pub use crate::query_builder::functions::copy_in;
+
+    #[doc(inline)]
     pub use diesel_derives::auto_type;
 }
 
@@ -682,6 +686,9 @@ pub use crate::macros::table;
 pub use crate::prelude::*;
 #[doc(inline)]
 pub use crate::query_builder::debug_query;
+#[doc(inline)]
+#[cfg(feature = "postgres")]
+pub use crate::query_builder::functions::{copy_in, copy_out};
 #[doc(inline)]
 pub use crate::query_builder::functions::{
     delete, insert_into, insert_or_ignore_into, replace_into, select, sql_query, update,

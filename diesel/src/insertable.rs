@@ -122,7 +122,7 @@ pub trait InsertValues<T: Table, DB: Backend>: QueryFragment<DB> {
 #[derive(Debug, Copy, Clone, QueryId)]
 #[doc(hidden)]
 pub struct ColumnInsertValue<Col, Expr> {
-    expr: Expr,
+    pub(crate) expr: Expr,
     p: PhantomData<Col>,
 }
 

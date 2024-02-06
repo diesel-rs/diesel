@@ -120,6 +120,7 @@ pub(crate) use self::insert_statement::ColumnList;
 #[cfg(feature = "postgres_backend")]
 pub use crate::pg::query_builder::only::Only;
 
+pub(crate) use self::bind_collector::ByteWrapper;
 use crate::backend::Backend;
 use crate::result::QueryResult;
 use std::error::Error;
