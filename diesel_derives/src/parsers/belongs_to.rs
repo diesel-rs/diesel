@@ -6,7 +6,7 @@ use syn::{Ident, TypePath};
 use crate::util::{parse_eq, unknown_attribute, BELONGS_TO_NOTE};
 
 enum Attr {
-    ForeignKey(Ident, Ident),
+    ForeignKey(Ident),
 }
 
 impl Parse for Attr {
@@ -15,7 +15,7 @@ impl Parse for Attr {
         let name_str = name.to_string();
 
         match &*name_str {
-            "foreign_key" => Ok(Attr::ForeignKey(name, parse_eq(input, BELONGS_TO_NOTE)?)),
+            "foreign_key" => Ok(Attr::ForeignKey(parse_eq(input, BELONGS_TO_NOTE)?)),
 
             _ => Err(unknown_attribute(&name, &["foreign_key"])),
         }
@@ -39,7 +39,7 @@ impl Parse for BelongsTo {
 
         for attr in Punctuated::<Attr, Comma>::parse_terminated(input)? {
             match attr {
-                Attr::ForeignKey(_, value) => foreign_key = Some(value),
+                Attr::ForeignKey(value) => foreign_key = Some(value),
             }
         }
 
