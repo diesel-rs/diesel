@@ -9,6 +9,8 @@ mod dynamic_values;
 
 mod connection_setup;
 
+mod delete;
+
 use connection_setup::{create_user_table, establish_connection};
 
 #[cfg(feature = "postgres")]
