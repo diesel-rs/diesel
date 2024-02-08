@@ -18,6 +18,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Added an optional `#[diesel(skip_insertion)]` field attribute to the `Insertable` derive macro, allowing fields which map to generated columns to be skipped during insertion.
 * Support for connection instrumentation. This allows to inspect any query run by your application
 * Logging in diesel-cli
+* Support for libsqlite3-sys 0.28
 
 ### Changed
 

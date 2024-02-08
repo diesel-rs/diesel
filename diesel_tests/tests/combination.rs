@@ -13,7 +13,7 @@ fn union() {
         NewUser::new("Jim", None),
     ];
     insert_into(users).values(&data).execute(conn).unwrap();
-    let data = users.load::<User>(conn).unwrap();
+    let data = users.order(id).load::<User>(conn).unwrap();
     let sean = &data[0];
     let tess = &data[1];
     let jim = &data[2];
@@ -43,7 +43,7 @@ fn union_all() {
         NewUser::new("Jim", None),
     ];
     insert_into(users).values(&data).execute(conn).unwrap();
-    let data = users.load::<User>(conn).unwrap();
+    let data = users.order(id).load::<User>(conn).unwrap();
     let sean = &data[0];
     let tess = &data[1];
     let jim = &data[2];
@@ -75,10 +75,10 @@ fn intersect() {
         NewUser::new("Jim", None),
     ];
     insert_into(users).values(&data).execute(conn).unwrap();
-    let data = users.load::<User>(conn).unwrap();
-    let _sean = &data[0];
-    let tess = &data[1];
-    let _jim = &data[2];
+    let data = users.order(name).load::<User>(conn).unwrap();
+    let _sean = &data[1];
+    let tess = &data[2];
+    let _jim = &data[0];
 
     let expected_data = vec![User::new(tess.id, "Tess")];
     let data: Vec<_> = users
@@ -171,6 +171,7 @@ fn as_subquery_for_eq_in() {
     let out = posts::table
         .filter(posts::user_id.eq_any(subquery))
         .select(posts::title)
+        .order_by(posts::title)
         .load::<String>(conn)
         .unwrap();
 
