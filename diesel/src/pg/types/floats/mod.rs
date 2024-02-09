@@ -37,6 +37,7 @@ pub enum PgNumeric {
 }
 
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)] // that's used by debug in the error impl
 struct InvalidNumericSign(u16);
 
 impl ::std::fmt::Display for InvalidNumericSign {

@@ -395,6 +395,7 @@ fn on_conflict_do_update_with_boxed_select() {
 
     users
         .select((id, name.concat(" says hi")))
+        .order(id)
         .into_boxed()
         .insert_into(posts)
         .into_columns((user_id, title))
@@ -411,6 +412,7 @@ fn on_conflict_do_update_with_boxed_select() {
 
     users
         .select((id, name.concat(" says hi")))
+        .order(id)
         .into_boxed()
         .insert_into(posts)
         .into_columns((user_id, title))
