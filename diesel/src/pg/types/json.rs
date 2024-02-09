@@ -46,9 +46,13 @@ impl ToSql<sql_types::Jsonb, Pg> for serde_json::Value {
     }
 }
 
-#[cfg(tests)]
+#[cfg(test)]
 mod tests {
-    use crate::query_builder::bind_types::ByteWrapper;
+    use crate::deserialize::FromSql;
+    use crate::pg::{Pg, PgValue};
+    use crate::query_builder::bind_collector::ByteWrapper;
+    use crate::serialize::{Output, ToSql};
+    use crate::sql_types;
 
     #[test]
     fn json_to_sql() {
