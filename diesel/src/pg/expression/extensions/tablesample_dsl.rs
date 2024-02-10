@@ -1,27 +1,6 @@
+use crate::pg::query_builder::tablesample::{BernoulliMethod, SystemMethod};
 use crate::query_builder::Tablesample;
-pub(crate) use crate::query_builder::TablesampleMethod;
 use crate::Table;
-use std::marker::PhantomData;
-
-#[derive(Clone, Copy, Debug)]
-/// Used to specify the `BERNOULLI` sampling method.
-pub struct BernoulliMethod;
-
-impl TablesampleMethod for BernoulliMethod {
-    fn method_name_sql() -> &'static str {
-        "BERNOULLI"
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-/// Used to specify the `SYSTEM` sampling method.
-pub struct SystemMethod;
-
-impl TablesampleMethod for SystemMethod {
-    fn method_name_sql() -> &'static str {
-        "SYSTEM"
-    }
-}
 
 /// The `tablesample` method
 ///
@@ -51,7 +30,7 @@ impl TablesampleMethod for SystemMethod {
 /// # fn main() {
 /// # let connection = &mut establish_connection();
 /// let random_user_ids = users::table
-///     .tablesample::<BernoulliMethod>(10, None)
+///     .tablesample_bernoulli(10)
 ///     .select((users::id))
 ///     .load::<i32>(connection);
 /// # }
@@ -68,28 +47,24 @@ impl TablesampleMethod for SystemMethod {
 /// # let connection = &mut establish_connection();
 /// # let _ =
 /// users::table
-///     .tablesample::<BernoulliMethod>(10, Some(42.0))
+///     .tablesample_system(10).with_seed(42.0)
 ///     .inner_join(posts::table)
 ///     .select((users::name, posts::title))
 ///     .load::<(String, String)>(connection);
 /// # }
 /// ```
-/// That query selects all of the posts for a random 10 percent of users, returning the same
-/// results each time it is run due to the static seed of 42.0.
+/// That query selects all of the posts for all of the users in a random 10 percent storage pages,
+/// returning the same results each time it is run due to the static seed of 42.0.
 ///
 pub trait TablesampleDsl: Table {
     /// See the trait-level docs.
-    fn tablesample<TSM: TablesampleMethod>(
-        self,
-        portion: i16,
-        seed: Option<f64>,
-    ) -> Tablesample<Self, TSM> {
-        Tablesample {
-            source: self,
-            method: PhantomData,
-            portion,
-            seed,
-        }
+    fn tablesample_bernoulli(self, portion: i16) -> Tablesample<Self, BernoulliMethod> {
+        Tablesample::new(self, portion)
+    }
+
+    /// See the trait-level docs.
+    fn tablesample_system(self, portion: i16) -> Tablesample<Self, SystemMethod> {
+        Tablesample::new(self, portion)
     }
 }
 

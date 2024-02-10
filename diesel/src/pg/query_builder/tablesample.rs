@@ -1,12 +1,10 @@
-use crate::{
-    expression::{Expression, ValidGrouping},
-    pg::Pg,
-    query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement},
-    query_source::QuerySource,
-    result::QueryResult,
-    sql_types::{Double, SmallInt},
-    JoinTo, SelectableExpression, Table,
-};
+use crate::expression::{Expression, ValidGrouping};
+use crate::pg::Pg;
+use crate::query_builder::{AsQuery, AstPass, FromClause, QueryFragment, QueryId, SelectStatement};
+use crate::query_source::QuerySource;
+use crate::result::QueryResult;
+use crate::sql_types::{Double, SmallInt};
+use crate::{JoinTo, SelectableExpression, Table};
 use std::marker::PhantomData;
 
 #[doc(hidden)]
@@ -14,14 +12,60 @@ pub trait TablesampleMethod: Clone {
     fn method_name_sql() -> &'static str;
 }
 
+#[derive(Clone, Copy, Debug)]
+/// Used to specify the `BERNOULLI` sampling method.
+pub struct BernoulliMethod;
+
+impl TablesampleMethod for BernoulliMethod {
+    fn method_name_sql() -> &'static str {
+        "BERNOULLI"
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+/// Used to specify the `SYSTEM` sampling method.
+pub struct SystemMethod;
+
+impl TablesampleMethod for SystemMethod {
+    fn method_name_sql() -> &'static str {
+        "SYSTEM"
+    }
+}
+
 /// Represents a query with a `TABLESAMPLE` clause.
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
-pub struct Tablesample<S, TSM> {
+pub struct Tablesample<S, TSM>
+where
+    TSM: TablesampleMethod,
+{
     pub source: S,
-    pub method: PhantomData<TSM>,
-    pub portion: i16,
-    pub seed: Option<f64>,
+    method: PhantomData<TSM>,
+    portion: i16,
+    seed: Option<f64>,
+}
+
+impl<S, TSM> Tablesample<S, TSM>
+where
+    TSM: TablesampleMethod,
+{
+    pub fn new(source: S, portion: i16) -> Tablesample<S, TSM> {
+        Tablesample {
+            source,
+            method: PhantomData,
+            portion,
+            seed: None,
+        }
+    }
+
+    pub fn with_seed(self, seed: f64) -> Tablesample<S, TSM> {
+        Tablesample {
+            source: self.source,
+            method: self.method,
+            portion: self.portion,
+            seed: Some(seed),
+        }
+    }
 }
 
 impl<S, TSM> QueryId for Tablesample<S, TSM>
@@ -133,7 +177,6 @@ mod test {
     use diesel::dsl::*;
     use diesel::*;
 
-    // TODO: Borrowed from src/pg/transaction.rs -- should this be extracted elsewhere?
     macro_rules! assert_sql {
         ($query:expr, $sql:expr) => {
             let mut query_builder = <Pg as Backend>::QueryBuilder::default();
@@ -153,17 +196,17 @@ mod test {
     #[test]
     fn test_generated_tablesample_sql() {
         assert_sql!(
-            users::table.tablesample::<BernoulliMethod>(10, None),
+            users::table.tablesample_bernoulli(10),
             "\"users\" TABLESAMPLE BERNOULLI($1)"
         );
 
         assert_sql!(
-            users::table.tablesample::<SystemMethod>(10, None),
+            users::table.tablesample_system(10),
             "\"users\" TABLESAMPLE SYSTEM($1)"
         );
 
         assert_sql!(
-            users::table.tablesample::<SystemMethod>(10, Some(42.0),),
+            users::table.tablesample_system(10).with_seed(42.0),
             "\"users\" TABLESAMPLE SYSTEM($1) REPEATABLE($2)"
         );
     }
