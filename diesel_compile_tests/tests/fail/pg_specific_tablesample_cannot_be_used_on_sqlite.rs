@@ -1,9 +1,6 @@
 extern crate diesel;
 
 use diesel::dsl::*;
-use diesel::query_builder::{TablesampleMethod, TablesampleSeed};
-use diesel::sql_types::*;
-use diesel::upsert::on_constraint;
 use diesel::*;
 
 table! {
@@ -18,9 +15,7 @@ fn main() {
     let mut connection = SqliteConnection::establish(":memory:").unwrap();
 
     let random_user_ids = users
-        .tablesample(
-            TablesampleMethod::System(10),
-            TablesampleSeed::Repeatable(42),
-        )
-        .load::<i32>(&mut connection);
+        .tablesample_system(10)
+        .with_seed(42.0)
+        .load::<(i32, String)>(&mut connection);
 }

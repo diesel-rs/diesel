@@ -17,6 +17,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `DistinctDsl`
@@ -48,6 +49,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctClause>` to implement `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>`
@@ -79,6 +81,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `DistinctOnDsl<_>`
@@ -127,6 +130,7 @@ error[E0277]: Cannot select `columns::id` from `SelectStatement<FromClause<users
              <columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <columns::id as SelectableExpression<JoinOn<Join, On>>>
              <columns::id as SelectableExpression<Only<users::table>>>
+             <columns::id as SelectableExpression<Tablesample<users::table, TSM>>>
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `DistinctOnDsl<columns::id>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
   --> $DIESEL/src/query_dsl/mod.rs
@@ -156,6 +160,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, DistinctOnClause<id>>` to implement `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>`
@@ -187,6 +192,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `GroupByDsl<_>`
@@ -218,6 +224,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ...>` to implement `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>`
@@ -249,6 +256,7 @@ error[E0277]: the trait bound `BoxedSelectStatement<'_, (diesel::sql_types::Inte
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `BoxedSelectStatement<'_, (diesel::sql_types::Integer,), FromClause<users::table>, _>` to implement `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>`
@@ -280,6 +288,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `BoxedDsl<'_, _>`
@@ -333,6 +342,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ..., ...>` to implement `GroupByDsl<_>`
@@ -364,6 +374,7 @@ error[E0277]: the trait bound `SelectStatement<FromClause<users::table>, diesel:
    = help: the following other types implement trait `Table`:
              users::table
              Only<S>
+             Tablesample<S, TSM>
              pg::metadata_lookup::pg_namespace::table
              pg::metadata_lookup::pg_type::table
    = note: required for `SelectStatement<FromClause<table>, DefaultSelectClause<FromClause<table>>, ..., ..., ..., ..., ..., ...>` to implement `LockingDsl<diesel::query_builder::locking_clause::ForUpdate>`
