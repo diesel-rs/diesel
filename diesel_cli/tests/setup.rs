@@ -171,6 +171,22 @@ fn setup_works_with_migration_dir_by_arg() {
 }
 
 #[test]
+fn setup_writes_migration_dir_by_arg_to_config_file() {
+    let p = project("setup_writes_migration_dir_by_arg_to_config_file").build();
+
+    // make sure the project builder doesn't create it for us
+    assert!(!p.has_file("migrations"));
+    assert!(!p.has_file("foo"));
+
+    let result = p.command("setup").arg("--migration-dir=foo").run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+    assert!(!p.has_file("migrations"));
+    assert!(p.has_file("foo"));
+    assert!(p.file_contents("diesel.toml").contains("dir = \"foo\""));
+}
+
+#[test]
 fn setup_works_with_migration_dir_by_env() {
     let p = project("setup_works_with_migration_dir_by_env").build();
 
