@@ -149,6 +149,18 @@ pub fn build_cli() -> Command {
                         .require_equals(true),
                 )
                 .arg(
+                    Arg::new("sqlite-integer-primary-key-is-bigint")
+                        .long("sqlite-integer-primary-key-is-bigint")
+                        .requires("SCHEMA_RS")
+                        .action(ArgAction::SetTrue)
+                        .help(
+                            "For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, \
+                             when the table isn't declared with `WITHOUT ROWID`.\n\
+                             See https://www.sqlite.org/lang_createtable.html#rowid for more information.\n\
+                             Only used with the `--diff-schema` argument."
+                        ),
+                )
+                .arg(
                     Arg::new("table-name")
                         .index(2)
                         .num_args(1..)
@@ -289,6 +301,16 @@ pub fn build_cli() -> Command {
                 .action(clap::ArgAction::Append)
                 .number_of_values(1)
                 .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
+        )
+        .arg(
+            Arg::new("sqlite-integer-primary-key-is-bigint")
+                .long("sqlite-integer-primary-key-is-bigint")
+                .action(ArgAction::SetTrue)
+                .help(
+                    "For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, \
+                     when the table isn't declared with `WITHOUT ROWID`.\n\
+                     See https://www.sqlite.org/lang_createtable.html#rowid for more information."
+                ),
         );
 
     let config_arg = Arg::new("CONFIG_FILE")

@@ -296,6 +296,10 @@ fn run_infer_schema(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
         config.custom_type_derives = Some(derives);
     }
 
+    if matches.get_flag("sqlite-integer-primary-key-is-bigint") {
+        config.sqlite_integer_primary_key_is_bigint = Some(true);
+    }
+
     run_print_schema(&mut conn, &config, &mut stdout())?;
     Ok(())
 }

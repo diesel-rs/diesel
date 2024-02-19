@@ -1,3 +1,5 @@
+use std::fmt;
+
 use diesel::deserialize::{self, Queryable};
 use diesel::dsl::sql;
 use diesel::row::NamedRow;
@@ -7,6 +9,7 @@ use diesel::*;
 
 use super::data_structures::*;
 use super::table_data::TableName;
+use crate::config::PrintSchema;
 use crate::print_schema::ColumnSorting;
 
 table! {
@@ -97,6 +100,12 @@ impl SqliteVersion {
             minor,
             patch,
         }
+    }
+}
+
+impl fmt::Display for SqliteVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
     }
 }
 
@@ -204,6 +213,55 @@ impl QueryableByName<Sqlite> for PrimaryKeyInformation {
     }
 }
 
+struct WithoutRowIdInformation {
+    name: String,
+    without_row_id: bool,
+}
+
+impl QueryableByName<Sqlite> for WithoutRowIdInformation {
+    fn build<'a>(row: &impl NamedRow<'a, Sqlite>) -> deserialize::Result<Self> {
+        Ok(Self {
+            name: NamedRow::get::<Text, String>(row, "name")?,
+            without_row_id: NamedRow::get::<Bool, bool>(row, "wr")?,
+        })
+    }
+}
+
+pub fn column_is_row_id(
+    conn: &mut SqliteConnection,
+    table: &TableName,
+    primary_keys: &[String],
+    column_name: &str,
+    type_name: &str,
+) -> Result<bool, crate::errors::Error> {
+    let sqlite_version = get_sqlite_version(conn)?;
+    if sqlite_version < SqliteVersion::new(3, 37, 0) {
+        return Err(crate::errors::Error::UnsupportedFeature(format!(
+            "Parameter `sqlite_integer_primary_key_is_bigint` needs SQLite 3.37 or above. \
+            Your current SQLite version is {sqlite_version}."
+        )));
+    }
+
+    if type_name != "integer" {
+        return Ok(false);
+    }
+
+    if !matches!(primary_keys, [pk] if pk == column_name) {
+        return Ok(false);
+    }
+
+    let table_list_query = format!("PRAGMA TABLE_LIST('{}')", &table.sql_name);
+    let table_list_results = sql_query(table_list_query).load::<WithoutRowIdInformation>(conn)?;
+
+    let res = table_list_results
+        .iter()
+        .find(|wr_info| wr_info.name == table.sql_name)
+        .map(|wr_info| !wr_info.without_row_id)
+        .unwrap_or_default();
+
+    Ok(res)
+}
+
 #[derive(Queryable)]
 struct ForeignKeyListRow {
     _id: i32,
@@ -260,8 +318,14 @@ pub fn get_primary_keys(
     Ok(collected)
 }
 
-#[tracing::instrument]
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, crate::errors::Error> {
+#[tracing::instrument(skip(conn))]
+pub fn determine_column_type(
+    conn: &mut SqliteConnection,
+    attr: &ColumnInformation,
+    table: &TableName,
+    primary_keys: &[String],
+    config: &PrintSchema,
+) -> Result<ColumnType, crate::errors::Error> {
     let mut type_name = attr.type_name.to_lowercase();
     if type_name == "generated always" {
         type_name.clear();
@@ -274,7 +338,17 @@ pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, cra
     } else if is_bigint(&type_name) {
         String::from("BigInt")
     } else if type_name.contains("int") {
-        String::from("Integer")
+        let sqlite_integer_primary_key_is_bigint = config
+            .sqlite_integer_primary_key_is_bigint
+            .unwrap_or_default();
+
+        if sqlite_integer_primary_key_is_bigint
+            && column_is_row_id(conn, table, primary_keys, &attr.column_name, &type_name)?
+        {
+            String::from("BigInt")
+        } else {
+            String::from("Integer")
+        }
     } else if is_text(&type_name) {
         String::from("Text")
     } else if is_binary(&type_name) {
@@ -474,4 +548,114 @@ fn all_rowid_aliases_used_empty_result() {
     let res = get_primary_keys(&mut connection, &table_1);
     assert!(res.is_ok());
     assert!(res.unwrap().is_empty());
+}
+
+#[test]
+fn integer_primary_key_sqlite_3_37() {
+    let mut conn = SqliteConnection::establish(":memory:").unwrap();
+
+    let sqlite_version = get_sqlite_version(&mut conn).unwrap();
+    if sqlite_version < SqliteVersion::new(3, 37, 0) {
+        return;
+    }
+
+    let test_data = [
+        (
+            "table_1",
+            "CREATE TABLE table_1 (id INTEGER PRIMARY KEY)",
+            vec![("id", "Integer".to_owned())],
+            vec![("id", "BigInt".to_owned())],
+        ),
+        (
+            "table_2",
+            "CREATE TABLE table_2 (id INTEGER, PRIMARY KEY(id))",
+            vec![("id", "Integer".to_owned())],
+            vec![("id", "BigInt".to_owned())],
+        ),
+        (
+            "table_3",
+            "CREATE TABLE table_3 (id INTEGER)",
+            vec![
+                ("rowid", "Integer".to_owned()),
+                ("id", "Integer".to_owned()),
+            ],
+            vec![("rowid", "BigInt".to_owned()), ("id", "Integer".to_owned())],
+        ),
+        (
+            "table_4",
+            "CREATE TABLE table_4 (id1 INTEGER, id2 INTEGER, PRIMARY KEY(id1, id2))",
+            vec![("id1", "Integer".to_owned()), ("id2", "Integer".to_owned())],
+            vec![("id1", "Integer".to_owned()), ("id2", "Integer".to_owned())],
+        ),
+        (
+            "table_5",
+            "CREATE TABLE table_5 (id INT PRIMARY KEY)",
+            vec![("id", "Integer".to_owned())],
+            vec![("id", "Integer".to_owned())],
+        ),
+        (
+            "table_6",
+            "CREATE TABLE table_6 (id INTEGER PRIMARY KEY) WITHOUT ROWID",
+            vec![("id", "Integer".to_owned())],
+            vec![("id", "Integer".to_owned())],
+        ),
+    ];
+
+    for (table_name, sql_query, expected_off_types, expected_on_types) in test_data {
+        diesel::sql_query(sql_query).execute(&mut conn).unwrap();
+
+        let table = TableName::from_name(table_name);
+        let column_infos = get_table_data(&mut conn, &table, &Default::default()).unwrap();
+
+        let primary_keys = get_primary_keys(&mut conn, &table).unwrap();
+
+        let off_column_types = column_infos
+            .iter()
+            .map(|column_info| {
+                (
+                    column_info.column_name.as_str(),
+                    determine_column_type(
+                        &mut conn,
+                        column_info,
+                        &table,
+                        &primary_keys,
+                        &Default::default(),
+                    )
+                    .unwrap()
+                    .sql_name,
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let on_column_types = column_infos
+            .iter()
+            .map(|column_info| {
+                (
+                    column_info.column_name.as_str(),
+                    determine_column_type(
+                        &mut conn,
+                        column_info,
+                        &table,
+                        &primary_keys,
+                        &PrintSchema {
+                            sqlite_integer_primary_key_is_bigint: Some(true),
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap()
+                    .sql_name,
+                )
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            (table_name, off_column_types),
+            (table_name, expected_off_types)
+        );
+
+        assert_eq!(
+            (table_name, on_column_types),
+            (table_name, expected_on_types)
+        );
+    }
 }
