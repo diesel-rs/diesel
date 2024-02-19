@@ -183,7 +183,7 @@ fn generate_completions_command(matches: &ArgMatches) {
 /// Returns a `DatabaseError::ProjectRootNotFound` if no Cargo.toml is found.
 fn create_migrations_directory(path: &Path) -> Result<PathBuf, crate::errors::Error> {
     println!("Creating migrations directory at: {}", path.display());
-    fs::create_dir(path)?;
+    fs::create_dir_all(path)?;
     fs::File::create(path.join(".keep"))?;
     Ok(path.to_owned())
 }
