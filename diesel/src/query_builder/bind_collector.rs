@@ -32,6 +32,18 @@ pub trait BindCollector<'a, DB: TypeMetadata>: Sized {
     where
         DB: Backend + HasSqlType<T>,
         U: ToSql<T, DB> + ?Sized + 'a;
+
+    /// Push a null value with the given type information onto the bind collector
+    ///
+    // For backward compatibility reasons we provide a default implementation
+    // but custom backends that want to support `#[derive(MultiConnection)]`
+    // need to provide a customized implementation of this function
+    #[diesel_derives::__diesel_public_if(
+        feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"
+    )]
+    fn push_null_value(&mut self, _metadata: DB::TypeMetadata) -> QueryResult<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
@@ -103,6 +115,12 @@ where
             IsNull::Yes => self.binds.push(None),
         }
         self.metadata.push(metadata);
+        Ok(())
+    }
+
+    fn push_null_value(&mut self, metadata: DB::TypeMetadata) -> QueryResult<()> {
+        self.metadata.push(metadata);
+        self.binds.push(None);
         Ok(())
     }
 }

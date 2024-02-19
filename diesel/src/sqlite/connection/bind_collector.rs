@@ -194,4 +194,9 @@ impl<'a> BindCollector<'a, Sqlite> for SqliteBindCollector<'a> {
         ));
         Ok(())
     }
+
+    fn push_null_value(&mut self, metadata: SqliteType) -> QueryResult<()> {
+        self.binds.push((InternalSqliteBindValue::Null, metadata));
+        Ok(())
+    }
 }
