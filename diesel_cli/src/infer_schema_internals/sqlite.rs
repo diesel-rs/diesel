@@ -114,6 +114,13 @@ fn get_sqlite_version(conn: &mut SqliteConnection) -> QueryResult<SqliteVersion>
     Ok(SqliteVersion::new(parts[0], parts[1], parts[2]))
 }
 
+// In sqlite the rowid is a signed 64-bit integer.
+// See: https://sqlite.org/rowidtable.html
+// We should use BigInt here but to avoid type problems with foreign keys to
+// rowid columns this is for now not done. A patch can be used after the schema
+// is generated to convert the columns to BigInt as needed.
+const ROWID_TYPE_NAME: &str = "Integer";
+
 pub fn get_table_data(
     conn: &mut SqliteConnection,
     table: &TableName,
@@ -134,6 +141,27 @@ pub fn get_table_data(
     // See: https://github.com/diesel-rs/diesel/issues/3579 as to why we use a direct
     // `sql_query` with `QueryableByName` instead of using `sql::<pragma_table_info::SqlType>`.
     let mut result = sql_query(query).load::<ColumnInformation>(conn)?;
+    // Add implicit rowid primary key column if the only primary key is rowid
+    // and ensure that the rowid column uses the right type.
+    let primary_key = get_primary_keys(conn, table)?;
+    if primary_key.len() == 1 {
+        let primary_key = primary_key.first().expect("guaranteed to have one element");
+        if !result.iter_mut().any(|x| &x.column_name == primary_key) {
+            // Prepend implicit rowid column for the rowid implicit primary key.
+            result.insert(
+                0,
+                ColumnInformation {
+                    column_name: String::from(primary_key),
+                    type_name: String::from(ROWID_TYPE_NAME),
+                    type_schema: None,
+                    nullable: false,
+                    max_length: None,
+                    comment: None,
+                },
+            );
+        }
+    }
+
     match column_sorting {
         ColumnSorting::OrdinalPosition => {}
         ColumnSorting::Name => {
