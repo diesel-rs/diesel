@@ -455,3 +455,32 @@ impl fmt::Display for EmptyChangeset {
 }
 
 impl StdError for EmptyChangeset {}
+
+/// An error occurred while deserializing a field
+#[derive(Debug)]
+pub struct DeserializeFieldError {
+    /// The name of the field that failed to deserialize
+    pub field_name: Option<String>,
+    /// The error that occurred while deserializing the field
+    pub error: Box<dyn StdError + Send + Sync>,
+}
+
+impl StdError for DeserializeFieldError {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
+        Some(&*self.error)
+    }
+}
+
+impl fmt::Display for DeserializeFieldError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(ref field_name) = self.field_name {
+            write!(
+                f,
+                "Error deserializing field '{}': {}",
+                field_name, self.error
+            )
+        } else {
+            write!(f, "Error deserializing field: {}", self.error)
+        }
+    }
+}

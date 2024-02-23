@@ -5,6 +5,7 @@ use std::result;
 
 use crate::backend::Backend;
 use crate::expression::select_by::SelectBy;
+use crate::result::DeserializeFieldError;
 use crate::row::{NamedRow, Row};
 use crate::sql_types::{SingleValue, SqlType, Untyped};
 use crate::Selectable;
@@ -540,9 +541,12 @@ where
         use crate::row::Field;
 
         let field = row.get(0).ok_or(crate::result::UnexpectedEndOfRow)?;
-        T::from_nullable_sql(field.value()).map_err(|e| {
-            format!("Error for field '{}': {:?}", field.field_name().unwrap(), e).into()
-        })
+        Ok(T::from_nullable_sql(field.value()).map_err(|e| {
+            Box::new(DeserializeFieldError {
+                field_name: field.field_name().map(|s| s.to_string()),
+                error: e,
+            })
+        })?)
     }
 }
 
