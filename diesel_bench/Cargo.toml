@@ -65,6 +65,9 @@ sqlx-bench = ["sqlx", "tokio", "sqlx/runtime-tokio-rustls"]
 instruction_count = ["criterion-perf-events", "perfcnt"]
 fast_run = []
 
+[profile.release]
+lto = true
+codegen-units = 1
 
 [patch.crates-io]
 quaint = { git = "https://github.com/prisma/prisma-engines", branch = "main" }
