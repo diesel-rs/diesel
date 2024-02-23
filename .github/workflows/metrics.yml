@@ -19,6 +19,10 @@ jobs:
       fail-fast: false
       matrix:
         backend: ["postgres", "sqlite", "mysql"]
+    env:
+      BENCHER_PROJECT: diesel
+      BENCHER_BRANCH: master
+      BENCHER_ADAPTER: rust_criterion
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -61,7 +65,7 @@ jobs:
 
       - name: Run Benchmarks (Postgres)
         if: matrix.backend == 'postgres'
-        run: cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rust_postgres futures sea-orm sea-orm/sqlx-postgres criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde diesel-async diesel-async/postgres wtx"
+        run: bencher run 'cargo +stable bench --manifest-path diesel_bench/Cargo.toml --no-default-features --features "postgres sqlx-bench sqlx/postgres rust_postgres futures sea-orm sea-orm/sqlx-postgres criterion/async_tokio quaint quaint/postgresql quaint/serde-support serde diesel-async diesel-async/postgres wtx"'
 
       - name: Run Benchmarks (Sqlite)
         if: matrix.backend == 'sqlite'
