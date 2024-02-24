@@ -37,19 +37,20 @@ jobs:
           sudo apt-get install gnupg2 -y
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc|sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
           sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-          PG_VER=16
           sudo apt-get update
-          sudo apt-get install -y libpq-dev postgresql-$PG_VER
-          sudo tee /etc/postgresql/$PG_VER/main/pg_hba.conf <<'EOF'
+          sudo apt-get install -y libpq-dev postgresql-$PG_VERSION
+          sudo tee /etc/postgresql/$PG_VERSION/main/pg_hba.conf <<'EOF'
           local   all             postgres                                peer
           local   all             all                                     peer
           host    all             all             127.0.0.1/32            trust
           host    all             all             ::1/128                 trust
           EOF
-          sudo service postgresql start $PG_VER && sleep 3
+          sudo service postgresql start $PG_VERSION && sleep 3
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
-          sudo service postgresql restart $PG_VER && sleep 3
+          sudo service postgresql restart $PG_VERSION && sleep 3
           echo 'DATABASE_URL=postgres://postgres:postgres@localhost:5432/' >> $GITHUB_ENV
+        env:
+          PG_VERSION: 16
 
       - name: Install sqlite (Linux)
         if: matrix.backend == 'sqlite'
