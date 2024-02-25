@@ -177,8 +177,8 @@ pub fn build_cli() -> Command {
                         .help("Exclude tables from table-name that matches regex."),
                 )
                 .arg(
-                    Arg::new("print-schema-key")
-                        .long("print-schema-key")
+                    Arg::new("schema-key")
+                        .long("schema-key")
                         .action(clap::ArgAction::Append)
                         .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
                 ),
@@ -304,9 +304,10 @@ pub fn build_cli() -> Command {
                 .help("A list of derives to implement for every automatically generated SqlType in the schema, separated by commas."),
         )
         .arg(
-            Arg::new("print-schema-key")
-                .long("print-schema-key")
+            Arg::new("schema-key")
+                .long("schema-key")
                 .action(ArgAction::Append)
+                .default_values(["default"])
                 .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
         );
 

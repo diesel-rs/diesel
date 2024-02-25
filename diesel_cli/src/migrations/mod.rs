@@ -93,16 +93,19 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
             {
                 let config = Config::read(matches)?;
                 let diff_schema = if diff_schema == "NOT_SET" {
-                    if config.print_schema.all_configs.len() != 1 {
-                        return Err(crate::errors::Error::UnsupportedFeature(
-                            "Please select exact one print schema key".into(),
-                        ));
+                    if config.print_schema.all_configs.len() > 1 {
+                        config
+                            .print_schema
+                            .all_configs
+                            .get("default")
+                            .and_then(|v| v.file.clone())
+                    } else {
+                        config
+                            .print_schema
+                            .all_configs
+                            .first_key_value()
+                            .and_then(|v| v.1.file.clone())
                     }
-                    config
-                        .print_schema
-                        .all_configs
-                        .first_key_value()
-                        .and_then(|v| v.1.file.clone())
                 } else {
                     Some(PathBuf::from(diff_schema))
                 };

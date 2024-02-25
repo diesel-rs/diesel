@@ -78,7 +78,7 @@ impl Config {
     pub fn set_filter(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
         if self.print_schema.has_multiple_schema {
             let selected_schema_keys =
-                get_values_with_indices::<String>(matches, "print-schema-key")?.unwrap_or_default();
+                get_values_with_indices::<String>(matches, "schema-key")?.unwrap_or_default();
             let table_names_with_indices =
                 get_values_with_indices::<String>(matches, "table-name")?;
             let only_tables_with_indices = get_values_with_indices::<bool>(matches, "only-tables")?;
@@ -172,7 +172,7 @@ impl Config {
     pub fn update_config(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
         if self.print_schema.has_multiple_schema {
             if let Some(selected_schema_keys) =
-                get_values_with_indices::<String>(matches, "print-schema-key")?
+                get_values_with_indices::<String>(matches, "schema-key")?
             {
                 let schema_with_indices = get_values_with_indices::<String>(matches, "schema")?;
                 let with_docs_with_indices = get_values_with_indices::<bool>(matches, "with-docs")?;
@@ -337,7 +337,6 @@ impl Config {
                 let derives = derives.cloned().collect();
                 config.custom_type_derives = Some(derives);
             }
-            dbg!(config.clone());
         }
         Ok(self)
     }
@@ -372,12 +371,9 @@ impl<'de> Deserialize<'de> for RootPrintSchema {
             })
         } else {
             let mut other_configs = other_configs;
-            if other_configs.contains_key(&"default".to_string()) {
-                return Err(serde::de::Error::custom(
-                    "cannot use 'default' as a print_schema key. Please select other name",
-                ));
-            }
-            other_configs.insert("default".to_string(), default_config);
+            other_configs
+                .entry("default".to_string())
+                .or_insert(default_config);
             Ok(RootPrintSchema {
                 all_configs: other_configs,
                 has_multiple_schema: true,

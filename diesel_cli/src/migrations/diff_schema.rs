@@ -11,7 +11,6 @@ use syn::visit::Visit;
 
 use crate::config::Config;
 use crate::database::InferConnection;
-use crate::errors;
 use crate::infer_schema_internals::{
     filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
     TableData, TableName,
@@ -89,15 +88,17 @@ pub fn generate_sql_based_on_diff_schema(
     let table_names = load_table_names(&mut conn, None)?;
     let tables_from_database = filter_table_names(
         table_names.clone(),
-        &config
-            .print_schema
-            .all_configs
-            .first_key_value()
-            .ok_or(errors::Error::UnsupportedFeature(
-                "select exact one print schema key".to_string(),
-            ))?
-            .1
-            .filter,
+        &(if config.print_schema.all_configs.len() > 1 {
+            config.print_schema.all_configs.get("default")
+        } else {
+            config
+                .print_schema
+                .all_configs
+                .first_key_value()
+                .map(|v| v.1)
+        })
+        .map(|v| v.filter.clone())
+        .unwrap_or_default(),
     );
     for table in tables_from_database {
         tracing::info!(?table, "Diff for existing table");

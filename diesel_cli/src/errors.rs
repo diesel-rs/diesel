@@ -60,6 +60,6 @@ pub enum Error {
     UrlParsingError(#[from] url::ParseError),
     #[error("Failed to parse CLI parameter: {0}")]
     ClapMatchesError(#[from] clap::parser::MatchesError),
-    #[error("No print schema key with the name `{0}` exists")]
+    #[error(" no `[print_schema.{0}]` entries in your diesel.toml")]
     NoPrintSchemaKeyFound(String),
 }

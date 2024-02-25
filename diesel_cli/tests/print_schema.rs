@@ -351,14 +351,14 @@ fn print_schema_with_multiple_schema() {
     test_multiple_print_schema(
         "print_schema_with_multiple_schema",
         vec![
-            "--print-schema-key",
+            "--schema-key",
             "default",
-            "--print-schema-key",
+            "--schema-key",
             "user1",
             "-o",
             "users1",
             "--with-docs",
-            "--print-schema-key",
+            "--schema-key",
             "user2",
             "-o",
             "users2",
@@ -481,6 +481,7 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
 
     insta::assert_snapshot!("expected", result);
 }
+
 fn test_multiple_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
     let config = read_file(&test_path.join("diesel.toml"));
     let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
