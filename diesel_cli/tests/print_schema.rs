@@ -269,6 +269,12 @@ fn print_schema_sqlite_implicit_foreign_key_reference() {
 }
 
 #[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_sqlite_without_explicit_primary_key() {
+    test_print_schema("print_schema_sqlite_without_explicit_primary_key", vec![])
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn print_schema_respects_type_name_case() {
     test_print_schema("print_schema_respects_type_name_case", vec!["--with-docs"])

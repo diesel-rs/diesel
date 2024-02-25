@@ -96,8 +96,8 @@ where
 
 #[tracing::instrument]
 fn run_setup_command(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
-    create_config_file(matches)?;
     let migrations_dir = create_migrations_dir(matches)?;
+    create_config_file(matches, &migrations_dir)?;
 
     database::setup_database(matches, &migrations_dir)?;
     Ok(())
@@ -136,12 +136,22 @@ fn create_migrations_dir(matches: &ArgMatches) -> Result<PathBuf, crate::errors:
     Ok(dir)
 }
 
-fn create_config_file(matches: &ArgMatches) -> Result<(), crate::errors::Error> {
+fn create_config_file(
+    matches: &ArgMatches,
+    migrations_dir: &Path,
+) -> Result<(), crate::errors::Error> {
     use std::io::Write;
     let path = Config::file_path(matches);
     if !path.exists() {
+        let source_content = include_str!("default_files/diesel.toml").to_string();
+        // convert the path to a valid toml string (escaping backslashes on windows)
+        let migrations_dir_toml_string = migrations_dir.display().to_string().replace('\\', "\\\\");
+        let modified_content = source_content.replace(
+            "dir = \"migrations\"",
+            &format!("dir = \"{}\"", migrations_dir_toml_string),
+        );
         let mut file = fs::File::create(path)?;
-        file.write_all(include_bytes!("default_files/diesel.toml"))?;
+        file.write_all(modified_content.as_bytes())?;
     }
 
     Ok(())
@@ -183,7 +193,7 @@ fn generate_completions_command(matches: &ArgMatches) {
 /// Returns a `DatabaseError::ProjectRootNotFound` if no Cargo.toml is found.
 fn create_migrations_directory(path: &Path) -> Result<PathBuf, crate::errors::Error> {
     println!("Creating migrations directory at: {}", path.display());
-    fs::create_dir(path)?;
+    fs::create_dir_all(path)?;
     fs::File::create(path.join(".keep"))?;
     Ok(path.to_owned())
 }

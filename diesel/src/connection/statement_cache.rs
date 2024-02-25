@@ -255,7 +255,9 @@ where
     doc(cfg(feature = "i-implement-a-third-party-backend-and-opt-into-breaking-changes"))
 )]
 pub trait QueryFragmentForCachedStatement<DB> {
+    /// Convert the query fragment into a SQL string for the given backend
     fn construct_sql(&self, backend: &DB) -> QueryResult<String>;
+    /// Check whether it's safe to cache the query
     fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool>;
 }
 impl<T, DB> QueryFragmentForCachedStatement<DB> for T
@@ -269,6 +271,7 @@ where
         self.to_sql(&mut query_builder, backend)?;
         Ok(query_builder.finish())
     }
+
     fn is_safe_to_cache_prepared(&self, backend: &DB) -> QueryResult<bool> {
         <T as QueryFragment<DB>>::is_safe_to_cache_prepared(self, backend)
     }

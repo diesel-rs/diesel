@@ -21,7 +21,7 @@ concurrency:
 jobs:
   check_and_test:
     name: Check
-    needs: [sqlite_bundled, rustfmt_and_clippy]
+    needs: [sqlite_bundled, rustfmt_and_clippy, postgres_bundled]
     strategy:
       fail-fast: false
       matrix:
@@ -420,8 +420,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: nightly
           components: "rust-src"
       - name: Cache cargo registry
         uses: Swatinem/rust-cache@v2
@@ -443,6 +444,44 @@ jobs:
           RUSTFLAGS: -Zsanitizer=address
           ASAN_OPTIONS: detect_stack_use_after_return=1
         run: cargo +nightly -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "sqlite extras libsqlite3-sys libsqlite3-sys/bundled libsqlite3-sys/with-asan" --target x86_64-unknown-linux-gnu
+  postgres_bundled:
+    name: Check postgres bundled + Postgres with asan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: "rust-src"
+      - name: Cache cargo registry
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: postgres_bundled-cargo-${{ hashFiles('**/Cargo.toml') }}
+      - name: Install postgres (Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpq-dev postgresql valgrind
+          echo "host    all             all             127.0.0.1/32            md5" > sudo tee -a /etc/postgresql/10/main/pg_hba.conf
+          sudo service postgresql restart && sleep 3
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
+          sudo service postgresql restart && sleep 3
+          echo "PG_DATABASE_URL=postgres://postgres:postgres@localhost/" >> $GITHUB_ENV
+          echo $PG_DATABASE_URL
+
+      - name: Test diesel-cli
+        run: cargo +nightly test --manifest-path diesel_cli/Cargo.toml --no-default-features --features "postgres-bundled"
+
+      - name: Run diesel_tests with ASAN enabled
+        env:
+          RUSTFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: detect_stack_use_after_return=1
+        run: cargo +nightly -Z build-std test --manifest-path diesel_tests/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
+
+      - name: Run diesel tests with ASAN enabled
+        env:
+          RUSTDOCFLAGS: -Zsanitizer=address
+          RUSTFLAGS: -Zsanitizer=address
+          ASAN_OPTIONS: detect_stack_use_after_return=1
+        run: cargo +nightly -Z build-std test --manifest-path diesel/Cargo.toml --no-default-features --features "postgres pq-sys pq-sys/bundled pq-src/with-asan" --target x86_64-unknown-linux-gnu
 
   minimal_rust_version:
     name: Check Minimal supported rust version (1.70.0)
@@ -470,7 +509,7 @@ jobs:
       - name: Check diesel_migrations
         run: cargo +1.70.0 minimal-versions check -p diesel_migrations --all-features
       - name: Check diesel_cli
-        run: cargo +1.70.0 minimal-versions check -p diesel_cli --all-features
+        run: cargo +1.70.0 minimal-versions check -p diesel_cli --features "default sqlite-bundled"
 
   typos:
     name: Spell Check with Typos
