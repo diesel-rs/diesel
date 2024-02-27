@@ -1,11 +1,9 @@
 use super::on_conflict_actions::*;
 use super::on_conflict_target::*;
 use crate::backend::sql_dialect;
-use crate::backend::Backend;
 use crate::insertable::*;
 use crate::query_builder::where_clause::{NoWhereClause, WhereClause};
 use crate::query_builder::*;
-use crate::result::QueryResult;
 
 #[doc(hidden)]
 #[derive(Debug, Clone, Copy)]

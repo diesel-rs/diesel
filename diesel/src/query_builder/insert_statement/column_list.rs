@@ -1,7 +1,5 @@
-use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::query_source::Column;
-use crate::result::QueryResult;
 
 /// Represents the column list for use in an insert statement.
 ///

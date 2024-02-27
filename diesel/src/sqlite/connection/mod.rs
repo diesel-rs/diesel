@@ -20,7 +20,6 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
-use crate::connection::instrumentation::InstrumentationEvent;
 use crate::connection::instrumentation::StrQueryHelper;
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;
@@ -706,8 +705,6 @@ mod tests {
             .get_result::<(i32, i32, i32)>(connection);
         assert_eq!(Ok((2, 3, 4)), added);
     }
-
-    use crate::sqlite::SqliteAggregateFunction;
 
     sql_function! {
         #[aggregate]

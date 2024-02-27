@@ -1,8 +1,7 @@
-use crate::backend::{sql_dialect, Backend};
+use crate::backend::sql_dialect;
 use crate::expression::SqlLiteral;
 use crate::query_builder::*;
 use crate::query_source::Column;
-use crate::result::QueryResult;
 
 #[doc(hidden)]
 pub trait OnConflictTarget<Table> {}

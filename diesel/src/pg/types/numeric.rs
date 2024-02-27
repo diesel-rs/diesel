@@ -16,7 +16,6 @@ mod bigdecimal {
     use crate::serialize::{self, Output, ToSql};
     use crate::sql_types::Numeric;
 
-    use std::convert::{TryFrom, TryInto};
     use std::error::Error;
 
     /// Iterator over the digits of a big uint in base 10k.

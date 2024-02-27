@@ -734,7 +734,6 @@ fn known_buffer_size_for_ffi_type(tpe: ffi::enum_field_types) -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::MysqlValue;
     use super::*;
     use crate::connection::statement_cache::MaybeCached;
     use crate::deserialize::FromSql;

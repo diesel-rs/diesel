@@ -1,7 +1,6 @@
-use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::backend::DieselReserveSpecialization;
 use crate::query_builder::*;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
-use crate::result::QueryResult;
 
 #[derive(Debug, Clone, Copy, QueryId)]
 pub struct NoDistinctClause;
