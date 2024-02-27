@@ -90,6 +90,8 @@ pub struct PrintSchema {
     pub generate_missing_sql_type_definitions: Option<bool>,
     #[serde(default)]
     pub custom_type_derives: Option<Vec<String>>,
+    #[serde(default)]
+    pub sqlite_integer_primary_key_is_bigint: Option<bool>,
 }
 
 impl PrintSchema {

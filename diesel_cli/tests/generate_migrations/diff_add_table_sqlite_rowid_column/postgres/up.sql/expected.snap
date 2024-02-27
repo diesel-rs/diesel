@@ -1,0 +1,10 @@
+---
+source: diesel_cli/tests/migration_generate.rs
+assertion_line: 295
+description: "Test: diff_add_table"
+---
+-- Your SQL goes here
+CREATE TABLE "users"(
+	"id" BIGINT NOT NULL PRIMARY KEY,
+	"name" TEXT NOT NULL
+);
