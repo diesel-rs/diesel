@@ -18,6 +18,8 @@ jobs:
 
       - name: Install postgres (Linux)
         if: matrix.backend == 'postgres'
+        env:
+          PG_VERSION: 16
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get --purge remove postgresql\* -y
@@ -36,8 +38,6 @@ jobs:
           sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
           sudo service postgresql restart $PG_VERSION && sleep 3
           echo 'DATABASE_URL=postgres://postgres:postgres@localhost:5432/' >> $GITHUB_ENV
-        env:
-          PG_VERSION: 16
 
       - name: Install sqlite (Linux)
         if: matrix.backend == 'sqlite'
