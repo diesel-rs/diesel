@@ -256,7 +256,7 @@ pub fn bench_insert(b: &mut Bencher, size: usize) {
 
     b.iter(|| {
         runtime.block_on(async {
-            insert_users(size, &client, |_| Some(String::from("hair_color")))
+            insert_users(size, &client, |_| Some(String::from("hair_color"))).await;
         })
     })
 }
