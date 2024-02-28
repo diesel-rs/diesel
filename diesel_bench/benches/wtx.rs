@@ -278,7 +278,7 @@ async fn connection() -> Executor<wtx::Error, ExecutorBuffer, TcpStream> {
 }
 
 async fn insert_posts<const N: usize>(conn: &mut Executor<wtx::Error, ExecutorBuffer, TcpStream>) {
-    let mut users_ids = Vec::with_capacity(N);
+    let mut users_ids: Vec<i32> = Vec::with_capacity(N);
     conn.fetch_many_with_stmt("SELECT id FROM users", (), |record| {
         users_ids.push(record.decode(0).unwrap());
         Ok(())
