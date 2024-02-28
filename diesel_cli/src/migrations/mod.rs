@@ -91,7 +91,7 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
 
             let (up_sql, down_sql) = if let Some(diff_schema) = args.get_one::<String>("SCHEMA_RS")
             {
-                let config = Config::read(matches)?;
+                let mut config = Config::read(matches)?;
                 let diff_schema = if diff_schema == "NOT_SET" {
                     if config.print_schema.all_configs.len() > 1 {
                         config
@@ -109,6 +109,9 @@ pub(super) fn run_migration_command(matches: &ArgMatches) -> Result<(), crate::e
                 } else {
                     Some(PathBuf::from(diff_schema))
                 };
+                if args.get_flag("sqlite-integer-primary-key-is-bigint") {
+                    config.print_schema.sqlite_integer_primary_key_is_bigint = Some(true);
+                }
                 if let Some(diff_schema) = diff_schema {
                     self::diff_schema::generate_sql_based_on_diff_schema(
                         config,

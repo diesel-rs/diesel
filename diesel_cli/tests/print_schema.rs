@@ -251,6 +251,15 @@ fn print_schema_generated_columns_with_generated_always() {
 }
 
 #[test]
+#[cfg(feature = "sqlite")]
+fn print_schema_sqlite_rowid_column() {
+    test_print_schema(
+        "print_schema_sqlite_rowid_column",
+        vec!["--sqlite-integer-primary-key-is-bigint"],
+    )
+}
+
+#[test]
 #[cfg(feature = "postgres")]
 fn print_schema_multiple_annotations() {
     test_print_schema("print_schema_multiple_annotations", vec![])

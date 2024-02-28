@@ -260,7 +260,7 @@ jobs:
         env:
           BACKEND: ${{ matrix.backend }}
         run: |
-           (cd examples/${{ matrix.backend }} && rustup run ${{ matrix.rust }} bash test_all)
+          (cd examples/${{ matrix.backend }} && rustup run ${{ matrix.rust }} bash test_all)
 
       - name: Test migrations-internals
         shell: bash
