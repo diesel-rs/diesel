@@ -2,7 +2,6 @@
 //! These are split into multiple segments, depending on
 //! where in the migration process an error occurs.
 
-use std::convert::From;
 use std::error::Error;
 use std::path::PathBuf;
 use std::{fmt, io};

@@ -1,4 +1,4 @@
-use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed, OrFilter};
 use crate::expression::{AppearsOnTable, SelectableExpression};
 use crate::query_builder::returning_clause::*;
@@ -7,9 +7,6 @@ use crate::query_builder::*;
 use crate::query_dsl::methods::{BoxedDsl, FilterDsl, OrFilterDsl};
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{QuerySource, Table};
-use crate::result::QueryResult;
-
-use super::from_clause::FromClause;
 
 #[must_use = "Queries are only executed when calling `load`, `get_result` or similar."]
 /// Represents a SQL `DELETE` statement.

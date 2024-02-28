@@ -252,7 +252,6 @@ mod tests {
     use self::quickcheck::quickcheck;
 
     use super::*;
-    use crate::data_types::PgInterval;
     use crate::dsl::sql;
     use crate::prelude::*;
     use crate::test_helpers::*;

@@ -566,7 +566,7 @@ pub mod sql_types {
 mod ops {
     use super::sql_types::*;
     use crate::sql_types::ops::*;
-    use crate::sql_types::{Bigint, Cidr, Inet, Interval};
+    use crate::sql_types::{Bigint, Interval};
 
     impl Add for Timestamptz {
         type Rhs = Interval;

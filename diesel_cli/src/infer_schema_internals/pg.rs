@@ -3,7 +3,7 @@ use super::information_schema::DefaultSchema;
 use super::TableName;
 use crate::print_schema::ColumnSorting;
 use diesel::connection::DefaultLoadingMode;
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
+use diesel::deserialize::{self, FromStaticSqlRow};
 use diesel::dsl::AsExprOf;
 use diesel::expression::AsExpression;
 use diesel::pg::Pg;

@@ -8,6 +8,8 @@ use crate::serialize::{self, IsNull, Output, ToSql};
 use crate::sql_types::{
     self, BigInt, Binary, Bool, Double, Float, Integer, SingleValue, SmallInt, Text,
 };
+use std::borrow::Cow;
+use std::fmt;
 
 #[allow(dead_code)]
 mod foreign_impls {
@@ -201,8 +203,6 @@ where
     }
 }
 
-use std::borrow::{Cow, ToOwned};
-use std::fmt;
 impl<'a, T: ?Sized, ST, DB> ToSql<ST, DB> for Cow<'a, T>
 where
     T: 'a + ToOwned + ToSql<ST, DB>,

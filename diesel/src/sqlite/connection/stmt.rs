@@ -517,7 +517,6 @@ impl<'stmt, 'query> StatementUse<'stmt, 'query> {
 mod tests {
     use crate::prelude::*;
     use crate::sql_types::Text;
-    use crate::SqliteConnection;
 
     // this is a regression test for
     // https://github.com/diesel-rs/diesel/issues/3558

@@ -1,10 +1,9 @@
 use super::from_clause::AsQuerySource;
 use super::*;
-use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::backend::DieselReserveSpecialization;
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::{And, Or};
 use crate::expression::*;
-use crate::result::QueryResult;
 use crate::sql_types::BoolOrNullableBool;
 
 /// Add `Predicate` to the current `WHERE` clause, joining with `AND` if

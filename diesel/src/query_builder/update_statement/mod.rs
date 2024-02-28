@@ -1,9 +1,7 @@
 pub(crate) mod changeset;
 pub(super) mod target;
 
-use self::target::UpdateTarget;
-
-use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::backend::DieselReserveSpecialization;
 use crate::dsl::{Filter, IntoBoxed};
 use crate::expression::{
     is_aggregate, AppearsOnTable, Expression, MixedAggregates, SelectableExpression, ValidGrouping,
@@ -14,7 +12,6 @@ use crate::query_dsl::methods::{BoxedDsl, FilterDsl};
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::Table;
 use crate::result::Error::QueryBuilderError;
-use crate::result::QueryResult;
 use crate::{query_builder::*, QuerySource};
 
 impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {

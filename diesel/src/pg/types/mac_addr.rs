@@ -1,4 +1,3 @@
-use std::convert::TryInto;
 use std::io::prelude::*;
 
 use crate::deserialize::{self, FromSql};
