@@ -5,7 +5,6 @@ use diesel::serialize::{Output, ToSql};
 use diesel::sql_types::Binary;
 use diesel::sql_types::Text;
 use diesel::*;
-use std::convert::TryInto;
 
 use crate::helpers::connection;
 

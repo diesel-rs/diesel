@@ -1,5 +1,5 @@
-use diesel::deserialize::{self, FromStaticSqlRow, Queryable};
-use diesel::mysql::{Mysql, MysqlConnection};
+use diesel::deserialize::FromStaticSqlRow;
+use diesel::mysql::Mysql;
 use diesel::*;
 use heck::ToUpperCamelCase;
 use std::borrow::Cow;

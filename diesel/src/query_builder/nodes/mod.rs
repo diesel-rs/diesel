@@ -1,6 +1,5 @@
-use crate::backend::{Backend, DieselReserveSpecialization};
+use crate::backend::DieselReserveSpecialization;
 use crate::query_builder::*;
-use crate::result::QueryResult;
 use std::marker::PhantomData;
 
 #[doc(hidden)] // used by the table macro

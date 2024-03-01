@@ -23,7 +23,6 @@ use crate::query_builder::NoFromClause;
 use crate::query_builder::{
     AsQuery, IntoBoxedClause, Query, QueryFragment, SelectQuery, SelectStatement,
 };
-use crate::query_dsl::boxed_dsl::BoxedDsl;
 use crate::query_dsl::methods::*;
 use crate::query_dsl::order_dsl::ValidOrderingForDistinct;
 use crate::query_dsl::*;

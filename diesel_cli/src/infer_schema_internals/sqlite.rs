@@ -1,6 +1,6 @@
 use std::fmt;
 
-use diesel::deserialize::{self, Queryable};
+use diesel::deserialize::Queryable;
 use diesel::dsl::sql;
 use diesel::row::NamedRow;
 use diesel::sql_types::{Bool, Text};

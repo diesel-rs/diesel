@@ -1,4 +1,3 @@
-use crate::backend::Backend;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
 use crate::insertable::*;
 use crate::query_builder::*;

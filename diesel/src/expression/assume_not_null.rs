@@ -1,5 +1,3 @@
-use crate::backend::Backend;
-use crate::expression::TypedExpressionType;
 use crate::expression::*;
 use crate::query_builder::*;
 use crate::query_source::joins::ToInnerJoin;

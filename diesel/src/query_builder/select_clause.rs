@@ -1,5 +1,4 @@
 use super::from_clause::AsQuerySource;
-use crate::backend::Backend;
 use crate::expression::{Expression, SelectableExpression};
 use crate::query_builder::*;
 use crate::query_source::QuerySource;
