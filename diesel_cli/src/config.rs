@@ -103,7 +103,7 @@ impl Config {
                     .print_schema
                     .all_configs
                     .get_mut(&key)
-                    .ok_or(crate::errors::Error::NoPrintSchemaKeyFound(key))?;
+                    .ok_or(crate::errors::Error::NoSchemaKeyFound(key))?;
                 if let Some(table_names_with_indices) = table_names_with_indices.clone() {
                     let table_names = table_names_with_indices
                         .range(boundary)
@@ -142,29 +142,16 @@ impl Config {
                 }
             }
         } else {
-            let print_schema = match self.print_schema.all_configs.entry("default".to_string()) {
-                Entry::Vacant(entry) => entry.insert(PrintSchema::default()),
-                Entry::Occupied(entry) => entry.into_mut(),
-            };
-            let table_names = matches
-                .get_many::<String>("table-name")
-                .unwrap_or_default()
-                .map(|table_name_regex| regex::Regex::new(table_name_regex).map(Into::into))
-                .collect::<Result<Vec<Regex>, _>>()?;
-
-            if matches
-                .try_get_one::<bool>("only-tables")?
-                .cloned()
-                .unwrap_or(false)
-            {
-                print_schema.filter = Filtering::OnlyTables(table_names)
-            } else if matches
-                .try_get_one::<bool>("except-tables")?
-                .cloned()
-                .unwrap_or(false)
-            {
-                print_schema.filter = Filtering::ExceptTables(table_names)
-            }
+            let print_schema = self
+                .print_schema
+                .all_configs
+                .entry("default".to_string())
+                .or_insert(PrintSchema::default().set_filter(matches)?);
+            let print_schema = print_schema.clone().set_filter(matches)?;
+            self.print_schema
+                .all_configs
+                .entry("default".to_string())
+                .and_modify(|v| *v = print_schema);
         }
         Ok(self)
     }
@@ -188,6 +175,11 @@ impl Config {
                     get_values_with_indices::<bool>(matches, "generate-custom-type-definitions")?;
                 let custom_type_derives_with_indices =
                     get_values_with_indices::<String>(matches, "custom-type-derives")?;
+                let sqlite_integer_primary_key_is_bigint_with_indices =
+                    get_values_with_indices::<bool>(
+                        matches,
+                        "sqlite-integer-primary-key-is-bigint",
+                    )?;
                 for (key, boundary) in selected_schema_keys.values().cloned().zip(
                     selected_schema_keys
                         .keys()
@@ -206,7 +198,7 @@ impl Config {
                         .print_schema
                         .all_configs
                         .get_mut(&key)
-                        .ok_or(crate::errors::Error::NoPrintSchemaKeyFound(key))?;
+                        .ok_or(crate::errors::Error::NoSchemaKeyFound(key))?;
                     if let Some(schema) = schema_with_indices
                         .clone()
                         .and_then(|v| v.range(boundary).nth(0).map(|v| v.1.clone()))
@@ -287,6 +279,16 @@ impl Config {
                     if !custom_type_derives.is_empty() {
                         print_schema.custom_type_derives = Some(custom_type_derives);
                     }
+                    if let Some(sqlite_integer_primary_key_is_bigint) =
+                        sqlite_integer_primary_key_is_bigint_with_indices
+                            .clone()
+                            .and_then(|with_docs_with_indices| {
+                                with_docs_with_indices.range(boundary).nth(0).map(|v| *v.1)
+                            })
+                    {
+                        print_schema.sqlite_integer_primary_key_is_bigint =
+                            Some(sqlite_integer_primary_key_is_bigint);
+                    }
                 }
             }
         } else {
@@ -336,6 +338,9 @@ impl Config {
             if let Some(derives) = matches.get_many("custom-type-derives") {
                 let derives = derives.cloned().collect();
                 config.custom_type_derives = Some(derives);
+            }
+            if matches.get_flag("sqlite-integer-primary-key-is-bigint") {
+                config.sqlite_integer_primary_key_is_bigint = Some(true);
             }
         }
         Ok(self)
@@ -457,6 +462,29 @@ impl PrintSchema {
             derives.push("diesel::sql_types::SqlType".to_owned());
             derives
         }
+    }
+
+    pub fn set_filter(mut self, matches: &ArgMatches) -> Result<Self, crate::errors::Error> {
+        let table_names = matches
+            .get_many::<String>("table-name")
+            .unwrap_or_default()
+            .map(|table_name_regex| regex::Regex::new(table_name_regex).map(Into::into))
+            .collect::<Result<Vec<Regex>, _>>()?;
+
+        if matches
+            .try_get_one::<bool>("only-tables")?
+            .cloned()
+            .unwrap_or(false)
+        {
+            self.filter = Filtering::OnlyTables(table_names)
+        } else if matches
+            .try_get_one::<bool>("except-tables")?
+            .cloned()
+            .unwrap_or(false)
+        {
+            self.filter = Filtering::ExceptTables(table_names)
+        }
+        Ok(self)
     }
 }
 

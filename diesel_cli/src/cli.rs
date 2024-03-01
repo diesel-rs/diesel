@@ -322,9 +322,9 @@ pub fn build_cli() -> Command {
                 .default_values(["default"])
                 .help("select schema key from diesel.toml, use 'default' for print_schema without key."),
         ).arg(
-            Arg::new("sqlite-integer-primary-key-is-bigint")
+            position_sensitive_flag(Arg::new("sqlite-integer-primary-key-is-bigint"))
                 .long("sqlite-integer-primary-key-is-bigint")
-                .action(ArgAction::SetTrue)
+                .action(ArgAction::Append)
                 .help(
                     "For SQLite 3.37 and above, detect `INTEGER PRIMARY KEY` columns as `BigInt`, \
                      when the table isn't declared with `WITHOUT ROWID`.\n\
