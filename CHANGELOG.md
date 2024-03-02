@@ -20,6 +20,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 * Logging in diesel-cli
 * Support for libsqlite3-sys 0.28
 * Add `sqlite-integer-primary-key-is-bigint` configuration option, usable with SQLite 3.37 or above, allowing to use `BigInt` for `INTEGER PRIMARY KEY` columns in SQLite for tables without the `WITHOUT ROWID` attribute ([SQLite doc](https://www.sqlite.org/lang_createtable.html#rowid)).
+* Support for multiple `print_schema` entry in `diesel.toml` (e.g. `[print_schema.user1]`), which allows generating multiple schema.rs files
 
 ### Changed
 
