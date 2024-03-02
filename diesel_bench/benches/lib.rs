@@ -5,6 +5,8 @@ mod diesel_benches;
 mod mysql_benches;
 #[cfg(all(feature = "postgres", feature = "rust_postgres"))]
 mod postgres_benches;
+#[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
+mod tokio_postgres_benches;
 #[cfg(feature = "quaint")]
 mod quaint_benches;
 #[cfg(all(feature = "rusqlite", feature = "sqlite"))]
@@ -142,6 +144,16 @@ fn bench_trivial_query(c: &mut CriterionType) {
             crate::postgres_benches::bench_trivial_query_by_name(b, *i);
         });
 
+        #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
+        group.bench_with_input(BenchmarkId::new("tokio_postgres_by_id", size), size, |b, i| {
+            crate::tokio_postgres_benches::bench_trivial_query_by_id(b, *i);
+        });
+
+        #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
+        group.bench_with_input(BenchmarkId::new("tokio_postgres_by_name", size), size, |b, i| {
+            crate::tokio_postgres_benches::bench_trivial_query_by_name(b, *i);
+        });
+
         #[cfg(all(feature = "mysql", feature = "rust_mysql"))]
         group.bench_with_input(BenchmarkId::new("mysql_by_id", size), size, |b, i| {
             crate::mysql_benches::bench_trivial_query_by_id(b, *i);
@@ -245,6 +257,16 @@ fn bench_medium_complex_query(c: &mut CriterionType) {
             crate::postgres_benches::bench_medium_complex_query_by_name(b, *i);
         });
 
+        #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
+        group.bench_with_input(BenchmarkId::new("tokio_postgres_by_id", size), size, |b, i| {
+            crate::tokio_postgres_benches::bench_medium_complex_query_by_id(b, *i);
+        });
+
+        #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
+        group.bench_with_input(BenchmarkId::new("tokio_postgres_by_name", size), size, |b, i| {
+            crate::tokio_postgres_benches::bench_medium_complex_query_by_name(b, *i);
+        });
+
         #[cfg(all(feature = "mysql", feature = "rust_mysql"))]
         group.bench_with_input(BenchmarkId::new("mysql_by_id", size), size, |b, i| {
             crate::mysql_benches::bench_medium_complex_query_by_id(b, *i);
@@ -285,6 +307,11 @@ fn bench_loading_associations_sequentially(c: &mut CriterionType) {
     #[cfg(all(feature = "postgres", feature = "rust_postgres"))]
     group.bench_function("postgres", |b| {
         crate::postgres_benches::loading_associations_sequentially(b)
+    });
+
+    #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
+    group.bench_function("tokio_postgres", |b| {
+        crate::tokio_postgres_benches::loading_associations_sequentially(b)
     });
 
     #[cfg(all(feature = "sqlite", feature = "rusqlite"))]
@@ -356,6 +383,11 @@ fn bench_insert(c: &mut CriterionType) {
         #[cfg(all(feature = "postgres", feature = "rust_postgres"))]
         group.bench_with_input(BenchmarkId::new("postgres", size), size, |b, i| {
             crate::postgres_benches::bench_insert(b, *i);
+        });
+
+        #[cfg(all(feature = "postgres", feature = "tokio_postgres"))]
+        group.bench_with_input(BenchmarkId::new("tokio_postgres", size), size, |b, i| {
+            crate::tokio_postgres_benches::bench_insert(b, *i);
         });
 
         #[cfg(all(feature = "sqlite", feature = "rusqlite"))]
