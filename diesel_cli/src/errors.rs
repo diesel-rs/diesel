@@ -58,4 +58,8 @@ pub enum Error {
     ColumnLiteralParseError(syn::Error),
     #[error("Failed to parse database url: {0}")]
     UrlParsingError(#[from] url::ParseError),
+    #[error("Failed to parse CLI parameter: {0}")]
+    ClapMatchesError(#[from] clap::parser::MatchesError),
+    #[error("No `[print_schema.{0}]` entries in your diesel.toml")]
+    NoSchemaKeyFound(String),
 }

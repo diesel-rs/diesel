@@ -9,7 +9,7 @@ use std::io::Read;
 use std::path::Path;
 use syn::visit::Visit;
 
-use crate::config::{Config, PrintSchema};
+use crate::config::PrintSchema;
 use crate::database::InferConnection;
 use crate::infer_schema_internals::{
     filter_table_names, load_table_names, ColumnDefinition, ColumnType, ForeignKeyConstraint,
@@ -28,7 +28,7 @@ fn compatible_type_list() -> HashMap<&'static str, Vec<&'static str>> {
 
 #[tracing::instrument]
 pub fn generate_sql_based_on_diff_schema(
-    config: Config,
+    config: PrintSchema,
     matches: &ArgMatches,
     schema_file_path: &Path,
 ) -> Result<(String, String), crate::errors::Error> {
@@ -46,10 +46,6 @@ pub fn generate_sql_based_on_diff_schema(
 
     tables_from_schema.visit_file(&syn_file);
     let mut conn = InferConnection::from_matches(matches)?;
-    let tables_from_database = filter_table_names(
-        load_table_names(&mut conn, None)?,
-        &config.print_schema.filter,
-    );
 
     let foreign_keys =
         crate::infer_schema_internals::load_foreign_key_constraints(&mut conn, None)?;
@@ -87,31 +83,28 @@ pub fn generate_sql_based_on_diff_schema(
         table_pk_key_list.insert(t.table_name.to_string(), keys);
         expected_schema_map.insert(t.table_name.to_string(), t);
     }
-
-    config.print_schema.with_docs = DocConfig::NoDocComments;
-    config.print_schema.column_sorting = ColumnSorting::OrdinalPosition;
+    config.with_docs = DocConfig::NoDocComments;
+    config.column_sorting = ColumnSorting::OrdinalPosition;
 
     // Parameter `sqlite_integer_primary_key_is_bigint` is only used for a SQLite connection
     match conn {
         #[cfg(feature = "postgres")]
-        InferConnection::Pg(_) => config.print_schema.sqlite_integer_primary_key_is_bigint = None,
+        InferConnection::Pg(_) => config.sqlite_integer_primary_key_is_bigint = None,
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => (),
         #[cfg(feature = "mysql")]
         InferConnection::Mysql(_) => {
-            config.print_schema.sqlite_integer_primary_key_is_bigint = None;
+            config.sqlite_integer_primary_key_is_bigint = None;
         }
     }
 
     let mut schema_diff = Vec::new();
-
+    let table_names = load_table_names(&mut conn, None)?;
+    let tables_from_database = filter_table_names(table_names.clone(), &config.filter);
     for table in tables_from_database {
         tracing::info!(?table, "Diff for existing table");
-        let columns = crate::infer_schema_internals::load_table_data(
-            &mut conn,
-            table.clone(),
-            &config.print_schema,
-        )?;
+        let columns =
+            crate::infer_schema_internals::load_table_data(&mut conn, table.clone(), &config)?;
         if let Some(t) = expected_schema_map.remove(&table.sql_name.to_lowercase()) {
             tracing::info!(table = ?t.sql_name, "Table exists in schema.rs");
             let mut primary_keys_in_db =
@@ -222,19 +215,19 @@ pub fn generate_sql_based_on_diff_schema(
             #[cfg(feature = "postgres")]
             InferConnection::Pg(_) => {
                 let mut qb = diesel::pg::PgQueryBuilder::default();
-                diff.generate_up_sql(&mut qb, &config.print_schema)?;
+                diff.generate_up_sql(&mut qb, &config)?;
                 qb.finish()
             }
             #[cfg(feature = "sqlite")]
             InferConnection::Sqlite(_) => {
                 let mut qb = diesel::sqlite::SqliteQueryBuilder::default();
-                diff.generate_up_sql(&mut qb, &config.print_schema)?;
+                diff.generate_up_sql(&mut qb, &config)?;
                 qb.finish()
             }
             #[cfg(feature = "mysql")]
             InferConnection::Mysql(_) => {
                 let mut qb = diesel::mysql::MysqlQueryBuilder::default();
-                diff.generate_up_sql(&mut qb, &config.print_schema)?;
+                diff.generate_up_sql(&mut qb, &config)?;
                 qb.finish()
             }
         };
@@ -243,19 +236,19 @@ pub fn generate_sql_based_on_diff_schema(
             #[cfg(feature = "postgres")]
             InferConnection::Pg(_) => {
                 let mut qb = diesel::pg::PgQueryBuilder::default();
-                diff.generate_down_sql(&mut qb, &config.print_schema)?;
+                diff.generate_down_sql(&mut qb, &config)?;
                 qb.finish()
             }
             #[cfg(feature = "sqlite")]
             InferConnection::Sqlite(_) => {
                 let mut qb = diesel::sqlite::SqliteQueryBuilder::default();
-                diff.generate_down_sql(&mut qb, &config.print_schema)?;
+                diff.generate_down_sql(&mut qb, &config)?;
                 qb.finish()
             }
             #[cfg(feature = "mysql")]
             InferConnection::Mysql(_) => {
                 let mut qb = diesel::mysql::MysqlQueryBuilder::default();
-                diff.generate_down_sql(&mut qb, &config.print_schema)?;
+                diff.generate_down_sql(&mut qb, &config)?;
                 qb.finish()
             }
         };

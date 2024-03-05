@@ -355,6 +355,27 @@ fn print_schema_quoted_schema_and_table_name() {
     )
 }
 
+#[test]
+fn print_schema_with_multiple_schema() {
+    test_multiple_print_schema(
+        "print_schema_with_multiple_schema",
+        vec![
+            "--schema-key",
+            "default",
+            "--schema-key",
+            "user1",
+            "-o",
+            "users1",
+            "--with-docs",
+            "--schema-key",
+            "user2",
+            "-o",
+            "users2",
+            "--with-docs",
+        ],
+    )
+}
+
 #[cfg(feature = "sqlite")]
 const BACKEND: &str = "sqlite";
 #[cfg(feature = "postgres")]
@@ -369,6 +390,45 @@ fn backend_file_path(test_name: &str, file: &str) -> PathBuf {
         .join(test_name)
         .join(BACKEND)
         .join(file)
+}
+
+fn test_multiple_print_schema(test_name: &str, args: Vec<&str>) {
+    let test_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("print_schema")
+        .join(test_name);
+    let p = project(test_name)
+        .file(
+            "diesel.toml",
+            r#"
+            [print_schema.user1]
+            [print_schema.user2]
+            "#,
+        )
+        .build();
+    let db = database(&p.database_url());
+
+    p.command("setup").run();
+
+    let schema = read_file(&backend_file_path(test_name, "schema.sql"));
+    db.execute(&schema);
+
+    let result = p.command("print-schema").args(args).run();
+
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let result = result.stdout().replace("\r\n", "\n");
+
+    let mut setting = insta::Settings::new();
+    setting.set_snapshot_path(backend_file_path(test_name, ""));
+    setting.set_omit_expression(true);
+    setting.set_description(format!("Test: {test_name}"));
+    setting.set_prepend_module_to_snapshot(false);
+
+    setting.bind(|| {
+        insta::assert_snapshot!("expected", result);
+        test_multiple_print_schema_config(test_name, &test_path, schema);
+    });
 }
 
 fn test_print_schema(test_name: &str, args: Vec<&str>) {
@@ -428,6 +488,35 @@ fn test_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
 
     let result = result.stdout().replace("\r\n", "\n");
 
+    insta::assert_snapshot!("expected", result);
+}
+
+fn test_multiple_print_schema_config(test_name: &str, test_path: &Path, schema: String) {
+    let config = read_file(&test_path.join("diesel.toml"));
+    let mut p = project(&format!("{}_config", test_name)).file("diesel.toml", &config);
+
+    let patch_file = backend_file_path(test_name, "schema.patch");
+    if patch_file.exists() {
+        let patch_contents = read_file(&patch_file);
+        p = p.file("schema.patch", &patch_contents);
+    }
+
+    let p = p.build();
+
+    p.command("setup").run();
+    p.create_migration("12345_create_schema", &schema, None, None);
+    let result = p.command("migration").arg("run").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let schema = p.file_contents("src/schema1.rs").replace("\r\n", "\n");
+    insta::assert_snapshot!("expected_1", schema);
+    let schema = p.file_contents("src/schema2.rs").replace("\r\n", "\n");
+    insta::assert_snapshot!("expected_2", schema);
+
+    let result = p.command("print-schema").run();
+    assert!(result.is_success(), "Result was unsuccessful {:?}", result);
+
+    let result = result.stdout().replace("\r\n", "\n");
     insta::assert_snapshot!("expected", result);
 }
 

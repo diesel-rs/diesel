@@ -10,7 +10,7 @@ use std::io::Write as IoWrite;
 const SCHEMA_HEADER: &str = "// @generated automatically by Diesel CLI.\n";
 
 /// How to sort columns when querying the table schema.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub enum ColumnSorting {
     /// Order by ordinal position
     #[serde(rename = "ordinal_position")]
