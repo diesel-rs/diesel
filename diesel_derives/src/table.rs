@@ -176,7 +176,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
             impl<S, TSM> diesel::JoinTo<diesel::query_builder::Tablesample<S, TSM>> for table
             where
                 diesel::query_builder::Tablesample<S, TSM>: diesel::JoinTo<table>,
-                TSM: diesel::query_builder::TablesampleMethod
+                TSM: diesel::internal::table_macro::TablesampleMethod
             {
                 type FromClause = diesel::query_builder::Tablesample<S, TSM>;
                 type OnClause = <diesel::query_builder::Tablesample<S, TSM> as diesel::JoinTo<table>>::OnClause;
@@ -190,7 +190,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
             impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<table, TSM>>
                 for table
                     where
-                TSM:  diesel::query_builder::TablesampleMethod
+                TSM: diesel::internal::table_macro::TablesampleMethod
             {
                 type Count = diesel::query_source::Once;
             }
@@ -198,7 +198,7 @@ pub(crate) fn expand(input: TableDecl) -> TokenStream {
             impl<TSM> diesel::query_source::AppearsInFromClause<table>
                 for diesel::query_builder::Tablesample<table, TSM>
                     where
-                TSM:  diesel::query_builder::TablesampleMethod
+                TSM: diesel::internal::table_macro::TablesampleMethod
             {
                 type Count = diesel::query_source::Once;
             }
@@ -700,12 +700,13 @@ fn expand_column_def(column_def: &ColumnDef) -> TokenStream {
 
             impl<TSM> diesel::query_source::AppearsInFromClause<diesel::query_builder::Tablesample<super::table, TSM>>
                 for #column_name
-                where TSM:  diesel::query_builder::TablesampleMethod
+                    where
+                TSM: diesel::internal::table_macro::TablesampleMethod
             {
                 type Count = diesel::query_source::Once;
             }
             impl<TSM> diesel::SelectableExpression<diesel::query_builder::Tablesample<super::table, TSM>>
-                for #column_name where TSM: diesel::query_builder::TablesampleMethod {}
+                for #column_name where TSM: diesel::internal::table_macro::TablesampleMethod {}
         })
     } else {
         None

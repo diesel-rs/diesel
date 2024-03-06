@@ -33,13 +33,12 @@ impl TablesampleMethod for SystemMethod {
 }
 
 /// Represents a query with a `TABLESAMPLE` clause.
-#[doc(hidden)]
 #[derive(Debug, Clone, Copy)]
 pub struct Tablesample<S, TSM>
 where
     TSM: TablesampleMethod,
 {
-    pub source: S,
+    source: S,
     method: PhantomData<TSM>,
     portion: i16,
     seed: Option<f64>,
@@ -49,7 +48,7 @@ impl<S, TSM> Tablesample<S, TSM>
 where
     TSM: TablesampleMethod,
 {
-    pub fn new(source: S, portion: i16) -> Tablesample<S, TSM> {
+    pub(crate) fn new(source: S, portion: i16) -> Tablesample<S, TSM> {
         Tablesample {
             source,
             method: PhantomData,
@@ -58,6 +57,8 @@ where
         }
     }
 
+    /// This method allows you to specify the random number generator seed to use in the sampling
+    /// method. This allows you to obtain repeatable results.
     pub fn with_seed(self, seed: f64) -> Tablesample<S, TSM> {
         Tablesample {
             source: self.source,

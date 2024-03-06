@@ -246,13 +246,13 @@ macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_q
         impl<TSM> $crate::query_source::TableNotEqual<$left::table>
             for $crate::query_builder::Tablesample<$right::table, TSM>
         where
-            TSM: $crate::query_builder::TablesampleMethod,
+            TSM: $crate::internal::table_macro::TablesampleMethod,
         {
         }
         impl<TSM> $crate::query_source::TableNotEqual<$right::table>
             for $crate::query_builder::Tablesample<$left::table, TSM>
         where
-            TSM: $crate::query_builder::TablesampleMethod,
+            TSM: $crate::internal::table_macro::TablesampleMethod,
         {
         }
         impl<TSM>
@@ -260,7 +260,7 @@ macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_q
                 $crate::query_builder::Tablesample<$left::table, TSM>,
             > for $right::table
         where
-            TSM: $crate::query_builder::TablesampleMethod,
+            TSM: $crate::internal::table_macro::TablesampleMethod,
         {
         }
         impl<TSM>
@@ -268,7 +268,7 @@ macro_rules! __diesel_internal_backend_specific_allow_tables_to_appear_in_same_q
                 $crate::query_builder::Tablesample<$right::table, TSM>,
             > for $left::table
         where
-            TSM: $crate::query_builder::TablesampleMethod,
+            TSM: $crate::internal::table_macro::TablesampleMethod,
         {
         }
     };

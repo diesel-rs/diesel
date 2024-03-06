@@ -19,7 +19,8 @@ use crate::Table;
 /// a `TABLESAMPLE method(p)` clause where p is specified by the portion argument. The provided
 /// percentage should be an integer between 0 and 100.
 ///
-/// If the seed argument is is Some(f) then f becomes the seed in `TABLESAMPLE ... REPEATABLE (f)`.
+/// To generate a `TABLESAMPLE ... REPEATABLE (f)` clause, you'll need to call
+/// [`.with_seed(f)`](Tablesample::with_seed).
 ///
 /// Example:
 ///
