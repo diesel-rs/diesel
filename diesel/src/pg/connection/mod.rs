@@ -1,13 +1,15 @@
+pub(super) mod copy;
 pub(crate) mod cursor;
 mod raw;
 mod result;
 mod row;
 mod stmt;
 
+use self::copy::CopyIn;
+use self::copy::CopyOut;
 use self::cursor::*;
 use self::private::ConnectionAndTransactionManager;
 use self::raw::{PgTransactionStatus, RawConnection};
-use self::result::PgResult;
 use self::stmt::Statement;
 use crate::connection::instrumentation::DebugQuery;
 use crate::connection::instrumentation::Instrumentation;
@@ -16,6 +18,7 @@ use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
+use crate::pg::query_builder::copy::InternalCopyInQuery;
 use crate::pg::{Pg, TransactionBuilder};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
@@ -25,6 +28,12 @@ use crate::RunQueryDsl;
 use std::ffi::CString;
 use std::fmt::Debug;
 use std::os::raw as libc;
+
+use super::query_builder::copy::CopyInExpression;
+use super::query_builder::copy::CopyTarget;
+use super::query_builder::copy::CopyTo;
+
+pub(super) use self::result::PgResult;
 
 /// The connection string expected by `PgConnection::establish`
 /// should be a PostgreSQL connection string, as documented at
@@ -393,7 +402,46 @@ impl PgConnection {
         TransactionBuilder::new(self)
     }
 
-    fn with_prepared_query<'conn, T: QueryFragment<Pg> + QueryId, R>(
+    pub(crate) fn copy_in<S, T>(&mut self, target: S) -> Result<usize, S::Error>
+    where
+        S: CopyInExpression<T>,
+    {
+        let query = InternalCopyInQuery::new(target);
+        let res = self.with_prepared_query(query, true, |stmt, binds, conn, source| {
+            let _res = stmt.execute(&mut conn.raw_connection, &binds, false)?;
+            let mut copy_in = CopyIn::new(&mut conn.raw_connection);
+            let r = source.target.callback(&mut copy_in);
+            copy_in.finish(r.as_ref().err().map(|e| e.to_string()))?;
+            let next_res = conn.raw_connection.get_next_result()?.expect("exists");
+            let rows = next_res.rows_affected();
+            // need to pull out any other result
+            while let Some(_r) = conn.raw_connection.get_next_result()? {}
+            // it's important to only return a potential error here as
+            // we need to ensure that `finish` is called and we pull
+            // all the results
+            r?;
+            Ok::<_, S::Error>(rows)
+        })?;
+
+        Ok(res)
+    }
+
+    pub(crate) fn copy_out<T>(&mut self, command: CopyTo<T>) -> QueryResult<CopyOut<'_>>
+    where
+        T: CopyTarget,
+    {
+        let res = self.with_prepared_query::<_, _, Error>(
+            command,
+            true,
+            |stmt, binds, conn, _source| {
+                let res = stmt.execute(&mut conn.raw_connection, &binds, false)?;
+                Ok(CopyOut::new(&mut conn.raw_connection, res))
+            },
+        )?;
+        Ok(res)
+    }
+
+    fn with_prepared_query<'conn, T, R, E>(
         &'conn mut self,
         source: T,
         execute_returning_count: bool,
@@ -402,8 +450,12 @@ impl PgConnection {
             Vec<Option<Vec<u8>>>,
             &'conn mut ConnectionAndTransactionManager,
             T,
-        ) -> QueryResult<R>,
-    ) -> QueryResult<R> {
+        ) -> Result<R, E>,
+    ) -> Result<R, E>
+    where
+        T: QueryFragment<Pg> + QueryId,
+        E: From<crate::result::Error>,
+    {
         self.connection_and_transaction_manager
             .instrumentation
             .on_connection_event(InstrumentationEvent::StartQuery {

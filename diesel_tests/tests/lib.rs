@@ -14,6 +14,8 @@ mod boxed_queries;
 mod combination;
 mod connection;
 #[cfg(feature = "postgres")]
+mod copy;
+#[cfg(feature = "postgres")]
 mod custom_types;
 mod debug;
 mod delete;
