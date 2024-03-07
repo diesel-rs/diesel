@@ -75,6 +75,7 @@ fn parse_julian(julian_days: f64) -> Option<NaiveDateTime> {
     let timestamp = (julian_days - EPOCH_IN_JULIAN_DAYS) * SECONDS_IN_DAY;
     let seconds = timestamp as i64;
     let nanos = (timestamp.fract() * 1E9) as u32;
+    #[allow(deprecated)] // otherwise we would need to bump our minimal chrono version
     NaiveDateTime::from_timestamp_opt(seconds, nanos)
 }
 
@@ -325,11 +326,11 @@ mod tests {
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
-        let time = Utc::now().naive_utc() + Duration::seconds(60);
+        let time = Utc::now().naive_utc() + Duration::try_seconds(60).unwrap();
         let query = select(now.lt(time));
         assert_eq!(Ok(true), query.get_result(connection));
 
-        let time = Utc::now().naive_utc() - Duration::seconds(600);
+        let time = Utc::now().naive_utc() - Duration::try_seconds(600).unwrap();
         let query = select(now.gt(time));
         assert_eq!(Ok(true), query.get_result(connection));
     }

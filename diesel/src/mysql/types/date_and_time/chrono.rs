@@ -32,6 +32,7 @@ impl ToSql<Timestamp, Mysql> for NaiveDateTime {
             hour: self.hour() as libc::c_uint,
             minute: self.minute() as libc::c_uint,
             second: self.second() as libc::c_uint,
+            #[allow(deprecated)] // otherwise we would need to bump our minimal chrono version
             second_part: libc::c_ulong::from(self.timestamp_subsec_micros()),
             neg: false,
             time_type: MysqlTimestampType::MYSQL_TIMESTAMP_DATETIME,
@@ -162,11 +163,11 @@ mod tests {
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
-        let time = Utc::now().naive_utc() + Duration::days(1);
+        let time = Utc::now().naive_utc() + Duration::try_days(1).unwrap();
         let query = select(now.lt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let time = Utc::now().naive_utc() - Duration::days(1);
+        let time = Utc::now().naive_utc() - Duration::try_days(1).unwrap();
         let query = select(now.gt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
