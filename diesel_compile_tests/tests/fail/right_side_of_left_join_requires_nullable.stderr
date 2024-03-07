@@ -27,6 +27,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
    |
@@ -65,6 +66,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
    |
@@ -131,6 +133,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
    |
@@ -169,6 +172,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
    |
@@ -235,6 +239,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
    |
@@ -273,6 +278,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
    |
@@ -339,6 +345,7 @@ error[E0277]: Cannot select `posts::columns::title` from `pets::table`
              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
    |
@@ -377,6 +384,7 @@ error[E0277]: Cannot select `posts::columns::title` from `pets::table`
              <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::title as SelectableExpression<Only<posts::table>>>
+             <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<pets::table, SelectStatement<FromClause<JoinOn<query_source::joins::Join<users::table, posts::table, LeftOuter>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<posts::columns::user_id>, NullableExpression<users::columns::id>>>>>>, LeftOuter>>`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
    |
@@ -443,6 +451,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
     |
@@ -481,6 +490,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:17:9
     |

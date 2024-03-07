@@ -94,10 +94,13 @@ error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+             <Tablesample<pg::metadata_lookup::pg_namespace::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+             <Tablesample<pg::metadata_lookup::pg_type::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
+             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>>
              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+           and $N others
    = note: required for `users::table` to implement `AppearsInFromClause<posts::table>`
 note: required for `posts::columns::title` to implement `AppearsOnTable<users::table>`
   --> tests/fail/pg_upsert_do_update_requires_valid_update.rs:16:9

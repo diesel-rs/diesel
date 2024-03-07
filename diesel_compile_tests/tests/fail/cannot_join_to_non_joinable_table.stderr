@@ -13,6 +13,7 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
              <users::table as JoinTo<Alias<S>>>
              <users::table as JoinTo<JoinOn<Join, On>>>
              <users::table as JoinTo<Only<S>>>
+             <users::table as JoinTo<Tablesample<S, TSM>>>
    = note: required for `users::table` to implement `JoinWithImplicitOnClause<posts::table, Inner>`
 note: required by a bound in `inner_join`
   --> $DIESEL/src/query_dsl/mod.rs
@@ -38,6 +39,7 @@ error[E0277]: the trait bound `users::table: JoinTo<posts::table>` is not satisf
              <users::table as JoinTo<Alias<S>>>
              <users::table as JoinTo<JoinOn<Join, On>>>
              <users::table as JoinTo<Only<S>>>
+             <users::table as JoinTo<Tablesample<S, TSM>>>
    = note: required for `users::table` to implement `JoinWithImplicitOnClause<posts::table, LeftOuter>`
 note: required by a bound in `left_outer_join`
   --> $DIESEL/src/query_dsl/mod.rs
@@ -62,5 +64,6 @@ error[E0277]: the trait bound `posts::table: JoinTo<users::table>` is not satisf
              <posts::table as JoinTo<Alias<S>>>
              <posts::table as JoinTo<JoinOn<Join, On>>>
              <posts::table as JoinTo<Only<S>>>
+             <posts::table as JoinTo<Tablesample<S, TSM>>>
    = note: required for `query_source::joins::Join<posts::table, comments::table, Inner>` to implement `JoinTo<users::table>`
    = note: required for `users::table` to implement `JoinWithImplicitOnClause<SelectStatement<FromClause<JoinOn<query_source::joins::Join<posts::table, comments::table, Inner>, diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<NullableExpression<comments::columns::post_id>, NullableExpression<posts::columns::id>>>>>>, Inner>`
