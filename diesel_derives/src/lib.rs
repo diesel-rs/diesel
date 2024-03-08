@@ -136,6 +136,8 @@ pub fn derive_as_changeset(input: TokenStream) -> TokenStream {
 /// you can specify this by adding the annotation `#[diesel(not_sized)]`
 /// as attribute on the type. This will skip the impls for non-reference types.
 ///
+/// Using this derive requires implementing the `ToSql` trait for your type.
+///
 /// # Attributes:
 ///
 /// ## Required container attributes
