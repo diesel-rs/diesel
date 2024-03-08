@@ -25,6 +25,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 ### Changed
 
 * The minimal officially supported rustc version is now 1.70.0
+* Deserialization error messages now contain information about the field that failed to deserialize
 
 ## [2.1.0] 2023-05-26
 

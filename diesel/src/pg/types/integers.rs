@@ -25,17 +25,21 @@ impl ToSql<sql_types::Oid, Pg> for u32 {
 impl FromSql<sql_types::SmallInt, Pg> for i16 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
-        debug_assert!(
-            bytes.len() <= 2,
-            "Received more than 2 bytes decoding i16. \
-             Was an Integer expression accidentally identified as SmallInt?"
-        );
-        debug_assert!(
-            bytes.len() >= 2,
-            "Received fewer than 2 bytes decoding i16. \
-             Was an expression of a different type accidentally identified \
-             as SmallInt?"
-        );
+        if bytes.len() < 2 {
+            return deserialize::Result::Err(
+                "Received less than 2 bytes while decoding an i16. \
+                    Was an expression of a different type accidentally marked as SmallInt?"
+                    .into(),
+            );
+        }
+
+        if bytes.len() > 2 {
+            return deserialize::Result::Err(
+                "Received more than 2 bytes while decoding an i16. \
+                    Was an Integer expression accidentally marked as SmallInt?"
+                    .into(),
+            );
+        }
         bytes
             .read_i16::<NetworkEndian>()
             .map_err(|e| Box::new(e) as Box<_>)
@@ -46,16 +50,21 @@ impl FromSql<sql_types::SmallInt, Pg> for i16 {
 impl FromSql<sql_types::Integer, Pg> for i32 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
-        debug_assert!(
-            bytes.len() <= 4,
-            "Received more than 4 bytes decoding i32. \
-             Was a BigInt expression accidentally identified as Integer?"
-        );
-        debug_assert!(
-            bytes.len() >= 4,
-            "Received fewer than 4 bytes decoding i32. \
-             Was a SmallInt expression accidentally identified as Integer?"
-        );
+        if bytes.len() < 4 {
+            return deserialize::Result::Err(
+                "Received less than 4 bytes while decoding an i32. \
+                    Was an SmallInt expression accidentally marked as Integer?"
+                    .into(),
+            );
+        }
+
+        if bytes.len() > 4 {
+            return deserialize::Result::Err(
+                "Received more than 4 bytes while decoding an i32. \
+                    Was an BigInt expression accidentally marked as Integer?"
+                    .into(),
+            );
+        }
         bytes
             .read_i32::<NetworkEndian>()
             .map_err(|e| Box::new(e) as Box<_>)
@@ -66,16 +75,21 @@ impl FromSql<sql_types::Integer, Pg> for i32 {
 impl FromSql<sql_types::BigInt, Pg> for i64 {
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
-        debug_assert!(
-            bytes.len() <= 8,
-            "Received more than 8 bytes decoding i64. \
-             Was an expression of a different type misidentified as BigInt?"
-        );
-        debug_assert!(
-            bytes.len() >= 8,
-            "Received fewer than 8 bytes decoding i64. \
-             Was an Integer expression misidentified as BigInt?"
-        );
+        if bytes.len() < 8 {
+            return deserialize::Result::Err(
+                "Received less than 8 bytes while decoding an i64. \
+                    Was an Integer expression accidentally marked as BigInt?"
+                    .into(),
+            );
+        }
+
+        if bytes.len() > 8 {
+            return deserialize::Result::Err(
+                "Received more than 8 bytes while decoding an i64. \
+                    Was an expression of a different type expression accidentally marked as BigInt?"
+                    .into(),
+            );
+        }
         bytes
             .read_i64::<NetworkEndian>()
             .map_err(|e| Box::new(e) as Box<_>)
