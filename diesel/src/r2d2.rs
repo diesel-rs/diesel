@@ -100,7 +100,6 @@ pub use r2d2::*;
 /// [`r2d2::Pool`]: r2d2::Pool
 pub type PoolError = r2d2::Error;
 
-use std::convert::Into;
 use std::fmt;
 use std::marker::PhantomData;
 

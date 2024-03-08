@@ -8,14 +8,13 @@ pub(crate) use self::insert_from_select::InsertFromSelect;
 pub(crate) use self::private::{Insert, InsertOrIgnore, Replace};
 
 use super::returning_clause::*;
-use crate::backend::{sql_dialect, Backend, DieselReserveSpecialization, SqlDialect};
+use crate::backend::{sql_dialect, DieselReserveSpecialization, SqlDialect};
 use crate::expression::grouped::Grouped;
 use crate::expression::operators::Eq;
 use crate::expression::{Expression, NonAggregate, SelectableExpression};
 use crate::query_builder::*;
 use crate::query_dsl::RunQueryDsl;
 use crate::query_source::{Column, Table};
-use crate::result::QueryResult;
 use crate::{insertable::*, QuerySource};
 use std::marker::PhantomData;
 
@@ -283,8 +282,12 @@ impl<T: QuerySource, U, Op> InsertStatement<T, U, Op> {
     /// let inserted_names = diesel::insert_into(users)
     ///     .values(&vec![name.eq("Timmy"), name.eq("Jimmy")])
     ///     .returning(name)
-    ///     .get_results(connection);
-    /// assert_eq!(Ok(vec!["Timmy".to_string(), "Jimmy".to_string()]), inserted_names);
+    ///     .get_results(connection)
+    ///     .unwrap();
+    /// // Note that the returned order is not guaranteed to be preserved
+    /// assert_eq!(inserted_names.len(), 2);
+    /// assert!(inserted_names.contains(&"Timmy".to_string()));
+    /// assert!(inserted_names.contains(&"Jimmy".to_string()));
     /// # }
     /// # #[cfg(not(feature = "postgres"))]
     /// # fn main() {}

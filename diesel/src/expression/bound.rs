@@ -1,11 +1,10 @@
 use std::marker::PhantomData;
 
 use super::*;
-use crate::backend::Backend;
 use crate::query_builder::*;
 use crate::result::QueryResult;
 use crate::serialize::ToSql;
-use crate::sql_types::{DieselNumericOps, HasSqlType, SqlType};
+use crate::sql_types::DieselNumericOps;
 
 #[doc(hidden)] // This is used by the `AsExpression` derive
 #[derive(Debug, Clone, Copy, DieselNumericOps)]

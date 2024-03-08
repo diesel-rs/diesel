@@ -1,4 +1,3 @@
-use std::convert::TryInto;
 use std::os::raw as libc;
 use time::{
     Date as NaiveDate, Month, OffsetDateTime, PrimitiveDateTime, Time as NaiveTime, UtcOffset,

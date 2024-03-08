@@ -16,9 +16,10 @@ rust-version.workspace = true
 byteorder = { version = "1.0", optional = true }
 chrono = { version = "0.4.20", optional = true, default-features = false, features = ["clock", "std"] }
 libc = { version = "0.2.0", optional = true }
-libsqlite3-sys = { version = ">=0.17.2, <0.28.0", optional = true, features = ["bundled_bindings"] }
+libsqlite3-sys = { version = ">=0.17.2, <0.29.0", optional = true, features = ["bundled_bindings"] }
 mysqlclient-sys = { version = "0.2.5", optional = true }
-pq-sys = { version = "0.4.0", optional = true }
+pq-sys = { version = ">=0.4.0, <0.6.0", optional = true }
+pq-src = { version = "0.1", optional = true }
 quickcheck = { version = "1.0.3", optional = true }
 serde_json = { version = ">=0.8.0, <2.0", optional = true }
 url = { version = "2.1.0", optional = true }

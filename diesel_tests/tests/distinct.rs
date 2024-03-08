@@ -178,7 +178,7 @@ fn distinct_of_multiple_columns() {
         .execute(&mut connection)
         .unwrap();
     let posts = posts::table
-        .order(posts::id)
+        .order(posts::title)
         .load::<Post>(&mut connection)
         .unwrap();
 

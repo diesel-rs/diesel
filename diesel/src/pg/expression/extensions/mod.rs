@@ -3,6 +3,8 @@
 //! re-exported in `diesel::dsl`
 mod interval_dsl;
 mod only_dsl;
+mod tablesample_dsl;
 
 pub use self::interval_dsl::IntervalDsl;
 pub use self::only_dsl::OnlyDsl;
+pub use self::tablesample_dsl::TablesampleDsl;

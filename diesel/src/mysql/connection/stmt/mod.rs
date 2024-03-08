@@ -1,6 +1,5 @@
 #![allow(unsafe_code)] // module uses ffi
 use mysqlclient_sys as ffi;
-use std::convert::TryFrom;
 use std::ffi::CStr;
 use std::os::raw as libc;
 use std::ptr::NonNull;

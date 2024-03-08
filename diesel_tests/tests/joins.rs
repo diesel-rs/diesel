@@ -20,7 +20,7 @@ fn belongs_to() {
     let tess_post = Post::new(2, 2, "World", None);
 
     let expected_data = vec![(seans_post, sean), (tess_post, tess)];
-    let source = posts::table.inner_join(users::table);
+    let source = posts::table.inner_join(users::table).order(posts::id);
     let actual_data: Vec<_> = source.load(connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
@@ -40,8 +40,8 @@ fn select_single_from_join() {
     .unwrap();
 
     let source = posts::table.inner_join(users::table);
-    let select_name = source.select(users::name);
-    let select_title = source.select(posts::title);
+    let select_name = source.select(users::name).order(users::name);
+    let select_title = source.select(posts::title).order(posts::title);
 
     let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
     let actual_names: Vec<String> = select_name.load(connection).unwrap();
@@ -75,7 +75,7 @@ fn select_multiple_from_join() {
         ("Sean".to_string(), "Hello".to_string()),
         ("Tess".to_string(), "World".to_string()),
     ];
-    let actual_data: Vec<_> = source.load(connection).unwrap();
+    let actual_data: Vec<_> = source.order(users::name).load(connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }
@@ -102,7 +102,7 @@ fn join_boxed_query() {
         ("Sean".to_string(), "Hello".to_string()),
         ("Tess".to_string(), "World".to_string()),
     ];
-    let actual_data: Vec<_> = source.load(connection).unwrap();
+    let actual_data: Vec<_> = source.order(users::name).load(connection).unwrap();
 
     assert_eq!(expected_data, actual_data);
 }

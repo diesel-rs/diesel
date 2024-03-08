@@ -115,6 +115,7 @@ error[E0277]: Cannot select `users::columns::id` from `Alias<users2>`
              <users::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <users::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <users::columns::id as SelectableExpression<Only<users::table>>>
+             <users::columns::id as SelectableExpression<Tablesample<users::table, TSM>>>
    = note: required for `SelectStatement<FromClause<Alias<users2>>>` to implement `SelectDsl<users::columns::id>`
    = note: 1 redundant requirement hidden
    = note: required for `Alias<users2>` to implement `SelectDsl<users::columns::id>`
@@ -143,6 +144,7 @@ error[E0277]: Cannot select `users::columns::id` from `Alias<users2>`
              <users::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <users::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <users::columns::id as SelectableExpression<Only<users::table>>>
+             <users::columns::id as SelectableExpression<Tablesample<users::table, TSM>>>
    = note: required for `diesel::query_builder::select_clause::SelectClause<users::columns::id>` to implement `diesel::query_builder::select_clause::SelectClauseExpression<FromClause<Alias<users2>>>`
    = note: required for `SelectStatement<FromClause<Alias<users2>>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>` to implement `Query`
    = note: required for `SelectStatement<FromClause<Alias<users2>>, diesel::query_builder::select_clause::SelectClause<users::columns::id>>` to implement `LoadQuery<'_, _, i32>`
@@ -202,6 +204,7 @@ error[E0277]: the trait bound `users::table: JoinTo<pets::table>` is not satisfi
              <users::table as JoinTo<Alias<S>>>
              <users::table as JoinTo<JoinOn<Join, On>>>
              <users::table as JoinTo<Only<S>>>
+             <users::table as JoinTo<Tablesample<S, TSM>>>
    = note: required for `Alias<users2>` to implement `JoinTo<pets::table>`
    = note: required for `pets::table` to implement `JoinWithImplicitOnClause<Alias<users2>, Inner>`
 

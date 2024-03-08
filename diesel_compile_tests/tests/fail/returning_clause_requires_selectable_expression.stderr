@@ -14,6 +14,7 @@ error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
              <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
              <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
              <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
+             <non_users::columns::noname as SelectableExpression<Tablesample<non_users::table, TSM>>>
 note: required by a bound in `DeleteStatement::<T, U>::returning`
   --> $DIESEL/src/query_builder/delete_statement/mod.rs
    |
@@ -39,6 +40,7 @@ error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
              <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
              <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
              <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
+             <non_users::columns::noname as SelectableExpression<Tablesample<non_users::table, TSM>>>
    = note: required for `InsertStatement<table, ValuesClause<(DefaultableColumnInsertValue<...>,), ...>, ..., ...>` to implement `Query`
 note: required by a bound in `InsertStatement::<T, U, Op>::returning`
   --> $DIESEL/src/query_builder/insert_statement/mod.rs
@@ -65,6 +67,7 @@ error[E0277]: Cannot select `non_users::columns::noname` from `users::table`
              <non_users::columns::noname as SelectableExpression<SelectStatement<FromClause<From>>>>
              <non_users::columns::noname as SelectableExpression<JoinOn<Join, On>>>
              <non_users::columns::noname as SelectableExpression<Only<non_users::table>>>
+             <non_users::columns::noname as SelectableExpression<Tablesample<non_users::table, TSM>>>
    = note: required for `UpdateStatement<table, NoWhereClause, Assign<ColumnWrapperForUpdate<name>, Bound<Text, &str>>, ...>` to implement `Query`
 note: required by a bound in `UpdateStatement::<T, U, V>::returning`
   --> $DIESEL/src/query_builder/update_statement/mod.rs

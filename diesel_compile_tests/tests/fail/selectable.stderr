@@ -54,6 +54,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
+              <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/selectable.rs:15:9
     |
@@ -77,6 +78,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/selectable.rs:16:9
     |
@@ -129,6 +131,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
+              <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::id` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/selectable.rs:15:9
     |
@@ -164,6 +167,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
 note: required for `posts::columns::title` to implement `SelectableExpression<query_source::joins::Join<users::table, posts::table, LeftOuter>>`
    --> tests/fail/selectable.rs:16:9
     |
@@ -251,6 +255,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
+              <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -280,6 +285,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -337,6 +343,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
+              <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -367,6 +374,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -426,6 +434,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
+              <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -455,6 +464,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -512,6 +522,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
+              <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -542,6 +553,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -601,6 +613,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
+              <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -629,6 +642,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -684,6 +698,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
               <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::id as SelectableExpression<Only<posts::table>>>
+              <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`
@@ -714,6 +729,7 @@ error[E0277]: Cannot select `posts::columns::title` from `users::table`
               <posts::columns::title as SelectableExpression<SelectStatement<FromClause<From>>>>
               <posts::columns::title as SelectableExpression<JoinOn<Join, On>>>
               <posts::columns::title as SelectableExpression<Only<posts::table>>>
+              <posts::columns::title as SelectableExpression<Tablesample<posts::table, TSM>>>
     = note: required for `(posts::columns::id, posts::columns::title)` to implement `SelectableExpression<users::table>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithEmbeddedPost, _>` to implement `SelectableExpression<users::table>`

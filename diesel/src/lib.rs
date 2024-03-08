@@ -334,6 +334,14 @@ pub mod dsl {
 
     #[doc(inline)]
     pub use diesel_derives::auto_type;
+
+    #[cfg(feature = "postgres_backend")]
+    #[doc(inline)]
+    pub use crate::pg::expression::extensions::OnlyDsl;
+
+    #[cfg(feature = "postgres_backend")]
+    #[doc(inline)]
+    pub use crate::pg::expression::extensions::TablesampleDsl;
 }
 
 pub mod helper_types {

@@ -1,0 +1,21 @@
+error[E0277]: the trait bound `Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>: QueryFragment<Mysql>` is not satisfied
+  --> tests/fail/pg_specific_tablesample_cannot_be_used_on_mysql.rs:20:32
+   |
+20 |         .load::<(i32, String)>(&mut connection);
+   |          ----                  ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>`
+   |          |
+   |          required by a bound introduced by this call
+   |
+   = help: the trait `QueryFragment<Pg>` is implemented for `Tablesample<S, TSM>`
+   = note: required for `FromClause<Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>>` to implement `QueryFragment<Mysql>`
+   = note: 2 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>>>` to implement `QueryFragment<Mysql>`
+   = note: required for `Tablesample<users::table, pg::query_builder::tablesample::SystemMethod>` to implement `LoadQuery<'_, diesel::MysqlConnection, (i32, std::string::String)>`
+note: required by a bound in `diesel::RunQueryDsl::load`
+  --> $DIESEL/src/query_dsl/mod.rs
+   |
+   |     fn load<'query, U>(self, conn: &mut Conn) -> QueryResult<Vec<U>>
+   |        ---- required by a bound in this associated function
+   |     where
+   |         Self: LoadQuery<'query, Conn, U>,
+   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::load`

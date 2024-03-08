@@ -6,7 +6,7 @@ use syn::{Ident, LitStr};
 use crate::util::{parse_eq, unknown_attribute, SQLITE_TYPE_NOTE};
 
 enum Attr {
-    Name(Ident, LitStr),
+    Name(LitStr),
 }
 
 impl Parse for Attr {
@@ -15,7 +15,7 @@ impl Parse for Attr {
         let name_str = name.to_string();
 
         match &*name_str {
-            "name" => Ok(Attr::Name(name, parse_eq(input, SQLITE_TYPE_NOTE)?)),
+            "name" => Ok(Attr::Name(parse_eq(input, SQLITE_TYPE_NOTE)?)),
 
             _ => Err(unknown_attribute(&name, &["name"])),
         }
@@ -32,7 +32,7 @@ impl Parse for SqliteType {
 
         for attr in Punctuated::<Attr, Comma>::parse_terminated(input)? {
             match attr {
-                Attr::Name(_, value) => name = Some(value),
+                Attr::Name(value) => name = Some(value),
             }
         }
 

@@ -14,6 +14,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
+             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
    = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<posts::columns::id>`
    = note: 1 redundant requirement hidden
    = note: required for `users::table` to implement `SelectDsl<posts::columns::id>`

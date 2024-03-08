@@ -14,6 +14,7 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
+             <posts::columns::id as SelectableExpression<Tablesample<posts::table, TSM>>>
    = note: required for `users::table` to implement `DistinctOnDsl<posts::columns::id>`
 note: required by a bound in `diesel::QueryDsl::distinct_on`
   --> $DIESEL/src/query_dsl/mod.rs
@@ -38,6 +39,7 @@ error[E0277]: Cannot select `users::columns::name` from `posts::table`
              <users::columns::name as SelectableExpression<SelectStatement<FromClause<From>>>>
              <users::columns::name as SelectableExpression<JoinOn<Join, On>>>
              <users::columns::name as SelectableExpression<Only<users::table>>>
+             <users::columns::name as SelectableExpression<Tablesample<users::table, TSM>>>
    = note: required for `(posts::columns::name, users::columns::name)` to implement `SelectableExpression<posts::table>`
    = note: required for `posts::table` to implement `DistinctOnDsl<(posts::columns::name, users::columns::name)>`
 
@@ -66,10 +68,13 @@ error[E0277]: the trait bound `posts::table: TableNotEqual<users::table>` is not
    = help: the following other types implement trait `TableNotEqual<T>`:
              <Only<pg::metadata_lookup::pg_namespace::table> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <Only<pg::metadata_lookup::pg_type::table> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+             <Tablesample<pg::metadata_lookup::pg_namespace::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_type::table>>
+             <Tablesample<pg::metadata_lookup::pg_type::table, TSM> as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Only<pg::metadata_lookup::pg_type::table>>>
+             <pg::metadata_lookup::pg_namespace::table as TableNotEqual<Tablesample<pg::metadata_lookup::pg_type::table, TSM>>>
              <pg::metadata_lookup::pg_namespace::table as TableNotEqual<pg::metadata_lookup::pg_type::table>>
              <pg::metadata_lookup::pg_type::table as TableNotEqual<Only<pg::metadata_lookup::pg_namespace::table>>>
-             <pg::metadata_lookup::pg_type::table as TableNotEqual<pg::metadata_lookup::pg_namespace::table>>
+           and $N others
    = note: required for `posts::table` to implement `AppearsInFromClause<users::table>`
 note: required for `users::columns::name` to implement `AppearsOnTable<posts::table>`
   --> tests/fail/distinct_on_allows_only_fields_of_table.rs:9:9

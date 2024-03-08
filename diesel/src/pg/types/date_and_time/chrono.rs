@@ -124,7 +124,9 @@ impl ToSql<Date, Pg> for NaiveDate {
 impl FromSql<Date, Pg> for NaiveDate {
     fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
         let PgDate(offset) = FromSql::<Date, Pg>::from_sql(bytes)?;
-        match pg_epoch_date().checked_add_signed(Duration::days(i64::from(offset))) {
+        #[allow(deprecated)] // otherwise we would need to bump our minimal chrono version
+        let duration = Duration::days(i64::from(offset));
+        match pg_epoch_date().checked_add_signed(duration) {
             Some(date) => Ok(date),
             None => {
                 let error_message = format!(
@@ -205,11 +207,11 @@ mod tests {
     #[test]
     fn times_relative_to_now_encode_correctly() {
         let connection = &mut connection();
-        let time = Utc::now().naive_utc() + Duration::seconds(60);
+        let time = Utc::now().naive_utc() + Duration::try_seconds(60).unwrap();
         let query = select(now.at_time_zone("utc").lt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let time = Utc::now().naive_utc() - Duration::seconds(60);
+        let time = Utc::now().naive_utc() - Duration::try_seconds(60).unwrap();
         let query = select(now.at_time_zone("utc").gt(time));
         assert!(query.get_result::<bool>(connection).unwrap());
     }
@@ -280,8 +282,8 @@ mod tests {
         let query = select(sql::<Date>("'J0'::date").eq(julian_epoch));
         assert!(query.get_result::<bool>(connection).unwrap());
 
-        let max_date = NaiveDate::MAX;
-        let query = select(sql::<Date>("'262143-12-31'::date").eq(max_date));
+        let max_date = NaiveDate::from_ymd_opt(262142, 12, 31).unwrap();
+        let query = select(sql::<Date>("'262142-12-31'::date").eq(max_date));
         assert!(query.get_result::<bool>(connection).unwrap());
 
         let january_first_2018 = NaiveDate::from_ymd_opt(2018, 1, 1).unwrap();
@@ -311,8 +313,8 @@ mod tests {
         let query = select(sql::<Date>("'J0'::date"));
         assert_eq!(Ok(julian_epoch), query.get_result::<NaiveDate>(connection));
 
-        let max_date = NaiveDate::MAX;
-        let query = select(sql::<Date>("'262143-12-31'::date"));
+        let max_date = NaiveDate::from_ymd_opt(262142, 12, 31).unwrap();
+        let query = select(sql::<Date>("'262142-12-31'::date"));
         assert_eq!(Ok(max_date), query.get_result::<NaiveDate>(connection));
 
         let january_first_2018 = NaiveDate::from_ymd_opt(2018, 1, 1).unwrap();

@@ -639,7 +639,7 @@ mod tests {
     #[test]
     fn register_custom_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        fun_case_internals::register_impl(connection, |x: String| {
+        fun_case_utils::register_impl(connection, |x: String| {
             x.chars()
                 .enumerate()
                 .map(|(i, c)| {
@@ -664,7 +664,7 @@ mod tests {
     #[test]
     fn register_multiarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        my_add_internals::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
+        my_add_utils::register_impl(connection, |x: i32, y: i32| x + y).unwrap();
 
         let added = crate::select(my_add(1, 2)).get_result::<i32>(connection);
         assert_eq!(Ok(3), added);
@@ -675,7 +675,7 @@ mod tests {
     #[test]
     fn register_noarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        answer_internals::register_impl(connection, || 42).unwrap();
+        answer_utils::register_impl(connection, || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);
@@ -684,7 +684,7 @@ mod tests {
     #[test]
     fn register_nondeterministic_noarg_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
-        answer_internals::register_nondeterministic_impl(connection, || 42).unwrap();
+        answer_utils::register_nondeterministic_impl(connection, || 42).unwrap();
 
         let answer = crate::select(answer()).get_result::<i32>(connection);
         assert_eq!(Ok(42), answer);
@@ -696,7 +696,7 @@ mod tests {
     fn register_nondeterministic_function() {
         let connection = &mut SqliteConnection::establish(":memory:").unwrap();
         let mut y = 0;
-        add_counter_internals::register_nondeterministic_impl(connection, move |x: i32| {
+        add_counter_utils::register_nondeterministic_impl(connection, move |x: i32| {
             y += 1;
             x + y
         })
@@ -706,8 +706,6 @@ mod tests {
             .get_result::<(i32, i32, i32)>(connection);
         assert_eq!(Ok((2, 3, 4)), added);
     }
-
-    use crate::sqlite::SqliteAggregateFunction;
 
     define_sql_function! {
         #[aggregate]
@@ -752,7 +750,7 @@ mod tests {
             .execute(connection)
             .unwrap();
 
-        my_sum_internals::register_impl::<MySum, _>(connection).unwrap();
+        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
@@ -771,7 +769,7 @@ mod tests {
         .execute(connection)
         .unwrap();
 
-        my_sum_internals::register_impl::<MySum, _>(connection).unwrap();
+        my_sum_utils::register_impl::<MySum, _>(connection).unwrap();
 
         let result = my_sum_example
             .select(my_sum(value))
@@ -843,7 +841,7 @@ mod tests {
         .execute(connection)
         .unwrap();
 
-        range_max_internals::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
+        range_max_utils::register_impl::<RangeMax<i32>, _, _, _>(connection).unwrap();
         let result = range_max_example
             .select(range_max(value1, value2, value3))
             .get_result::<Option<i32>>(connection)

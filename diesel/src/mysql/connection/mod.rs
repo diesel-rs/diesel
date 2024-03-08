@@ -9,7 +9,6 @@ use self::stmt::Statement;
 use self::url::ConnectionOptions;
 use super::backend::Mysql;
 use crate::connection::instrumentation::DebugQuery;
-use crate::connection::instrumentation::InstrumentationEvent;
 use crate::connection::instrumentation::StrQueryHelper;
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
