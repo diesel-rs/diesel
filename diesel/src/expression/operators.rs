@@ -748,7 +748,7 @@ pub trait LikeIsAllowedForType<ST>: Backend {}
 
 impl<DB> LikeIsAllowedForType<crate::sql_types::Text> for DB where DB: Backend {}
 
-// impl<T, DB> LikeIsAllowedForType<crate::sql_types::Nullable<T>> for DB 
-// where 
-//     DB: Backend + LikeIsAllowedForType<T>,  
-// {}
+impl<T, DB> LikeIsAllowedForType<crate::sql_types::Nullable<T>> for DB 
+where 
+    DB: Backend + LikeIsAllowedForType<T>,  
+{}
