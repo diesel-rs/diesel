@@ -32,10 +32,10 @@ composite_type_db=# SELECT * FROM coordinates;
 The typical working flow when using Diesel is to automatically generate [schema.rs](./src/schema.rs) which
 provides us with the type information of the columns which are present in
 our coordinates table. Also, an SQL function, [distance_from_origin()](./migrations/2023-10-23-111951_composite2rust_coordinates/up.sql),
-is defined. We need to explain this to the Rust compiler using the [sql_function!](https://docs.rs/diesel/latest/diesel/expression/functions/macro.sql_function.html)
+is defined. We need to explain this to the Rust compiler using the [define_sql_function!](https://docs.rs/diesel/latest/diesel/expression/functions/macro.define_sql_function.html)
 macro like this:
 ```rust
-sql_function!(fn distance_from_origin(re: Integer,im: Integer) -> Float);
+define_sql_function!(fn distance_from_origin(re: Integer,im: Integer) -> Float);
 ```
 Keep in mind that we specify [only postgreSQL types](https://docs.rs/diesel/latest/diesel/sql_types/index.html)
 as the input parameters and return value(s) of this function. If the columns
@@ -48,7 +48,7 @@ let results: Vec<(i32, f32)> = coordinates
 ```
 So we expect a vector of a 2-tuple, or ordered pair of the Rust types ```i32```
 and ```f32```. Mind that the float type is not present in the table but is
-specified in by the SQL function in the database and also in the macro `sql_function!`
+specified in by the SQL function in the database and also in the macro `define_sql_function!`
 definition above. Of course we can expand this to very long tuples, but that
 will become error prone as we have to specify the sequence of type correctly
 every function call. Try out the [first example](./examples/composite2rust_coordinates) with:
@@ -126,8 +126,8 @@ cargo run --example composite2rust_colors
 On the Rust side, we define the interpretation of both functions differently, the first one using a tuple similar to the coordinates example, the second one using a _locally_ defined Rust type for interpreting a tuple: notice the **Pg**-prefix of `PgGrayType`.
 
 ```rust
-sql_function!(fn color2grey(r: Integer, g: Integer,b: Integer) -> Record<(Float,Text)>);
-sql_function!(fn color2gray(r: Integer, g: Integer,b: Integer) -> PgGrayType);
+define_sql_function!(fn color2grey(r: Integer, g: Integer,b: Integer) -> Record<(Float,Text)>);
+define_sql_function!(fn color2gray(r: Integer, g: Integer,b: Integer) -> PgGrayType);
 ```
 As this only creates a type with anonymous fields, which can be addressed by their field number **object.0**, **object.1** etc., it would be more convenient to attach names to the fields. Therefore we need to define a type with our intended field names, which we can use _globally_ (or at least outside the database related code space):
 ```rust
