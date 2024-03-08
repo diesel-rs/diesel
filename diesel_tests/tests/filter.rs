@@ -445,7 +445,6 @@ fn filter_like_nullable_column() {
     assert_eq!(expected, data);
 }
 
-
 #[test]
 fn filter_subselect_referencing_outer_table() {
     use diesel::dsl::exists;
