@@ -28,6 +28,7 @@ Increasing the minimal supported Rust version will always be coupled at least wi
 
 * The minimal officially supported rustc version is now 1.78.0
 * Deprecated `sql_function!` in favour of `define_sql_function!` which provides compatibility with `#[dsl::auto_type]`
+* Deserialization error messages now contain information about the field that failed to deserialize
 
 ## [2.1.0] 2023-05-26
 
