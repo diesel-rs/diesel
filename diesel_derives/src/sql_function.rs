@@ -396,7 +396,7 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
 
     let (outside_of_module_helper_type, return_type_path, internals_module_name) =
         if legacy_helper_type_and_module {
-            (None, quote! { #fn_name }, fn_name.clone())
+            (None, quote! { #fn_name::HelperType }, fn_name.clone())
         } else {
             let internals_module_name = Ident::new(&format!("{fn_name}_utils"), fn_name.span());
             (
