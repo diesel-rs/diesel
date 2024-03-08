@@ -9,6 +9,9 @@ use self::private::ConnectionAndTransactionManager;
 use self::raw::{PgTransactionStatus, RawConnection};
 use self::result::PgResult;
 use self::stmt::Statement;
+use crate::connection::instrumentation::DebugQuery;
+use crate::connection::instrumentation::StrQueryHelper;
+use crate::connection::instrumentation::{Instrumentation, InstrumentationEvent};
 use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
@@ -20,6 +23,7 @@ use crate::result::ConnectionError::CouldntSetupConfiguration;
 use crate::result::*;
 use crate::RunQueryDsl;
 use std::ffi::CString;
+use std::fmt::Debug;
 use std::os::raw as libc;
 
 /// The connection string expected by `PgConnection::establish`
@@ -126,11 +130,16 @@ unsafe impl Send for PgConnection {}
 impl SimpleConnection for PgConnection {
     #[allow(unsafe_code)] // use of unsafe function
     fn batch_execute(&mut self, query: &str) -> QueryResult<()> {
-        let query = CString::new(query)?;
+        self.connection_and_transaction_manager
+            .instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &StrQueryHelper::new(query),
+            });
+        let c_query = CString::new(query)?;
         let inner_result = unsafe {
             self.connection_and_transaction_manager
                 .raw_connection
-                .exec(query.as_ptr())
+                .exec(c_query.as_ptr())
         };
         update_transaction_manager_status(
             inner_result.and_then(|raw_result| {
@@ -140,6 +149,8 @@ impl SimpleConnection for PgConnection {
                 )
             }),
             &mut self.connection_and_transaction_manager,
+            &StrQueryHelper::new(query),
+            true,
         )?;
         Ok(())
     }
@@ -158,11 +169,16 @@ impl Connection for PgConnection {
     type TransactionManager = AnsiTransactionManager;
 
     fn establish(database_url: &str) -> ConnectionResult<PgConnection> {
-        RawConnection::establish(database_url).and_then(|raw_conn| {
+        let mut instrumentation = crate::connection::instrumentation::get_default_instrumentation();
+        instrumentation.on_connection_event(InstrumentationEvent::StartEstablishConnection {
+            url: database_url,
+        });
+        let r = RawConnection::establish(database_url).and_then(|raw_conn| {
             let mut conn = PgConnection {
                 connection_and_transaction_manager: ConnectionAndTransactionManager {
                     raw_connection: raw_conn,
                     transaction_state: AnsiTransactionManager::default(),
+                    instrumentation: None,
                 },
                 statement_cache: StatementCache::new(),
                 metadata_cache: PgMetadataCache::new(),
@@ -170,14 +186,22 @@ impl Connection for PgConnection {
             conn.set_config_options()
                 .map_err(CouldntSetupConfiguration)?;
             Ok(conn)
-        })
+        });
+        instrumentation.on_connection_event(InstrumentationEvent::FinishEstablishConnection {
+            url: database_url,
+            error: r.as_ref().err(),
+        });
+        let mut conn = r?;
+        conn.connection_and_transaction_manager.instrumentation = instrumentation;
+        Ok(conn)
     }
+
     fn execute_returning_count<T>(&mut self, source: &T) -> QueryResult<usize>
     where
         T: QueryFragment<Pg> + QueryId,
     {
         update_transaction_manager_status(
-            self.with_prepared_query(source, |query, params, conn| {
+            self.with_prepared_query(source, true, |query, params, conn, _source| {
                 let res = query
                     .execute(&mut conn.raw_connection, &params, false)
                     .map(|r| r.rows_affected());
@@ -187,6 +211,8 @@ impl Connection for PgConnection {
                 res
             }),
             &mut self.connection_and_transaction_manager,
+            &crate::debug_query(source),
+            true,
         )
     }
 
@@ -195,6 +221,14 @@ impl Connection for PgConnection {
         Self: Sized,
     {
         &mut self.connection_and_transaction_manager.transaction_state
+    }
+
+    fn instrumentation(&mut self) -> &mut dyn Instrumentation {
+        &mut self.connection_and_transaction_manager.instrumentation
+    }
+
+    fn set_instrumentation(&mut self, instrumentation: impl Instrumentation) {
+        self.connection_and_transaction_manager.instrumentation = Some(Box::new(instrumentation));
     }
 }
 
@@ -213,11 +247,16 @@ where
         T: Query + QueryFragment<Self::Backend> + QueryId + 'query,
         Self::Backend: QueryMetadata<T::SqlType>,
     {
-        self.with_prepared_query(&source, |stmt, params, conn| {
+        self.with_prepared_query(source, false, |stmt, params, conn, source| {
             use self::private::PgLoadingMode;
             let result = stmt.execute(&mut conn.raw_connection, &params, Self::USE_ROW_BY_ROW_MODE);
-            let result = update_transaction_manager_status(result, conn)?;
-            Self::get_cursor(conn, result)
+            let result = update_transaction_manager_status(
+                result,
+                conn,
+                &crate::debug_query(&source),
+                false,
+            )?;
+            Self::get_cursor(conn, result, source)
         })
     }
 }
@@ -232,6 +271,8 @@ impl GetPgMetadataCache for PgConnection {
 fn update_transaction_manager_status<T>(
     query_result: QueryResult<T>,
     conn: &mut ConnectionAndTransactionManager,
+    source: &dyn DebugQuery,
+    final_call: bool,
 ) -> QueryResult<T> {
     /// avoid monomorphizing for every result type - this part will not be inlined
     fn non_generic_inner(conn: &mut ConnectionAndTransactionManager, is_err: bool) {
@@ -281,6 +322,19 @@ fn update_transaction_manager_status<T>(
         }
     }
     non_generic_inner(conn, query_result.is_err());
+    if let Err(ref e) = query_result {
+        conn.instrumentation
+            .on_connection_event(InstrumentationEvent::FinishQuery {
+                query: source,
+                error: Some(e),
+            });
+    } else if final_call {
+        conn.instrumentation
+            .on_connection_event(InstrumentationEvent::FinishQuery {
+                query: source,
+                error: None,
+            });
+    }
     query_result
 }
 
@@ -341,13 +395,20 @@ impl PgConnection {
 
     fn with_prepared_query<'conn, T: QueryFragment<Pg> + QueryId, R>(
         &'conn mut self,
-        source: &'_ T,
+        source: T,
+        execute_returning_count: bool,
         f: impl FnOnce(
             MaybeCached<'_, Statement>,
             Vec<Option<Vec<u8>>>,
             &'conn mut ConnectionAndTransactionManager,
+            T,
         ) -> QueryResult<R>,
     ) -> QueryResult<R> {
+        self.connection_and_transaction_manager
+            .instrumentation
+            .on_connection_event(InstrumentationEvent::StartQuery {
+                query: &crate::debug_query(&source),
+            });
         let mut bind_collector = RawBytesBindCollector::<Pg>::new();
         source.collect_binds(&mut bind_collector, self, &Pg)?;
         let binds = bind_collector.binds;
@@ -356,16 +417,37 @@ impl PgConnection {
         let cache_len = self.statement_cache.len();
         let cache = &mut self.statement_cache;
         let conn = &mut self.connection_and_transaction_manager.raw_connection;
-        let query = cache.cached_statement(source, &Pg, &metadata, |sql, _| {
-            let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
-                Some(format!("__diesel_stmt_{cache_len}"))
-            } else {
-                None
-            };
-            Statement::prepare(conn, sql, query_name.as_deref(), &metadata)
-        });
+        let query = cache.cached_statement(
+            &source,
+            &Pg,
+            &metadata,
+            |sql, _| {
+                let query_name = if source.is_safe_to_cache_prepared(&Pg)? {
+                    Some(format!("__diesel_stmt_{cache_len}"))
+                } else {
+                    None
+                };
+                Statement::prepare(conn, sql, query_name.as_deref(), &metadata)
+            },
+            &mut self.connection_and_transaction_manager.instrumentation,
+        );
+        if !execute_returning_count {
+            if let Err(ref e) = query {
+                self.connection_and_transaction_manager
+                    .instrumentation
+                    .on_connection_event(InstrumentationEvent::FinishQuery {
+                        query: &crate::debug_query(&source),
+                        error: Some(e),
+                    });
+            }
+        }
 
-        f(query?, binds, &mut self.connection_and_transaction_manager)
+        f(
+            query?,
+            binds,
+            &mut self.connection_and_transaction_manager,
+            source,
+        )
     }
 
     fn set_config_options(&mut self) -> QueryResult<()> {
@@ -387,6 +469,7 @@ mod private {
     pub struct ConnectionAndTransactionManager {
         pub(super) raw_connection: RawConnection,
         pub(super) transaction_state: AnsiTransactionManager,
+        pub(super) instrumentation: Option<Box<dyn Instrumentation>>,
     }
 
     pub trait PgLoadingMode<B> {
@@ -394,10 +477,11 @@ mod private {
         type Cursor<'conn, 'query>: Iterator<Item = QueryResult<Self::Row<'conn, 'query>>>;
         type Row<'conn, 'query>: crate::row::Row<'conn, Pg>;
 
-        fn get_cursor<'query>(
-            raw_connection: &mut ConnectionAndTransactionManager,
+        fn get_cursor<'conn, 'query>(
+            raw_connection: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<Self::Cursor<'_, 'query>>;
+            source: impl QueryFragment<Pg> + 'query,
+        ) -> QueryResult<Self::Cursor<'conn, 'query>>;
     }
 
     impl PgLoadingMode<DefaultLoadingMode> for PgConnection {
@@ -405,24 +489,35 @@ mod private {
         type Cursor<'conn, 'query> = Cursor;
         type Row<'conn, 'query> = self::row::PgRow;
 
-        fn get_cursor<'query>(
-            conn: &mut ConnectionAndTransactionManager,
+        fn get_cursor<'conn, 'query>(
+            conn: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<Self::Cursor<'_, 'query>> {
-            update_transaction_manager_status(Cursor::new(result, &mut conn.raw_connection), conn)
+            source: impl QueryFragment<Pg> + 'query,
+        ) -> QueryResult<Self::Cursor<'conn, 'query>> {
+            update_transaction_manager_status(
+                Cursor::new(result, &mut conn.raw_connection),
+                conn,
+                &crate::debug_query(&source),
+                true,
+            )
         }
     }
 
     impl PgLoadingMode<PgRowByRowLoadingMode> for PgConnection {
         const USE_ROW_BY_ROW_MODE: bool = true;
-        type Cursor<'conn, 'query> = RowByRowCursor<'conn>;
+        type Cursor<'conn, 'query> = RowByRowCursor<'conn, 'query>;
         type Row<'conn, 'query> = self::row::PgRow;
 
-        fn get_cursor<'query>(
-            raw_connection: &mut ConnectionAndTransactionManager,
+        fn get_cursor<'conn, 'query>(
+            raw_connection: &'conn mut ConnectionAndTransactionManager,
             result: PgResult,
-        ) -> QueryResult<Self::Cursor<'_, 'query>> {
-            Ok(RowByRowCursor::new(result, raw_connection))
+            source: impl QueryFragment<Pg> + 'query,
+        ) -> QueryResult<Self::Cursor<'conn, 'query>> {
+            Ok(RowByRowCursor::new(
+                result,
+                raw_connection,
+                Box::new(source),
+            ))
         }
     }
 }
@@ -489,7 +584,7 @@ mod tests {
         assert_eq!(2, connection.statement_cache.len());
     }
 
-    sql_function!(fn lower(x: VarChar) -> VarChar);
+    sql_function_v2!(fn lower(x: VarChar) -> VarChar);
 
     #[test]
     fn queries_with_identical_types_and_binds_but_different_sql_are_cached_separately() {

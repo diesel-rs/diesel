@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use diesel::deserialize::{self, Queryable};
 use diesel::dsl::sql;
 use diesel::row::NamedRow;
@@ -33,13 +31,11 @@ table! {
 pub fn load_table_names(
     connection: &mut SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<Vec<TableName>, crate::errors::Error> {
     use self::sqlite_master::dsl::*;
 
     if schema_name.is_some() {
-        return Err("sqlite cannot infer schema for databases other than the \
-                    main database"
-            .into());
+        return Err(crate::errors::Error::InvalidSqliteSchema);
     }
 
     Ok(sqlite_master
@@ -57,7 +53,7 @@ pub fn load_table_names(
 pub fn load_foreign_key_constraints(
     connection: &mut SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<Vec<ForeignKeyConstraint>, crate::errors::Error> {
     let tables = load_table_names(connection, schema_name)?;
     let rows = tables
         .into_iter()
@@ -104,15 +100,18 @@ impl SqliteVersion {
     }
 }
 
-fn get_sqlite_version(conn: &mut SqliteConnection) -> SqliteVersion {
+fn get_sqlite_version(conn: &mut SqliteConnection) -> QueryResult<SqliteVersion> {
     let query = "SELECT sqlite_version()";
-    let result = sql::<sql_types::Text>(query).load::<String>(conn).unwrap();
+    let result = sql::<sql_types::Text>(query).load::<String>(conn)?;
     let parts = result[0]
         .split('.')
-        .map(|part| part.parse().unwrap())
+        .map(|part| {
+            part.parse()
+                .expect("sqlite version is guaranteed to consist of numbers")
+        })
         .collect::<Vec<u32>>();
     assert_eq!(parts.len(), 3);
-    SqliteVersion::new(parts[0], parts[1], parts[2])
+    Ok(SqliteVersion::new(parts[0], parts[1], parts[2]))
 }
 
 pub fn get_table_data(
@@ -120,7 +119,7 @@ pub fn get_table_data(
     table: &TableName,
     column_sorting: &ColumnSorting,
 ) -> QueryResult<Vec<ColumnInformation>> {
-    let sqlite_version = get_sqlite_version(conn);
+    let sqlite_version = get_sqlite_version(conn)?;
     let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
         /*
          * To get generated columns we need to use TABLE_XINFO
@@ -139,7 +138,7 @@ pub fn get_table_data(
         ColumnSorting::OrdinalPosition => {}
         ColumnSorting::Name => {
             result.sort_by(|a: &ColumnInformation, b: &ColumnInformation| {
-                a.column_name.partial_cmp(&b.column_name).unwrap()
+                a.column_name.cmp(&b.column_name)
             });
         }
     };
@@ -198,7 +197,7 @@ pub fn get_primary_keys(
     conn: &mut SqliteConnection,
     table: &TableName,
 ) -> QueryResult<Vec<String>> {
-    let sqlite_version = get_sqlite_version(conn);
+    let sqlite_version = get_sqlite_version(conn)?;
     let query = if sqlite_version >= SqliteVersion::new(3, 26, 0) {
         format!("PRAGMA TABLE_XINFO('{}')", &table.sql_name)
     } else {
@@ -233,9 +232,8 @@ pub fn get_primary_keys(
     Ok(collected)
 }
 
-pub fn determine_column_type(
-    attr: &ColumnInformation,
-) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
+#[tracing::instrument]
+pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, crate::errors::Error> {
     let mut type_name = attr.type_name.to_lowercase();
     if type_name == "generated always" {
         type_name.clear();
@@ -264,7 +262,7 @@ pub fn determine_column_type(
     } else if type_name == "time" {
         String::from("Time")
     } else {
-        return Err(format!("Unsupported type: {type_name}").into());
+        return Err(crate::errors::Error::UnsupportedType(type_name));
     };
 
     Ok(ColumnType {

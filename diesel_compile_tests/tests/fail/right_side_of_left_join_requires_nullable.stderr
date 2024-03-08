@@ -88,9 +88,9 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
    |
-33 | sql_function!(fn lower(x: Text) -> Text);
+33 | sql_function_v2!(fn lower(x: Text) -> Text);
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-   = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `sql_function_v2` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:49:25
@@ -192,9 +192,9 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
    |
-33 | sql_function!(fn lower(x: Text) -> Text);
+33 | sql_function_v2!(fn lower(x: Text) -> Text);
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-   = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `sql_function_v2` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:66:25
@@ -296,9 +296,9 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
    |
-33 | sql_function!(fn lower(x: Text) -> Text);
+33 | sql_function_v2!(fn lower(x: Text) -> Text);
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-   = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `sql_function_v2` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:83:25
@@ -400,9 +400,9 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
 note: required by a bound in `lower`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
    |
-33 | sql_function!(fn lower(x: Text) -> Text);
+33 | sql_function_v2!(fn lower(x: Text) -> Text);
    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-   = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+   = note: this error originates in the macro `sql_function_v2` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
   --> tests/fail/right_side_of_left_join_requires_nullable.rs:98:25
@@ -504,9 +504,9 @@ error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType 
 note: required by a bound in `lower`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:33:1
     |
-33  | sql_function!(fn lower(x: Text) -> Text);
+33  | sql_function_v2!(fn lower(x: Text) -> Text);
     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `lower`
-    = note: this error originates in the macro `sql_function` (in Nightly builds, run with -Z macro-backtrace for more info)
+    = note: this error originates in the macro `sql_function_v2` (in Nightly builds, run with -Z macro-backtrace for more info)
 
 error[E0271]: type mismatch resolving `<Nullable<title> as Expression>::SqlType == Text`
    --> tests/fail/right_side_of_left_join_requires_nullable.rs:113:25

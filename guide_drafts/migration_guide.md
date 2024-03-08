@@ -32,7 +32,7 @@ by the following changes:
 * [Changed `FromSql` implementations](#2-0-0-from-sql)
 
 `no_arg_sql_function!` macro is now pending deprecation.
-Users of the macro are advised to consider `sql_function!` macro.
+Users of the macro are advised to consider `sql_function_v2!` macro.
 
 * [Deprecated usage of `no_arg_sql_function!` macro](#2-0-0-no_arg_sql_function)
 
@@ -188,9 +188,9 @@ impl<DB: Backend> FromSql<YourSqlType, DB> for YourType {
 
 ## `no_arg_sql_function`<a name="2-0-0-no_arg_sql_function"></a>
 
-The `no_arg_sql_function` was deprecated without direct replacement. At the same time the
-`sql_function!` macro gained support for sql functions without argument. This support generates slightly 
-different code. Instead of representing the sql function as zero sized struct, `sql_function!` will generate an ordinary function call without arguments. This requires changing any usage of the generated dsl. This change 
+The `no_arg_sql_function` was deprecated without direct replacement. However the
+`sql_function_v2!` macro gained support for sql functions without argument. This support generates slightly 
+different code. Instead of representing the sql function as zero sized struct, `sql_function_v2!` will generate an ordinary function call without arguments. This requires changing any usage of the generated dsl. This change 
 affects all of the usages of the `no_arg_sql_function!` in third party crates.
 
 ```diff
@@ -198,7 +198,7 @@ affects all of the usages of the `no_arg_sql_function!` in third party crates.
 - 
 - diesel::select(now)
  
-+ sql_function!{
++ sql_function_v2!{
 +     /// Represents the SQL NOW() function
 +     fn now() -> sql_types::Timestamp;
 + }

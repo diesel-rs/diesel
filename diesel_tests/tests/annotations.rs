@@ -286,7 +286,7 @@ fn derive_insertable_with_option_for_not_null_field_with_default() {
     assert_eq!(Some(&User::new(123, "Bob")), bob);
 }
 
-sql_function!(fn nextval(a: Text) -> Integer);
+sql_function_v2!(fn nextval(a: Text) -> Integer);
 
 #[test]
 #[cfg(feature = "postgres")]
@@ -294,7 +294,7 @@ fn derive_insertable_with_field_that_cannot_convert_expression_to_nullable() {
     #[derive(Insertable)]
     #[diesel(table_name = users)]
     struct NewUser {
-        id: nextval::HelperType<&'static str>,
+        id: nextval<&'static str>,
         name: &'static str,
     }
 

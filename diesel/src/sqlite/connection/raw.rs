@@ -200,6 +200,8 @@ impl RawConnection {
     }
 
     pub(super) fn deserialize(&mut self, data: &[u8]) -> QueryResult<()> {
+        // the cast for `ffi::SQLITE_DESERIALIZE_READONLY` is required for old libsqlite3-sys versions
+        #[allow(clippy::unnecessary_cast)]
         unsafe {
             let result = ffi::sqlite3_deserialize(
                 self.internal_connection.as_ptr(),

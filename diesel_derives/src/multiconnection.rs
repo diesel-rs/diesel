@@ -109,6 +109,24 @@ fn generate_connection_impl(
         }
     });
 
+    let instrumentation_impl = connection_types.iter().map(|c| {
+        let variant_ident = c.name;
+        quote::quote! {
+            #ident::#variant_ident(conn) => {
+                diesel::connection::Connection::set_instrumentation(conn, instrumentation);
+            }
+        }
+    });
+
+    let get_instrumentation_impl = connection_types.iter().map(|c| {
+        let variant_ident = c.name;
+        quote::quote! {
+            #ident::#variant_ident(conn) => {
+                diesel::connection::Connection::instrumentation(conn)
+            }
+        }
+    });
+
     let establish_impls = connection_types.iter().map(|c| {
         let ident = c.name;
         let ty = c.ty;
@@ -325,6 +343,18 @@ fn generate_connection_impl(
                 &mut self,
             ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
                 self
+            }
+
+            fn instrumentation(&mut self) -> &mut dyn diesel::connection::Instrumentation {
+                match self {
+                    #(#get_instrumentation_impl,)*
+                }
+            }
+
+            fn set_instrumentation(&mut self, instrumentation: impl diesel::connection::Instrumentation) {
+                match self {
+                    #(#instrumentation_impl,)*
+                }
             }
         }
 

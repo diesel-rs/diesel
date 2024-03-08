@@ -75,40 +75,16 @@ pub(crate) mod dsl {
     pub use crate::pg::expression::dsl::*;
 
     /// The return type of [`count(expr)`](crate::dsl::count())
-    pub type Count<Expr> = super::count::count::HelperType<SqlTypeOf<Expr>, Expr>;
-
-    #[doc(hidden)]
-    // cannot put deprecated on this because rustc then
-    // also reports the function as deprecated
-    #[cfg(any(feature = "with-deprecated", not(feature = "without-deprecated")))]
-    pub type count<Expr> = Count<Expr>;
+    pub type count<Expr> = super::count::count<SqlTypeOf<Expr>, Expr>;
 
     /// The return type of [`count_star()`](crate::dsl::count_star())
-    pub type CountStar = super::count::CountStar;
-
-    #[doc(hidden)]
-    // cannot put deprecated on this because rustc then
-    // also reports the function as deprecated
-    #[cfg(any(feature = "with-deprecated", not(feature = "without-deprecated")))]
-    pub type count_star = CountStar;
+    pub type count_star = super::count::CountStar;
 
     /// The return type of [`count_distinct()`](crate::dsl::count_distinct())
-    pub type CountDistinct<Expr> = super::count::CountDistinct<SqlTypeOf<Expr>, Expr>;
-
-    #[doc(hidden)]
-    // cannot put deprecated on this because rustc then
-    // also reports the function as deprecated
-    #[cfg(any(feature = "with-deprecated", not(feature = "without-deprecated")))]
-    pub type count_distinct<Expr> = CountDistinct<Expr>;
+    pub type count_distinct<Expr> = super::count::CountDistinct<SqlTypeOf<Expr>, Expr>;
 
     /// The return type of [`date(expr)`](crate::dsl::date())
-    pub type Date<Expr> = super::functions::date_and_time::date::HelperType<Expr>;
-
-    #[doc(hidden)]
-    // cannot put deprecated on this because rustc then
-    // also reports the function as deprecated
-    #[cfg(any(feature = "with-deprecated", not(feature = "without-deprecated")))]
-    pub type date<Expr> = Date<Expr>;
+    pub type date<Expr> = super::functions::date_and_time::date<Expr>;
 
     #[cfg(feature = "mysql_backend")]
     pub use crate::mysql::query_builder::DuplicatedKeys;

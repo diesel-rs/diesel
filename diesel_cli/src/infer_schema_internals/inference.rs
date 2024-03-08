@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use diesel::result::Error::NotFound;
 
 use super::data_structures::*;
@@ -109,11 +107,12 @@ pub fn rust_name_for_sql_name(sql_name: &str) -> String {
     }
 }
 
+#[tracing::instrument(skip(connection))]
 pub fn load_table_names(
     connection: &mut InferConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<dyn Error + Send + Sync + 'static>> {
-    match connection {
+) -> Result<Vec<TableName>, crate::errors::Error> {
+    let tables = match connection {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref mut c) => super::sqlite::load_table_names(c, schema_name),
         #[cfg(feature = "postgres")]
@@ -124,7 +123,10 @@ pub fn load_table_names(
         InferConnection::Mysql(ref mut c) => {
             super::information_schema::load_table_names(c, schema_name)
         }
-    }
+    }?;
+
+    tracing::info!(?tables, "Loaded tables");
+    Ok(tables)
 }
 
 pub fn filter_table_names(table_names: Vec<TableName>, table_filter: &Filtering) -> Vec<TableName> {
@@ -134,10 +136,11 @@ pub fn filter_table_names(table_names: Vec<TableName>, table_filter: &Filtering)
         .collect::<_>()
 }
 
+#[tracing::instrument(skip(conn))]
 fn get_table_comment(
     conn: &mut InferConnection,
     table: &TableName,
-) -> Result<Option<String>, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<Option<String>, crate::errors::Error> {
     let table_comment = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => Ok(None),
@@ -147,9 +150,11 @@ fn get_table_comment(
         InferConnection::Mysql(ref mut c) => super::mysql::get_table_comment(c, table),
     };
     if let Err(NotFound) = table_comment {
-        Err(format!("no table exists named {table}").into())
+        Err(crate::errors::Error::NoTableFound(table.clone()))
     } else {
-        table_comment.map_err(Into::into)
+        let table_comment = table_comment?;
+        tracing::info!(?table_comment, "Load table comments for {table}");
+        Ok(table_comment)
     }
 }
 
@@ -157,7 +162,7 @@ fn get_column_information(
     conn: &mut InferConnection,
     table: &TableName,
     column_sorting: &ColumnSorting,
-) -> Result<Vec<ColumnInformation>, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<Vec<ColumnInformation>, crate::errors::Error> {
     let column_info = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref mut c) => {
@@ -169,16 +174,18 @@ fn get_column_information(
         InferConnection::Mysql(ref mut c) => super::mysql::get_table_data(c, table, column_sorting),
     };
     if let Err(NotFound) = column_info {
-        Err(format!("no table exists named {table}").into())
+        Err(crate::errors::Error::NoTableFound(table.clone()))
     } else {
-        column_info.map_err(Into::into)
+        let column_info = column_info?;
+        tracing::info!(?column_info, "Load column information for table {table}");
+        Ok(column_info)
     }
 }
 
 fn determine_column_type(
     attr: &ColumnInformation,
     conn: &mut InferConnection,
-) -> Result<ColumnType, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<ColumnType, crate::errors::Error> {
     match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(_) => super::sqlite::determine_column_type(attr),
@@ -193,10 +200,11 @@ fn determine_column_type(
     }
 }
 
+#[tracing::instrument(skip(conn))]
 pub(crate) fn get_primary_keys(
     conn: &mut InferConnection,
     table: &TableName,
-) -> Result<Vec<String>, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<Vec<String>, crate::errors::Error> {
     let primary_keys: Vec<String> = match *conn {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref mut c) => super::sqlite::get_primary_keys(c, table),
@@ -206,20 +214,18 @@ pub(crate) fn get_primary_keys(
         InferConnection::Mysql(ref mut c) => super::information_schema::get_primary_keys(c, table),
     }?;
     if primary_keys.is_empty() {
-        Err(format!(
-            "Diesel only supports tables with primary keys. \
-             Table {table} has no primary key",
-        )
-        .into())
+        Err(crate::errors::Error::NoPrimaryKeyFound(table.clone()))
     } else {
+        tracing::info!(?primary_keys, "Load primary keys for table {table}");
         Ok(primary_keys)
     }
 }
 
+#[tracing::instrument(skip(connection))]
 pub fn load_foreign_key_constraints(
     connection: &mut InferConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<Vec<ForeignKeyConstraint>, crate::errors::Error> {
     let constraints = match connection {
         #[cfg(feature = "sqlite")]
         InferConnection::Sqlite(ref mut c) => {
@@ -244,16 +250,18 @@ pub fn load_foreign_key_constraints(
                 }
             }
         });
+        tracing::info!(?ct, "Loaded foreign key constraints");
         ct
     })
 }
 
+#[tracing::instrument(skip(connection))]
 pub fn load_table_data(
     connection: &mut InferConnection,
     name: TableName,
     column_sorting: &ColumnSorting,
     with_docs: DocConfig,
-) -> Result<TableData, Box<dyn Error + Send + Sync + 'static>> {
+) -> Result<TableData, crate::errors::Error> {
     // No point in loading table comments if they are not going to be displayed
     let table_comment = match with_docs {
         DocConfig::NoDocComments => None,
@@ -288,7 +296,7 @@ pub fn load_table_data(
                 comment,
             })
         })
-        .collect::<Result<_, Box<dyn Error + Send + Sync + 'static>>>()?;
+        .collect::<Result<_, crate::errors::Error>>()?;
 
     Ok(TableData {
         name,

@@ -334,6 +334,8 @@ pub fn derive_identifiable(input: TokenStream) -> TokenStream {
 ///    the actual field type.
 /// * `#[diesel(treat_none_as_default_value = true/false)]`, overrides the container-level
 ///   `treat_none_as_default_value` attribute for the current field.
+/// * `#[diesel(skip_insertion)]`, skips insertion of this field. Useful for working with
+///    generated columns.
 ///
 /// # Examples
 ///
@@ -1011,46 +1013,17 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// function. For example, this invocation:
 ///
 /// ```ignore
-/// sql_function!(fn lower(x: Text) -> Text);
+/// sql_function_v2!(fn lower(x: Text) -> Text);
 /// ```
 ///
 /// will generate this code:
 ///
 /// ```ignore
-/// pub fn lower<X>(x: X) -> lower::HelperType<X> {
+/// pub fn lower<X>(x: X) -> lower<X> {
 ///     ...
 /// }
 ///
-/// pub(crate) mod lower {
-///     pub type HelperType<X> = ...;
-/// }
-/// ```
-///
-/// If you are using this macro for part of a library, where the function is
-/// part of your public API, it is highly recommended that you re-export this
-/// helper type with the same name as your function. This is the standard
-/// structure:
-///
-/// ```ignore
-/// pub mod functions {
-///     use super::types::*;
-///     use diesel::sql_types::*;
-///
-///     sql_function! {
-///         /// Represents the Pg `LENGTH` function used with `tsvector`s.
-///         fn length(x: TsVector) -> Integer;
-///     }
-/// }
-///
-/// pub mod helper_types {
-///     /// The return type of `length(expr)`
-///     pub type Length<Expr> = functions::length::HelperType<Expr>;
-/// }
-///
-/// pub mod dsl {
-///     pub use functions::*;
-///     pub use helper_types::*;
-/// }
+/// pub type lower<X> = ...;
 /// ```
 ///
 /// Most attributes given to this macro will be put on the generated function
@@ -1066,7 +1039,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// use diesel::sql_types::Text;
 ///
-/// sql_function! {
+/// sql_function_v2! {
 ///     /// Represents the `canon_crate_name` SQL function, created in
 ///     /// migration ....
 ///     fn canon_crate_name(a: Text) -> Text;
@@ -1104,7 +1077,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// use diesel::sql_types::Foldable;
 ///
-/// sql_function! {
+/// sql_function_v2! {
 ///     #[aggregate]
 ///     #[sql_name = "SUM"]
 ///     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
@@ -1119,7 +1092,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # SQL Functions without Arguments
 ///
 /// A common example is ordering a query using the `RANDOM()` sql function,
-/// which can be implemented using `sql_function!` like this:
+/// which can be implemented using `sql_function_v2!` like this:
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -1127,7 +1100,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
-/// sql_function!(fn random() -> Text);
+/// sql_function_v2!(fn random() -> Text);
 ///
 /// # fn main() {
 /// # use self::crates::dsl::*;
@@ -1140,8 +1113,8 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// On most backends, the implementation of the function is defined in a
 /// migration using `CREATE FUNCTION`. On SQLite, the function is implemented in
 /// Rust instead. You must call `register_impl` or
-/// `register_nondeterministic_impl` with every connection before you can use
-/// the function.
+/// `register_nondeterministic_impl` (in the generated function's `_internals`
+/// module) with every connection before you can use the function.
 ///
 /// These functions will only be generated if the `sqlite` feature is enabled,
 /// and the function is not generic.
@@ -1161,13 +1134,13 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # }
 /// #
 /// use diesel::sql_types::{Integer, Double};
-/// sql_function!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
+/// sql_function_v2!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
 ///
 /// # #[cfg(feature = "sqlite")]
 /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
 /// let connection = &mut SqliteConnection::establish(":memory:")?;
 ///
-/// add_mul::register_impl(connection, |x: i32, y: i32, z: f64| {
+/// add_mul_internals::register_impl(connection, |x: i32, y: i32, z: f64| {
 ///     (x + y) as f64 * z
 /// })?;
 ///
@@ -1189,8 +1162,8 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// ## Custom Aggregate Functions
 ///
 /// Custom aggregate functions can be created in SQLite by adding an `#[aggregate]`
-/// attribute inside `sql_function`. `register_impl` needs to be called on
-/// the generated function with a type implementing the
+/// attribute inside `sql_function_v2`. `register_impl` (in the generated function's `_internals`
+/// module) needs to be called with a type implementing the
 /// [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html)
 /// trait as a type parameter as shown in the examples below.
 ///
@@ -1210,7 +1183,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///
-/// sql_function! {
+/// sql_function_v2! {
 ///     #[aggregate]
 ///     fn my_sum(x: Integer) -> Integer;
 /// }
@@ -1248,7 +1221,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #        .execute(connection)
 /// #        .unwrap();
 ///
-///     my_sum::register_impl::<MySum, _>(connection)?;
+///     my_sum_internals::register_impl::<MySum, _>(connection)?;
 ///
 ///     let total_score = players.select(my_sum(score))
 ///         .get_result::<i32>(connection)?;
@@ -1278,7 +1251,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///
-/// sql_function! {
+/// sql_function_v2! {
 ///     #[aggregate]
 ///     fn range_max(x0: Float, x1: Float) -> Nullable<Float>;
 /// }
@@ -1328,7 +1301,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #        .execute(connection)
 /// #        .unwrap();
 ///
-///     range_max::register_impl::<RangeMax<f32>, _, _>(connection)?;
+///     range_max_internals::register_impl::<RangeMax<f32>, _, _>(connection)?;
 ///
 ///     let result = student_avgs.select(range_max(s1_avg, s2_avg))
 ///         .get_result::<Option<f32>>(connection)?;
@@ -1342,8 +1315,41 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 #[proc_macro]
+pub fn sql_function_v2(input: TokenStream) -> TokenStream {
+    sql_function::expand(parse_macro_input!(input), false).into()
+}
+
+/// A legacy version of [`sql_function_v2!`].
+///
+/// The difference is that it makes the helper type available in a module named the exact same as
+/// the function:
+///
+/// ```ignore
+/// sql_function!(fn lower(x: Text) -> Text);
+/// ```
+///
+/// will generate this code:
+///
+/// ```ignore
+/// pub fn lower<X>(x: X) -> lower::HelperType<X> {
+///     ...
+/// }
+///
+/// pub(crate) mod lower {
+///     pub type HelperType<X> = ...;
+/// }
+/// ```
+///
+/// This turned out to be an issue for the support of the `auto_type` feature, which is why
+/// [`sql_function_v2!`] was introduced (and why this is deprecated).
+///
+/// SQL functions declared with this version of the macro will not be usable with `#[auto_type]`
+/// or `Selectable` `select_expression` type inference.
+
+#[deprecated = "Use [`sql_function_v2`] instead"]
+#[proc_macro]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
-    sql_function::expand(parse_macro_input!(input)).into()
+    sql_function::expand(parse_macro_input!(input), true).into()
 }
 
 /// This is an internal diesel macro that

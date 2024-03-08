@@ -248,6 +248,14 @@ where
     ) -> &mut <Self::TransactionManager as TransactionManager<Self>>::TransactionStateData {
         (**self).transaction_state()
     }
+
+    fn instrumentation(&mut self) -> &mut dyn crate::connection::Instrumentation {
+        (**self).instrumentation()
+    }
+
+    fn set_instrumentation(&mut self, instrumentation: impl crate::connection::Instrumentation) {
+        (**self).set_instrumentation(instrumentation)
+    }
 }
 
 impl<B, M> LoadConnection<B> for PooledConnection<M>
