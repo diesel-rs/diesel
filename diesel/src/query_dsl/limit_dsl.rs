@@ -7,7 +7,7 @@ use crate::query_source::Table;
 /// to call `limit` from generic code.
 ///
 /// [`QueryDsl`]: crate::QueryDsl
-pub trait LimitDsl<DummyArg = i64> {
+pub trait LimitDsl<DummyArgForAutoType = i64> {
     /// The type returned by `.limit`
     type Output;
 

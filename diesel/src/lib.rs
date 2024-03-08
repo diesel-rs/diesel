@@ -416,10 +416,12 @@ pub mod helper_types {
     pub type ThenOrderBy<Source, Ordering> = <Source as ThenOrderDsl<Ordering>>::Output;
 
     /// Represents the return type of [`.limit()`](crate::prelude::QueryDsl::limit)
-    pub type Limit<Source, DummyArg = i64> = <Source as LimitDsl<DummyArg>>::Output;
+    pub type Limit<Source, DummyArgForAutoType = i64> =
+        <Source as LimitDsl<DummyArgForAutoType>>::Output;
 
     /// Represents the return type of [`.offset()`](crate::prelude::QueryDsl::offset)
-    pub type Offset<Source, DummyArg = i64> = <Source as OffsetDsl<DummyArg>>::Output;
+    pub type Offset<Source, DummyArgForAutoType = i64> =
+        <Source as OffsetDsl<DummyArgForAutoType>>::Output;
 
     /// Represents the return type of [`.inner_join(rhs)`](crate::prelude::QueryDsl::inner_join)
     pub type InnerJoin<Source, Rhs> =

@@ -1345,7 +1345,7 @@ pub fn define_sql_function(input: TokenStream) -> TokenStream {
 ///
 /// SQL functions declared with this version of the macro will not be usable with `#[auto_type]`
 /// or `Selectable` `select_expression` type inference.
-#[deprecated = "Use [`define_sql_function`] instead"]
+#[deprecated(since = "2.2.0", note = "Use [`define_sql_function`] instead")]
 #[proc_macro]
 #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
