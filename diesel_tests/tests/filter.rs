@@ -433,6 +433,20 @@ fn filter_by_boxed_predicate() {
 }
 
 #[test]
+fn filter_like_nullable_column() {
+    use crate::schema::users::dsl::*;
+
+    let conn = &mut connection_with_gilbert_and_jonathan_in_users_table();
+    let jonathan = find_user_by_name("Jonathan", conn);
+
+    let data = users.filter(hair_color.like("%blue%")).load(conn);
+
+    let expected = Ok(vec![jonathan]);
+    assert_eq!(expected, data);
+}
+
+
+#[test]
 fn filter_subselect_referencing_outer_table() {
     use diesel::dsl::exists;
 
