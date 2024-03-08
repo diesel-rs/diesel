@@ -57,7 +57,7 @@
 //!   They live in [the `dsl` module](dsl).
 //!   Diesel only supports a very small number of these functions.
 //!   You can declare additional functions you want to use
-//!   with [the `sql_function_v2!` macro][`sql_function_v2!`].
+//!   with [the `define_sql_function!` macro][`define_sql_function!`].
 //!
 //! [`std::ops`]: //doc.rust-lang.org/stable/std/ops/index.html
 //!
@@ -625,19 +625,23 @@ pub mod helper_types {
         <Q as load_dsl::LoadQuery<'query, Conn, U, B>>::RowIter<'conn>;
 
     /// Represents the return type of [`diesel::delete`]
-    pub type Delete<T> = crate::query_builder::DeleteStatement<
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type delete<T> = crate::query_builder::DeleteStatement<
         <T as HasTable>::Table,
         <T as IntoUpdateTarget>::WhereClause,
     >;
 
     /// Represents the return type of [`diesel::insert_into`]
-    pub type InsertInto<T> = crate::query_builder::IncompleteInsertStatement<T>;
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type insert_into<T> = crate::query_builder::IncompleteInsertStatement<T>;
 
     /// Represents the return type of [`diesel::insert_or_ignore_into`]
-    pub type InsertOrIgnoreInto<T> = crate::query_builder::IncompleteInsertOrIgnoreStatement<T>;
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type insert_or_ignore_into<T> = crate::query_builder::IncompleteInsertOrIgnoreStatement<T>;
 
     /// Represents the return type of [`diesel::replace_into`]
-    pub type ReplaceInto<T> = crate::query_builder::IncompleteReplaceStatement<T>;
+    #[allow(non_camel_case_types)] // required for `#[auto_type]`
+    pub type replace_into<T> = crate::query_builder::IncompleteReplaceStatement<T>;
 
     /// Represents the return type of
     /// [`IncompleteInsertStatement::values()`](crate::query_builder::IncompleteInsertStatement::values)
@@ -673,7 +677,9 @@ pub mod prelude {
     };
 
     #[doc(inline)]
-    pub use crate::expression::functions::{sql_function, sql_function_v2};
+    pub use crate::expression::functions::define_sql_function;
+    #[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
+    pub use crate::expression::functions::sql_function;
 
     #[doc(inline)]
     pub use crate::expression::SelectableHelper;

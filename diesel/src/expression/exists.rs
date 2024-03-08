@@ -32,7 +32,7 @@ use crate::sql_types::Bool;
 /// assert_eq!(Ok(false), jim_exists);
 /// # }
 /// ```
-pub fn exists<T>(query: T) -> helper_types::Exists<T> {
+pub fn exists<T>(query: T) -> helper_types::exists<T> {
     Exists {
         subselect: Subselect::new(query),
     }

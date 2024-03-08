@@ -398,7 +398,7 @@ pub(crate) fn expand(input: SqlFunctionDecl, legacy_helper_type_and_module: bool
         if legacy_helper_type_and_module {
             (None, quote! { #fn_name }, fn_name.clone())
         } else {
-            let internals_module_name = Ident::new(&format!("{fn_name}_internals"), fn_name.span());
+            let internals_module_name = Ident::new(&format!("{fn_name}_utils"), fn_name.span());
             (
                 Some(quote! {
                     #[allow(non_camel_case_types, non_snake_case)]

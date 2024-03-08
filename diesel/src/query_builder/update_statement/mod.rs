@@ -294,6 +294,8 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
 pub struct SetNotCalled;
 
 mod private {
+    // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
+    #[allow(unreachable_pub)]
     pub trait UpdateAutoTypeHelper {
         type Table;
         type Where;

@@ -12,8 +12,8 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
-   = note: required for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
@@ -27,9 +27,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:20:31
@@ -51,9 +51,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
@@ -69,8 +69,8 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
-   = note: required for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
@@ -84,9 +84,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:21:31
@@ -108,9 +108,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg::avg<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_folding::avg_utils::avg<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
@@ -126,8 +126,8 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
-   = note: required for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
@@ -141,9 +141,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:22:31
@@ -165,9 +165,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max::max<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::max_utils::max<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: Cannot select `posts::columns::id` from `users::table`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
@@ -183,8 +183,8 @@ error[E0277]: Cannot select `posts::columns::id` from `users::table`
              <posts::columns::id as SelectableExpression<SelectStatement<FromClause<From>>>>
              <posts::columns::id as SelectableExpression<JoinOn<Join, On>>>
              <posts::columns::id as SelectableExpression<Only<posts::table>>>
-   = note: required for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0271]: type mismatch resolving `<table as AppearsInFromClause<table>>::Count == Once`
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
@@ -198,9 +198,9 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`
 
 error[E0277]: the trait bound `users::table: TableNotEqual<posts::table>` is not satisfied
   --> tests/fail/aggregate_expression_requires_column_from_same_table.rs:23:31
@@ -222,6 +222,6 @@ note: required for `posts::columns::id` to implement `AppearsOnTable<users::tabl
 14 |         id -> Integer,
    |         ^^
    = note: 1 redundant requirement hidden
-   = note: required for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
-   = note: required for `diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min::min<diesel::sql_types::Integer, posts::columns::id>>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `AppearsOnTable<users::table>`
+   = note: required for `diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>` to implement `SelectableExpression<users::table>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `SelectDsl<diesel::expression::functions::aggregate_ordering::min_utils::min<diesel::sql_types::Integer, posts::columns::id>>`

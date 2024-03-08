@@ -23,8 +23,8 @@ struct User {
     name: String,
 }
 
-sql_function_v2!(fn foo(x: Integer) -> Integer);
-sql_function_v2!(fn bar(x: VarChar) -> VarChar);
+define_sql_function!(fn foo(x: Integer) -> Integer);
+define_sql_function!(fn bar(x: VarChar) -> VarChar);
 
 fn main() {
     use self::posts::title;

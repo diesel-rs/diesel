@@ -1,5 +1,6 @@
 #![allow(dead_code)] // this is a compile pass test
 use diesel::dsl::*;
+use diesel::helper_types::*;
 use diesel::prelude::*;
 
 table! {

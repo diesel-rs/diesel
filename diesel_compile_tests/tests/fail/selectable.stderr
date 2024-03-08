@@ -230,7 +230,7 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::No: MixedAggreg
     = help: the following other types implement trait `MixedAggregates<Other>`:
               <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::No>>
               <diesel::expression::is_aggregate::No as MixedAggregates<diesel::expression::is_aggregate::Never>>
-    = note: required for `(users::columns::name, diesel::expression::count::count::count<diesel::sql_types::Integer, posts::columns::id>)` to implement `ValidGrouping<()>`
+    = note: required for `(users::columns::name, diesel::expression::count::count_utils::count<diesel::sql_types::Integer, posts::columns::id>)` to implement `ValidGrouping<()>`
     = note: 2 redundant requirements hidden
     = note: required for `diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>` to implement `ValidGrouping<()>`
     = note: required for `SelectStatement<FromClause<JoinOn<Join<table, table, Inner>, Grouped<Eq<Nullable<user_id>, Nullable<id>>>>>>` to implement `SelectDsl<diesel::expression::select_by::SelectBy<UserWithPostCount, Pg>>`

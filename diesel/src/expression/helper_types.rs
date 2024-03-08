@@ -134,7 +134,8 @@ pub type Like<Lhs, Rhs> = Grouped<super::operators::Like<Lhs, AsExprOf<Rhs, SqlT
 pub type NotLike<Lhs, Rhs> = Grouped<super::operators::NotLike<Lhs, AsExprOf<Rhs, SqlTypeOf<Lhs>>>>;
 
 /// The return type of [`case_when()`](expression::case_when::case_when)
-pub type CaseWhen<C, T, ST = <T as Expression>::SqlType> = expression::case_when::CaseWhen<
+#[allow(non_camel_case_types)] // required for `#[auto_type]`
+pub type case_when<C, T, ST = <T as Expression>::SqlType> = expression::case_when::CaseWhen<
     expression::case_when::CaseWhenConditionsLeaf<Grouped<C>, Grouped<AsExprOf<T, ST>>>,
     expression::case_when::NoElseExpression,
 >;

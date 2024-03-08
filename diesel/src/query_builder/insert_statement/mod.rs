@@ -537,6 +537,8 @@ mod private {
         }
     }
 
+    // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
+    #[allow(unreachable_pub)]
     pub trait InsertAutoTypeHelper {
         type Table;
         type Op;

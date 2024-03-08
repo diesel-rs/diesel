@@ -249,9 +249,9 @@ mod tests {
     use crate::sql_types::{Text, Time, Timestamp, TimestamptzSqlite};
     use crate::test_helpers::connection;
 
-    sql_function_v2!(fn datetime(x: Text) -> Timestamp);
-    sql_function_v2!(fn time(x: Text) -> Time);
-    sql_function_v2!(fn date(x: Text) -> Date);
+    define_sql_function!(fn datetime(x: Text) -> Timestamp);
+    define_sql_function!(fn time(x: Text) -> Time);
+    define_sql_function!(fn date(x: Text) -> Date);
 
     #[test]
     fn unix_epoch_encodes_correctly() {

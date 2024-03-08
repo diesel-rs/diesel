@@ -23,7 +23,7 @@ use crate::sql_types::BoolOrNullableBool;
 /// assert_eq!(Ok(2), users_not_with_name.first(connection));
 /// # }
 /// ```
-pub fn not<T>(expr: T) -> helper_types::Not<T>
+pub fn not<T>(expr: T) -> helper_types::not<T>
 where
     T: Expression,
     <T as Expression>::SqlType: BoolOrNullableBool,

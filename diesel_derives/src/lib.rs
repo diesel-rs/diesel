@@ -1013,7 +1013,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// function. For example, this invocation:
 ///
 /// ```ignore
-/// sql_function_v2!(fn lower(x: Text) -> Text);
+/// define_sql_function!(fn lower(x: Text) -> Text);
 /// ```
 ///
 /// will generate this code:
@@ -1039,7 +1039,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// use diesel::sql_types::Text;
 ///
-/// sql_function_v2! {
+/// define_sql_function! {
 ///     /// Represents the `canon_crate_name` SQL function, created in
 ///     /// migration ....
 ///     fn canon_crate_name(a: Text) -> Text;
@@ -1077,7 +1077,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// use diesel::sql_types::Foldable;
 ///
-/// sql_function_v2! {
+/// define_sql_function! {
 ///     #[aggregate]
 ///     #[sql_name = "SUM"]
 ///     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
@@ -1092,7 +1092,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # SQL Functions without Arguments
 ///
 /// A common example is ordering a query using the `RANDOM()` sql function,
-/// which can be implemented using `sql_function_v2!` like this:
+/// which can be implemented using `define_sql_function!` like this:
 ///
 /// ```rust
 /// # extern crate diesel;
@@ -1100,7 +1100,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #
 /// # table! { crates { id -> Integer, name -> VarChar, } }
 /// #
-/// sql_function_v2!(fn random() -> Text);
+/// define_sql_function!(fn random() -> Text);
 ///
 /// # fn main() {
 /// # use self::crates::dsl::*;
@@ -1134,13 +1134,13 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # }
 /// #
 /// use diesel::sql_types::{Integer, Double};
-/// sql_function_v2!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
+/// define_sql_function!(fn add_mul(x: Integer, y: Integer, z: Double) -> Double);
 ///
 /// # #[cfg(feature = "sqlite")]
 /// # fn run_test() -> Result<(), Box<dyn std::error::Error>> {
 /// let connection = &mut SqliteConnection::establish(":memory:")?;
 ///
-/// add_mul_internals::register_impl(connection, |x: i32, y: i32, z: f64| {
+/// add_mul_utils::register_impl(connection, |x: i32, y: i32, z: f64| {
 ///     (x + y) as f64 * z
 /// })?;
 ///
@@ -1162,7 +1162,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// ## Custom Aggregate Functions
 ///
 /// Custom aggregate functions can be created in SQLite by adding an `#[aggregate]`
-/// attribute inside `sql_function_v2`. `register_impl` (in the generated function's `_internals`
+/// attribute inside `define_sql_function`. `register_impl` (in the generated function's `_utils`
 /// module) needs to be called with a type implementing the
 /// [SqliteAggregateFunction](../diesel/sqlite/trait.SqliteAggregateFunction.html)
 /// trait as a type parameter as shown in the examples below.
@@ -1183,7 +1183,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///
-/// sql_function_v2! {
+/// define_sql_function! {
 ///     #[aggregate]
 ///     fn my_sum(x: Integer) -> Integer;
 /// }
@@ -1221,7 +1221,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #        .execute(connection)
 /// #        .unwrap();
 ///
-///     my_sum_internals::register_impl::<MySum, _>(connection)?;
+///     my_sum_utils::register_impl::<MySum, _>(connection)?;
 ///
 ///     let total_score = players.select(my_sum(score))
 ///         .get_result::<i32>(connection)?;
@@ -1251,7 +1251,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// # #[cfg(feature = "sqlite")]
 /// use diesel::sqlite::SqliteAggregateFunction;
 ///
-/// sql_function_v2! {
+/// define_sql_function! {
 ///     #[aggregate]
 ///     fn range_max(x0: Float, x1: Float) -> Nullable<Float>;
 /// }
@@ -1301,7 +1301,7 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// #        .execute(connection)
 /// #        .unwrap();
 ///
-///     range_max_internals::register_impl::<RangeMax<f32>, _, _>(connection)?;
+///     range_max_utils::register_impl::<RangeMax<f32>, _, _>(connection)?;
 ///
 ///     let result = student_avgs.select(range_max(s1_avg, s2_avg))
 ///         .get_result::<Option<f32>>(connection)?;
@@ -1315,11 +1315,11 @@ pub fn derive_valid_grouping(input: TokenStream) -> TokenStream {
 /// }
 /// ```
 #[proc_macro]
-pub fn sql_function_v2(input: TokenStream) -> TokenStream {
+pub fn define_sql_function(input: TokenStream) -> TokenStream {
     sql_function::expand(parse_macro_input!(input), false).into()
 }
 
-/// A legacy version of [`sql_function_v2!`].
+/// A legacy version of [`define_sql_function!`].
 ///
 /// The difference is that it makes the helper type available in a module named the exact same as
 /// the function:
@@ -1341,13 +1341,13 @@ pub fn sql_function_v2(input: TokenStream) -> TokenStream {
 /// ```
 ///
 /// This turned out to be an issue for the support of the `auto_type` feature, which is why
-/// [`sql_function_v2!`] was introduced (and why this is deprecated).
+/// [`define_sql_function!`] was introduced (and why this is deprecated).
 ///
 /// SQL functions declared with this version of the macro will not be usable with `#[auto_type]`
 /// or `Selectable` `select_expression` type inference.
-
-#[deprecated = "Use [`sql_function_v2`] instead"]
+#[deprecated = "Use [`define_sql_function`] instead"]
 #[proc_macro]
+#[cfg(all(feature = "with-deprecated", not(feature = "without-deprecated")))]
 pub fn sql_function_proc(input: TokenStream) -> TokenStream {
     sql_function::expand(parse_macro_input!(input), true).into()
 }
@@ -1771,7 +1771,7 @@ pub fn derive_multiconnection(input: TokenStream) -> TokenStream {
 ///     // If we didn't specify the type for this query fragment, the macro would infer it as
 ///     // `user_has_post_with_id_greater_than<i32>`, which would be incorrect because there is
 ///     // no generic parameter.
-///     let filter: UserHasPostWithIdGreaterThan =
+///     let filter: user_has_post_with_id_greater_than =
 ///         user_has_post_with_id_greater_than(id_greater_than);
 ///     // The macro inferring that it has to pass generic parameters is still the convention
 ///     // because it's the most general case, as well as the common case within Diesel itself,
@@ -1812,4 +1812,4 @@ pub fn auto_type(
 }
 
 const AUTO_TYPE_DEFAULT_METHOD_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::UpperCamel;
-const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::UpperCamel;
+const AUTO_TYPE_DEFAULT_FUNCTION_TYPE_CASE: dsl_auto_type::Case = dsl_auto_type::Case::DoNotChange;

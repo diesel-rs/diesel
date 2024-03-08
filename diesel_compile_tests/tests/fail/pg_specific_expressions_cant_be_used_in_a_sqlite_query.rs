@@ -12,7 +12,7 @@ table! {
     }
 }
 
-sql_function_v2!(fn lower(x: VarChar) -> VarChar);
+define_sql_function!(fn lower(x: VarChar) -> VarChar);
 
 #[derive(Insertable)]
 #[diesel(table_name = users)]
