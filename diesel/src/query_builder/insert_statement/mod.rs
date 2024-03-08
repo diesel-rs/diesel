@@ -18,6 +18,8 @@ use crate::query_source::{Column, Table};
 use crate::{insertable::*, QuerySource};
 use std::marker::PhantomData;
 
+pub(crate) use self::private::InsertAutoTypeHelper;
+
 #[cfg(feature = "sqlite")]
 mod insert_with_default_for_sqlite;
 
@@ -536,5 +538,17 @@ mod private {
             out.push_sql("REPLACE");
             Ok(())
         }
+    }
+
+    // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
+    #[allow(unreachable_pub)]
+    pub trait InsertAutoTypeHelper {
+        type Table;
+        type Op;
+    }
+
+    impl<T, Op> InsertAutoTypeHelper for crate::query_builder::IncompleteInsertStatement<T, Op> {
+        type Table = T;
+        type Op = Op;
     }
 }

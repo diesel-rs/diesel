@@ -1,16 +1,16 @@
-error[E0277]: the trait bound `diesel::pg::expression::operators::ConcatBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>: QueryFragment<Sqlite>` is not satisfied
+error[E0277]: the trait bound `Sqlite: diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not satisfied
   --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:21:32
    |
 21 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::operators::ConcatBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>`
+   |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Sqlite`
    |          |
    |          required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ConcatBinary<T, U>`
-   = note: required for `Grouped<ConcatBinary<name, Bound<Binary, Vec<u8>>>>` to implement `QueryFragment<Sqlite>`
-   = note: 3 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `QueryFragment<Sqlite>`
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<u8>>`
+   = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
+   = note: required for `diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>` to implement `QueryFragment<Sqlite>`
+   = note: 6 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<Concat<name, Bound<Binary, Vec<u8>>>>>, ..., ...>` to implement `QueryFragment<Sqlite>`
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<Concat<name, Bound<Binary, Vec<u8>>>>>, ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<u8>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |
@@ -20,107 +20,19 @@ note: required by a bound in `get_result`
    |         Self: LoadQuery<'query, Conn, U>,
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
 
-error[E0277]: the trait bound `diesel::pg::expression::operators::LikeBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>: QueryFragment<Sqlite>` is not satisfied
-  --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:21:32
-   |
-21 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::operators::LikeBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::LikeBinary<T, U>`
-   = note: required for `Grouped<LikeBinary<name, Bound<Binary, Vec<u8>>>>` to implement `QueryFragment<Sqlite>`
-   = note: 5 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `QueryFragment<Sqlite>`
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<u8>>`
-note: required by a bound in `get_result`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-   |        ---------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-
-error[E0277]: the trait bound `diesel::pg::expression::operators::NotLikeBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>: QueryFragment<Sqlite>` is not satisfied
-  --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:21:32
-   |
-21 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `QueryFragment<Sqlite>` is not implemented for `diesel::pg::expression::operators::NotLikeBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::NotLikeBinary<T, U>`
-   = note: required for `Grouped<NotLikeBinary<name, Bound<Binary, Vec<u8>>>>` to implement `QueryFragment<Sqlite>`
-   = note: 5 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `QueryFragment<Sqlite>`
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `LoadQuery<'_, diesel::SqliteConnection, Vec<u8>>`
-note: required by a bound in `get_result`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-   |        ---------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-
-error[E0277]: the trait bound `diesel::pg::expression::operators::ConcatBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>: QueryFragment<Mysql>` is not satisfied
+error[E0277]: the trait bound `Mysql: diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not satisfied
   --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:29:32
    |
 29 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `diesel::pg::expression::operators::ConcatBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>`
+   |          ----------            ^^^^^^^^^^^^^^^ the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is not implemented for `Mysql`
    |          |
    |          required by a bound introduced by this call
    |
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::ConcatBinary<T, U>`
-   = note: required for `Grouped<ConcatBinary<name, Bound<Binary, Vec<u8>>>>` to implement `QueryFragment<Mysql>`
-   = note: 3 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `QueryFragment<Mysql>`
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<u8>>`
-note: required by a bound in `get_result`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-   |        ---------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-
-error[E0277]: the trait bound `diesel::pg::expression::operators::LikeBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>: QueryFragment<Mysql>` is not satisfied
-  --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:29:32
-   |
-29 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `diesel::pg::expression::operators::LikeBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::LikeBinary<T, U>`
-   = note: required for `Grouped<LikeBinary<name, Bound<Binary, Vec<u8>>>>` to implement `QueryFragment<Mysql>`
-   = note: 5 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `QueryFragment<Mysql>`
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<u8>>`
-note: required by a bound in `get_result`
-  --> $DIESEL/src/query_dsl/mod.rs
-   |
-   |     fn get_result<'query, U>(self, conn: &mut Conn) -> QueryResult<U>
-   |        ---------- required by a bound in this associated function
-   |     where
-   |         Self: LoadQuery<'query, Conn, U>,
-   |               ^^^^^^^^^^^^^^^^^^^^^^^^^^ required by this bound in `RunQueryDsl::get_result`
-
-error[E0277]: the trait bound `diesel::pg::expression::operators::NotLikeBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>: QueryFragment<Mysql>` is not satisfied
-  --> tests/fail/pg_specific_binary_expressions_only_usable_with_pg.rs:29:32
-   |
-29 |         .get_result::<Vec<u8>>(&mut connection).unwrap();
-   |          ----------            ^^^^^^^^^^^^^^^ the trait `QueryFragment<Mysql>` is not implemented for `diesel::pg::expression::operators::NotLikeBinary<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>`
-   |          |
-   |          required by a bound introduced by this call
-   |
-   = help: the trait `QueryFragment<Pg>` is implemented for `diesel::pg::expression::operators::NotLikeBinary<T, U>`
-   = note: required for `Grouped<NotLikeBinary<name, Bound<Binary, Vec<u8>>>>` to implement `QueryFragment<Mysql>`
-   = note: 5 redundant requirements hidden
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `QueryFragment<Mysql>`
-   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<ConcatBinary<name, Bound<Binary, ...>>>>, ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<u8>>`
+   = help: the trait `diesel::expression::operators::LikeIsAllowedForType<diesel::sql_types::Binary>` is implemented for `Pg`
+   = note: required for `diesel::expression::operators::Like<columns::name, diesel::expression::bound::Bound<diesel::sql_types::Binary, Vec<u8>>>` to implement `QueryFragment<Mysql>`
+   = note: 6 redundant requirements hidden
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<Concat<name, Bound<Binary, Vec<u8>>>>>, ..., ...>` to implement `QueryFragment<Mysql>`
+   = note: required for `SelectStatement<FromClause<table>, SelectClause<Grouped<Concat<name, Bound<Binary, Vec<u8>>>>>, ..., ...>` to implement `LoadQuery<'_, diesel::MysqlConnection, Vec<u8>>`
 note: required by a bound in `get_result`
   --> $DIESEL/src/query_dsl/mod.rs
    |

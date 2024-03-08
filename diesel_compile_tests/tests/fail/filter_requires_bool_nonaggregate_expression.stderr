@@ -31,4 +31,4 @@ error[E0277]: the trait bound `diesel::expression::is_aggregate::Yes: MixedAggre
              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Yes>>
              <diesel::expression::is_aggregate::Yes as MixedAggregates<diesel::expression::is_aggregate::Never>>
    = note: required for `Grouped<Eq<sum<Integer, id>, Bound<Nullable<BigInt>, i64>>>` to implement `NonAggregate`
-   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<BigInt>, i64>>>>`
+   = note: required for `SelectStatement<FromClause<users::table>>` to implement `FilterDsl<diesel::expression::grouped::Grouped<diesel::expression::operators::Eq<diesel::expression::functions::aggregate_folding::sum_utils::sum<diesel::sql_types::Integer, columns::id>, diesel::expression::bound::Bound<Nullable<BigInt>, i64>>>>`

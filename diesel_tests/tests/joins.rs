@@ -358,7 +358,7 @@ fn select_then_join() {
 }
 
 use diesel::sql_types::Text;
-sql_function!(fn lower(x: Text) -> Text);
+define_sql_function!(fn lower(x: Text) -> Text);
 
 #[test]
 fn selecting_complex_expression_from_right_side_of_left_join() {

@@ -7,12 +7,12 @@ use diesel_postgres_composite_type::schema::colors::{
 };
 
 // Define the signature of the SQL function we want to call:
+use diesel::define_sql_function;
 use diesel::pg::Pg;
 use diesel::pg::PgValue;
-use diesel::sql_function;
 use diesel::sql_types::{Float, Integer, Record, Text};
-sql_function!(fn color2grey(r: Integer, g: Integer,b: Integer) -> Record<(Float,Text)>);
-sql_function!(fn color2gray(r: Integer, g: Integer,b: Integer) -> PgGrayType);
+define_sql_function!(fn color2grey(r: Integer, g: Integer,b: Integer) -> Record<(Float,Text)>);
+define_sql_function!(fn color2gray(r: Integer, g: Integer,b: Integer) -> PgGrayType);
 
 // Needed to select, construct the query and submit it.
 use diesel::deserialize::{self, FromSql, FromSqlRow};
@@ -66,7 +66,7 @@ fn main() {
         );
     }
     // Experiment 3: Similar, using the type also in the above listed
-    // sql_function!(...) definition.
+    // define_sql_function!(...) definition.
     let results: Vec<(i32, GrayType)> = colors
         .select((color_id, color2gray(red, green, blue)))
         .load(connection)

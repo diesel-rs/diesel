@@ -11,7 +11,7 @@ table! {
     }
 }
 
-sql_function!(fn f(x: Nullable<Integer>, y: Nullable<Integer>) -> Nullable<Integer>);
+define_sql_function!(fn f(x: Nullable<Integer>, y: Nullable<Integer>) -> Nullable<Integer>);
 
 fn main() {
     use self::users::dsl::*;

@@ -14,6 +14,8 @@ use crate::query_source::Table;
 use crate::result::Error::QueryBuilderError;
 use crate::{query_builder::*, QuerySource};
 
+pub(crate) use self::private::UpdateAutoTypeHelper;
+
 impl<T: QuerySource, U> UpdateStatement<T, U, SetNotCalled> {
     pub(crate) fn new(target: UpdateTarget<T, U>) -> Self {
         UpdateStatement {
@@ -287,3 +289,20 @@ impl<T: QuerySource, U, V> UpdateStatement<T, U, V, NoReturningClause> {
 /// Indicates that you have not yet called `.set` on an update statement
 #[derive(Debug, Clone, Copy)]
 pub struct SetNotCalled;
+
+mod private {
+    // otherwise rustc complains at a different location that this trait is more private than the other item that uses it
+    #[allow(unreachable_pub)]
+    pub trait UpdateAutoTypeHelper {
+        type Table;
+        type Where;
+    }
+
+    impl<T, W> UpdateAutoTypeHelper for crate::query_builder::UpdateStatement<T, W>
+    where
+        T: crate::QuerySource,
+    {
+        type Table = T;
+        type Where = W;
+    }
+}

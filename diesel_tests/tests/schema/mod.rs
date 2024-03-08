@@ -318,7 +318,7 @@ pub fn drop_table_cascade(connection: &mut TestConnection, table: &str) {
         .unwrap();
 }
 
-sql_function!(fn nextval(a: sql_types::VarChar) -> sql_types::BigInt);
+define_sql_function!(fn nextval(a: sql_types::VarChar) -> sql_types::BigInt);
 
 pub fn connection_with_sean_and_tess_in_users_table() -> TestConnection {
     let mut connection = connection();

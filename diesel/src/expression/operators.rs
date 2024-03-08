@@ -529,7 +529,6 @@ infix_operator!(Escape, " ESCAPE ");
 infix_operator!(Eq, " = ");
 infix_operator!(Gt, " > ");
 infix_operator!(GtEq, " >= ");
-infix_operator!(Like, " LIKE ");
 infix_operator!(Lt, " < ");
 infix_operator!(LtEq, " <= ");
 infix_operator!(NotEq, " != ");
@@ -645,3 +644,106 @@ where
         Ok(())
     }
 }
+
+// need an explicit impl here to control which types are allowed
+#[derive(
+    Debug,
+    Clone,
+    Copy,
+    crate::query_builder::QueryId,
+    crate::sql_types::DieselNumericOps,
+    crate::expression::ValidGrouping,
+)]
+#[doc(hidden)]
+pub struct Like<T, U> {
+    pub(crate) left: T,
+    pub(crate) right: U,
+}
+
+impl<T, U> Like<T, U> {
+    pub(crate) fn new(left: T, right: U) -> Self {
+        Like { left, right }
+    }
+}
+
+impl<T, U, QS> crate::expression::SelectableExpression<QS> for Like<T, U>
+where
+    Like<T, U>: crate::expression::AppearsOnTable<QS>,
+    T: crate::expression::SelectableExpression<QS>,
+    U: crate::expression::SelectableExpression<QS>,
+{
+}
+
+impl<T, U, QS> crate::expression::AppearsOnTable<QS> for Like<T, U>
+where
+    Like<T, U>: crate::expression::Expression,
+    T: crate::expression::AppearsOnTable<QS>,
+    U: crate::expression::AppearsOnTable<QS>,
+{
+}
+
+impl<T, U> crate::expression::Expression for Like<T, U>
+where
+    T: crate::expression::Expression,
+    U: crate::expression::Expression,
+    <T as crate::expression::Expression>::SqlType: crate::sql_types::SqlType,
+    <U as crate::expression::Expression>::SqlType: crate::sql_types::SqlType,
+    crate::sql_types::is_nullable::IsSqlTypeNullable<<T as crate::expression::Expression>::SqlType>:
+        crate::sql_types::OneIsNullable<
+            crate::sql_types::is_nullable::IsSqlTypeNullable<
+                <U as crate::expression::Expression>::SqlType,
+            >,
+        >,
+    crate::sql_types::is_nullable::IsOneNullable<
+        <T as crate::expression::Expression>::SqlType,
+        <U as crate::expression::Expression>::SqlType,
+    >: crate::sql_types::MaybeNullableType<crate::sql_types::Bool>,
+{
+    type SqlType = crate::sql_types::is_nullable::MaybeNullable<
+        crate::sql_types::is_nullable::IsOneNullable<
+            <T as crate::expression::Expression>::SqlType,
+            <U as crate::expression::Expression>::SqlType,
+        >,
+        crate::sql_types::Bool,
+    >;
+}
+
+impl<T, U, DB> crate::query_builder::QueryFragment<DB> for Like<T, U>
+where
+    T: crate::query_builder::QueryFragment<DB> + crate::Expression,
+    U: crate::query_builder::QueryFragment<DB>,
+    DB: crate::backend::Backend,
+    DB: LikeIsAllowedForType<T::SqlType>,
+{
+    fn walk_ast<'b>(
+        &'b self,
+        mut out: crate::query_builder::AstPass<'_, 'b, DB>,
+    ) -> crate::result::QueryResult<()> {
+        (self.left.walk_ast(out.reborrow())?);
+        (out.push_sql(" LIKE "));
+        (self.right.walk_ast(out.reborrow())?);
+        Ok(())
+    }
+}
+
+impl<S, T, U> crate::internal::operators_macro::FieldAliasMapper<S> for Like<T, U>
+where
+    S: crate::query_source::AliasSource,
+    T: crate::internal::operators_macro::FieldAliasMapper<S>,
+    U: crate::internal::operators_macro::FieldAliasMapper<S>,
+{
+    type Out = Like<
+        <T as crate::internal::operators_macro::FieldAliasMapper<S>>::Out,
+        <U as crate::internal::operators_macro::FieldAliasMapper<S>>::Out,
+    >;
+    fn map(self, alias: &crate::query_source::Alias<S>) -> Self::Out {
+        Like {
+            left: self.left.map(alias),
+            right: self.right.map(alias),
+        }
+    }
+}
+
+pub trait LikeIsAllowedForType<ST>: Backend {}
+
+impl<DB> LikeIsAllowedForType<crate::sql_types::Text> for DB where DB: Backend {}

@@ -1,7 +1,7 @@
-use crate::expression::functions::sql_function;
+use crate::expression::functions::define_sql_function;
 use crate::sql_types::Foldable;
 
-sql_function! {
+define_sql_function! {
     /// Represents a SQL `SUM` function. This function can only take types which are
     /// Foldable.
     ///
@@ -21,7 +21,7 @@ sql_function! {
     fn sum<ST: Foldable>(expr: ST) -> ST::Sum;
 }
 
-sql_function! {
+define_sql_function! {
     /// Represents a SQL `AVG` function. This function can only take types which are
     /// Foldable.
     ///
