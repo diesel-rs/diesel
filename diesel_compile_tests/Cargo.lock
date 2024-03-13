@@ -64,7 +64,7 @@ dependencies = [
 
 [[package]]
 name = "diesel"
-version = "2.0.2"
+version = "2.1.4"
 dependencies = [
  "bigdecimal",
  "bitflags 2.2.1",
@@ -98,7 +98,7 @@ dependencies = [
 
 [[package]]
 name = "diesel_derives"
-version = "2.0.2"
+version = "2.1.2"
 dependencies = [
  "diesel_table_macro_syntax",
  "proc-macro2",

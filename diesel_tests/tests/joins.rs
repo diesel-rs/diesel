@@ -44,7 +44,8 @@ fn select_single_from_join() {
     let select_title = source.select(posts::title);
 
     let expected_names = vec!["Sean".to_string(), "Tess".to_string()];
-    let actual_names: Vec<String> = select_name.load(connection).unwrap();
+    let mut actual_names: Vec<String> = select_name.load(connection).unwrap();
+    actual_names.sort();
 
     assert_eq!(expected_names, actual_names);
 
