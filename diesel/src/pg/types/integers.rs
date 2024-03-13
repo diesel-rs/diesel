@@ -23,21 +23,20 @@ impl ToSql<sql_types::Oid, Pg> for u32 {
 
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::SmallInt, Pg> for i16 {
+    #[inline(always)]
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
         if bytes.len() < 2 {
-            return deserialize::Result::Err(
+            return emit_size_error(
                 "Received less than 2 bytes while decoding an i16. \
-                    Was an expression of a different type accidentally marked as SmallInt?"
-                    .into(),
+                    Was an expression of a different type accidentally marked as SmallInt?",
             );
         }
 
         if bytes.len() > 2 {
-            return deserialize::Result::Err(
+            return emit_size_error(
                 "Received more than 2 bytes while decoding an i16. \
-                    Was an Integer expression accidentally marked as SmallInt?"
-                    .into(),
+                    Was an Integer expression accidentally marked as SmallInt?",
             );
         }
         bytes
@@ -48,21 +47,20 @@ impl FromSql<sql_types::SmallInt, Pg> for i16 {
 
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::Integer, Pg> for i32 {
+    #[inline(always)]
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
         if bytes.len() < 4 {
-            return deserialize::Result::Err(
+            return emit_size_error(
                 "Received less than 4 bytes while decoding an i32. \
-                    Was an SmallInt expression accidentally marked as Integer?"
-                    .into(),
+                    Was an SmallInt expression accidentally marked as Integer?",
             );
         }
 
         if bytes.len() > 4 {
-            return deserialize::Result::Err(
+            return emit_size_error(
                 "Received more than 4 bytes while decoding an i32. \
-                    Was an BigInt expression accidentally marked as Integer?"
-                    .into(),
+                    Was an BigInt expression accidentally marked as Integer?",
             );
         }
         bytes
@@ -71,23 +69,28 @@ impl FromSql<sql_types::Integer, Pg> for i32 {
     }
 }
 
+#[cold]
+#[inline(never)]
+fn emit_size_error<T>(var_name: &str) -> deserialize::Result<T> {
+    deserialize::Result::Err(var_name.into())
+}
+
 #[cfg(feature = "postgres_backend")]
 impl FromSql<sql_types::BigInt, Pg> for i64 {
+    #[inline(always)]
     fn from_sql(value: PgValue<'_>) -> deserialize::Result<Self> {
         let mut bytes = value.as_bytes();
         if bytes.len() < 8 {
-            return deserialize::Result::Err(
+            return emit_size_error(
                 "Received less than 8 bytes while decoding an i64. \
-                    Was an Integer expression accidentally marked as BigInt?"
-                    .into(),
+                    Was an Integer expression accidentally marked as BigInt?",
             );
         }
 
         if bytes.len() > 8 {
-            return deserialize::Result::Err(
+            return emit_size_error(
                 "Received more than 8 bytes while decoding an i64. \
                     Was an expression of a different type expression accidentally marked as BigInt?"
-                    .into(),
             );
         }
         bytes

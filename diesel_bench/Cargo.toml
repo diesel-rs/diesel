@@ -71,6 +71,7 @@ fast_run = []
 
 [profile.release]
 lto = true
+debug = true
 codegen-units = 1
 
 [patch.crates-io]

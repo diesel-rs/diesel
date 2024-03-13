@@ -466,6 +466,20 @@ pub struct DeserializeFieldError {
     pub error: Box<dyn StdError + Send + Sync>,
 }
 
+impl DeserializeFieldError {
+    #[cold]
+    pub(crate) fn new<'a, F, DB>(field: F, error: Box<dyn std::error::Error + Send + Sync>) -> Self
+    where
+        DB: crate::backend::Backend,
+        F: crate::row::Field<'a, DB>,
+    {
+        DeserializeFieldError {
+            field_name: field.field_name().map(|s| s.to_string()),
+            error,
+        }
+    }
+}
+
 impl StdError for DeserializeFieldError {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         Some(&*self.error)
