@@ -1268,13 +1268,12 @@ pub trait QueryDsl: Sized {
     /// # }
     /// ```
     ///
-    /// Diesel queries also have a similar problem to [`Iterator`][iterator], where
+    /// Diesel queries also have a similar problem to [`Iterator`], where
     /// returning them from a function requires exposing the implementation of that
     /// function. The [`helper_types`][helper_types] module exists to help with this,
     /// but you might want to hide the return type or have it conditionally change.
     /// Boxing can achieve both.
     ///
-    /// [iterator]: std::iter::Iterator
     /// [helper_types]: crate::helper_types
     ///
     /// ### Example

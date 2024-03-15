@@ -186,7 +186,7 @@
 //! `64-column-tables` feature. Enabling this feature will increase your compile times significantly.
 //! - `i-implement-a-third-party-backend-and-opt-into-breaking-changes`: This feature opens up some otherwise
 //! private API, that can be useful to implement a third party [`Backend`](crate::backend::Backend)
-//! or write a custom [`Connection`](crate::connection::Connection) implementation. **Do not use this feature for
+//! or write a custom [`Connection`] implementation. **Do not use this feature for
 //! any other usecase**. By enabling this feature you explicitly opt out diesel stability guarantees. We explicitly
 //! reserve us the right to break API's exported under this feature flag in any upcoming minor version release.
 //! If you publish a crate depending on this feature flag consider to restrict the supported diesel version to the
