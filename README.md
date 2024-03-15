@@ -19,6 +19,7 @@ Supported databases:
 1. [PostgreSQL](https://docs.diesel.rs/master/diesel/pg/index.html)
 2. [MySQL](https://docs.diesel.rs/master/diesel/mysql/index.html)
 3. [SQLite](https://docs.diesel.rs/master/diesel/sqlite/index.html)
+4. [MariaDB](https://docs.diesel.rs/master/diesel/mysql/index.html) - Uses the same setup as MySQL.
 
 You can configure the database backend in `Cargo.toml`:
 
