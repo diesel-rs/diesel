@@ -256,7 +256,17 @@ pub fn output_schema(
             "Found patch file to apply to the generated schema"
         );
         tracing::trace!(?out, "Schema before applying patch file");
-        let patch = std::fs::read_to_string(patch_file)?;
+        let patch = match std::fs::read_to_string(patch_file) {
+            Ok(patch) => patch,
+            Err(e) => {
+                eprintln!(
+                    "Failed to read patch file at {}: {}",
+                    patch_file.display(),
+                    e
+                );
+                return Err(e.into());
+            }
+        };
         let patch = diffy::Patch::from_str(&patch)?;
 
         out = diffy::apply(&out, &patch)?;
