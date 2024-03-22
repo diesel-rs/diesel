@@ -20,7 +20,6 @@ use self::raw::RawConnection;
 use self::statement_iterator::*;
 use self::stmt::{Statement, StatementUse};
 use super::SqliteAggregateFunction;
-use crate::connection::instrumentation::InstrumentationEvent;
 use crate::connection::instrumentation::StrQueryHelper;
 use crate::connection::statement_cache::StatementCache;
 use crate::connection::*;

@@ -9,7 +9,6 @@ extern crate diesel;
 extern crate diesel_dynamic_schema;
 
 use diesel::sql_types::Integer;
-use diesel::sqlite::SqliteConnection;
 use diesel::*;
 use diesel_dynamic_schema::table;
 
