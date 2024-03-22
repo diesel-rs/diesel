@@ -160,8 +160,13 @@ impl RawConnection {
         Ok(())
     }
 
-    pub(crate) fn finish_copy_in(&self, err: Option<String>) -> QueryResult<()> {
-        let error = err.map(CString::new).transpose()?;
+    pub(crate) fn finish_copy_from(&self, err: Option<String>) -> QueryResult<()> {
+        let error = err.map(CString::new).map(|r| {
+            r.unwrap_or_else(|_| {
+                CString::new("Error message contains a \\0 byte")
+                    .expect("Does not contain a null byte")
+            })
+        });
         let error = error
             .as_ref()
             .map(|l| l.as_ptr())

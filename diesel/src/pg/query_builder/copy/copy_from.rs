@@ -11,7 +11,7 @@ use super::CopyTarget;
 use crate::expression::bound::Bound;
 use crate::insertable::ColumnInsertValue;
 use crate::pg::backend::FailedToLookupTypeError;
-use crate::pg::connection::copy::CopyIn;
+use crate::pg::connection::copy::CopyFromSink;
 use crate::pg::metadata_lookup::PgMetadataCacheKey;
 use crate::pg::Pg;
 use crate::pg::PgMetadataLookup;
@@ -21,6 +21,7 @@ use crate::query_builder::QueryId;
 use crate::query_builder::ValuesClause;
 use crate::serialize::IsNull;
 use crate::serialize::ToSql;
+use crate::Connection;
 use crate::Insertable;
 use crate::PgConnection;
 use crate::QueryResult;
@@ -130,7 +131,7 @@ where
 pub trait CopyInExpression<T> {
     type Error: From<crate::result::Error> + std::error::Error;
 
-    fn callback(self, copy: &mut CopyIn<'_>) -> Result<(), Self::Error>;
+    fn callback(&mut self, copy: &mut CopyFromSink<'_>) -> Result<(), Self::Error>;
 
     fn walk_target<'b>(
         &'b self,
@@ -144,11 +145,11 @@ impl<S, F, E> CopyInExpression<S::Table> for CopyFrom<S, F>
 where
     E: From<crate::result::Error> + std::error::Error,
     S: CopyTarget,
-    F: Fn(&mut CopyIn<'_>) -> Result<(), E>,
+    F: Fn(&mut dyn std::io::Write) -> Result<(), E>,
 {
     type Error = E;
 
-    fn callback(self, copy: &mut CopyIn<'_>) -> Result<(), Self::Error> {
+    fn callback(&mut self, copy: &mut CopyFromSink<'_>) -> Result<(), Self::Error> {
         (self.copy_callback)(copy)
     }
 
@@ -258,7 +259,7 @@ macro_rules! impl_copy_from_insertable_helper_for_values_clause {
 diesel_derives::__diesel_for_each_tuple!(impl_copy_from_insertable_helper_for_values_clause);
 
 #[derive(Debug)]
-pub struct InsertableWrapper<I>(I);
+pub struct InsertableWrapper<I>(Option<I>);
 
 impl<I, T, V, QId, const STATIC_QUERY_ID: bool> CopyInExpression<T> for InsertableWrapper<I>
 where
@@ -267,7 +268,7 @@ where
 {
     type Error = crate::result::Error;
 
-    fn callback(self, copy: &mut CopyIn<'_>) -> Result<(), Self::Error> {
+    fn callback(&mut self, copy: &mut CopyFromSink<'_>) -> Result<(), Self::Error> {
         let io_result_mapper = |e| crate::result::Error::DeserializationError(Box::new(e));
         // see https://www.postgresql.org/docs/current/sql-copy.html for
         // a description of the binary format
@@ -286,7 +287,11 @@ where
         // as we expect the data to be "similar"
         // this skips reallocating
         let mut buffer = Vec::<u8>::new();
-        let values = self.0.values();
+        let values = self
+            .0
+            .take()
+            .expect("We only call this callback once")
+            .values();
         for i in values.values {
             // column count
             buffer
@@ -354,7 +359,7 @@ where
     pub fn from_raw_data<F, C, E>(self, _target: C, action: F) -> CopyInQuery<T, CopyFrom<C, F>>
     where
         C: CopyTarget<Table = T>,
-        F: Fn(&mut CopyIn<'_>) -> Result<(), E>,
+        F: Fn(&mut dyn std::io::Write) -> Result<(), E>,
     {
         CopyInQuery {
             table: self.table,
@@ -372,7 +377,7 @@ where
     {
         CopyInQuery {
             table: self.table,
-            action: InsertableWrapper(insertable),
+            action: InsertableWrapper(Some(insertable)),
         }
     }
 }
@@ -419,19 +424,30 @@ impl<T, C, F> CopyInQuery<T, CopyFrom<C, F>> {
     }
 }
 
-impl<T, A> CopyInQuery<T, A>
+pub trait ExecuteCopyInQueryDsl<C>
+where
+    C: Connection<Backend = Pg>,
+{
+    type Error: std::error::Error;
+
+    fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
+}
+
+impl<T, A> ExecuteCopyInQueryDsl<PgConnection> for CopyInQuery<T, A>
 where
     A: CopyInExpression<T>,
 {
-    pub fn execute(self, conn: &mut PgConnection) -> Result<usize, A::Error> {
-        conn.copy_in::<A, T>(self.action)
+    type Error = A::Error;
+
+    fn execute(self, conn: &mut PgConnection) -> Result<usize, A::Error> {
+        conn.copy_from::<A, T>(self.action)
     }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct NotSet;
 
-pub fn copy_in<T>(table: T) -> CopyInQuery<T, NotSet>
+pub fn copy_from<T>(table: T) -> CopyInQuery<T, NotSet>
 where
     T: Table,
 {

@@ -270,3 +270,67 @@ fn check_events_are_emitted_for_load_does_contain_error_for_failures_pg_row_by_r
     assert_matches!(events[0], Event::StartQuery { .. });
     assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
 }
+
+#[cfg(feature = "postgres")]
+#[test]
+fn check_events_are_emitted_for_copy_to() {
+    use diesel::pg::CopyFormat;
+    use diesel::ExecuteCopyInQueryDsl;
+
+    let (events_to_check, mut conn) = setup_test_case();
+
+    let _count = diesel::copy_from(users::table)
+        .from_raw_data(users::table, |copy| {
+            writeln!(copy, "3,Sean,").unwrap();
+            writeln!(copy, "4,Tess,").unwrap();
+            diesel::QueryResult::Ok(())
+        })
+        .with_format(CopyFormat::Csv)
+        .execute(&mut conn)
+        .unwrap();
+    let events = events_to_check.lock().unwrap();
+    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_matches!(events[0], Event::StartQuery { .. });
+    assert_matches!(events[1], Event::FinishQuery { error: None, .. });
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn check_events_are_emitted_for_copy_to_with_error() {
+    use diesel::pg::CopyFormat;
+    use diesel::ExecuteCopyInQueryDsl;
+
+    let (events_to_check, mut conn) = setup_test_case();
+
+    let count = diesel::copy_from(users::table)
+        .from_raw_data(users::table, |_copy| {
+            diesel::QueryResult::Err(diesel::result::Error::RollbackTransaction)
+        })
+        .with_format(CopyFormat::Csv)
+        .execute(&mut conn);
+    assert!(count.is_err());
+    let events = events_to_check.lock().unwrap();
+    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_matches!(events[0], Event::StartQuery { .. });
+    assert_matches!(events[1], Event::FinishQuery { error: Some(_), .. });
+}
+
+#[cfg(feature = "postgres")]
+#[test]
+fn check_events_are_emitted_for_copy_from() {
+    use diesel::pg::CopyFormat;
+    use std::io::Read;
+
+    let (events_to_check, mut conn) = setup_test_case();
+
+    let mut out = String::new();
+    let mut copy = diesel::copy_to(users::table)
+        .with_format(CopyFormat::Csv)
+        .load_raw(&mut conn)
+        .unwrap();
+    copy.read_to_string(&mut out).unwrap();
+    let events = events_to_check.lock().unwrap();
+    assert_eq!(events.len(), 2, "{:?}", events);
+    assert_matches!(events[0], Event::StartQuery { .. });
+    assert_matches!(events[1], Event::FinishQuery { error: None, .. });
+}
