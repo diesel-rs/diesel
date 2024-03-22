@@ -6,13 +6,13 @@ use crate::sql_types::SqlType;
 use crate::Expression;
 use crate::{Column, Table};
 
-pub(crate) mod copy_in;
-pub(crate) mod copy_out;
+pub(crate) mod copy_from;
+pub(crate) mod copy_to;
 
-pub(crate) use self::copy_in::{CopyInExpression, InternalCopyInQuery};
-pub(crate) use self::copy_out::CopyTo;
+pub(crate) use self::copy_from::{CopyInExpression, InternalCopyInQuery};
+pub(crate) use self::copy_to::CopyToCommand;
 
-pub use self::copy_in::CopyHeader;
+pub use self::copy_from::{CopyHeader, ExecuteCopyInQueryDsl};
 
 const COPY_MAGIC_HEADER: [u8; 11] = [
     0x50, 0x47, 0x43, 0x4F, 0x50, 0x59, 0x0A, 0xFF, 0x0D, 0x0A, 0x00,

@@ -5,8 +5,8 @@ mod result;
 mod row;
 mod stmt;
 
-use self::copy::CopyIn;
-use self::copy::CopyOut;
+use self::copy::CopyFromSink;
+use self::copy::CopyToBuffer;
 use self::cursor::*;
 use self::private::ConnectionAndTransactionManager;
 use self::raw::{PgTransactionStatus, RawConnection};
@@ -31,7 +31,7 @@ use std::os::raw as libc;
 
 use super::query_builder::copy::CopyInExpression;
 use super::query_builder::copy::CopyTarget;
-use super::query_builder::copy::CopyTo;
+use super::query_builder::copy::CopyToCommand;
 
 pub(super) use self::result::PgResult;
 
@@ -402,40 +402,72 @@ impl PgConnection {
         TransactionBuilder::new(self)
     }
 
-    pub(crate) fn copy_in<S, T>(&mut self, target: S) -> Result<usize, S::Error>
+    pub(crate) fn copy_from<S, T>(&mut self, target: S) -> Result<usize, S::Error>
     where
         S: CopyInExpression<T>,
     {
         let query = InternalCopyInQuery::new(target);
-        let res = self.with_prepared_query(query, true, |stmt, binds, conn, source| {
-            let _res = stmt.execute(&mut conn.raw_connection, &binds, false)?;
-            let mut copy_in = CopyIn::new(&mut conn.raw_connection);
-            let r = source.target.callback(&mut copy_in);
-            copy_in.finish(r.as_ref().err().map(|e| e.to_string()))?;
-            let next_res = conn.raw_connection.get_next_result()?.expect("exists");
-            let rows = next_res.rows_affected();
-            // need to pull out any other result
-            while let Some(_r) = conn.raw_connection.get_next_result()? {}
-            // it's important to only return a potential error here as
-            // we need to ensure that `finish` is called and we pull
-            // all the results
-            r?;
-            Ok::<_, S::Error>(rows)
+        let res = self.with_prepared_query(query, false, |stmt, binds, conn, mut source| {
+            fn inner_copy_in<S, T>(
+                stmt: MaybeCached<'_, Statement>,
+                conn: &mut ConnectionAndTransactionManager,
+                binds: Vec<Option<Vec<u8>>>,
+                source: &mut InternalCopyInQuery<S, T>,
+            ) -> Result<usize, S::Error>
+            where
+                S: CopyInExpression<T>,
+            {
+                let _res = stmt.execute(&mut conn.raw_connection, &binds, false)?;
+                let mut copy_in = CopyFromSink::new(&mut conn.raw_connection);
+                let r = source.target.callback(&mut copy_in);
+                copy_in.finish(r.as_ref().err().map(|e| e.to_string()))?;
+                let next_res = conn.raw_connection.get_next_result()?.expect("exists");
+                let rows = next_res.rows_affected();
+                while let Some(_r) = conn.raw_connection.get_next_result()? {}
+                r?;
+                Ok(rows)
+            }
+
+            let rows = inner_copy_in(stmt, conn, binds, &mut source);
+            if let Err(ref e) = rows {
+                let database_error = crate::result::Error::DatabaseError(
+                    crate::result::DatabaseErrorKind::Unknown,
+                    Box::new(e.to_string()),
+                );
+                conn.instrumentation
+                    .on_connection_event(InstrumentationEvent::FinishQuery {
+                        query: &crate::debug_query(&source),
+                        error: Some(&database_error),
+                    });
+            } else {
+                conn.instrumentation
+                    .on_connection_event(InstrumentationEvent::FinishQuery {
+                        query: &crate::debug_query(&source),
+                        error: None,
+                    });
+            }
+
+            rows
         })?;
 
         Ok(res)
     }
 
-    pub(crate) fn copy_out<T>(&mut self, command: CopyTo<T>) -> QueryResult<CopyOut<'_>>
+    pub(crate) fn copy_to<T>(&mut self, command: CopyToCommand<T>) -> QueryResult<CopyToBuffer<'_>>
     where
         T: CopyTarget,
     {
         let res = self.with_prepared_query::<_, _, Error>(
             command,
-            true,
-            |stmt, binds, conn, _source| {
-                let res = stmt.execute(&mut conn.raw_connection, &binds, false)?;
-                Ok(CopyOut::new(&mut conn.raw_connection, res))
+            false,
+            |stmt, binds, conn, source| {
+                let res = stmt.execute(&mut conn.raw_connection, &binds, false);
+                conn.instrumentation
+                    .on_connection_event(InstrumentationEvent::FinishQuery {
+                        query: &crate::debug_query(&source),
+                        error: res.as_ref().err(),
+                    });
+                Ok(CopyToBuffer::new(&mut conn.raw_connection, res?))
             },
         )?;
         Ok(res)

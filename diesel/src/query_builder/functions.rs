@@ -605,6 +605,6 @@ pub fn sql_query<T: Into<String>>(query: T) -> SqlQuery {
 }
 
 #[cfg(feature = "postgres")]
-pub use crate::pg::query_builder::copy::copy_in::copy_in;
+pub use crate::pg::query_builder::copy::copy_from::copy_from;
 #[cfg(feature = "postgres")]
-pub use crate::pg::query_builder::copy::copy_out::copy_out;
+pub use crate::pg::query_builder::copy::copy_to::copy_to;
