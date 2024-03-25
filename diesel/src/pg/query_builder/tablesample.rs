@@ -173,7 +173,6 @@ where
 mod test {
     use super::*;
     use crate::backend::Backend;
-    use crate::pg::Pg;
     use crate::query_builder::QueryBuilder;
     use diesel::dsl::*;
     use diesel::*;
