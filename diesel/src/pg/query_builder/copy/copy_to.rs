@@ -95,11 +95,11 @@ where
 #[derive(Debug, Clone, Copy)]
 pub struct NotSet;
 
-pub trait CopyOutMarker: Sized {
+pub trait CopyToMarker: Sized {
     fn setup_options<T>(q: CopyToQuery<T, Self>) -> CopyToQuery<T, CopyToOptions>;
 }
 
-impl CopyOutMarker for NotSet {
+impl CopyToMarker for NotSet {
     fn setup_options<T>(q: CopyToQuery<T, Self>) -> CopyToQuery<T, CopyToOptions> {
         CopyToQuery {
             target: q.target,
@@ -107,13 +107,26 @@ impl CopyOutMarker for NotSet {
         }
     }
 }
-impl CopyOutMarker for CopyToOptions {
+impl CopyToMarker for CopyToOptions {
     fn setup_options<T>(q: CopyToQuery<T, Self>) -> CopyToQuery<T, CopyToOptions> {
         q
     }
 }
-
+/// The structure returned by [`copy_to`]
+///
+/// The [`load`] and the [`load_raw`] methods allow
+/// to receive the configured data from the database.
+/// If you don't have any special needs you should prefer using
+/// the more convenient `load` method.
+///
+/// The `with_*` methods allow to configure the settings used for the
+/// copy statement.
+///
+/// [`load`]: CopyToQuery::load
+/// [`load_raw`]: CopyToQuery::load_raw
 #[derive(Debug)]
+#[must_use = "`COPY TO` statements are only executed when calling `.load()` or `load_raw()`."]
+#[cfg(feature = "postgres_backend")]
 pub struct CopyToQuery<T, O> {
     target: T,
     options: O,
@@ -199,29 +212,29 @@ impl<'a> Row<'a, Pg> for CopyRow<'_> {
     }
 }
 
-pub trait ExecuteCopyOutConnection: Connection<Backend = Pg> {
-    type CopyOutBuffer<'a>: BufRead;
+pub trait ExecuteCopyToConnection: Connection<Backend = Pg> {
+    type CopyToBuffer<'a>: BufRead;
 
     fn make_row<'a, 'b>(
-        out: &'a Self::CopyOutBuffer<'_>,
+        out: &'a Self::CopyToBuffer<'_>,
         buffers: Vec<Option<&'a [u8]>>,
     ) -> impl Row<'b, Pg> + 'a;
 
-    fn get_buffer<'a>(out: &'a Self::CopyOutBuffer<'_>) -> &'a [u8];
+    fn get_buffer<'a>(out: &'a Self::CopyToBuffer<'_>) -> &'a [u8];
 
     fn execute<'conn, T>(
         &'conn mut self,
         command: CopyToCommand<T>,
-    ) -> QueryResult<Self::CopyOutBuffer<'conn>>
+    ) -> QueryResult<Self::CopyToBuffer<'conn>>
     where
         T: CopyTarget;
 }
 
-impl ExecuteCopyOutConnection for PgConnection {
-    type CopyOutBuffer<'a> = CopyToBuffer<'a>;
+impl ExecuteCopyToConnection for PgConnection {
+    type CopyToBuffer<'a> = CopyToBuffer<'a>;
 
     fn make_row<'a, 'b>(
-        out: &'a Self::CopyOutBuffer<'_>,
+        out: &'a Self::CopyToBuffer<'_>,
         buffers: Vec<Option<&'a [u8]>>,
     ) -> impl Row<'b, Pg> + 'a {
         CopyRow {
@@ -230,14 +243,14 @@ impl ExecuteCopyOutConnection for PgConnection {
         }
     }
 
-    fn get_buffer<'a>(out: &'a Self::CopyOutBuffer<'_>) -> &'a [u8] {
+    fn get_buffer<'a>(out: &'a Self::CopyToBuffer<'_>) -> &'a [u8] {
         out.data_slice()
     }
 
     fn execute<'conn, T>(
         &'conn mut self,
         command: CopyToCommand<T>,
-    ) -> QueryResult<Self::CopyOutBuffer<'conn>>
+    ) -> QueryResult<Self::CopyToBuffer<'conn>>
     where
         T: CopyTarget,
     {
@@ -245,10 +258,45 @@ impl ExecuteCopyOutConnection for PgConnection {
     }
 }
 
+#[cfg(feature = "r2d2")]
+impl<C> ExecuteCopyToConnection for crate::r2d2::PooledConnection<crate::r2d2::ConnectionManager<C>>
+where
+    C: ExecuteCopyToConnection + crate::r2d2::R2D2Connection + 'static,
+{
+    type CopyToBuffer<'a> = C::CopyToBuffer<'a>;
+
+    fn make_row<'a, 'b>(
+        out: &'a Self::CopyToBuffer<'_>,
+        buffers: Vec<Option<&'a [u8]>>,
+    ) -> impl Row<'b, Pg> + 'a {
+        C::make_row(out, buffers)
+    }
+
+    fn get_buffer<'a>(out: &'a Self::CopyToBuffer<'_>) -> &'a [u8] {
+        C::get_buffer(out)
+    }
+
+    fn execute<'conn, T>(
+        &'conn mut self,
+        command: CopyToCommand<T>,
+    ) -> QueryResult<Self::CopyToBuffer<'conn>>
+    where
+        T: CopyTarget,
+    {
+        C::execute(&mut **self, command)
+    }
+}
+
 impl<T> CopyToQuery<T, NotSet>
 where
     T: CopyTarget,
 {
+    /// Copy data from the database by returning an iterator of deserialized data
+    ///
+    /// This function allows to easily load data from the database via a `COPY TO` statement.
+    /// It does **not** allow to configure any settings via the `with_*` method, as it internally
+    /// sets the required options itself. It will use the binary format to deserialize the result
+    /// into the specified type `U`. Column selection is performed via [`Selectable`].
     pub fn load<'a, U, C>(
         self,
         conn: &'a mut C,
@@ -256,7 +304,7 @@ where
     where
         U: FromSqlRow<<U::SelectExpression as Expression>::SqlType, Pg> + Selectable<Pg>,
         U::SelectExpression: AppearsOnTable<T::Table> + CopyTarget<Table = T::Table>,
-        C: ExecuteCopyOutConnection,
+        C: ExecuteCopyToConnection,
     {
         let io_result_mapper = |e| crate::result::Error::DeserializationError(Box::new(e));
 
@@ -275,7 +323,7 @@ where
         //
         // We don't write oids
 
-        let mut out = ExecuteCopyOutConnection::execute(conn, command)?;
+        let mut out = ExecuteCopyToConnection::execute(conn, command)?;
         let buffer = out.fill_buf().map_err(io_result_mapper)?;
         if &buffer[..super::COPY_MAGIC_HEADER.len()] != super::COPY_MAGIC_HEADER {
             return Err(crate::result::Error::DeserializationError(
@@ -339,57 +387,91 @@ where
 
 impl<T, O> CopyToQuery<T, O>
 where
-    O: CopyOutMarker,
+    O: CopyToMarker,
     T: CopyTarget,
 {
+    /// Copy data from the database by directly accessing the provided response
+    ///
+    /// This function returns a type that implements [`std::io::BufRead`] which allows to directly read
+    /// the data as provided by the database. The exact format depends on what options are
+    /// set via the various `with_*` methods.
     pub fn load_raw<'conn, C>(self, conn: &'conn mut C) -> QueryResult<impl BufRead + 'conn>
     where
-        C: ExecuteCopyOutConnection,
+        C: ExecuteCopyToConnection,
     {
         let q = O::setup_options(self);
         let command = CopyToCommand {
             p: PhantomData::<T>,
             options: q.options,
         };
-        ExecuteCopyOutConnection::execute(conn, command)
+        ExecuteCopyToConnection::execute(conn, command)
     }
 
+    /// The format used for the copy statement
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_format(self, format: CopyFormat) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.format = Some(format);
         out
     }
 
+    /// Whether or not the `freeze` option is set
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_freeze(self, freeze: bool) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.freeze = Some(freeze);
         out
     }
 
+    /// Which delimiter should be used for textual output formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_delimiter(self, delimiter: char) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.delimiter = Some(delimiter);
         out
     }
 
+    /// Which string should be used in place of a `NULL` value
+    /// for textual output formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_null(self, null: impl Into<String>) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.null = Some(null.into());
         out
     }
 
+    /// Which quote character should be used for textual output formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_quote(self, quote: char) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.quote = Some(quote);
         out
     }
 
+    /// Which escape character should be used for textual output formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_escape(self, escape: char) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.common.escape = Some(escape);
         out
     }
 
+    /// Is a header provided as part of the textual input or not
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_header(self, set: bool) -> CopyToQuery<T, CopyToOptions> {
         let mut out = O::setup_options(self);
         out.options.header = Some(set);
@@ -397,7 +479,97 @@ where
     }
 }
 
-pub fn copy_to<T>(target: T) -> CopyToQuery<T, NotSet> {
+/// Creates a `COPY TO` statement
+///
+/// This function constructs a `COPY TO` statement which copies data
+/// from the database **to** a client side target. It's designed to move
+/// larger amounts of data out of the database.
+///
+/// This function accepts a target selection (table name or list of columns) as argument.
+///
+/// There are two ways to use a `COPY TO` statement with diesel:
+///
+/// * By using [`CopyToQuery::load`] directly to load the deserialized result
+///   directly into a specified type
+/// * By using the `with_*` methods to configure the format sent by the database
+///   and then by calling [`CopyToQuery::load_raw`] to receive the raw data
+///   sent by the database.
+///
+/// The first variant uses the `BINARY` format internally to receive
+/// the selected data efficiently. It automatically sets the right options
+/// and does not allow to change them via `with_*` methods.
+///
+/// The second variant allows you to control the behaviour of the
+/// generated `COPY TO` statement in detail. You can use the various
+/// `with_*` methods for that before issuing the statement via [`CopyToQuery::load_raw`].
+/// That method will return an type that implements [`std::io::BufRead`], which
+/// allows you to directly read the response from the database in the configured
+/// format.
+/// See [the postgresql documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+/// for more details about the supported formats.
+///
+/// If you don't have any specific needs you should prefer using the more
+/// convenient first variant.
+///
+/// This functionality is postgresql specific.
+///
+/// # Examples
+///
+/// ## Via [`CopyToQuery::load()`]
+///
+/// ```rust
+/// # include!("../../../doctest_setup.rs");
+/// # use crate::schema::users;
+///
+/// #[derive(Queryable, Selectable, PartialEq, Debug)]
+/// #[diesel(table_name = users)]
+/// #[diesel(check_for_backend(diesel::pg::Pg))]
+/// struct User {
+///     name: String,
+/// }
+///
+/// # fn run_test() -> QueryResult<()> {
+/// # let connection = &mut establish_connection();
+/// let out = diesel::copy_to(users::table)
+///     .load::<User, _>(connection)?
+///     .collect::<Result<Vec<_>, _>>()?;
+///
+/// assert_eq!(out, vec![User{ name: "Sean".into() }, User{ name: "Tess".into() }]);
+/// # Ok(())
+/// # }
+/// # fn main() {
+/// #    run_test().unwrap();
+/// # }
+/// ```
+///
+/// ## Via [`CopyToQuery::load_raw()`]
+///
+/// ```rust
+/// # include!("../../../doctest_setup.rs");
+/// # fn run_test() -> QueryResult<()> {
+/// # use crate::schema::users;
+/// use diesel::pg::CopyFormat;
+/// use std::io::Read;
+/// # let connection = &mut establish_connection();
+///
+/// let mut copy = diesel::copy_to(users::table)
+///     .with_format(CopyFormat::Csv)
+///     .load_raw(connection)?;
+///
+/// let mut out = String::new();
+/// copy.read_to_string(&mut out).unwrap();
+/// assert_eq!(out, "1,Sean\n2,Tess\n");
+/// # Ok(())
+/// # }
+/// # fn main() {
+/// #    run_test().unwrap();
+/// # }
+/// ```
+#[cfg(feature = "postgres_backend")]
+pub fn copy_to<T>(target: T) -> CopyToQuery<T, NotSet>
+where
+    T: CopyTarget,
+{
     CopyToQuery {
         target,
         options: NotSet,

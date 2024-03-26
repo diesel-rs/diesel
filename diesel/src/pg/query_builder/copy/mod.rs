@@ -9,20 +9,31 @@ use crate::{Column, Table};
 pub(crate) mod copy_from;
 pub(crate) mod copy_to;
 
-pub(crate) use self::copy_from::{CopyInExpression, InternalCopyInQuery};
+pub(crate) use self::copy_from::{CopyFromExpression, InternalCopyFromQuery};
 pub(crate) use self::copy_to::CopyToCommand;
 
-pub use self::copy_from::{CopyHeader, ExecuteCopyInQueryDsl};
+pub use self::copy_from::{CopyFromQuery, CopyHeader, ExecuteCopyFromDsl};
+pub use self::copy_to::CopyToQuery;
 
 const COPY_MAGIC_HEADER: [u8; 11] = [
     0x50, 0x47, 0x43, 0x4F, 0x50, 0x59, 0x0A, 0xFF, 0x0D, 0x0A, 0x00,
 ];
 
+/// Describes the format used by `COPY FROM` or `COPY TO`
+/// statements
+///
+/// See [the postgresql documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+/// for details about the different formats
 #[derive(Default, Debug, Copy, Clone)]
 pub enum CopyFormat {
+    /// The postgresql text format
+    ///
+    /// This format is the default if no format is explicitly set
     #[default]
     Text,
+    /// Represents the data as comma separated values (CSV)
     Csv,
+    /// The postgresql binary format
     Binary,
 }
 
@@ -95,10 +106,16 @@ impl CommonOptions {
     }
 }
 
+/// A expression that could be used as target/source for `COPY FROM` and `COPY TO` commands
+///
+/// This trait is implemented for any table type and for tuples of columns from the same table
 pub trait CopyTarget {
+    /// The table targeted by the command
     type Table: Table;
+    /// The sql side type of the target expression
     type SqlType: SqlType;
 
+    #[doc(hidden)]
     fn walk_target<'b>(pass: crate::query_builder::AstPass<'_, 'b, Pg>) -> crate::QueryResult<()>;
 }
 

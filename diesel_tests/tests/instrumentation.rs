@@ -275,7 +275,7 @@ fn check_events_are_emitted_for_load_does_contain_error_for_failures_pg_row_by_r
 #[test]
 fn check_events_are_emitted_for_copy_to() {
     use diesel::pg::CopyFormat;
-    use diesel::ExecuteCopyInQueryDsl;
+    use diesel::ExecuteCopyFromDsl;
 
     let (events_to_check, mut conn) = setup_test_case();
 
@@ -298,7 +298,7 @@ fn check_events_are_emitted_for_copy_to() {
 #[test]
 fn check_events_are_emitted_for_copy_to_with_error() {
     use diesel::pg::CopyFormat;
-    use diesel::ExecuteCopyInQueryDsl;
+    use diesel::ExecuteCopyFromDsl;
 
     let (events_to_check, mut conn) = setup_test_case();
 

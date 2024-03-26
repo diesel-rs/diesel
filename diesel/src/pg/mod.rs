@@ -27,7 +27,8 @@ pub use self::query_builder::DistinctOnClause;
 pub use self::query_builder::OrderDecorator;
 #[doc(inline)]
 pub use self::query_builder::PgQueryBuilder;
-pub use self::query_builder::{CopyFormat, CopyHeader};
+#[doc(inline)]
+pub use self::query_builder::{CopyFormat, CopyFromQuery, CopyHeader, CopyTarget, CopyToQuery};
 #[doc(inline)]
 pub use self::transaction::TransactionBuilder;
 #[doc(inline)]

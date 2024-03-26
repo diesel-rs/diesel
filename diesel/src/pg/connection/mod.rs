@@ -18,7 +18,7 @@ use crate::connection::statement_cache::{MaybeCached, StatementCache};
 use crate::connection::*;
 use crate::expression::QueryMetadata;
 use crate::pg::metadata_lookup::{GetPgMetadataCache, PgMetadataCache};
-use crate::pg::query_builder::copy::InternalCopyInQuery;
+use crate::pg::query_builder::copy::InternalCopyFromQuery;
 use crate::pg::{Pg, TransactionBuilder};
 use crate::query_builder::bind_collector::RawBytesBindCollector;
 use crate::query_builder::*;
@@ -29,7 +29,7 @@ use std::ffi::CString;
 use std::fmt::Debug;
 use std::os::raw as libc;
 
-use super::query_builder::copy::CopyInExpression;
+use super::query_builder::copy::CopyFromExpression;
 use super::query_builder::copy::CopyTarget;
 use super::query_builder::copy::CopyToCommand;
 
@@ -404,18 +404,18 @@ impl PgConnection {
 
     pub(crate) fn copy_from<S, T>(&mut self, target: S) -> Result<usize, S::Error>
     where
-        S: CopyInExpression<T>,
+        S: CopyFromExpression<T>,
     {
-        let query = InternalCopyInQuery::new(target);
+        let query = InternalCopyFromQuery::new(target);
         let res = self.with_prepared_query(query, false, |stmt, binds, conn, mut source| {
             fn inner_copy_in<S, T>(
                 stmt: MaybeCached<'_, Statement>,
                 conn: &mut ConnectionAndTransactionManager,
                 binds: Vec<Option<Vec<u8>>>,
-                source: &mut InternalCopyInQuery<S, T>,
+                source: &mut InternalCopyFromQuery<S, T>,
             ) -> Result<usize, S::Error>
             where
-                S: CopyInExpression<T>,
+                S: CopyFromExpression<T>,
             {
                 let _res = stmt.execute(&mut conn.raw_connection, &binds, false)?;
                 let mut copy_in = CopyFromSink::new(&mut conn.raw_connection);

@@ -27,9 +27,14 @@ use crate::PgConnection;
 use crate::QueryResult;
 use crate::{Column, Table};
 
+/// Describes the different possible settings for the `HEADER` option
+/// for `COPY FROM` statements
 #[derive(Debug, Copy, Clone)]
 pub enum CopyHeader {
+    /// Is the header set?
     Set(bool),
+    /// Match the header with the targeted table names
+    /// and fail in the case of a mismatch
     Match,
 }
 
@@ -88,12 +93,12 @@ pub struct CopyFrom<S, F> {
     p: PhantomData<S>,
 }
 
-pub(crate) struct InternalCopyInQuery<S, T> {
+pub(crate) struct InternalCopyFromQuery<S, T> {
     pub(crate) target: S,
     p: PhantomData<T>,
 }
 
-impl<S, T> InternalCopyInQuery<S, T> {
+impl<S, T> InternalCopyFromQuery<S, T> {
     pub(crate) fn new(target: S) -> Self {
         Self {
             target,
@@ -102,17 +107,17 @@ impl<S, T> InternalCopyInQuery<S, T> {
     }
 }
 
-impl<S, T> QueryId for InternalCopyInQuery<S, T>
+impl<S, T> QueryId for InternalCopyFromQuery<S, T>
 where
-    S: CopyInExpression<T>,
+    S: CopyFromExpression<T>,
 {
     const HAS_STATIC_QUERY_ID: bool = false;
     type QueryId = ();
 }
 
-impl<S, T> QueryFragment<Pg> for InternalCopyInQuery<S, T>
+impl<S, T> QueryFragment<Pg> for InternalCopyFromQuery<S, T>
 where
-    S: CopyInExpression<T>,
+    S: CopyFromExpression<T>,
 {
     fn walk_ast<'b>(
         &'b self,
@@ -128,7 +133,7 @@ where
     }
 }
 
-pub trait CopyInExpression<T> {
+pub trait CopyFromExpression<T> {
     type Error: From<crate::result::Error> + std::error::Error;
 
     fn callback(&mut self, copy: &mut CopyFromSink<'_>) -> Result<(), Self::Error>;
@@ -141,7 +146,7 @@ pub trait CopyInExpression<T> {
     fn options(&self) -> &CopyFromOptions;
 }
 
-impl<S, F, E> CopyInExpression<S::Table> for CopyFrom<S, F>
+impl<S, F, E> CopyFromExpression<S::Table> for CopyFrom<S, F>
 where
     E: From<crate::result::Error> + std::error::Error,
     S: CopyTarget,
@@ -261,7 +266,7 @@ diesel_derives::__diesel_for_each_tuple!(impl_copy_from_insertable_helper_for_va
 #[derive(Debug)]
 pub struct InsertableWrapper<I>(Option<I>);
 
-impl<I, T, V, QId, const STATIC_QUERY_ID: bool> CopyInExpression<T> for InsertableWrapper<I>
+impl<I, T, V, QId, const STATIC_QUERY_ID: bool> CopyFromExpression<T> for InsertableWrapper<I>
 where
     I: Insertable<T, Values = BatchInsert<Vec<V>, T, QId, STATIC_QUERY_ID>>,
     V: CopyFromInsertableHelper,
@@ -346,22 +351,39 @@ where
     }
 }
 
+/// The structure returned by [`copy_from`]
+///
+/// The [`from_raw_data`] and the [`from_insertable`] methods allow
+/// to configure the data copied into the database
+///
+/// The `with_*` methods allow to configure the settings used for the
+/// copy statement.
+///
+/// [`from_raw_data`]: CopyFromQuery::from_raw_data
+/// [`from_insertable`]: CopyFromQuery::from_insertable
 #[derive(Debug)]
-pub struct CopyInQuery<T, Action> {
+#[must_use = "`COPY FROM` statements are only executed when calling `.execute()`."]
+#[cfg(feature = "postgres_backend")]
+pub struct CopyFromQuery<T, Action> {
     table: T,
     action: Action,
 }
 
-impl<T> CopyInQuery<T, NotSet>
+impl<T> CopyFromQuery<T, NotSet>
 where
     T: Table,
 {
-    pub fn from_raw_data<F, C, E>(self, _target: C, action: F) -> CopyInQuery<T, CopyFrom<C, F>>
+    /// Copy data into the database by directly providing the data in the corresponding format
+    ///
+    /// `target` specifies the column selection that is the target of the `COPY FROM` statement
+    /// `action` expects a callback which accepts a [`std::io::Write`] argument. The necessary format
+    /// accepted by this writer sink depends on the options provided via the `with_*` methods
+    pub fn from_raw_data<F, C, E>(self, _target: C, action: F) -> CopyFromQuery<T, CopyFrom<C, F>>
     where
         C: CopyTarget<Table = T>,
         F: Fn(&mut dyn std::io::Write) -> Result<(), E>,
     {
-        CopyInQuery {
+        CopyFromQuery {
             table: self.table,
             action: CopyFrom {
                 p: PhantomData,
@@ -371,71 +393,123 @@ where
         }
     }
 
-    pub fn from_insertable<I>(self, insertable: I) -> CopyInQuery<T, InsertableWrapper<I>>
+    /// Copy a set of insertable values into the database.
+    ///
+    /// The `insertable` argument is expected to be a `Vec<I>`, `&[I]` or similar, where `I`
+    /// needs to implement `Insertable<T>`. If you use the [`#[derive(Insertable)]`](derive@crate::prelude::Insertable)
+    /// derive macro make sure to also set the `#[diesel(treat_none_as_default_value = false)]` option
+    /// to disable the default value handling otherwise implemented by `#[derive(Insertable)]`.
+    ///
+    /// This uses the binary format. It internally configures the correct
+    /// set of settings and does not allow to set other options
+    pub fn from_insertable<I>(self, insertable: I) -> CopyFromQuery<T, InsertableWrapper<I>>
     where
-        InsertableWrapper<I>: CopyInExpression<T>,
+        InsertableWrapper<I>: CopyFromExpression<T>,
     {
-        CopyInQuery {
+        CopyFromQuery {
             table: self.table,
             action: InsertableWrapper(Some(insertable)),
         }
     }
 }
 
-impl<T, C, F> CopyInQuery<T, CopyFrom<C, F>> {
+impl<T, C, F> CopyFromQuery<T, CopyFrom<C, F>> {
+    /// The format used for the copy statement
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_format(mut self, format: CopyFormat) -> Self {
         self.action.options.common.format = Some(format);
         self
     }
 
+    /// Whether or not the `freeze` option is set
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_freeze(mut self, freeze: bool) -> Self {
         self.action.options.common.freeze = Some(freeze);
         self
     }
 
+    /// Which delimiter should be used for textual input formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_delimiter(mut self, delimiter: char) -> Self {
         self.action.options.common.delimiter = Some(delimiter);
         self
     }
 
+    /// Which string should be used in place of a `NULL` value
+    /// for textual input formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_null(mut self, null: impl Into<String>) -> Self {
         self.action.options.common.null = Some(null.into());
         self
     }
 
+    /// Which quote character should be used for textual input formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_quote(mut self, quote: char) -> Self {
         self.action.options.common.quote = Some(quote);
         self
     }
 
+    /// Which escape character should be used for textual input formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_escape(mut self, escape: char) -> Self {
         self.action.options.common.escape = Some(escape);
         self
     }
 
+    /// Which string should be used to indicate that
+    /// the `default` value should be used in place of that string
+    /// for textual formats
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
+    ///
+    /// (This parameter was added with PostgreSQL 16)
     pub fn with_default(mut self, default: impl Into<String>) -> Self {
         self.action.options.default = Some(default.into());
         self
     }
 
+    /// Is a header provided as part of the textual input or not
+    ///
+    /// See the [PostgreSQL documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+    /// for more details.
     pub fn with_header(mut self, header: CopyHeader) -> Self {
         self.action.options.header = Some(header);
         self
     }
 }
 
-pub trait ExecuteCopyInQueryDsl<C>
+/// A custom execute function tailored for `COPY FROM` statements
+///
+/// This trait can be used to execute `COPY FROM` queries constructed
+/// via [`copy_from]`
+pub trait ExecuteCopyFromDsl<C>
 where
     C: Connection<Backend = Pg>,
 {
+    /// The error type returned by the execute function
     type Error: std::error::Error;
 
+    /// See the trait documentation for details
     fn execute(self, conn: &mut C) -> Result<usize, Self::Error>;
 }
 
-impl<T, A> ExecuteCopyInQueryDsl<PgConnection> for CopyInQuery<T, A>
+impl<T, A> ExecuteCopyFromDsl<PgConnection> for CopyFromQuery<T, A>
 where
-    A: CopyInExpression<T>,
+    A: CopyFromExpression<T>,
 {
     type Error = A::Error;
 
@@ -447,11 +521,107 @@ where
 #[derive(Debug, Clone, Copy)]
 pub struct NotSet;
 
-pub fn copy_from<T>(table: T) -> CopyInQuery<T, NotSet>
+/// Creates a `COPY FROM` statement
+///
+/// This function constructs `COPY FROM` statement which copies data
+/// *from* a source into the database. It's designed to move larger
+/// amounts of data into the database.
+///
+/// This function accepts a target table as argument.
+///
+/// There are two ways to construct a `COPY FROM` statement with
+/// diesel:
+///
+/// * By providing a `Vec<I>` where `I` implements `Insertable` for the
+///   given table
+/// * By providing a target selection (column list or table name)
+///   and a callback that provides the data
+///
+/// The first variant uses the `BINARY` format internally to send
+/// the provided data efficiently to the database. It automatically
+/// sets the right options and does not allow changing them.
+/// Use [`CopyFromQuery::from_insertable`] for this.
+///
+/// The second variant allows you to control the behaviour
+/// of the generated `COPY FROM` statement in detail. It can
+/// be setup via the [`CopyFromQuery::from_raw_data`] function.
+/// The callback accepts an opaque object as argument that allows
+/// to write the corresponding data to the database. The exact
+/// format depends on the settings chosen by the various
+/// `CopyFromQuery::with_*` methods. See
+/// [the postgresql documentation](https://www.postgresql.org/docs/current/sql-copy.html)
+/// for more details about the expected formats.
+///
+/// If you don't have any specific needs you should prefer
+/// using the more convenient first variant.
+///
+/// This functionality is postgresql specific.
+///
+/// # Examples
+///
+/// ## Via [`CopyFromQuery::from_insertable`]
+///
+/// ```rust
+/// # include!("../../../doctest_setup.rs");
+/// # use crate::schema::users;
+///
+/// #[derive(Insertable)]
+/// #[diesel(table_name = users)]
+/// #[diesel(treat_none_as_default_value = false)]
+/// struct NewUser {
+///     name: &'static str,
+/// }
+///
+/// # fn run_test() -> QueryResult<()> {
+/// # let connection = &mut establish_connection();
+///
+/// let data = vec![
+///     NewUser { name: "Diva Plavalaguna" },
+///     NewUser { name: "Father Vito Cornelius" },
+/// ];
+///
+/// let count = diesel::copy_from(users::table)
+///     .from_insertable(&data)
+///     .execute(connection)?;
+///
+/// assert_eq!(count, 2);
+/// # Ok(())
+/// # }
+/// # fn main() {
+/// #    run_test().unwrap();
+/// # }
+/// ```
+///
+/// ## Via [`CopyFromQuery::from_raw_data`]
+///
+/// ```rust
+/// # include!("../../../doctest_setup.rs");
+/// # fn run_test() -> QueryResult<()> {
+/// # use crate::schema::users;
+/// use diesel::pg::CopyFormat;
+/// # let connection = &mut establish_connection();
+/// let count = diesel::copy_from(users::table)
+///     .from_raw_data(users::table, |copy| {
+///         writeln!(copy, "3,Diva Plavalaguna").unwrap();
+///         writeln!(copy, "4,Father Vito Cornelius").unwrap();
+///         diesel::QueryResult::Ok(())
+///     })
+///     .with_format(CopyFormat::Csv)
+///     .execute(connection)?;
+///
+/// assert_eq!(count, 2);
+/// # Ok(())
+/// # }
+/// # fn main() {
+/// #    run_test().unwrap();
+/// # }
+/// ```
+#[cfg(feature = "postgres_backend")]
+pub fn copy_from<T>(table: T) -> CopyFromQuery<T, NotSet>
 where
     T: Table,
 {
-    CopyInQuery {
+    CopyFromQuery {
         table,
         action: NotSet,
     }

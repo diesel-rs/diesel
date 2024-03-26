@@ -724,7 +724,7 @@ pub mod prelude {
     pub use crate::mysql::MysqlConnection;
     #[doc(inline)]
     #[cfg(feature = "postgres")]
-    pub use crate::pg::query_builder::copy::ExecuteCopyInQueryDsl;
+    pub use crate::pg::query_builder::copy::ExecuteCopyFromDsl;
     #[cfg(feature = "postgres")]
     #[doc(inline)]
     pub use crate::pg::PgConnection;
