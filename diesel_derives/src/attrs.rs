@@ -159,8 +159,11 @@ impl Parse for FieldAttr {
                 &name,
                 &[
                     "embed",
+                    "skip_insertion",
                     "column_name",
                     "sql_type",
+                    "treat_none_as_default_value",
+                    "treat_none_as_null",
                     "serialize_as",
                     "deserialize_as",
                     "select_expression",
