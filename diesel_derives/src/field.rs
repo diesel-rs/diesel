@@ -14,6 +14,8 @@ pub struct Field {
     pub treat_none_as_null: Option<AttributeSpanWrapper<bool>>,
     pub serialize_as: Option<AttributeSpanWrapper<Type>>,
     pub deserialize_as: Option<AttributeSpanWrapper<Type>>,
+    pub serialize_fn: Option<AttributeSpanWrapper<Expr>>,
+    pub deserialize_fn: Option<AttributeSpanWrapper<Expr>>,
     pub select_expression: Option<AttributeSpanWrapper<Expr>>,
     pub select_expression_type: Option<AttributeSpanWrapper<Type>>,
     pub embed: Option<AttributeSpanWrapper<bool>>,
@@ -30,6 +32,8 @@ impl Field {
         let mut sql_type = None;
         let mut serialize_as = None;
         let mut deserialize_as = None;
+        let mut serialize_fn = None;
+        let mut deserialize_fn = None;
         let mut embed = None;
         let mut skip_insertion = None;
         let mut select_expression = None;
@@ -79,6 +83,20 @@ impl Field {
                 FieldAttr::DeserializeAs(_, value) => {
                     deserialize_as = Some(AttributeSpanWrapper {
                         item: Type::Path(value),
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::SerializeFn(_, value) => {
+                    serialize_fn = Some(AttributeSpanWrapper {
+                        item: value,
+                        attribute_span,
+                        ident_span,
+                    })
+                }
+                FieldAttr::DeserializeFn(_, value) => {
+                    deserialize_fn = Some(AttributeSpanWrapper {
+                        item: value,
                         attribute_span,
                         ident_span,
                     })
@@ -134,6 +152,8 @@ impl Field {
             treat_none_as_null,
             serialize_as,
             deserialize_as,
+            serialize_fn,
+            deserialize_fn,
             select_expression,
             select_expression_type,
             embed,
