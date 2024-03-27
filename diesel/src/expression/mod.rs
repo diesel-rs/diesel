@@ -551,12 +551,19 @@ where
 /// # }
 /// ```
 ///
-/// If you want to avoid nesting types, you can use the
-/// [`Selectable`](derive@Selectable) derive macro's
-/// `select_expression` and `select_expression_type` attributes to
-/// flatten the fields. If the `select_expression` is simple enough,
-/// it is not necessary to specify `select_expression_type`
-/// (most query fragments are supported for this).
+/// It is also possible to specify an entirely custom select expression
+/// for fields when deriving [`Selectable`](derive@Selectable).
+/// This is useful for example to
+///
+///  * avoid nesting types, or to
+///  * populate fields with values other than table columns, such as
+///    the result of an SQL function like `CURRENT_TIMESTAMP()`
+///    or a custom SQL function.
+///
+/// The select expression is specified via the `select_expression` parameter.
+/// For more complex expressions, it may be required to also specify the result type
+/// of the expression with `select_expression_type`, However, for most query fragments
+/// this can be inferred and is not needed to be specified.
 ///
 /// ```rust
 /// # include!("../doctest_setup.rs");
@@ -583,6 +590,8 @@ where
 ///     name: String,
 ///     #[diesel(select_expression = posts::columns::title)]
 ///     title: String,
+///     #[diesel(select_expression = diesel::dsl::now)]
+///     access_time: chrono::DateTime<chrono::Utc>,
 /// }
 ///
 /// # fn main() -> QueryResult<()> {
@@ -597,6 +606,7 @@ where
 ///     id: 1,
 ///     name: "Sean".into(),
 ///     title: "My first post".into(),
+///     access_time: first_user_post.access_time,
 /// };
 /// assert_eq!(expected_user_post, first_user_post);
 /// #
